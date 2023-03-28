@@ -22,6 +22,7 @@ namespace flame
 	{
 		static std::vector<std::unique_ptr<Font>> fonts;
 		static std::vector<std::unique_ptr<FontAtlasT>> atlases;
+		const auto general_font_size = 14U;
 
 		Font::~Font()
 		{
@@ -122,6 +123,7 @@ namespace flame
 			if (font_size == 0)
 				return empty_glyph;
 
+			if (type == FontAtlasSDF) font_size = general_font_size;
 			auto key = GlyphKey(code, font_size);
 
 			auto it = map.find(key);
@@ -132,29 +134,28 @@ namespace flame
 
 				for (auto& font : fonts)
 				{
-					auto info = font->stbtt_info;
-					auto index = stbtt_FindGlyphIndex(info, code);
+					auto stbtt_info = font->stbtt_info;
+					auto index = stbtt_FindGlyphIndex(stbtt_info, code);
 					if (index == 0)
 						continue;
 
 					auto x = 0, y = 0, w = 0, h = 0;
-					auto scale = stbtt_ScaleForPixelHeight(info, font_size);
+					auto scale = stbtt_ScaleForPixelHeight(stbtt_info, font_size);
 					auto ascent = 0, adv = 0;
-					stbtt_GetFontVMetrics(info, &ascent, 0, 0);
+					stbtt_GetFontVMetrics(stbtt_info, &ascent, 0, 0);
 					ascent *= scale;
-					stbtt_GetGlyphHMetrics(info, index, &adv, nullptr);
+					stbtt_GetGlyphHMetrics(stbtt_info, index, &adv, nullptr);
 					adv *= scale;
 					switch (type)
 					{
 					case FontAtlasBitmap:
-						if (auto bitmap = stbtt_GetGlyphBitmap(info, scale, scale, index, &w, &h, &x, &y); bitmap)
+						if (auto bitmap_data = stbtt_GetGlyphBitmap(stbtt_info, scale, scale, index, &w, &h, &x, &y); bitmap_data)
 						{
-							auto n = bin_pack_root->find(uvec2(w, h));
-							if (n)
+							if (auto n = bin_pack_root->find(uvec2(w, h)); n)
 							{
 								auto& atlas_pos = n->pos;
 
-								StagingBuffer stag(image_pitch(w) * h, bitmap);
+								StagingBuffer stag(image_pitch(w) * h, bitmap_data);
 
 								InstanceCommandBuffer cb;
 								auto old_layout = image->get_layout();
@@ -171,14 +172,93 @@ namespace flame
 							}
 							else
 								printf("font atlas is full\n");
-							delete[]bitmap;
+							delete[]bitmap_data;
 						}
 						break;
 					case FontAtlasSDF:
 					{
 						stbtt_vertex* stbtt_verts = nullptr;
-						auto n = stbtt_GetGlyphShape(info, index, &stbtt_verts);
-						delete[]stbtt_verts;
+						auto n = stbtt_GetGlyphShape(stbtt_info, index, &stbtt_verts);
+						msdfgen::Shape msdf_shape;
+						auto contour = &msdf_shape.addContour();
+						auto position = msdfgen::Point2(0.f);
+						for (auto i = 0; i < n; i++)
+						{
+							auto& v = stbtt_verts[i];
+							switch (v.type)
+							{
+							case STBTT_vmove:
+								position = msdfgen::Point2(v.x, v.y);
+								break;
+							case STBTT_vline:
+							{
+								auto end_point = msdfgen::Point2(v.x, v.y);
+								contour->addEdge(new msdfgen::LinearSegment(position, end_point));
+								position = end_point;
+							}
+								break;
+							case STBTT_vcurve:
+							{
+								auto control_point = msdfgen::Point2(v.cx, v.cy);
+								auto end_point = msdfgen::Point2(v.x, v.y);
+								contour->addEdge(new msdfgen::QuadraticSegment(position, control_point, end_point));
+								position = end_point;
+							}
+								break;
+							case STBTT_vcubic:
+							{
+								auto control_point1 = msdfgen::Point2(v.cx, v.cy);
+								auto control_point2 = msdfgen::Point2(v.cx1, v.cy1);
+								auto end_point = msdfgen::Point2(v.x, v.y);
+								contour->addEdge(new msdfgen::CubicSegment(position, control_point1, control_point2, end_point));
+								position = end_point;
+							}
+								break;
+							}
+						}
+						stbtt_FreeShape(stbtt_info, stbtt_verts);
+
+						msdf_shape.normalize();
+						msdfgen::Bitmap<float, 3> bitmap(32, 32);
+						msdfgen::edgeColoringSimple(msdf_shape, 3.0);
+						msdfgen::generateMSDF(bitmap, msdf_shape, 4.0, 1.0, msdfgen::Vector2(4.0, 4.0));
+
+						w = bitmap.width(); h = bitmap.height();
+						if (auto n = bin_pack_root->find(uvec2(w, h)); n)
+						{
+							auto& atlas_pos = n->pos;
+
+							StagingBuffer stag(image_pitch(w * 4) * h);
+							auto dst = (uchar*)stag->mapped;
+							for (auto y = 0; y < h; y++)
+							{
+								dst += image_pitch(w * 4);
+								for (auto x = 0; x < w; x++)
+								{
+									auto pixel = bitmap(x, y);
+									dst[0] = uchar(pixel[0] * 255.f);
+									dst[1] = uchar(pixel[1] * 255.f);
+									dst[2] = uchar(pixel[2] * 255.f);
+									dst[3] = 255;
+									dst += 4;
+								}
+							}
+
+							InstanceCommandBuffer cb;
+							auto old_layout = image->get_layout();
+							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst);
+							BufferImageCopy cpy;
+							cpy.img_off = uvec3(atlas_pos, 0);
+							cpy.img_ext = uvec3(w, h, 1);
+							cb->copy_buffer_to_image(stag.get(), image.get(), { &cpy, 1 });
+							cb->image_barrier(image.get(), {}, old_layout);
+							cb.excute();
+
+							g.uv = vec4(atlas_pos.x / (float)font_atlas_size.x, (atlas_pos.y + h) / (float)font_atlas_size.y,
+								(atlas_pos.x + w) / (float)font_atlas_size.x, atlas_pos.y / (float)font_atlas_size.y);
+						}
+						else
+							printf("font atlas is full\n");
 					}
 						break;
 					}
@@ -197,6 +277,15 @@ namespace flame
 				return it->second;
 
 			return empty_glyph;
+		}
+
+		float FontAtlasPrivate::get_scale()
+		{
+			if (type == FontAtlasBitmap)
+				return 1.f;
+			if (type == FontAtlasSDF)
+				return 1.f / general_font_size;
+			return 1.f;
 		}
 
 		struct FontAtlasGet : FontAtlas::Get
@@ -267,9 +356,20 @@ namespace flame
 
 				ret->bin_pack_root.reset(new BinPackNode(font_atlas_size));
 
-				ret->image.reset(Image::create(Format_R8_UNORM, uvec3(font_atlas_size, 1), ImageUsageSampled | ImageUsageTransferSrc | ImageUsageTransferDst));
-				ret->image->clear(vec4(0, 0, 0, 1), ImageLayoutShaderReadOnly);
-				ret->view = ret->image->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR });
+				if (type == FontAtlasBitmap)
+				{
+					ret->image.reset(Image::create(Format_R8_UNORM, uvec3(font_atlas_size, 1), ImageUsageSampled | ImageUsageTransferSrc | ImageUsageTransferDst));
+					ret->image->clear(vec4(0, 0, 0, 1), ImageLayoutShaderReadOnly);
+					ret->view = ret->image->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR });
+				}
+				else if (type == FontAtlasSDF)
+				{
+					ret->image.reset(Image::create(Format_R8G8B8A8_UNORM, uvec3(font_atlas_size, 1), ImageUsageSampled | ImageUsageTransferSrc | ImageUsageTransferDst));
+					ret->image->clear(vec4(0, 0, 0, 1), ImageLayoutShaderReadOnly);
+					ret->view = ret->image->get_view();
+				}
+				else
+					assert(0);
 
 				ret->ref = 1;
 				atlases.emplace_back(ret);

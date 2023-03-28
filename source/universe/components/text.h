@@ -26,12 +26,12 @@ namespace flame
 		virtual void set_font_size(uint size) = 0;
 
 		// Reflect
-		std::vector<std::wstring> font_names;
+		std::vector<std::filesystem::path> font_names;
 		// Reflect
-		virtual void set_font_names(const std::vector<std::wstring>& names) = 0;
+		virtual void set_font_names(const std::vector<std::filesystem::path>& names) = 0;
 
 		// Reflect
-		bool sdf = true;
+		bool sdf = false;
 		// Reflect
 		virtual void set_sdf(bool v) = 0;
 

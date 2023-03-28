@@ -1,3 +1,4 @@
+#include "../../graphics/font.h"
 #include "../../graphics/canvas.h"
 #include "element_private.h"
 #include "text_private.h"
@@ -40,14 +41,40 @@ namespace flame
 		data_changed("font_size"_h);
 	}
 
-	void cTextPrivate::set_font_names(const std::vector<std::wstring>& names)
+	void cTextPrivate::set_font_names(const std::vector<std::filesystem::path>& names)
 	{
-
+		if (font_names == names)
+			return;
+		font_names = names;
+		get_font_atlas();
+		element->mark_drawing_dirty();
+		data_changed("font_names"_h);
 	}
 
 	void cTextPrivate::set_sdf(bool v)
 	{
+		if (sdf == v)
+			return;
+		sdf = v;
+		get_font_atlas();
+		element->mark_drawing_dirty();
+		data_changed("sdf"_h);
+	}
 
+	void cTextPrivate::get_font_atlas()
+	{
+		auto _font_names = font_names;
+		if (_font_names.empty())
+			_font_names.push_back(L"flame\\fonts\\OpenSans-Regular.ttf");
+		auto _font_atlas = graphics::FontAtlas::get(font_names, sdf ? graphics::FontAtlasSDF : graphics::FontAtlasBitmap);
+		if (font_atlas != _font_atlas)
+		{
+			if (font_atlas)
+				graphics::FontAtlas::release(font_atlas);
+			font_atlas = _font_atlas;
+		}
+		else if (_font_atlas)
+			graphics::FontAtlas::release(_font_atlas);
 	}
 
 	struct cTextCreate : cText::Create

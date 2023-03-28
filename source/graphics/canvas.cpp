@@ -305,13 +305,16 @@ namespace flame
 		{
 			auto& cmd = get_cmd(main_ds.get());
 			font_atlas = font_atlas ? font_atlas : main_font_atlas;
+			auto scale = font_atlas->get_scale();
+			if (scale != 1.f)
+				scale *= font_size;
 
 			auto p = pos;
 			for (auto ch : str)
 			{
 				auto& g = font_atlas->get_glyph(ch, font_size);
-				auto o = p + vec2(g.off);
-				auto s = vec2(g.size);
+				auto o = p + vec2(g.off) * scale;
+				auto s = vec2(g.size) * scale;
 				s.y *= -1.f;
 
 				path_rect(o, o + s);
