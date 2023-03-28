@@ -180,6 +180,7 @@ namespace flame
 						break;
 					case FontAtlasSDF:
 					{
+#ifdef USE_MSDFGEN
 						int x0, y0, x1, y1;
 						stbtt_GetGlyphBitmapBox(stbtt_info, index, scale, scale, &x0, &y0, &x1, &y1);
 						x = x0; y = y0;
@@ -274,6 +275,7 @@ namespace flame
 							else
 								printf("font atlas is full\n");
 						}
+#endif
 					}
 						break;
 					}

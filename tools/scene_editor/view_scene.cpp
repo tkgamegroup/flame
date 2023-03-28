@@ -5,6 +5,7 @@
 #include <flame/foundation/typeinfo.h>
 #include <flame/universe/draw_data.h>
 #include <flame/universe/components/node.h>
+#include <flame/universe/components/element.h>
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
 #include <flame/universe/components/armature.h>
@@ -70,16 +71,16 @@ void View_Scene::on_draw()
 	auto camera = camera_list[camera_idx];
 	app.renderer->camera = camera;
 
-	auto scene_extent = vec2(ImGui::GetContentRegionAvail());
+	auto render_target_extent = vec2(ImGui::GetContentRegionAvail());
 	if (fixed_render_target_size)
-		scene_extent = vec2(1280, 720);
-	if (!render_tar || vec2(render_tar->extent) != scene_extent)
+		render_target_extent = vec2(1280, 720);
+	if (!render_tar || vec2(render_tar->extent) != render_target_extent)
 	{
-		add_event([this, scene_extent]() {
+		add_event([this, render_target_extent]() {
 			graphics::Queue::get()->wait_idle();
-			if (scene_extent.x > 1 && scene_extent.y > 1)
+			if (render_target_extent.x > 1 && render_target_extent.y > 1)
 			{
-				render_tar.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(scene_extent, 1),
+				render_tar.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(render_target_extent, 1),
 					graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 				render_tar->change_layout(graphics::ImageLayoutShaderReadOnly);
 				auto iv = render_tar->get_view();
@@ -98,7 +99,7 @@ void View_Scene::on_draw()
 
 	if (render_tar)
 	{
-		ImGui::Image(render_tar.get(), scene_extent);
+		ImGui::Image(render_tar.get(), render_target_extent);
 		auto p0 = ImGui::GetItemRectMin();
 		auto p1 = ImGui::GetItemRectMax();
 		app.input->offset = p0;
@@ -107,13 +108,14 @@ void View_Scene::on_draw()
 #if USE_IM_GUIZMO
 		if (is_in(app.tool, ToolMove, ToolScale) && app.e_editor && selection.type == Selection::tEntity)
 		{
-			std::vector<cNodePtr> targets;
+			std::vector<cNodePtr> node_targets;
+			std::vector<cElementPtr> element_targets;
 			for (auto e : selection.entities())
 			{
-				if (auto target = e->node(); target)
+				if (auto node = e->node(); node)
 				{
 					auto ok = true;
-					for (auto t : targets)
+					for (auto t : node_targets)
 					{
 						if (is_ancestor(t->entity, e))
 						{
@@ -122,36 +124,28 @@ void View_Scene::on_draw()
 						}
 					}
 					if (ok)
-						targets.push_back(target);
+						node_targets.push_back(node);
+				}
+				if (auto element = e->element(); element)
+				{
+					auto ok = true;
+					for (auto t : element_targets)
+					{
+						if (is_ancestor(t->entity, e))
+						{
+							ok = false;
+							break;
+						}
+					}
+					if (ok)
+						element_targets.push_back(element);
 				}
 			}
 
-			if (!targets.empty())
-			{
-				ImGuizmo::BeginFrame();
-				ImGuizmo::SetRect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
-				auto matp = camera->proj_mat; matp[1][1] *= -1.f;
-				mat4 mat;
-				static bool last_gizmo_using = false;
-				static std::vector<vec3> before_editing_poses;
-				static std::vector<quat> before_editing_quts;
-				static std::vector<vec3> before_editing_scls;
-				static vec3 center;
-				if (targets.size() > 1)
-				{
-					if (!last_gizmo_using)
-					{
-						center = vec3(0.f);
-						for (auto t : targets)
-							center += t->global_pos();
-						center /= (float)targets.size();
-					}
-					mat = translate(mat4(1.f), center);
-				}
-				else
-					mat = targets[0]->transform;
-				ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+			static bool last_gizmo_using = false;
+			auto gizmo_manipulate = [](const mat4& view_mat, const mat4& proj_mat, mat4& mat) {
 				auto op = ImGuizmo::TRANSLATE;
+				auto mode = ImGuizmo::LOCAL;
 				vec3 snap_value; float* p_snap_value = nullptr;
 				switch (app.tool)
 				{
@@ -180,7 +174,42 @@ void View_Scene::on_draw()
 					}
 					break;
 				}
-				auto changed = ImGuizmo::Manipulate(&camera->view_mat[0][0], &matp[0][0], op, app.tool_mode == ToolLocal ? ImGuizmo::LOCAL : ImGuizmo::WORLD, &mat[0][0], nullptr, p_snap_value);
+				switch (app.tool_mode)
+				{
+				case ToolLocal:
+					mode = ImGuizmo::LOCAL;
+					break;
+				case ToolWorld:
+					mode = ImGuizmo::WORLD;
+					break;
+				}
+				ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+				return ImGuizmo::Manipulate(&view_mat[0][0], &proj_mat[0][0], op, mode, &mat[0][0], nullptr, p_snap_value);
+			};
+			if (!node_targets.empty() && element_targets.empty())
+			{
+				static std::vector<vec3> before_editing_poses;
+				static std::vector<quat> before_editing_quts;
+				static std::vector<vec3> before_editing_scls;
+				static vec3 center;
+				ImGuizmo::BeginFrame();
+				ImGuizmo::SetRect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
+				auto matp = camera->proj_mat; matp[1][1] *= -1.f;
+				mat4 mat;
+				if (node_targets.size() > 1)
+				{
+					if (!last_gizmo_using)
+					{
+						center = vec3(0.f);
+						for (auto t : node_targets)
+							center += t->global_pos();
+						center /= (float)node_targets.size();
+					}
+					mat = translate(mat4(1.f), center);
+				}
+				else
+					mat = node_targets[0]->transform;
+				auto changed = gizmo_manipulate(camera->view_mat, matp, mat);
 				gizmo_using = ImGuizmo::IsUsing();
 				if (!last_gizmo_using && gizmo_using)
 				{
@@ -190,57 +219,57 @@ void View_Scene::on_draw()
 					switch (app.tool)
 					{
 					case ToolMove:
-						for (auto t : targets)
+						for (auto t : node_targets)
 							before_editing_poses.push_back(t->pos);
 						break;
 					case ToolRotate:
-						for (auto t : targets)
+						for (auto t : node_targets)
 							before_editing_quts.push_back(t->qut);
-						if (targets.size() > 1 && app.tool_pivot == ToolCenter)
+						if (node_targets.size() > 1 && app.tool_pivot == ToolCenter)
 						{
-							for (auto t : targets)
+							for (auto t : node_targets)
 								before_editing_poses.push_back(t->pos);
 						}
 						break;
 					case ToolScale:
-						for (auto t : targets)
+						for (auto t : node_targets)
 							before_editing_scls.push_back(t->scl);
 						break;
 					}
 				}
 				if (changed)
 				{
-					if (targets.size() == 1)
+					if (node_targets.size() == 1)
 					{
-						if (auto pnode = targets[0]->entity->get_parent_component_i<cNodeT>(0); pnode)
+						if (auto pnode = node_targets[0]->entity->get_parent_component_i<cNodeT>(0); pnode)
 							mat = inverse(pnode->transform) * mat;
 					}
 					vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
 					decompose(mat, scl, qut, pos, skew, perspective);
 					if (app.tool == ToolMove)
 					{
-						if (targets.size() > 1)
+						if (node_targets.size() > 1)
 						{
-							auto diff = pos - targets[0]->pos;
-							for (auto t : targets)
+							auto diff = pos - node_targets[0]->pos;
+							for (auto t : node_targets)
 							{
 								t->add_pos(diff);
 								if (auto ins = get_prefab_instance(t->entity); ins)
-									ins->mark_modifier(targets[0]->entity->file_id.to_string(), "flame::cNode", "pos");
+									ins->mark_modifier(node_targets[0]->entity->file_id.to_string(), "flame::cNode", "pos");
 							}
 						}
 						else
 						{
-							targets[0]->set_pos(pos);
-							if (auto ins = get_prefab_instance(targets[0]->entity); ins)
-								ins->mark_modifier(targets[0]->entity->file_id.to_string(), "flame::cNode", "pos");
+							node_targets[0]->set_pos(pos);
+							if (auto ins = get_prefab_instance(node_targets[0]->entity); ins)
+								ins->mark_modifier(node_targets[0]->entity->file_id.to_string(), "flame::cNode", "pos");
 						}
 					}
 					if (app.tool == ToolRotate)
 					{
-						if (targets.size() > 1)
+						if (node_targets.size() > 1)
 						{
-							for (auto t : targets)
+							for (auto t : node_targets)
 							{
 								t->mul_qut(qut);
 								if (auto ins = get_prefab_instance(t->entity); ins)
@@ -255,29 +284,29 @@ void View_Scene::on_draw()
 						}
 						else
 						{
-							targets[0]->set_qut(qut);
-							if (auto ins = get_prefab_instance(targets[0]->entity); ins)
-								ins->mark_modifier(targets[0]->entity->file_id.to_string(), "flame::cNode", "qut");
+							node_targets[0]->set_qut(qut);
+							if (auto ins = get_prefab_instance(node_targets[0]->entity); ins)
+								ins->mark_modifier(node_targets[0]->entity->file_id.to_string(), "flame::cNode", "qut");
 						}
 					}
 					if (app.tool == ToolScale)
 					{
-						if (targets.size() > 1)
+						if (node_targets.size() > 1)
 						{
 
 						}
 						else
 						{
-							targets[0]->set_scl(scl);
-							if (auto ins = get_prefab_instance(targets[0]->entity); ins)
-								ins->mark_modifier(targets[0]->entity->file_id.to_string(), "flame::cNode", "scl");
+							node_targets[0]->set_scl(scl);
+							if (auto ins = get_prefab_instance(node_targets[0]->entity); ins)
+								ins->mark_modifier(node_targets[0]->entity->file_id.to_string(), "flame::cNode", "scl");
 						}
 					}
 				}
 				if (last_gizmo_using && !gizmo_using)
 				{
 					std::vector<GUID> ids;
-					for (auto t : targets)
+					for (auto t : node_targets)
 						ids.push_back(t->entity->instance_id);
 					if (app.tool == ToolMove)
 					{
@@ -286,7 +315,7 @@ void View_Scene::on_draw()
 						for (auto i = 0; i < ids.size(); i++)
 							old_values[i] = str(before_editing_poses[i]);
 						for (auto i = 0; i < ids.size(); i++)
-							new_values[i] = str(targets[i]->pos);
+							new_values[i] = str(node_targets[i]->pos);
 						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, old_values, new_values));
 						app.prefab_unsaved = true;
 					}
@@ -297,16 +326,16 @@ void View_Scene::on_draw()
 						for (auto i = 0; i < old_values.size(); i++)
 							old_values[i] = str((vec4&)before_editing_quts[i]);
 						for (auto i = 0; i < ids.size(); i++)
-							new_values[i] = str((vec4&)targets[i]->qut);
+							new_values[i] = str((vec4&)node_targets[i]->qut);
 						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "qut"_h, old_values, new_values));
-						if (targets.size() > 1 && app.tool_pivot == ToolCenter)
+						if (node_targets.size() > 1 && app.tool_pivot == ToolCenter)
 						{
 							std::vector<std::string> old_values(ids.size());
 							std::vector<std::string> new_values(ids.size());
 							for (auto i = 0; i < ids.size(); i++)
 								old_values[i] = str(before_editing_poses[i]);
 							for (auto i = 0; i < ids.size(); i++)
-								new_values[i] = str(targets[i]->pos);
+								new_values[i] = str(node_targets[i]->pos);
 							add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, old_values, new_values));
 						}
 						app.prefab_unsaved = true;
@@ -318,11 +347,86 @@ void View_Scene::on_draw()
 						for (auto i = 0; i < ids.size(); i++)
 							old_values[i] = str(before_editing_scls[i]);
 						for (auto i = 0; i < ids.size(); i++)
-							new_values[i] = str(targets[i]->scl);
+							new_values[i] = str(node_targets[i]->scl);
 						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "scl"_h, old_values, new_values));
 						app.prefab_unsaved = true;
 					}
 				}
+				last_gizmo_using = gizmo_using;
+			}
+			else if (node_targets.empty() && !element_targets.empty())
+			{
+				static vec2 center;
+				ImGuizmo::BeginFrame();
+				ImGuizmo::SetRect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
+				static auto matv = mat4(1.f);
+				auto		matp = mat4(1.f);
+				matp[1][1] *= -1.f;
+				matp = translate(matp, vec3(-1.f, -1.f, 0.5f));
+				matp = scale(matp, vec3(2.f / render_target_extent, 1.f));
+				mat4 mat = mat4(1.f);
+				if (element_targets.size() > 1)
+				{
+					if (!last_gizmo_using)
+					{
+						center = vec3(0.f);
+						for (auto t : element_targets)
+							center += t->global_pos0();
+						center /= (float)element_targets.size();
+					}
+					mat = translate(mat, vec3(center, 0.f));
+				}
+				else
+					mat = translate(mat, vec3(element_targets[0]->global_pos0(), 0.f));
+				auto changed = gizmo_manipulate(matv, matp, mat);
+				if (changed)
+				{
+					auto m3 = mat3(1.f);
+					m3[0] = mat[0]; m3[1] = mat[1]; 
+					m3[2] = mat[3]; m3[2][2] = 0.f;
+					if (element_targets.size() == 1)
+					{
+						if (auto pelement = element_targets[0]->entity->get_parent_component_i<cElementT>(0); pelement)
+							m3 = inverse(mat3(pelement->transform)) * m3;
+					}
+					vec2 pos; vec2 scl;
+					pos = m3[2];
+					scl.x = length(vec2(m3[0]));
+					scl.y = length(vec2(m3[1]));
+					if (app.tool == ToolMove)
+					{
+						if (element_targets.size() > 1)
+						{
+							auto diff = pos - element_targets[0]->pos;
+							for (auto t : element_targets)
+							{
+								t->add_pos(diff);
+								if (auto ins = get_prefab_instance(t->entity); ins)
+									ins->mark_modifier(element_targets[0]->entity->file_id.to_string(), "flame::cElement", "pos");
+							}
+						}
+						else
+						{
+							element_targets[0]->set_pos(pos);
+							if (auto ins = get_prefab_instance(element_targets[0]->entity); ins)
+								ins->mark_modifier(element_targets[0]->entity->file_id.to_string(), "flame::cElement", "pos");
+						}
+					}
+					if (app.tool == ToolScale)
+					{
+						if (element_targets.size() > 1)
+						{
+
+						}
+						else
+						{
+							element_targets[0]->set_scl(scl);
+							if (auto ins = get_prefab_instance(element_targets[0]->entity); ins)
+								ins->mark_modifier(element_targets[0]->entity->file_id.to_string(), "flame::cElement", "scl");
+						}
+					}
+				}
+				gizmo_using = ImGuizmo::IsUsing();
 				last_gizmo_using = gizmo_using;
 			}
 		}
