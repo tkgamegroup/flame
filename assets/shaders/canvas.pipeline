@@ -42,7 +42,7 @@ layout (set = SET, binding = 0) uniform sampler2D image;
 layout(push_constant) uniform PushConstant
 {
 	vec2 scale;
-	vec2 translate;
+    float screen_px_range;
 }pc;
 @
 
@@ -58,7 +58,7 @@ void main()
 {
 	o_col = i_col;
 	o_uv = i_uv;
-	gl_Position = vec4(i_pos * pc.scale + pc.translate, 0, 1);
+	gl_Position = vec4(i_pos * pc.scale - 1.0, 0, 1);
 }
 @
 
@@ -68,8 +68,23 @@ layout (location = 1) in vec2 i_uv;
 
 layout (location = 0) out vec4 o_col;
 
+#ifdef MSDF
+float median(float r, float g, float b)
+{ 
+    return max(min(r, g), min(max(r, g), b));
+}
+#endif
+
 void main()
 {
+#ifdef MSDF
+    vec3 msd = texture(image, i_uv).rgb;
+    float sd = median(msd.r, msd.g, msd.b);
+    float screen_px_distance = pc.screen_px_range * (sd - 0.5);
+    float alpha = clamp(screen_px_distance + 0.5, 0.0, 1.0);
+    o_col = vec4(i_col.rgb, i_col.a * alpha);
+#else
 	o_col = i_col * texture(image, i_uv);
+#endif
 }
 @

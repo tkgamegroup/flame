@@ -129,7 +129,7 @@ std::vector<Drop> drops;
 
 int entry(int argc, char** args)
 {
-	app.create("Graphics Test", uvec2(640, 360), WindowFrame | WindowResizable, true);
+	app.create("Graphics Test", uvec2(640, 360), WindowFrame | WindowResizable, true, true);
 	app.main_window->native->resize_listeners.add([](const uvec2& size) {
 		projector.set(size, 45.f, 1.f, 4.f);
 	});

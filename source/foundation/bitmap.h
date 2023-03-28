@@ -43,25 +43,27 @@ namespace flame
 		{
 		}
 
-		BinPackNode* find(const uvec2& ext)
+		BinPackNode* find(const uvec2& sz)
 		{
-			if (!used && extent.x >= ext.x && extent.y >= extent.y)
+			if (!used && extent.x >= sz.x && extent.y >= extent.y)
 			{
 				used = true;
-				right.reset(new BinPackNode(uvec2(extent.x - ext.x, ext.y)));
-				right->pos = pos + uvec2(ext.x, 0);
-				bottom.reset(new BinPackNode(uvec2(extent.x, extent.y - ext.y)));
-				bottom->pos = pos + uvec2(0, ext.y);
+				if (extent.x > sz.x)
+				{
+					right.reset(new BinPackNode(uvec2(extent.x - sz.x, sz.y)));
+					right->pos = pos + uvec2(sz.x, 0);
+				}
+				if (extent.y > sz.y)
+				{
+					bottom.reset(new BinPackNode(uvec2(extent.x, extent.y - sz.y)));
+					bottom->pos = pos + uvec2(0, sz.y);
+				}
 				return this;
 			}
-			if (!right || !bottom)
-				return nullptr;
-			auto n1 = right->find(ext);
-			if (n1)
-				return n1;
-			auto n2 = bottom->find(ext);
-			if (n2)
-				return n2;
+			if (auto n = right ? right->find(sz) : nullptr; n)
+				return n;
+			if (auto n = bottom ? bottom->find(sz) : nullptr; n)
+				return n;
 			return nullptr;
 		}
 	};

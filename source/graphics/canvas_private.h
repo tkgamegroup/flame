@@ -21,11 +21,14 @@ namespace flame
 
 			struct DrawCmd
 			{
-				uint idx_cnt;
-				DescriptorSetPtr ds;
+				uint idx_cnt = 0;
+				DescriptorSetPtr ds = nullptr;
+				float sdf_size = 0.f;
 			};
 
 			GraphicsPipelinePtr pl = nullptr;
+			GraphicsPipelinePtr pl_sdf = nullptr;
+			PipelineResourceManager prm;
 			RenderpassPtr rp = nullptr;
 			RenderpassPtr rp_load = nullptr;
 			VertexBuffer buf_vtx;
@@ -41,7 +44,7 @@ namespace flame
 			~CanvasPrivate();
 			void set_targets(std::span<ImageViewPtr> targets);
 			void reset();
-			DrawCmd& get_cmd(DescriptorSetPtr ds);
+			DrawCmd& get_cmd(DescriptorSetPtr ds, float sdf_size = 0.f);
 
 			void path_rect(const vec2& a, const vec2& b);
 			void stroke_path(DrawCmd& cmd, float thickness, const cvec4& col, bool closed);

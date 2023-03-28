@@ -92,44 +92,44 @@ struct Star
 
 		rad = radians(a + 0.f);
 		{
-			auto pv = vtx_buf.add();
-			pv.item("i_pos"_h).set(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-			pv.item("i_col"_h).set(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+			auto vtx = vtx_buf.add();
+			vtx.child("i_pos"_h).as<vec2>() = vec2(c.x + cos(rad) * r, c.y + sin(rad) * r);
+			vtx.child("i_col"_h).as<cvec4>() = cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f));
 		}
 
 		rad = radians(a + 240.f);
 		{
-			auto pv = vtx_buf.add();
-			pv.item("i_pos"_h).set(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-			pv.item("i_col"_h).set(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+			auto vtx = vtx_buf.add();
+			vtx.child("i_pos"_h).as<vec2>() = vec2(c.x + cos(rad) * r, c.y + sin(rad) * r);
+			vtx.child("i_col"_h).as<cvec4>() = cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f));
 		}
 
 		rad = radians(a + 120.f);
 		{
-			auto pv = vtx_buf.add();
-			pv.item("i_pos"_h).set(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-			pv.item("i_col"_h).set(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+			auto vtx = vtx_buf.add();
+			vtx.child("i_pos"_h).as<vec2>() = vec2(c.x + cos(rad) * r, c.y + sin(rad) * r);
+			vtx.child("i_col"_h).as<cvec4>() = cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f));
 		}
 
 		rad = radians(a + 60.f);
 		{
-			auto pv = vtx_buf.add();
-			pv.item("i_pos"_h).set(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-			pv.item("i_col"_h).set(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+			auto vtx = vtx_buf.add();
+			vtx.child("i_pos"_h).as<vec2>() = vec2(c.x + cos(rad) * r, c.y + sin(rad) * r);
+			vtx.child("i_col"_h).as<cvec4>() = cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f));
 		}
 
 		rad = radians(a + 300.f);
 		{
-			auto pv = vtx_buf.add();
-			pv.item("i_pos"_h).set(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-			pv.item("i_col"_h).set(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+			auto vtx = vtx_buf.add();
+			vtx.child("i_pos"_h).as<vec2>() = vec2(c.x + cos(rad) * r, c.y + sin(rad) * r);
+			vtx.child("i_col"_h).as<cvec4>() = cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f));
 		}
 
 		rad = radians(a + 180.f);
 		{
-			auto pv = vtx_buf.add();
-			pv.item("i_pos"_h).set(vec2(c.x + cos(rad) * r, c.y + sin(rad) * r));
-			pv.item("i_col"_h).set(cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f)));
+			auto vtx = vtx_buf.add();
+			vtx.child("i_pos"_h).as<vec2>() = vec2(c.x + cos(rad) * r, c.y + sin(rad) * r);
+			vtx.child("i_col"_h).as<cvec4>() = cvec4(255, 255, 255, 80 * (3.f - p.z + 1.f));
 		}
 	}
 };
@@ -138,7 +138,7 @@ std::vector<Star> stars;
 
 int entry(int argc, char** args)
 {
-	app.create("Graphics Test", uvec2(500, 500), WindowFrame | WindowResizable, true);
+	app.create("Graphics Test", uvec2(500, 500), WindowFrame | WindowResizable, true, true);
 	app.main_window->native->resize_listeners.add([](const uvec2& size) {
 		projector.set(size, 45.f, 1.f, 4.f);
 	});

@@ -23,6 +23,7 @@ namespace flame
 		static std::vector<std::unique_ptr<Font>> fonts;
 		static std::vector<std::unique_ptr<FontAtlasT>> atlases;
 		const auto general_font_size = 14U;
+		const auto sdf_font_size = 32U;
 
 		Font::~Font()
 		{
@@ -123,7 +124,7 @@ namespace flame
 			if (font_size == 0)
 				return empty_glyph;
 
-			if (type == FontAtlasSDF) font_size = general_font_size;
+			if (type == FontAtlasSDF) font_size = sdf_font_size;
 			auto key = GlyphKey(code, font_size);
 
 			auto it = map.find(key);
@@ -131,6 +132,8 @@ namespace flame
 			{
 				Glyph g;
 				g.code = code;
+				if (code == 'S')
+					int cut = 1;
 
 				for (auto& font : fonts)
 				{
@@ -177,9 +180,15 @@ namespace flame
 						break;
 					case FontAtlasSDF:
 					{
+						int x0, y0, x1, y1;
+						stbtt_GetGlyphBitmapBox(stbtt_info, index, scale, scale, &x0, &y0, &x1, &y1);
+						x = x0; y = y0;
+						w = x1 - x0; h = y1 - y0;
+
 						stbtt_vertex* stbtt_verts = nullptr;
 						auto n = stbtt_GetGlyphShape(stbtt_info, index, &stbtt_verts);
 						msdfgen::Shape msdf_shape;
+						msdf_shape.inverseYAxis = true;
 						auto contour = &msdf_shape.addContour();
 						auto position = msdfgen::Point2(0.f);
 						for (auto i = 0; i < n; i++)
@@ -188,28 +197,30 @@ namespace flame
 							switch (v.type)
 							{
 							case STBTT_vmove:
-								position = msdfgen::Point2(v.x, v.y);
+								if (!contour->edges.empty())
+									contour = &msdf_shape.addContour();
+								position = msdfgen::Point2(v.x, v.y) * scale;
 								break;
 							case STBTT_vline:
 							{
-								auto end_point = msdfgen::Point2(v.x, v.y);
+								auto end_point = msdfgen::Point2(v.x, v.y) * scale;
 								contour->addEdge(new msdfgen::LinearSegment(position, end_point));
 								position = end_point;
 							}
 								break;
 							case STBTT_vcurve:
 							{
-								auto control_point = msdfgen::Point2(v.cx, v.cy);
-								auto end_point = msdfgen::Point2(v.x, v.y);
+								auto control_point = msdfgen::Point2(v.cx, v.cy) * scale;
+								auto end_point = msdfgen::Point2(v.x, v.y) * scale;
 								contour->addEdge(new msdfgen::QuadraticSegment(position, control_point, end_point));
 								position = end_point;
 							}
 								break;
 							case STBTT_vcubic:
 							{
-								auto control_point1 = msdfgen::Point2(v.cx, v.cy);
-								auto control_point2 = msdfgen::Point2(v.cx1, v.cy1);
-								auto end_point = msdfgen::Point2(v.x, v.y);
+								auto control_point1 = msdfgen::Point2(v.cx, v.cy) * scale;
+								auto control_point2 = msdfgen::Point2(v.cx1, v.cy1) * scale;
+								auto end_point = msdfgen::Point2(v.x, v.y) * scale;
 								contour->addEdge(new msdfgen::CubicSegment(position, control_point1, control_point2, end_point));
 								position = end_point;
 							}
@@ -218,47 +229,51 @@ namespace flame
 						}
 						stbtt_FreeShape(stbtt_info, stbtt_verts);
 
-						msdf_shape.normalize();
-						msdfgen::Bitmap<float, 3> bitmap(32, 32);
-						msdfgen::edgeColoringSimple(msdf_shape, 3.0);
-						msdfgen::generateMSDF(bitmap, msdf_shape, 4.0, 1.0, msdfgen::Vector2(4.0, 4.0));
-
-						w = bitmap.width(); h = bitmap.height();
-						if (auto n = bin_pack_root->find(uvec2(w, h)); n)
+						if (contour->edges.empty())
+							msdf_shape.contours.pop_back();
+						if (!msdf_shape.contours.empty())
 						{
-							auto& atlas_pos = n->pos;
+							msdf_shape.normalize();
+							msdfgen::Bitmap<float, 3> bitmap(sdf_font_size, sdf_font_size);
+							msdfgen::edgeColoringSimple(msdf_shape, 3.0);
+							msdfgen::generateMSDF(bitmap, msdf_shape, 4.0, 1.0, msdfgen::Vector2(4.0, 4.0));
 
-							StagingBuffer stag(image_pitch(w * 4) * h);
-							auto dst = (uchar*)stag->mapped;
-							for (auto y = 0; y < h; y++)
+							if (auto n = bin_pack_root->find(uvec2(bitmap.width(), bitmap.height())); n)
 							{
-								dst += image_pitch(w * 4);
-								for (auto x = 0; x < w; x++)
+								auto& atlas_pos = n->pos;
+
+								StagingBuffer stag(image_pitch(bitmap.width() * 4) * bitmap.height());
+								for (auto y = 0; y < bitmap.height(); y++)
 								{
-									auto pixel = bitmap(x, y);
-									dst[0] = uchar(pixel[0] * 255.f);
-									dst[1] = uchar(pixel[1] * 255.f);
-									dst[2] = uchar(pixel[2] * 255.f);
-									dst[3] = 255;
-									dst += 4;
+									auto dst = (uchar*)stag->mapped + image_pitch(bitmap.width() * 4) * y;
+									for (auto x = 0; x < bitmap.width(); x++)
+									{
+										auto pixel = bitmap(x, y);
+										dst[0] = uchar(clamp(pixel[0], 0.f, 1.f) * 255.f);
+										dst[1] = uchar(clamp(pixel[1], 0.f, 1.f) * 255.f);
+										dst[2] = uchar(clamp(pixel[2], 0.f, 1.f) * 255.f);
+										dst[3] = 255;
+										dst += 4;
+									}
 								}
+
+								InstanceCommandBuffer cb;
+								auto old_layout = image->get_layout();
+								cb->image_barrier(image.get(), {}, ImageLayoutTransferDst);
+								BufferImageCopy cpy;
+								cpy.img_off = uvec3(atlas_pos, 0);
+								cpy.img_ext = uvec3(bitmap.width(), bitmap.height(), 1);
+								cb->copy_buffer_to_image(stag.get(), image.get(), { &cpy, 1 });
+								cb->image_barrier(image.get(), {}, old_layout);
+								cb.excute();
+
+								auto uv0 = vec2(atlas_pos.x + x + 4, atlas_pos.y + ascent + h + y + 4);
+								auto uv1 = uv0 + vec2(w, -h - 4);
+								g.uv = vec4(uv0 / (vec2)font_atlas_size, uv1 / (vec2)font_atlas_size);
 							}
-
-							InstanceCommandBuffer cb;
-							auto old_layout = image->get_layout();
-							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst);
-							BufferImageCopy cpy;
-							cpy.img_off = uvec3(atlas_pos, 0);
-							cpy.img_ext = uvec3(w, h, 1);
-							cb->copy_buffer_to_image(stag.get(), image.get(), { &cpy, 1 });
-							cb->image_barrier(image.get(), {}, old_layout);
-							cb.excute();
-
-							g.uv = vec4(atlas_pos.x / (float)font_atlas_size.x, (atlas_pos.y + h) / (float)font_atlas_size.y,
-								(atlas_pos.x + w) / (float)font_atlas_size.x, atlas_pos.y / (float)font_atlas_size.y);
+							else
+								printf("font atlas is full\n");
 						}
-						else
-							printf("font atlas is full\n");
 					}
 						break;
 					}
@@ -284,7 +299,7 @@ namespace flame
 			if (type == FontAtlasBitmap)
 				return 1.f;
 			if (type == FontAtlasSDF)
-				return 1.f / general_font_size;
+				return 1.f / sdf_font_size;
 			return 1.f;
 		}
 

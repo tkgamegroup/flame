@@ -37,14 +37,35 @@ namespace flame
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx.buf.get(), IndiceTypeUint);
 				cb->bind_pipeline(pl);
-				auto scale = 2.f / vp.b;
-				cb->push_constant_t(vec4(scale, -1.f, -1.f));
+				prm.pc.mark_dirty_c("scale"_h).as<vec2>() = 2.f / vp.b;
+				prm.push_constant(cb);
+				auto last_pl = pl;
+				auto idx_off = 0;
 				for (auto& cmd : draw_cmds)
 				{
 					if (cmd.idx_cnt > 0)
 					{
+						if (cmd.sdf_size > 0.f)
+						{
+							if (last_pl != pl_sdf)
+							{
+								cb->bind_pipeline(pl_sdf);
+								last_pl = pl_sdf;
+							}
+							prm.pc.mark_dirty_c("screen_px_range"_h).as<float>() = cmd.sdf_size / 32.f * 4.f;
+							prm.push_constant(cb);
+						}
+						else
+						{
+							if (last_pl != pl)
+							{
+								cb->bind_pipeline(pl);
+								last_pl = pl;
+							}
+						}
 						cb->bind_descriptor_set(0, cmd.ds);
-						cb->draw_indexed(cmd.idx_cnt, 0, 0, 1, 0);
+						cb->draw_indexed(cmd.idx_cnt, idx_off, 0, 1, 0);
+						idx_off += cmd.idx_cnt;
 					}
 				}
 				cb->end_renderpass();
@@ -82,6 +103,8 @@ namespace flame
 				set_targets(targets);
 
 			pl = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", { "rp=" + str(rp) });
+			pl_sdf = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", { "rp=" + str(rp), "frag:MSDF" });
+			prm.init(pl->layout, graphics::PipelineGraphics);
 			buf_vtx.create(sizeof(DrawVert), 360000);
 			buf_idx.create(240000);
 			const auto font_size = 14;
@@ -92,7 +115,7 @@ namespace flame
 			main_img->set_pixel(0, 0, 0, 0, vec4(1.f));
 			main_img->upload_pixels(0, 0, 1, 1, 0, 0);
 			main_img->change_layout(ImageLayoutShaderReadOnly);
-			main_ds.reset(DescriptorSet::create(nullptr, pl->layout->dsls[0]));
+			main_ds.reset(DescriptorSet::create(nullptr, prm.get_dsl(""_h)));
 			main_ds->set_image_i(0, 0, main_img->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(FilterNearest, FilterNearest, false, AddressClampToEdge));
 			main_ds->update();
 
@@ -118,21 +141,19 @@ namespace flame
 
 		void CanvasPrivate::reset()
 		{
-			draw_cmds.resize(1);
-			auto& cmd = draw_cmds[0];
-			cmd.idx_cnt = 0;
-			cmd.ds = main_ds.get();
+			draw_cmds.clear();
+			draw_cmds.emplace_back().ds = main_ds.get();
 		}
 
-		CanvasPrivate::DrawCmd& CanvasPrivate::get_cmd(DescriptorSetPtr ds)
+		CanvasPrivate::DrawCmd& CanvasPrivate::get_cmd(DescriptorSetPtr ds, float sdf_size)
 		{
-			auto& ret = draw_cmds.back();
-			if (ret.ds == ds)
-				return ret;
-			ret = draw_cmds.emplace_back();
-			ret.idx_cnt = 0;
-			ret.ds = ds;
-			return ret;
+			auto& cmd = draw_cmds.back();
+			if (cmd.ds == ds && cmd.sdf_size == sdf_size)
+				return cmd;
+			auto& new_cmd = draw_cmds.emplace_back();
+			new_cmd.ds = ds;
+			new_cmd.sdf_size = sdf_size;
+			return new_cmd;
 		}
 
 		void CanvasPrivate::path_rect(const vec2& a, const vec2& b)
@@ -303,8 +324,9 @@ namespace flame
 
 		void CanvasPrivate::add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col)
 		{
-			auto& cmd = get_cmd(main_ds.get());
 			font_atlas = font_atlas ? font_atlas : main_font_atlas;
+			auto& cmd = get_cmd(font_atlas == main_font_atlas ? main_ds.get() : font_atlas->view->get_shader_read_src(nullptr),
+				font_atlas->type == FontAtlasSDF ? font_size : 0.f);
 			auto scale = font_atlas->get_scale();
 			if (scale != 1.f)
 				scale *= font_size;
@@ -325,7 +347,7 @@ namespace flame
 				buf_vtx.item_t<DrawVert>(-2).uv = g.uv.zw;
 				buf_vtx.item_t<DrawVert>(-1).uv = g.uv.zy;
 
-				p.x += g.advance;
+				p.x += g.advance * scale;
 			}
 		}
 
