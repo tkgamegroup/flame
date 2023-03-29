@@ -20,6 +20,8 @@ namespace flame
 
 		void set_scissor(bool v) override;
 
+		void set_align(ElementAlign align) override;
+
 		void mark_transform_dirty() override;
 		void mark_drawing_dirty() override;
 

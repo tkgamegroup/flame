@@ -15,6 +15,11 @@ namespace flame
 		// Reflect
 		virtual void set_image_name(const std::filesystem::path& image_name) = 0;
 
+		// Reflect
+		bool auto_size = true;
+		// Reflect
+		virtual void set_auto_size(bool v) = 0;
+
 		graphics::ImagePtr image = nullptr;
 
 		struct Create

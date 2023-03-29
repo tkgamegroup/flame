@@ -57,6 +57,11 @@ namespace flame
 		// Reflect
 		virtual void set_scissor(bool v) = 0;
 
+		// Reflect
+		ElementAlign align = ElementAlignNone;
+		// Reflect
+		virtual void set_align(ElementAlign align) = 0;
+
 		mat3x2 transform;
 		vec2 global_pos0() { return transform[2]; }
 		vec2 global_pos1() { return transform * vec3(ext, 1.f); }

@@ -45,11 +45,27 @@ namespace flame
 			AssetManagemant::get(Path::get(image_name));
 
 		if (image != old_one)
+		{
 			element->mark_drawing_dirty();
+			if (auto_size && image)
+				element->set_ext(image->extent);
+		}
 
 		if (old_one)
 			graphics::Image::release(old_one);
 		data_changed("image_name"_h);
+	}
+
+	void cImagePrivate::set_auto_size(bool v)
+	{
+		if (auto_size == v)
+			return;
+		auto_size = v;
+		if (auto_size && image)
+		{
+			element->set_ext(image->extent);
+			data_changed("auto_size"_h);
+		}
 	}
 
 	struct cImageCreate : cImage::Create

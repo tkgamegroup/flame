@@ -78,6 +78,15 @@ namespace flame
 		data_changed("scissor"_h);
 	}
 
+	void cElementPrivate::set_align(ElementAlign _align)
+	{
+		if (align == _align)
+			return;
+		align = _align;
+		mark_transform_dirty();
+		data_changed("align"_h);
+	}
+
 	void cElementPrivate::mark_transform_dirty()
 	{
 		transform_dirty = true;

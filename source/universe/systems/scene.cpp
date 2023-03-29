@@ -101,6 +101,22 @@ namespace flame
 		}
 	}
 
+	static Rect parent_rect(cElementPtr element)
+	{
+		Rect ret;
+		if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
+		{
+			ret.a = pelement->global_pos0();
+			ret.b = pelement->global_pos1();
+		}
+		else
+		{
+			ret.a = vec2(0.f);
+			ret.b = sRenderer::instance()->target_extent();
+		}
+		return ret;
+	}
+
 	void sScenePrivate::update_element_transform(EntityPtr e, bool mark_dirty)
 	{
 		if (!e->global_enable)
@@ -114,8 +130,78 @@ namespace flame
 			{
 				if (element->static_state == StaticButDirty)
 					element->static_state = Static;
+
 				if (mark_dirty)
 					element->mark_transform_dirty();
+
+				if (element->transform_dirty)
+				{
+					switch (element->align)
+					{
+					case ElementAlignCenter:
+					{
+						auto prect = parent_rect(element);
+						element->set_pos((prect.a + prect.b - element->ext) * 0.5f);
+					}
+						break;
+					case ElementAlignFill:
+					{
+						auto prect = parent_rect(element);
+						element->set_pos(vec2(0.f));
+						element->set_ext(prect.b - prect.a);
+					}
+						break;
+					case ElementAlignLeft:
+					{
+						auto prect = parent_rect(element);
+						element->set_pos(vec2(0.f, (prect.b.y - element->ext.y) * 0.5f));
+					}
+						break;
+					case ElementAlignTop:
+					{
+						auto prect = parent_rect(element);
+						element->set_pos(vec2((prect.b.x - element->ext.x) * 0.5f, 0.f));
+					}
+						break;
+					case ElementAlignRight:
+					{
+						auto prect = parent_rect(element);
+						element->set_pos(vec2(prect.b.x - element->ext.x, (prect.b.y - element->ext.y) * 0.5f));
+					}
+						break;
+					case ElementAlignBottom:
+					{
+						auto prect = parent_rect(element);
+						element->set_pos(vec2((prect.b.x - element->ext.x) * 0.5f, prect.b.y - element->ext.y));
+					}
+						break;
+					case ElementAlignTopLeft:
+					{
+						auto prect = parent_rect(element);
+						element->set_pos(vec2(0.f));
+					}
+						break;
+					case ElementAlignTopRight:
+					{
+						auto prect = parent_rect(element);
+						element->set_pos(vec2(prect.b.x - element->ext.x, 0.f));
+					}
+						break;
+					case ElementAlignBottomLeft:
+					{
+						auto prect = parent_rect(element);
+						element->set_pos(vec2(0.f, prect.b.y - element->ext.y));
+					}
+						break;
+					case ElementAlignBottomRight:
+					{
+						auto prect = parent_rect(element);
+						element->set_pos(prect.b - element->ext);
+					}
+						break;
+					}
+				}
+
 				if (element->update_transform())
 					mark_dirty = true;
 			}
@@ -1133,7 +1219,18 @@ namespace flame
 		if (first_node)
 			update_node_transform(first_node, false);
 		if (first_element)
-			update_element_transform(first_node, false);
+		{
+			static auto last_target_extent = vec2(0.f);
+			auto target_extent = sRenderer::instance()->target_extent();
+			auto mark_dirty = false;
+			if (last_target_extent != target_extent)
+			{
+				last_target_extent = target_extent;
+				if (first_element->element()->align != ElementAlignNone)
+					mark_dirty = true;
+			}
+			update_element_transform(first_element, mark_dirty);
+		}
 
 #ifdef USE_RECASTNAV
 		if (dt_crowd)
