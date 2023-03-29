@@ -110,9 +110,9 @@ namespace flame
 						if (array_stride != type->size)
 							name += std::format(":{}", array_stride);
 						if (type->tag == TagU)
-							type = TypeInfo::get(TagAU, name);
+							type = TypeInfo::get(TagAU, name, db);
 						else
-							type = TypeInfo::get(TagAD, name);
+							type = TypeInfo::get(TagAD, name, db);
 					}
 					auto& vi = ui.variables.emplace_back();
 					vi.type = type;
