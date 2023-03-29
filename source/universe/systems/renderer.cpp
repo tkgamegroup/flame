@@ -2683,7 +2683,6 @@ namespace flame
 		std::vector<cNodePtr> nodes;
 
 		graphics::InstanceCommandBuffer cb(fence_pickup.get());
-
 		cb->begin_debug_label("Pick Up");
 		{
 			cb->set_viewport(Rect(vec2(0), sz));
@@ -2778,8 +2777,8 @@ namespace flame
 		if (draw_data.graphics_debug)
 			graphics::Debug::end_capture_frame();
 
-		int index; uint depth;
-		graphics::StagingBuffer sb(sizeof(index) + sizeof(depth), nullptr, graphics::BufferUsageTransferDst);
+		int index; uint depth_data;
+		graphics::StagingBuffer sb(sizeof(index) + sizeof(depth_data), nullptr, graphics::BufferUsageTransferDst);
 		{
 			graphics::InstanceCommandBuffer cb(nullptr);
 			cb->begin_debug_label("Get Pick Up Result");
@@ -2788,7 +2787,7 @@ namespace flame
 			cpy.img_ext = uvec3(1U);
 			cb->image_barrier(img_pickup.get(), cpy.img_sub, graphics::ImageLayoutTransferSrc);
 			cb->copy_image_to_buffer(img_pickup.get(), sb.get(), cpy);
-			cb->image_barrier(img_pickup.get(), cpy.img_sub, graphics::ImageLayoutAttachment);
+			cb->image_barrier(img_pickup.get(), cpy.img_sub, graphics::ImageLayoutAttachment); 
 			if (out_pos)
 			{
 				cpy.buf_off = sizeof(uint);
@@ -2803,13 +2802,13 @@ namespace flame
 		memcpy(&index, sb->mapped, sizeof(index));
 		if (out_pos)
 		{
-			memcpy(&depth, (char*)sb->mapped + sizeof(index), sizeof(depth));
-			float depth_f;
+			memcpy(&depth_data, (char*)sb->mapped + sizeof(index), sizeof(depth_data));
+			float depth;
 			if (dep_fmt == graphics::Format::Format_Depth16)
-				depth_f = depth / 65535.f;
+				depth = depth_data / 65535.f;
 			else
-				depth_f = *(float*)&depth;
-			auto p = vec4(vec2(screen_pos) / sz * 2.f - 1.f, depth_f, 1.f);
+				depth = *(float*)&depth_data;
+			auto p = vec4(vec2(screen_pos) / sz * 2.f - 1.f, depth, 1.f);
 			p = camera->proj_mat_inv * p;
 			p /= p.w;
 			p = camera->view_mat_inv * p; 
@@ -2819,6 +2818,30 @@ namespace flame
 		if (index == -1)
 			return nullptr;
 		return nodes[index];
+	}
+
+	cElementPtr sRendererPrivate::pick_up_2d(const uvec2& screen_pos)
+	{
+		auto first_element = sScene::instance()->first_element; 
+		if (!first_element)
+			return nullptr;
+
+		cElementPtr ret = nullptr;
+
+		first_element->traversal_bfs([&](EntityPtr e) {
+			if (!e->global_enable)
+				return false;
+
+			if (auto element = e->element(); element)
+			{
+				if (Rect(element->global_pos0(), element->global_pos1()).contains(screen_pos))
+					ret = element;
+			}
+
+			return true;
+		});
+
+		return ret;
 	}
 
 	std::vector<vec3> sRendererPrivate::transform_feedback(cNodePtr node)

@@ -238,9 +238,8 @@ namespace flame
 				for (auto& cc : e->children)
 				{
 					auto c = (Entity*)cc.get();
-					queue.push_back(c);
-					if (!callback((EntityPtr)c))
-						return;
+					if (callback((EntityPtr)c))
+						queue.push_back(c);
 				}
 			}
 		}

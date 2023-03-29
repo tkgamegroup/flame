@@ -95,7 +95,7 @@ void View_Scene::on_draw()
 		});
 	}
 
-	hovering_node = nullptr;
+	hovering_entity = nullptr;
 
 	if (render_tar)
 	{
@@ -378,6 +378,7 @@ void View_Scene::on_draw()
 				}
 				else
 					mat = translate(mat, vec3(element_targets[0]->global_pos0(), 0.f));
+
 				auto changed = gizmo_manipulate(matv, matp, mat);
 				if (changed)
 				{
@@ -458,15 +459,15 @@ void View_Scene::on_draw()
 								draw_data.meshes.back().mat_id = 0;
 						}
 					};
-					bool outline_hovering = hovering_node;
+					bool already_outline_hovering = false;
 					for (auto e : selection.entities())
 					{
-						if (hovering_node && e == hovering_node->entity)
-							outline_hovering = false;
+						if (hovering_entity && e == hovering_entity)
+							already_outline_hovering = true;
 						outline_node(e, cvec4(200, 200, 100, 255));
 					}
-					if (outline_hovering)
-						outline_node(hovering_node->entity, cvec4(128, 128, 64, 255));
+					if (!already_outline_hovering && hovering_entity)
+						outline_node(hovering_entity, cvec4(128, 128, 64, 255));
 				}
 				if (draw_data.pass == PassPrimitive)
 				{
@@ -694,42 +695,57 @@ void View_Scene::on_draw()
 
 			if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
 			{
-				hovering_node = sRenderer::instance()->pick_up((vec2)io.MousePos - (vec2)p0, &hovering_pos, [](cNodePtr n, DrawData& draw_data) {
-					if (draw_data.categories & CateMesh)
-					{
-						if (auto armature = n->entity->get_component_t<cArmature>(); armature)
+				auto hovering_element = sRenderer::instance()->pick_up_2d(app.input->mpos);
+
+				if (hovering_element)
+				{
+					hovering_entity = hovering_element->entity;
+					hovering_pos = vec3(app.input->mpos, 0.f);
+				}
+
+				if (!hovering_entity)
+				{
+					auto hovering_node = sRenderer::instance()->pick_up(app.input->mpos, &hovering_pos, [](cNodePtr n, DrawData& draw_data) {
+						if (draw_data.categories & CateMesh)
 						{
-							for (auto& c : n->entity->children)
+							if (auto armature = n->entity->get_component_t<cArmature>(); armature)
 							{
-								if (auto mesh = c->get_component_t<cMesh>(); mesh)
+								for (auto& c : n->entity->children)
+								{
+									if (auto mesh = c->get_component_t<cMesh>(); mesh)
+									{
+										if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
+											draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
+									}
+								}
+							}
+							if (auto mesh = n->entity->get_component_t<cMesh>(); mesh)
+							{
+								if (auto armature = n->entity->get_parent_component_t<cArmature>(); armature)
+									;
+								else
 								{
 									if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
 										draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
 								}
 							}
 						}
-						if (auto mesh = n->entity->get_component_t<cMesh>(); mesh)
+						if (draw_data.categories & CateTerrain)
 						{
-							if (auto armature = n->entity->get_parent_component_t<cArmature>(); armature)
-								;
-							else
-							{
-								if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
-									draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
-							}
+							if (auto terrain = n->entity->get_component_t<cTerrain>(); terrain)
+								draw_data.terrains.emplace_back(terrain->instance_id, terrain->blocks, terrain->material_res_id);
 						}
-					}
-					if (draw_data.categories & CateTerrain)
-					{
-						if (auto terrain = n->entity->get_component_t<cTerrain>(); terrain)
-							draw_data.terrains.emplace_back(terrain->instance_id, terrain->blocks, terrain->material_res_id);
-					}
-					if (draw_data.categories & CateMarchingCubes)
-					{
-						if (auto volume = n->entity->get_component_t<cVolume>(); volume && volume->marching_cubes)
-							draw_data.volumes.emplace_back(volume->instance_id, volume->blocks, volume->material_res_id);
-					}
-					});
+						if (draw_data.categories & CateMarchingCubes)
+						{
+							if (auto volume = n->entity->get_component_t<cVolume>(); volume && volume->marching_cubes)
+								draw_data.volumes.emplace_back(volume->instance_id, volume->blocks, volume->material_res_id);
+						}
+						});
+
+					if (hovering_node)
+						hovering_entity = hovering_node->entity;
+				}
+
 				if (!gizmo_using && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
 				{
 					auto get_top_entity = [](EntityPtr e) {
@@ -742,9 +758,9 @@ void View_Scene::on_draw()
 					};
 					if (ImGui::IsKeyDown(Keyboard_Ctrl))
 					{
-						if (hovering_node)
+						if (hovering_entity)
 						{
-							auto e = get_top_entity(hovering_node->entity);
+							auto e = get_top_entity(hovering_entity);
 							auto entities = selection.get_entities();
 							auto found = false;
 							for (auto it = entities.begin(); it != entities.end();)
@@ -765,8 +781,8 @@ void View_Scene::on_draw()
 					}
 					else
 					{
-						if (hovering_node)
-							selection.select(get_top_entity(hovering_node->entity), "scene"_h);
+						if (hovering_entity)
+							selection.select(get_top_entity(hovering_entity), "scene"_h);
 						else
 							selection.clear("scene"_h);
 					}
@@ -798,7 +814,7 @@ void View_Scene::on_draw()
 							if (auto node = e->get_component_i<cNode>(0); node)
 							{
 								auto pos = hovering_pos;
-								if (!hovering_node)
+								if (!hovering_entity)
 								{
 									auto camera_node = view_scene.curr_camera()->node;
 									auto camera_pos = camera_node->global_pos();
@@ -816,9 +832,9 @@ void View_Scene::on_draw()
 					}
 					else if (ext == L".fmat")
 					{
-						if (hovering_node)
+						if (hovering_entity)
 						{
-							if (auto mesh = hovering_node->entity->get_component_t<cMesh>(); mesh)
+							if (auto mesh = hovering_entity->get_component_t<cMesh>(); mesh)
 								mesh->set_material_name(path);
 						}
 					}

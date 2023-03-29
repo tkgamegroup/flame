@@ -235,6 +235,8 @@ namespace flame
 		// Reflect
 		virtual cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos = nullptr, const std::function<void(cNodePtr, DrawData&)>& draw_callback = {}) = 0;
 		// Reflect
+		virtual cElementPtr pick_up_2d(const uvec2& screen_pos) = 0;
+		// Reflect
 		virtual std::vector<vec3> transform_feedback(cNodePtr node) = 0;
 
 		// Reflect
