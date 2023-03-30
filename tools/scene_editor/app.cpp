@@ -494,7 +494,7 @@ void App::init()
 		{
 		case ToolMove:
 			p_snap = &move_snap;
-			p_snap_value = &move_snap_value;
+			p_snap_value = view_scene.element_targets.empty() ? &move_snap_value : &move_snap_2d_value;
 			break;
 		case ToolRotate:
 			p_snap = &rotate_snap;

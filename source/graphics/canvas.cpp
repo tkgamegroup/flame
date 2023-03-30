@@ -52,7 +52,8 @@ namespace flame
 								cb->bind_pipeline(pl_sdf);
 								last_pl = pl_sdf;
 							}
-							prm.pc.mark_dirty_c("screen_px_range"_h).as<float>() = cmd.sdf_size / 32.f * 4.f;
+							prm.pc.mark_dirty_c("sdf_screen_pxrange"_h).as<float>() = cmd.sdf_size / 32.f * 4.f;
+							prm.pc.mark_dirty_c("sdf_pxsize"_h).as<float>() = 1.f / (cmd.sdf_size / 32.f) / 4.f;
 							prm.push_constant(cb);
 						}
 						else

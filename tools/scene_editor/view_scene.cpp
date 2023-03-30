@@ -108,8 +108,8 @@ void View_Scene::on_draw()
 #if USE_IM_GUIZMO
 		if (is_in(app.tool, ToolMove, ToolScale) && app.e_editor && selection.type == Selection::tEntity)
 		{
-			std::vector<cNodePtr> node_targets;
-			std::vector<cElementPtr> element_targets;
+			node_targets.clear();
+			element_targets.clear();
 			for (auto e : selection.entities())
 			{
 				if (auto node = e->node(); node)
@@ -143,7 +143,7 @@ void View_Scene::on_draw()
 			}
 
 			static bool last_gizmo_using = false;
-			auto gizmo_manipulate = [](const mat4& view_mat, const mat4& proj_mat, mat4& mat) {
+			auto gizmo_manipulate = [this](const mat4& view_mat, const mat4& proj_mat, mat4& mat) {
 				auto op = ImGuizmo::TRANSLATE;
 				auto mode = ImGuizmo::LOCAL;
 				vec3 snap_value; float* p_snap_value = nullptr;
@@ -153,7 +153,7 @@ void View_Scene::on_draw()
 					op = ImGuizmo::TRANSLATE;
 					if (app.move_snap)
 					{
-						snap_value = vec3(app.move_snap_value);
+						snap_value = vec3(element_targets.empty() ? app.move_snap_value : app.move_snap_2d_value);
 						p_snap_value = &snap_value[0];
 					}
 					break;
@@ -377,14 +377,21 @@ void View_Scene::on_draw()
 					mat = translate(mat, vec3(center, 0.f));
 				}
 				else
-					mat = translate(mat, vec3(element_targets[0]->global_pos0(), 0.f));
+				{
+					vec2 pos;
+					if (app.input->kbtn[Keyboard_Alt])
+						pos = element_targets[0]->global_pos1();
+					else
+						pos = element_targets[0]->global_pos0();
+					mat = translate(mat, vec3(pos, 0.f));
+				}
 
 				auto changed = gizmo_manipulate(matv, matp, mat);
 				if (changed)
 				{
 					auto m3 = mat3(1.f);
 					m3[0] = mat[0]; m3[1] = mat[1]; 
-					m3[2] = mat[3]; m3[2][2] = 0.f;
+					m3[2] = mat[3]; m3[2][2] = 1.f;
 					if (element_targets.size() == 1)
 					{
 						if (auto pelement = element_targets[0]->entity->get_parent_component_i<cElementT>(0); pelement)
@@ -408,7 +415,10 @@ void View_Scene::on_draw()
 						}
 						else
 						{
-							element_targets[0]->set_pos(pos);
+							if (app.input->kbtn[Keyboard_Alt])
+								element_targets[0]->set_ext(pos - element_targets[0]->pos);
+							else
+								element_targets[0]->set_pos(pos);
 							if (auto ins = get_prefab_instance(element_targets[0]->entity); ins)
 								ins->mark_modifier(element_targets[0]->entity->file_id.to_string(), "flame::cElement", "pos");
 						}

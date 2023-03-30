@@ -18,6 +18,8 @@ struct View_Scene : graphics::GuiView
 	float camera_zoom = 5.f;
 	EntityPtr hovering_entity = nullptr;
 	vec3 hovering_pos;
+	std::vector<cNodePtr> node_targets;
+	std::vector<cElementPtr> element_targets;
 
 	View_Scene();
 

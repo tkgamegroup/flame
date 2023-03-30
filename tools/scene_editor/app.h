@@ -64,6 +64,7 @@ struct App : UniverseApplication
 	ToolMode tool_mode = ToolLocal;
 	bool move_snap = true;
 	float move_snap_value = 0.5f;
+	float move_snap_2d_value = 4.f;
 	vec3 get_snap_pos(const vec3& _pos);
 	bool rotate_snap = true;
 	float rotate_snap_value = 5.f;

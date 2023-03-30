@@ -42,7 +42,8 @@ layout (set = SET, binding = 0) uniform sampler2D image;
 layout(push_constant) uniform PushConstant
 {
 	vec2 scale;
-    float screen_px_range;
+    float sdf_screen_pxrange;
+    float sdf_pxsize; // 1.0 / sdf_scale / pxrange 
 }pc;
 @
 
@@ -69,20 +70,51 @@ layout (location = 1) in vec2 i_uv;
 layout (location = 0) out vec4 o_col;
 
 #ifdef MSDF
+
+const float thickness = -0.0;
+const float border = 0.125;
+
+const vec3 borderColor = vec3(0.0);
+
 float median(float r, float g, float b)
 { 
     return max(min(r, g), min(max(r, g), b));
 }
+
+float linearStep(float a, float b, float x) 
+{
+    return clamp((x-a)/(b-a), 0.0, 1.0);
+}
+
 #endif
 
 void main()
 {
 #ifdef MSDF
+/*
     vec3 msd = texture(image, i_uv).rgb;
     float sd = median(msd.r, msd.g, msd.b);
-    float screen_px_distance = pc.screen_px_range * (sd - 0.5);
+    float screen_px_distance = pc.sdf_screen_pxrange * (sd - 0.5);
     float alpha = clamp(screen_px_distance + 0.5, 0.0, 1.0);
     o_col = vec4(i_col.rgb, i_col.a * alpha);
+*/
+    vec2 p = i_uv;
+    /*
+    vec2 msdfSize = vec2(textureSize(MSDF, 0));
+    float pxSize = min(0.5/pxRange*(fwidth(p.x)*msdfSize.x+fwidth(p.y)*msdfSize.y), 0.25);
+    // fwidth(p.x)*msdfSize.x = 1.0 / sdf_scale.x
+    // fwidth(p.y)*msdfSize.y = 1.0 / sdf_scale.y
+    */
+    float pxSize = pc.sdf_pxsize;
+
+    vec3 msd = texture(image, p).rgb;
+    float sd = 2.0*median(msd.r, msd.g, msd.b) -1.0 + thickness;
+    float inside = linearStep(-border-pxSize, -border+pxSize, sd);
+    float outsideBorder = border > 0.0 ? linearStep(+border-pxSize, +border+pxSize, sd) : 1.0;
+
+    vec4 fg = vec4(mix(borderColor, i_col.rgb, outsideBorder), inside);
+
+    o_col = vec4(mix(vec3(0.0), fg.rgb, fg.a), fg.a);
 #else
 	o_col = i_col * texture(image, i_uv);
 #endif

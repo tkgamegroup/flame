@@ -170,13 +170,18 @@ namespace flame
 								cb->image_barrier(image.get(), {}, old_layout);
 								cb.excute();
 
-								g.uv = vec4(atlas_pos.x / (float)font_atlas_size.x, (atlas_pos.y + h) / (float)font_atlas_size.y,
-									(atlas_pos.x + w) / (float)font_atlas_size.x, atlas_pos.y / (float)font_atlas_size.y);
+								auto uv0 = vec2(atlas_pos.x, atlas_pos.y + h);
+								auto uv1 = uv0 + vec2(w, -h);
+								g.uv = vec4(uv0 / (vec2)font_atlas_size, uv1 / (vec2)font_atlas_size.y);
 							}
 							else
 								printf("font atlas is full\n");
 							delete[]bitmap_data;
 						}
+
+						g.size = uvec2(w, h);
+						g.off = uvec2(x, ascent + h + y);
+						g.advance = adv;
 						break;
 					case FontAtlasSDF:
 					{
@@ -185,6 +190,8 @@ namespace flame
 						stbtt_GetGlyphBitmapBox(stbtt_info, index, scale, scale, &x0, &y0, &x1, &y1);
 						x = x0; y = y0;
 						w = x1 - x0; h = y1 - y0;
+
+						const auto pxrange = 4;
 
 						stbtt_vertex* stbtt_verts = nullptr;
 						auto n = stbtt_GetGlyphShape(stbtt_info, index, &stbtt_verts);
@@ -268,21 +275,21 @@ namespace flame
 								cb->image_barrier(image.get(), {}, old_layout);
 								cb.excute();
 
-								auto uv0 = vec2(atlas_pos.x + x + 4, atlas_pos.y + ascent + h + y + 4);
-								auto uv1 = uv0 + vec2(w, -h - 4);
+								auto uv0 = vec2(atlas_pos.x + x + pxrange, atlas_pos.y + h + ascent + y + pxrange);
+								auto uv1 = uv0 + vec2(w + pxrange, -h - pxrange);
 								g.uv = vec4(uv0 / (vec2)font_atlas_size, uv1 / (vec2)font_atlas_size);
 							}
 							else
 								printf("font atlas is full\n");
 						}
 #endif
+
+						g.size = uvec2(w + pxrange, h + pxrange);
+						g.off = uvec2(x, ascent + h + y);
+						g.advance = adv;
 					}
 						break;
 					}
-
-					g.size = uvec2(w, h);
-					g.off = uvec2(x, ascent + h + y);
-					g.advance = adv;
 
 					break;
 				}
