@@ -7,6 +7,11 @@ namespace flame
 	// Reflect ctor
 	struct cReceiver : Component
 	{
+		// Reflect requires
+		cElementPtr element = nullptr;
+
+		Listeners<void()> click_listeners;
+
 		struct Create
 		{
 			virtual cReceiverPtr operator()(EntityPtr) = 0;

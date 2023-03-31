@@ -15,6 +15,12 @@ namespace flame
 
 			auto gui_idx = window->renderers.find("gui"_h);
 			window->renderers.add([this](uint idx, CommandBufferPtr cb) {
+				if (iv_tars.empty())
+				{
+					reset();
+					return;
+				}
+
 				buf_vtx.upload(cb);
 				buf_vtx.buf_top = buf_vtx.stag_top = 0;
 				buf_idx.upload(cb);

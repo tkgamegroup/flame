@@ -124,7 +124,8 @@ namespace flame
 			if (font_size == 0)
 				return empty_glyph;
 
-			if (type == FontAtlasSDF) font_size = sdf_font_size;
+			if (type == FontAtlasSDF) 
+				font_size = sdf_font_size;
 			auto key = GlyphKey(code, font_size);
 
 			auto it = map.find(key);
@@ -247,15 +248,15 @@ namespace flame
 							msdfgen::edgeColoringSimple(msdf_shape, 3.0);
 							msdfgen::generateMSDF(bitmap, msdf_shape, pxrange, 1.0, msdfgen::Vector2(xoff, yoff));
 
-							if (auto n = bin_pack_root->find(uvec2(bitmap.width(), bitmap.height())); n)
+							if (auto n = bin_pack_root->find(uvec2(w, h) + 2U); n)
 							{
 								auto& atlas_pos = n->pos;
 
-								StagingBuffer stag(image_pitch(bitmap.width() * 4) * bitmap.height());
-								for (auto y = 0; y < bitmap.height(); y++)
+								StagingBuffer stag(image_pitch(w * 4) * h);
+								for (auto y = 0; y < h; y++)
 								{
-									auto dst = (uchar*)stag->mapped + image_pitch(bitmap.width() * 4) * y;
-									for (auto x = 0; x < bitmap.width(); x++)
+									auto dst = (uchar*)stag->mapped + image_pitch(w * 4) * y;
+									for (auto x = 0; x < w; x++)
 									{
 										auto pixel = bitmap(x, y);
 										dst[0] = uchar(clamp(pixel[0], 0.f, 1.f) * 255.f);
@@ -270,13 +271,13 @@ namespace flame
 								auto old_layout = image->get_layout();
 								cb->image_barrier(image.get(), {}, ImageLayoutTransferDst);
 								BufferImageCopy cpy;
-								cpy.img_off = uvec3(atlas_pos, 0);
-								cpy.img_ext = uvec3(bitmap.width(), bitmap.height(), 1);
+								cpy.img_off = uvec3(atlas_pos + 1U, 0);
+								cpy.img_ext = uvec3(w, h, 1);
 								cb->copy_buffer_to_image(stag.get(), image.get(), { &cpy, 1 });
 								cb->image_barrier(image.get(), {}, old_layout);
 								cb.excute();
 
-								auto uv0 = vec2(atlas_pos.x, atlas_pos.y + h);
+								auto uv0 = vec2(atlas_pos.x + 1, atlas_pos.y + 1 + h);
 								auto uv1 = uv0 + vec2(w, -h);
 								g.uv = vec4(uv0 / (vec2)font_atlas_size, uv1 / (vec2)font_atlas_size);
 							}

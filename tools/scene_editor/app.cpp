@@ -1221,6 +1221,7 @@ bool App::cmd_delete_entity(EntityPtr e)
 			});
 		}
 		selection.clear("app"_h);
+		prefab_unsaved = true;
 		return true;
 	}
 	if (e == e_prefab || !e->prefab_instance && get_prefab_instance(e))

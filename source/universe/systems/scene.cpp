@@ -1200,7 +1200,10 @@ namespace flame
 
 	void sScenePrivate::update()
 	{
-		world->root->traversal_bfs([&](EntityPtr e) {
+		first_node = nullptr;
+		first_element = nullptr;
+
+		world->root->traversal_bfs([&](EntityPtr e, int depth) {
 			if (!first_node)
 			{
 				if (auto node = e->node(); node)
@@ -1211,22 +1214,26 @@ namespace flame
 				if (auto element = e->element(); element)
 					first_element = e;
 			}
-			if (first_node && first_element)
+			if ((first_node && first_element) || depth > 2)
 				return false;
 			return true;
 		});
 
 		if (first_node)
 			update_node_transform(first_node, false);
+
+		static auto last_target_extent = vec2(0.f);
+		static auto last_element_align = ElementAlignNone;
 		if (first_element)
 		{
-			static auto last_target_extent = vec2(0.f);
-			auto target_extent = sRenderer::instance()->target_extent();
 			auto mark_dirty = false;
-			if (last_target_extent != target_extent)
+			auto target_extent = sRenderer::instance()->target_extent();
+			auto align = first_element->element()->align;
+			if (last_target_extent != target_extent || last_element_align != align)
 			{
 				last_target_extent = target_extent;
-				if (first_element->element()->align != ElementAlignNone)
+				last_element_align = align;
+				if (align != ElementAlignNone)
 					mark_dirty = true;
 			}
 			update_element_transform(first_element, mark_dirty);

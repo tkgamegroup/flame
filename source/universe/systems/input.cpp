@@ -1,6 +1,9 @@
 #include "../../foundation/window.h"
 #include "../../graphics/window.h"
+#include "../components/element_private.h"
+#include "../components/receiver_private.h"
 #include "input_private.h"
+#include "scene_private.h"
 
 namespace flame
 {
@@ -43,6 +46,33 @@ namespace flame
 			else
 				kbtn_duration[i] += delta_time;
 			kbtn[i] = kbtn_temp[i];
+		}
+
+		if (auto first_element = sScene::instance()->first_element; first_element)
+		{
+			if (mpressed(Mouse_Left))
+			{
+				cElementPtr target = nullptr;
+
+				first_element->traversal_bfs([&](EntityPtr e, int depth) {
+					if (!e->global_enable)
+						return false;
+
+					if (auto element = e->element(); element)
+					{
+						if (Rect(element->global_pos0(), element->global_pos1()).contains(mpos))
+							target = element;
+					}
+
+					return true;
+				});
+
+				if (target)
+				{
+					if (auto receiver = target->entity->get_component_t<cReceiverT>(); receiver)
+						receiver->click_listeners.call();
+				}
+			}
 		}
 	}
 

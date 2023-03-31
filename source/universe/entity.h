@@ -225,12 +225,13 @@ namespace flame
 			callback((EntityPtr)this);
 		}
 
-		inline void traversal_bfs(const std::function<bool(EntityPtr)>& callback)
+		inline void traversal_bfs(const std::function<bool(EntityPtr, int depth)>& callback)
 		{
 			std::deque<Entity*> queue;
 			queue.push_back((Entity*)this);
-			if (!callback((EntityPtr)this))
+			if (!callback((EntityPtr)this, 0))
 				return;
+			auto depth = 1;
 			while (!queue.empty())
 			{
 				auto e = queue.front();
@@ -238,7 +239,7 @@ namespace flame
 				for (auto& cc : e->children)
 				{
 					auto c = (Entity*)cc.get();
-					if (callback((EntityPtr)c))
+					if (callback((EntityPtr)c, depth++))
 						queue.push_back(c);
 				}
 			}
