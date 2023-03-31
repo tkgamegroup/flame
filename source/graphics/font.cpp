@@ -132,8 +132,6 @@ namespace flame
 			{
 				Glyph g;
 				g.code = code;
-				if (code == 'S')
-					int cut = 1;
 
 				for (auto& font : fonts)
 				{
@@ -186,11 +184,6 @@ namespace flame
 					case FontAtlasSDF:
 					{
 #ifdef USE_MSDFGEN
-						int x0, y0, x1, y1;
-						stbtt_GetGlyphBitmapBox(stbtt_info, index, scale, scale, &x0, &y0, &x1, &y1);
-						x = x0; y = y0;
-						w = x1 - x0; h = y1 - y0;
-
 						const auto pxrange = 4;
 
 						stbtt_vertex* stbtt_verts = nullptr;
@@ -241,10 +234,18 @@ namespace flame
 							msdf_shape.contours.pop_back();
 						if (!msdf_shape.contours.empty())
 						{
-							msdf_shape.normalize();
-							msdfgen::Bitmap<float, 3> bitmap(sdf_font_size, sdf_font_size);
+							auto bbox = msdf_shape.getBounds();
+							auto pad = pxrange >> 1;
+							w = round(bbox.r - bbox.l) + pad + pad;
+							h = round(bbox.t - bbox.b) + pad + pad;
+							x = round(bbox.l) - pad;
+							y = round(-bbox.b) + pad;
+							auto xoff = round(-bbox.l) + pad;
+							auto yoff = round(-bbox.b) + pad;
+
+							msdfgen::Bitmap<float, 3> bitmap(w, h);
 							msdfgen::edgeColoringSimple(msdf_shape, 3.0);
-							msdfgen::generateMSDF(bitmap, msdf_shape, 4.0, 1.0, msdfgen::Vector2(4.0, 4.0));
+							msdfgen::generateMSDF(bitmap, msdf_shape, pxrange, 1.0, msdfgen::Vector2(xoff, yoff));
 
 							if (auto n = bin_pack_root->find(uvec2(bitmap.width(), bitmap.height())); n)
 							{
@@ -275,8 +276,8 @@ namespace flame
 								cb->image_barrier(image.get(), {}, old_layout);
 								cb.excute();
 
-								auto uv0 = vec2(atlas_pos.x + x + pxrange, atlas_pos.y + h + ascent + y + pxrange);
-								auto uv1 = uv0 + vec2(w + pxrange, -h - pxrange);
+								auto uv0 = vec2(atlas_pos.x, atlas_pos.y + h);
+								auto uv1 = uv0 + vec2(w, -h);
 								g.uv = vec4(uv0 / (vec2)font_atlas_size, uv1 / (vec2)font_atlas_size);
 							}
 							else
@@ -284,8 +285,8 @@ namespace flame
 						}
 #endif
 
-						g.size = uvec2(w + pxrange, h + pxrange);
-						g.off = uvec2(x, ascent + h + y);
+						g.size = uvec2(w, h);
+						g.off = uvec2(x, ascent + y);
 						g.advance = adv;
 					}
 						break;
