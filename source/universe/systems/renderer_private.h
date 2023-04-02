@@ -11,7 +11,6 @@ namespace flame
 {
 	struct sRendererPrivate : sRenderer
 	{
-		graphics::CanvasPtr canvas = nullptr;
 		graphics::ImageLayout final_layout;
 
 		sRendererPrivate();

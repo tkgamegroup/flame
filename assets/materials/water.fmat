@@ -1,13 +1,3 @@
 <?xml version="1.0"?>
-<material color="0,0,0,0.5" roughness="1" opaque="false" receive_ssr="true" color_map="-1" normal_map="-1" metallic_map="-1" roughness_map="-1" emissive_map="-1" alpha_map="-1" code_file="flame/shaders/default_mat.glsl">
-	<textures>
-		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
-		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
-		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
-		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
-		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
-		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
-		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
-		<item mag_filter="Linear" min_filter="Linear" linear_mipmap="true" address_mode="Repeat" />
-	</textures>
+<material color="0,0,0,0.5" roughness="1" opaque="false" receive_ssr="true">
 </material>

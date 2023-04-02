@@ -27,6 +27,7 @@ namespace flame
 				old_one = nullptr;
 		}
 		image_name = name;
+		image = nullptr;
 		if (!image_name.empty())
 		{
 			if (!image_name.native().starts_with(L"0x"))

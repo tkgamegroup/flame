@@ -38,7 +38,8 @@ struct UniverseApplication : GraphicsApplication
 
 	bool on_update() override
 	{
-		graphics::gui_frame();
+		if (use_gui)
+			graphics::gui_frame();
 		world->update();
 		GraphicsApplication::on_update();
 		return true;

@@ -109,7 +109,7 @@ namespace flame
 
 			// shader will insert this file to its content
 			// Reflect
-			std::filesystem::path code_file = L"flame/shaders/default_mat.glsl";
+			std::filesystem::path code_file = L"flame/shaders/standard_mat.glsl";
 			// Reflect
 			virtual void set_code_file(const std::filesystem::path& path) = 0;
 			// Reflect

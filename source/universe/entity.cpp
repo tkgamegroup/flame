@@ -483,8 +483,9 @@ namespace flame
 
 			if (auto a = src.attribute("filename"); a)
 			{
-				e->load(Path::combine(base_path, a.value()));
-				new PrefabInstance(e, a.value());
+				auto path = Path::combine(base_path, a.value());
+				e->load(path);
+				new PrefabInstance(e, path);
 
 				auto n_mod = src.child("modifications");
 				for (auto n : n_mod)

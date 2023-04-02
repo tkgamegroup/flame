@@ -61,6 +61,7 @@ namespace flame
 				old_one = nullptr;
 		}
 		height_map_name = name;
+		height_map = nullptr;
 		if (!height_map_name.empty())
 		{
 			if (!height_map_name.native().starts_with(L"0x"))

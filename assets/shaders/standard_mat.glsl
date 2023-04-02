@@ -35,27 +35,29 @@
 		color = material.color;
 	#endif
 
-	float metallic;
-	#ifdef METALLIC_MAP
-		metallic = SAMPLE_MAP(METALLIC_MAP).r;
-	#else
-		metallic = material.metallic;
-	#endif
+	#ifndef UNLIT
+		float metallic;
+		#ifdef METALLIC_MAP
+			metallic = SAMPLE_MAP(METALLIC_MAP).r;
+		#else
+			metallic = material.metallic;
+		#endif
 	  
-	float roughness;
-	#ifdef ROUGHNESS_MAP
-		roughness = SAMPLE_MAP(ROUGHNESS_MAP).r;
-	#else
-		roughness = material.roughness;
-	#endif
+		float roughness;
+		#ifdef ROUGHNESS_MAP
+			roughness = SAMPLE_MAP(ROUGHNESS_MAP).r;
+		#else
+			roughness = material.roughness;
+		#endif
 
-	vec3 N;
-	#ifdef NORMAL_MAP
-		vec3 sampled_normal = normalize(SAMPLE_MAP(NORMAL_MAP).xyz * 2.0 - 1.0);
-		vec3 bitangent = normalize(cross(i_tangent, i_normal));
-		N = normalize(mat3(i_tangent, bitangent, i_normal) * sampled_normal * vec3(1.0, 1.0, material.normal_map_strength));
-	#else
-		N = i_normal;
+		vec3 N;
+		#ifdef NORMAL_MAP
+			vec3 sampled_normal = normalize(SAMPLE_MAP(NORMAL_MAP).xyz * 2.0 - 1.0);
+			vec3 bitangent = normalize(cross(i_tangent, i_normal));
+			N = normalize(mat3(i_tangent, bitangent, i_normal) * sampled_normal * vec3(1.0, 1.0, material.normal_map_strength));
+		#else
+			N = i_normal;
+		#endif
 	#endif
 
 	vec3 emissive;

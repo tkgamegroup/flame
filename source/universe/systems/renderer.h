@@ -59,6 +59,7 @@ namespace flame
 		cCameraPtr camera = nullptr;
 		std::vector<graphics::ImageViewPtr> iv_tars;
 		bool use_window_targets = false;
+		graphics::CanvasPtr canvas = nullptr;
 		bool dirty = false;
 
 		// Reflect

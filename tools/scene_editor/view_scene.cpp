@@ -705,9 +705,8 @@ void View_Scene::on_draw()
 
 			if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
 			{
-				auto hovering_element = sRenderer::instance()->pick_up_2d(app.input->mpos);
-
-				if (hovering_element)
+				if (auto hovering_element = sRenderer::instance()->pick_up_2d(app.input->mpos); 
+					hovering_element && hovering_element->entity != sScene::instance()->first_element)
 				{
 					hovering_entity = hovering_element->entity;
 					hovering_pos = vec3(app.input->mpos, 0.f);

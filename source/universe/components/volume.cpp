@@ -42,6 +42,7 @@ namespace flame
 				old_one = nullptr;
 		}
 		data_map_name = name;
+		data_map = nullptr;
 		if (!data_map_name.empty())
 		{
 			if (!data_map_name.native().starts_with(L"0x"))

@@ -1100,29 +1100,40 @@ void View_Inspector::on_draw()
 		changed_name = manipulate_udt(ui_entity, (voidptr*)editing_entities.entities.data(), editing_entities.entities.size());
 		if (editing_entities.entities.size() == 1 && entity->prefab_instance)
 		{
-			auto& path = entity->prefab_instance->filename;
+			auto ins = entity->prefab_instance.get();
+			auto& path = ins->filename;
 			auto str = path.string();
 			ImGui::InputText("Prefab", str.data(), ImGuiInputTextFlags_ReadOnly);
 			ImGui::SameLine();
 			if (ImGui::Button("P"))
 				selection.select(Path::get(path), "inspector"_h);
-			if (ImGui::Button("Apply Changes"))
+			if (!ins->modifications.empty())
 			{
-				auto ins = entity->prefab_instance.get();
-				entity->save(ins->filename);
-				ins->modifications.clear();
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Discard Changes"))
-			{
-				auto ins = entity->prefab_instance.get();
-				add_event([ins, entity]() {
-					entity->remove_all_children();
-					entity->remove_all_components();
-					entity->load(ins->filename);
-					return false;
-				});
-				ins->modifications.clear();
+				ImGui::Button("Modifications");
+				if (ImGui::BeginPopupContextItem())
+				{
+					for (auto& m : ins->modifications)
+						ImGui::Text(m.c_str());
+					ImGui::EndPopup();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Apply"))
+				{
+					entity->save(ins->filename);
+					ins->modifications.clear();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Discard"))
+				{
+					add_event([ins, entity]() {
+						entity->remove_all_children();
+						entity->remove_all_components();
+						entity->load(ins->filename);
+						editing_entities.refresh();
+						return false;
+					});
+					ins->modifications.clear();
+				}
 			}
 		}
 		ImGui::PopID();
