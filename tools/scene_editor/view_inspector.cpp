@@ -1119,7 +1119,7 @@ void View_Inspector::on_draw()
 				ImGui::SameLine();
 				if (ImGui::Button("Apply"))
 				{
-					entity->save(ins->filename);
+					entity->save(Path::get(ins->filename));
 					ins->modifications.clear();
 				}
 				ImGui::SameLine();

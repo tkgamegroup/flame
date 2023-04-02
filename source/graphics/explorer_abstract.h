@@ -235,7 +235,9 @@ namespace flame
 				opened_folder = folder;
 				open_folder_frame = frames;
 
-				items.clear();
+				std::vector<Item*> dead_items(items.size());
+				for (auto i = 0; i < items.size(); i++)
+					dead_items[i] = items[i].get();
 
 				if (folder)
 				{
@@ -273,10 +275,10 @@ namespace flame
 							}
 							std::sort(dirs.begin(), dirs.end(), [](const auto& a, const auto& b) {
 								return a->path < b->path;
-							});
+								});
 							std::sort(files.begin(), files.end(), [](const auto& a, const auto& b) {
 								return a->path < b->path;
-							});
+								});
 							for (auto i : dirs)
 							{
 								if (item_created_callback)
@@ -293,6 +295,16 @@ namespace flame
 							}
 						}
 					}
+				}
+
+				for (auto it = items.begin(); it != items.end();)
+				{
+					auto i = it->get();
+					auto it2 = std::find(dead_items.begin(), dead_items.end(), i);
+					if (it2 == dead_items.end())
+						it++;
+					else
+						it = items.erase(it);
 				}
 			}
 

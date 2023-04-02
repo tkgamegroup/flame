@@ -1009,19 +1009,6 @@ void App::close_project()
 void App::new_prefab(const std::filesystem::path& path)
 {
 	auto e = Entity::create();
-	e->add_component_t<cNode>();
-	auto e_plane = Entity::create();
-	e_plane->add_component_t<cNode>()->set_transform(vec3(0.f, -0.5f, 0.f), vec3(10.f, 0.1f, 10.f));
-	e_plane->add_component_t<cMesh>()->set_mesh_and_material(L"standard_cube", L"default");
-	e->add_child(e_plane);
-	auto e_cube = Entity::create();
-	e_cube->add_component_t<cNode>();
-	e_cube->add_component_t<cMesh>()->set_mesh_and_material(L"standard_cube", L"default");
-	e->add_child(e_cube);
-	auto e_light = Entity::create();
-	e_light->add_component_t<cNode>()->set_eul(vec3(0.f, -45.f, 0.f));
-	e_light->add_component_t<cDirLight>()->cast_shadow = true;
-	e->add_child(e_light);
 	e->save(path);
 	delete e;
 }
@@ -1133,10 +1120,15 @@ bool App::cmd_redo()
 
 bool App::cmd_create_entity(EntityPtr dst, uint type)
 {
-	if (!dst)
-		dst = e_prefab;
-	if (!dst)
+	if (!e_prefab)
 		return false;
+	if (!dst)
+	{
+		if (auto e = selection.as_entity(); e)
+			dst = e;
+		else
+			dst = e_prefab;
+	}
 	static int id = 0;
 	auto e = Entity::create();
 	e->name = "Entity " + str(id++);

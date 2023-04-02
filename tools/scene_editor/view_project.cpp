@@ -737,8 +737,8 @@ void View_Project::on_draw()
 	mtx_changed_paths.lock();
 	if (!changed_paths.empty())
 	{
-		std::vector<std::filesystem::path> changed_directories;
-		std::vector<std::pair<std::filesystem::path, FileChangeFlags>> changed_files;
+		std::vector<std::filesystem::path>								changed_directories;
+		std::vector<std::pair<std::filesystem::path, FileChangeFlags>>	changed_files;
 		for (auto& p : changed_paths)
 		{
 			if (std::filesystem::is_directory(p.first) && p.second == FileModified)
@@ -769,8 +769,6 @@ void View_Project::on_draw()
 			return a.first.wstring().size() < b.first.wstring().size();
 		});
 
-		auto current_path = explorer.opened_folder ? explorer.opened_folder->path : L"";
-
 		for (auto& p : changed_directories)
 		{
 			if (auto node = explorer.find_folder(p); node && node->read)
@@ -780,7 +778,18 @@ void View_Project::on_draw()
 			}
 		}
 
-		explorer.open_folder(current_path.empty() ? nullptr : explorer.find_folder(current_path));
+		auto current_path = explorer.opened_folder ? explorer.opened_folder->path : L"";
+		if (!current_path.empty())
+		{
+			for (auto& p : changed_directories)
+			{
+				if (current_path == p)
+				{
+					explorer.open_folder(explorer.find_folder(current_path));
+					break;
+				}
+			}
+		}
 
 		std::vector<std::pair<AssetManagemant::Asset*, std::filesystem::path>>	changed_assets;
 		std::pair<std::vector<graphics::MaterialPtr>, uint>						materials;

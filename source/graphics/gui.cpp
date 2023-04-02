@@ -714,6 +714,9 @@ namespace flame
 			return nullptr;
 		}
 
+		static std::vector<ImagePtr> dead_icons;
+		static void* ev_clear_dead_icons = nullptr;
+
 		void release_icon(Image* image)
 		{
 			for (auto it = icons.begin(); it != icons.end(); it++)
@@ -725,10 +728,16 @@ namespace flame
 						it->second.first--;
 						if (it->second.first == 0)
 						{
-							add_event([image]() {
-								delete image;
-								return false;
-							});
+							if (!ev_clear_dead_icons)
+							{
+								ev_clear_dead_icons = add_event([]() {
+									for (auto img : dead_icons)
+										delete img;
+									dead_icons.clear();
+									return true;
+								});
+							}
+							dead_icons.push_back((ImagePtr)image);
 							icons.erase(it);
 						}
 					}
