@@ -124,7 +124,10 @@ void View_Hierarchy::on_draw()
 				e->add_child(e_src);
 			}
 			if (auto e_src = read_drop_file(); e_src)
+			{
 				e->add_child(e_src);
+				app.prefab_unsaved = true;
+			}
 			ImGui::EndDragDropTarget();
 		}
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsItemHovered())
@@ -173,7 +176,10 @@ void View_Hierarchy::on_draw()
 						e->add_child(e_src, idx);
 					}
 					if (auto e_src = read_drop_file(); e_src)
+					{
 						e->add_child(e_src, i);
+						app.prefab_unsaved = true;
+					}
 					ImGui::EndDragDropTarget();
 				}
 			};
