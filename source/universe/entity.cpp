@@ -438,7 +438,7 @@ namespace flame
 		return true;
 	}
 
-	bool EntityPrivate::load(const std::filesystem::path& _filename, bool no_children)
+	bool EntityPrivate::load(const std::filesystem::path& _filename, bool only_root)
 	{
 		pugi::xml_document doc;
 		pugi::xml_node doc_root;
@@ -479,12 +479,8 @@ namespace flame
 				printf("cannot find component with name %s\n", name.c_str());
 			return INVALID_POINTER;
 		};
-		if (no_children)
-		{
-			spec.typed_obj_delegates[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
-				return INVALID_POINTER;
-			};
-		}
+		if (only_root)
+			spec.excludes.emplace_back("flame::Entity"_h, "children"_h);
 		else
 		{
 			spec.typed_obj_delegates[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
@@ -535,9 +531,36 @@ namespace flame
 		return true;
 	}
 
-	bool EntityPrivate::save(const std::filesystem::path& filename)
+	bool EntityPrivate::save(const std::filesystem::path& _filename, bool only_root)
 	{
-		pugi::xml_document file;
+		pugi::xml_document doc;
+		pugi::xml_node doc_root;
+		auto filename = Path::get(_filename);
+
+		if (only_root)
+		{
+			if (!std::filesystem::exists(filename))
+			{
+				wprintf(L"prefab does not exist: %s\n", _filename.c_str());
+				return false;
+			}
+			if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("prefab"))
+			{
+				wprintf(L"prefab is wrong format: %s\n", _filename.c_str());
+				return false;
+			}
+		}
+		else
+		{
+			doc_root = doc.append_child("prefab");
+			std::vector<pugi::xml_attribute> old_attributes;
+			for (auto a : doc_root.attributes())
+				old_attributes.push_back(a);
+			for (auto a : old_attributes)
+				doc_root.remove_attribute(a);
+			if (auto c = doc_root.child("components"); c)
+				doc_root.remove_child(c);
+		}
 
 		auto base_path = Path::reverse(filename).parent_path();
 
@@ -560,36 +583,40 @@ namespace flame
 				serialize_xml(*ui, comp, dst, spec);
 			}
 		};
-		spec.typed_obj_delegates[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
-			auto e = (EntityPtr)src;
-			if (e->prefab_instance)
-			{
-				dst.append_attribute("filename").set_value(Path::rebase(base_path, e->prefab_instance->filename).string().c_str());
-				auto n_mod = dst.append_child("modifications");
-				for (auto& target : e->prefab_instance->modifications)
+		if (only_root)
+			spec.excludes.emplace_back("flame::Entity"_h, "children"_h);
+		else
+		{
+			spec.typed_obj_delegates[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
+				auto e = (EntityPtr)src;
+				if (e->prefab_instance)
 				{
-					void* obj;
-					const Attribute* attr;
-					if (!get_modification_target(target, e, obj, attr))
-						continue;
+					dst.append_attribute("filename").set_value(Path::rebase(base_path, e->prefab_instance->filename).string().c_str());
+					auto n_mod = dst.append_child("modifications");
+					for (auto& target : e->prefab_instance->modifications)
+					{
+						void* obj;
+						const Attribute* attr;
+						if (!get_modification_target(target, e, obj, attr))
+							continue;
 
-					auto n = n_mod.append_child("item");
-					n.append_attribute("target").set_value(target.c_str());
-					serialize_xml(*attr->ui, attr->var_off(), attr->type, "value", 0, "", attr->getter_idx, obj, n);
+						auto n = n_mod.append_child("item");
+						n.append_attribute("target").set_value(target.c_str());
+						serialize_xml(*attr->ui, attr->var_off(), attr->type, "value", 0, "", attr->getter_idx, obj, n);
+					}
 				}
-			}
-			else
-			{
-				dst.append_attribute("file_id").set_value(e->file_id.to_string().c_str());
-				serialize_xml(e, dst, spec);
-			}
-		};
+				else
+				{
+					dst.append_attribute("file_id").set_value(e->file_id.to_string().c_str());
+					serialize_xml(e, dst, spec);
+				}
+			};
+		}
 
-		auto doc_root = file.append_child("prefab");
 		doc_root.append_attribute("file_id").set_value(file_id.to_string().c_str());
 		serialize_xml(this, doc_root, spec);
 
-		file.save_file(filename.c_str());
+		doc.save_file(filename.c_str());
 
 		return true;
 	}

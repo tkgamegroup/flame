@@ -12,23 +12,23 @@ struct History
 
 struct AssetModifyHistory : History
 {
-	std::vector<std::filesystem::path> paths;
+	std::filesystem::path path;
 	uint asset_type;
 	uint attr_hash;
-	std::vector<std::string> old_values;
-	std::vector<std::string> new_values;
+	std::string old_value;
+	std::string new_value;
 
-	AssetModifyHistory(const std::vector<std::filesystem::path>& paths, uint asset_type, uint attr_hash,
-		const std::vector<std::string>& old_values, const std::vector<std::string>& new_values) :
-		paths(paths),
+	AssetModifyHistory(const std::filesystem::path& path, uint asset_type, uint attr_hash,
+		const std::string& old_value, const std::string& new_value) :
+		path(path),
 		asset_type(asset_type),
 		attr_hash(attr_hash),
-		old_values(old_values),
-		new_values(new_values)
+		old_value(old_value),
+		new_value(new_value)
 	{
 	}
 
-	void set_value(const std::vector<std::string>& values);
+	void set_value(const std::string& value);
 	void undo() override;
 	void redo() override;
 };
@@ -98,6 +98,28 @@ struct ComponentPositionHistory : History
 	bool is_remove = true;
 	std::vector<std::string> ids;
 	uint comp_type;
+
+	void undo() override;
+	void redo() override;
+};
+
+struct PrefabModifyHistory : History
+{
+	std::filesystem::path path;
+	uint comp_type;
+	uint attr_hash;
+	std::string old_value;
+	std::string new_value;
+
+	PrefabModifyHistory(const std::filesystem::path& paths, uint comp_type, uint attr_hash,
+		const std::string& old_value, const std::string& new_value) :
+		path(path),
+		comp_type(comp_type),
+		attr_hash(attr_hash),
+		old_value(old_value),
+		new_value(new_value)
+	{
+	}
 
 	void undo() override;
 	void redo() override;

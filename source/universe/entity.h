@@ -256,8 +256,8 @@ namespace flame
 
 		virtual EntityPtr copy() = 0;
 
-		virtual bool load(const std::filesystem::path& filename, bool no_children = false) = 0;
-		virtual bool save(const std::filesystem::path& filename) = 0;
+		virtual bool load(const std::filesystem::path& filename, bool only_root = false) = 0;
+		virtual bool save(const std::filesystem::path& filename, bool only_root = false) = 0;
 
 		struct Create
 		{

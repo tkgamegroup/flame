@@ -30,7 +30,7 @@ namespace flame
 		std::map<TypeInfo*, std::function<void(void* src, pugi::xml_node dst)>>										typed_obj_delegates;
 	};
 
-	struct UnserializeXmlSpec
+	struct UnserializeXmlSpec : ExcludeSpec
 	{
 		std::function<bool(const std::string& name, uint name_hash, TypeInfo* type, const std::string& src, void* dst)>	general_delegate;
 		std::map<uint, std::function<void(const std::string& src, void* dst)>>											named_data_delegates;
@@ -588,12 +588,20 @@ namespace flame
 		if (!ui.attributes.empty())
 		{
 			for (auto& a : ui.attributes)
+			{
+				if (spec.skip(ui.name_hash, a.name_hash))
+					continue;
 				unserialize_xml(ui, a.var_off(), a.type, a.name, a.name_hash, a.setter_idx, src, dst, spec);
+			}
 		}
 		else
 		{
 			for (auto& vi : ui.variables)
+			{
+				if (spec.skip(ui.name_hash, vi.name_hash))
+					continue;
 				unserialize_xml(ui, vi.offset, vi.type, vi.name, vi.name_hash, -1, src, dst, spec);
+			}
 		}
 	}
 

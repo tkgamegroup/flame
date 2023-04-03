@@ -3,7 +3,7 @@
 
 #include <flame/foundation/typeinfo.h>
 
-void AssetModifyHistory::set_value(const std::vector<std::string>& values)
+void AssetModifyHistory::set_value(const std::string& value)
 {
 	auto ui = find_udt(asset_type);
 
@@ -11,27 +11,24 @@ void AssetModifyHistory::set_value(const std::vector<std::string>& values)
 	auto func_release = ui->find_function("release"_h);
 	auto func_save = ui->find_function("save"_h);
 
-	for (auto i = 0; i < paths.size(); i++)
+	auto obj = func_get->call<void*, const std::filesystem::path&>(nullptr, path);
+	if (auto a = ui->find_attribute(attr_hash); a)
 	{
-		auto obj = func_get->call<void*, const std::filesystem::path&>(nullptr, paths[i]);
-		if (auto a = ui->find_attribute(attr_hash); a)
-		{
-			a->type->unserialize(values.size() == 1 ? values[0] : values[i], nullptr);
-			a->set_value(obj, nullptr);
-		}
-		func_save->call<void, const std::filesystem::path&>(obj, paths[i]);
-		func_release->call<void, void*>(nullptr, obj);
+		a->type->unserialize(value, nullptr);
+		a->set_value(obj, nullptr);
 	}
+	func_save->call<void, const std::filesystem::path&>(obj, path);
+	func_release->call<void, void*>(nullptr, obj);
 }
 
 void AssetModifyHistory::undo()
 {
-	set_value(old_values);
+	set_value(old_value);
 }
 
 void AssetModifyHistory::redo()
 {
-	set_value(new_values);
+	set_value(new_value);
 }
 
 void EntityModifyHistory::set_value(const std::vector<std::string>& values)
@@ -74,6 +71,16 @@ void EntityModifyHistory::undo()
 void EntityModifyHistory::redo()
 {
 	set_value(new_values);
+}
+
+void PrefabModifyHistory::undo()
+{
+
+}
+
+void PrefabModifyHistory::redo()
+{
+
 }
 
 int history_idx = -1;

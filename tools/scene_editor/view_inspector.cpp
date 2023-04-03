@@ -149,27 +149,18 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 	switch (eos.type)
 	{
 	case 0:
-	{
-		std::vector<std::filesystem::path> paths;
-		paths.assign((std::filesystem::path*)eos.objs, (std::filesystem::path*)eos.objs + eos.num);
-		add_history(new AssetModifyHistory(paths, eos.type2, attr_hash, before_editing_values, { new_value }));
-	}
+		add_history(new AssetModifyHistory(*(std::filesystem::path*)eos.objs, eos.type2, attr_hash, before_editing_values[0], new_value));
 		break;
 	case 1:
 	{
 		std::vector<GUID> ids(eos.num);
 		for (auto i = 0; i < eos.num; i++)
 			ids[i] = ((EntityPtr*)eos.objs)[i]->instance_id;
-		add_history(new EntityModifyHistory(ids, 0, attr_hash, before_editing_values, { new_value }));
+		add_history(new EntityModifyHistory(ids, eos.type2, attr_hash, before_editing_values, { new_value }));
 	}
 		break;
 	case 2:
-	{
-		std::vector<GUID> ids(eos.num);
-		for (auto i = 0; i < eos.num; i++)
-			ids[i] = ((EntityPtr*)eos.objs)[i]->instance_id;
-		add_history(new EntityModifyHistory(ids, eos.type2, attr_hash, before_editing_values, { new_value }));
-	}  
+		add_history(new PrefabModifyHistory(*(std::filesystem::path*)eos.objs, eos.type2, attr_hash, before_editing_values[0], new_value));
 		break;
 	}
 	app.prefab_unsaved = true;
@@ -921,12 +912,14 @@ struct EditingEntities
 	std::vector<EntityPtr> entities;
 	std::unordered_map<const void*, uint> sync_states;
 	std::vector<CommonComponents> common_components;
+	std::filesystem::path prefab_path;
 
 	void refresh(const std::vector<EntityPtr>& _entities)
 	{
 		entities.clear();
 		sync_states.clear();
 		common_components.clear();
+		prefab_path.clear();
 
 		entities = _entities;
 		if (entities.empty())
@@ -1037,49 +1030,26 @@ struct EditingEntities
 		refresh(selection.get_entities());
 	}
 
-	void manipulate()
+	std::pair<uint, uint> manipulate()
 	{
-
-	}
-};
-static EditingEntities editing_entities;
-
-void View_Inspector::on_draw()
-{
-	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-left"_h).c_str()))
-		selection.backward();
-	ImGui::SameLine();
-	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-right"_h).c_str()))
-		selection.forward();
-
-	static void* sel_ref_obj = nullptr;
-	static void(*sel_ref_deletor)(void*) = nullptr;
-	static auto sel_ref_info = new char[1024];
-	if (selection_changed)
-	{
-		staging_vectors.clear();
-		editing_entities.refresh();
-
-		if (sel_ref_deletor && sel_ref_obj)
-			sel_ref_deletor(sel_ref_obj);
-		sel_ref_deletor = nullptr;
-		sel_ref_obj = nullptr;
-	}
-
-	switch (selection.type)
-	{
-	case Selection::tEntity:
-	{
+		uint changed = 0;
 		uint changed_name = 0;
+		std::pair<uint, uint> res;
+
 		static auto& ui_entity = *TypeInfo::get<Entity>()->retrive_ui();
 		static auto& ui_component = *TypeInfo::get<Component>()->retrive_ui();
-		auto entity = editing_entities.entities[0];
+		auto entity = entities[0];
 
-		editing_objects.emplace(EditingObjects(1, 0, editing_entities.entities.data(), editing_entities.entities.size(), &editing_entities.sync_states));
-
+		if (prefab_path.empty())
+			editing_objects.emplace(EditingObjects(1, 0, entities.data(), entities.size(), &sync_states));
+		else
+			editing_objects.emplace(EditingObjects(2, 0, &prefab_path, 1, nullptr));
 		ImGui::PushID("flame::Entity"_h);
-		changed_name = manipulate_udt(ui_entity, (voidptr*)editing_entities.entities.data(), editing_entities.entities.size()).second;
-		if (editing_entities.entities.size() == 1 && entity->prefab_instance)
+
+		res = manipulate_udt(ui_entity, (voidptr*)entities.data(), entities.size());
+		changed |= res.first;
+		changed_name |= res.second;
+		if (entities.size() == 1 && entity->prefab_instance)
 		{
 			auto ins = entity->prefab_instance.get();
 			auto& path = ins->filename;
@@ -1136,14 +1106,14 @@ void View_Inspector::on_draw()
 				ImGui::SameLine();
 				if (ImGui::Button("Discard"))
 				{
-					ImGui::OpenYesNoDialog("Are you sure to revert all modifications?", "This action cannot be redo", [entity, ins](bool yes) {
+					ImGui::OpenYesNoDialog("Are you sure to revert all modifications?", "This action cannot be redo", [this, entity, ins](bool yes) {
 						if (yes)
 						{
-							add_event([ins, entity]() {
+							add_event([this, ins, entity]() {
 								entity->remove_all_children();
 								entity->remove_all_components();
 								entity->load(ins->filename);
-								editing_entities.refresh();
+								refresh();
 								return false;
 							});
 							ins->modifications.clear();
@@ -1154,21 +1124,24 @@ void View_Inspector::on_draw()
 			}
 		}
 		ImGui::PopID();
-
 		editing_objects.pop();
+
 		if (changed_name != 0)
 		{
 			auto& str = ui_entity.find_attribute(changed_name)->name;
-			for (auto e : editing_entities.entities)
+			for (auto e : entities)
 			{
 				if (auto ins = get_root_prefab_instance(e); ins)
 					ins->mark_modifier(e->file_id.to_string(), "", str);
 			}
 		}
 
-		for (auto& cc : editing_entities.common_components)
+		for (auto& cc : common_components)
 		{
-			editing_objects.emplace(EditingObjects(2, cc.type_hash, editing_entities.entities.data(), editing_entities.entities.size(), &editing_entities.sync_states));
+			if (prefab_path.empty())
+				editing_objects.emplace(EditingObjects(1, cc.type_hash, entities.data(), entities.size(), &sync_states));
+			else
+				editing_objects.emplace(EditingObjects(2, cc.type_hash, &prefab_path, 1, nullptr));
 			ImGui::PushID(cc.type_hash);
 			auto& ui = *find_udt(cc.type_hash);
 			auto open = ImGui::CollapsingHeader(ui.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
@@ -1186,7 +1159,7 @@ void View_Inspector::on_draw()
 				if (ImGui::Selectable("Move Up"))
 				{
 					auto ok = true;
-					for (auto e : editing_entities.entities)
+					for (auto e : entities)
 					{
 						if (get_root_prefab_instance(e))
 						{
@@ -1196,17 +1169,17 @@ void View_Inspector::on_draw()
 					}
 					if (ok)
 					{
-						auto e0 = editing_entities.entities[0];
+						auto e0 = entities[0];
 						for (auto i = 0; i < e0->components.size(); i++)
 						{
 							if (e0->components[i]->type_hash == cc.type_hash)
 							{
 								if (i > 0)
 								{
-									for (auto e : editing_entities.entities)
+									for (auto e : entities)
 										std::swap(e->components[i], e->components[i - 1]);
 								}
-								editing_entities.refresh();
+								refresh();
 								app.prefab_unsaved = true;
 								break;
 							}
@@ -1218,7 +1191,7 @@ void View_Inspector::on_draw()
 				if (ImGui::Selectable("Move Down"))
 				{
 					auto ok = true;
-					for (auto e : editing_entities.entities)
+					for (auto e : entities)
 					{
 						if (get_root_prefab_instance(e))
 						{
@@ -1228,17 +1201,17 @@ void View_Inspector::on_draw()
 					}
 					if (ok)
 					{
-						auto e0 = editing_entities.entities[0];
+						auto e0 = entities[0];
 						for (auto i = 0; i < e0->components.size(); i++)
 						{
 							if (e0->components[i]->type_hash == cc.type_hash)
 							{
 								if (i < e0->components.size() - 1)
 								{
-									for (auto e : editing_entities.entities)
+									for (auto e : entities)
 										std::swap(e->components[i], e->components[i + 1]);
 								}
-								editing_entities.refresh();
+								refresh();
 								app.prefab_unsaved = true;
 								break;
 							}
@@ -1250,7 +1223,7 @@ void View_Inspector::on_draw()
 				if (ImGui::Selectable("Remove"))
 				{
 					auto ok = true;
-					for (auto e : editing_entities.entities)
+					for (auto e : entities)
 					{
 						if (get_root_prefab_instance(e))
 						{
@@ -1260,9 +1233,9 @@ void View_Inspector::on_draw()
 					}
 					if (ok)
 					{
-						for (auto e : editing_entities.entities)
+						for (auto e : entities)
 							e->remove_component(cc.type_hash);
-						editing_entities.refresh();
+						refresh();
 						app.prefab_unsaved = true;
 					}
 					else
@@ -1272,13 +1245,15 @@ void View_Inspector::on_draw()
 			}
 			if (open)
 			{
-				changed_name |= manipulate_udt(ui_component, (voidptr*)cc.components.data(), cc.components.size()).second;
+				res = manipulate_udt(ui_component, (voidptr*)cc.components.data(), cc.components.size());
+				changed |= res.first;
+				changed_name |= res.second;
 
 				static bool open_select_standard_model = false;
 				static bool open_select_hash = false;
 				static std::vector<std::string> hash_candidates;
-				static const Attribute* op_attr;
-				changed_name |= manipulate_udt(ui, (voidptr*)cc.components.data(), cc.components.size(), [&ui, &cc](uint name) {
+				static const Attribute* op_attr; 
+				res = manipulate_udt(ui, (voidptr*)cc.components.data(), cc.components.size(), [&ui, &cc](uint name) {
 					ImGui::PushID(name);
 					if (name == "mesh_name"_h)
 					{
@@ -1342,7 +1317,10 @@ void View_Inspector::on_draw()
 						}
 					}
 					ImGui::PopID();
-				}).second;
+				});
+				changed |= res.first;
+				changed_name |= res.second;
+
 				if (open_select_standard_model)
 				{
 					ImGui::OpenPopup("select_standard_model");
@@ -1390,7 +1368,7 @@ void View_Inspector::on_draw()
 				if (changed_name != 0)
 				{
 					auto& str = ui.find_attribute(changed_name)->name;
-					for (auto e : editing_entities.entities)
+					for (auto e : entities)
 					{
 						if (auto ins = get_root_prefab_instance(e); ins)
 							ins->mark_modifier(e->file_id.to_string(), ui.name, str);
@@ -1491,7 +1469,7 @@ void View_Inspector::on_draw()
 				if (ImGui::Selectable(ui->name.c_str()))
 				{
 					auto ok = true;
-					for (auto e : editing_entities.entities)
+					for (auto e : entities)
 					{
 						if (get_root_prefab_instance(e))
 						{
@@ -1501,9 +1479,9 @@ void View_Inspector::on_draw()
 					}
 					if (ok)
 					{
-						for (auto e : editing_entities.entities)
+						for (auto e : entities)
 							e->add_component(ui->name_hash);
-						editing_entities.refresh();
+						refresh();
 						app.prefab_unsaved = true;
 					}
 					else
@@ -1512,7 +1490,38 @@ void View_Inspector::on_draw()
 			}
 			ImGui::EndPopup();
 		}
+
+		return { changed, changed_name };
 	}
+};
+static EditingEntities editing_entities;
+
+void View_Inspector::on_draw()
+{
+	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-left"_h).c_str()))
+		selection.backward();
+	ImGui::SameLine();
+	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-right"_h).c_str()))
+		selection.forward();
+
+	static void* sel_ref_obj = nullptr;
+	static void(*sel_ref_deletor)(void*) = nullptr;
+	static auto sel_ref_info = new char[1024];
+	if (selection_changed)
+	{
+		staging_vectors.clear();
+		editing_entities.refresh();
+
+		if (sel_ref_deletor && sel_ref_obj)
+			sel_ref_deletor(sel_ref_obj);
+		sel_ref_deletor = nullptr;
+		sel_ref_obj = nullptr;
+	}
+
+	switch (selection.type)
+	{
+	case Selection::tEntity:
+		editing_entities.manipulate();
 		break;
 	case Selection::tPath:
 	{
@@ -1736,7 +1745,11 @@ void View_Inspector::on_draw()
 
 				if (sel_ref_obj)
 				{
-
+					auto entity = (EntityPtr)sel_ref_obj;
+					editing_entities.refresh({ entity });
+					editing_entities.prefab_path = path;
+					if (editing_entities.manipulate().first == 2)
+						entity->save(path, true);
 				}
 			}
 			else if (ext == L".pipeline")
