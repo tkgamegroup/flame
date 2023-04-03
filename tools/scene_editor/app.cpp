@@ -959,8 +959,6 @@ void App::build_project()
 		close_prefab();
 
 	add_event([this, old_prefab_path]() {
-		// remove saved udts, inspector will try to get new ones
-		view_inspector.clear_typeinfos();
 		unload_project_cpp();
 
 		focus_window(get_console_window());
@@ -1001,8 +999,6 @@ void App::close_project()
 
 	Path::set_root(L"assets", L"");
 	view_project.reset();
-	// remove saved udts, inspector will try to get new ones
-	view_inspector.clear_typeinfos();
 	unload_project_cpp();
 }
 
@@ -1199,7 +1195,7 @@ bool App::cmd_delete_entity(EntityPtr e)
 			return false;
 		for (auto e : entities)
 		{
-			if (e == e_prefab || !e->prefab_instance && get_prefab_instance(e))
+			if (e == e_prefab || !e->prefab_instance && get_root_prefab_instance(e))
 			{
 				app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 				return false;
@@ -1216,7 +1212,7 @@ bool App::cmd_delete_entity(EntityPtr e)
 		prefab_unsaved = true;
 		return true;
 	}
-	if (e == e_prefab || !e->prefab_instance && get_prefab_instance(e))
+	if (e == e_prefab || !e->prefab_instance && get_root_prefab_instance(e))
 	{
 		app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 		return false;
@@ -1238,7 +1234,7 @@ bool App::cmd_duplicate_entity(EntityPtr e)
 			return false;
 		for (auto e : entities)
 		{
-			if (e == e_prefab || !e->prefab_instance && get_prefab_instance(e))
+			if (e == e_prefab || !e->prefab_instance && get_root_prefab_instance(e))
 			{
 				app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 				return false;
@@ -1254,7 +1250,7 @@ bool App::cmd_duplicate_entity(EntityPtr e)
 		selection.select(new_entities, "app"_h);
 		return true;
 	}
-	if (e == e_prefab || !e->prefab_instance && get_prefab_instance(e))
+	if (e == e_prefab || !e->prefab_instance && get_root_prefab_instance(e))
 	{
 		app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 		return false;

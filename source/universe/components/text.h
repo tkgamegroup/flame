@@ -35,6 +35,15 @@ namespace flame
 		// Reflect
 		virtual void set_sdf(bool v) = 0;
 
+		// Reflect
+		float thickness = 0.f;
+		// Reflect
+		virtual void set_thickness(float thickness) = 0;
+		// Reflect
+		float border = 0.f;
+		// Reflect
+		virtual void set_border(float border) = 0;
+
 		graphics::FontAtlas* font_atlas = nullptr;
 
 		struct Create

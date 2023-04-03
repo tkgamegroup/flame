@@ -31,7 +31,7 @@ namespace flame
 
 		EntityPtr copy() override;
 
-		bool load(const std::filesystem::path& filename) override;
+		bool load(const std::filesystem::path& filename, bool no_children) override;
 		bool save(const std::filesystem::path& filename) override;
 	};
 }

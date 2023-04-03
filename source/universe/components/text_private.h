@@ -13,6 +13,8 @@ namespace flame
 		void set_font_size(uint size) override;
 		void set_font_names(const std::vector<std::filesystem::path>& names) override;
 		void set_sdf(bool v) override;
+		void set_thickness(float thickness) override;
+		void set_border(float border) override;
 
 		void get_font_atlas();
 	};

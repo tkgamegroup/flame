@@ -104,7 +104,7 @@ struct App : UniverseApplication
 
 extern App app;
 
-inline PrefabInstance* get_prefab_instance(EntityPtr e)
+inline PrefabInstance* get_root_prefab_instance(EntityPtr e)
 {
 	PrefabInstance* ret = nullptr;
 	while (e)

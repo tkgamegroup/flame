@@ -7,18 +7,20 @@ void AssetModifyHistory::set_value(const std::vector<std::string>& values)
 {
 	auto ui = find_udt(asset_type);
 
-	auto ref_getter = ui->find_function("get"_h);
-	auto ref_releaser = ui->find_function("release"_h);
+	auto func_get = ui->find_function("get"_h);
+	auto func_release = ui->find_function("release"_h);
+	auto func_save = ui->find_function("save"_h);
 
 	for (auto i = 0; i < paths.size(); i++)
 	{
-		auto obj = ref_getter->call<void*, const std::filesystem::path&>(nullptr, paths[i]);
+		auto obj = func_get->call<void*, const std::filesystem::path&>(nullptr, paths[i]);
 		if (auto a = ui->find_attribute(attr_hash); a)
 		{
 			a->type->unserialize(values.size() == 1 ? values[0] : values[i], nullptr);
 			a->set_value(obj, nullptr);
 		}
-		ref_releaser->call<void*, void*>(nullptr, obj);
+		func_save->call<void, const std::filesystem::path&>(obj, paths[i]);
+		func_release->call<void, void*>(nullptr, obj);
 	}
 }
 

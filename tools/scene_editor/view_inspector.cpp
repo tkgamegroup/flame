@@ -23,9 +23,6 @@
 View_Inspector view_inspector;
 static auto selection_changed = false;
 
-static std::unordered_map<uint, UdtInfo*> com_udts_map;
-static std::vector<UdtInfo*> com_udts_list;
-
 View_Inspector::View_Inspector() :
 	GuiView("Inspector")
 {
@@ -142,132 +139,6 @@ struct EditingObjects
 
 std::stack<EditingObjects> editing_objects;
 
-struct CommonComponents
-{
-	uint type_hash;
-	std::vector<ComponentPtr> components;
-};
-
-struct EditingEntities
-{
-	std::vector<EntityPtr> entities;
-	std::unordered_map<const void*, uint> sync_states;
-	std::vector<CommonComponents> common_components;
-
-	void refresh()
-	{
-		entities.clear();
-		sync_states.clear();
-		common_components.clear();
-
-		entities = selection.get_entities();
-		if (entities.empty())
-			return;
-
-		static auto& ui_entity = *TypeInfo::get<Entity>()->retrive_ui();
-		auto entt0 = entities[0];
-		auto process_attribute = [&](const Attribute& a, uint comp_hash) {
-			void* obj0 = comp_hash == 0 ? entt0 : (void*)entt0->get_component(comp_hash);
-			uint state = 1;
-
-			auto var0 = a.type->create();
-			a.type->copy(var0, a.get_value(obj0));
-			if (a.type->tag == TagD)
-			{
-				auto ti = (TypeInfo_Data*)a.type;
-				switch (ti->data_type)
-				{
-				case DataBool:
-					for (auto i = 1; i < entities.size(); i++)
-					{
-						void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component(comp_hash);
-						auto var1 = a.get_value(obj1);
-						if (*(bool*)var0 != *(bool*)var1)
-						{
-							state = 0;
-							break;
-						}
-					}
-					break;
-				case DataInt:
-				case DataFloat:
-					for (auto i = 1; i < entities.size(); i++)
-					{
-						void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component(comp_hash);
-						auto var1 = a.get_value(obj1);
-						for (auto y = 0; y < ti->vec_size; y++)
-						{
-							if (memcmp((char*)var0 + sizeof(float) * y, (char*)var1 + sizeof(float) * y, sizeof(float)) != 0)
-								((char*)&state)[y] = 0;
-							else
-								((char*)&state)[y] = 1;
-						}
-					}
-					break;
-				default:
-					for (auto i = 1; i < entities.size(); i++)
-					{
-						void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component(comp_hash);
-						if (!a.type->compare(var0, a.get_value(obj1)))
-						{
-							state = 0;
-							break;
-						}
-					}
-				}
-
-			}
-			a.type->destroy(var0);
-
-			sync_states[&a] = state;
-		};
-
-		if (entities.size() > 1)
-		{
-			for (auto& a : ui_entity.attributes)
-				process_attribute(a, 0);
-		}
-
-		for (auto& comp : entt0->components)
-		{
-			auto hash = comp->type_hash;
-			auto all_have = true;
-			for (auto i = 1; i < entities.size(); i++)
-			{
-				if (!entities[i]->get_component(hash))
-				{
-					all_have = false;
-					break;
-				}
-			}
-			if (all_have)
-			{
-				auto& cc = common_components.emplace_back();
-				cc.type_hash = hash;
-				cc.components.resize(entities.size());
-				for (auto i = 0; i < entities.size(); i++)
-					cc.components[i] = entities[i]->get_component(hash);
-			}
-		}
-		if (entities.size() > 1)
-		{
-			static auto& ui_component = *TypeInfo::get<Component>()->retrive_ui();
-			for (auto& cc : common_components)
-			{
-				auto comp0 = entt0->get_component(cc.type_hash);
-				auto& ui = *find_udt(cc.type_hash);
-				for (auto& a : ui_component.attributes)
-					process_attribute(a, cc.type_hash);
-				for (auto& a : ui.attributes)
-					process_attribute(a, cc.type_hash);
-			}
-		}
-	}
-};
-static EditingEntities editing_entities;
-
-uint manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num = 1, const std::function<void(uint)>& cb = {});
-
 std::vector<std::string> before_editing_values;
 
 void add_modify_history(uint attr_hash, const std::string& new_value)
@@ -303,6 +174,8 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 	}
 	app.prefab_unsaved = true;
 }
+
+std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num = 1, const std::function<void(uint)>& cb = {});
 
 int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash, int offset, const FunctionInfo* getter, const FunctionInfo* setter, voidptr* objs, uint num, const void* id)
 {
@@ -757,7 +630,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				if (vo.data)
 				{
 					voidptr ptr = vo.data;
-					if (manipulate_udt(*vo.type->retrive_ui(), &ptr))
+					if (manipulate_udt(*vo.type->retrive_ui(), &ptr).first)
 					{
 						changed = true;
 						app.prefab_unsaved = true;
@@ -767,7 +640,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			else
 			{
 				voidptr ptr = (char*)objs[0] + offset;
-				if (manipulate_udt(*ui, &ptr))
+				if (manipulate_udt(*ui, &ptr).first)
 				{
 					changed = true;
 					app.prefab_unsaved = true;
@@ -862,7 +735,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					if (i > 0) ImGui::Separator();
 					ImGui::PushID(i);
 					voidptr obj = sv.v.data() + ui.size * i;
-					if (manipulate_udt(ui, &obj))
+					if (manipulate_udt(ui, &obj).first)
 					{
 						changed = true;
 						app.prefab_unsaved = true;
@@ -1004,15 +877,17 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 	return changed;
 }
 
-uint manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num, const std::function<void(uint)>& cb)
+std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num, const std::function<void(uint)>& cb)
 {
+	uint changed = 0;
 	uint changed_name = 0;
 
 	if (ui.attributes.empty())
 	{
 		for (auto& v : ui.variables)
 		{
-			if (manipulate_variable(v.type, v.name, v.name_hash, v.offset, nullptr, nullptr, objs, num, &v))
+			changed = manipulate_variable(v.type, v.name, v.name_hash, v.offset, nullptr, nullptr, objs, num, &v);
+			if (changed)
 				changed_name = v.name_hash;
 			if (cb)
 				cb(v.name_hash);
@@ -1022,49 +897,155 @@ uint manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num, const std::funct
 	{
 		for (auto& a : ui.attributes)
 		{
-			if (manipulate_variable(a.type, a.name, a.name_hash, a.var_off(),
+			changed = manipulate_variable(a.type, a.name, a.name_hash, a.var_off(),
 				a.getter_idx != -1 ? &ui.functions[a.getter_idx] : nullptr,
 				a.setter_idx != -1 ? &ui.functions[a.setter_idx] : nullptr,
-				objs, num, &a))
+				objs, num, &a);
+			if (changed)
 				changed_name = a.name_hash;
 			if (cb)
 				cb(a.name_hash);
 		}
 	}
-	return changed_name;
+	return std::make_pair(changed, changed_name);
 }
 
-void get_com_udts()
+struct CommonComponents
 {
-	for (auto& ui : tidb.udts)
+	uint type_hash;
+	std::vector<ComponentPtr> components;
+};
+
+struct EditingEntities
+{
+	std::vector<EntityPtr> entities;
+	std::unordered_map<const void*, uint> sync_states;
+	std::vector<CommonComponents> common_components;
+
+	void refresh(const std::vector<EntityPtr>& _entities)
 	{
-		if (ui.second.base_class_name == "flame::Component")
-			com_udts_map.emplace(ui.first, &ui.second);
+		entities.clear();
+		sync_states.clear();
+		common_components.clear();
+
+		entities = _entities;
+		if (entities.empty())
+			return;
+
+		static auto& ui_entity = *TypeInfo::get<Entity>()->retrive_ui();
+		auto entt0 = entities[0];
+		auto process_attribute = [&](const Attribute& a, uint comp_hash) {
+			void* obj0 = comp_hash == 0 ? entt0 : (void*)entt0->get_component(comp_hash);
+			uint state = 1;
+
+			auto var0 = a.type->create();
+			a.type->copy(var0, a.get_value(obj0));
+			if (a.type->tag == TagD)
+			{
+				auto ti = (TypeInfo_Data*)a.type;
+				switch (ti->data_type)
+				{
+				case DataBool:
+					for (auto i = 1; i < entities.size(); i++)
+					{
+						void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component(comp_hash);
+						auto var1 = a.get_value(obj1);
+						if (*(bool*)var0 != *(bool*)var1)
+						{
+							state = 0;
+							break;
+						}
+					}
+					break;
+				case DataInt:
+				case DataFloat:
+					for (auto i = 1; i < entities.size(); i++)
+					{
+						void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component(comp_hash);
+						auto var1 = a.get_value(obj1);
+						for (auto y = 0; y < ti->vec_size; y++)
+						{
+							if (memcmp((char*)var0 + sizeof(float) * y, (char*)var1 + sizeof(float) * y, sizeof(float)) != 0)
+								((char*)&state)[y] = 0;
+							else
+								((char*)&state)[y] = 1;
+						}
+					}
+					break;
+				default:
+					for (auto i = 1; i < entities.size(); i++)
+					{
+						void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component(comp_hash);
+						if (!a.type->compare(var0, a.get_value(obj1)))
+						{
+							state = 0;
+							break;
+						}
+					}
+				}
+
+			}
+			a.type->destroy(var0);
+
+			sync_states[&a] = state;
+		};
+
+		if (entities.size() > 1)
+		{
+			for (auto& a : ui_entity.attributes)
+				process_attribute(a, 0);
+		}
+
+		for (auto& comp : entt0->components)
+		{
+			auto hash = comp->type_hash;
+			auto all_have = true;
+			for (auto i = 1; i < entities.size(); i++)
+			{
+				if (!entities[i]->get_component(hash))
+				{
+					all_have = false;
+					break;
+				}
+			}
+			if (all_have)
+			{
+				auto& cc = common_components.emplace_back();
+				cc.type_hash = hash;
+				cc.components.resize(entities.size());
+				for (auto i = 0; i < entities.size(); i++)
+					cc.components[i] = entities[i]->get_component(hash);
+			}
+		}
+		if (entities.size() > 1)
+		{
+			static auto& ui_component = *TypeInfo::get<Component>()->retrive_ui();
+			for (auto& cc : common_components)
+			{
+				auto comp0 = entt0->get_component(cc.type_hash);
+				auto& ui = *find_udt(cc.type_hash);
+				for (auto& a : ui_component.attributes)
+					process_attribute(a, cc.type_hash);
+				for (auto& a : ui.attributes)
+					process_attribute(a, cc.type_hash);
+			}
+		}
 	}
-	std::vector<UdtInfo*> temp1;
-	std::vector<UdtInfo*> temp2;
-	for (auto& pair : com_udts_map)
+
+	void refresh()
 	{
-		if (pair.second->name.starts_with("flame::"))
-			temp1.push_back(pair.second);
-		else
-			temp2.push_back(pair.second);
+		refresh(selection.get_entities());
 	}
-	std::sort(temp1.begin(), temp1.end(), [](const auto& a, const auto& b) {
-		return a->name < b->name;
-	});
-	std::sort(temp2.begin(), temp2.end(), [](const auto& a, const auto& b) {
-		return a->name < b->name;
-	});
-	com_udts_list.insert(com_udts_list.end(), temp1.begin(), temp1.end());
-	com_udts_list.insert(com_udts_list.end(), temp2.begin(), temp2.end());
-}
+
+	void manipulate()
+	{
+
+	}
+};
+static EditingEntities editing_entities;
 
 void View_Inspector::on_draw()
 {
-	if (com_udts_map.empty())
-		get_com_udts();
-
 	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-left"_h).c_str()))
 		selection.backward();
 	ImGui::SameLine();
@@ -1097,7 +1078,7 @@ void View_Inspector::on_draw()
 		editing_objects.emplace(EditingObjects(1, 0, editing_entities.entities.data(), editing_entities.entities.size(), &editing_entities.sync_states));
 
 		ImGui::PushID("flame::Entity"_h);
-		changed_name = manipulate_udt(ui_entity, (voidptr*)editing_entities.entities.data(), editing_entities.entities.size());
+		changed_name = manipulate_udt(ui_entity, (voidptr*)editing_entities.entities.data(), editing_entities.entities.size()).second;
 		if (editing_entities.entities.size() == 1 && entity->prefab_instance)
 		{
 			auto ins = entity->prefab_instance.get();
@@ -1107,33 +1088,69 @@ void View_Inspector::on_draw()
 			ImGui::SameLine();
 			if (ImGui::Button("P"))
 				selection.select(Path::get(path), "inspector"_h);
-			if (!ins->modifications.empty())
+			ImGui::SameLine();
+			ImGui::Button("Modifications");
+			if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft))
 			{
-				ImGui::Button("Modifications");
-				if (ImGui::BeginPopupContextItem())
+				for (auto& m : ins->modifications)
+					ImGui::Text(m.c_str());
+				if (ins->modifications.empty())
 				{
-					for (auto& m : ins->modifications)
-						ImGui::Text(m.c_str());
-					ImGui::EndPopup();
+					if (ImGui::Button("Seize Modifications and Apply"))
+					{
+						ImGui::OpenYesNoDialog("Are you sure to seize modificaitons and apply all?", "This action cannot be redo\n"
+							"This action will first filter modificaions that their targets are in this prefab, \n"
+							"seizes them from the prefab root, and then apply them to this prefab", [entity, ins](bool yes) {
+								if (yes)
+								{
+									auto& root_ins_mods = get_root_prefab_instance(entity)->modifications;
+									for (auto it = root_ins_mods.begin(); it != root_ins_mods.end();)
+									{
+										auto sp = SUS::split(*it, '|');
+										GUID guid;
+										guid.from_string(sp.front());
+										if (entity->find_with_instance_id(guid))
+											it = root_ins_mods.erase(it);
+										else
+											it++;
+									}
+									entity->save(Path::get(ins->filename));
+									ins->modifications.clear();
+								}
+						});
+					}
 				}
-				ImGui::SameLine();
-				if (ImGui::Button("Apply"))
+				else
 				{
-					entity->save(Path::get(ins->filename));
-					ins->modifications.clear();
+					if (ImGui::Button("Apply"))
+					{
+						ImGui::OpenYesNoDialog("Are you sure to apply all modifications?", "This action cannot be redo", [entity, ins](bool yes) {
+							if (yes)
+							{
+								entity->save(Path::get(ins->filename));
+								ins->modifications.clear();
+							}
+						});
+					}
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Discard"))
 				{
-					add_event([ins, entity]() {
-						entity->remove_all_children();
-						entity->remove_all_components();
-						entity->load(ins->filename);
-						editing_entities.refresh();
-						return false;
+					ImGui::OpenYesNoDialog("Are you sure to revert all modifications?", "This action cannot be redo", [entity, ins](bool yes) {
+						if (yes)
+						{
+							add_event([ins, entity]() {
+								entity->remove_all_children();
+								entity->remove_all_components();
+								entity->load(ins->filename);
+								editing_entities.refresh();
+								return false;
+							});
+							ins->modifications.clear();
+						}
 					});
-					ins->modifications.clear();
 				}
+				ImGui::EndPopup();
 			}
 		}
 		ImGui::PopID();
@@ -1144,7 +1161,7 @@ void View_Inspector::on_draw()
 			auto& str = ui_entity.find_attribute(changed_name)->name;
 			for (auto e : editing_entities.entities)
 			{
-				if (auto ins = get_prefab_instance(e); ins)
+				if (auto ins = get_root_prefab_instance(e); ins)
 					ins->mark_modifier(e->file_id.to_string(), "", str);
 			}
 		}
@@ -1153,7 +1170,7 @@ void View_Inspector::on_draw()
 		{
 			editing_objects.emplace(EditingObjects(2, cc.type_hash, editing_entities.entities.data(), editing_entities.entities.size(), &editing_entities.sync_states));
 			ImGui::PushID(cc.type_hash);
-			auto& ui = *com_udts_map[cc.type_hash];
+			auto& ui = *find_udt(cc.type_hash);
 			auto open = ImGui::CollapsingHeader(ui.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
 			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 40);
 			if (ImGui::Button("P"))
@@ -1171,7 +1188,7 @@ void View_Inspector::on_draw()
 					auto ok = true;
 					for (auto e : editing_entities.entities)
 					{
-						if (get_prefab_instance(e))
+						if (get_root_prefab_instance(e))
 						{
 							ok = false;
 							break;
@@ -1203,7 +1220,7 @@ void View_Inspector::on_draw()
 					auto ok = true;
 					for (auto e : editing_entities.entities)
 					{
-						if (get_prefab_instance(e))
+						if (get_root_prefab_instance(e))
 						{
 							ok = false;
 							break;
@@ -1235,7 +1252,7 @@ void View_Inspector::on_draw()
 					auto ok = true;
 					for (auto e : editing_entities.entities)
 					{
-						if (get_prefab_instance(e))
+						if (get_root_prefab_instance(e))
 						{
 							ok = false;
 							break;
@@ -1255,13 +1272,13 @@ void View_Inspector::on_draw()
 			}
 			if (open)
 			{
-				manipulate_udt(ui_component, (voidptr*)cc.components.data(), cc.components.size());
+				changed_name |= manipulate_udt(ui_component, (voidptr*)cc.components.data(), cc.components.size()).second;
 
 				static bool open_select_standard_model = false;
 				static bool open_select_hash = false;
 				static std::vector<std::string> hash_candidates;
 				static const Attribute* op_attr;
-				auto changed_name = manipulate_udt(ui, (voidptr*)cc.components.data(), cc.components.size(), [&ui, &cc](uint name) {
+				changed_name |= manipulate_udt(ui, (voidptr*)cc.components.data(), cc.components.size(), [&ui, &cc](uint name) {
 					ImGui::PushID(name);
 					if (name == "mesh_name"_h)
 					{
@@ -1290,10 +1307,10 @@ void View_Inspector::on_draw()
 								if (auto material = graphics::Material::get(name); material)
 								{
 									editing_objects.emplace(EditingObjects(0, th<graphics::Material>(), &name, 1));
-									auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1);
+									auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1).first;
 									editing_objects.pop();
 									graphics::Material::release(material);
-									if (changed)
+									if (changed == 2)
 									{
 										auto path = Path::get(name);
 										material->save(path);
@@ -1325,7 +1342,7 @@ void View_Inspector::on_draw()
 						}
 					}
 					ImGui::PopID();
-				});
+				}).second;
 				if (open_select_standard_model)
 				{
 					ImGui::OpenPopup("select_standard_model");
@@ -1375,7 +1392,7 @@ void View_Inspector::on_draw()
 					auto& str = ui.find_attribute(changed_name)->name;
 					for (auto e : editing_entities.entities)
 					{
-						if (auto ins = get_prefab_instance(e); ins)
+						if (auto ins = get_root_prefab_instance(e); ins)
 							ins->mark_modifier(e->file_id.to_string(), ui.name, str);
 					}
 
@@ -1440,18 +1457,43 @@ void View_Inspector::on_draw()
 		const float ButtonWidth = 100.f;
 		ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ButtonWidth) * 0.5f);
 		ImGui::SetNextItemWidth(ButtonWidth);
+		static std::vector<UdtInfo*> comp_udts;
 		if (ImGui::Button("Add Component"))
+		{
 			ImGui::OpenPopup("add_component");
+			comp_udts.clear();
+
+			std::vector<UdtInfo*> temp1;
+			std::vector<UdtInfo*> temp2;
+			for (auto& ui : tidb.udts)
+			{
+				if (ui.second.base_class_name == "flame::Component")
+				{
+					if (ui.second.name.starts_with("flame::"))
+						temp1.push_back(&ui.second);
+					else
+						temp2.push_back(&ui.second);
+				}
+			}
+			std::sort(temp1.begin(), temp1.end(), [](const auto& a, const auto& b) {
+				return a->name < b->name;
+			});
+			std::sort(temp2.begin(), temp2.end(), [](const auto& a, const auto& b) {
+				return a->name < b->name;
+			});
+			comp_udts.insert(comp_udts.end(), temp1.begin(), temp1.end());
+			comp_udts.insert(comp_udts.end(), temp2.begin(), temp2.end());
+		}
 		if (ImGui::BeginPopup("add_component"))
 		{
-			for (auto ui : com_udts_list)
+			for (auto ui : comp_udts)
 			{
 				if (ImGui::Selectable(ui->name.c_str()))
 				{
 					auto ok = true;
 					for (auto e : editing_entities.entities)
 					{
-						if (get_prefab_instance(e))
+						if (get_root_prefab_instance(e))
 						{
 							ok = false;
 							break;
@@ -1573,7 +1615,7 @@ void View_Inspector::on_draw()
 			}
 			else if (ext == L".fmat")
 			{
-				if (selection_changed || !sel_ref_obj)
+				if (selection_changed)
 				{
 					auto material = graphics::Material::get(path);
 					if (material)
@@ -1589,9 +1631,9 @@ void View_Inspector::on_draw()
 				{
 					auto material = (graphics::MaterialPtr)sel_ref_obj;
 					editing_objects.emplace(EditingObjects(0, th<graphics::Material>(), &path, 1));
-					auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1);
+					auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1).first;
 					editing_objects.pop();
-					if (changed)
+					if (changed == 2)
 					{
 						material->save(path);
 						auto asset = AssetManagemant::find(path);
@@ -1602,7 +1644,7 @@ void View_Inspector::on_draw()
 			}
 			else if (ext == L".fmod")
 			{
-				if (selection_changed || !sel_ref_obj)
+				if (selection_changed)
 				{
 					auto model = graphics::Model::get(path);
 					if (model)
@@ -1637,7 +1679,7 @@ void View_Inspector::on_draw()
 			}
 			else if (ext == L".fani")
 			{
-				if (selection_changed || !sel_ref_obj)
+				if (selection_changed)
 				{
 					auto animation = graphics::Animation::get(path);
 					if (animation)
@@ -1680,14 +1722,29 @@ void View_Inspector::on_draw()
 					}
 				}
 			}
+			else if (ext == L".prefab")
+			{
+				if (selection_changed)
+				{
+					sel_ref_obj = Entity::create();
+					sel_ref_deletor = [](void* obj) {
+						delete (EntityPtr)obj;
+					};
+
+					((EntityPtr)sel_ref_obj)->load(path, true);
+				}
+
+				if (sel_ref_obj)
+				{
+
+				}
+			}
 			else if (ext == L".pipeline")
 			{
-				static auto ti = TypeInfo::get<graphics::PipelineInfo>();
-				static UdtInfo* ui = ti->retrive_ui();
-				static UdtInfo* ser_ui = ui->transform_to_serializable();
+				static UdtInfo* ser_ui = TypeInfo::get<graphics::PipelineInfo>()->retrive_ui()->transform_to_serializable();
 				static std::vector<std::pair<std::string, std::string>> default_defines;
 
-				if (selection_changed || !sel_ref_obj)
+				if (selection_changed)
 				{
 					sel_ref_obj = ser_ui->create_object();
 					sel_ref_deletor = [](void* obj) {
@@ -1706,15 +1763,9 @@ void View_Inspector::on_draw()
 
 				if (sel_ref_obj)
 				{
-					manipulate_variable(TypeInfo::get<decltype(default_defines)>(), "default defines", 0, 0, nullptr, nullptr, (voidptr*)&default_defines, 1, nullptr);
-					manipulate_udt(*ser_ui, (voidptr*)&sel_ref_obj, 1);
-					if (ImGui::Button("Test Compile"))
-					{
-						auto pl = graphics::GraphicsPipeline::get(path, {});
-						if (pl)
-							graphics::GraphicsPipeline::release(pl);
-					}
-					if (ImGui::Button("Save"))
+					uint changed = manipulate_variable(TypeInfo::get<decltype(default_defines)>(), "default defines", 0, 0, nullptr, nullptr, (voidptr*)&default_defines, 1, nullptr);
+					changed |= manipulate_udt(*ser_ui, (voidptr*)&sel_ref_obj, 1).first;
+					if (changed == 2)
 					{
 						std::ofstream file(path);
 						for (auto& d : default_defines)
@@ -1723,6 +1774,12 @@ void View_Inspector::on_draw()
 						spec.force_print_bar = true;
 						serialize_text(*ser_ui, sel_ref_obj, file, "", spec);
 						file.close();
+					}
+					if (ImGui::Button("Test Compile"))
+					{
+						auto pl = graphics::GraphicsPipeline::get(path, {});
+						if (pl)
+							graphics::GraphicsPipeline::release(pl);
 					}
 					if (ImGui::Button("Open Sandbox"))
 					{
@@ -1780,10 +1837,4 @@ target_include_directories({0} PUBLIC "${{GLM_INCLUDE_DIR}}")
 	}
 
 	selection_changed = false;
-}
-
-void View_Inspector::clear_typeinfos()
-{
-	com_udts_map.clear();
-	com_udts_list.clear();
 }

@@ -73,7 +73,7 @@ void View_Hierarchy::on_draw()
 		auto read_drop_entity = [e]()->EntityPtr {
 			if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
 			{
-				if (get_prefab_instance(e))
+				if (get_root_prefab_instance(e))
 				{
 					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 					return nullptr;
@@ -81,7 +81,7 @@ void View_Hierarchy::on_draw()
 				else
 				{
 					auto e_src = *(EntityPtr*)payload->Data;
-					if (!e_src->prefab_instance && get_prefab_instance(e_src))
+					if (!e_src->prefab_instance && get_root_prefab_instance(e_src))
 					{
 						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 						return nullptr;
@@ -95,7 +95,7 @@ void View_Hierarchy::on_draw()
 		auto read_drop_file = [e]()->EntityPtr {
 			if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
 			{
-				if (get_prefab_instance(e))
+				if (get_root_prefab_instance(e))
 				{
 					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 					return nullptr;

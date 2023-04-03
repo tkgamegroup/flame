@@ -51,24 +51,24 @@ namespace flame
 				{
 					if (cmd.idx_cnt > 0)
 					{
-						if (cmd.sdf_size > 0.f)
+						switch (cmd.type)
 						{
-							if (last_pl != pl_sdf)
-							{
-								cb->bind_pipeline(pl_sdf);
-								last_pl = pl_sdf;
-							}
-							prm.pc.mark_dirty_c("sdf_screen_pxrange"_h).as<float>() = cmd.sdf_size / 32.f * 4.f;
-							prm.pc.mark_dirty_c("sdf_pxsize"_h).as<float>() = 1.f / (cmd.sdf_size / 32.f) / 4.f;
-							prm.push_constant(cb);
-						}
-						else
-						{
+						case DrawCmd::DrawBmp:
 							if (last_pl != pl)
 							{
 								cb->bind_pipeline(pl);
 								last_pl = pl;
 							}
+							break;
+						case DrawCmd::DrawSdf:
+							if (last_pl != pl_sdf)
+							{
+								cb->bind_pipeline(pl_sdf);
+								last_pl = pl_sdf;
+							}
+							prm.pc.mark_dirty_c("data"_h).as<vec4>() = vec4(1.f / cmd.data.sdf.scale / 4.f, cmd.data.sdf.thickness, cmd.data.sdf.border, 0.f);
+							prm.push_constant(cb);
+							break;
 						}
 						cb->bind_descriptor_set(0, cmd.ds);
 						cb->draw_indexed(cmd.idx_cnt, idx_off, 0, 1, 0);
@@ -152,14 +152,30 @@ namespace flame
 			draw_cmds.emplace_back().ds = main_ds.get();
 		}
 
-		CanvasPrivate::DrawCmd& CanvasPrivate::get_cmd(DescriptorSetPtr ds, float sdf_size)
+		CanvasPrivate::DrawCmd& CanvasPrivate::get_bmp_cmd(DescriptorSetPtr ds)
 		{
 			auto& cmd = draw_cmds.back();
-			if (cmd.ds == ds && cmd.sdf_size == sdf_size)
+			if (cmd.ds == ds && cmd.type == DrawCmd::DrawBmp)
 				return cmd;
 			auto& new_cmd = draw_cmds.emplace_back();
 			new_cmd.ds = ds;
-			new_cmd.sdf_size = sdf_size;
+			return new_cmd;
+		}
+
+		CanvasPrivate::DrawCmd& CanvasPrivate::get_sdf_cmd(DescriptorSetPtr ds, float sdf_scale, float thickness, float border)
+		{
+			auto& cmd = draw_cmds.back();
+			if (cmd.ds == ds && cmd.type == DrawCmd::DrawSdf &&
+				cmd.data.sdf.scale == sdf_scale &&
+				cmd.data.sdf.thickness == thickness &&
+				cmd.data.sdf.border == border)
+				return cmd;
+			auto& new_cmd = draw_cmds.emplace_back();
+			new_cmd.type = DrawCmd::DrawSdf;
+			new_cmd.ds = ds;
+			new_cmd.data.sdf.scale = sdf_scale;
+			new_cmd.data.sdf.thickness = thickness;
+			new_cmd.data.sdf.border = border;
 			return new_cmd;
 		}
 
@@ -305,14 +321,14 @@ namespace flame
 
 		void CanvasPrivate::stroke(float thickness, const cvec4& col, bool closed)
 		{
-			auto& cmd = get_cmd(main_ds.get());
+			auto& cmd = get_bmp_cmd(main_ds.get());
 			stroke_path(cmd, thickness, col, closed);
 			path.clear();
 		}
 
 		void CanvasPrivate::fill(const cvec4& col)
 		{
-			auto& cmd = get_cmd(main_ds.get());
+			auto& cmd = get_bmp_cmd(main_ds.get());
 			fill_path(cmd, col);
 			path.clear();
 		}
@@ -329,14 +345,16 @@ namespace flame
 			fill(col);
 		}
 
-		void CanvasPrivate::add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col)
+		void CanvasPrivate::add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness, float border)
 		{
 			font_atlas = font_atlas ? font_atlas : main_font_atlas;
-			auto& cmd = get_cmd(font_atlas == main_font_atlas ? main_ds.get() : font_atlas->view->get_shader_read_src(nullptr),
-				font_atlas->type == FontAtlasSDF ? font_size : 0.f);
+			thickness = clamp(thickness, -1.f, +1.f);
+			border = clamp(border, 0.f, 0.25f);
 			auto scale = font_atlas->get_scale();
 			if (scale != 1.f)
 				scale *= font_size;
+			auto ds = font_atlas == main_font_atlas ? main_ds.get() : font_atlas->view->get_shader_read_src(nullptr);
+			auto& cmd = font_atlas->type == FontAtlasBitmap ? get_bmp_cmd(ds) : get_sdf_cmd(ds, scale, thickness, border);
 
 			auto p = pos;
 			for (auto ch : str)
@@ -360,7 +378,7 @@ namespace flame
 
 		void CanvasPrivate::add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs)
 		{
-			auto& cmd = get_cmd(view->get_shader_read_src(nullptr));
+			auto& cmd = get_bmp_cmd(view->get_shader_read_src(nullptr));
 
 			path_rect(a, b);
 			fill_path(cmd, cvec4(255));

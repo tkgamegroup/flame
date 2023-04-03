@@ -21,9 +21,28 @@ namespace flame
 
 			struct DrawCmd
 			{
+				enum Type
+				{
+					DrawBmp,
+					DrawSdf
+				};
+
+				Type type = DrawBmp;
 				uint idx_cnt = 0;
-				DescriptorSetPtr ds = nullptr;
-				float sdf_size = 0.f;
+				DescriptorSetPtr ds;
+
+				union
+				{
+					struct
+					{
+					}bmp;
+					struct
+					{
+						float scale;
+						float thickness;
+						float border;
+					}sdf;
+				}data;
 			};
 
 			GraphicsPipelinePtr pl = nullptr;
@@ -44,7 +63,8 @@ namespace flame
 			~CanvasPrivate();
 			void set_targets(std::span<ImageViewPtr> targets);
 			void reset();
-			DrawCmd& get_cmd(DescriptorSetPtr ds, float sdf_size = 0.f);
+			DrawCmd& get_bmp_cmd(DescriptorSetPtr ds);
+			DrawCmd& get_sdf_cmd(DescriptorSetPtr ds, float sdf_scale, float thickness, float border);
 
 			void path_rect(const vec2& a, const vec2& b);
 			void stroke_path(DrawCmd& cmd, float thickness, const cvec4& col, bool closed);
@@ -54,7 +74,7 @@ namespace flame
 
 			void add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col) override;
 			void add_rect_filled(const vec2& a, const vec2& b, const cvec4& col) override;
-			void add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col) override;
+			void add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness, float border) override;
 			void add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs) override;
 		};
 	}

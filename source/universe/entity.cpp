@@ -362,7 +362,8 @@ namespace flame
 			{
 				if (a.var_idx != -1)
 				{
-					if (a.var()->metas.get("requires"_h) || a.var()->metas.get("auto_requires"_h))
+					auto& metas = a.var()->metas;
+					if (metas.get("requires"_h) || metas.get("auto_requires"_h))
 						continue;
 				}
 				auto v = a.get_value(c.get());
@@ -387,7 +388,7 @@ namespace flame
 		return nullptr;
 	}
 
-	bool get_modification_target(const std::string& target, EntityPtr e, void*& obj, const Attribute*& attr)
+	static bool get_modification_target(const std::string& target, EntityPtr e, void*& obj, const Attribute*& attr)
 	{
 		auto sp = SUS::split(target, '|');
 		GUID guid;
@@ -437,7 +438,7 @@ namespace flame
 		return true;
 	}
 
-	bool EntityPrivate::load(const std::filesystem::path& _filename)
+	bool EntityPrivate::load(const std::filesystem::path& _filename, bool no_children)
 	{
 		pugi::xml_document doc;
 		pugi::xml_node doc_root;
@@ -478,42 +479,51 @@ namespace flame
 				printf("cannot find component with name %s\n", name.c_str());
 			return INVALID_POINTER;
 		};
-		spec.typed_obj_delegates[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
-			auto e = new EntityPrivate();
+		if (no_children)
+		{
+			spec.typed_obj_delegates[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
+				return INVALID_POINTER;
+			};
+		}
+		else
+		{
+			spec.typed_obj_delegates[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
+				auto e = new EntityPrivate();
 
-			if (auto a = src.attribute("filename"); a)
-			{
-				auto path = Path::combine(base_path, a.value());
-				e->load(path);
-				new PrefabInstance(e, path);
-
-				auto n_mod = src.child("modifications");
-				for (auto n : n_mod)
+				if (auto a = src.attribute("filename"); a)
 				{
-					std::string target = n.attribute("target").value();
+					auto path = Path::combine(base_path, a.value());
+					e->load(path, false);
+					new PrefabInstance(e, path);
 
-					void* obj;
-					const Attribute* attr;
-					if (!get_modification_target(target, e, obj, attr))
-						continue;
+					auto n_mod = src.child("modifications");
+					for (auto n : n_mod)
+					{
+						std::string target = n.attribute("target").value();
 
-					unserialize_xml(*attr->ui, attr->var_off(), attr->type, "value", 0, attr->setter_idx, n, obj);
-					e->prefab_instance->modifications.push_back(target);
+						void* obj;
+						const Attribute* attr;
+						if (!get_modification_target(target, e, obj, attr))
+							continue;
+
+						unserialize_xml(*attr->ui, attr->var_off(), attr->type, "value", 0, attr->setter_idx, n, obj);
+						e->prefab_instance->modifications.push_back(target);
+					}
 				}
-			}
-			else
-			{
-				if (auto a = src.attribute("file_id"); a)
-					e->file_id.from_string(a.value());
 				else
-					e->file_id = e->instance_id;
-				unserialize_xml(src, e, spec);
-			}
+				{
+					if (auto a = src.attribute("file_id"); a)
+						e->file_id.from_string(a.value());
+					else
+						e->file_id = e->instance_id;
+					unserialize_xml(src, e, spec);
+				}
 
-			((EntityPtr)dst_o)->add_child(e);
+				((EntityPtr)dst_o)->add_child(e);
 
-			return INVALID_POINTER;
-		};
+				return INVALID_POINTER;
+			};
+		}
 
 		if (auto a = doc_root.attribute("file_id"); a)
 			file_id.from_string(a.value());
@@ -599,7 +609,7 @@ namespace flame
 		EntityPtr operator()(const std::filesystem::path& filename) override
 		{
 			auto ret = new EntityPrivate();
-			ret->load(filename);
+			ret->load(filename, false);
 			return ret;
 		}
 	}Entity_create;

@@ -9,7 +9,7 @@ namespace flame
 	{
 		element->drawers.add([this](graphics::CanvasPtr canvas) {
 			if (!text.empty() && col.a > 0)
-				canvas->add_text(font_atlas, font_size, element->global_pos0(), text, col);
+				canvas->add_text(font_atlas, font_size, element->global_pos0(), text, col, thickness, border);
 		});
 	}
 
@@ -59,6 +59,24 @@ namespace flame
 		get_font_atlas();
 		element->mark_drawing_dirty();
 		data_changed("sdf"_h);
+	}
+
+	void cTextPrivate::set_thickness(float _thickness)
+	{
+		if (thickness == _thickness)
+			return;
+		thickness = _thickness;
+		element->mark_drawing_dirty();
+		data_changed("thickness"_h);
+	}
+
+	void cTextPrivate::set_border(float _border)
+	{
+		if (border == _border)
+			return;
+		border = _border;
+		element->mark_drawing_dirty();
+		data_changed("border"_h);
 	}
 
 	void cTextPrivate::get_font_atlas()
