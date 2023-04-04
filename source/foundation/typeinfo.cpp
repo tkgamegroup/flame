@@ -47,6 +47,9 @@ namespace flame
 		case TagT:
 			t = new TypeInfo_Tuple(name, db);
 			break;
+		case TagO:
+			t = new TypeInfo_VirtualUdt(name, db);
+			break;
 		case TagPE:
 			t = new TypeInfo_PointerOfEnum(name, db);
 			break;

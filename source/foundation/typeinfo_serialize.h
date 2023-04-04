@@ -120,18 +120,7 @@ namespace flame
 			break;
 		case TagU:
 			if (auto ui = type->retrive_ui(); ui)
-			{
-				if (ui->name.starts_with("flame::VirtualUdt"))
-				{
-					auto& vo = *(VirtualUdt<int>*)((char*)src + offset);
-					auto n = dst.append_child(name.c_str());
-					n.append_attribute("type").set_value(vo.type ? vo.type->name.c_str() : "");
-					if (vo.data)
-						serialize_xml(*vo.type->retrive_ui(), vo.data, n, spec);
-				}
-				else
-					serialize_xml(*ui, (char*)src + offset, dst.append_child(name.c_str()), spec);
-			}
+				serialize_xml(*ui, (char*)src + offset, dst.append_child(name.c_str()), spec);
 			break;
 		case TagR:
 			if (auto ti = (TypeInfo_Pair*)type; ti)
@@ -153,6 +142,15 @@ namespace flame
 					i++;
 				}
 			}
+			break;
+		case TagO:
+		{
+			auto& vo = *(VirtualUdt<int>*)((char*)src + offset);
+			auto n = dst.append_child(name.c_str());
+			n.append_attribute("type").set_value(vo.type ? vo.type->name.c_str() : "");
+			if (vo.data)
+				serialize_xml(*vo.type->retrive_ui(), vo.data, n, spec);
+		}
 			break;
 		case TagPU:
 			if (auto it = spec.typed_obj_delegates.find(type); it != spec.typed_obj_delegates.end())
@@ -355,21 +353,24 @@ namespace flame
 				if (auto ui = type->retrive_ui(); ui)
 				{
 					if (setter_idx == -1)
+						unserialize_xml(*ui, c, (char*)dst + offset, spec);
+				}
+			}
+			break;
+		case TagO:
+			if (auto c = src.child(name.c_str()); c)
+			{
+				if (setter_idx == -1)
+				{
+					auto& vo = *(VirtualUdt<int>*)((char*)dst + offset);
+					if (auto a = c.attribute("type"); a)
 					{
-						if (ui->name.starts_with("flame::VirtualUdt"))
+						if (auto ui = find_udt(sh(a.value())); ui)
 						{
-							auto& vo = *(VirtualUdt<int>*)((char*)dst + offset);
-							if (auto a = c.attribute("type"); a)
-							{
-								if (auto ui = find_udt(sh(a.value())); ui)
-								{
-									vo.create(ui);
-									unserialize_xml(*ui, c, vo.data, spec);
-								}
-							}
+							vo.type = TypeInfo::get(TagU, ui->name, *ui->db);
+							vo.create();
+							unserialize_xml(*ui, c, vo.data, spec);
 						}
-						else
-							unserialize_xml(*ui, c, (char*)dst + offset, spec);
 					}
 				}
 			}

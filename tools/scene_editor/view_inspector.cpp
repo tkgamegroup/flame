@@ -581,63 +581,64 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			auto ti = (TypeInfo_Udt*)type;
 			auto ui = ti->ui;
 			editing_objects.push(EditingObjects());
-			if (ui->name.starts_with("flame::VirtualUdt"))
+
+			voidptr ptr = (char*)objs[0] + offset;
+			if (manipulate_udt(*ui, &ptr).first)
 			{
-				auto& vo = *(VirtualUdt<int>*)((char*)objs[0] + offset);
-				static std::vector<UdtInfo*> available_types;
-				ImGui::Text("[%s]", vo.type ? vo.type->name.c_str() : "");
-				ImGui::SameLine();
-				if (ImGui::Button("T"))
+				changed = true;
+				app.prefab_unsaved = true;
+			}
+
+			editing_objects.pop();
+			ImGui::TreePop();
+		}
+		break;
+	case TagO:
+		if (num == 1 && ImGui::TreeNode(display_name.c_str()))
+		{
+			editing_objects.push(EditingObjects());
+
+			auto& vo = *(VirtualUdt<int>*)((char*)objs[0] + offset);
+			static std::vector<UdtInfo*> available_types;
+			ImGui::Text("[%s]", vo.type ? vo.type->name.c_str() : "");
+			ImGui::SameLine();
+			if (ImGui::Button("T"))
+			{
+				ImGui::OpenPopup("select_type");
+				available_types.clear();
+				auto base_name = type->name;
+				for (auto& [_, ui] : tidb.udts)
 				{
-					ImGui::OpenPopup("select_type");
-					available_types.clear();
-					static std::regex reg(R"(\<(\w+)\>$)");
-					std::smatch res;
-					std::regex_search(ui->name, res, reg);
-					if (res.size() > 1)
-					{
-						auto base_name = res[1].str();
-						for (auto& [_, ui] : tidb.udts)
-						{
-							if (ui.base_class_name == base_name)
-								available_types.push_back(&ui);
-						}
-					}
+					if (ui.base_class_name == base_name)
+						available_types.push_back(&ui);
 				}
-				if (ImGui::BeginPopup("select_type"))
+			}
+			if (ImGui::BeginPopup("select_type"))
+			{
+				for (auto ui : available_types)
 				{
-					for (auto ui : available_types)
+					if (ImGui::Selectable(ui->name.c_str()))
 					{
-						if (ImGui::Selectable(ui->name.c_str()))
-						{
-							if (vo.data)
-								vo.destroy();
-							vo.create(ui);
-							changed = true;
-							app.prefab_unsaved = true;
-						}
-					}
-					ImGui::EndPopup();
-				}
-				if (vo.data)
-				{
-					voidptr ptr = vo.data;
-					if (manipulate_udt(*vo.type->retrive_ui(), &ptr).first)
-					{
+						if (vo.data)
+							vo.destroy();
+						vo.type = TypeInfo::get(TagU, ui->name, *ui->db);
+						vo.create();
 						changed = true;
 						app.prefab_unsaved = true;
 					}
 				}
+				ImGui::EndPopup();
 			}
-			else
+			if (vo.data)
 			{
-				voidptr ptr = (char*)objs[0] + offset;
-				if (manipulate_udt(*ui, &ptr).first)
+				voidptr ptr = vo.data;
+				if (manipulate_udt(*vo.type->retrive_ui(), &ptr).first)
 				{
 					changed = true;
 					app.prefab_unsaved = true;
 				}
 			}
+
 			editing_objects.pop();
 			ImGui::TreePop();
 		}

@@ -2314,7 +2314,6 @@ namespace flame
 		}
 	};
 
-
 	struct TypeInfo_VirtualUdt : TypeInfo
 	{
 		TypeInfo_VirtualUdt(std::string_view base_name, TypeInfoDataBase& db) :
@@ -2322,29 +2321,9 @@ namespace flame
 		{
 		}
 
-		void* create(void* p = nullptr) const override
-		{
-			if (!p)
-				return nullptr;
-			auto& vo = *(VirtualUdt<int>*)p;
-			assert(vo.type && vo.type->tag == TagU);
-			vo.create();
-		}
-		void destroy(void* p, bool free_memory = true) const override
-		{
-			auto& vo = *(VirtualUdt<int>*)p;
-			vo.destroy();
-			if (free_memory)
-				delete &vo;
-		}
-		void copy(void* dst, const void* src) const override
-		{
-			auto& dvo = *(VirtualUdt<int>*)dst;
-			auto& svo = *(VirtualUdt<int>*)src;
-			dvo.destroy();
-			dvo.type = svo.type;
-			dvo.create();
-		}
+		void* create(void* p = nullptr) const override;
+		void destroy(void* p, bool free_memory = true) const override;
+		void copy(void* dst, const void* src) const override;
 	};
 
 	struct TypeInfo_PointerOfEnum : TypeInfo
@@ -2882,12 +2861,38 @@ namespace flame
 			assert(!data && type && type->tag == TagU);
 			data = (char*)type->retrive_ui()->create_object();
 		}
-
-		void create(UdtInfo* ui)
-		{
-			assert(!data);
-			type = TypeInfo::get(TagU, ui->name, *ui->db);
-			data = (char*)ui->create_object();
-		}
 	};
+
+	inline void* TypeInfo_VirtualUdt::create(void* p) const
+	{
+		if (!p)
+			return nullptr;
+		auto& vo = *(VirtualUdt<int>*)p;
+		assert(vo.type && vo.type->tag == TagU);
+		vo.create();
+	}
+
+	inline void TypeInfo_VirtualUdt::destroy(void* p, bool free_memory) const
+	{
+		auto& vo = *(VirtualUdt<int>*)p;
+		if (vo.type && vo.data)
+			vo.destroy();
+		if (free_memory)
+			delete& vo;
+	}
+
+	inline void TypeInfo_VirtualUdt::copy(void* dst, const void* src) const
+	{
+		auto& dvo = *(VirtualUdt<int>*)dst;
+		auto& svo = *(VirtualUdt<int>*)src;
+		if (dvo.type && dvo.data)
+			dvo.destroy();
+		auto type = svo.type;
+		dvo.type = type;
+		if (type)
+		{
+			dvo.create();
+			type->retrive_ui()->copy_object(dvo.data, svo.data);
+		}
+	}
 }

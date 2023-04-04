@@ -18,6 +18,7 @@ TypeTag parse_vector(std::string& name)
 	auto is_pointer = false;
 	auto is_pair = false;
 	auto is_tuple = false;
+	auto is_virtual_udt = false;
 	if (SUS::strip_head_if(name, "std::unique_ptr<"))
 	{
 		is_pointer = true;
@@ -186,6 +187,11 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 			{
 				name = w2s(pwname);
 				return TypeInfo::get(parse_vector(name), name, db);
+			}
+			else if (SUS::strip_head_if(name, "flame::VirtualUdt<"))
+			{
+				name.pop_back();
+				return TypeInfo::get(TagO, name, db);
 			}
 			return TypeInfo::get(TagU, name, db);
 		}
