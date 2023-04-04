@@ -11,6 +11,7 @@ namespace flame
 	*	U - Udt
 	*	R - std::pair
 	*	T - std::tuple
+	*	O - Virtual Udt
 	*	A - Array
 	*	P - Pointer
 	*	V - Vector
@@ -23,6 +24,7 @@ namespace flame
 		TagU,
 		TagR,
 		TagT,
+		TagO,
 		TagPE,
 		TagPD,
 		TagPU,
@@ -2312,6 +2314,39 @@ namespace flame
 		}
 	};
 
+
+	struct TypeInfo_VirtualUdt : TypeInfo
+	{
+		TypeInfo_VirtualUdt(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagO, base_name, 0)
+		{
+		}
+
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return nullptr;
+			auto& vo = *(VirtualUdt<int>*)p;
+			assert(vo.type && vo.type->tag == TagU);
+			vo.create();
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			auto& vo = *(VirtualUdt<int>*)p;
+			vo.destroy();
+			if (free_memory)
+				delete &vo;
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			auto& dvo = *(VirtualUdt<int>*)dst;
+			auto& svo = *(VirtualUdt<int>*)src;
+			dvo.destroy();
+			dvo.type = svo.type;
+			dvo.create();
+		}
+	};
+
 	struct TypeInfo_PointerOfEnum : TypeInfo
 	{
 		TypeInfo_Enum* ti = nullptr;
@@ -2683,7 +2718,7 @@ namespace flame
 		}
 
 		TypeInfo* get_wrapped() const override
-		{ 
+		{
 			return ti;
 		}
 	};
@@ -2766,8 +2801,8 @@ namespace flame
 
 	struct VirtualObject
 	{
-		TypeInfo*	type = nullptr;
-		char*		data = nullptr;
+		TypeInfo* type = nullptr;
+		char* data = nullptr;
 
 		template<class T>
 		T& as()
@@ -2840,6 +2875,12 @@ namespace flame
 		BaseType& value()
 		{
 			return *(BaseType*)data;
+		}
+
+		void create()
+		{
+			assert(!data && type && type->tag == TagU);
+			data = (char*)type->retrive_ui()->create_object();
 		}
 
 		void create(UdtInfo* ui)

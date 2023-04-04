@@ -613,6 +613,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 							if (vo.data)
 								vo.destroy();
 							vo.create(ui);
+							changed = true;
 							app.prefab_unsaved = true;
 						}
 					}
@@ -1057,9 +1058,9 @@ struct EditingEntities
 			ImGui::InputText("Prefab", str.data(), ImGuiInputTextFlags_ReadOnly);
 			ImGui::SameLine();
 			if (ImGui::Button("P"))
-				selection.select(Path::get(path), "inspector"_h);
+				selection.select(Path::get(path), "app"_h);
 			ImGui::SameLine();
-			ImGui::Button("Modifications");
+			ImGui::Button(("Modifications " + graphics::FontAtlas::icon_s("angle-down"_h)).c_str());
 			if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft))
 			{
 				for (auto& m : ins->modifications)
@@ -1068,23 +1069,33 @@ struct EditingEntities
 				{
 					if (ImGui::Button("Seize Modifications and Apply"))
 					{
-						ImGui::OpenYesNoDialog("Are you sure to seize modificaitons and apply all?", "This action cannot be redo\n"
+						std::string str;
+						auto& root_ins_mods = get_root_prefab_instance(entity)->modifications;
+						std::vector<int> seize_indices;
+						uint off = 0;
+						for (auto i = 0; i < root_ins_mods.size(); i++)
+						{
+							auto sp = SUS::split(root_ins_mods[i], '|');
+							GUID guid;
+							guid.from_string(sp.front());
+							if (entity->find_with_file_id(guid))
+							{
+								str += root_ins_mods[i] + "\n";
+								seize_indices.push_back(i - off);
+								off++;
+							}
+						}
+						auto prompt = std::format("This action cannot be redo\n"
 							"This action will first filter modificaions that their targets are in this prefab, \n"
-							"seizes them from the prefab root, and then apply them to this prefab", [entity, ins](bool yes) {
+							"and then seizes them from the prefab root, finally apply them to this prefab\n\n"
+							"{} modifications will be seized and apply:\n{}", (int)seize_indices.size(), str);
+
+						ImGui::OpenYesNoDialog("Are you sure to seize modificaitons and apply?", prompt, [entity, ins, &root_ins_mods, seize_indices](bool yes) {
 								if (yes)
 								{
-									auto& root_ins_mods = get_root_prefab_instance(entity)->modifications;
-									for (auto it = root_ins_mods.begin(); it != root_ins_mods.end();)
-									{
-										auto sp = SUS::split(*it, '|');
-										GUID guid;
-										guid.from_string(sp.front());
-										if (entity->find_with_instance_id(guid))
-											it = root_ins_mods.erase(it);
-										else
-											it++;
-									}
-									entity->save(Path::get(ins->filename));
+									for (auto i : seize_indices)
+										root_ins_mods.erase(root_ins_mods.begin() + i);
+									entity->save(Path::get(ins->filename));   
 									ins->modifications.clear();
 								}
 						});
@@ -1149,7 +1160,7 @@ struct EditingEntities
 			if (ImGui::Button("P"))
 			{
 				if (!ui.source_file.empty())
-					selection.select(ui.source_file, "inspector"_h);
+					selection.select(ui.source_file, "app"_h);
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("..."))
@@ -1507,7 +1518,10 @@ void View_Inspector::on_draw()
 	static void* sel_ref_obj = nullptr;
 	static void(*sel_ref_deletor)(void*) = nullptr;
 	static auto sel_ref_info = new char[1024];
-	if (selection_changed)
+	auto last_selection_changed = selection_changed;
+	selection_changed = false;
+
+	if (last_selection_changed)
 	{
 		staging_vectors.clear();
 		editing_entities.refresh();
@@ -1572,7 +1586,7 @@ void View_Inspector::on_draw()
 				};
 				auto& info = *(ImageRefInfo*)sel_ref_info;
 
-				if (selection_changed)
+				if (last_selection_changed)
 				{
 					auto image = graphics::Image::get(path);
 					if (image)
@@ -1624,7 +1638,7 @@ void View_Inspector::on_draw()
 			}
 			else if (ext == L".fmat")
 			{
-				if (selection_changed)
+				if (last_selection_changed)
 				{
 					auto material = graphics::Material::get(path);
 					if (material)
@@ -1653,7 +1667,7 @@ void View_Inspector::on_draw()
 			}
 			else if (ext == L".fmod")
 			{
-				if (selection_changed)
+				if (last_selection_changed)
 				{
 					auto model = graphics::Model::get(path);
 					if (model)
@@ -1688,7 +1702,7 @@ void View_Inspector::on_draw()
 			}
 			else if (ext == L".fani")
 			{
-				if (selection_changed)
+				if (last_selection_changed)
 				{
 					auto animation = graphics::Animation::get(path);
 					if (animation)
@@ -1733,7 +1747,7 @@ void View_Inspector::on_draw()
 			}
 			else if (ext == L".prefab")
 			{
-				if (selection_changed)
+				if (last_selection_changed)
 				{
 					sel_ref_obj = Entity::create();
 					sel_ref_deletor = [](void* obj) {
@@ -1757,7 +1771,7 @@ void View_Inspector::on_draw()
 				static UdtInfo* ser_ui = TypeInfo::get<graphics::PipelineInfo>()->retrive_ui()->transform_to_serializable();
 				static std::vector<std::pair<std::string, std::string>> default_defines;
 
-				if (selection_changed)
+				if (last_selection_changed)
 				{
 					sel_ref_obj = ser_ui->create_object();
 					sel_ref_deletor = [](void* obj) {
@@ -1848,6 +1862,4 @@ target_include_directories({0} PUBLIC "${{GLM_INCLUDE_DIR}}")
 	}
 		break;
 	}
-
-	selection_changed = false;
 }

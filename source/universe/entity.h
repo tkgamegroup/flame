@@ -189,7 +189,20 @@ namespace flame
 				return (EntityPtr)this;
 			for (auto& c : children)
 			{
-				auto res = ((Entity*)c.get())->find_with_instance_id(instance_id);
+				auto res = ((Entity*)c.get())->find_with_instance_id(guid);
+				if (res)
+					return res;
+			}
+			return nullptr;
+		}
+
+		inline EntityPtr find_with_file_id(const GUID& guid) const
+		{
+			if (file_id == guid)
+				return (EntityPtr)this;
+			for (auto& c : children)
+			{
+				auto res = ((Entity*)c.get())->find_with_file_id(guid);
 				if (res)
 					return res;
 			}

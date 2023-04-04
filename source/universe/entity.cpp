@@ -375,25 +375,12 @@ namespace flame
 		return ret;
 	}
 
-	static EntityPtr find_with_file_id(EntityPtr e, const GUID& guid)
-	{
-		if (e->file_id == guid)
-			return e;
-		for (auto& c : e->children)
-		{
-			auto ret = find_with_file_id(c.get(), guid);
-			if (ret)
-				return ret;
-		}
-		return nullptr;
-	}
-
 	static bool get_modification_target(const std::string& target, EntityPtr e, void*& obj, const Attribute*& attr)
 	{
 		auto sp = SUS::split(target, '|');
 		GUID guid;
 		guid.from_string(sp.front());
-		auto te = find_with_file_id(e, guid);
+		auto te = e->find_with_file_id(guid);
 		if (!te)
 		{
 			printf("prefab modification: cannot find target: %s\n", sp.front().c_str());
