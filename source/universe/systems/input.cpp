@@ -48,6 +48,8 @@ namespace flame
 			kbtn[i] = kbtn_temp[i];
 		}
 
+		mouse_used = false;
+		key_used = false;
 		if (auto first_element = sScene::instance()->first_element; first_element)
 		{
 			if (mpressed(Mouse_Left))
@@ -67,10 +69,11 @@ namespace flame
 					return true;
 				});
 
-				if (target)
+				if (target && target->entity != first_element)
 				{
 					if (auto receiver = target->entity->get_component_t<cReceiverT>(); receiver)
 						receiver->click_listeners.call();
+					mouse_used = true;
 				}
 			}
 		}

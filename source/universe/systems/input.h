@@ -15,6 +15,9 @@ namespace flame
 		bool kbtn[KeyboardKey_Count] = {};
 		float kbtn_duration[KeyboardKey_Count] = {};
 
+		bool mouse_used = false;
+		bool key_used = false;
+
 		inline bool mpressed(MouseButton btn)
 		{
 			return mbtn[btn] && mbtn_duration[btn] == 0.f;
