@@ -49,17 +49,6 @@ namespace flame
 				graphics::Material::release(material);
 			material = _material;
 			material_res_id = material ? sRenderer::instance()->get_material_res(material, -1) : -1;
-
-			if (material_res_id != -1)
-			{
-				if (material->color_map != -1)
-				{
-					auto& res = sRenderer::instance()->get_material_res_info(material_res_id);
-					color_map_tiles = res.texs[material->color_map].second->tiles;
-				}
-				else
-					color_map_tiles = uvec2(1);
-			}
 		}
 		else if (_material)
 			graphics::Material::release(_material);
@@ -132,12 +121,13 @@ namespace flame
 							}
 							break;
 						}
-						if (color_map_tiles != uvec2(1))
+						if (texture_tiles != uvec2(1))
 						{
-							int n = (dst.time / src.time_max) * (color_map_tiles.x * color_map_tiles.y);
-							auto x = n % color_map_tiles.x;
-							auto y = n / color_map_tiles.y;
-							dst.uv = vec4(float(x) / color_map_tiles.x, float(y) / color_map_tiles.y, float(x + 1) / color_map_tiles.x, float(y + 1) / color_map_tiles.y);
+							auto n = texture_tiles.x * texture_tiles.y;
+							int i = texture_tiles_range.x + (dst.time / src.time_max) * ((texture_tiles_range.y == -1 ? n : texture_tiles_range.y) - texture_tiles_range.x);
+							auto x = i % texture_tiles.x;
+							auto y = i / texture_tiles.y;
+							dst.uv = vec4(float(x) / texture_tiles.x, float(y) / texture_tiles.y, float(x + 1) / texture_tiles.x, float(y + 1) / texture_tiles.y);
 						}
 						else
 							dst.uv = vec4(vec2(0.f), vec2(1.f));
@@ -187,21 +177,19 @@ namespace flame
 			{
 			case "Sphere"_h:
 				pt.vel = particle_speed > 0.f ? sphericalRand(particle_speed) : vec3(0.f);
+				if (emitt_offset > 0.f)
+					pt.pos = normalize(pt.vel) * emitt_offset;
 				break;
 			case "Pie"_h:
 				pt.vel = particle_speed > 0.f ? emitt_rotation_mat * dir_xz(linearRand(-emitt_angle, +emitt_angle)) * particle_speed : vec3(0.f);
+				if (emitt_offset > 0.f)
+					pt.pos = normalize(pt.vel) * emitt_offset;
 				break;
 			}
 			pt.rot = linearRand(0.f, 360.f);
 			pt.col = particle_col;
 			pt.time_max = particle_life_time;
-			if (particle_life_time_start > 0.f)
-			{
-				pt.time = pt.time_max - particle_life_time_start;
-				pt.pos = pt.vel * particle_life_time_start;
-			}
-			else
-				pt.time = pt.time_max;
+			pt.time = pt.time_max;
 			pt.rnd = linearRand(0.f, 1.f);
 		}
 

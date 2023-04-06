@@ -12,7 +12,6 @@ namespace flame
 		float emitt_timer = 0.f;
 		float accumulated_num = 0.f;
 		mat3 emitt_rotation_mat = mat3(1.f);
-		uvec2 color_map_tiles = uvec2(1);
 
 		~cParticleSystemPrivate();
 		void set_emitt_rotation(const vec3& r) override;

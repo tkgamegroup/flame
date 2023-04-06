@@ -807,18 +807,6 @@ namespace flame
 					}
 				}
 
-				auto ini_path = filename;
-				ini_path += L".ini";
-				if (std::filesystem::exists(ini_path))
-				{
-					auto ini_file = parse_ini_file(ini_path);
-					for (auto& e : ini_file.get_section_entries(""))
-					{
-						if (e.key_hash == "tiles"_h)
-							ret->tiles = s2t<2, uint>(e.values[0]);
-					}
-				}
-
 				ret->filename = filename;
 				ret->srgb = srgb;
 				ret->ref = 1;

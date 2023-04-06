@@ -108,7 +108,6 @@ namespace flame
 			SampleCount sample_count = SampleCount_1;
 			std::vector<Level> levels;
 			uint data_size;
-			uvec2 tiles = uvec2(1);
 
 			std::filesystem::path filename;
 			uint ref = 0;

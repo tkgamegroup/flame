@@ -23,9 +23,11 @@ namespace flame
 		cNodePtr node = nullptr;
 
 		// Reflect
-		float particle_life_time = 5.f;
+		uvec2 texture_tiles = uvec2(1U);
 		// Reflect
-		float particle_life_time_start = 0.f;
+		ivec2 texture_tiles_range = ivec2(0, -1);
+		// Reflect
+		float particle_life_time = 5.f;
 		// Reflect
 		float particle_speed = 5.f;
 		// Reflect
@@ -42,6 +44,8 @@ namespace flame
 		uint emitt_start_num = 0;
 		// Reflect
 		vec3 emitt_rotation = vec3(0.f);
+		// Reflect
+		float emitt_offset = 0.f;
 		// Reflect
 		virtual void set_emitt_rotation(const vec3& r) = 0;
 		// Reflect
