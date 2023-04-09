@@ -86,6 +86,9 @@ namespace flame
 		int register_volume_instance(int id) override;
 		void set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, graphics::ImageViewPtr data_map) override;
 
+		void draw_outline(uint type, uint res_id, uint ins_id, const cvec4& color, uint width, uint mode, bool new_group) override;
+		void draw_primitives(uint type, const vec3* points, uint count, const cvec4& color, bool depth_test) override;
+
 		void render(uint tar_idx, graphics::CommandBufferPtr cb) override;
 
 		void update() override;

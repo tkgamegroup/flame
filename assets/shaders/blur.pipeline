@@ -42,7 +42,7 @@ void main()
 	#elifdef VERTICAL
 		vec4 value = texture(img_src, i_uv + vec2(0, (i + pc.off) * pc.pxsz.y));
 	#endif
-	#ifdef LOCAL_MAX
+	#ifdef MAX
 		res = max(res, value);
 	#else
 		res += value * pc.weights[i];

@@ -1,5 +1,7 @@
 %rp=../color_depth.rp
 %pt=TriangleList
+%dt=true
+%dw=true
 layout
   plain.pll
 shaders
@@ -14,6 +16,10 @@ primitive_topology
   {pt}
 cull_mode
   None
+depth_test
+  dt
+depth_write
+  dw
 blend_options
   enable
     true

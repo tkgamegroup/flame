@@ -1,5 +1,7 @@
 %rp=../color.rp
 %pt=LineList
+%dt=true
+%dw=true
 layout
   plain.pll
 shaders
@@ -14,3 +16,7 @@ primitive_topology
   {pt}
 cull_mode
   None
+depth_test
+  dt
+depth_write
+  dw

@@ -93,29 +93,6 @@ namespace flame
 		std::vector<Ptc> ptcs;
 	};
 
-	struct PrimitiveDraw
-	{
-		uint type; // "LineList"_h, "LineStrip"_h, "TriangleList"_h
-		std::vector<vec3> points;
-		cvec4 color;
-
-		PrimitiveDraw(uint type, std::vector<vec3>&& points, const cvec4& color) :
-			type(type),
-			points(points),
-			color(color)
-		{
-		}
-
-		PrimitiveDraw(uint type, const vec3* _points, uint count, const cvec4& color) :
-			type(type),
-			color(color)
-		{
-			points.resize(count);
-			for (auto i = 0; i < count; i++)
-				points[i] = _points[i];
-		}
-	};
-
 	enum DrawPass
 	{
 		PassInstance,
@@ -123,8 +100,6 @@ namespace flame
 		PassGBuffer,
 		PassForward,
 		PassOcculder,
-		PassOutline,
-		PassPrimitive,
 		PassPickUp,
 		PassTransformFeedback
 	};
@@ -153,9 +128,6 @@ namespace flame
 		std::vector<SdfDraw>		sdfs;
 		std::vector<VolumeDraw>		volumes; // or marching cubes
 		std::vector<ParticleDraw>	particles;
-		std::vector<PrimitiveDraw>	primitives;
-
-		float line_width;
 
 		bool graphics_debug; // could use this to request a capture
 
@@ -170,9 +142,6 @@ namespace flame
 			sdfs.clear();
 			volumes.clear();
 			particles.clear();
-			primitives.clear();
-
-			line_width = 1.f;
 
 			graphics_debug = false;
 		}

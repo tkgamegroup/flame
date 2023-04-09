@@ -103,8 +103,10 @@ namespace flame
 	graphics::RenderpassPtr rp_gbuf = nullptr;
 	graphics::RenderpassPtr rp_dep = nullptr;
 	graphics::RenderpassPtr rp_col_dep = nullptr;
+	graphics::RenderpassPtr rp_primitive = nullptr;
 	std::unique_ptr<graphics::Framebuffer> fb_fwd;
 	std::unique_ptr<graphics::Framebuffer> fb_gbuf;
+	std::unique_ptr<graphics::Framebuffer> fb_primitive;
 	std::unique_ptr<graphics::Framebuffer> fb_pickup;
 	graphics::PipelineLayoutPtr pll_fwd = nullptr;
 	graphics::PipelineLayoutPtr pll_gbuf = nullptr;
@@ -163,8 +165,11 @@ namespace flame
 	graphics::GraphicsPipelinePtr pl_terrain_transform_feedback = nullptr;
 	graphics::GraphicsPipelinePtr pl_MC_transform_feedback = nullptr;
 	graphics::GraphicsPipelinePtr pl_line3d = nullptr;
+	graphics::GraphicsPipelinePtr pl_line3d_dep = nullptr;
 	graphics::GraphicsPipelinePtr pl_line_strip3d = nullptr;
+	graphics::GraphicsPipelinePtr pl_line_strip3d_dep = nullptr;
 	graphics::GraphicsPipelinePtr pl_triangle3d = nullptr;
+	graphics::GraphicsPipelinePtr pl_triangle3d_dep = nullptr;
 
 	std::unique_ptr<graphics::Fence> fence_pickup;
 
@@ -208,7 +213,27 @@ namespace flame
 	DirShadow dir_shadows[DirShadowMaxCount];
 	PointShadow pt_shadows[PtShadowMaxCount];
 
-	std::vector<PrimitiveDraw> debug_primitives;
+	struct OutlineDraw
+	{
+		uint type;
+		uint res_id;
+		uint ins_id;
+		cvec4 color;
+		uint width;
+		uint mode;
+		bool new_group;
+	};
+
+	struct PrimitiveDraw
+	{
+		uint type;
+		uint vtx_cnt;
+		cvec4 color;
+		bool depth_test;
+	};
+
+	std::vector<OutlineDraw> outline_draws;
+	std::vector<PrimitiveDraw> primitives_draws;
 	bool csm_debug_sig = false;
 
 	void combine_global_defines(std::vector<std::string>& defines)
@@ -452,6 +477,13 @@ namespace flame
 		rp_col_dep = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
 			{ "col_fmt=" + TypeInfo::serialize_t(graphics::Format_R8G8B8A8_UNORM),
 			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
+		rp_primitive = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
+			{ "col_fmt=" + TypeInfo::serialize_t(col_fmt),
+			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt),
+			  "col_load_op=" + TypeInfo::serialize_t(graphics::AttachmentLoadLoad),
+			  "dep_load_op=" + TypeInfo::serialize_t(graphics::AttachmentLoadLoad),
+			  "col_initia_layout=" + TypeInfo::serialize_t(graphics::ImageLayoutAttachment), 
+			  "dep_initia_layout=" + TypeInfo::serialize_t(graphics::ImageLayoutAttachment) });
 
 		auto graphics_device = graphics::Device::current();
 		static auto sp_trilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
@@ -552,9 +584,12 @@ namespace flame
 		mesh_reses.resize(1024);
 
 		prm_plain.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain.pll"), graphics::PipelineGraphics);
-		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", {});
-		pl_line_strip3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "pt=LineStrip" });
-		pl_triangle3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", {});
+		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dt=false", "dw=false" });
+		pl_line3d_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dw=false" });
+		pl_line_strip3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "pt=LineStrip", "dt=false", "dw=false" });
+		pl_line_strip3d_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "pt=LineStrip", "dw=false" });
+		pl_triangle3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", { "dt=false", "dw=false" });
+		pl_triangle3d_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", { "dw=false" });
 
 		pll_fwd = graphics::PipelineLayout::get(L"flame\\shaders\\forward.pll");
 		pll_gbuf = graphics::PipelineLayout::get(L"flame\\shaders\\gbuffer.pll");
@@ -606,8 +641,8 @@ namespace flame
 		pl_blur.add_pl("V"_h, { "frag:VERTICAL" });
 		pl_blur.add_pl("DEPTH_H"_h, { "rp=" + str(rp_dep), "frag:HORIZONTAL", "frag:DEPTH" });
 		pl_blur.add_pl("DEPTH_V"_h, { "rp=" + str(rp_dep), "frag:VERTICAL", "frag:DEPTH" });
-		pl_blur.add_pl("LOCAL_MAX_H"_h, { "frag:HORIZONTAL", "frag:LOCAL_MAX" });
-		pl_blur.add_pl("LOCAL_MAX_V"_h, { "frag:VERTICAL", "frag:LOCAL_MAX" });
+		pl_blur.add_pl("MAX_H"_h, { "frag:HORIZONTAL", "frag:MAX" });
+		pl_blur.add_pl("MAX_V"_h, { "frag:VERTICAL", "frag:MAX" });
 
 		pl_luma.init(L"flame\\shaders\\luma.pipeline", false);
 		pl_luma.add_pl("hist"_h, { "comp:HISTOGRAM_PASS" });
@@ -726,6 +761,7 @@ namespace flame
 
 		img_pickup.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
 		img_dep_pickup.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
+		fb_primitive.reset(graphics::Framebuffer::create(rp_primitive, { img_dst->get_view(), img_dep->get_view() }));
 		fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
 
 		final_layout = _final_layout;
@@ -1748,6 +1784,16 @@ namespace flame
 		ds_instance->update();
 	}
 
+	void sRendererPrivate::draw_outline(uint type, uint res_id, uint ins_id, const cvec4& color, uint width, uint mode, bool new_group)
+	{
+
+	}
+
+	void sRendererPrivate::draw_primitives(uint type, const vec3* points, uint count, const cvec4& color, bool depth_test)
+	{
+
+	}
+
 	static std::vector<std::vector<float>> gauss_blur_weights;
 	static float* get_gauss_blur_weights(uint len)
 	{
@@ -1969,7 +2015,7 @@ namespace flame
 						}
 						auto frustum_slice = Frustum::get_points(camera->proj_view_mat_inv, n, f);
 						if (csm_debug_sig)
-							debug_primitives.emplace_back("LineList"_h, Frustum::points_to_lines(frustum_slice.data()), cvec4(156, 127, 0, 255));
+							primitives_draws.emplace_back("LineList"_h, Frustum::points_to_lines(frustum_slice.data()), cvec4(156, 127, 0, 255));
 						auto b = AABB(frustum_slice, inverse(s.rot));
 						auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
 						auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
@@ -2048,15 +2094,15 @@ namespace flame
 						if (csm_debug_sig)
 						{
 							auto frustum_points = Frustum::get_points(inverse(proj_view));
-							debug_primitives.emplace_back("LineList"_h, Frustum::points_to_lines(frustum_points.data()), cvec4(255, 127, 0, 255));
+							primitives_draws.emplace_back("LineList"_h, Frustum::points_to_lines(frustum_points.data()), cvec4(255, 127, 0, 255));
 							auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
 							vec3 pts[2];
 							pts[0] = c; pts[1] = c + s.rot[0] * hf_xlen;
-							debug_primitives.emplace_back("LineList"_h, pts, 2, cvec4(255, 0, 0, 255));
+							primitives_draws.emplace_back("LineList"_h, pts, 2, cvec4(255, 0, 0, 255));
 							pts[0] = c; pts[1] = c + s.rot[1] * hf_ylen;
-							debug_primitives.emplace_back("LineList"_h, pts, 2, cvec4(0, 255, 0, 255));
+							primitives_draws.emplace_back("LineList"_h, pts, 2, cvec4(0, 255, 0, 255));
 							pts[0] = c; pts[1] = c + s.rot[2] * hf_zlen;
-							debug_primitives.emplace_back("LineList"_h, pts, 2, cvec4(0, 0, 255, 255));
+							primitives_draws.emplace_back("LineList"_h, pts, 2, cvec4(0, 0, 255, 255));
 						}
 					}
 
@@ -2454,22 +2500,24 @@ namespace flame
 		cb->begin_debug_label("Outline");
 		{
 			auto blur_pass = [&](int w = 3) {
+				auto len = w * 2 + 1;
 				pl_blur.prm.pc.child("off"_h).as<int>() = -w;
-				pl_blur.prm.pc.child("len"_h).as<int>() = w * 2 + 1;
+				pl_blur.prm.pc.child("len"_h).as<int>() = len;
 				pl_blur.prm.pc.child("pxsz"_h).as<vec2>() = 1.f / (vec2)img_back0->extent;
+				memcpy(pl_blur.prm.pc.child("weights"_h).data, get_gauss_blur_weights(len), sizeof(float) * len);
 				pl_blur.prm.pc.mark_dirty();
 				pl_blur.prm.push_constant(cb);
 
 				cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
 				cb->begin_renderpass(nullptr, img_back1->get_shader_write_dst());
-				cb->bind_pipeline(pl_blur.pls["LOCAL_MAX_H"_h]);
+				cb->bind_pipeline(pl_blur.pls["H"_h]);
 				cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 
 				cb->image_barrier(img_back1.get(), {}, graphics::ImageLayoutShaderReadOnly);
 				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
-				cb->bind_pipeline(pl_blur.pls["LOCAL_MAX_V"_h]);
+				cb->bind_pipeline(pl_blur.pls["V"_h]);
 				cb->bind_descriptor_set(0, img_back1->get_shader_read_src());
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
@@ -2590,8 +2638,8 @@ namespace flame
 			draw_data.reset(PassPrimitive, 0);
 			for (auto n : camera_culled_nodes)
 				n->drawers.call<DrawData&>(draw_data);
-			if (!debug_primitives.empty())
-				draw_data.primitives.insert(draw_data.primitives.end(), debug_primitives.begin(), debug_primitives.end());
+			if (!primitives_draws.empty())
+				draw_data.primitives.insert(draw_data.primitives.end(), primitives_draws.begin(), primitives_draws.end());
 			for (auto& l : draw_data.primitives)
 			{
 				for (auto& p : l.points)
@@ -2602,7 +2650,8 @@ namespace flame
 			}
 			buf_primitives.upload(cb);
 			buf_primitives.buf_top = buf_primitives.stag_top = 0;
-			cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+			cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutAttachment);
+			cb->begin_renderpass(nullptr, fb_primitive.get());
 			cb->bind_vertex_buffer(buf_primitives.buf.get(), 0);
 			cb->bind_pipeline_layout(prm_plain.pll);
 			prm_plain.pc.mark_dirty_c("mvp"_h).as<mat4>() = camera->proj_view_mat;
@@ -2903,7 +2952,7 @@ namespace flame
 	void sRendererPrivate::send_debug_string(const std::string& str)
 	{
 		if (str == "clear_debug")
-			debug_primitives.clear();
+			primitives_draws.clear();
 		else if (str == "sig_csm_debug")
 			csm_debug_sig = true;
 	}

@@ -452,6 +452,7 @@ void View_Scene::on_draw()
 			editor_node->drawers.add([this](DrawData& draw_data) {
 				if (draw_data.pass == PassOutline && show_outline)
 				{
+					draw_data.line_width = 1.f;
 					auto outline_node = [&](EntityPtr e, const cvec4& col) {
 						if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
 							draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, 0, col);
