@@ -215,13 +215,10 @@ namespace flame
 
 	struct OutlineDraw
 	{
-		uint type;
-		uint res_id;
-		uint ins_id;
+		std::vector<CommonDraw> draws;
 		cvec4 color;
 		uint width;
 		uint mode;
-		bool new_group;
 	};
 
 	struct PrimitiveDraw
@@ -232,9 +229,9 @@ namespace flame
 		bool depth_test;
 	};
 
-	std::vector<OutlineDraw> outline_draws;
+	std::vector<OutlineDraw> outlines_draws;
 	std::vector<PrimitiveDraw> primitives_draws;
-	bool csm_debug_sig = false;
+	bool csm_debug_flag = false;
 
 	void combine_global_defines(std::vector<std::string>& defines)
 	{
@@ -1784,14 +1781,27 @@ namespace flame
 		ds_instance->update();
 	}
 
-	void sRendererPrivate::draw_outline(uint type, uint res_id, uint ins_id, const cvec4& color, uint width, uint mode, bool new_group)
+	void sRendererPrivate::draw_outlines(const std::vector<CommonDraw>& draws, const cvec4& color, uint width, uint mode)
 	{
-
+		auto& od = outlines_draws.emplace_back();
+		od.draws = draws;
+		od.color = color;
+		od.width = width;
+		od.mode = mode;
 	}
 
 	void sRendererPrivate::draw_primitives(uint type, const vec3* points, uint count, const cvec4& color, bool depth_test)
 	{
-
+		auto& pd = primitives_draws.emplace_back();
+		pd.type = type;
+		pd.vtx_cnt = count;
+		pd.color = color;
+		pd.depth_test = depth_test;
+		for (auto i = 0; i < count; i++)
+		{
+			auto vertex = buf_primitives.add();
+			vertex.child("i_pos"_h).as<vec3>() = points[i];
+		}
 	}
 
 	static std::vector<std::vector<float>> gauss_blur_weights;
@@ -2014,8 +2024,11 @@ namespace flame
 							f = p.z / p.w;
 						}
 						auto frustum_slice = Frustum::get_points(camera->proj_view_mat_inv, n, f);
-						if (csm_debug_sig)
-							primitives_draws.emplace_back("LineList"_h, Frustum::points_to_lines(frustum_slice.data()), cvec4(156, 127, 0, 255));
+						if (csm_debug_flag)
+						{
+							auto pts = Frustum::points_to_lines(frustum_slice.data());
+							draw_primitives("LineList"_h, pts.data(), pts.size(), cvec4(156, 127, 0, 255), false);
+						}
 						auto b = AABB(frustum_slice, inverse(s.rot));
 						auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
 						auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
@@ -2091,18 +2104,19 @@ namespace flame
 						proj_view = proj * view;
 						mats[lv] = proj_view;
 						s.frustum = Frustum(inverse(proj_view));
-						if (csm_debug_sig)
+						if (csm_debug_flag)
 						{
 							auto frustum_points = Frustum::get_points(inverse(proj_view));
-							primitives_draws.emplace_back("LineList"_h, Frustum::points_to_lines(frustum_points.data()), cvec4(255, 127, 0, 255));
+							auto lines_points = Frustum::points_to_lines(frustum_points.data());
+							draw_primitives("LineList"_h, lines_points.data(), lines_points.size(), cvec4(255, 127, 0, 255), false);
 							auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
 							vec3 pts[2];
 							pts[0] = c; pts[1] = c + s.rot[0] * hf_xlen;
-							primitives_draws.emplace_back("LineList"_h, pts, 2, cvec4(255, 0, 0, 255));
+							draw_primitives("LineList"_h, pts, 2, cvec4(255, 0, 0, 255), false);
 							pts[0] = c; pts[1] = c + s.rot[1] * hf_ylen;
-							primitives_draws.emplace_back("LineList"_h, pts, 2, cvec4(0, 255, 0, 255));
+							draw_primitives("LineList"_h, pts, 2, cvec4(0, 255, 0, 255), false);
 							pts[0] = c; pts[1] = c + s.rot[2] * hf_zlen;
-							primitives_draws.emplace_back("LineList"_h, pts, 2, cvec4(0, 0, 255, 255));
+							draw_primitives("LineList"_h, pts, 2, cvec4(0, 0, 255, 255), false);
 						}
 					}
 
@@ -2115,8 +2129,6 @@ namespace flame
 
 				}
 			}
-
-			csm_debug_sig = false;
 
 			auto set_blur_args = [cb](const vec2 img_size) {
 				pl_blur.prm.pc.child("off"_h).as<int>() = -3;
@@ -2378,6 +2390,49 @@ namespace flame
 		}
 		cb->end_debug_label();
 
+		auto draw_common = [&](const CommonDraw& d, const cvec4& color) {
+			switch (d.type)
+			{
+			case "mesh"_h:
+			{
+				auto& mesh_r = mesh_reses[d.res_id];
+
+				prm_fwd.bind_dss(cb);
+				prm_fwd.pc.mark_dirty_c("f"_h).as<vec4>() = vec4(color) / 255.f;
+				prm_fwd.push_constant(cb);
+
+				if (!mesh_r.arm)
+				{
+					cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+					cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+					cb->bind_pipeline(pl_mesh_plain);
+					cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, d.ins_id << 8);
+				}
+				else
+				{
+					cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+					cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+					cb->bind_pipeline(pl_mesh_arm_plain);
+					cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, d.ins_id << 8);
+				}
+			}
+				break;
+			case "terrain"_h:
+			{
+				auto blocks = buf_instance.child("terrains"_h).item(d.ins_id).child("blocks"_h).as<uvec2>();
+
+				prm_fwd.bind_dss(cb);
+				prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = d.ins_id << 16;
+				prm_fwd.pc.mark_dirty_c("f"_h).as<vec4>() = vec4(color) / 255.f;
+				prm_fwd.push_constant(cb);
+				cb->bind_pipeline(pl_terrain_plain);
+				cb->draw(4, blocks.x * blocks.y, 0, d.ins_id << 24);
+				cb->end_renderpass();
+			}
+				break;
+			}
+		};
+
 		// post processing
 		cb->begin_debug_label("Post Processing");
 		if (mode == Shaded || mode == CameraLight && post_processing_enable)
@@ -2428,8 +2483,66 @@ namespace flame
 				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
 				cb->bind_pipeline(pl_bloom.pls["UPSAMPLE"_h]);
 				cb->bind_descriptor_set(0, img_back0->get_shader_read_src(1));
+				pl_bloom.prm.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_back0->levels[1].extent);
+				pl_bloom.prm.push_constant(cb);
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
+			}
+			cb->end_debug_label();
+
+			cb->begin_debug_label("Outline (box)");
+			{
+				for (auto& od : outlines_draws)
+				{
+					if (od.mode != "BOX"_h)
+						continue;
+					auto n_levels = min((uint)std::bit_width(od.width), img_back0->n_levels);
+					if (n_levels > 0)
+					{
+						cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+						for (auto& d : od.draws)
+							draw_common(d, od.color);
+						cb->end_renderpass();
+
+						for (auto i = 1; i < n_levels; i++)
+						{
+							cb->image_barrier(img_back0.get(), { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+							cb->set_viewport(Rect(vec2(0.f), vec2(img_back0->levels[i].extent)));
+							cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(i, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+							cb->bind_pipeline(pl_bloom.pls["DOWNSAMPLE"_h]);
+							cb->bind_descriptor_set(0, img_back0->get_shader_read_src(i - 1));
+							pl_bloom.prm.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_back0->levels[i - 1].extent);
+							pl_bloom.prm.push_constant(cb);
+							cb->draw(3, 1, 0, 0);
+							cb->end_renderpass();
+						}
+						for (auto i = (int)n_levels - 1; i > 0; i--)
+						{
+							cb->image_barrier(img_back0.get(), { (uint)i, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+							cb->set_viewport(Rect(vec2(0.f), vec2(img_back0->levels[i - 1].extent)));
+							cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(i - 1, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+							cb->bind_pipeline(pl_bloom.pls["UPSAMPLE"_h]);
+							cb->bind_descriptor_set(0, img_back0->get_shader_read_src(i));
+							pl_bloom.prm.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_back0->levels[i].extent);
+							pl_bloom.prm.push_constant(cb);
+							cb->draw(3, 1, 0, 0);
+							cb->end_renderpass();
+						}
+
+						cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+						for (auto& d : od.draws)
+							draw_common(d, cvec4(0));
+						cb->end_renderpass();
+
+						cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
+						cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+						cb->bind_pipeline(pl_add);
+						cb->bind_descriptor_set(0, img_back0->get_shader_read_src(0));
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+					}
+				}
 			}
 			cb->end_debug_label();
 
@@ -2497,157 +2610,58 @@ namespace flame
 		}
 		cb->end_debug_label();
 
-		cb->begin_debug_label("Outline");
+		cb->begin_debug_label("Outline (max)");
 		{
-			auto blur_pass = [&](int w = 3) {
+			for (auto& od : outlines_draws)
+			{
+				if (od.mode != "MAX"_h)
+					continue;
+				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+				for (auto& d : od.draws)
+					draw_common(d, od.color);
+				cb->end_renderpass();
+
+				const auto w = od.width;
 				auto len = w * 2 + 1;
 				pl_blur.prm.pc.child("off"_h).as<int>() = -w;
 				pl_blur.prm.pc.child("len"_h).as<int>() = len;
 				pl_blur.prm.pc.child("pxsz"_h).as<vec2>() = 1.f / (vec2)img_back0->extent;
-				memcpy(pl_blur.prm.pc.child("weights"_h).data, get_gauss_blur_weights(len), sizeof(float) * len);
+				memcpy(pl_blur.prm.pc.child("weights"_h).data, get_gauss_blur_weights(len), sizeof(float)* len);
 				pl_blur.prm.pc.mark_dirty();
 				pl_blur.prm.push_constant(cb);
 
 				cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
 				cb->begin_renderpass(nullptr, img_back1->get_shader_write_dst());
-				cb->bind_pipeline(pl_blur.pls["H"_h]);
+				cb->bind_pipeline(pl_blur.pls["MAX_H"_h]);
 				cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 
 				cb->image_barrier(img_back1.get(), {}, graphics::ImageLayoutShaderReadOnly);
 				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
-				cb->bind_pipeline(pl_blur.pls["V"_h]);
+				cb->bind_pipeline(pl_blur.pls["MAX_V"_h]);
 				cb->bind_descriptor_set(0, img_back1->get_shader_read_src());
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
-			};
 
-			auto blend_pass = [&]() {
+				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+				for (auto& d : od.draws)
+					draw_common(d, cvec4(0));
+				cb->end_renderpass();
+
 				cb->image_barrier(img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
 				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 				cb->bind_pipeline(pl_blend);
 				cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
-			};
-
-			draw_data.reset(PassOutline, 0);
-			for (auto n : camera_culled_nodes)
-				n->drawers.call<DrawData&>(draw_data);
-			auto outline_idx = 0;
-			std::vector<uint> outline_groups;
-			outline_groups.push_back(0);
-			for (auto i = 0; i < draw_data.meshes.size(); i++)
-			{
-				outline_groups.back()++;
-				if (draw_data.meshes[i].mat_id == 0)
-					outline_groups.push_back(0);
 			}
-			for (auto n : outline_groups)
-			{
-				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
-				for (auto i = 0; i < n; i++)
-				{
-					auto& m = draw_data.meshes[outline_idx + i];
-					auto& mesh_r = mesh_reses[m.mesh_id];
-
-					prm_fwd.bind_dss(cb);
-					prm_fwd.pc.mark_dirty_c("f"_h).as<vec4>() = vec4(m.color) / 255.f;
-					prm_fwd.push_constant(cb);
-
-					if (!mesh_r.arm)
-					{
-						cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-						cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-						cb->bind_pipeline(pl_mesh_plain);
-						cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.ins_id << 8);
-					}
-					else
-					{
-						cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
-						cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
-						cb->bind_pipeline(pl_mesh_arm_plain);
-						cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.ins_id << 8);
-					}
-				}
-				cb->end_renderpass();
-
-				blur_pass(draw_data.line_width);
-
-				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-				for (auto i = 0; i < n; i++)
-				{
-					auto& m = draw_data.meshes[outline_idx + i];
-					auto& mesh_r = mesh_reses[m.mesh_id];
-
-					prm_fwd.bind_dss(cb);
-					prm_fwd.pc.mark_dirty_c("f"_h).as<vec4>() = vec4(0.f);
-					prm_fwd.push_constant(cb);
-
-					if (!mesh_r.arm)
-					{
-						cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-						cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-						cb->bind_pipeline(pl_mesh_plain);
-						cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.ins_id << 8);
-					}
-					else
-					{
-						cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
-						cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
-						cb->bind_pipeline(pl_mesh_arm_plain);
-						cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.ins_id << 8);
-
-					}
-				}
-				cb->end_renderpass();
-
-				blend_pass();
-
-				outline_idx += n;
-			}
-			for (auto& t : draw_data.terrains)
-			{
-				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
-				prm_fwd.bind_dss(cb);
-				prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (t.ins_id << 16) + t.mat_id;
-				prm_fwd.pc.mark_dirty_c("f"_h).as<vec4>() = vec4(t.color) / 255.f;
-				prm_fwd.push_constant(cb);
-				cb->bind_pipeline(pl_terrain_plain);
-				cb->draw(4, t.blocks.x * t.blocks.y, 0, t.ins_id << 24);
-				cb->end_renderpass();
-
-				blur_pass(draw_data.line_width);
-
-				cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-				prm_fwd.bind_dss(cb);
-				prm_fwd.pc.mark_dirty_c("f"_h).as<vec4>() = vec4(0.f);
-				prm_fwd.push_constant(cb);
-				cb->bind_pipeline(pl_terrain_plain);
-				cb->draw(4, t.blocks.x * t.blocks.y, 0, t.ins_id << 24);
-				cb->end_renderpass();
-
-				blend_pass();
-			}
+			outlines_draws.clear();
 		}
 		cb->end_debug_label();
 
 		cb->begin_debug_label("Primitives");
 		{
-			draw_data.reset(PassPrimitive, 0);
-			for (auto n : camera_culled_nodes)
-				n->drawers.call<DrawData&>(draw_data);
-			if (!primitives_draws.empty())
-				draw_data.primitives.insert(draw_data.primitives.end(), primitives_draws.begin(), primitives_draws.end());
-			for (auto& l : draw_data.primitives)
-			{
-				for (auto& p : l.points)
-				{
-					auto vertex = buf_primitives.add();
-					vertex.child("i_pos"_h).as<vec3>() = p;
-				}
-			}
 			buf_primitives.upload(cb);
 			buf_primitives.buf_top = buf_primitives.stag_top = 0;
 			cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutAttachment);
@@ -2658,27 +2672,28 @@ namespace flame
 			prm_plain.push_constant(cb);
 			{
 				auto vtx_off = 0;
-				for (auto& d : draw_data.primitives)
+				for (auto& d : primitives_draws)
 				{
 					prm_plain.pc.mark_dirty_c("col"_h).as<vec4>() = vec4(d.color) / 255.f;
 					prm_plain.push_constant(cb);
 					switch (d.type)
 					{
 					case "LineList"_h:
-						cb->bind_pipeline(pl_line3d);
+						cb->bind_pipeline(d.depth_test ? pl_line3d_dep : pl_line3d);
 						break;
 					case "LineStrip"_h:
-						cb->bind_pipeline(pl_line_strip3d);
+						cb->bind_pipeline(d.depth_test ? pl_line_strip3d_dep : pl_line_strip3d);
 						break;
 					case "TriangleList"_h:
-						cb->bind_pipeline(pl_triangle3d);
+						cb->bind_pipeline(d.depth_test ? pl_triangle3d_dep : pl_triangle3d);
 						break;
 					}
-					cb->draw(d.points.size(), 1, vtx_off, 0);
-					vtx_off += d.points.size();
+					cb->draw(d.vtx_cnt, 1, vtx_off, 0);
+					vtx_off += d.vtx_cnt;
 				}
 			}
 			cb->end_renderpass();
+			primitives_draws.clear();
 		}
 		cb->end_debug_label();
 
@@ -2951,10 +2966,8 @@ namespace flame
 
 	void sRendererPrivate::send_debug_string(const std::string& str)
 	{
-		if (str == "clear_debug")
-			primitives_draws.clear();
-		else if (str == "sig_csm_debug")
-			csm_debug_sig = true;
+		if (str == "toggle_csm_debug")
+			csm_debug_flag = !csm_debug_flag;
 	}
 
 	static sRendererPtr _instance = nullptr;

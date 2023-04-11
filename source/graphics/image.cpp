@@ -194,10 +194,10 @@ namespace flame
 			return ds;
 		}
 
-		static std::vector<RenderpassPrivate*> dummy_rps;
-
 		FramebufferPtr ImagePrivate::get_shader_write_dst(uint base_level, uint base_layer, AttachmentLoadOp load_op)
 		{
+			static std::vector<RenderpassPrivate*> dummy_rps;
+
 			auto key = (base_level & 0xff) << 24;
 			key |= (base_layer & 0xff) << 16;
 			key |= (uint)load_op & 0xffff;

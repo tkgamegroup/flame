@@ -33,7 +33,7 @@ namespace flame
 		bool navmesh_nearest_point(const vec3& center, const vec3& ext, vec3& res) override;
 		std::vector<vec3> query_navmesh_path(const vec3& start, const vec3& end, uint max_smooth) override;
 		bool navmesh_check_agents_and_obstacles(const vec3& pos, float radius) override;
-		void get_debug_draw(DrawData& draw_data) override;
+		void draw_debug_primitives() override;
 
 		void update() override;
 	};

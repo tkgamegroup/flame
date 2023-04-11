@@ -93,6 +93,21 @@ namespace flame
 		std::vector<Ptc> ptcs;
 	};
 
+	struct CommonDraw
+	{
+		// type: "mesh"_h, "terrain"_h
+		uint type;
+		uint res_id;
+		uint ins_id;
+
+		CommonDraw(uint type, uint res_id, uint ins_id) :
+			type(type),
+			res_id(res_id),
+			ins_id(ins_id)
+		{
+		}
+	};
+
 	enum DrawPass
 	{
 		PassInstance,

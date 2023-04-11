@@ -295,33 +295,8 @@ void App::init()
 				if (ImGui::MenuItem("Test", nullptr, &test_dialog.open))
 				{
 					auto node = e_editor->get_component_i<cNode>(0);
-					if (!test_dialog.open)
-						node->drawers.remove("navmesh_test"_h);
-					else
+					if (test_dialog.open)
 					{
-						node->drawers.add([&](DrawData& draw_data) {
-							if (draw_data.pass == "primitive"_h)
-							{
-								{
-									std::vector<vec3> points;
-									points.push_back(test_dialog.start - vec3(1, 0, 0));
-									points.push_back(test_dialog.start + vec3(1, 0, 0));
-									points.push_back(test_dialog.start - vec3(0, 0, 1));
-									points.push_back(test_dialog.start + vec3(0, 0, 1));
-									draw_data.primitives.emplace_back("LineList"_h, std::move(points), cvec4(0, 255, 0, 255));
-								}
-								{
-									std::vector<vec3> points;
-									points.push_back(test_dialog.end - vec3(1, 0, 0));
-									points.push_back(test_dialog.end + vec3(1, 0, 0));
-									points.push_back(test_dialog.end - vec3(0, 0, 1));
-									points.push_back(test_dialog.end + vec3(0, 0, 1));
-									draw_data.primitives.emplace_back("LineList"_h, std::move(points), cvec4(0, 0, 255, 255));
-								}
-								if (!test_dialog.points.empty())
-									draw_data.primitives.emplace_back("LineList"_h, std::move(test_dialog.points), cvec4(255, 0, 0, 255));
-							}
-						}, "navmesh_test"_h);
 						dialogs.push_back([&]() {
 							if (test_dialog.open)
 							{
@@ -342,8 +317,25 @@ void App::init()
 										test_dialog.points = sScene::instance()->query_navmesh_path(test_dialog.start, test_dialog.end);
 								}
 								ImGui::End();
-								if (!test_dialog.open)
-									e_editor->get_component_i<cNode>(0)->drawers.remove("navmesh_test"_h);
+
+								{
+									std::vector<vec3> points;
+									points.push_back(test_dialog.start - vec3(1, 0, 0));
+									points.push_back(test_dialog.start + vec3(1, 0, 0));
+									points.push_back(test_dialog.start - vec3(0, 0, 1));
+									points.push_back(test_dialog.start + vec3(0, 0, 1));
+									sRenderer::instance()->draw_primitives("LineList"_h, points.data(), points.size(), cvec4(0, 255, 0, 255));
+								}
+								{
+									std::vector<vec3> points;
+									points.push_back(test_dialog.end - vec3(1, 0, 0));
+									points.push_back(test_dialog.end + vec3(1, 0, 0));
+									points.push_back(test_dialog.end - vec3(0, 0, 1));
+									points.push_back(test_dialog.end + vec3(0, 0, 1));
+									sRenderer::instance()->draw_primitives("LineList"_h, points.data(), points.size(), cvec4(0, 0, 255, 255));
+								}
+								if (!test_dialog.points.empty())
+									sRenderer::instance()->draw_primitives("LineList"_h, test_dialog.points.data(), test_dialog.points.size(), cvec4(255, 0, 0, 255));
 							}
 							return test_dialog.open;
 						});

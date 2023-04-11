@@ -390,7 +390,7 @@ void View_Scene::on_draw()
 				if (changed)
 				{
 					auto m3 = mat3(1.f);
-					m3[0] = mat[0]; m3[1] = mat[1]; 
+					m3[0] = mat[0]; m3[1] = mat[1];
 					m3[2] = mat[3]; m3[2][2] = 1.f;
 					if (element_targets.size() == 1)
 					{
@@ -445,161 +445,6 @@ void View_Scene::on_draw()
 
 		auto& io = ImGui::GetIO();
 		auto& style = ImGui::GetStyle();
-
-		auto editor_node = app.e_editor->get_component_i<cNode>(0);
-		if (editor_node->drawers.find("scene"_h) == -1)
-		{
-			editor_node->drawers.add([this](DrawData& draw_data) {
-				if (draw_data.pass == PassOutline && show_outline)
-				{
-					draw_data.line_width = 1.f;
-					auto outline_node = [&](EntityPtr e, const cvec4& col) {
-						if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
-							draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, 0, col);
-						if (auto terrain = e->get_component_t<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
-							draw_data.terrains.emplace_back(terrain->instance_id, terrain->blocks, 0, col);
-						if (auto armature = e->get_component_t<cArmature>(); armature && armature->model)
-						{
-							auto idx = (int)draw_data.meshes.size();
-							for (auto& c : e->children)
-							{
-								if (auto mesh = c->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
-									draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, -1, col);
-							}
-							if (draw_data.meshes.size() > idx)
-								draw_data.meshes.back().mat_id = 0;
-						}
-					};
-					bool already_outline_hovering = false;
-					for (auto e : selection.entities())
-					{
-						if (hovering_entity && e == hovering_entity)
-							already_outline_hovering = true;
-						outline_node(e, cvec4(200, 200, 100, 255));
-					}
-					if (!already_outline_hovering && hovering_entity)
-						outline_node(hovering_entity, cvec4(128, 128, 64, 255));
-				}
-				if (draw_data.pass == PassPrimitive)
-				{
-					if (show_AABB)
-					{
-						World::instance()->root->forward_traversal([&draw_data](EntityPtr e) {
-							if (!e->global_enable)
-								return false;
-							if (auto node = e->get_component_i<cNode>(0); node)
-							{
-								if (!node->bounds.invalid())
-								{
-									auto points = node->bounds.get_points();
-									auto line_pts = Frustum::points_to_lines(points.data());
-									draw_data.primitives.emplace_back("LineList"_h, std::move(line_pts), cvec4(255, 127, 127, 255));
-								}
-							}
-							return true;
-						});
-					}
-					if (show_axis)
-					{
-						if (selection.type == Selection::tEntity)
-						{
-							auto e = selection.as_entity();
-							if (e->global_enable)
-							{
-								if (auto node = e->get_component_i<cNode>(0); node)
-								{
-									vec3 line_pts[2];
-									line_pts[0] = node->global_pos(); line_pts[1] = node->global_pos() + node->x_axis();
-									draw_data.primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(255, 0, 0, 255));
-									line_pts[0] = node->global_pos(); line_pts[1] = node->global_pos() + node->y_axis();
-									draw_data.primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(0, 255, 0, 255));
-									line_pts[0] = node->global_pos(); line_pts[1] = node->global_pos() + node->z_axis();
-									draw_data.primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(0, 0, 255, 255));
-								}
-							}
-						}
-					}
-					if (show_bones)
-					{
-						World::instance()->root->forward_traversal([&draw_data](EntityPtr e) {
-							if (!e->global_enable)
-								return false;
-							if (auto arm = e->get_component_t<cArmature>(); arm)
-							{
-								std::function<void(cNodePtr)> draw_node;
-								draw_node = [&](cNodePtr n) {
-									vec3 line_pts[2];
-									line_pts[0] = n->global_pos();
-									for (auto& c : n->entity->children)
-									{
-										auto nn = c->node();
-										if (nn)
-										{
-											line_pts[1] = nn->global_pos();
-											draw_data.primitives.emplace_back("LineList"_h, line_pts, 2, cvec4(255));
-											draw_node(nn);
-										}
-									}
-								};
-								draw_node(arm->node);
-							}
-							return true;
-						});
-					}
-					if (show_navigation || show_navigation_frames)
-					{
-						World::instance()->root->forward_traversal([&draw_data](EntityPtr e) {
-							if (!e->global_enable)
-								return false;
-							auto draw_cylinder = [&](const vec3& p, float r, float h) {
-								auto circle_pts = graphics::get_circle_points(r > 8.f ? 3 : (r > 4.f ? 3 : (r > 2.f ? 2 : (r > 1.f ? 1 : 0))));
-								auto n = (int)circle_pts.size();
-								circle_pts.push_back(circle_pts[0]);
-								std::vector<vec3> pts(n * 2);
-								auto center = p;
-								for (auto i = 0; i < n; i++)
-								{
-									pts[i * 2 + 0] = center + vec3(r * circle_pts[i + 0], 0.f).xzy();
-									pts[i * 2 + 1] = center + vec3(r * circle_pts[i + 1], 0.f).xzy();
-								}
-								draw_data.primitives.emplace_back("LineList"_h, pts.data(), (uint)pts.size(), cvec4(127, 0, 255, 255));
-								center.y += h;
-								for (auto i = 0; i < n; i++)
-								{
-									pts[i * 2 + 0] = center + vec3(r * circle_pts[i + 0], 0.f).xzy();
-									pts[i * 2 + 1] = center + vec3(r * circle_pts[i + 1], 0.f).xzy();
-								}
-								draw_data.primitives.emplace_back("LineList"_h, pts.data(), (uint)pts.size(), cvec4(127, 0, 255, 255));
-								center = p;
-								pts[0] = center + r * vec3(+1.f, 0.f, 0.f);
-								pts[1] = pts[0] + vec3(0.f, h, 0.f);
-								draw_data.primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
-								pts[0] = center + r * vec3(-1.f, 0.f, 0.f);
-								pts[1] = pts[0] + vec3(0.f, h, 0.f);
-								draw_data.primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
-								pts[0] = center + r * vec3(0.f, 0.f, +1.f);
-								pts[1] = pts[0] + vec3(0.f, h, 0.f);
-								draw_data.primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
-								pts[0] = center + r * vec3(0.f, 0.f, -1.f);
-								pts[1] = pts[0] + vec3(0.f, h, 0.f);
-								draw_data.primitives.emplace_back("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
-							};
-							if (auto agent = e->get_component_t<cNavAgent>(); agent)
-								draw_cylinder(agent->node->global_pos(), agent->radius, agent->height);
-							if (auto obstacle = e->get_component_t<cNavObstacle>(); obstacle)
-								draw_cylinder(obstacle->node->global_pos(), obstacle->radius, obstacle->height);
-							return true;
-						});
-
-						sScene::instance()->get_debug_draw(draw_data);
-
-						if (show_navigation_frames > 0)
-							show_navigation_frames--;
-					}
-				}
-			}, "scene"_h);
-			editor_node->mark_transform_dirty();
-		}
 
 		if (ImGui::IsItemHovered())
 		{
@@ -804,6 +649,155 @@ void View_Scene::on_draw()
 					ImGui::GetWindowDrawList()->AddText(p0, ImColor(255.f, 255.f, 255.f), s.c_str(), s.c_str() + s.size());
 				}
 			}
+		}
+
+		{
+			auto outline_node = [&](EntityPtr e, const cvec4& col) {
+				if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
+				{
+					CommonDraw d("mesh"_h, mesh->mesh_res_id, mesh->instance_id);
+					sRenderer::instance()->draw_outlines({ d }, col, 5, "MAX"_h);
+				}
+				if (auto terrain = e->get_component_t<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
+				{
+					CommonDraw d("terrain"_h, 0, terrain->instance_id);
+					sRenderer::instance()->draw_outlines({ d }, col, 1, "MAX"_h);
+				}
+				if (auto armature = e->get_component_t<cArmature>(); armature && armature->model)
+				{
+					std::vector<CommonDraw> ds;
+
+					for (auto& c : e->children)
+					{
+						if (auto mesh = c->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
+							ds.emplace_back("mesh"_h, mesh->mesh_res_id, mesh->instance_id);
+					}
+					sRenderer::instance()->draw_outlines(ds, col, 1, "MAX"_h);
+				}
+			};
+			bool already_outline_hovering = false;
+			for (auto e : selection.entities())
+			{
+				if (e == hovering_entity)
+					already_outline_hovering = true;
+				outline_node(e, cvec4(200, 200, 100, 255));
+			}
+			if (!already_outline_hovering && hovering_entity)
+				outline_node(hovering_entity, cvec4(128, 128, 64, 255));
+		}
+		if (show_AABB)
+		{
+			World::instance()->root->forward_traversal([](EntityPtr e) {
+				if (!e->global_enable)
+					return false;
+				if (auto node = e->get_component_i<cNode>(0); node)
+				{
+					if (!node->bounds.invalid())
+					{
+						auto points = node->bounds.get_points();
+						auto line_pts = Frustum::points_to_lines(points.data());
+						sRenderer::instance()->draw_primitives("LineList"_h, line_pts.data(), line_pts.size(), cvec4(255, 127, 127, 255));
+					}
+				}
+				return true;
+			});
+		}
+		if (show_axis)
+		{
+			if (selection.type == Selection::tEntity)
+			{
+				auto e = selection.as_entity();
+				if (e->global_enable)
+				{
+					if (auto node = e->get_component_i<cNode>(0); node)
+					{
+						vec3 line_pts[2];
+						line_pts[0] = node->global_pos(); line_pts[1] = node->global_pos() + node->x_axis();
+						sRenderer::instance()->draw_primitives("LineList"_h, line_pts, 2, cvec4(255, 0, 0, 255));
+						line_pts[0] = node->global_pos(); line_pts[1] = node->global_pos() + node->y_axis();
+						sRenderer::instance()->draw_primitives("LineList"_h, line_pts, 2, cvec4(0, 255, 0, 255));
+						line_pts[0] = node->global_pos(); line_pts[1] = node->global_pos() + node->z_axis();
+						sRenderer::instance()->draw_primitives("LineList"_h, line_pts, 2, cvec4(0, 0, 255, 255));
+					}
+				}
+			}
+		}
+		if (show_bones)
+		{
+			World::instance()->root->forward_traversal([](EntityPtr e) {
+				if (!e->global_enable)
+					return false;
+				if (auto arm = e->get_component_t<cArmature>(); arm)
+				{
+					std::function<void(cNodePtr)> draw_node;
+					draw_node = [&](cNodePtr n) {
+						vec3 line_pts[2];
+						line_pts[0] = n->global_pos();
+						for (auto& c : n->entity->children)
+						{
+							auto nn = c->node();
+							if (nn)
+							{
+								line_pts[1] = nn->global_pos();
+								sRenderer::instance()->draw_primitives("LineList"_h, line_pts, 2, cvec4(255));
+								draw_node(nn);
+							}
+						}
+					};
+					draw_node(arm->node);
+				}
+				return true;
+			});
+		}
+		if (show_navigation || show_navigation_frames)
+		{
+			World::instance()->root->forward_traversal([](EntityPtr e) {
+				if (!e->global_enable)
+					return false;
+				auto draw_cylinder = [&](const vec3& p, float r, float h) {
+					auto circle_pts = graphics::get_circle_points(r > 8.f ? 3 : (r > 4.f ? 3 : (r > 2.f ? 2 : (r > 1.f ? 1 : 0))));
+					auto n = (int)circle_pts.size();
+					circle_pts.push_back(circle_pts[0]);
+					std::vector<vec3> pts(n * 2);
+					auto center = p;
+					for (auto i = 0; i < n; i++)
+					{
+						pts[i * 2 + 0] = center + vec3(r * circle_pts[i + 0], 0.f).xzy();
+						pts[i * 2 + 1] = center + vec3(r * circle_pts[i + 1], 0.f).xzy();
+					}
+					sRenderer::instance()->draw_primitives("LineList"_h, pts.data(), (uint)pts.size(), cvec4(127, 0, 255, 255));
+					center.y += h;
+					for (auto i = 0; i < n; i++)
+					{
+						pts[i * 2 + 0] = center + vec3(r * circle_pts[i + 0], 0.f).xzy();
+						pts[i * 2 + 1] = center + vec3(r * circle_pts[i + 1], 0.f).xzy();
+					}
+					sRenderer::instance()->draw_primitives("LineList"_h, pts.data(), (uint)pts.size(), cvec4(127, 0, 255, 255));
+					center = p;
+					pts[0] = center + r * vec3(+1.f, 0.f, 0.f);
+					pts[1] = pts[0] + vec3(0.f, h, 0.f);
+					sRenderer::instance()->draw_primitives("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
+					pts[0] = center + r * vec3(-1.f, 0.f, 0.f);
+					pts[1] = pts[0] + vec3(0.f, h, 0.f);
+					sRenderer::instance()->draw_primitives("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
+					pts[0] = center + r * vec3(0.f, 0.f, +1.f);
+					pts[1] = pts[0] + vec3(0.f, h, 0.f);
+					sRenderer::instance()->draw_primitives("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
+					pts[0] = center + r * vec3(0.f, 0.f, -1.f);
+					pts[1] = pts[0] + vec3(0.f, h, 0.f);
+					sRenderer::instance()->draw_primitives("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
+				};
+				if (auto agent = e->get_component_t<cNavAgent>(); agent)
+					draw_cylinder(agent->node->global_pos(), agent->radius, agent->height);
+				if (auto obstacle = e->get_component_t<cNavObstacle>(); obstacle)
+					draw_cylinder(obstacle->node->global_pos(), obstacle->radius, obstacle->height);
+				return true;
+			});
+
+			sScene::instance()->draw_debug_primitives();
+
+			if (show_navigation_frames > 0)
+				show_navigation_frames--;
 		}
 
 		if (ImGui::BeginDragDropTarget())

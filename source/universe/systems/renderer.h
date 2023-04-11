@@ -4,6 +4,7 @@
 
 namespace flame
 {
+	struct CommonDraw;
 	struct DrawData;
 
 	// Reflect ctor
@@ -231,8 +232,7 @@ namespace flame
 		virtual void set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, graphics::ImageViewPtr data_map) = 0;
 
 		// Reflect
-		// type: "mesh"_h, "terrain"_h
-		virtual void draw_outline(uint type, uint res_id, uint ins_id, const cvec4& color, uint width, uint mode = "MAX"_h/*or BOX*/, bool new_group = true) = 0;
+		virtual void draw_outlines(const std::vector<CommonDraw>& draws, const cvec4& color, uint width, uint mode = "MAX"_h/*or BOX*/) = 0;
 		// Reflect
 		// type: "LineList"_h, "LineStrip"_h, "TriangleList"_h
 		virtual void draw_primitives(uint type, const vec3* points, uint count, const cvec4& color, bool depth_test = false) = 0;

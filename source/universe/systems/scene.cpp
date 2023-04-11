@@ -1160,41 +1160,44 @@ namespace flame
 		return true;
 	}
 
-	void sScenePrivate::get_debug_draw(DrawData& draw_data)
+	void sScenePrivate::draw_debug_primitives()
 	{
-		if (dt_nav_mesh)
+		if (auto renderer = sRenderer::instance(); renderer)
 		{
-			std::vector<vec3> points;
-			auto& navmesh = (const dtNavMesh&)*dt_nav_mesh;
-			auto ntiles = navmesh.getMaxTiles();
-			for (auto i = 0; i < ntiles; i++)
+			if (dt_nav_mesh)
 			{
-				auto tile = navmesh.getTile(i);
-				if (tile->header)
+				std::vector<vec3> points;
+				auto& navmesh = (const dtNavMesh&)*dt_nav_mesh;
+				auto ntiles = navmesh.getMaxTiles();
+				for (auto i = 0; i < ntiles; i++)
 				{
-					auto npolys = tile->header->polyCount;
-					for (auto n = 0; n < npolys; n++)
+					auto tile = navmesh.getTile(i);
+					if (tile->header)
 					{
-						auto& p = tile->polys[n];
-						if (p.getType() != DT_POLYTYPE_OFFMESH_CONNECTION)
+						auto npolys = tile->header->polyCount;
+						for (auto n = 0; n < npolys; n++)
 						{
-							auto& pd = tile->detailMeshes[n];
-							for (auto j = 0; j < pd.triCount; j++)
+							auto& p = tile->polys[n];
+							if (p.getType() != DT_POLYTYPE_OFFMESH_CONNECTION)
 							{
-								auto t = &tile->detailTris[(pd.triBase + j) * 4];
-								for (int k = 0; k < 3; ++k)
+								auto& pd = tile->detailMeshes[n];
+								for (auto j = 0; j < pd.triCount; j++)
 								{
-									if (t[k] < p.vertCount)
-										points.push_back(*(vec3*)&tile->verts[p.verts[t[k]] * 3]);
-									else
-										points.push_back(*(vec3*)&tile->detailVerts[(pd.vertBase + t[k] - p.vertCount) * 3]);
+									auto t = &tile->detailTris[(pd.triBase + j) * 4];
+									for (int k = 0; k < 3; ++k)
+									{
+										if (t[k] < p.vertCount)
+											points.push_back(*(vec3*)&tile->verts[p.verts[t[k]] * 3]);
+										else
+											points.push_back(*(vec3*)&tile->detailVerts[(pd.vertBase + t[k] - p.vertCount) * 3]);
+									}
 								}
 							}
 						}
 					}
 				}
+				renderer->draw_primitives("TriangleList"_h, points.data(), points.size(), cvec4(0, 127, 255, 127), false);
 			}
-			draw_data.primitives.emplace_back("TriangleList"_h, std::move(points), cvec4(0, 127, 255, 127));
 		}
 	}
 

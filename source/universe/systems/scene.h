@@ -22,7 +22,7 @@ namespace flame
 		// Reflect
 		virtual bool navmesh_check_agents_and_obstacles(const vec3& pos, float radius) = 0;
 		// Reflect
-		virtual void get_debug_draw(DrawData& draw_data) = 0;
+		virtual void draw_debug_primitives() = 0;
 
 		struct Instance
 		{

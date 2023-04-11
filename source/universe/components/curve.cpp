@@ -13,26 +13,26 @@ namespace flame
 
 	void cCurvePrivate::on_init()
 	{
-		node->drawers.add([this](DrawData& draw_data) {
-			if (curve.vertices.empty())
-				return;
+		//node->drawers.add([this](DrawData& draw_data) {
+		//	if (curve.vertices.empty())
+		//		return;
 
-			switch (draw_data.pass)
-			{
-			case PassPrimitive:
-			{
-				auto transformed_vertices = curve.vertices;
-				for (auto& v : transformed_vertices)
-					v = vec3(node->transform * vec4(v, 1.f));
-				draw_data.primitives.emplace_back("LineStrip"_h, transformed_vertices.data(), (uint)transformed_vertices.size(), cvec4(255, 255, 255, 255));
-			}
-				break;
-			}
-		}, "mesh"_h);
-		node->measurers.add([this](AABB& b) {
-			if (!curve.vertices.empty())
-				b.expand(AABB(bounds.get_points(node->transform)));
-		}, "curve"_h);
+		//	switch (draw_data.pass)
+		//	{
+		//	case PassPrimitive:
+		//	{
+		//		auto transformed_vertices = curve.vertices;
+		//		for (auto& v : transformed_vertices)
+		//			v = vec3(node->transform * vec4(v, 1.f));
+		//		draw_data.primitives.emplace_back("LineStrip"_h, transformed_vertices.data(), (uint)transformed_vertices.size(), cvec4(255, 255, 255, 255));
+		//	}
+		//		break;
+		//	}
+		//}, "mesh"_h);
+		//node->measurers.add([this](AABB& b) {
+		//	if (!curve.vertices.empty())
+		//		b.expand(AABB(bounds.get_points(node->transform)));
+		//}, "curve"_h);
 	}
 
 	void cCurvePrivate::update_curve()
