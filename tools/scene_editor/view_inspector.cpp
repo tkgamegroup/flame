@@ -1034,8 +1034,8 @@ struct EditingEntities
 
 	std::pair<uint, uint> manipulate()
 	{
-		uint changed = 0;
-		uint changed_name = 0;
+		uint ret_changed = 0;
+		uint ret_changed_name = 0;
 		std::pair<uint, uint> res;
 
 		static auto& ui_entity = *TypeInfo::get<Entity>()->retrive_ui();
@@ -1047,10 +1047,9 @@ struct EditingEntities
 		else
 			editing_objects.emplace(EditingObjects(2, 0, &prefab_path, 1, nullptr));
 		ImGui::PushID("flame::Entity"_h);
-
 		res = manipulate_udt(ui_entity, (voidptr*)entities.data(), entities.size());
-		changed |= res.first;
-		changed_name |= res.second;
+		ret_changed |= res.first;
+		ret_changed_name |= res.second;
 		if (entities.size() == 1 && entity->prefab_instance)
 		{
 			auto ins = entity->prefab_instance.get();
@@ -1138,9 +1137,9 @@ struct EditingEntities
 		ImGui::PopID();
 		editing_objects.pop();
 
-		if (changed_name != 0)
+		if (res.second != 0)
 		{
-			auto& str = ui_entity.find_attribute(changed_name)->name;
+			auto& str = ui_entity.find_attribute(res.second)->name;
 			for (auto e : entities)
 			{
 				if (auto ins = get_root_prefab_instance(e); ins)
@@ -1148,6 +1147,7 @@ struct EditingEntities
 			}
 		}
 
+		bool exit_editing = false;
 		for (auto& cc : common_components)
 		{
 			if (prefab_path.empty())
@@ -1193,6 +1193,7 @@ struct EditingEntities
 								}
 								refresh();
 								app.prefab_unsaved = true;
+								exit_editing = true;
 								break;
 							}
 						}
@@ -1225,6 +1226,7 @@ struct EditingEntities
 								}
 								refresh();
 								app.prefab_unsaved = true;
+								exit_editing = true;
 								break;
 							}
 						}
@@ -1249,17 +1251,18 @@ struct EditingEntities
 							e->remove_component(cc.type_hash);
 						refresh();
 						app.prefab_unsaved = true;
+						exit_editing = true;
 					}
 					else
 						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 				}
 				ImGui::EndPopup();
 			}
-			if (open)
+			if (open && !exit_editing)
 			{
 				res = manipulate_udt(ui_component, (voidptr*)cc.components.data(), cc.components.size());
-				changed |= res.first;
-				changed_name |= res.second;
+				ret_changed |= res.first;
+				ret_changed_name |= res.second;
 
 				static bool open_select_standard_model = false;
 				static bool open_select_hash = false;
@@ -1272,7 +1275,7 @@ struct EditingEntities
 						ImGui::SameLine();
 						if (ImGui::Button("S"))
 						{
-							open_select_hash = true;
+							open_select_standard_model = true;
 							op_attr = ui.find_attribute(name);
 						}
 					}
@@ -1330,8 +1333,8 @@ struct EditingEntities
 					}
 					ImGui::PopID();
 				});
-				changed |= res.first;
-				changed_name |= res.second;
+				ret_changed |= res.first;
+				ret_changed_name |= res.second;
 
 				if (open_select_standard_model)
 				{
@@ -1377,9 +1380,9 @@ struct EditingEntities
 					}
 					ImGui::EndPopup();
 				}
-				if (changed_name != 0)
+				if (res.second != 0)
 				{
-					auto& str = ui.find_attribute(changed_name)->name;
+					auto& str = ui.find_attribute(res.second)->name;
 					for (auto e : entities)
 					{
 						if (auto ins = get_root_prefab_instance(e); ins)
@@ -1387,7 +1390,7 @@ struct EditingEntities
 					}
 
 					if ((ui.name_hash == "flame::cNavAgent"_h || ui.name_hash == "flame::cNavObstacle"_h) &&
-						(changed_name == "radius"_h || changed_name == "height"_h))
+						(res.second == "radius"_h || res.second == "height"_h))
 						view_scene.show_navigation_frames = 3;
 				}
 
@@ -1441,6 +1444,8 @@ struct EditingEntities
 			}
 			ImGui::PopID();
 			editing_objects.pop();
+			if (exit_editing)
+				break;
 		}
 
 		ImGui::Dummy(vec2(0.f, 10.f));
@@ -1503,7 +1508,7 @@ struct EditingEntities
 			ImGui::EndPopup();
 		}
 
-		return { changed, changed_name };
+		return { ret_changed, ret_changed_name };
 	}
 };
 static EditingEntities editing_entities;

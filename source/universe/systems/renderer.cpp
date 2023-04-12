@@ -1861,6 +1861,8 @@ namespace flame
 		auto img = iv->image;
 		auto ext = vec2(img->extent);
 
+		before_render_callbacks.call();
+
 		camera->aspect = ext.x / ext.y;
 		camera->update();
 

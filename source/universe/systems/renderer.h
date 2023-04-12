@@ -237,6 +237,8 @@ namespace flame
 		// type: "LineList"_h, "LineStrip"_h, "TriangleList"_h
 		virtual void draw_primitives(uint type, const vec3* points, uint count, const cvec4& color, bool depth_test = false) = 0;
 
+		Listeners<void()> before_render_callbacks;
+
 		// Reflect
 		virtual void render(uint tar_idx, graphics::CommandBufferPtr cb) = 0;
 
