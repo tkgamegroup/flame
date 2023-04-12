@@ -656,7 +656,7 @@ void View_Scene::on_draw()
 				if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
 				{
 					CommonDraw d("mesh"_h, mesh->mesh_res_id, mesh->instance_id);
-					sRenderer::instance()->draw_outlines({ d }, col, 5, "MAX"_h);
+					sRenderer::instance()->draw_outlines({ d }, col, 1, "MAX"_h);
 				}
 				if (auto terrain = e->get_component_t<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
 				{

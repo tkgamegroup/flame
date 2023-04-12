@@ -582,11 +582,11 @@ namespace flame
 
 		prm_plain.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain.pll"), graphics::PipelineGraphics);
 		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dt=false", "dw=false" });
-		pl_line3d_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dw=false" });
+		pl_line3d_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dt=true", "dw=false" });
 		pl_line_strip3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "pt=LineStrip", "dt=false", "dw=false" });
-		pl_line_strip3d_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "pt=LineStrip", "dw=false" });
+		pl_line_strip3d_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "pt=LineStrip", "dt=true", "dw=false" });
 		pl_triangle3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", { "dt=false", "dw=false" });
-		pl_triangle3d_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", { "dw=false" });
+		pl_triangle3d_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", { "dt=true", "dw=false" });
 
 		pll_fwd = graphics::PipelineLayout::get(L"flame\\shaders\\forward.pll");
 		pll_gbuf = graphics::PipelineLayout::get(L"flame\\shaders\\gbuffer.pll");

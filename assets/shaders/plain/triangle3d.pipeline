@@ -17,9 +17,9 @@ primitive_topology
 cull_mode
   None
 depth_test
-  dt
+  {dt}
 depth_write
-  dw
+  {dw}
 blend_options
   enable
     true
