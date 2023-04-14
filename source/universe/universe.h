@@ -44,6 +44,7 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cSdf);
 	FLAME_UNIVERSE_TYPE(cVolume);
 	FLAME_UNIVERSE_TYPE(cProcedureVolume);
+	FLAME_UNIVERSE_TYPE(cTileMap);
 	FLAME_UNIVERSE_TYPE(cParticleSystem);
 	FLAME_UNIVERSE_TYPE(cCurve);
 	FLAME_UNIVERSE_TYPE(cPhysicsRigid);

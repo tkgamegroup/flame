@@ -511,13 +511,19 @@ void App::init()
 		ImGui::SameLine();
 		ImGui::Dummy(vec2(0.f, 20.f));
 
-		static cTerrainPtr terrain_tool_target = nullptr;
-		if (add_tool_button(ToolTerrainUp, "mound"_h, "", "up"))
-			tool = ToolTerrainUp;
-		if (add_tool_button(ToolTerrainDown, "mound"_h, "", "down", 180.f))
-			tool = ToolTerrainDown;
-		if (add_tool_button(ToolTerrainPaint, "paintbrush"_h))
-			tool = ToolTerrainPaint;
+		if (selection.type == Selection::tEntity)
+		{
+			auto e = selection.as_entity();
+			if (auto terrain = e->get_component_t<cTerrain>(); terrain)
+			{
+				if (add_tool_button(ToolTerrainUp, "mound"_h, "", "up"))
+					tool = ToolTerrainUp;
+				if (add_tool_button(ToolTerrainDown, "mound"_h, "", "down", 180.f))
+					tool = ToolTerrainDown;
+				if (add_tool_button(ToolTerrainPaint, "paintbrush"_h))
+					tool = ToolTerrainPaint;
+			}
+		}
 
 		ImGui::SameLine();
 		ImGui::Dummy(vec2(50.f, 20.f));
