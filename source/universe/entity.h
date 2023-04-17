@@ -267,7 +267,7 @@ namespace flame
 			return ret;
 		}
 
-		virtual EntityPtr copy() = 0;
+		virtual EntityPtr copy(EntityPtr dst = nullptr) = 0;
 
 		virtual bool load(const std::filesystem::path& filename, bool only_root = false) = 0;
 		virtual bool save(const std::filesystem::path& filename, bool only_root = false) = 0;

@@ -1118,7 +1118,7 @@ bool App::cmd_create_entity(EntityPtr dst, uint type)
 		return false;
 	if (!dst)
 	{
-		if (auto e = selection.as_entity(); e)
+		if (auto e = selection.type == Selection::tEntity ? selection.as_entity() : nullptr)
 			dst = e;
 		else
 			dst = e_prefab;

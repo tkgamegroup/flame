@@ -347,15 +347,21 @@ namespace flame
 		children.clear();
 	}
 
-	EntityPtr EntityPrivate::copy()
+	EntityPtr EntityPrivate::copy(EntityPtr dst)
 	{
-		auto ret = Entity::create();
-		ret->name = name;
-		ret->tag = tag;
-		ret->set_enable(enable);
+		if (!dst)
+			dst = Entity::create();
+		else
+		{
+			dst->remove_all_children();
+			dst->remove_all_components();
+		}
+		dst->name = name;
+		dst->tag = tag;
+		dst->set_enable(enable);
 		for (auto& c : components)
 		{
-			auto cc = ret->add_component(c->type_hash);
+			auto cc = dst->add_component(c->type_hash);
 			cc->enable = c->enable;
 			auto& ui = *find_udt(c->type_hash);
 			for (auto& a : ui.attributes)
@@ -371,8 +377,8 @@ namespace flame
 			}
 		}
 		for (auto& c : children)
-			ret->add_child(c->copy());
-		return ret;
+			dst->add_child(c->copy());
+		return dst;
 	}
 
 	static bool get_modification_target(const std::string& target, EntityPtr e, void*& obj, const Attribute*& attr)

@@ -255,7 +255,7 @@ namespace flame
 					draw_data.terrains.emplace_back(instance_id, blocks, material_res_id);
 				break;
 			}
-			}, "terrain"_h);
+		}, "terrain"_h);
 		node->measurers.add([this](AABB& b) {
 			if (height_map)
 			{

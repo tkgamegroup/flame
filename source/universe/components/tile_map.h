@@ -7,6 +7,13 @@ namespace flame
 	// Reflect ctor
 	struct cTileMap : Component
 	{
+		struct Sample
+		{
+			uint height : 5;
+			bool is_half : 1;
+			uint slope : 2;
+		};
+
 		// Reflect requires
 		cNodePtr node = nullptr;
 

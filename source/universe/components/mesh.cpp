@@ -40,8 +40,8 @@ namespace flame
 			AssetManagemant::release(Path::get(model_and_index.first));
 		if (!material_name.empty())
 			AssetManagemant::release(Path::get(material_name));
-		if (model)
-			graphics::Model::release(model);
+		if (mesh)
+			graphics::Model::release(mesh->model);
 		if (material)
 			graphics::Material::release(material);
 	}
@@ -133,11 +133,10 @@ namespace flame
 			if (_model_and_index.second < _model->meshes.size())
 				_mesh = &_model->meshes[_model_and_index.second];
 		}
-		if (model != _model)
+		if (!mesh || mesh->model != _model)
 		{
-			if (model)
-				graphics::Model::release(model);
-			model = _model;
+			if (mesh)
+				graphics::Model::release(mesh->model);
 		}
 		else if (_model)
 			graphics::Model::release(_model);

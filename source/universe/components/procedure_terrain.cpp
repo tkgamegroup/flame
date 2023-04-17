@@ -1,4 +1,5 @@
 #include "procedure_terrain_private.h"
+#include "node_private.h"
 #include "terrain_private.h"
 #include "nav_obstacle_private.h"
 #include "../entity_private.h"

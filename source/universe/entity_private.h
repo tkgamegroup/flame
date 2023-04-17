@@ -29,7 +29,7 @@ namespace flame
 		void remove_child(EntityPtr e, bool destroy = true) override;
 		void remove_all_children(bool destroy = true) override;
 
-		EntityPtr copy() override;
+		EntityPtr copy(EntityPtr dst = nullptr) override;
 
 		bool load(const std::filesystem::path& filename, bool only_root) override;
 		bool save(const std::filesystem::path& filename, bool only_root) override;

@@ -825,11 +825,13 @@ namespace flame
 									auto n_mesh = n_components.append_child("item");
 									n_mesh.append_attribute("type_name").set_value("flame::cMesh");
 									n_mesh.append_attribute("mesh_name").set_value((model_name + "#mesh" + str(base_mesh_idx)).c_str());
+									std::string material_name = "default";
 									if (auto fbx_mat = src->GetMaterial(0); fbx_mat)
 									{
 										if (auto mat = (MaterialPtr)fbx_mat->GetUserDataPtr(); mat)
-											n_mesh.append_attribute("material_name").set_value(mat->filename.filename().string().c_str());
+											material_name = mat->filename.filename().string();
 									}
+									n_mesh.append_attribute("material_name").set_value(material_name.c_str());
 								}
 								else
 								{
@@ -845,11 +847,13 @@ namespace flame
 										auto n_mesh = n_components.append_child("item");
 										n_mesh.append_attribute("type_name").set_value("flame::cMesh");
 										n_mesh.append_attribute("mesh_name").set_value((model_name + "#mesh" + str(base_mesh_idx + i)).c_str());
+										std::string material_name = "default";
 										if (auto fbx_mat = src->GetMaterial(i); fbx_mat)
 										{
 											if (auto mat = (MaterialPtr)fbx_mat->GetUserDataPtr(); mat)
-												n_mesh.append_attribute("material_name").set_value(mat->filename.filename().string().c_str());
+												material_name = mat->filename.filename().string();
 										}
+										n_mesh.append_attribute("material_name").set_value(material_name.c_str());
 									}
 								}
 							}

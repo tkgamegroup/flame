@@ -1277,6 +1277,7 @@ struct EditingEntities
 						{
 							open_select_standard_model = true;
 							op_attr = ui.find_attribute(name);
+							app.prefab_unsaved = true;
 						}
 					}
 					else if (name == "material_name"_h)
@@ -1362,6 +1363,7 @@ struct EditingEntities
 							std::filesystem::path v(n);
 							for (auto c : cc.components)
 								op_attr->set_value(c, &v);
+							app.prefab_unsaved = true;
 						}
 					}
 
@@ -1376,6 +1378,7 @@ struct EditingEntities
 							uint v = sh(c.c_str());
 							for (auto c : cc.components)
 								op_attr->set_value(c, &v);
+							app.prefab_unsaved = true;
 						}
 					}
 					ImGui::EndPopup();
