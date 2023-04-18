@@ -71,6 +71,17 @@ void View_Scene::on_draw()
 	auto camera = camera_list[camera_idx];
 	app.renderer->camera = camera;
 
+	ImGui::SameLine();
+	ImGui::Checkbox("Outline", &show_outline);
+	ImGui::SameLine();
+	ImGui::Checkbox("AABB", &show_AABB);
+	ImGui::SameLine();
+	ImGui::Checkbox("Axis", &show_axis);
+	ImGui::SameLine();
+	ImGui::Checkbox("Bones", &show_bones);
+	ImGui::SameLine();
+	ImGui::Checkbox("Navigation", &show_navigation);
+
 	auto render_target_extent = vec2(ImGui::GetContentRegionAvail());
 	if (fixed_render_target_size)
 		render_target_extent = vec2(1280, 720);
@@ -651,6 +662,7 @@ void View_Scene::on_draw()
 			}
 		}
 
+		if (show_outline)
 		{
 			auto outline_node = [&](EntityPtr e, const cvec4& col) {
 				if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)

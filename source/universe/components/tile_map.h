@@ -18,7 +18,7 @@ namespace flame
 		cNodePtr node = nullptr;
 
 		// Reflect
-		vec3 extent = vec3(256.f, 8.f, 256.f);
+		vec3 extent = vec3(64.f, 4.f, 64.f);
 		// Reflect
 		virtual void set_extent(const vec3& extent) = 0;
 
@@ -34,6 +34,8 @@ namespace flame
 
 		// Reflect
 		std::vector<uint> samples;
+		// Reflect
+		virtual void set_sample(uint idx, uint v) = 0;
 
 		struct Create
 		{

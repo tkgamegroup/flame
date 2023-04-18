@@ -118,12 +118,16 @@ void Selection::History::redo()
 
 void Selection::clear(uint caller)
 {
+	if (lock)
+		return;
 	selection_clear_no_history(caller);
 	add_history(new EmptyHistory);
 }
 
 void Selection::select(const std::vector<std::filesystem::path>& paths, uint caller)
 {
+	if (lock)
+		return;
 	selection_select_no_history(paths, caller);
 	add_history(new PathHistory(paths));
 }
@@ -156,6 +160,8 @@ bool Selection::selecting(const std::filesystem::path& path)
 
 void Selection::select(const std::vector<EntityPtr>& entities, uint caller)
 {
+	if (lock)
+		return;
 	selection_select_no_history(entities, caller);
 	add_history(new EntityHistory(entities));
 }

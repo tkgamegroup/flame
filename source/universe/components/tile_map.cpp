@@ -98,14 +98,14 @@ namespace flame
 					{
 						auto e = meshes[i]->copy();
 						e->children[0]->node()->set_qut(angleAxis(radians(180.f), vec3(0.f, 1.f, 0.f)));
-						meshes[r90] = e;
+						meshes[r180] = e;
 					}
 					auto r270 = get_mesh_id(c, a, d, b);
 					if (!meshes[r270])
 					{
 						auto e = meshes[i]->copy();
 						e->children[0]->node()->set_qut(angleAxis(radians(270.f), vec3(0.f, 1.f, 0.f)));
-						meshes[r90] = e;
+						meshes[r270] = e;
 					}
 				}
 			}
@@ -114,6 +114,15 @@ namespace flame
 		update_tiles();
 
 		data_changed("tiles_path"_h);
+	}
+
+	void cTileMapPrivate::set_sample(uint idx, uint v)
+	{
+		if (idx < samples.size())
+		{
+			samples[idx] = v;
+			update_tiles();
+		}
 	}
 
 	void cTileMapPrivate::update_tiles()
@@ -128,10 +137,14 @@ namespace flame
 			for (auto i = 0; i < blocks.x * blocks.z; i++)
 			{
 				auto e = Entity::create();
+				e->name = std::format("{}, {}", i % blocks.x, i / blocks.x);
+				e->tag = e->tag | TagNotSerialized;
 				e->add_component_t<cNode>();
 				entity->add_child(e);
 			}
 		}
+		auto gap_x = extent.x / blocks.x;
+		auto gap_z = extent.z / blocks.z;
 		for (auto i = 0; i < blocks.x; i++)
 		{
 			for (auto j = 0; j < blocks.z; j++)
@@ -144,7 +157,7 @@ namespace flame
 				auto dst = entity->children[i + j * blocks.x].get();
 				if (meshes[id])
 					meshes[id]->copy(dst);
-				dst->node()->set_pos(vec3(i * 2.f, 0.f, j * 2.f));
+				dst->node()->set_pos(vec3((i + 0.5f) * gap_x , 0.f, (j + 0.5f) * gap_z));
 			}
 		}
 	}

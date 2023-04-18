@@ -122,6 +122,7 @@ void View_Hierarchy::on_draw()
 			{
 				e_src->remove_from_parent(false);
 				e->add_child(e_src);
+				app.prefab_unsaved = true;
 			}
 			if (auto e_src = read_drop_file(); e_src)
 			{
@@ -174,6 +175,7 @@ void View_Hierarchy::on_draw()
 						if (e_src->parent == e && e_src->index < i) idx--;
 						e_src->remove_from_parent(false);
 						e->add_child(e_src, idx);
+						app.prefab_unsaved = true;
 					}
 					if (auto e_src = read_drop_file(); e_src)
 					{

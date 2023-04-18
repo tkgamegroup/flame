@@ -58,7 +58,7 @@ namespace flame
 				if (!parmature && dirty)
 				{
 					if (enable)
-						sRenderer::instance()->set_mesh_instance(instance_id, node->transform, mat3(node->g_qut));
+						sRenderer::instance()->set_mesh_instance(instance_id, node->transform, transpose(inverse(mat3(node->transform))));
 					dirty = false;
 				}
 				break;

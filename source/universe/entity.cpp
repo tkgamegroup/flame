@@ -350,15 +350,17 @@ namespace flame
 	EntityPtr EntityPrivate::copy(EntityPtr dst)
 	{
 		if (!dst)
+		{
 			dst = Entity::create();
+			dst->name = name;
+			dst->tag = tag;
+			dst->set_enable(enable);
+		}
 		else
 		{
 			dst->remove_all_children();
 			dst->remove_all_components();
 		}
-		dst->name = name;
-		dst->tag = tag;
-		dst->set_enable(enable);
 		for (auto& c : components)
 		{
 			auto cc = dst->add_component(c->type_hash);
@@ -582,6 +584,11 @@ namespace flame
 		{
 			spec.typed_obj_delegates[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
 				auto e = (EntityPtr)src;
+				if (e->tag & TagNotSerialized)
+				{
+					dst.parent().remove_child(dst);
+					return;
+				}
 				if (e->prefab_instance)
 				{
 					dst.append_attribute("filename").set_value(Path::rebase(base_path, e->prefab_instance->filename).string().c_str());

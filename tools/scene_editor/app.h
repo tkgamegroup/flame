@@ -14,7 +14,11 @@ enum Tool
 	ToolScale,
 	ToolTerrainUp,
 	ToolTerrainDown,
-	ToolTerrainPaint
+	ToolTerrainSmooth,
+	ToolTerrainPaint,
+	ToolTileMapLevelUp,
+	ToolTileMapLevelDown,
+	ToolTileMapSlope
 };
 
 enum ToolPivot
@@ -52,6 +56,7 @@ struct App : UniverseApplication
 	void* project_cpp_library = nullptr;
 	EntityPtr e_editor = nullptr;
 	EntityPtr e_prefab = nullptr;
+	EntityPtr e_editing = nullptr;
 	EntityPtr e_playing = nullptr;
 	EntityPtr e_preview = nullptr;
 	bool paused = false;
@@ -95,7 +100,7 @@ struct App : UniverseApplication
 	bool cmd_play();
 	bool cmd_pause();
 	bool cmd_stop();
-	bool cmd_start_preview();
+	bool cmd_start_preview(EntityPtr e);
 	bool cmd_stop_preview();
 	bool cmd_restart_preview();
 

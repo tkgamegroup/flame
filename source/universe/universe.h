@@ -76,8 +76,9 @@ namespace flame
 	{
 		TagNone = 0,
 		TagGeneral = 1 << 0,
-		TagMarkNavMesh = 1 << 1,
-		TagUser = 1 << 2
+		TagNotSerialized,
+		TagMarkNavMesh = 1 << 2,
+		TagUser = 1 << 3
 	};
 
 	inline TagFlags operator| (TagFlags a, TagFlags b) { return (TagFlags)((int)a | (int)b); }
