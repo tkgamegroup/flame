@@ -50,14 +50,7 @@ namespace flame
 			return;
 		tiles_path = _path;
 
-		for (auto& m : meshes)
-		{
-			if (m)
-			{
-				delete m;
-				m = nullptr;
-			}
-		}
+		meshes.clear();
 		meshes.resize(81);
 
 		auto path = Path::get(tiles_path);
@@ -75,38 +68,24 @@ namespace flame
 				auto c = name[2]; if (c == '0') c = 0; else if (c == '1') c = 1; else if (c == 'H') c = 2; else continue;
 				auto d = name[3]; if (d == '0') d = 0; else if (d == '1') d = 1; else if (d == 'H') d = 2; else continue;
 
-				auto e = Entity::create();
-				e->load(p.path(), false);
-				meshes[a + b * 3 + c * 3 * 3 + d * 3 * 3 * 3] = e;
+				meshes[a + b * 3 + c * 3 * 3 + d * 3 * 3 * 3] = std::make_pair(p.path(), 0U);
 			}
 			for (auto i = 0; i < 81; i++)
 			{
-				if (meshes[i])
+				if (!meshes[i].first.empty())
 				{
 					int a, b, c, d;
 					parse_mesh_id(i, a, b, c, d);
 
 					auto r90 = get_mesh_id(b, d, a, c);
-					if (!meshes[r90])
-					{
-						auto e = meshes[i]->copy();
-						e->children[0]->node()->set_qut(angleAxis(radians(90.f), vec3(0.f, 1.f, 0.f)));
-						meshes[r90] = e;
-					}
+					if (meshes[r90].first.empty())
+						meshes[r90] = std::make_pair(meshes[i].first, 1);
 					auto r180 = get_mesh_id(d, c, b, a);
-					if (!meshes[r180])
-					{
-						auto e = meshes[i]->copy();
-						e->children[0]->node()->set_qut(angleAxis(radians(180.f), vec3(0.f, 1.f, 0.f)));
-						meshes[r180] = e;
-					}
+					if (meshes[r180].first.empty())
+						meshes[r180] = std::make_pair(meshes[i].first, 2);
 					auto r270 = get_mesh_id(c, a, d, b);
-					if (!meshes[r270])
-					{
-						auto e = meshes[i]->copy();
-						e->children[0]->node()->set_qut(angleAxis(radians(270.f), vec3(0.f, 1.f, 0.f)));
-						meshes[r270] = e;
-					}
+					if (meshes[r270].first.empty())
+						meshes[r270] = std::make_pair(meshes[i].first, 3);
 				}
 			}
 		}
@@ -155,9 +134,25 @@ namespace flame
 				auto d = samples[i + 1 + (j + 1) * (blocks.x + 1)];
 				auto id = get_mesh_id(a, b, c, d);
 				auto dst = entity->children[i + j * blocks.x].get();
-				if (meshes[id])
-					meshes[id]->copy(dst);
-				dst->node()->set_pos(vec3((i + 0.5f) * gap_x , 0.f, (j + 0.5f) * gap_z));
+				auto node = dst->node();
+				if (!meshes[id].first.empty())
+				{
+					dst->remove_all_children();
+					dst->add_child(Entity::create(meshes[id].first));
+					switch (meshes[id].second)
+					{
+					case 1:
+						node->set_qut(angleAxis(radians(90.f), vec3(0.f, 1.f, 0.f)));
+						break;
+					case 2:
+						node->set_qut(angleAxis(radians(180.f), vec3(0.f, 1.f, 0.f)));
+						break;
+					case 3:
+						node->set_qut(angleAxis(radians(270.f), vec3(0.f, 1.f, 0.f)));
+						break;
+					}
+				}
+				node->set_pos(vec3((i + 0.5f) * gap_x , 0.f, (j + 0.5f) * gap_z));
 			}
 		}
 	}

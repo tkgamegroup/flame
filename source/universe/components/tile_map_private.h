@@ -6,7 +6,7 @@ namespace flame
 {
 	struct cTileMapPrivate : cTileMap
 	{
-		std::vector<EntityPtr> meshes;
+		std::vector<std::pair<std::filesystem::path, uint>> meshes;
 
 		void set_extent(const vec3& extent) override;
 		void set_blocks(const uvec3& blocks) override;

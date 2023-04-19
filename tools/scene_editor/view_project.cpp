@@ -914,16 +914,19 @@ void View_Project::on_draw()
 						{
 							if (a.type == TypeInfo::get<std::filesystem::path>())
 							{
-								auto value = std::filesystem::path(a.serialize(c.get()));
-								auto abs_value = Path::get(value);
-								for (auto& asset : changed_assets)
+								auto& value = *(std::filesystem::path*)a.get_value(c.get(), true);
+								if (!value.empty())
 								{
-									if (abs_value == asset.second)
+									auto abs_value = Path::get(std::filesystem::path(SUW::split(value.wstring(), '#').front()));
+									for (auto& asset : changed_assets)
 									{
-										std::filesystem::path p;
-										a.set_value(c.get(), &p);
-										affected_attributes.emplace_back(c.get(), &a, value);
-										break;
+										if (abs_value == asset.second)
+										{
+											std::filesystem::path p;
+											a.set_value(c.get(), &p);
+											affected_attributes.emplace_back(c.get(), &a, value);
+											break;
+										}
 									}
 								}
 							}
