@@ -15,7 +15,7 @@ layout(location = 3) out vec3 o_coordw;
 
 void main()
 {
-	uint terrain_id = pc.index >> 16;
+	uint terrain_id = pc.index & 0xffff;
 
 	vec3 pp = (gl_in[0].gl_Position.xyz + gl_in[1].gl_Position.xyz + gl_in[2].gl_Position.xyz) / 3.0;
 

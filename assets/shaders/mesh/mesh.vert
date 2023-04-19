@@ -10,8 +10,8 @@ layout(location = 4) out vec3 o_coordw;
 
 void main()
 {
-	uint id = gl_InstanceIndex >> 8;
-	o_matid = gl_InstanceIndex & 0xff;
+	uint id = gl_InstanceIndex & 0xffff;
+	o_matid = gl_InstanceIndex >> 16;
 	o_uv = i_uv;
 
 #ifdef ARMATURE

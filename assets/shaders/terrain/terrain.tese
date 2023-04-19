@@ -11,7 +11,7 @@ layout(location = 3) out vec3 o_coordw;
 
 void main()
 {
-	uint terrain_id = pc.index >> 16;
+	uint terrain_id = pc.index & 0xffff;
 
 	o_uv = mix(
 		mix(i_uvs[0], i_uvs[1], gl_TessCoord.x),

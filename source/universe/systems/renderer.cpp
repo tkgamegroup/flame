@@ -184,10 +184,18 @@ namespace flame
 
 	struct MeshBatcher
 	{
-		graphics::IndirectBuffer buf_idr;
-		std::unordered_map<graphics::GraphicsPipelinePtr, std::pair<bool, std::vector<uint>>> batches;
+		struct Batch
+		{
+			bool				armature;
+			std::vector<uint>	draw_indices;
+			uint				sub_cmd_offset;
+			uint				sub_cmd_count;
+		};
 
-		void collect_idrs(const DrawData& draw_data, graphics::CommandBufferPtr cb, uint mod2 = 0);
+		graphics::IndirectBuffer buf_idr;
+		std::unordered_map<graphics::GraphicsPipelinePtr, Batch> batches;
+
+		void collect(const DrawData& draw_data, graphics::CommandBufferPtr cb, uint mod2 = 0);
 		void draw(graphics::CommandBufferPtr cb);
 	};
 
@@ -386,7 +394,7 @@ namespace flame
 		return pl_deferred.add_pl(modifier, defines);
 	}
 
-	void MeshBatcher::collect_idrs(const DrawData& draw_data, graphics::CommandBufferPtr cb, uint mod2)
+	void MeshBatcher::collect(const DrawData& draw_data, graphics::CommandBufferPtr cb, uint mod2)
 	{
 		for (auto i = 0; i < draw_data.meshes.size(); i++)
 		{
@@ -396,30 +404,34 @@ namespace flame
 			auto pl = get_material_pipeline(mat_r, "mesh"_h, mesh_r.arm ? "ARMATURE"_h : 0, mod2);
 			auto it = batches.find(pl);
 			if (it == batches.end())
-				it = batches.emplace(pl, std::make_pair(mesh_r.arm, std::vector<uint>())).first;
-			it->second.second.push_back(i);
+			{
+				it = batches.emplace(pl, Batch()).first;
+				it->second.armature = mesh_r.arm;
+			}
+			it->second.draw_indices.push_back(i);
 		}
 
 		for (auto& b : batches)
 		{
-			for (auto i : b.second.second)
+			b.second.sub_cmd_offset = buf_idr.top;
+			for (auto i : b.second.draw_indices)
 			{
 				auto& m = draw_data.meshes[i];
 				auto& mesh_r = mesh_reses[m.mesh_id];
-				buf_idr.add(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, (m.ins_id << 8) + m.mat_id);
+				buf_idr.add(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, (m.mat_id << 16) + m.ins_id);
 			}
+			b.second.sub_cmd_count = buf_idr.top - b.second.sub_cmd_offset;
 		}
 		buf_idr.upload(cb);
 	}
 
 	void MeshBatcher::draw(graphics::CommandBufferPtr cb)
 	{
-		auto off = 0;
 		for (auto& b : batches)
 		{
-			if (b.second.second.empty())
+			if (b.second.sub_cmd_count == 0)
 				continue;
-			if (!b.second.first)
+			if (!b.second.armature)
 			{
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
@@ -430,8 +442,7 @@ namespace flame
 				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
 			}
 			cb->bind_pipeline(b.first);
-			cb->draw_indexed_indirect(buf_idr.buf.get(), off, b.second.second.size());
-			off += b.second.second.size();
+			cb->draw_indexed_indirect(buf_idr.buf.get(), b.second.sub_cmd_offset, b.second.sub_cmd_count);
 		}
 	}
 
@@ -1996,7 +2007,7 @@ namespace flame
 				for (auto j = 0; j < DirShadowMaxLevels; j++)
 				{
 					for (auto& b : s.batcher[j].batches)
-						b.second.second.clear();
+						b.second.draw_indices.clear();
 				}
 			}
 
@@ -2096,7 +2107,7 @@ namespace flame
 								n_MC_draws = draw_data.volumes.size();
 							}
 						}
-						s.batcher[lv].collect_idrs(draw_data, cb, "DEPTH_ONLY"_h);
+						s.batcher[lv].collect(draw_data, cb, "DEPTH_ONLY"_h);
 						s.draw_terrains[lv] = draw_data.terrains;
 						s.draw_MCs[lv] = draw_data.volumes;
 
@@ -2158,14 +2169,14 @@ namespace flame
 					for (auto& t : s.draw_terrains[lv])
 					{
 						cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, "DEPTH_ONLY"_h));
-						prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (t.ins_id << 16) + t.mat_id;
+						prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (t.mat_id << 16) + t.ins_id;
 						prm_fwd.push_constant(cb);
-						cb->draw(4, t.blocks.x * t.blocks.y, 0, (t.ins_id << 24) + (t.mat_id << 16));
+						cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
 					}
 					for (auto& v : s.draw_MCs[lv])
 					{
 						cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, "DEPTH_ONLY"_h));
-						prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (v.ins_id << 16) + v.mat_id;
+						prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (v.mat_id << 16) + v.ins_id;
 						for (auto z = 0; z < v.blocks.z; z++)
 						{
 							for (auto y = 0; y < v.blocks.y; y++)
@@ -2218,11 +2229,11 @@ namespace flame
 		cb->begin_debug_label("Deferred Shading");
 		{
 			for (auto& b : opa_batcher.batches)
-				b.second.second.clear();
+				b.second.draw_indices.clear();
 			draw_data.reset(PassGBuffer, CateMesh | CateTerrain | CateSDF | CateMarchingCubes);
 			for (auto n : camera_culled_nodes)
 				n->drawers.call<DrawData&>(draw_data);
-			opa_batcher.collect_idrs(draw_data, cb);
+			opa_batcher.collect(draw_data, cb);
 
 			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
 			cb->set_viewport_and_scissor(Rect(vec2(0), ext));
@@ -2242,21 +2253,21 @@ namespace flame
 				for (auto& t : draw_data.terrains)
 				{
 					cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, 0));
-					prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (t.ins_id << 16) + t.mat_id;
+					prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (t.mat_id << 16) + t.ins_id;
 					prm_fwd.push_constant(cb);
 					cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
 				}
 				for (auto& s : draw_data.sdfs)
 				{
 					cb->bind_pipeline(get_material_pipeline(mat_reses[s.mat_id], "sdf"_h, 0, 0));
-					prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (s.ins_id << 16) + s.mat_id;
+					prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (s.mat_id << 16) + s.ins_id;
 					prm_fwd.push_constant(cb);
 					cb->draw(3, 1, 0, 0);
 				}
 				for (auto& v : draw_data.volumes)
 				{
 					cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, 0));
-					prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (v.ins_id << 16) + v.mat_id;
+					prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (v.mat_id << 16) + v.ins_id;
 					for (auto z = 0; z < v.blocks.z; z++)
 					{
 						for (auto y = 0; y < v.blocks.y; y++)
@@ -2321,11 +2332,11 @@ namespace flame
 			cb->end_renderpass();
 
 			for (auto& b : trs_batcher.batches)
-				b.second.second.clear();
+				b.second.draw_indices.clear();
 			draw_data.reset(PassForward, CateMesh | CateGrassField | CateParticle);
 			for (auto n : camera_culled_nodes)
 				n->drawers.call<DrawData&>(draw_data);
-			trs_batcher.collect_idrs(draw_data, cb);
+			trs_batcher.collect(draw_data, cb);
 
 			for (auto& p : draw_data.particles)
 			{
@@ -2353,9 +2364,9 @@ namespace flame
 			for (auto& t : draw_data.terrains)
 			{
 				cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "grass_field"_h, 0, 0));
-				prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (t.ins_id << 16) + t.mat_id;
+				prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (t.mat_id << 16) + t.ins_id;
 				prm_fwd.push_constant(cb);
-				cb->draw(4, t.blocks.x * t.blocks.y, 0, (t.ins_id << 24) + (t.mat_id << 16));
+				cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
 			}
 
 			{
@@ -2408,14 +2419,14 @@ namespace flame
 					cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 					cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
 					cb->bind_pipeline(pl_mesh_plain);
-					cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, d.ins_id << 8);
+					cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, d.ins_id);
 				}
 				else
 				{
 					cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
 					cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
 					cb->bind_pipeline(pl_mesh_arm_plain);
-					cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, d.ins_id << 8);
+					cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, d.ins_id);
 				}
 			}
 				break;
@@ -2424,11 +2435,11 @@ namespace flame
 				auto blocks = buf_instance.child("terrains"_h).item(d.ins_id).child("blocks"_h).as<uvec2>();
 
 				prm_fwd.bind_dss(cb);
-				prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = d.ins_id << 16;
+				prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = d.ins_id;
 				prm_fwd.pc.mark_dirty_c("f"_h).as<vec4>() = vec4(color) / 255.f;
 				prm_fwd.push_constant(cb);
 				cb->bind_pipeline(pl_terrain_plain);
-				cb->draw(4, blocks.x * blocks.y, 0, d.ins_id << 24);
+				cb->draw(4, blocks.x * blocks.y, 0, 0);
 				cb->end_renderpass();
 			}
 				break;
@@ -2780,7 +2791,7 @@ namespace flame
 						cb->bind_pipeline(pl_mesh_pickup);
 						prm_fwd.pc.mark_dirty_c("i"_h).as<ivec4>() = ivec4((int)nodes.size() + 1, 0, 0, 0);
 						prm_fwd.push_constant(cb.get());
-						cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.ins_id << 8);
+						cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.ins_id);
 					}
 					else
 					{
@@ -2789,7 +2800,7 @@ namespace flame
 						cb->bind_pipeline(pl_mesh_arm_pickup);
 						prm_fwd.pc.mark_dirty_c("i"_h).as<ivec4>() = ivec4((int)nodes.size() + 1, 0, 0, 0);
 						prm_fwd.push_constant(cb.get());
-						cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.ins_id << 8);
+						cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.ins_id);
 					}
 
 					nodes.push_back(n);
@@ -2800,10 +2811,10 @@ namespace flame
 				{
 					cb->bind_pipeline(pl_terrain_pickup);
 					auto& t = draw_data.terrains[i];
-					prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (t.ins_id << 16) + t.mat_id;
+					prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (t.mat_id << 16) + t.ins_id;
 					prm_fwd.pc.mark_dirty_c("i"_h).as<ivec4>() = ivec4((int)nodes.size() + 1, 0, 0, 0);
 					prm_fwd.push_constant(cb.get());
-					cb->draw(4, t.blocks.x * t.blocks.y, 0, t.ins_id << 24);
+					cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
 
 					nodes.push_back(n);
 				}
@@ -2813,7 +2824,7 @@ namespace flame
 				{
 					cb->bind_pipeline(pl_MC_pickup);
 					auto& v = draw_data.volumes[i];
-					prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (v.ins_id << 16) + v.mat_id;
+					prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (v.mat_id << 16) + v.ins_id;
 					prm_fwd.pc.mark_dirty_c("i"_h).as<ivec4>() = ivec4((int)nodes.size() + 1, 0, 0, 0);
 					for (auto z = 0; z < v.blocks.z; z++)
 					{
@@ -2928,7 +2939,7 @@ namespace flame
 		cb->bind_pipeline(pl_MC_transform_feedback);
 		for (auto& v : draw_data.volumes)
 		{
-			prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (v.ins_id << 16) + v.mat_id;
+			prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (v.mat_id << 16) + v.ins_id;
 			for (auto z = 0; z < v.blocks.z; z++)
 			{
 				for (auto y = 0; y < v.blocks.y; y++)
