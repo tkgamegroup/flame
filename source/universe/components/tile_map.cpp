@@ -145,6 +145,9 @@ namespace flame
 					});
 					switch (meshes[id].second)
 					{
+					case 0:
+						node->set_qut(angleAxis(radians(0.f), vec3(0.f, 1.f, 0.f)));
+						break;
 					case 1:
 						node->set_qut(angleAxis(radians(90.f), vec3(0.f, 1.f, 0.f)));
 						break;

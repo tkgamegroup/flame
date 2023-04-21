@@ -247,6 +247,12 @@ namespace flame
 		return ret;
 	}
 
+	template<uint N, typename T, class CH>
+	inline vec<N, T> s2t(const CH* s)
+	{
+		return s2t<N, T, CH>(std::basic_string<CH>(s));
+	}
+
 	template<uint C, uint R, typename T, class CH>
 	inline mat<C, R, T> s2t(const std::basic_string<CH>& s)
 	{
