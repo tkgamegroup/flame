@@ -4,7 +4,7 @@ layout (location = 0) in vec2 i_uvs[];
  
 layout (location = 0) out vec2 o_uvs[4];
 
-uint terrain_id = pc.index >> 16;
+uint terrain_id = pc.index & 0xffff;
 #ifndef GRASS_FIELD
 	uint tess_level = instance.terrains[terrain_id].tess_level;
 #else

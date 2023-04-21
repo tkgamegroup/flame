@@ -333,20 +333,31 @@ namespace flame
 			void create(uint _capacity)
 			{
 				capacity = _capacity;
-				buf.reset(Buffer::create(capacity * sizeof(graphics::DrawIndexedIndirectCommand), BufferUsageTransferDst | BufferUsageIndirect, MemoryPropertyDevice));
+				buf.reset(Buffer::create(capacity * sizeof(DrawIndexedIndirectCommand), BufferUsageTransferDst | BufferUsageIndirect, MemoryPropertyDevice));
 				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stag->map();
 			}
 
 			inline void add(uint index_count, uint first_index = 0, int vertex_offset = 0, uint instance_count = 1, uint first_instance = 0)
 			{
-				auto& c = *(DrawIndexedIndirectCommand*)((char*)stag->mapped + top * sizeof(graphics::DrawIndexedIndirectCommand));
-				c.index_count = index_count;
-				c.instance_count = instance_count;
-				c.first_index = first_index;
-				c.vertex_offset = vertex_offset;
-				c.first_instance = first_instance;
+				auto c = (DrawIndexedIndirectCommand*)((char*)stag->mapped + top * sizeof(DrawIndexedIndirectCommand));
+				if (top > 0)
+				{
+					c--;
+					if (c->index_count == index_count && c->first_index == first_index && c->vertex_offset == vertex_offset
+						&& c->first_instance + c->instance_count == first_instance)
+					{
+						c->instance_count += instance_count;
+						return;
+					}
+					c++;
+				}
 
+				c->index_count = index_count;
+				c->instance_count = instance_count;
+				c->first_index = first_index;
+				c->vertex_offset = vertex_offset;
+				c->first_instance = first_instance;
 				top++;
 			}
 
@@ -355,7 +366,7 @@ namespace flame
 				if (top > 0)
 				{
 					BufferCopy cpy;
-					cpy.size = top * sizeof(graphics::DrawIndexedIndirectCommand);
+					cpy.size = top * sizeof(DrawIndexedIndirectCommand);
 					cb->copy_buffer(stag.get(), buf.get(), { &cpy, 1 });
 					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageIndirect), PipelineStageTransfer, u2s(BufferUsageIndirect));
 					top = 0;

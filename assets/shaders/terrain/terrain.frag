@@ -28,7 +28,7 @@ layout(location = 3) out vec4 o_gbufferD;
 void main()
 {
 #ifdef MAT_CODE
-	MaterialInfo material = material.infos[pc.index & 0xffff];
+	MaterialInfo material = material.infos[pc.index >> 16];
 	#include MAT_CODE
 #else
 	#ifndef DEPTH_ONLY

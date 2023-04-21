@@ -2,7 +2,7 @@ layout(location = 0) out vec2 o_uv;
 
 void main(void)
 {
-	uint terrain_id = pc.index >> 16;
+	uint terrain_id = pc.index & 0xffff;
 	uint block_idx = gl_InstanceIndex;
 
 	vec2 vs[4] = { vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(1.0, 1.0), vec2(0.0, 1.0) };

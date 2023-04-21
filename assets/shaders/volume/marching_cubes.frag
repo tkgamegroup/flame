@@ -26,9 +26,9 @@ layout(location = 3) out vec4 o_gbufferD;
 void main()
 {
 #ifdef MAT_CODE
-	MaterialInfo material = material.infos[pc.index & 0xffff];
+	MaterialInfo material = material.infos[pc.index >> 16];
 	float tiling = float(material.f[0]);
-	vec4 weights = texture(volume_splash_maps[pc.index >> 16], i_uv);
+	vec4 weights = texture(volume_splash_maps[pc.index & 0xffff], i_uv);
 
 	#include MAT_CODE
 #else

@@ -9,7 +9,7 @@ struct Task
 };
 
 #ifndef CUSTOM_INPUT
-uint volume_id = pc.index >> 16;
+uint volume_id = pc.index & 0xffff;
 vec3 extent = instance.volumes[volume_id].extent;
 vec3 blocks = vec3(instance.volumes[volume_id].blocks);
 #define DATA_MAP volume_data_maps[volume_id]
