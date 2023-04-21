@@ -139,6 +139,10 @@ namespace flame
 				{
 					dst->remove_all_children();
 					dst->add_child(Entity::create(meshes[id].first));
+					dst->forward_traversal([](EntityPtr e) { 
+						if (e->get_component_t<cMesh>())
+							e->tag = e->tag | TagMarkNavMesh;
+					});
 					switch (meshes[id].second)
 					{
 					case 1:

@@ -1023,9 +1023,32 @@ void App::close_project()
 	unload_project_cpp();
 }
 
-void App::new_prefab(const std::filesystem::path& path)
+void App::new_prefab(const std::filesystem::path& path, uint type)
 {
 	auto e = Entity::create();
+	switch (type)
+	{
+	case "general_3d_scene"_h:
+		e->add_component_t<cNode>();
+		e->add_component_t<cNavScene>()->generate_delay_frames = 1;
+		auto e_camera = Entity::create();
+		e_camera->name = "Camera";
+		e_camera->add_component_t<cNode>();
+		e_camera->add_component_t<cCamera>();
+		e->add_child(e_camera);
+		auto e_light = Entity::create();
+		e_light->name = "Directional Light";
+		e_light->add_component_t<cNode>()->set_eul(vec3(45.f, -60.f, 0.f));
+		e_light->add_component_t<cDirLight>();
+		e->add_child(e_light);
+		auto e_plane = Entity::create();
+		e_plane->name = "Plane";
+		e_plane->tag = e_plane->tag | TagMarkNavMesh;
+		e_plane->add_component_t<cNode>();
+		e_plane->add_component_t<cMesh>()->set_mesh_and_material(L"standard_plane", L"default");
+		e->add_child(e_plane);
+		break;
+	}
 	e->save(path);
 	delete e;
 }

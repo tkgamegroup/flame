@@ -843,15 +843,19 @@ void View_Scene::on_draw()
 								app.e_playing->add_child(e);
 							else
 								app.e_prefab->add_child(e);
+							app.prefab_unsaved = true;
 							return false;
-							});
+						});
 					}
 					else if (ext == L".fmat")
 					{
 						if (hovering_entity)
 						{
 							if (auto mesh = hovering_entity->get_component_t<cMesh>(); mesh)
+							{
 								mesh->set_material_name(path);
+								app.prefab_unsaved = true;
+							}
 						}
 					}
 				}

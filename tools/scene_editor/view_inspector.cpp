@@ -1261,6 +1261,15 @@ struct EditingEntities
 			if (open && !exit_editing)
 			{
 				res = manipulate_udt(ui_component, (voidptr*)cc.components.data(), cc.components.size());
+				if (res.second != 0)
+				{
+					auto& str = ui_component.find_attribute(res.second)->name;
+					for (auto e : entities)
+					{
+						if (auto ins = get_root_prefab_instance(e); ins)
+							ins->mark_modifier(e->file_id.to_string(), ui.name, str);
+					}
+				}
 				ret_changed |= res.first;
 				ret_changed_name |= res.second;
 

@@ -527,17 +527,33 @@ void View_Project::init()
 					}
 				});
 			}
-			if (ImGui::MenuItem("New Prefab"))
+			if (ImGui::BeginMenu("New Prefab"))
 			{
-				ImGui::OpenInputDialog("New Prefab", "File Name", [path](bool ok, const std::string& str) {
-					if (ok && !str.empty())
-					{
-						auto fn = path / str;
-						fn.replace_extension(L".prefab");
-						if (!std::filesystem::exists(fn))
-							app.new_prefab(fn);
-					}
-				});
+				if (ImGui::MenuItem("Empty"))
+				{
+					ImGui::OpenInputDialog("New Prefab", "File Name", [path](bool ok, const std::string& str) {
+						if (ok && !str.empty())
+						{
+							auto fn = path / str;
+							fn.replace_extension(L".prefab");
+							if (!std::filesystem::exists(fn))
+								app.new_prefab(fn);
+						}
+					});
+				}
+				if (ImGui::MenuItem("General 3D Scene"))
+				{
+					ImGui::OpenInputDialog("New Prefab", "File Name", [path](bool ok, const std::string& str) {
+						if (ok && !str.empty())
+						{
+							auto fn = path / str;
+							fn.replace_extension(L".prefab");
+							if (!std::filesystem::exists(fn))
+								app.new_prefab(fn, "general_3d_scene"_h);
+						}
+					});
+				}
+				ImGui::EndMenu();
 			}
 		}
 		if (in_cpp)
