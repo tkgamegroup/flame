@@ -110,9 +110,8 @@ namespace flame
 		{
 			auto parent_path = _filename.parent_path();
 			auto filename = Path::reverse(_filename);
-			auto model_name_no_ext = filename.filename().stem().string();
-			auto model_name = model_name_no_ext + ".fmod";
 			auto ext = filename.extension().wstring();
+			auto model_name = filename.replace_extension(L".fmod").string();
 			SUW::to_lower(ext);
 			filename.replace_extension(L".fmod");
 
@@ -125,8 +124,14 @@ namespace flame
 				if (ret.empty())
 					ret = str(i);
 				else
-					for (auto& ch : ret) if (ch == ' ' || ch == ':' || ch == '|') ch = '_';
-				ret = std::format("{}_{}.{}", model_name_no_ext, ret, ext);
+				{
+					for (auto& ch : ret)
+					{
+						if (ch == ' ' || ch == ':' || ch == '|')
+							ch = '_';
+					}
+				}
+				ret = std::format("{}.{}", ret, ext);
 				return ret;
 			};
 
@@ -1137,7 +1142,7 @@ namespace flame
 							auto n_mesh = n_components.append_child("item");
 							n_mesh.append_attribute("type_name").set_value("flame::cMesh");
 							auto mesh_idx = src->mMeshes[0];
-							n_mesh.append_attribute("mesh_name").set_value((filename.string() + "#mesh" + str(mesh_idx)).c_str());
+							n_mesh.append_attribute("mesh_name").set_value((model_name + "#mesh" + str(mesh_idx)).c_str());
 							n_mesh.append_attribute("material_name").set_value(materials[scene->mMeshes[mesh_idx]->mMaterialIndex]->filename.string().c_str());
 							if (name == "mesh_collider")
 							{

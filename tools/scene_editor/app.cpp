@@ -4,7 +4,6 @@
 #include "view_scene.h"
 #include "view_project.h"
 #include "view_inspector.h"
-#include "tile_map_editing.h"
 
 #include <flame/xml.h>
 #include <flame/foundation/system.h>
@@ -518,7 +517,8 @@ void App::init()
 					tool = ToolTileMapLevelUp;
 				if (tool_button(graphics::FontAtlas::icon_s("down-long"_h), app.tool == ToolTileMapLevelDown))
 					tool = ToolTileMapLevelDown;
-				tile_map_editing();
+				if (tool_button(graphics::FontAtlas::icon_s("stairs"_h), app.tool == ToolTileMapSlope))
+					tool = ToolTileMapSlope;
 			}
 		}
 

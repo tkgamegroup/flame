@@ -1,6 +1,7 @@
 #include "view_scene.h"
 #include "selection.h"
 #include "history.h"
+#include "tile_map_editing.h"
 
 #include <flame/foundation/typeinfo.h>
 #include <flame/universe/draw_data.h>
@@ -456,8 +457,9 @@ void View_Scene::on_draw()
 
 		auto& io = ImGui::GetIO();
 		auto& style = ImGui::GetStyle();
+		auto in_scene = ImGui::IsItemHovered();
 
-		if (ImGui::IsItemHovered())
+		if (in_scene)
 		{
 			auto camera_node = camera->node;
 
@@ -560,105 +562,103 @@ void View_Scene::on_draw()
 				}
 			}
 
-			if (all(greaterThanEqual((vec2)io.MousePos, (vec2)p0)) && all(lessThanEqual((vec2)io.MousePos, (vec2)p1)))
+			if (auto hovering_element = sRenderer::instance()->pick_up_2d(app.input->mpos);
+				hovering_element && hovering_element->entity != sScene::instance()->first_element)
 			{
-				if (auto hovering_element = sRenderer::instance()->pick_up_2d(app.input->mpos); 
-					hovering_element && hovering_element->entity != sScene::instance()->first_element)
-				{
-					hovering_entity = hovering_element->entity;
-					hovering_pos = vec3(app.input->mpos, 0.f);
-				}
+				hovering_entity = hovering_element->entity;
+				hovering_pos = vec3(app.input->mpos, 0.f);
+			}
 
-				if (!hovering_entity)
-				{
-					auto hovering_node = sRenderer::instance()->pick_up(app.input->mpos, &hovering_pos, [](cNodePtr n, DrawData& draw_data) {
-						if (draw_data.categories & CateMesh)
+			if (!hovering_entity)
+			{
+				auto hovering_node = sRenderer::instance()->pick_up(app.input->mpos, &hovering_pos, [](cNodePtr n, DrawData& draw_data) {
+					if (draw_data.categories & CateMesh)
+					{
+						if (auto armature = n->entity->get_component_t<cArmature>(); armature)
 						{
-							if (auto armature = n->entity->get_component_t<cArmature>(); armature)
+							for (auto& c : n->entity->children)
 							{
-								for (auto& c : n->entity->children)
-								{
-									if (auto mesh = c->get_component_t<cMesh>(); mesh)
-									{
-										if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
-											draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
-									}
-								}
-							}
-							if (auto mesh = n->entity->get_component_t<cMesh>(); mesh)
-							{
-								if (auto armature = n->entity->get_parent_component_t<cArmature>(); armature)
-									;
-								else
+								if (auto mesh = c->get_component_t<cMesh>(); mesh)
 								{
 									if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
 										draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
 								}
 							}
 						}
-						if (draw_data.categories & CateTerrain)
+						if (auto mesh = n->entity->get_component_t<cMesh>(); mesh)
 						{
-							if (auto terrain = n->entity->get_component_t<cTerrain>(); terrain)
-								draw_data.terrains.emplace_back(terrain->instance_id, terrain->blocks, terrain->material_res_id);
-						}
-						if (draw_data.categories & CateMarchingCubes)
-						{
-							if (auto volume = n->entity->get_component_t<cVolume>(); volume && volume->marching_cubes)
-								draw_data.volumes.emplace_back(volume->instance_id, volume->blocks, volume->material_res_id);
-						}
-						});
-
-					if (hovering_node)
-						hovering_entity = hovering_node->entity;
-				}
-
-				if (!gizmo_using && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
-				{
-					auto get_top_entity = [](EntityPtr e) {
-						if (auto ins = get_root_prefab_instance(e); ins)
-						{
-							if (!selection.selecting(ins->e))
-								return ins->e;
-						}
-						return e;
-					};
-					if (ImGui::IsKeyDown(Keyboard_Ctrl))
-					{
-						if (hovering_entity)
-						{
-							auto e = get_top_entity(hovering_entity);
-							auto entities = selection.get_entities();
-							auto found = false;
-							for (auto it = entities.begin(); it != entities.end();)
+							if (auto armature = n->entity->get_parent_component_t<cArmature>(); armature)
+								;
+							else
 							{
-								if (*it == e)
-								{
-									found = true;
-									it = entities.erase(it);
-									break;
-								}
-								else
-									it++;
+								if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
+									draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
 							}
-							if (!found)
-								entities.push_back(e);
-							selection.select(entities, "scene"_h);
 						}
 					}
-					else
+					if (draw_data.categories & CateTerrain)
 					{
-						if (hovering_entity)
-							selection.select(get_top_entity(hovering_entity), "scene"_h);
-						else
-							selection.clear("scene"_h);
+						if (auto terrain = n->entity->get_component_t<cTerrain>(); terrain)
+							draw_data.terrains.emplace_back(terrain->instance_id, terrain->blocks, terrain->material_res_id);
+					}
+					if (draw_data.categories & CateMarchingCubes)
+					{
+						if (auto volume = n->entity->get_component_t<cVolume>(); volume && volume->marching_cubes)
+							draw_data.volumes.emplace_back(volume->instance_id, volume->blocks, volume->material_res_id);
+					}
+					});
+
+				if (hovering_node)
+					hovering_entity = hovering_node->entity;
+			}
+
+			if (!gizmo_using && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
+			{
+				auto get_top_entity = [](EntityPtr e) {
+					if (auto ins = get_root_prefab_instance(e); ins)
+					{
+						if (!selection.selecting(ins->e))
+							return ins->e;
+					}
+					return e;
+				};
+				if (ImGui::IsKeyDown(Keyboard_Ctrl))
+				{
+					if (hovering_entity)
+					{
+						auto e = get_top_entity(hovering_entity);
+						auto entities = selection.get_entities();
+						auto found = false;
+						for (auto it = entities.begin(); it != entities.end();)
+						{
+							if (*it == e)
+							{
+								found = true;
+								it = entities.erase(it);
+								break;
+							}
+							else
+								it++;
+						}
+						if (!found)
+							entities.push_back(e);
+						selection.select(entities, "scene"_h);
 					}
 				}
+				else
 				{
-					auto s = str(hovering_pos);
-					auto sz = ImGui::CalcTextSize(s.c_str(), s.c_str() + s.size());
-					ImGui::GetWindowDrawList()->AddRectFilled(p0, (vec2)p0 + (vec2)sz, ImColor(0.f, 0.f, 0.f, 0.5f));
-					ImGui::GetWindowDrawList()->AddText(p0, ImColor(255.f, 255.f, 255.f), s.c_str(), s.c_str() + s.size());
+					if (hovering_entity)
+						selection.select(get_top_entity(hovering_entity), "scene"_h);
+					else
+						selection.clear("scene"_h);
 				}
+			}
+
+			{
+				auto s = str(hovering_pos);
+				auto sz = ImGui::CalcTextSize(s.c_str(), s.c_str() + s.size());
+				ImGui::GetWindowDrawList()->AddRectFilled(p0, (vec2)p0 + (vec2)sz, ImColor(0.f, 0.f, 0.f, 0.5f));
+				ImGui::GetWindowDrawList()->AddText(p0, ImColor(255.f, 255.f, 255.f), s.c_str(), s.c_str() + s.size());
 			}
 		}
 
@@ -810,6 +810,17 @@ void View_Scene::on_draw()
 
 			if (show_navigation_frames > 0)
 				show_navigation_frames--;
+		}
+
+		if (in_scene && app.e_editing)
+		{
+			if (auto terrain = app.e_editing->get_component_t<cTerrain>(); terrain)
+			{
+			}
+			if (auto tile_map = app.e_editing->get_component_t<cTileMap>(); tile_map)
+			{
+				tile_map_editing();
+			}
 		}
 
 		if (ImGui::BeginDragDropTarget())

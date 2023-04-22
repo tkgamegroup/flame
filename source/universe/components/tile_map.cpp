@@ -63,10 +63,10 @@ namespace flame
 				auto name = p.path().filename().stem().string();
 				if (name.size() != 4)
 					continue;
-				auto a = name[0]; if (a == '0') a = 0; else if (a == '1') a = 1; else if (a == 'H') a = 2; else continue;
-				auto b = name[1]; if (b == '0') b = 0; else if (b == '1') b = 1; else if (b == 'H') b = 2; else continue;
-				auto c = name[2]; if (c == '0') c = 0; else if (c == '1') c = 1; else if (c == 'H') c = 2; else continue;
-				auto d = name[3]; if (d == '0') d = 0; else if (d == '1') d = 1; else if (d == 'H') d = 2; else continue;
+				auto a = name[0]; if (a == '0') a = 0; else if (a == '1') a = 2; else if (a == 'H') a = 1; else continue;
+				auto b = name[1]; if (b == '0') b = 0; else if (b == '1') b = 2; else if (b == 'H') b = 1; else continue;
+				auto c = name[2]; if (c == '0') c = 0; else if (c == '1') c = 2; else if (c == 'H') c = 1; else continue;
+				auto d = name[3]; if (d == '0') d = 0; else if (d == '1') d = 2; else if (d == 'H') d = 1; else continue;
 
 				meshes[a + b * 3 + c * 3 * 3 + d * 3 * 3 * 3] = std::make_pair(p.path(), 0U);
 			}
@@ -93,6 +93,12 @@ namespace flame
 		update_tiles();
 
 		data_changed("tiles_path"_h);
+	}
+
+	void cTileMapPrivate::set_samples(const std::vector<uint>& _samples)
+	{
+		samples = _samples;
+		update_tiles();
 	}
 
 	void cTileMapPrivate::set_sample(uint idx, uint v)
@@ -123,6 +129,7 @@ namespace flame
 			}
 		}
 		auto gap_x = extent.x / blocks.x;
+		auto gap_y = extent.y / blocks.y;
 		auto gap_z = extent.z / blocks.z;
 		for (auto i = 0; i < blocks.x; i++)
 		{
@@ -132,6 +139,9 @@ namespace flame
 				auto b = samples[i + 1 + j * (blocks.x + 1)];
 				auto c = samples[i + (j + 1) * (blocks.x + 1)];
 				auto d = samples[i + 1 + (j + 1) * (blocks.x + 1)];
+				auto base_lv = min(min(a / 2, b / 2), min(c / 2, d / 2));
+				a -= base_lv * 2; b -= base_lv * 2; c -= base_lv * 2; d -= base_lv * 2;
+
 				auto id = get_mesh_id(a, b, c, d);
 				auto dst = entity->children[i + j * blocks.x].get();
 				auto node = dst->node();
@@ -146,7 +156,7 @@ namespace flame
 					switch (meshes[id].second)
 					{
 					case 0:
-						node->set_qut(angleAxis(radians(0.f), vec3(0.f, 1.f, 0.f)));
+						node->set_qut(quat(1.f, 0.f, 0.f, 0.f));
 						break;
 					case 1:
 						node->set_qut(angleAxis(radians(90.f), vec3(0.f, 1.f, 0.f)));
@@ -159,7 +169,7 @@ namespace flame
 						break;
 					}
 				}
-				node->set_pos(vec3((i + 0.5f) * gap_x , 0.f, (j + 0.5f) * gap_z));
+				node->set_pos(vec3((i + 0.5f) * gap_x , base_lv * gap_y, (j + 0.5f) * gap_z));
 			}
 		}
 	}

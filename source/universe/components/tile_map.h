@@ -28,7 +28,14 @@ namespace flame
 		// Reflect
 		std::vector<uint> samples;
 		// Reflect
+		virtual void set_samples(const std::vector<uint>& samples) = 0;
+		// Reflect
 		virtual void set_sample(uint idx, uint v) = 0;
+		inline void add_sample(uint idx, uint v)
+		{
+			v = max((int)samples[idx] + (int)v, 0);
+			set_sample(idx, v);
+		}
 
 		struct Create
 		{
