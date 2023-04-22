@@ -17,28 +17,32 @@ class ExportFmod(bpy.types.Operator, ExportHelper):
     bl_label = "Export Fmod"
     bl_options = {'PRESET'}
     
-    filename_ext = ".fbx" # needed by blender
+    filename_ext = "." # needed by blender
+    use_filter_folder = True
 
     def execute(self, context):
-        if len(context.selected_objects) != 1 :
+        if len(context.selected_objects) < 1 :
             return {"CANCELLED"}
-        
-        obj = context.selected_objects[0]
-        x = obj.location.x
-        y = obj.location.y
-        z = obj.location.z
 
-        obj.location.x = 0
-        obj.location.y = 0
-        obj.location.z = 0
-
-        bpy.ops.export_scene.fbx(filepath=self.filepath, use_selection=True, use_triangles=True)
-        os.system("%s/bin/debug/model_converter.exe %s -scaling 0.01,0.01,0.01" % (os.environ["FLAME_PATH"], self.filepath))
-        os.remove(self.filepath)
+        print("Export Fmods To " + self.filepath)
         
-        obj.location.x = x
-        obj.location.y = y
-        obj.location.z = z
+        for obj in context.selected_objects:
+            x = obj.location.x
+            y = obj.location.y
+            z = obj.location.z
+
+            obj.location.x = 0
+            obj.location.y = 0
+            obj.location.z = 0
+
+            path = self.filepath + obj.name + ".fbx"
+            bpy.ops.export_scene.fbx(filepath=path, use_selection=True, use_triangles=True)
+            os.system("%s/bin/debug/model_converter.exe %s -scaling 0.01,0.01,0.01" % (os.environ["FLAME_PATH"], path))
+            os.remove(path)
+        
+            obj.location.x = x
+            obj.location.y = y
+            obj.location.z = z
 
         return {"FINISHED"}
 
