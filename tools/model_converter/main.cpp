@@ -21,7 +21,7 @@ int main(int argc, char** args)
 			}
 		}
 
-		Model::convert(input, vec3(0.f), scaling);
+		Model::convert(input, vec3(0.f), scaling, false, true);
 		printf("converted\n");
 	}
 	return 0;

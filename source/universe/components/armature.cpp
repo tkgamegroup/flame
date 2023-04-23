@@ -48,7 +48,7 @@ namespace flame
 			{
 				auto& src = model->bones[i];
 				auto& dst = bones[i];
-				auto e = entity->find_child(src.name);
+				auto e = entity->find_child_recursively(src.name);
 				if (e)
 				{
 					dst.name = src.name;
@@ -149,15 +149,15 @@ namespace flame
 										k.first = a.duration;
 										t.rotations.push_back(k);
 									}
-									if (id == 0)
-									{
-										if (!t.positions.empty())
-										{
-											auto first_xz = t.positions.front().second.xz();
-											for (auto i = 1; i < t.positions.size(); i++)
-												t.positions[i].second.xz = first_xz;
-										}
-									}
+									//if (id == 0)
+									//{
+									//	if (!t.positions.empty())
+									//	{
+									//		auto first_xz = t.positions.front().second.xz();
+									//		for (auto i = 1; i < t.positions.size(); i++)
+									//			t.positions[i].second.xz = first_xz;
+									//	}
+									//}
 								}
 							}
 						}
@@ -288,7 +288,7 @@ namespace flame
 					{
 						auto rit = std::lower_bound(t.positions.begin(), t.positions.end(), playing_time, [](const auto& i, auto v) {
 							return i.first < v;
-							});
+						});
 						auto lit = rit;
 						if (lit != t.positions.begin())
 							lit--;

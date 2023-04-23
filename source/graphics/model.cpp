@@ -111,7 +111,7 @@ namespace flame
 			auto parent_path = _filename.parent_path();
 			auto filename = Path::reverse(_filename);
 			auto ext = filename.extension().wstring();
-			auto model_name = filename.replace_extension(L".fmod").string();
+			auto model_name = filename.filename().replace_extension(L".fmod").string();
 			SUW::to_lower(ext);
 			filename.replace_extension(L".fmod");
 
@@ -473,7 +473,7 @@ namespace flame
 												}
 												if (!copied && dst != fn)
 												{
-													std::filesystem::copy_file(fn, dst);
+													std::filesystem::copy_file(fn, dst, std::filesystem::copy_options::overwrite_existing);
 													fn = dst;
 												}
 											}
