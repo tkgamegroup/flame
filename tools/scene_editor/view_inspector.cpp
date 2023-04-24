@@ -668,6 +668,8 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				changed = 2;
 				app.prefab_unsaved = true;
 			}
+			else
+				n = sv.count();
 			if (!changed)
 			{
 				editing_objects.push(EditingObjects());
@@ -720,6 +722,8 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				changed = 2;
 				app.prefab_unsaved = true;
 			}
+			else
+				n = sv.count();
 			if (!changed)
 			{
 				editing_objects.push(EditingObjects());
@@ -772,6 +776,8 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				changed = 2;
 				app.prefab_unsaved = true;
 			}
+			else
+				n = sv.count();
 			if (!changed)
 			{
 				editing_objects.push(EditingObjects());
@@ -831,6 +837,8 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				changed = 2;
 				app.prefab_unsaved = true;
 			}
+			else
+				n = sv.count();
 			if (!changed)
 			{
 				editing_objects.push(EditingObjects());
@@ -872,16 +880,17 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 
 std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num, const std::function<void(uint)>& cb)
 {
-	uint changed = 0;
-	uint changed_name = 0;
+	uint ret_changed = 0;
+	uint ret_changed_name = 0;
 
 	if (ui.attributes.empty())
 	{
 		for (auto& v : ui.variables)
 		{
-			changed = manipulate_variable(v.type, v.name, v.name_hash, v.offset, nullptr, nullptr, objs, num, &v);
+			auto changed = manipulate_variable(v.type, v.name, v.name_hash, v.offset, nullptr, nullptr, objs, num, &v);
+			ret_changed |= changed;
 			if (changed)
-				changed_name = v.name_hash;
+				ret_changed_name = v.name_hash;
 			if (cb)
 				cb(v.name_hash);
 		}
@@ -890,17 +899,18 @@ std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num,
 	{
 		for (auto& a : ui.attributes)
 		{
-			changed = manipulate_variable(a.type, a.name, a.name_hash, a.var_off(),
+			auto changed = manipulate_variable(a.type, a.name, a.name_hash, a.var_off(),
 				a.getter_idx != -1 ? &ui.functions[a.getter_idx] : nullptr,
 				a.setter_idx != -1 ? &ui.functions[a.setter_idx] : nullptr,
 				objs, num, &a);
+			ret_changed |= changed;
 			if (changed)
-				changed_name = a.name_hash;
+				ret_changed_name = a.name_hash;
 			if (cb)
 				cb(a.name_hash);
 		}
 	}
-	return std::make_pair(changed, changed_name);
+	return std::make_pair(ret_changed, ret_changed_name);
 }
 
 struct CommonComponents

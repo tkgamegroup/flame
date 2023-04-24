@@ -2,6 +2,7 @@
 #include "../foundation/bitmap.h"
 #include "../foundation/typeinfo.h"
 #include "../foundation/typeinfo_serialize.h"
+#include "../foundation/system.h"
 #include "material_private.h"
 #include "model_private.h"
 #include "model_ext.h"
@@ -170,6 +171,7 @@ namespace flame
 			auto preprocess = [&](pugi::xml_node first_node)->pugi::xml_node {
 				if (need_wrap_root)
 				{
+					first_node.append_attribute("file_id").set_value(generate_guid().to_string().c_str());
 					auto n_node = first_node.append_child("components").append_child("item");
 					n_node.append_attribute("type_name").set_value("flame::cNode");
 					return first_node.append_child("children").append_child("item");
@@ -409,6 +411,7 @@ namespace flame
 
 				std::function<void(pugi::xml_node, fbxsdk::FbxNode*)> process_node;
 				process_node = [&](pugi::xml_node dst, fbxsdk::FbxNode* src) {
+					dst.append_attribute("file_id").set_value(generate_guid().to_string().c_str());
 					dst.append_attribute("name").set_value(src->GetName());
 
 					auto n_components = dst.append_child("components");
