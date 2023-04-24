@@ -88,7 +88,7 @@ namespace flame
 				else
 				{
 					auto pb = parmature->bone_node_map[node];
-					if (!pb)
+					if (!pb || !pb->pose.valid)
 						b.expand(AABB(mesh->bounds.get_points(parmature->node->transform)));
 					else
 						b.expand(AABB(mesh->bounds.get_points(pb->pose.m)));

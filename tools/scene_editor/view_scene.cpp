@@ -50,7 +50,7 @@ void View_Scene::selected_to_focus()
 	if (selection.type == Selection::tEntity)
 	{
 		auto e = selection.as_entity();
-		if (auto node = e->get_component_i<cNode>(0); node)
+		if (auto node = e->node(); node)
 		{
 			node->set_pos(camera_target_pos());
 			if (auto ins = get_root_prefab_instance(e); ins)
@@ -702,7 +702,7 @@ void View_Scene::on_draw()
 			World::instance()->root->forward_traversal([](EntityPtr e) {
 				if (!e->global_enable)
 					return false;
-				if (auto node = e->get_component_i<cNode>(0); node)
+				if (auto node = e->node(); node)
 				{
 					if (!node->bounds.invalid())
 					{
@@ -721,7 +721,7 @@ void View_Scene::on_draw()
 				auto e = selection.as_entity();
 				if (e->global_enable)
 				{
-					if (auto node = e->get_component_i<cNode>(0); node)
+					if (auto node = e->node(); node)
 					{
 						vec3 line_pts[2];
 						line_pts[0] = node->global_pos(); line_pts[1] = node->global_pos() + node->x_axis();
@@ -838,7 +838,7 @@ void View_Scene::on_draw()
 							auto e = Entity::create();
 							e->load(path);
 							new PrefabInstance(e, path);
-							if (auto node = e->get_component_i<cNode>(0); node)
+							if (auto node = e->node(); node)
 							{
 								auto pos = hovering_pos;
 								if (!hovering_entity)

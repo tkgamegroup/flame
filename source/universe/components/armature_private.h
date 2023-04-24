@@ -11,6 +11,7 @@ namespace flame
 	{
 		struct Pose
 		{
+			bool valid = false;
 			vec3 p = vec3(0);
 			quat q = quat(1, 0, 0, 0);
 			mat4 m;

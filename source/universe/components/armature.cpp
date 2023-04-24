@@ -10,6 +10,7 @@ namespace flame
 {
 	void cArmaturePrivate::Bone::calc_mat()
 	{
+		pose.valid = true;
 		if (!node)
 			pose.m = mat4(1.f);
 		pose.m = node->transform * offmat;
