@@ -44,13 +44,15 @@ struct GraphicsApplication : Application
 	{
 		if (main_window->native->has_input)
 			render_frames = 3;
-		if (render_frames > 0 || always_render)
+		if (always_render)
+			render_frames = max(render_frames, 1);
+		if (render_frames > 0)
 		{
 			on_render();
 			main_window->dirty = true;
-			main_window->render();
 			render_frames--;
 		}
+		main_window->render();
 		return true;
 	}
 };

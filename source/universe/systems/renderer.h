@@ -240,7 +240,7 @@ namespace flame
 		Listeners<void()> before_render_callbacks;
 
 		// Reflect
-		virtual void render(uint tar_idx, graphics::CommandBufferPtr cb) = 0;
+		virtual void render(int tar_idx, graphics::CommandBufferPtr cb) = 0;
 
 		// Reflect
 		virtual cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos = nullptr, const std::function<void(cNodePtr, DrawData&)>& draw_callback = {}) = 0;

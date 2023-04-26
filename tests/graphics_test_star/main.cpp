@@ -142,7 +142,7 @@ int entry(int argc, char** args)
 	app.main_window->native->resize_listeners.add([](const uvec2& size) {
 		projector.set(size, 45.f, 1.f, 4.f);
 	});
-	app.main_window->renderers.add([](uint idx, CommandBufferPtr cb) {
+	app.main_window->renderers.add([](int idx, CommandBufferPtr cb) {
 		for (auto& s : stars)
 		{
 			s.move();

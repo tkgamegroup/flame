@@ -33,7 +33,7 @@ namespace flame
 			NativeWindowPtr native;
 			std::unique_ptr<SwapchainT> swapchain;
 
-			Listeners<void(uint, CommandBufferPtr)> renderers;
+			Listeners<void(int, CommandBufferPtr)> renderers;
 
 			bool dirty = false;
 

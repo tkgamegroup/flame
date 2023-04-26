@@ -89,7 +89,7 @@ namespace flame
 		void draw_outlines(const std::vector<CommonDraw>& draws, const cvec4& color, uint width, uint mode) override;
 		void draw_primitives(uint type, const vec3* points, uint count, const cvec4& color, bool depth_test) override;
 
-		void render(uint tar_idx, graphics::CommandBufferPtr cb) override;
+		void render(int tar_idx, graphics::CommandBufferPtr cb) override;
 
 		void update() override;
 

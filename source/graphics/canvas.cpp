@@ -14,8 +14,8 @@ namespace flame
 			window = _window;
 
 			auto gui_idx = window->renderers.find("gui"_h);
-			window->renderers.add([this](uint idx, CommandBufferPtr cb) {
-				if (iv_tars.empty())
+			window->renderers.add([this](int idx, CommandBufferPtr cb) {
+				if (idx < 0 || iv_tars.empty())
 				{
 					reset();
 					return;

@@ -184,7 +184,10 @@ namespace flame
 		void WindowPrivate::render()
 		{
 			if (!dirty || swapchain->images.empty())
+			{
+				renderers.call(-1, commandbuffer.get());
 				return;
+			}
 
 			finished_fence->wait();
 			commandbuffer->calc_executed_time();

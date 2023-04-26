@@ -393,8 +393,10 @@ namespace flame
 			return want_keyboard;
 		}
 
-		static void gui_render(uint img_idx, CommandBufferPtr cb)
+		static void gui_render(int img_idx, CommandBufferPtr cb)
 		{
+			if (img_idx < 0)
+				return;
 #ifdef USE_IMGUI
 			auto curr_img = main_window->swapchain->images[img_idx].get();
 			auto curr_fb = imgui_fbs[img_idx].get();

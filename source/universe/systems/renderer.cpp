@@ -707,7 +707,7 @@ namespace flame
 
 		cb.excute();
 		
-		w->renderers.add([this](uint img_idx, graphics::CommandBufferPtr cb) {
+		w->renderers.add([this](int img_idx, graphics::CommandBufferPtr cb) {
 			render(img_idx, cb);
 		}, 0, 0);
 	}
@@ -1830,7 +1830,7 @@ namespace flame
 		return gauss_blur_weights[radius].data();
 	}
 
-	void sRendererPrivate::render(uint tar_idx, graphics::CommandBufferPtr cb)
+	void sRendererPrivate::render(int tar_idx, graphics::CommandBufferPtr cb)
 	{
 		if (mark_clear_pipelines)
 		{
@@ -1855,6 +1855,14 @@ namespace flame
 			pl_deferred.pls.clear();
 
 			mark_clear_pipelines = false;
+		}
+
+		if (tar_idx < 0)
+		{
+			outlines_draws.clear();
+			buf_primitives.buf_top = buf_primitives.stag_top = 0;
+			primitives_draws.clear();
+			return;
 		}
 
 		if (camera == INVALID_POINTER || iv_tars.empty())
