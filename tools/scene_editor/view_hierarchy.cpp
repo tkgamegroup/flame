@@ -14,6 +14,12 @@ View_Hierarchy::View_Hierarchy() :
 	}, "hierarchy"_h);
 }
 
+struct Entities
+{
+	EntityPtr* p;
+	uint n;
+};
+
 void View_Hierarchy::on_draw()
 {
 	EntityPtr select_entity = nullptr;
@@ -31,105 +37,155 @@ void View_Hierarchy::on_draw()
 	}
 
 	std::function<void(EntityPtr, bool)> show_entity;
-	show_entity = [&](EntityPtr e, bool in_prefab) {
-		auto flags = selection.selecting(e) ? ImGuiTreeNodeFlags_Selected : 0;
-		if (e->children.empty())
+	show_entity = [&](EntityPtr e_dst, bool in_prefab) {
+		auto flags = selection.selecting(e_dst) ? ImGuiTreeNodeFlags_Selected : 0;
+		if (e_dst->children.empty())
 			flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		else
 			flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 		if (!open_nodes.empty())
 		{
-			if (std::find(open_nodes.begin(), open_nodes.end(), e) != open_nodes.end())
+			if (std::find(open_nodes.begin(), open_nodes.end(), e_dst) != open_nodes.end())
 				ImGui::SetNextItemOpen(true);
 		}
 
-		if (e->prefab_instance)
+		if (e_dst->prefab_instance)
 			in_prefab = true;
-		auto display_name = e->name;
+		auto display_name = e_dst->name;
 		if (!in_prefab)
 			display_name = "[] " + display_name;
 		else
 			display_name = "[-] " + display_name;
 		display_name += "###";
-		display_name += str((uint64)e);
+		display_name += str((uint64)e_dst);
 		if (in_prefab)
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.f, 0.8f, 1.f, 1.f));
 		auto opened = ImGui::TreeNodeEx(display_name.c_str(), flags) && !(flags & ImGuiTreeNodeFlags_Leaf);
-		if (e == focus_entity)
+		if (e_dst == focus_entity)
 			ImGui::SetScrollHereY();
 		if (in_prefab)
 			ImGui::PopStyleColor();
 
 		if (ImGui::BeginDragDropSource())
 		{
-			ImGui::SetDragDropPayload("Entity", &e, sizeof(void*));
-			ImGui::TextUnformatted("Entity");
-			ImGui::EndDragDropSource();
+			auto found = false;
+			for (auto _e : selection.get_entities())
+			{
+				if (e_dst == _e)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				ImGui::SetDragDropPayload("Entity", &e_dst, sizeof(void*));
+				ImGui::TextUnformatted(e_dst->name.c_str());
+				ImGui::EndDragDropSource();
+			}
+			else
+			{
+				Entities es;
+				es.p = (EntityPtr*)selection.objects.data();
+				es.n = selection.objects.size();
+				ImGui::SetDragDropPayload("Entities", &es, sizeof(Entities));
+				ImGui::Text("%d entities", es.n);
+				ImGui::EndDragDropSource();
+			}
 		}
 
-		auto read_drop_entity = [e]()->EntityPtr {
+		auto read_drop_entities = [e_dst]()->std::vector<EntityPtr> {
+			std::vector<EntityPtr> ret;
 			if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
 			{
-				if (get_root_prefab_instance(e))
+				if (get_root_prefab_instance(e_dst))
 				{
 					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-					return nullptr;
+					return ret;
 				}
-				else
+				auto e = *(EntityPtr*)payload->Data;
+				if (!e->prefab_instance && get_root_prefab_instance(e))
 				{
-					auto e_src = *(EntityPtr*)payload->Data;
-					if (!e_src->prefab_instance && get_root_prefab_instance(e_src))
+					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+					return ret;
+				}
+				if (is_ancestor(e, e_dst))
+					return ret;
+				ret.push_back(e);
+			}
+			if (auto payload = ImGui::AcceptDragDropPayload("Entities"); payload)
+			{
+				if (get_root_prefab_instance(e_dst))
+				{
+					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+					return ret;
+				}
+				auto& es = *(Entities*)payload->Data;
+				for (auto i = 0; i < es.n; i++)
+				{
+					auto e = es.p[i];
+					if (!e->prefab_instance && get_root_prefab_instance(e))
 					{
 						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-						return nullptr;
+						return ret;
 					}
-					if (!is_ancestor(e_src, e))
-						return e_src;
 				}
+				for (auto i = 0; i < es.n; i++)
+				{
+					for (auto j = 0; j < es.n; j++)
+					{
+						if (is_ancestor(es.p[i], es.p[j]))
+						{
+							app.open_message_dialog("Cannot reparent", "The entities you select must not have parentships");
+							return ret;
+						}
+					}
+				}
+				for (auto i = 0; i < es.n; i++)
+				{
+					if (is_ancestor(es.p[i], e_dst))
+						return ret;
+				}
+				for (auto i = 0; i < es.n; i++)
+					ret.push_back(es.p[i]);
 			}
-			return nullptr;
-		};
-		auto read_drop_file = [e]()->EntityPtr {
 			if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
 			{
-				if (get_root_prefab_instance(e))
+				if (get_root_prefab_instance(e_dst))
 				{
 					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-					return nullptr;
+					return ret;
 				}
-				else
+				auto str = std::wstring((wchar_t*)payload->Data);
+				auto path = Path::reverse(str);
+				if (path.extension() == L".prefab")
 				{
-					auto str = std::wstring((wchar_t*)payload->Data);
-					auto path = Path::reverse(str);
-					if (path.extension() == L".prefab")
-					{
-						auto e_src = Entity::create();
-						e_src->load(path);
-						new PrefabInstance(e_src, path);
-						return e_src;
-					}
+					auto e = Entity::create(path);
+					new PrefabInstance(e, path);
+					ret.push_back(e);
 				}
 			}
-			return nullptr;
+			return ret;
 		};
 
 		if (ImGui::BeginDragDropTarget())
 		{
-			if (auto e_src = read_drop_entity(); e_src)
+			auto es = read_drop_entities();
+			if (!es.empty())
 			{
-				e_src->remove_from_parent(false);
-				e->add_child(e_src);
-				app.prefab_unsaved = true;
-			}
-			if (auto e_src = read_drop_file(); e_src)
-			{
-				e->add_child(e_src);
+				for (auto _e : es)
+				{
+					if (_e->parent)
+						_e->remove_from_parent(false);
+				}
+				for (auto _e : es)
+					e_dst->add_child(_e);
 				app.prefab_unsaved = true;
 			}
 			ImGui::EndDragDropTarget();
 		}
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsItemHovered())
-			select_entity = e;
+			select_entity = e_dst;
 
 		if (opened)
 		{
@@ -139,27 +195,32 @@ void View_Hierarchy::on_draw()
 				ImGui::PopID();
 				if (ImGui::BeginDragDropTarget())
 				{
-					if (auto e_src = read_drop_entity(); e_src)
+					auto es = read_drop_entities();
+					if (!es.empty())
 					{
 						auto idx = i;
-						if (e_src->parent == e && e_src->index < i) idx--;
-						e_src->remove_from_parent(false);
-						e->add_child(e_src, idx);
-						app.prefab_unsaved = true;
-					}
-					if (auto e_src = read_drop_file(); e_src)
-					{
-						e->add_child(e_src, i);
+						for (auto _e : es)
+						{
+							if (_e->parent == e_dst && _e->index < i)
+								idx--;
+							if (_e->parent)
+								_e->remove_from_parent(false);
+						}
+						for (auto _e : es)
+						{
+							e_dst->add_child(_e, idx);
+							idx++;
+						}
 						app.prefab_unsaved = true;
 					}
 					ImGui::EndDragDropTarget();
 				}
 			};
 			auto i = 0;
-			for (; i < e->children.size(); i++)
+			for (; i < e_dst->children.size(); i++)
 			{
 				gap_item(i);
-				show_entity(e->children[i].get(), in_prefab);
+				show_entity(e_dst->children[i].get(), in_prefab);
 			}
 			gap_item(i);
 			ImGui::TreePop();
@@ -201,7 +262,7 @@ void View_Hierarchy::on_draw()
 				selection.select(select_entity, "hierarchy"_h);
 			else
 			{
-				auto begin = entities.back();
+				auto begin = entities.front();
 				auto end = select_entity;
 				if (end->compare_depth(begin))
 					std::swap(begin, end);
