@@ -13,7 +13,8 @@ namespace flame
 		pose.valid = true;
 		if (!node)
 			pose.m = mat4(1.f);
-		pose.m = node->transform * offmat;
+		else
+			pose.m = node->transform * offmat;
 	}
 
 	std::filesystem::path parse_name(const std::filesystem::path& src)
@@ -203,9 +204,6 @@ namespace flame
 			{
 				if (dirty)
 				{
-					for (auto& c : entity->children)
-						c->node()->mark_transform_dirty();
-
 					std::vector<mat4> mats(bones.size());
 					for (auto i = 0; i < bones.size(); i++)
 					{
