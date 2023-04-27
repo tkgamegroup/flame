@@ -14,12 +14,9 @@ View_Hierarchy::View_Hierarchy() :
 	}, "hierarchy"_h);
 }
 
-uint hierarchy_select_frame = 0;
-
 void View_Hierarchy::on_draw()
 {
-	auto no_select = true;
-
+	EntityPtr select_entity = nullptr;
 	EntityPtr focus_entity = selection_changed ? (selection.type == Selection::tEntity ? selection.as_entity(-1) : nullptr) : nullptr;
 
 	std::vector<EntityPtr> open_nodes;
@@ -40,7 +37,6 @@ void View_Hierarchy::on_draw()
 			flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		else
 			flags |= ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
-		ImGui::PushID(e);
 		if (!open_nodes.empty())
 		{
 			if (std::find(open_nodes.begin(), open_nodes.end(), e) != open_nodes.end())
@@ -55,6 +51,7 @@ void View_Hierarchy::on_draw()
 		else
 			display_name = "[-] " + display_name;
 		display_name += "###";
+		display_name += str((uint64)e);
 		if (in_prefab)
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.f, 0.8f, 1.f, 1.f));
 		auto opened = ImGui::TreeNodeEx(display_name.c_str(), flags) && !(flags & ImGuiTreeNodeFlags_Leaf);
@@ -62,7 +59,6 @@ void View_Hierarchy::on_draw()
 			ImGui::SetScrollHereY();
 		if (in_prefab)
 			ImGui::PopStyleColor();
-		ImGui::PopID();
 
 		if (ImGui::BeginDragDropSource())
 		{
@@ -133,77 +129,14 @@ void View_Hierarchy::on_draw()
 			ImGui::EndDragDropTarget();
 		}
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsItemHovered())
-		{
-			if (ImGui::IsKeyDown(Keyboard_Ctrl))
-			{
-				auto entities = selection.get_entities();
-				auto found = false;
-				for (auto it = entities.begin(); it != entities.end();)
-				{
-					if (*it == e)
-					{
-						found = true;
-						it = entities.erase(it);
-						break;
-					}
-					else
-						it++;
-				}
-				if (!found)
-					entities.push_back(e);
-				selection.select(entities, "hierarchy"_h);
-			}
-			else if (ImGui::IsKeyDown(Keyboard_Shift))
-			{
-				auto entities = selection.get_entities();
-				if (entities.empty())
-					selection.select(e, "hierarchy"_h);
-				else
-				{
-					auto begin = entities.back();
-					auto end = e;
-					if (end->compare_depth(begin))
-						std::swap(begin, end);
-					entities.clear();
+			select_entity = e;
 
-					auto root = app.e_playing ? app.e_playing : app.e_prefab;
-					std::function<void(EntityPtr, bool)> process_entity;
-					process_entity = [&](EntityPtr e, bool select) {
-						if (e == begin)
-							select = true;
-						if (select)
-							entities.push_back(e);
-						if (e == end)
-							select = false;
-						auto window = ImGui::GetCurrentWindow();
-						ImGui::PushID(e);
-						bool opened;
-						if (e->children.empty())
-							opened = true;
-						else
-							opened = ImGui::TreeNodeBehaviorIsOpen(window->GetID("###"));
-						ImGui::PopID();
-						if (opened)
-						{
-							for (auto& c : e->children)
-								process_entity(c.get(), select);
-						}
-					};
-					process_entity(root, false);
-					selection.select(entities, "hierarchy"_h);
-				}
-			}
-			else
-				selection.select(e, "hierarchy"_h);
-			hierarchy_select_frame = frames;
-			no_select = false;
-		}
 		if (opened)
 		{
 			auto gap_item = [&](int i) {
-				ImGui::PushID(e); ImGui::PushID(i);
+				ImGui::PushID(i);
 				ImGui::InvisibleButton("gap", ImVec2(-1, 2));
-				ImGui::PopID(); ImGui::PopID();
+				ImGui::PopID();
 				if (ImGui::BeginDragDropTarget())
 				{
 					if (auto e_src = read_drop_entity(); e_src)
@@ -240,11 +173,76 @@ void View_Hierarchy::on_draw()
 		ImGui::PopStyleVar(1);
 	}
 
+	if (select_entity)
+	{
+		if (ImGui::IsKeyDown(Keyboard_Ctrl))
+		{
+			auto entities = selection.get_entities();
+			auto found = false;
+			for (auto it = entities.begin(); it != entities.end();)
+			{
+				if (*it == select_entity)
+				{
+					found = true;
+					it = entities.erase(it);
+					break;
+				}
+				else
+					it++;
+			}
+			if (!found)
+				entities.push_back(select_entity);
+			selection.select(entities, "hierarchy"_h);
+		}
+		else if (ImGui::IsKeyDown(Keyboard_Shift))
+		{
+			auto entities = selection.get_entities();
+			if (entities.empty())
+				selection.select(select_entity, "hierarchy"_h);
+			else
+			{
+				auto begin = entities.back();
+				auto end = select_entity;
+				if (end->compare_depth(begin))
+					std::swap(begin, end);
+				entities.clear();
+
+				auto root = app.e_playing ? app.e_playing : app.e_prefab;
+				bool select = false;
+				std::function<void(EntityPtr)> process_entity;
+				process_entity = [&](EntityPtr e) {
+					if (e == begin)
+						select = true;
+					if (select)
+						entities.push_back(e);
+					if (e == end)
+						select = false;
+					auto window = ImGui::GetCurrentWindow();
+					if (!e->children.empty())
+					{
+						auto id = window->GetIDNoKeepAlive(("###" + str((uint64)e)).c_str());
+						if (ImGui::TreeNodeBehaviorIsOpen(id))
+						{
+							ImGui::PushOverrideID(id);
+							for (auto& c : e->children)
+								process_entity(c.get());
+							ImGui::PopID();
+						}
+					}
+				};
+				process_entity(root);
+				selection.select(entities, "hierarchy"_h);
+			}
+		}
+		else
+			selection.select(select_entity, "hierarchy"_h);
+	}
+
 	if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered())
 	{
 		if (ImGui::IsKeyPressed(Keyboard_Del))
 			app.cmd_delete_entity();
-		if (no_select && ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !ImGui::IsKeyDown(Keyboard_Ctrl) && !ImGui::IsKeyDown(Keyboard_Shift))
+		if (!select_entity && ImGui::IsMouseReleased(ImGuiMouseButton_Left) && !ImGui::IsKeyDown(Keyboard_Ctrl) && !ImGui::IsKeyDown(Keyboard_Shift))
 			selection.clear("hierarchy"_h);
 	}
 
