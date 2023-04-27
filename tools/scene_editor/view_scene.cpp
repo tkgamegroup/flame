@@ -574,26 +574,10 @@ void View_Scene::on_draw()
 				auto hovering_node = sRenderer::instance()->pick_up(app.input->mpos, &hovering_pos, [](cNodePtr n, DrawData& draw_data) {
 					if (draw_data.categories & CateMesh)
 					{
-						if (auto armature = n->entity->get_component_t<cArmature>(); armature)
-						{
-							for (auto& c : n->entity->children)
-							{
-								if (auto mesh = c->get_component_t<cMesh>(); mesh)
-								{
-									if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
-										draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
-								}
-							}
-						}
 						if (auto mesh = n->entity->get_component_t<cMesh>(); mesh)
 						{
-							if (auto armature = n->entity->get_parent_component_t<cArmature>(); armature)
-								;
-							else
-							{
-								if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
-									draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
-							}
+							if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
+								draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
 						}
 					}
 					if (draw_data.categories & CateTerrain)
@@ -665,6 +649,10 @@ void View_Scene::on_draw()
 		if (show_outline)
 		{
 			auto outline_node = [&](EntityPtr e, const cvec4& col) {
+				if (!e->global_enable)
+					return;
+				if (auto node = e->node(); !node || !AABB_frustum_check(camera->frustum, node->bounds))
+					return;
 				if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
 				{
 					CommonDraw d("mesh"_h, mesh->mesh_res_id, mesh->instance_id);
@@ -678,7 +666,6 @@ void View_Scene::on_draw()
 				if (auto armature = e->get_component_t<cArmature>(); armature && armature->model)
 				{
 					std::vector<CommonDraw> ds;
-
 					for (auto& c : e->children)
 					{
 						if (auto mesh = c->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)

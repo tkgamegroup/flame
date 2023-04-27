@@ -55,11 +55,16 @@ namespace flame
 			switch (draw_data.pass)
 			{
 			case PassInstance:
-				if (!parmature && dirty)
+				if (parmature)
+					parmature->update_instance();
+				else
 				{
-					if (enable)
-						sRenderer::instance()->set_mesh_instance(instance_id, node->transform, transpose(inverse(mat3(node->transform))));
-					dirty = false;
+					if (dirty)
+					{
+						if (enable)
+							sRenderer::instance()->set_mesh_instance(instance_id, node->transform, transpose(inverse(mat3(node->transform))));
+						dirty = false;
+					}
 				}
 				break;
 			case PassGBuffer:
@@ -88,7 +93,7 @@ namespace flame
 				else
 				{
 					auto pb = parmature->bone_node_map[node];
-					if (!pb || !pb->pose.valid)
+					if (!pb)
 						b.expand(AABB(mesh->bounds.get_points(parmature->node->transform)));
 					else
 						b.expand(AABB(mesh->bounds.get_points(pb->pose.m)));

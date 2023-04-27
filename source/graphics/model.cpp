@@ -215,6 +215,20 @@ namespace flame
 							}
 						}
 					}
+
+					auto& name = model->bones.front().name;
+					auto dst_children = dst.child("children");
+					for (auto n : dst_children.children())
+					{
+						if (auto n_children = n.child("children"); n_children)
+						{
+							if (auto nn = n_children.first_child(); nn && nn.attribute("name").value() == name)
+							{
+								dst_children.prepend_move(n);
+								break;
+							}
+						}
+					}
 				}
 			};
 

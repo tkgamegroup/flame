@@ -11,10 +11,9 @@ namespace flame
 	{
 		struct Pose
 		{
-			bool valid = false;
 			vec3 p = vec3(0);
 			quat q = quat(1, 0, 0, 0);
-			mat4 m;
+			mat4 m = mat4(1.f);
 		};
 
 		struct Bone
@@ -23,8 +22,6 @@ namespace flame
 			cNodePtr node = nullptr;
 			mat4 offmat;
 			Pose pose;
-
-			inline void calc_mat();
 		};
 
 		struct Track
@@ -54,8 +51,8 @@ namespace flame
 
 		void attach();
 		void detach();
+		void update_instance();
 
-		void on_init() override;
 		void on_active() override;
 		void on_inactive() override;
 		void update() override;

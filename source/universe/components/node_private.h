@@ -11,8 +11,6 @@ namespace flame
 	{
 		bool transform_dirty = true;
 
-		uint instance_frame = 0;
-
 		void set_pos(const vec3& pos) override;
 		vec3 get_eul() override;
 		void set_eul(const vec3& eul) override;

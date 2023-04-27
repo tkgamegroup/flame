@@ -221,7 +221,7 @@ namespace flame
 	DirShadow dir_shadows[DirShadowMaxCount];
 	PointShadow pt_shadows[PtShadowMaxCount];
 
-	struct OutlineDraw
+	struct OutlineDrawGroup
 	{
 		std::vector<CommonDraw> draws;
 		cvec4 color;
@@ -229,7 +229,7 @@ namespace flame
 		uint mode;
 	};
 
-	struct PrimitiveDraw
+	struct PrimitivesDraw
 	{
 		uint type;
 		uint vtx_cnt;
@@ -237,8 +237,8 @@ namespace flame
 		bool depth_test;
 	};
 
-	std::vector<OutlineDraw> outlines_draws;
-	std::vector<PrimitiveDraw> primitives_draws;
+	std::vector<OutlineDrawGroup> outline_groups;
+	std::vector<PrimitivesDraw> primitives_draws;
 	bool csm_debug_flag = false;
 
 	void combine_global_defines(std::vector<std::string>& defines)
@@ -1794,7 +1794,7 @@ namespace flame
 
 	void sRendererPrivate::draw_outlines(const std::vector<CommonDraw>& draws, const cvec4& color, uint width, uint mode)
 	{
-		auto& od = outlines_draws.emplace_back();
+		auto& od = outline_groups.emplace_back();
 		od.draws = draws;
 		od.color = color;
 		od.width = width;
@@ -1857,9 +1857,10 @@ namespace flame
 			mark_clear_pipelines = false;
 		}
 
+		// clear staging draws and reset buffers
 		if (tar_idx < 0)
 		{
-			outlines_draws.clear();
+			outline_groups.clear();
 			buf_primitives.buf_top = buf_primitives.stag_top = 0;
 			primitives_draws.clear();
 			return;
@@ -1880,8 +1881,6 @@ namespace flame
 		auto img = iv->image;
 		auto ext = vec2(img->extent);
 
-		before_render_callbacks.call();
-
 		camera->aspect = ext.x / ext.y;
 		camera->update();
 
@@ -1890,13 +1889,7 @@ namespace flame
 
 		draw_data.reset(PassInstance, 0);
 		for (auto n : camera_culled_nodes)
-		{
-			if (n->instance_frame < frames)
-			{
-				n->drawers.call<DrawData&>(draw_data);
-				n->instance_frame = frames;
-			}
-		}
+			n->drawers.call<DrawData&>(draw_data);
 
 		static auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
 
@@ -2065,13 +2058,7 @@ namespace flame
 						sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
 						draw_data.reset(PassInstance, 0);
 						for (auto n : s.culled_nodes)
-						{
-							if (n->instance_frame < frames)
-							{
-								n->drawers.call<DrawData&>(draw_data);
-								n->instance_frame = frames;
-							}
-						}
+							n->drawers.call<DrawData&>(draw_data);
 
 						auto z_min = -hf_zlen;
 						auto z_max = +hf_zlen;
@@ -2513,7 +2500,7 @@ namespace flame
 
 			cb->begin_debug_label("Outline (box)");
 			{
-				for (auto& od : outlines_draws)
+				for (auto& od : outline_groups)
 				{
 					if (od.mode != "BOX"_h)
 						continue;
@@ -2633,7 +2620,7 @@ namespace flame
 
 		cb->begin_debug_label("Outline (max)");
 		{
-			for (auto& od : outlines_draws)
+			for (auto& od : outline_groups)
 			{
 				if (od.mode != "MAX"_h)
 					continue;
@@ -2677,7 +2664,6 @@ namespace flame
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
 			}
-			outlines_draws.clear();
 		}
 		cb->end_debug_label();
 
@@ -2743,6 +2729,9 @@ namespace flame
 		cb->draw(3, 1, 0, 0);
 		cb->end_renderpass();
 		cb->image_barrier(img, iv->sub, final_layout);
+
+		// clear draws
+		outline_groups.clear();
 	}
 
 	void sRendererPrivate::update()

@@ -8,15 +8,6 @@
 
 namespace flame
 {
-	void cArmaturePrivate::Bone::calc_mat()
-	{
-		pose.valid = true;
-		if (!node)
-			pose.m = mat4(1.f);
-		else
-			pose.m = node->transform * offmat;
-	}
-
 	std::filesystem::path parse_name(const std::filesystem::path& src)
 	{
 		auto sp = SUW::split(src.wstring(), '#');
@@ -25,9 +16,6 @@ namespace flame
 
 	cArmaturePrivate::~cArmaturePrivate()
 	{
-		node->drawers.remove("armature"_h);
-		node->measurers.remove("armature"_h);
-
 		if (auto name = parse_name(armature_name); !name.empty())
 			AssetManagemant::release(Path::get(name));
 		if (model)
@@ -58,9 +46,13 @@ namespace flame
 					if (dst.node)
 					{
 						dst.offmat = src.offset_matrix;
-						dst.node->data_listeners.add([this](uint hash) {
+						dst.node->data_listeners.add([this, i](uint hash) {
 							if (hash == "transform"_h)
+							{
+								auto& bone = bones[i];
+								bone.pose.m = bone.node->transform * bone.offmat;
 								dirty = true;
+							}
 						}, "armature"_h);
 					}
 					else
@@ -194,34 +186,16 @@ namespace flame
 		animations.clear();
 	}
 
-	void cArmaturePrivate::on_init()
+	void cArmaturePrivate::update_instance()
 	{
-		node->drawers.add([this](DrawData& draw_data) {
-			if (instance_id == -1)
-				return;
-
-			if (draw_data.pass == PassInstance)
-			{
-				if (dirty)
-				{
-					std::vector<mat4> mats(bones.size());
-					for (auto i = 0; i < bones.size(); i++)
-					{
-						bones[i].calc_mat();
-						mats[i] = bones[i].pose.m;
-					}
-					sRenderer::instance()->set_armature_instance(instance_id, mats.data(), mats.size());
-					dirty = false;
-				}
-			}
-		}, "armature"_h);
-
-		node->measurers.add([this](AABB& b) {
-			if (model)
-				b.expand(AABB(model->bounds.get_points(node->transform)));
-		}, "armature"_h);
-
-		node->mark_transform_dirty();
+		if (dirty)
+		{
+			std::vector<mat4> mats(bones.size());
+			for (auto i = 0; i < bones.size(); i++)
+				mats[i] = bones[i].pose.m;
+			sRenderer::instance()->set_armature_instance(instance_id, mats.data(), mats.size());
+			dirty = false;
+		}
 	}
 
 	void cArmaturePrivate::on_active()
