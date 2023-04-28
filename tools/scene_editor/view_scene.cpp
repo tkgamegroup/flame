@@ -210,13 +210,10 @@ void View_Scene::on_draw()
 				mat4 mat;
 				if (node_targets.size() > 1)
 				{
-					if (!last_gizmo_using)
-					{
-						center = vec3(0.f);
-						for (auto t : node_targets)
-							center += t->global_pos();
-						center /= (float)node_targets.size();
-					}
+					center = vec3(0.f);
+					for (auto t : node_targets)
+						center += t->global_pos();
+					center /= (float)node_targets.size();
 					mat = translate(mat4(1.f), center);
 				}
 				else
@@ -262,7 +259,7 @@ void View_Scene::on_draw()
 					{
 						if (node_targets.size() > 1)
 						{
-							auto diff = pos - node_targets[0]->pos;
+							auto diff = pos - center;
 							for (auto t : node_targets)
 							{
 								t->add_pos(diff);
