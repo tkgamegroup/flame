@@ -10,6 +10,27 @@ struct History
 	virtual void redo() = 0;
 };
 
+struct SelectHistory : History
+{
+	Selection::Type old_type;
+	Selection::Type new_type;
+	std::vector<void*> old_objects;
+	std::vector<void*> new_objects;
+
+	SelectHistory(Selection::Type old_type, Selection::Type new_type,
+		const std::vector<void*> old_objects, const std::vector<void*> new_objects) :
+		old_type(old_type),
+		new_type(new_type),
+		old_objects(old_objects),
+		new_objects(new_objects)
+	{
+	}
+
+	void select(Selection::Type type, const std::vector<void*> objects);
+	void undo() override;
+	void redo() override;
+};
+
 struct AssetModifyHistory : History
 {
 	std::filesystem::path path;

@@ -3,6 +3,21 @@
 
 #include <flame/foundation/typeinfo.h>
 
+void SelectHistory::select(Selection::Type type, const std::vector<void*> objects)
+{
+
+}
+
+void SelectHistory::undo()
+{
+
+}
+
+void SelectHistory::redo()
+{
+
+}
+
 void AssetModifyHistory::set_value(const std::string& value)
 {
 	auto ui = find_udt(asset_type);

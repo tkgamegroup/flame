@@ -1537,12 +1537,6 @@ static EditingEntities editing_entities;
 
 void View_Inspector::on_draw()
 {
-	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-left"_h).c_str()))
-		selection.backward();
-	ImGui::SameLine();
-	if (ImGui::Button(graphics::FontAtlas::icon_s("arrow-right"_h).c_str()))
-		selection.forward();
-
 	static void* sel_ref_obj = nullptr;
 	static void(*sel_ref_deletor)(void*) = nullptr;
 	static auto sel_ref_info = new char[1024];

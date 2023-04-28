@@ -1,9 +1,9 @@
 #include "selection.h"
 
-void selection_clear_no_history(uint caller = 0)
+bool selection_clear_ll(uint caller = 0)
 {
 	if (selection.type == Selection::tNothing)
-		return;
+		return false;
 
 	switch (selection.type)
 	{
@@ -21,14 +21,15 @@ void selection_clear_no_history(uint caller = 0)
 
 	if (caller)
 		selection.callbacks.call(caller);
+	return true;
 }
 
-void selection_select_no_history(const std::vector<std::filesystem::path>& paths, uint caller = 0)
+void selection_select_ll(const std::vector<std::filesystem::path>& paths, uint caller = 0)
 {
 	if (selection.selecting(paths))
 		return;
 
-	selection_clear_no_history();
+	selection_clear_ll();
 	if (paths.empty())
 		return;
 
@@ -41,12 +42,12 @@ void selection_select_no_history(const std::vector<std::filesystem::path>& paths
 		selection.callbacks.call(caller);
 }
 
-void selection_select_no_history(const std::vector<EntityPtr>& entities, uint caller = 0)
+void selection_select_ll(const std::vector<EntityPtr>& entities, uint caller = 0)
 {
 	if (selection.selecting(entities))
 		return;
 
-	selection_clear_no_history();
+	selection_clear_ll();
 	if (entities.empty())
 		return;
 
@@ -85,7 +86,7 @@ void Selection::History::redo()
 	switch (type)
 	{
 	case Selection::tNothing:
-		selection_clear_no_history();
+		selection_clear_ll();
 	case Selection::tPath:
 	{
 		auto& h = (PathHistory&)*this;
@@ -95,7 +96,7 @@ void Selection::History::redo()
 			if (std::filesystem::exists(p))
 				paths.push_back(p);
 		}
-		selection_select_no_history(paths);
+		selection_select_ll(paths);
 	}
 		break;
 	case Selection::tEntity:
@@ -110,7 +111,7 @@ void Selection::History::redo()
 					entities.push_back(e);
 			}
 		}
-		selection_select_no_history(entities);
+		selection_select_ll(entities);
 	}
 		break;
 	}
@@ -120,7 +121,7 @@ void Selection::clear(uint caller)
 {
 	if (lock)
 		return;
-	selection_clear_no_history(caller);
+	selection_clear_ll(caller);
 	add_history(new EmptyHistory);
 }
 
@@ -128,7 +129,7 @@ void Selection::select(const std::vector<std::filesystem::path>& paths, uint cal
 {
 	if (lock)
 		return;
-	selection_select_no_history(paths, caller);
+	selection_select_ll(paths, caller);
 	add_history(new PathHistory(paths));
 }
 
@@ -162,7 +163,7 @@ void Selection::select(const std::vector<EntityPtr>& entities, uint caller)
 {
 	if (lock)
 		return;
-	selection_select_no_history(entities, caller);
+	selection_select_ll(entities, caller);
 	add_history(new EntityHistory(entities));
 }
 
