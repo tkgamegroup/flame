@@ -118,104 +118,55 @@ void App::init()
 				history_idx = -1;
 				histories.clear();
 			}
-			if (ImGui::MenuItem("Duplicate (Ctrl+D)"))
-				cmd_duplicate_entity();
-			if (ImGui::MenuItem("Delete (Del)"))
-				cmd_delete_entity();
 			ImGui::Separator();
-			if (ImGui::MenuItem("Preferences"))
-			{
-				struct PreferencesDialog
-				{
-					bool open = false;
-				};
-				static PreferencesDialog preferences_dialog;
-				dialogs.push_back([&]() {
-					if (!preferences_dialog.open)
-					{
-						preferences_dialog.open = true;
-						ImGui::OpenPopup("Preferences");
-					}
-
-					if (ImGui::BeginPopupModal("Preferences"))
-					{
-						ImGui::Checkbox("Use Flame Debugger", &preferences.use_flame_debugger);
-						if (ImGui::Button("Close"))
-						{
-							preferences_dialog.open = false;
-							ImGui::CloseCurrentPopup();
-						}
-						ImGui::End();
-					}
-					return preferences_dialog.open;
-				});
-			}
-			ImGui::EndMenu();
-		}
-		if (ImGui::BeginMenu("Project"))
-		{
-			if (ImGui::MenuItem("Open In VS"))
-			{
-				auto vs_path = get_special_path("Visual Studio Installation Location");
-				auto devenv_path = vs_path / L"Common7\\IDE\\devenv.exe";
-				auto sln_path = project_path / L"build";
-				sln_path = glob_files(sln_path, L".sln")[0];
-				exec(devenv_path, std::format(L"\"{}\"", sln_path.wstring()));
-			}
-			if (ImGui::MenuItem("Attach Debugger"))
-				vs_automate({ L"attach_debugger" });
-			if (ImGui::MenuItem("Detach Debugger"))
-				vs_automate({ L"detach_debugger" });
-			if (ImGui::MenuItem("Do CMake"))
-				cmake_project();
-			if (ImGui::MenuItem("Build (Ctrl+B)"))
-				build_project();
-			if (ImGui::MenuItem("Clean"))
-			{
-				if (!project_path.empty())
-				{
-					auto cpp_path = project_path / L"bin/debug/cpp.dll";
-					cpp_path.replace_extension(L".pdb");
-					if (std::filesystem::exists(cpp_path))
-						std::filesystem::remove(cpp_path);
-				}
-			}
-			ImGui::EndMenu();
-		}
-		if (ImGui::BeginMenu("Entity"))
-		{
-			if (ImGui::MenuItem("Create Empty"))
-				cmd_create_entity();
-			if (ImGui::BeginMenu("Create 3D"))
+			if (ImGui::MenuItem("New Empty"))
+				cmd_new_entities(selection.get_entities());
+			if (ImGui::BeginMenu("New 3D"))
 			{
 				if (ImGui::MenuItem("Node"))
-					cmd_create_entity(nullptr, "node"_h);
+					cmd_new_entities(selection.get_entities(), "node"_h);
 				if (ImGui::MenuItem("Plane"))
-					cmd_create_entity(nullptr, "plane"_h);
+					cmd_new_entities(selection.get_entities(), "plane"_h);
 				if (ImGui::MenuItem("Cube"))
-					cmd_create_entity(nullptr, "cube"_h);
+					cmd_new_entities(selection.get_entities(), "cube"_h);
 				if (ImGui::MenuItem("Sphere"))
-					cmd_create_entity(nullptr, "sphere"_h);
+					cmd_new_entities(selection.get_entities(), "sphere"_h);
 				if (ImGui::MenuItem("Cylinder"))
-					cmd_create_entity(nullptr, "cylinder"_h);
+					cmd_new_entities(selection.get_entities(), "cylinder"_h);
 				if (ImGui::MenuItem("Triangular Prism"))
-					cmd_create_entity(nullptr, "tri_prism"_h);
+					cmd_new_entities(selection.get_entities(), "tri_prism"_h);
 				if (ImGui::MenuItem("Directional Light"))
-					cmd_create_entity(nullptr, "dir_light"_h);
+					cmd_new_entities(selection.get_entities(), "dir_light"_h);
 				if (ImGui::MenuItem("Point Light"))
-					cmd_create_entity(nullptr, "pt_light"_h);
+					cmd_new_entities(selection.get_entities(), "pt_light"_h);
 				if (ImGui::MenuItem("Camera"))
-					cmd_create_entity(nullptr, "camera"_h);
+					cmd_new_entities(selection.get_entities(), "camera"_h);
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu("Create 2D"))
+			if (ImGui::BeginMenu("New 2D"))
 			{
 				if (ImGui::MenuItem("Element"))
-					cmd_create_entity(nullptr, "element"_h);
+					cmd_new_entities(selection.get_entities(), "element"_h);
 				if (ImGui::MenuItem("Image"))
-					cmd_create_entity(nullptr, "image"_h);
+					cmd_new_entities(selection.get_entities(), "image"_h);
 				if (ImGui::MenuItem("Text"))
-					cmd_create_entity(nullptr, "text"_h);
+					cmd_new_entities(selection.get_entities(), "text"_h);
+				ImGui::EndMenu();
+			}
+			if (ImGui::MenuItem("Duplicate (Shift+D)"))
+				cmd_duplicate_entities(selection.get_entities());
+			if (ImGui::MenuItem("Delete (Del)"))
+				cmd_delete_entities(selection.get_entities());
+			if (ImGui::BeginMenu("Selection"))
+			{
+				if (ImGui::MenuItem("Clear"))
+					selection.clear("app"_h);
+				if (ImGui::MenuItem("Select Parent"))
+					;
+				if (ImGui::MenuItem("Select Children"))
+					;
+				if (ImGui::MenuItem("Invert Siblings"))
+					;
 				ImGui::EndMenu();
 			}
 			if (ImGui::MenuItem("Focus To Selected (F)"))
@@ -267,7 +218,7 @@ void App::init()
 								ImGui::End();
 							}
 							return generate_dialog.open;
-						});
+							});
 					}
 				}
 
@@ -338,10 +289,68 @@ void App::init()
 									sRenderer::instance()->draw_primitives("LineList"_h, test_dialog.points.data(), test_dialog.points.size(), cvec4(255, 0, 0, 255));
 							}
 							return test_dialog.open;
-						});
+							});
 					}
 				}
 				ImGui::EndMenu();
+			}
+			ImGui::Separator();
+			if (ImGui::MenuItem("Preferences"))
+			{
+				struct PreferencesDialog
+				{
+					bool open = false;
+				};
+				static PreferencesDialog preferences_dialog;
+				dialogs.push_back([&]() {
+					if (!preferences_dialog.open)
+					{
+						preferences_dialog.open = true;
+						ImGui::OpenPopup("Preferences");
+					}
+
+					if (ImGui::BeginPopupModal("Preferences"))
+					{
+						ImGui::Checkbox("Use Flame Debugger", &preferences.use_flame_debugger);
+						if (ImGui::Button("Close"))
+						{
+							preferences_dialog.open = false;
+							ImGui::CloseCurrentPopup();
+						}
+						ImGui::End();
+					}
+					return preferences_dialog.open;
+				});
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Project"))
+		{
+			if (ImGui::MenuItem("Open In VS"))
+			{
+				auto vs_path = get_special_path("Visual Studio Installation Location");
+				auto devenv_path = vs_path / L"Common7\\IDE\\devenv.exe";
+				auto sln_path = project_path / L"build";
+				sln_path = glob_files(sln_path, L".sln")[0];
+				exec(devenv_path, std::format(L"\"{}\"", sln_path.wstring()));
+			}
+			if (ImGui::MenuItem("Attach Debugger"))
+				vs_automate({ L"attach_debugger" });
+			if (ImGui::MenuItem("Detach Debugger"))
+				vs_automate({ L"detach_debugger" });
+			if (ImGui::MenuItem("Do CMake"))
+				cmake_project();
+			if (ImGui::MenuItem("Build (Ctrl+B)"))
+				build_project();
+			if (ImGui::MenuItem("Clean"))
+			{
+				if (!project_path.empty())
+				{
+					auto cpp_path = project_path / L"bin/debug/cpp.dll";
+					cpp_path.replace_extension(L".pdb");
+					if (std::filesystem::exists(cpp_path))
+						std::filesystem::remove(cpp_path);
+				}
 			}
 			ImGui::EndMenu();
 		}
@@ -649,8 +658,8 @@ void App::init()
 			cmd_undo();
 		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Y))
 			cmd_redo();
-		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_D))
-			cmd_duplicate_entity();
+		if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_D))
+			cmd_duplicate_entities(selection.get_entities());
 
 		if (e_preview)
 		{
@@ -1158,148 +1167,123 @@ bool App::cmd_redo()
 	return true;
 }
 
-bool App::cmd_create_entity(EntityPtr dst, uint type)
+bool App::cmd_new_entities(std::vector<EntityPtr>&& es, uint type)
 {
-	if (!e_prefab)
-		return false;
-	if (!dst)
+	if (es.empty())
 	{
-		if (auto e = selection.type == Selection::tEntity ? selection.as_entity() : nullptr)
-			dst = e;
+		if (e_playing)
+			es.push_back(e_playing);
+		else if (e_prefab)
+			es.push_back(e_prefab);
 		else
-			dst = e_prefab;
+			return false;
 	}
 	static int id = 0;
-	auto e = Entity::create();
-	e->name = "Entity " + str(id++);
-	switch (type)
+	for (auto t : es)
 	{
-	case "empty"_h: 
-		break;
-	case "node"_h:
-		e->add_component_t<cNode>();
-		break;
-	case "plane"_h:
-		e->add_component_t<cNode>();
-		e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_plane", L"default");
-		break;
-	case "cube"_h:
-		e->add_component_t<cNode>();
-		e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_cube", L"default");
-		break;
-	case "sphere"_h:
-		e->add_component_t<cNode>();
-		e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_sphere", L"default");
-		break;
-	case "cylinder"_h:
-		e->add_component_t<cNode>();
-		e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_cylinder", L"default");
-		break;
-	case "tri_prism"_h:
-		e->add_component_t<cNode>();
-		e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_tri_prism", L"default");
-		break;
-	case "dir_light"_h:
-		e->add_component_t<cNode>()->set_eul(vec3(45.f, -60.f, 0.f));
-		e->add_component_t<cDirLight>();
-		break;
-	case "pt_light"_h:
-		e->add_component_t<cNode>();
-		e->add_component_t<cPtLight>();
-		break;
-	case "camera"_h:
-		e->add_component_t<cNode>();
-		e->add_component_t<cCamera>();
-		break;
-	case "element"_h:
-		e->add_component_t<cElement>();
-		break;
-	case "image"_h:
-		e->add_component_t<cElement>();
-		e->add_component_t<cImage>();
-		break;
-	case "text"_h:
-		e->add_component_t<cElement>();
-		e->add_component_t<cText>();
-		break;
+		auto e = Entity::create();
+		e->name = "Entity " + str(id++);
+		switch (type)
+		{
+		case "empty"_h:
+			break;
+		case "node"_h:
+			e->add_component_t<cNode>();
+			break;
+		case "plane"_h:
+			e->add_component_t<cNode>();
+			e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_plane", L"default");
+			break;
+		case "cube"_h:
+			e->add_component_t<cNode>();
+			e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_cube", L"default");
+			break;
+		case "sphere"_h:
+			e->add_component_t<cNode>();
+			e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_sphere", L"default");
+			break;
+		case "cylinder"_h:
+			e->add_component_t<cNode>();
+			e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_cylinder", L"default");
+			break;
+		case "tri_prism"_h:
+			e->add_component_t<cNode>();
+			e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_tri_prism", L"default");
+			break;
+		case "dir_light"_h:
+			e->add_component_t<cNode>()->set_eul(vec3(45.f, -60.f, 0.f));
+			e->add_component_t<cDirLight>();
+			break;
+		case "pt_light"_h:
+			e->add_component_t<cNode>();
+			e->add_component_t<cPtLight>();
+			break;
+		case "camera"_h:
+			e->add_component_t<cNode>();
+			e->add_component_t<cCamera>();
+			break;
+		case "element"_h:
+			e->add_component_t<cElement>();
+			break;
+		case "image"_h:
+			e->add_component_t<cElement>();
+			e->add_component_t<cImage>();
+			break;
+		case "text"_h:
+			e->add_component_t<cElement>();
+			e->add_component_t<cText>();
+			break;
+		}
+		t->add_child(e);
 	}
-	if (auto node = e->node(); node)
-		node->set_pos(get_snap_pos(view_scene.camera_target_pos()));
-	dst->add_child(e);
 	prefab_unsaved = true;
 	return true;
 }
 
-bool App::cmd_delete_entity(EntityPtr e)
+bool App::cmd_delete_entities(std::vector<EntityPtr>&& es)
 {
-	if (!e)
+	if (es.empty())
+		return false;
+	for (auto t : es)
 	{
-		auto entities = selection.get_entities();
-		if (entities.empty())
+		if (t == e_prefab || !t->prefab_instance && get_root_prefab_instance(t))
+		{
+			app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 			return false;
-		for (auto e : entities)
-		{
-			if (e == e_prefab || !e->prefab_instance && get_root_prefab_instance(e))
-			{
-				app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-				return false;
-			}
 		}
-		for (auto e : entities)
-		{
-			add_event([e]() {
-				e->remove_from_parent();
-				return false;
-			});
-		}
-		selection.clear("app"_h);
-		prefab_unsaved = true;
-		return true;
 	}
-	if (e == e_prefab || !e->prefab_instance && get_root_prefab_instance(e))
+	for (auto t : es)
 	{
-		app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-		return false;
+		add_event([t]() {
+			t->remove_from_parent();
+			return false;
+		});
 	}
-	add_event([e]() {
-		e->remove_from_parent();
-		return false;
-	});
+	selection.clear("app"_h);
 	prefab_unsaved = true;
 	return true;
 }
 
-bool App::cmd_duplicate_entity(EntityPtr e)
+bool App::cmd_duplicate_entities(std::vector<EntityPtr>&& es)
 {
-	if (!e)
-	{
-		auto entities = selection.get_entities();
-		if (entities.empty())
-			return false;
-		for (auto e : entities)
-		{
-			if (e == e_prefab || !e->prefab_instance && get_root_prefab_instance(e))
-			{
-				app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-				return false;
-			}
-		}
-		std::vector<EntityPtr> new_entities;
-		for (auto e : entities)
-		{
-			auto new_one = e->copy();
-			new_entities.push_back(new_one);
-			e_prefab->add_child(new_one);
-		}
-		selection.select(new_entities, "app"_h);
-		return true;
-	}
-	if (e == e_prefab || !e->prefab_instance && get_root_prefab_instance(e))
-	{
-		app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+	if (es.empty())
 		return false;
+	for (auto t : es)
+	{
+		if (t == e_prefab || !t->prefab_instance && get_root_prefab_instance(t))
+		{
+			app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+			return false;
+		}
 	}
-	e_prefab->add_child(e->copy());
+	std::vector<EntityPtr> new_entities;
+	for (auto t : es)
+	{
+		auto new_one = t->copy();
+		new_entities.push_back(new_one);
+		t->parent->add_child(new_one);
+	}
+	selection.select(new_entities, "app"_h);
 	prefab_unsaved = true;
 	return true;
 }

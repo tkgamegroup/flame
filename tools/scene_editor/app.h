@@ -94,9 +94,9 @@ struct App : UniverseApplication
 
 	bool cmd_undo();
 	bool cmd_redo();
-	bool cmd_create_entity(EntityPtr dst = nullptr/* entity or nullptr to use e_prefab */, uint type = "empty"_h);
-	bool cmd_delete_entity(EntityPtr e = nullptr/* entity or nullptr to use selected entity */);
-	bool cmd_duplicate_entity(EntityPtr e = nullptr/* entity or nullptr to use selected entity */);
+	bool cmd_new_entities(std::vector<EntityPtr>&& es, uint type = "empty"_h);
+	bool cmd_delete_entities(std::vector<EntityPtr>&& es);
+	bool cmd_duplicate_entities(std::vector<EntityPtr>&& es);
 	bool cmd_play();
 	bool cmd_pause();
 	bool cmd_stop();

@@ -555,10 +555,13 @@ void View_Scene::on_draw()
 					}
 					if (io.KeysDown[Keyboard_F])
 						focus_to_selected();
+					if (ImGui::IsKeyPressed(Keyboard_Del))
+						app.cmd_delete_entities(selection.get_entities());
+				}
+				if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && io.KeysDown[Keyboard_Shift])
+				{
 					if (io.KeysDown[Keyboard_G])
 						selected_to_focus();
-					if (ImGui::IsKeyPressed(Keyboard_Del))
-						app.cmd_delete_entity();
 				}
 			}
 
