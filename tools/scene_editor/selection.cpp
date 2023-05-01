@@ -1,119 +1,65 @@
 #include "selection.h"
+#include "history.h"
 
-bool selection_clear_ll(uint caller = 0)
-{
-	if (selection.type == Selection::tNothing)
-		return false;
-
-	switch (selection.type)
-	{
-	case Selection::tPath:
-		for (auto o : selection.objects)
-			delete (std::filesystem::path*)o;
-		break;
-	case Selection::tEntity:
-		for (auto o : selection.objects)
-			((EntityPtr)o)->message_listeners.remove("editor_selection"_h);
-		break;
-	}
-	selection.type = Selection::tNothing;
-	selection.objects.clear();
-
-	if (caller)
-		selection.callbacks.call(caller);
-	return true;
-}
-
-void selection_select_ll(const std::vector<std::filesystem::path>& paths, uint caller = 0)
-{
-	if (selection.selecting(paths))
-		return;
-
-	selection_clear_ll();
-	if (paths.empty())
-		return;
-
-	selection.type = Selection::tPath;
-	selection.objects.resize(paths.size());
-	for (auto i = 0; i < paths.size(); i++)
-		selection.objects[i] = new std::filesystem::path(paths[i]);
-
-	if (caller)
-		selection.callbacks.call(caller);
-}
-
-void selection_select_ll(const std::vector<EntityPtr>& entities, uint caller = 0)
-{
-	if (selection.selecting(entities))
-		return;
-
-	selection_clear_ll();
-	if (entities.empty())
-		return;
-
-	selection.type = Selection::tEntity;
-	selection.objects.resize(entities.size());
-	for (auto i = 0; i < entities.size(); i++)
-		selection.objects[i] = entities[i];
-
-	for (auto e : entities)
-	{
-		e->message_listeners.add([e](uint hash, void*, void*) {
-			if (hash == "destroyed"_h)
-			{
-				if (selection.type == Selection::tEntity)
-				{
-					for (auto it = selection.objects.begin(); it != selection.objects.end();)
-					{
-						if (*it == e)
-							it = selection.objects.erase(it);
-						else
-							it++;
-					}
-					if (selection.objects.empty())
-						selection.type = Selection::tNothing;
-				}
-			}
-		}, "editor_selection"_h);
-	}
-
-	if (caller)
-		selection.callbacks.call(caller);
-}
-
-void Selection::History::redo()
+void Selection::clear_ll()
 {
 	switch (type)
 	{
-	case Selection::tNothing:
-		selection_clear_ll();
 	case Selection::tPath:
-	{
-		auto& h = (PathHistory&)*this;
-		std::vector<std::filesystem::path> paths;
-		for (auto& p : h.paths)
-		{
-			if (std::filesystem::exists(p))
-				paths.push_back(p);
-		}
-		selection_select_ll(paths);
-	}
+		for (auto o : objects)
+			delete (std::filesystem::path*)o;
 		break;
 	case Selection::tEntity:
-	{
-		auto& h = (EntityHistory&)*this;
-		std::vector<EntityPtr> entities;
-		if (app.e_prefab)
-		{
-			for (auto& id : h.ids)
-			{
-				if (auto e = app.e_prefab->find_with_instance_id(id))
-					entities.push_back(e);
-			}
-		}
-		selection_select_ll(entities);
-	}
+		for (auto o : objects)
+			((EntityPtr)o)->message_listeners.remove("editor_selection"_h);
 		break;
+	}
+	type = Selection::tNothing;
+	objects.clear();
+}
+
+void Selection::select_ll(const std::vector<std::filesystem::path>& paths)
+{
+	clear_ll();
+	if (paths.empty())
+		return;
+
+	type = Selection::tPath;
+	objects.resize(paths.size());
+	for (auto i = 0; i < paths.size(); i++)
+		objects[i] = new std::filesystem::path(paths[i]);
+}
+
+void Selection::select_ll(const std::vector<EntityPtr>& entities)
+{
+	clear_ll();
+	if (entities.empty())
+		return;
+
+	type = Selection::tEntity;
+	objects.resize(entities.size());
+	for (auto i = 0; i < entities.size(); i++)
+		objects[i] = entities[i];
+
+	for (auto e : entities)
+	{
+		e->message_listeners.add([this, e](uint hash, void*, void*) {
+			if (hash == "destroyed"_h)
+			{
+				if (type == Selection::tEntity)
+				{
+					for (auto it = objects.begin(); it != objects.end();)
+					{
+						if (*it == e)
+							it = objects.erase(it);
+						else
+							it++;
+					}
+					if (objects.empty())
+						type = Selection::tNothing;
+				}
+			}
+		}, "editor_selection"_h);
 	}
 }
 
@@ -121,16 +67,30 @@ void Selection::clear(uint caller)
 {
 	if (lock)
 		return;
-	selection_clear_ll(caller);
-	add_history(new EmptyHistory);
+	if (type == Selection::tNothing)
+		return;
+	auto h = new SelectHistory;
+	h->init(0);
+	clear_ll();
+	h->init(1);
+	add_history(h);
+	if (caller)
+		callbacks.call(caller);
 }
 
 void Selection::select(const std::vector<std::filesystem::path>& paths, uint caller)
 {
 	if (lock)
 		return;
-	selection_select_ll(paths, caller);
-	add_history(new PathHistory(paths));
+	if (selecting(paths))
+		return;
+	auto h = new SelectHistory;
+	h->init(0);
+	select_ll(paths);
+	h->init(1);
+	add_history(h);
+	if (caller)
+		callbacks.call(caller);
 }
 
 bool Selection::selecting(const std::vector<std::filesystem::path>& paths)
@@ -163,8 +123,15 @@ void Selection::select(const std::vector<EntityPtr>& entities, uint caller)
 {
 	if (lock)
 		return;
-	selection_select_ll(entities, caller);
-	add_history(new EntityHistory(entities));
+	if (selecting(entities))
+		return;
+	auto h = new SelectHistory;
+	h->init(0);
+	select_ll(entities);
+	h->init(1);
+	add_history(h);
+	if (caller)
+		callbacks.call(caller);
 }
 
 bool Selection::selecting(const std::vector<EntityPtr>& entities)
@@ -191,40 +158,6 @@ bool Selection::selecting(EntityPtr entity)
 			return true;
 	}
 	return false;
-}
-
-void Selection::add_history(History* his)
-{
-	auto it = histories.begin() + (histroy_idx + 1);
-	it = histories.erase(it, histories.end());
-	histories.emplace(it, his);
-	if (histories.size() > 20)
-		histories.erase(histories.begin());
-	else
-		histroy_idx++;
-}
-
-void Selection::forward()
-{
-	if (histroy_idx + 1 < histories.size())
-	{
-		histroy_idx++;
-		histories[histroy_idx]->redo();
-		histories.erase(histories.begin() + histroy_idx);
-		histroy_idx--;
-		forward();
-	}
-}
-
-void Selection::backward()
-{
-	if (histroy_idx > 0)
-	{
-		histroy_idx--;
-		histories[histroy_idx]->redo();
-		histories.erase(histories.begin() + histroy_idx);
-		backward();
-	}
 }
 
 Selection selection;

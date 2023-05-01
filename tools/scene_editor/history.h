@@ -17,15 +17,9 @@ struct SelectHistory : History
 	std::vector<void*> old_objects;
 	std::vector<void*> new_objects;
 
-	SelectHistory(Selection::Type old_type, Selection::Type new_type,
-		const std::vector<void*> old_objects, const std::vector<void*> new_objects) :
-		old_type(old_type),
-		new_type(new_type),
-		old_objects(old_objects),
-		new_objects(new_objects)
-	{
-	}
+	~SelectHistory();
 
+	void init(int old_or_new);
 	void select(Selection::Type type, const std::vector<void*> objects);
 	void undo() override;
 	void redo() override;

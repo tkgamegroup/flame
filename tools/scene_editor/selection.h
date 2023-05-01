@@ -29,42 +29,15 @@ struct Selection
 		EntityPtr* end() { return p1; }
 	};
 
-	struct History
-	{
-		Type type;
-		virtual ~History() {}
-		void redo();
-	};
-	struct EmptyHistory : History
-	{
-		EmptyHistory() { type = tNothing; }
-	};
-	struct PathHistory : History
-	{
-		std::vector<std::filesystem::path> paths;
-		PathHistory(const std::vector<std::filesystem::path>& paths) : paths(paths) { type = tPath; }
-	};
-	struct EntityHistory : History
-	{
-		std::vector<GUID> ids;
-		EntityHistory(const std::vector<EntityPtr>& entities) 
-		{ 
-			type = tEntity;
-			ids.resize(entities.size());
-			for (auto i = 0; i < entities.size(); i++)
-				ids[i] = entities[i]->instance_id;
-		}
-	};
-
 	Type type = tNothing;
 	std::vector<void*> objects;
-	std::vector<std::unique_ptr<History>> histories;
-	int histroy_idx = -1;
 	Listeners<void(uint)> callbacks;
 	bool lock = false;
 
+	void clear_ll();
 	void clear(uint caller = 0);
 
+	void select_ll(const std::vector<std::filesystem::path>& paths);
 	void select(const std::vector<std::filesystem::path>& paths, uint caller = 0);
 	inline void select(const std::filesystem::path& path, uint caller = 0)
 	{
@@ -77,6 +50,7 @@ struct Selection
 	bool selecting(const std::vector<std::filesystem::path>& paths);
 	bool selecting(const std::filesystem::path& path);
 
+	void select_ll(const std::vector<EntityPtr>& entities);
 	void select(const std::vector<EntityPtr>& entities, uint caller = 0);
 	inline void select(EntityPtr entity, uint caller = 0)
 	{
@@ -88,10 +62,6 @@ struct Selection
 	}
 	bool selecting(const std::vector<EntityPtr>& entities);
 	bool selecting(EntityPtr entity);
-
-	void add_history(History* his);
-	void forward();
-	void backward();
 
 	inline std::filesystem::path	as_path(int idx = 0) 
 	{ 
