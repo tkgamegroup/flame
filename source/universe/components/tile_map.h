@@ -7,6 +7,19 @@ namespace flame
 	// Reflect ctor
 	struct cTileMap : Component
 	{
+		enum Slope
+		{
+			SlopeNone,
+			SlopeHorizontal,
+			SlopeVertical
+		};
+
+		struct Sample
+		{
+			uint height = 0;
+			Slope slope = SlopeNone;
+		};
+
 		// Reflect requires
 		cNodePtr node = nullptr;
 
@@ -26,16 +39,11 @@ namespace flame
 		virtual void set_tiles_path(const std::filesystem::path& path) = 0;
 
 		// Reflect
-		std::vector<uint> samples;
+		std::vector<Sample> samples;
 		// Reflect
-		virtual void set_samples(const std::vector<uint>& samples) = 0;
+		virtual void set_samples(const std::vector<Sample>& samples) = 0;
 		// Reflect
-		virtual void set_sample(uint idx, uint v) = 0;
-		inline void add_sample(uint idx, uint v)
-		{
-			v = max((int)samples[idx] + (int)v, 0);
-			set_sample(idx, v);
-		}
+		virtual void set_sample(uint idx, const Sample& v) = 0;
 
 		struct Create
 		{

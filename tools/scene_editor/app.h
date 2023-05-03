@@ -18,7 +18,8 @@ enum Tool
 	ToolTerrainPaint,
 	ToolTileMapLevelUp,
 	ToolTileMapLevelDown,
-	ToolTileMapSlope
+	ToolTileMapSlope,
+	ToolTileMapFlat,
 };
 
 enum ToolPivot

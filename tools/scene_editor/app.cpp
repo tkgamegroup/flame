@@ -1295,8 +1295,8 @@ bool App::cmd_play()
 	if (!e_playing && e_prefab)
 	{
 		add_event([this]() {
-			e_playing = e_prefab->copy();
 			e_prefab->remove_from_parent(false);
+			e_playing = e_prefab->copy();
 			world->root->add_child(e_playing);
 			world->update_components = true;
 			always_render = true;
