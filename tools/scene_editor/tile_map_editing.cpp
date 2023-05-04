@@ -21,8 +21,9 @@ void tile_map_editing()
 	auto z = (int)pos.z;
 	if (x >= 0 && x <= blocks.x && z >= 0 && z <= blocks.z)
 	{
-		auto sp = tile_map->samples[x + z * (blocks.x + 1)];
-		auto c = vec3(x, sp * 0.5f + 0.1f, z) * block_sz;
+		auto idx = x + z * (blocks.x + 1);
+		auto sp = tile_map->samples[idx];
+		auto c = vec3(x, sp.height * 0.5f + 0.1f, z) * block_sz;
 		vec3 pts[5];
 		pts[0] = c + vec3(-0.5f, 0.f, -0.5f);
 		pts[1] = c + vec3(+0.5f, 0.f, -0.5f);
@@ -36,15 +37,23 @@ void tile_map_editing()
 		case ToolTileMapLevelUp:
 			if (io.MouseClicked[ImGuiMouseButton_Left])
 			{
-				tile_map->add_sample(x + z * (blocks.x + 1), +2);
-				app.prefab_unsaved = true;
+				if (sp.height < 255)
+				{
+					sp.height++;
+					tile_map->set_sample(idx, sp);
+					app.prefab_unsaved = true;
+				}
 			}
 			break;
 		case ToolTileMapLevelDown:
 			if (io.MouseClicked[ImGuiMouseButton_Left])
 			{
-				tile_map->add_sample(x + z * (blocks.x + 1), -2);
-				app.prefab_unsaved = true;
+				if (sp.height > 0)
+				{
+					sp.height--;
+					tile_map->set_sample(idx, sp);
+					app.prefab_unsaved = true;
+				}
 			}
 			break;
 		case ToolTileMapSlope:
@@ -52,21 +61,27 @@ void tile_map_editing()
 			{
 				if (x > 0 && x < blocks.x && z > 0 && z < blocks.z)
 				{
-					if (sp % 2 != 1)
+					if (sp.slope == cTileMap::SlopeNone)
 					{
 						auto l = tile_map->samples[x - 1 + z * (blocks.x + 1)];
 						auto r = tile_map->samples[x + 1 + z * (blocks.x + 1)];
 						auto t = tile_map->samples[x + (z - 1) * (blocks.x + 1)];
 						auto b = tile_map->samples[x + (z + 1) * (blocks.x + 1)];
-						if ((l == r + 2 || r == l + 2) && !(t == b + 2 || b == t + 2))
+						if (l.slope == cTileMap::SlopeNone && r.slope == cTileMap::SlopeNone &&
+							t.slope == cTileMap::SlopeNone && b.slope == cTileMap::SlopeNone)
 						{
-							tile_map->add_sample(x + z * (blocks.x + 1), +1);
-							app.prefab_unsaved = true;
-						}
-						else if ((t == b + 2 || b == t + 2) && !(l == r + 2 || r == l + 2))
-						{
-							tile_map->add_sample(x + z * (blocks.x + 1), +1);
-							app.prefab_unsaved = true;
+							if ((l.height == r.height + 1 || r.height == l.height + 1) && !(t.height == b.height + 1 || b.height == t.height + 1))
+							{
+								sp.slope = cTileMap::SlopeHorizontal;
+								tile_map->set_sample(idx, sp);
+								app.prefab_unsaved = true;
+							}
+							else if ((t.height == b.height + 1 || b.height == t.height + 1) && !(l.height == r.height + 1 || r.height == l.height + 1))
+							{
+								sp.slope = cTileMap::SlopeVertical;
+								tile_map->set_sample(idx, sp);
+								app.prefab_unsaved = true;
+							}
 						}
 					}
 				}
@@ -75,9 +90,10 @@ void tile_map_editing()
 		case ToolTileMapFlat:
 			if (io.MouseClicked[ImGuiMouseButton_Left])
 			{
-				if (sp % 2 == 1)
+				if (sp.slope != cTileMap::SlopeNone)
 				{
-					tile_map->add_sample(x + z * (blocks.x + 1), -1);
+					sp.slope = cTileMap::SlopeNone;
+					tile_map->set_sample(idx, sp);
 					app.prefab_unsaved = true;
 				}
 			}

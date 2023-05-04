@@ -10,9 +10,17 @@ namespace flame
 		{
 			std::filesystem::path path;
 			uint rotation = 0;
+
+			Mesh() = default;
+			Mesh(const std::filesystem::path& path, uint rotation) :
+				path(path),
+				rotation(rotation)
+			{
+			}
 		};
 
 		std::map<std::string, Mesh> meshes;
+		bool dirty = true;
 
 		void set_extent(const vec3& extent) override;
 		void set_blocks(const uvec3& blocks) override;
