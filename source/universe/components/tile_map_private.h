@@ -21,6 +21,7 @@ namespace flame
 
 		std::map<std::string, Mesh> meshes;
 		bool dirty = true;
+		std::vector<uvec2> dirty_tiles;
 
 		void set_extent(const vec3& extent) override;
 		void set_blocks(const uvec3& blocks) override;

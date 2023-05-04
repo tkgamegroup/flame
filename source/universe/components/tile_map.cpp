@@ -35,8 +35,8 @@ namespace flame
 
 	static std::string rotate_name(const std::string& name)
 	{
-		auto sp = SUS::split(name, '|');
-		std::rotate(sp.begin(), sp.begin() + 1, sp.end());
+		auto sp = SUS::split(name, '_');
+		std::rotate(sp.rbegin(), sp.rbegin() + 1, sp.rend());
 		for (auto& t : sp)
 		{
 			if (t.size() >= 2)
@@ -49,7 +49,11 @@ namespace flame
 		}
 		std::string ret;
 		for (auto& t : sp)
-			ret += t + '|';
+		{
+			if (!ret.empty())
+				ret += '_';
+			ret += t;
+		}
 		return ret;
 	}
 
@@ -86,7 +90,7 @@ namespace flame
 				if (p.path().extension() != L".prefab")
 					continue;
 				auto name = p.path().filename().stem().string();
-				auto sp = SUS::split(name, '|');
+				auto sp = SUS::split(name, '_');
 				if (sp.size() != 4)
 					continue;
 				Mesh mesh;
@@ -133,7 +137,20 @@ namespace flame
 		{
 			samples[idx] = v;
 
-			dirty = true;
+			if (!dirty)
+			{
+				dirty = true;
+				auto x = idx % (blocks.x + 1);
+				auto y = idx / (blocks.x + 1);
+				if (x > 0 && y > 0)
+					dirty_tiles.push_back(uvec2(x - 1, y - 1));
+				if (y > 0)
+					dirty_tiles.push_back(uvec2(x, y - 1));
+				if (x > 0)
+					dirty_tiles.push_back(uvec2(x - 1, y));
+				dirty_tiles.push_back(uvec2(x, y));
+
+			}
 			update_tiles();
 		}
 	}
@@ -155,68 +172,79 @@ namespace flame
 			return;
 		dirty = false;
 
-		if (meshes.empty())
-			return;
-
-		samples.resize((blocks.x + 1) * (blocks.z + 1));
-		if (entity->children.size() != blocks.x * blocks.z)
+		if (dirty_tiles.empty())
 		{
-			entity->remove_all_children();
-			for (auto i = 0; i < blocks.x * blocks.z; i++)
+			samples.resize((blocks.x + 1) * (blocks.z + 1));
+			if (entity->children.size() != blocks.x * blocks.z)
 			{
-				auto e = Entity::create();
-				e->name = std::format("{}, {}", i % blocks.x, i / blocks.x);
-				e->tag = e->tag | TagNotSerialized;
-				e->add_component_t<cNode>();
-				entity->add_child(e);
+				entity->remove_all_children();
+				for (auto i = 0; i < blocks.x * blocks.z; i++)
+				{
+					auto e = Entity::create();
+					e->name = std::format("{}, {}", i % blocks.x, i / blocks.x);
+					e->tag = e->tag | TagNotSerialized;
+					e->add_component_t<cNode>();
+					entity->add_child(e);
+				}
 			}
 		}
+
 		auto gap_x = extent.x / blocks.x;
 		auto gap_y = extent.y / blocks.y;
 		auto gap_z = extent.z / blocks.z;
-		for (auto i = 0; i < blocks.x; i++)
-		{
-			for (auto j = 0; j < blocks.z; j++)
+		auto update_tile = [&](int i, int j) {
+			auto a = samples[i + j * (blocks.x + 1)];
+			auto b = samples[i + (j + 1) * (blocks.x + 1)];
+			auto c = samples[i + 1 + (j + 1) * (blocks.x + 1)];
+			auto d = samples[i + 1 + j * (blocks.x + 1)];
+			auto base_lv = min(min(a.height, b.height), min(c.height, d.height));
+			a.height -= base_lv; b.height -= base_lv; c.height -= base_lv; d.height -= base_lv;
+			if (a.height > 1 || b.height > 1 || c.height > 1 || d.height > 1)
+				return;
+
+			auto name = form_name(a, b, c, d);
+			auto dst = entity->children[i + j * blocks.x].get();
+			auto node = dst->node();
+			if (auto it = meshes.find(name); it != meshes.end())
 			{
-				auto a = samples[i + j * (blocks.x + 1)];
-				auto b = samples[i + (j + 1) * (blocks.x + 1)];
-				auto c = samples[i + 1 + (j + 1) * (blocks.x + 1)];
-				auto d = samples[i + 1 + j * (blocks.x + 1)];
-				auto base_lv = min(min(a.height, b.height), min(c.height, d.height));
-				a.height -= base_lv * 2; b.height -= base_lv * 2; c.height -= base_lv * 2; d.height -= base_lv * 2;
-				if (a.height > 1 || b.height > 1 || c.height > 1 || d.height > 1)
-					continue;
+				dst->remove_all_children();
+				dst->add_child(Entity::create(it->second.path));
+				dst->forward_traversal([](EntityPtr e) {
+					if (e->get_component_t<cMesh>())
+						e->tag = e->tag | TagMarkNavMesh;
+				});
 
-				auto name = form_name(a, b, c, d);
-				auto dst = entity->children[i + j * blocks.x].get();
-				auto node = dst->node();
-				if (auto it = meshes.find(name); it != meshes.end())
+				switch (name == "0_0_0_0" ? linearRand(0, 3) : it->second.rotation)
 				{
-					dst->remove_all_children();
-					dst->add_child(Entity::create(it->second.path));
-					dst->forward_traversal([](EntityPtr e) { 
-						if (e->get_component_t<cMesh>())
-							e->tag = e->tag | TagMarkNavMesh;
-					});
-
-					switch (name == "0000" ? linearRand(0, 3) : it->second.rotation)
-					{
-					case 0:
-						node->set_qut(quat(1.f, 0.f, 0.f, 0.f));
-						break;
-					case 1:
-						node->set_qut(angleAxis(radians(90.f), vec3(0.f, 1.f, 0.f)));
-						break;
-					case 2:
-						node->set_qut(angleAxis(radians(180.f), vec3(0.f, 1.f, 0.f)));
-						break;
-					case 3:
-						node->set_qut(angleAxis(radians(270.f), vec3(0.f, 1.f, 0.f)));
-						break;
-					}
+				case 0:
+					node->set_qut(quat(1.f, 0.f, 0.f, 0.f));
+					break;
+				case 1:
+					node->set_qut(angleAxis(radians(90.f), vec3(0.f, 1.f, 0.f)));
+					break;
+				case 2:
+					node->set_qut(angleAxis(radians(180.f), vec3(0.f, 1.f, 0.f)));
+					break;
+				case 3:
+					node->set_qut(angleAxis(radians(270.f), vec3(0.f, 1.f, 0.f)));
+					break;
 				}
-				node->set_pos(vec3((i + 0.5f) * gap_x , base_lv * gap_y, (j + 0.5f) * gap_z));
 			}
+			node->set_pos(vec3((i + 0.5f) * gap_x, base_lv * gap_y, (j + 0.5f) * gap_z));
+		};
+		if (dirty_tiles.empty())
+		{
+			for (auto i = 0; i < blocks.x; i++)
+			{
+				for (auto j = 0; j < blocks.z; j++)
+					update_tile(i, j);
+			}
+		}
+		else
+		{
+			for (auto& ij : dirty_tiles)
+				update_tile(ij.x, ij.y);
+			dirty_tiles.clear();
 		}
 	}
 

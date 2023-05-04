@@ -660,6 +660,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				sv.assign(nullptr, pv);
 			int n = sv.count();
 			ImGui::InputInt("size", &n, 1, 1);
+			ImGui::Separator();
 			if (ImGui::IsItemDeactivatedAfterEdit())
 			{
 				sv.resize(nullptr, n);
@@ -714,6 +715,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			auto& ui = *ti->retrive_ui();
 			int n = sv.count();
 			ImGui::InputInt("size", &n, 1, 1);
+			ImGui::Separator();
 			if (ImGui::IsItemDeactivatedAfterEdit())
 			{
 				sv.resize(nullptr, n);
@@ -768,6 +770,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				sv.assign(nullptr, pv);
 			int n = sv.count();
 			ImGui::InputInt("size", &n, 1, 1);
+			ImGui::Separator();
 			if (ImGui::IsItemDeactivatedAfterEdit())
 			{
 				sv.resize(nullptr, n);
@@ -829,6 +832,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				sv.assign(nullptr, pv);
 			int n = sv.count();
 			ImGui::InputInt("size", &n, 1, 1);
+			ImGui::Separator();
 			if (ImGui::IsItemDeactivatedAfterEdit())
 			{
 				sv.resize(nullptr, n);
