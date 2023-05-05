@@ -275,7 +275,7 @@ namespace flame
 				pugi::xml_node doc_root;
 				if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("material"))
 				{
-					printf("material does not exist: %s\n", filename.string().c_str());
+					printf("material does not exist or wrong format: %s\n", _filename.string().c_str());
 					return nullptr;
 				}
 

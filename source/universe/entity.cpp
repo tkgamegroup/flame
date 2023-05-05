@@ -451,11 +451,12 @@ namespace flame
 		}
 
 		auto base_path = Path::reverse(filename).parent_path();
-
-		UnserializeXmlSpec spec;
-		spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = [&](const std::string& str, void* dst) {
+		auto path_delegate = [&](const std::string& str, void* dst) {
 			*(std::filesystem::path*)dst = Path::combine(base_path, str);
 		};
+
+		UnserializeXmlSpec spec;
+		spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = path_delegate;
 		spec.typed_obj_delegates[TypeInfo::get<Component*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
 			std::string name = src.attribute("type_name").value();
 			auto hash = sh(name.c_str());
@@ -487,8 +488,7 @@ namespace flame
 					e->load(path, false);
 					new PrefabInstance(e, path);
 
-					auto n_mod = src.child("modifications");
-					for (auto n : n_mod)
+					for (auto n : src.child("modifications"))
 					{
 						std::string target = n.attribute("target").value();
 
@@ -497,7 +497,9 @@ namespace flame
 						if (!get_modification_target(target, e, obj, attr))
 							continue;
 
-						unserialize_xml(*attr->ui, attr->var_off(), attr->type, "value", 0, attr->setter_idx, n, obj);
+						UnserializeXmlSpec spec;
+						spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = path_delegate;
+						unserialize_xml(*attr->ui, attr->var_off(), attr->type, "value", 0, attr->setter_idx, n, obj, spec);
 						e->prefab_instance->modifications.push_back(target);
 					}
 				}
@@ -558,15 +560,16 @@ namespace flame
 		}
 
 		auto base_path = Path::reverse(filename).parent_path();
-
-		SerializeXmlSpec spec;
-		spec.excludes.emplace_back("flame::cNode"_h, "eul"_h);
-		spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = [&](void* src)->std::string {
+		auto path_delegate = [&](void* src)->std::string {
 			auto& path = *(std::filesystem::path*)src;
 			if (path.native().starts_with(L"0x"))
 				return "";
 			return Path::rebase(base_path, path).string();
 		};
+
+		SerializeXmlSpec spec;
+		spec.excludes.emplace_back("flame::cNode"_h, "eul"_h);
+		spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = path_delegate;
 		spec.typed_obj_delegates[TypeInfo::get<Component*>()] = [&](void* src, pugi::xml_node dst) {
 			auto comp = (Component*)src;
 			auto ui = find_udt(comp->type_hash);
@@ -602,7 +605,9 @@ namespace flame
 
 						auto n = n_mod.append_child("item");
 						n.append_attribute("target").set_value(target.c_str());
-						serialize_xml(*attr->ui, attr->var_off(), attr->type, "value", 0, "", attr->getter_idx, obj, n);
+						SerializeXmlSpec spec;
+						spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = path_delegate;
+						serialize_xml(*attr->ui, attr->var_off(), attr->type, "value", 0, "", attr->getter_idx, obj, n, spec);
 					}
 				}
 				else
