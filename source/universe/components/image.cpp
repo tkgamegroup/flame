@@ -63,10 +63,8 @@ namespace flame
 			return;
 		auto_size = v;
 		if (auto_size && image)
-		{
 			element->set_ext(image->extent);
-			data_changed("auto_size"_h);
-		}
+		data_changed("auto_size"_h);
 	}
 
 	struct cImageCreate : cImage::Create

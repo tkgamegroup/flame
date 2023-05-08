@@ -23,7 +23,7 @@ namespace flame
 					get_glyph(ch, font_size);
 			}
 
-			virtual float get_scale() = 0;
+			virtual float get_scale(uint font_size) = 0;
 
 			FLAME_GRAPHICS_API static ivec2 icons_range();
 			FLAME_GRAPHICS_API static wchar_t icon(uint hash);

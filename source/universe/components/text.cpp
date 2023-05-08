@@ -18,9 +18,10 @@ namespace flame
 		if (text == str)
 			return;
 		text = str;
+		if (auto_size)
+			element->set_ext(calc_text_size());
 		element->mark_drawing_dirty();
 		data_changed("text"_h);
-
 	}
 
 	void cTextPrivate::set_col(const cvec4& _col)
@@ -37,6 +38,8 @@ namespace flame
 		if (font_size == size)
 			return;
 		font_size = size;
+		if (auto_size)
+			element->set_ext(calc_text_size());
 		element->mark_drawing_dirty();
 		data_changed("font_size"_h);
 	}
@@ -47,6 +50,8 @@ namespace flame
 			return;
 		font_names = names;
 		get_font_atlas();
+		if (auto_size)
+			element->set_ext(calc_text_size());
 		element->mark_drawing_dirty();
 		data_changed("font_names"_h);
 	}
@@ -57,6 +62,8 @@ namespace flame
 			return;
 		sdf = v;
 		get_font_atlas();
+		if (auto_size)
+			element->set_ext(calc_text_size());
 		element->mark_drawing_dirty();
 		data_changed("sdf"_h);
 	}
@@ -77,6 +84,34 @@ namespace flame
 		border = _border;
 		element->mark_drawing_dirty();
 		data_changed("border"_h);
+	}
+
+	vec2 cTextPrivate::calc_text_size()
+	{
+		if (!font_atlas)
+			return vec2(0.f);
+
+		auto ret = vec2(0.f, font_size);
+		auto scale = font_atlas->get_scale(font_size);
+		for (auto ch : text)
+		{
+			auto& g = font_atlas->get_glyph(ch, font_size);
+			auto s = vec2(g.size) * scale;
+
+			ret.x += g.advance * scale;
+		}
+		return ret;
+	}
+
+	void cTextPrivate::set_auto_size(bool v)
+	{
+		if (auto_size == v)
+			return;
+		auto_size = v;
+		element->mark_drawing_dirty();
+		if (auto_size)
+			element->set_ext(calc_text_size());
+		data_changed("auto_size"_h);
 	}
 
 	void cTextPrivate::get_font_atlas()

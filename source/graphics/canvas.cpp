@@ -350,9 +350,7 @@ namespace flame
 			font_atlas = font_atlas ? font_atlas : main_font_atlas;
 			thickness = clamp(thickness, -1.f, +1.f);
 			border = clamp(border, 0.f, 0.25f);
-			auto scale = font_atlas->get_scale();
-			if (scale != 1.f)
-				scale *= font_size;
+			auto scale = font_atlas->get_scale(font_size);
 			auto ds = font_atlas == main_font_atlas ? main_ds.get() : font_atlas->view->get_shader_read_src(nullptr);
 			auto& cmd = font_atlas->type == FontAtlasBitmap ? get_bmp_cmd(ds) : get_sdf_cmd(ds, scale, thickness, border);
 

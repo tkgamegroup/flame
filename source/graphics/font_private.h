@@ -56,7 +56,7 @@ namespace flame
 
 			~FontAtlasPrivate();
 			const Glyph& get_glyph(wchar_t code, uint font_size) override;
-			float get_scale() override;
+			float get_scale(uint font_size) override;
 		};
 	}
 }

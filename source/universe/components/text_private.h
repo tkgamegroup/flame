@@ -15,6 +15,8 @@ namespace flame
 		void set_sdf(bool v) override;
 		void set_thickness(float thickness) override;
 		void set_border(float border) override;
+		vec2 calc_text_size();
+		void set_auto_size(bool v) override;
 
 		void get_font_atlas();
 	};

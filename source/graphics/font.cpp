@@ -305,12 +305,12 @@ namespace flame
 			return empty_glyph;
 		}
 
-		float FontAtlasPrivate::get_scale()
+		float FontAtlasPrivate::get_scale(uint font_size)
 		{
 			if (type == FontAtlasBitmap)
 				return 1.f;
 			if (type == FontAtlasSDF)
-				return 1.f / sdf_font_size;
+				return (1.f / sdf_font_size) * font_size;
 			return 1.f;
 		}
 

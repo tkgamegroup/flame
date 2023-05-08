@@ -44,6 +44,11 @@ namespace flame
 		// Reflect
 		virtual void set_border(float border) = 0;
 
+		// Reflect
+		bool auto_size = true;
+		// Reflect
+		virtual void set_auto_size(bool v) = 0;
+
 		graphics::FontAtlas* font_atlas = nullptr;
 
 		struct Create
