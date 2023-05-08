@@ -67,21 +67,22 @@ void tile_map_editing()
 						auto r = tile_map->samples[x + 1 + z * (blocks.x + 1)];
 						auto t = tile_map->samples[x + (z - 1) * (blocks.x + 1)];
 						auto b = tile_map->samples[x + (z + 1) * (blocks.x + 1)];
-						if (l.slope == cTileMap::SlopeNone && r.slope == cTileMap::SlopeNone &&
-							t.slope == cTileMap::SlopeNone && b.slope == cTileMap::SlopeNone)
+
+						if ((l.height == r.height + 1 || r.height == l.height + 1) &&
+							(l.slope == cTileMap::SlopeNone && r.slope == cTileMap::SlopeNone) &&
+							!(t.height == b.height + 1 || b.height == t.height + 1))
 						{
-							if ((l.height == r.height + 1 || r.height == l.height + 1) && !(t.height == b.height + 1 || b.height == t.height + 1))
-							{
-								sp.slope = cTileMap::SlopeHorizontal;
-								tile_map->set_sample(idx, sp);
-								app.prefab_unsaved = true;
-							}
-							else if ((t.height == b.height + 1 || b.height == t.height + 1) && !(l.height == r.height + 1 || r.height == l.height + 1))
-							{
-								sp.slope = cTileMap::SlopeVertical;
-								tile_map->set_sample(idx, sp);
-								app.prefab_unsaved = true;
-							}
+							sp.slope = cTileMap::SlopeHorizontal;
+							tile_map->set_sample(idx, sp);
+							app.prefab_unsaved = true;
+						}
+						else if ((t.height == b.height + 1 || b.height == t.height + 1) &&
+							(t.slope == cTileMap::SlopeNone && b.slope == cTileMap::SlopeNone) &&
+							!(l.height == r.height + 1 || r.height == l.height + 1))
+						{
+							sp.slope = cTileMap::SlopeVertical;
+							tile_map->set_sample(idx, sp);
+							app.prefab_unsaved = true;
 						}
 					}
 				}

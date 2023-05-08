@@ -144,11 +144,12 @@ namespace flame
 				auto y = idx / (blocks.x + 1);
 				if (x > 0 && y > 0)
 					dirty_tiles.push_back(uvec2(x - 1, y - 1));
-				if (y > 0)
+				if (x < blocks.x && y > 0)
 					dirty_tiles.push_back(uvec2(x, y - 1));
-				if (x > 0)
+				if (x > 0 && y < blocks.z)
 					dirty_tiles.push_back(uvec2(x - 1, y));
-				dirty_tiles.push_back(uvec2(x, y));
+				if (x < blocks.x && y < blocks.z)
+					dirty_tiles.push_back(uvec2(x, y));
 
 			}
 			update_tiles();
