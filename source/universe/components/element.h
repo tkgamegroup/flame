@@ -19,6 +19,8 @@ namespace flame
 			set_pos(pos + p);
 		}
 
+		virtual void set_global_pos(const vec2& pos) = 0;
+
 		// Reflect
 		vec2 ext = vec2(1.f);
 		// Reflect
@@ -27,6 +29,8 @@ namespace flame
 		{
 			set_ext(ext + e);
 		}
+
+		virtual void set_global_ext(const vec2& ext) = 0;
 
 		// Reflect
 		vec2 scl = vec2(1.f);
@@ -65,6 +69,7 @@ namespace flame
 		mat3x2 transform;
 		vec2 global_pos0() { return transform[2]; }
 		vec2 global_pos1() { return transform * vec3(ext, 1.f); }
+		virtual vec2 global_scl() = 0;
 
 		virtual void mark_transform_dirty() = 0;
 		virtual void mark_drawing_dirty() = 0;

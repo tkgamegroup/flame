@@ -141,62 +141,62 @@ namespace flame
 					case ElementAlignCenter:
 					{
 						auto prect = parent_rect(element);
-						element->set_pos((prect.a + prect.b - element->ext) * 0.5f);
+						element->set_global_pos((prect.a + prect.b - element->ext) * 0.5f);
 					}
 						break;
 					case ElementAlignFill:
 					{
 						auto prect = parent_rect(element);
-						element->set_pos(vec2(0.f));
-						element->set_ext(prect.b - prect.a);
+						element->set_global_pos(prect.a);
+						element->set_global_ext(prect.b - prect.a);
 					}
 						break;
 					case ElementAlignLeft:
 					{
 						auto prect = parent_rect(element);
-						element->set_pos(vec2(0.f, (prect.b.y - element->ext.y) * 0.5f));
+						element->set_global_pos(vec2(prect.a.x, (prect.b.y - element->ext.y) * 0.5f));
 					}
 						break;
 					case ElementAlignTop:
 					{
 						auto prect = parent_rect(element);
-						element->set_pos(vec2((prect.b.x - element->ext.x) * 0.5f, 0.f));
+						element->set_global_pos(vec2((prect.b.x - element->ext.x) * 0.5f, prect.a.y));
 					}
 						break;
 					case ElementAlignRight:
 					{
 						auto prect = parent_rect(element);
-						element->set_pos(vec2(prect.b.x - element->ext.x, (prect.b.y - element->ext.y) * 0.5f));
+						element->set_global_pos(vec2(prect.b.x - element->ext.x, (prect.b.y - element->ext.y) * 0.5f));
 					}
 						break;
 					case ElementAlignBottom:
 					{
 						auto prect = parent_rect(element);
-						element->set_pos(vec2((prect.b.x - element->ext.x) * 0.5f, prect.b.y - element->ext.y));
+						element->set_global_pos(vec2((prect.b.x - element->ext.x) * 0.5f, prect.b.y - element->ext.y));
 					}
 						break;
 					case ElementAlignTopLeft:
 					{
 						auto prect = parent_rect(element);
-						element->set_pos(vec2(0.f));
+						element->set_global_pos(prect.a);
 					}
 						break;
 					case ElementAlignTopRight:
 					{
 						auto prect = parent_rect(element);
-						element->set_pos(vec2(prect.b.x - element->ext.x, 0.f));
+						element->set_global_pos(vec2(prect.b.x - element->ext.x, prect.a.y));
 					}
 						break;
 					case ElementAlignBottomLeft:
 					{
 						auto prect = parent_rect(element);
-						element->set_pos(vec2(0.f, prect.b.y - element->ext.y));
+						element->set_global_pos(vec2(prect.a.x, prect.b.y - element->ext.y));
 					}
 						break;
 					case ElementAlignBottomRight:
 					{
 						auto prect = parent_rect(element);
-						element->set_pos(prect.b - element->ext);
+						element->set_global_pos(prect.b - element->ext);
 					}
 						break;
 					}

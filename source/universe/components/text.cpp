@@ -93,12 +93,13 @@ namespace flame
 
 		auto ret = vec2(0.f, font_size);
 		auto scale = font_atlas->get_scale(font_size);
+		auto p = vec2(0.f);
 		for (auto ch : text)
 		{
 			auto& g = font_atlas->get_glyph(ch, font_size);
 			auto s = vec2(g.size) * scale;
-
-			ret.x += g.advance * scale;
+			ret.x = p.x + s.x;
+			p.x += g.advance * scale;
 		}
 		return ret;
 	}
@@ -119,7 +120,7 @@ namespace flame
 		auto _font_names = font_names;
 		if (_font_names.empty())
 			_font_names.push_back(L"flame\\fonts\\OpenSans-Regular.ttf");
-		auto _font_atlas = graphics::FontAtlas::get(font_names, sdf ? graphics::FontAtlasSDF : graphics::FontAtlasBitmap);
+		auto _font_atlas = graphics::FontAtlas::get(_font_names, sdf ? graphics::FontAtlasSDF : graphics::FontAtlasBitmap);
 		if (font_atlas != _font_atlas)
 		{
 			if (font_atlas)

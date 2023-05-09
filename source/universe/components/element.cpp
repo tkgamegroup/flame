@@ -24,6 +24,14 @@ namespace flame
 		data_changed("pos"_h);
 	}
 
+	void cElementPrivate::set_global_pos(const vec2& pos)
+	{
+		if (auto pelement = entity->get_parent_component_i<cElementT>(0); pelement)
+			set_pos(pos - pelement->global_pos0());
+		else
+			set_pos(pos);
+	}
+
 	void cElementPrivate::set_ext(const vec2& e)
 	{
 		if (ext == e)
@@ -31,6 +39,17 @@ namespace flame
 		ext = e;
 		mark_transform_dirty();
 		data_changed("ext"_h);
+	}
+
+	void cElementPrivate::set_global_ext(const vec2& ext)
+	{
+		if (auto pelement = entity->get_parent_component_i<cElementT>(0); pelement)
+		{
+			auto gscl = pelement->global_scl();
+			set_ext(ext / (gscl == vec2(0.f) ? 1.f : 0.f));
+		}
+		else
+			set_ext(ext);
 	}
 
 	void cElementPrivate::set_scl(const vec2& s)
@@ -87,6 +106,18 @@ namespace flame
 		data_changed("align"_h);
 	}
 
+	vec2 cElementPrivate::global_scl()
+	{
+		auto ret = scl;
+		auto pelement = entity->get_parent_component_i<cElementT>(0);
+		while (pelement)
+		{
+			ret *= pelement->scl;
+			pelement = pelement->entity->get_parent_component_i<cElementT>(0);
+		}
+		return ret;
+	}
+
 	void cElementPrivate::mark_transform_dirty()
 	{
 		transform_dirty = true;
@@ -106,13 +137,9 @@ namespace flame
 
 		mat3 m;
 		if (auto pelement = entity->get_parent_component_i<cElementT>(0); pelement)
-		{
 			m = pelement->transform;
-		}
 		else
-		{
 			m = mat3(1.f);
-		}
 		m = translate(m, pos);
 		m = scale(m, scl);
 		transform = m;

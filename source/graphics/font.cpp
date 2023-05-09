@@ -293,11 +293,9 @@ namespace flame
 						break;
 					}
 
-					break;
+					it = map.insert(std::make_pair(key, g)).first;
+					return it->second;
 				}
-
-				it = map.insert(std::make_pair(key, g)).first;
-				return it->second;
 			}
 			else
 				return it->second;

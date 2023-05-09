@@ -11,7 +11,9 @@ namespace flame
 		void on_init() override;
 
 		void set_pos(const vec2& pos) override;
+		void set_global_pos(const vec2& pos) override;
 		void set_ext(const vec2& ext) override;
+		void set_global_ext(const vec2& ext) override;
 		void set_scl(const vec2& scl) override;
 
 		void set_background_col(const cvec4& col) override;
@@ -21,6 +23,8 @@ namespace flame
 		void set_scissor(bool v) override;
 
 		void set_align(ElementAlign align) override;
+
+		vec2 global_scl() override;
 
 		void mark_transform_dirty() override;
 		void mark_drawing_dirty() override;
