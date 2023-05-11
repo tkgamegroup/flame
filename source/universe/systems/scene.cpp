@@ -145,97 +145,81 @@ namespace flame
 							switch (playout->type)
 							{
 							case ElementLayoutHorizontal:
+							{
+								auto x = 0.f;
+								auto p = playout->entity;
+								for (auto i = 0; i < e->index; i++)
+								{
+									if (auto element = p->children[i]->element(); element && element->horizontal_alignment == ElementAlignNone)
+									{
+										if (x > 0.f)
+											x += playout->item_spacing;
+										x += element->ext.x;
+									}
+								}
+								element->set_x(playout->padding.x + x);
+							}
 								break;
 							}
 						}
 						break;
 					case ElementAlignCenter:
+						if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
+							element->set_x((pelement->ext.x - (playout ? playout->padding.x + playout->padding.z : 0.f) - element->ext.x) * 0.5f);
 						break;
 					case ElementAlignEnd0:
 						element->set_x(playout ? playout->padding.x : 0.f);
 						break;
 					case ElementAlignEnd1:
+						if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
+							element->set_x(pelement->ext.x - (playout ? playout->padding.x : 0.f) - element->ext.x);
 						break;
 					case ElementAlignFill:
+						if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
+							element->set_w(pelement->ext.x - (playout ? playout->padding.x + playout->padding.z : 0.f));
 						break;
 					}
 
 					switch (element->vertical_alignment)
 					{
 					case ElementAlignNone:
+						if (playout)
+						{
+							switch (playout->type)
+							{
+							case ElementLayoutVertical:
+							{
+								auto y = 0.f;
+								auto p = playout->entity;
+								for (auto i = 0; i < e->index; i++)
+								{
+									if (auto element = p->children[i]->element(); element && element->vertical_alignment == ElementAlignNone)
+									{
+										if (y > 0.f)
+											y += playout->item_spacing;
+										y += element->ext.y;
+									}
+								}
+								element->set_y(playout->padding.y + y);
+							}
+								break;
+							}
+						}
 						break;
 					case ElementAlignCenter:
+						if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
+							element->set_y((pelement->ext.y - (playout ? playout->padding.y + playout->padding.w : 0.f) - element->ext.y) * 0.5f);
 						break;
 					case ElementAlignEnd0:
+						element->set_y(playout ? playout->padding.y : 0.f);
 						break;
 					case ElementAlignEnd1:
+						if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
+							element->set_y(pelement->ext.y - (playout ? playout->padding.y : 0.f) - element->ext.y);
 						break;
 					case ElementAlignFill:
-						break;
-					}
-
-					switch (element->align)
-					{
-					case ElementAlignCenter:
-					{
-						auto prect = parent_rect(element);
-						element->set_global_pos((prect.a + prect.b - element->ext) * 0.5f);
-					}
-						break;
-					case ElementAlignFill:
-					{
-						auto prect = parent_rect(element);
-						element->set_global_pos(prect.a);
-						element->set_global_ext(prect.b - prect.a);
-					}
-						break;
-					case ElementAlignLeft:
-					{
-						auto prect = parent_rect(element);
-						element->set_global_pos(vec2(prect.a.x, (prect.b.y - element->ext.y) * 0.5f));
-					}
-						break;
-					case ElementAlignTop:
-					{
-						auto prect = parent_rect(element);
-						element->set_global_pos(vec2((prect.b.x - element->ext.x) * 0.5f, prect.a.y));
-					}
-						break;
-					case ElementAlignRight:
-					{
-						auto prect = parent_rect(element);
-						element->set_global_pos(vec2(prect.b.x - element->ext.x, (prect.b.y - element->ext.y) * 0.5f));
-					}
-						break;
-					case ElementAlignBottom:
-					{
-						auto prect = parent_rect(element);
-						element->set_global_pos(vec2((prect.b.x - element->ext.x) * 0.5f, prect.b.y - element->ext.y));
-					}
-						break;
-					case ElementAlignTopLeft:
-					{
-						auto prect = parent_rect(element);
-						element->set_global_pos(prect.a);
-					}
-						break;
-					case ElementAlignTopRight:
-					{
-						auto prect = parent_rect(element);
-						element->set_global_pos(vec2(prect.b.x - element->ext.x, prect.a.y));
-					}
-						break;
-					case ElementAlignBottomLeft:
-					{
-						auto prect = parent_rect(element);
-						element->set_global_pos(vec2(prect.a.x, prect.b.y - element->ext.y));
-					}
-						break;
-					case ElementAlignBottomRight:
-					{
-						auto prect = parent_rect(element);
-						element->set_global_pos(prect.b - element->ext);
-					}
+						if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
+							element->set_h(pelement->ext.y - (playout ? playout->padding.y + playout->padding.w : 0.f));
 						break;
 					}
 				}
@@ -1267,14 +1251,9 @@ namespace flame
 		static auto last_target_extent = vec2(0.f);
 		if (first_element)
 		{
-			auto mark_dirty = false;
 			auto target_extent = sRenderer::instance()->target_extent();
-			if (last_target_extent != target_extent)
-			{
-				last_target_extent = target_extent;
-				mark_dirty = true;
-			}
-			update_element_transform(first_element->get_component_t<cLayoutT>(), first_element, mark_dirty);
+			first_element->element()->set_ext(target_extent);
+			update_element_transform(first_element->get_component_t<cLayoutT>(), first_element, false);
 		}
 
 #ifdef USE_RECASTNAV

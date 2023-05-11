@@ -7,13 +7,16 @@ namespace flame
 	// Reflect ctor
 	struct cLayout : Component
 	{
+		// Reflect requires
+		cElementPtr element = nullptr;
+
 		// Reflect
 		ElementLayoutType type = ElementLayoutVertical;
 		// Reflect
 		virtual void set_type(ElementLayoutType type) = 0;
 
 		// Reflect
-		vec4 padding = vec4(4.f);
+		vec4 padding = vec4(4.f); // L T R B
 		// Reflect
 		virtual void set_padding(const vec4& padding) = 0;
 
