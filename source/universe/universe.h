@@ -84,19 +84,21 @@ namespace flame
 
 	inline TagFlags operator| (TagFlags a, TagFlags b) { return (TagFlags)((int)a | (int)b); }
 
-	enum ElementAlign
+	enum ElementAlignment
 	{
 		ElementAlignNone,
 		ElementAlignCenter,
-		ElementAlignFill,
-		ElementAlignLeft,
-		ElementAlignTop,
-		ElementAlignRight,
-		ElementAlignBottom,
-		ElementAlignTopLeft,
-		ElementAlignTopRight,
-		ElementAlignBottomLeft,
-		ElementAlignBottomRight
+		ElementAlignEnd0,
+		ElementAlignEnd1,
+		ElementAlignFill
+	};
+
+	enum ElementLayoutType
+	{
+		ElementLayoutFree,
+		ElementLayoutVertical,
+		ElementLayoutHorizontal,
+		ElementLayoutGrid
 	};
 
 	enum ElementStateFlags

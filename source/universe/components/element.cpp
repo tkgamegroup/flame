@@ -97,13 +97,22 @@ namespace flame
 		data_changed("scissor"_h);
 	}
 
-	void cElementPrivate::set_align(ElementAlign _align)
+	void cElementPrivate::set_horizontal_alignment(ElementAlignment alignment)
 	{
-		if (align == _align)
+		if (horizontal_alignment == alignment)
 			return;
-		align = _align;
+		horizontal_alignment = alignment;
 		mark_transform_dirty();
-		data_changed("align"_h);
+		data_changed("horizontal_alignment"_h);
+	}
+
+	void cElementPrivate::set_vertical_alignment(ElementAlignment alignment)
+	{
+		if (vertical_alignment == alignment)
+			return;
+		vertical_alignment = alignment;
+		mark_transform_dirty();
+		data_changed("vertical_alignment"_h);
 	}
 
 	vec2 cElementPrivate::global_scl()

@@ -3,16 +3,27 @@
 
 namespace flame
 {
-	void cLayoutPrivate::set_type(Type type)
+	void cLayoutPrivate::set_type(ElementLayoutType type)
 	{
 
 	}
 
-	void cLayoutPrivate::set_spacing(float spacing)
+	void cLayoutPrivate::set_padding(const vec4& padding)
 	{
+
 	}
 
-	void cLayoutPrivate::update()
+	void cLayoutPrivate::set_item_spacing(float spacing)
+	{
+
+	}
+
+	void cLayoutPrivate::set_auto_width(bool auto_width)
+	{
+
+	}
+
+	void cLayoutPrivate::set_auto_height(bool auto_height)
 	{
 
 	}

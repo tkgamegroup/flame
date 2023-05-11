@@ -18,6 +18,14 @@ namespace flame
 		{
 			set_pos(pos + p);
 		}
+		inline void set_x(float x)
+		{
+			set_pos(vec2(x, pos.y));
+		}
+		inline void set_y(float y)
+		{
+			set_pos(vec2(pos.x, y));
+		}
 
 		virtual void set_global_pos(const vec2& pos) = 0;
 
@@ -28,6 +36,14 @@ namespace flame
 		inline void add_ext(const vec2& e)
 		{
 			set_ext(ext + e);
+		}
+		inline void set_w(float w)
+		{
+			set_ext(vec2(w, ext.y));
+		}
+		inline void set_h(float h)
+		{
+			set_ext(vec2(ext.x, h));
 		}
 
 		virtual void set_global_ext(const vec2& ext) = 0;
@@ -62,9 +78,13 @@ namespace flame
 		virtual void set_scissor(bool v) = 0;
 
 		// Reflect
-		ElementAlign align = ElementAlignNone;
+		ElementAlignment horizontal_alignment = ElementAlignNone;
 		// Reflect
-		virtual void set_align(ElementAlign align) = 0;
+		virtual void set_horizontal_alignment(ElementAlignment alignment) = 0;
+		// Reflect
+		ElementAlignment vertical_alignment = ElementAlignNone;
+		// Reflect
+		virtual void set_vertical_alignment(ElementAlignment alignment) = 0;
 
 		mat3x2 transform;
 		vec2 global_pos0() { return transform[2]; }

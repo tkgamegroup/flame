@@ -4,6 +4,7 @@
 #include "../world_private.h"
 #include "../components/node_private.h"
 #include "../components/element_private.h"
+#include "../components/layout_private.h"
 #include "../components/mesh_private.h"
 #include "../components/terrain_private.h"
 #include "../components/volume_private.h"
@@ -60,7 +61,7 @@ namespace flame
 #endif
 	}
 
-	void sScenePrivate::update_node_transform(EntityPtr e, bool mark_dirty)
+	static void update_node_transform(OctNode* octree, EntityPtr e, bool mark_dirty)
 	{
 		if (!e->global_enable)
 			return;
@@ -97,7 +98,7 @@ namespace flame
 		if (!is_static)
 		{
 			for (auto& c : e->children)
-				update_node_transform(c.get(), mark_dirty);
+				update_node_transform(octree, c.get(), mark_dirty);
 		}
 	}
 
@@ -117,7 +118,7 @@ namespace flame
 		return ret;
 	}
 
-	void sScenePrivate::update_element_transform(EntityPtr e, bool mark_dirty)
+	static void update_element_transform(cLayoutPtr playout, EntityPtr e, bool mark_dirty)
 	{
 		if (!e->global_enable)
 			return;
@@ -136,6 +137,43 @@ namespace flame
 
 				if (element->transform_dirty)
 				{
+					switch (element->horizontal_alignment)
+					{
+					case ElementAlignNone:
+						if (playout)
+						{
+							switch (playout->type)
+							{
+							case ElementLayoutHorizontal:
+								break;
+							}
+						}
+						break;
+					case ElementAlignCenter:
+						break;
+					case ElementAlignEnd0:
+						element->set_x(playout ? playout->padding.x : 0.f);
+						break;
+					case ElementAlignEnd1:
+						break;
+					case ElementAlignFill:
+						break;
+					}
+
+					switch (element->vertical_alignment)
+					{
+					case ElementAlignNone:
+						break;
+					case ElementAlignCenter:
+						break;
+					case ElementAlignEnd0:
+						break;
+					case ElementAlignEnd1:
+						break;
+					case ElementAlignFill:
+						break;
+					}
+
 					switch (element->align)
 					{
 					case ElementAlignCenter:
@@ -209,8 +247,9 @@ namespace flame
 
 		if (!is_static)
 		{
+			auto layout = e->get_component_t<cLayoutT>();
 			for (auto& c : e->children)
-				update_element_transform(c.get(), mark_dirty);
+				update_element_transform(layout, c.get(), mark_dirty);
 		}
 	}
 
@@ -1223,23 +1262,19 @@ namespace flame
 		});
 
 		if (first_node)
-			update_node_transform(first_node, false);
+			update_node_transform(octree, first_node, false);
 
 		static auto last_target_extent = vec2(0.f);
-		static auto last_element_align = ElementAlignNone;
 		if (first_element)
 		{
 			auto mark_dirty = false;
 			auto target_extent = sRenderer::instance()->target_extent();
-			auto align = first_element->element()->align;
-			if (last_target_extent != target_extent || last_element_align != align)
+			if (last_target_extent != target_extent)
 			{
 				last_target_extent = target_extent;
-				last_element_align = align;
-				if (align != ElementAlignNone)
-					mark_dirty = true;
+				mark_dirty = true;
 			}
-			update_element_transform(first_element, mark_dirty);
+			update_element_transform(first_element->get_component_t<cLayoutT>(), first_element, mark_dirty);
 		}
 
 #ifdef USE_RECASTNAV

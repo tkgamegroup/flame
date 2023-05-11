@@ -22,7 +22,8 @@ namespace flame
 
 		void set_scissor(bool v) override;
 
-		void set_align(ElementAlign align) override;
+		void set_horizontal_alignment(ElementAlignment alignment) override;
+		void set_vertical_alignment(ElementAlignment alignment) override;
 
 		vec2 global_scl() override;
 
