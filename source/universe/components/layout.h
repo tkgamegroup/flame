@@ -26,11 +26,11 @@ namespace flame
 		virtual void set_item_spacing(float spacing) = 0;
 
 		// Reflect
-		bool auto_width = false;
+		bool auto_width = true;
 		// Reflect
 		virtual void set_auto_width(bool auto_width) = 0;
 		// Reflect
-		bool auto_height = false;
+		bool auto_height = true;
 		// Reflect
 		virtual void set_auto_height(bool auto_height) = 0;
 

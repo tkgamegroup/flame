@@ -11,5 +11,7 @@ namespace flame
 		void set_item_spacing(float spacing) override;
 		void set_auto_width(bool auto_width) override;
 		void set_auto_height(bool auto_height) override;
+
+		void on_active() override;
 	};
 }

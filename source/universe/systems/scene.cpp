@@ -158,7 +158,14 @@ namespace flame
 									}
 								}
 								element->set_x(playout->padding.x + x);
+								if (playout->auto_width)
+									;
 							}
+								break;
+							case ElementLayoutVertical:
+								element->set_y(playout->padding.y);
+								if (playout->auto_height)
+									;
 								break;
 							}
 						}
@@ -187,6 +194,11 @@ namespace flame
 						{
 							switch (playout->type)
 							{
+							case ElementLayoutHorizontal:
+								element->set_x(playout->padding.x);
+								if (playout->auto_width)
+									;
+								break;
 							case ElementLayoutVertical:
 							{
 								auto y = 0.f;
@@ -201,6 +213,8 @@ namespace flame
 									}
 								}
 								element->set_y(playout->padding.y + y);
+								if (playout->auto_height)
+									;
 							}
 								break;
 							}
