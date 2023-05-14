@@ -152,20 +152,40 @@ namespace flame
 								{
 									if (auto element = p->children[i]->element(); element && element->horizontal_alignment == ElementAlignNone)
 									{
-										if (x > 0.f)
-											x += playout->item_spacing;
+										x += playout->item_spacing;
 										x += element->ext.x;
 									}
 								}
 								element->set_x(playout->padding.x + x);
+
 								if (playout->auto_width)
-									;
+								{
+									auto w = 0.f;
+									for (auto& c : p->children)
+									{
+										if (auto element = c->element(); element && element->horizontal_alignment == ElementAlignNone)
+											w = max(w, element->pos.x + element->ext.x);
+									}
+									playout->element->set_w(w + playout->padding.z);
+								}
 							}
 								break;
 							case ElementLayoutVertical:
-								element->set_y(playout->padding.y);
-								if (playout->auto_height)
-									;
+							{
+								auto p = playout->entity;
+								element->set_x(playout->padding.x);
+
+								if (playout->auto_width)
+								{
+									auto w = 0.f;
+									for (auto& c : p->children)
+									{
+										if (auto element = c->element(); element && element->horizontal_alignment == ElementAlignNone)
+											w = max(w, element->pos.x + element->ext.x);
+									}
+									playout->element->set_w(w + playout->padding.z);
+								}
+							}
 								break;
 							}
 						}
@@ -195,9 +215,21 @@ namespace flame
 							switch (playout->type)
 							{
 							case ElementLayoutHorizontal:
-								element->set_x(playout->padding.x);
-								if (playout->auto_width)
-									;
+							{
+								auto p = playout->entity;
+								element->set_y(playout->padding.y);
+
+								if (playout->auto_height)
+								{
+									auto h = 0.f;
+									for (auto& c : p->children)
+									{
+										if (auto element = c->element(); element && element->horizontal_alignment == ElementAlignNone)
+											h = max(h, element->pos.y + element->ext.y);
+									}
+									playout->element->set_h(h + playout->padding.w);
+								}
+							}
 								break;
 							case ElementLayoutVertical:
 							{
@@ -207,14 +239,22 @@ namespace flame
 								{
 									if (auto element = p->children[i]->element(); element && element->vertical_alignment == ElementAlignNone)
 									{
-										if (y > 0.f)
-											y += playout->item_spacing;
+										y += playout->item_spacing;
 										y += element->ext.y;
 									}
 								}
 								element->set_y(playout->padding.y + y);
+
 								if (playout->auto_height)
-									;
+								{
+									auto h = 0.f;
+									for (auto& c : p->children)
+									{
+										if (auto element = c->element(); element && element->horizontal_alignment == ElementAlignNone)
+											h = max(h, element->pos.y + element->ext.y);
+									}
+									playout->element->set_h(h + playout->padding.w);
+								}
 							}
 								break;
 							}
