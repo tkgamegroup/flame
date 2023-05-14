@@ -255,6 +255,8 @@ namespace flame
 			pos = position;
 
 		e->parent = this;
+		for (auto i = pos; i < children.size(); i++)
+			children[i]->index++;
 		children.emplace(children.begin() + pos, e);
 
 		e->index = pos;
