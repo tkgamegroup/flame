@@ -332,6 +332,8 @@ namespace flame
 
 		if (!destroy)
 			it->release();
+		for (auto it2 = it + 1; it2 != children.end(); it2++)
+			(*it2)->index--;
 		children.erase(it);
 	}
 
