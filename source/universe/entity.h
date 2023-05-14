@@ -173,10 +173,20 @@ namespace flame
 				if (comp->type_hash == hash)
 					return comp.get();
 			}
+			return nullptr;
+		}
+
+		inline Component* find_component_recursively(uint hash) const
+		{
+			for (auto& comp : components)
+			{
+				if (comp->type_hash == hash)
+					return comp.get();
+			}
 			for (auto& cc : children)
 			{
 				auto c = (Entity*)cc.get();
-				auto res = c->find_component(hash);
+				auto res = c->find_component_recursively(hash);
 				if (res)
 					return res;
 			}

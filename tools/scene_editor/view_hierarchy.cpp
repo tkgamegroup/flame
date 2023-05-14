@@ -190,10 +190,7 @@ void View_Hierarchy::on_draw()
 
 		if (ImGui::BeginPopupContextItem())
 		{
-			if (ImGui::MenuItem("Duplicate"))
-				app.cmd_duplicate_entities(selection.get_entities());
-			if (ImGui::MenuItem("Delete"))
-				app.cmd_delete_entities(selection.get_entities());
+			app.show_entities_menu();
 			ImGui::EndPopup();
 		}
 

@@ -106,6 +106,8 @@ struct App : UniverseApplication
 	bool cmd_restart_preview();
 
 	void open_message_dialog(const std::string& title, const std::string& message);
+
+	void show_entities_menu();
 };
 
 extern App app;

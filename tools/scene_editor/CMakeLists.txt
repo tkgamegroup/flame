@@ -4,7 +4,7 @@ if(USE_UNIVERSE_MODULE)
 
 	add_executable(scene_editor "${source_files}")
 	set_target_properties(scene_editor PROPERTIES FOLDER "tools")
-	target_link_options(scene_editor PRIVATE "/FIXED:NO")
+	target_compile_options(scene_editor PRIVATE -ZI)
 	target_link_libraries(scene_editor flame_universe)
 	set_target_properties(scene_editor PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 	add_dependencies(scene_editor vs_automation)

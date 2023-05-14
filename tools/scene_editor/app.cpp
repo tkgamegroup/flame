@@ -119,56 +119,16 @@ void App::init()
 				histories.clear();
 			}
 			ImGui::Separator();
-			if (ImGui::MenuItem("New Empty"))
-				cmd_new_entities(selection.get_entities());
-			if (ImGui::BeginMenu("New 3D"))
-			{
-				if (ImGui::MenuItem("Node"))
-					cmd_new_entities(selection.get_entities(), "node"_h);
-				if (ImGui::MenuItem("Plane"))
-					cmd_new_entities(selection.get_entities(), "plane"_h);
-				if (ImGui::MenuItem("Cube"))
-					cmd_new_entities(selection.get_entities(), "cube"_h);
-				if (ImGui::MenuItem("Sphere"))
-					cmd_new_entities(selection.get_entities(), "sphere"_h);
-				if (ImGui::MenuItem("Cylinder"))
-					cmd_new_entities(selection.get_entities(), "cylinder"_h);
-				if (ImGui::MenuItem("Triangular Prism"))
-					cmd_new_entities(selection.get_entities(), "tri_prism"_h);
-				if (ImGui::MenuItem("Directional Light"))
-					cmd_new_entities(selection.get_entities(), "dir_light"_h);
-				if (ImGui::MenuItem("Point Light"))
-					cmd_new_entities(selection.get_entities(), "pt_light"_h);
-				if (ImGui::MenuItem("Camera"))
-					cmd_new_entities(selection.get_entities(), "camera"_h);
-				ImGui::EndMenu();
-			}
-			if (ImGui::BeginMenu("New 2D"))
-			{
-				if (ImGui::MenuItem("Element"))
-					cmd_new_entities(selection.get_entities(), "element"_h);
-				if (ImGui::MenuItem("Image"))
-					cmd_new_entities(selection.get_entities(), "image"_h);
-				if (ImGui::MenuItem("Text"))
-					cmd_new_entities(selection.get_entities(), "text"_h);
-				ImGui::EndMenu();
-			}
-			if (ImGui::MenuItem("Duplicate (Shift+D)"))
-				cmd_duplicate_entities(selection.get_entities());
-			if (ImGui::MenuItem("Delete (Del)"))
-				cmd_delete_entities(selection.get_entities());
-			if (ImGui::BeginMenu("Selection"))
-			{
-				if (ImGui::MenuItem("Clear"))
-					selection.clear("app"_h);
-				if (ImGui::MenuItem("Select Parent"))
-					;
-				if (ImGui::MenuItem("Select Children"))
-					;
-				if (ImGui::MenuItem("Invert Siblings"))
-					;
-				ImGui::EndMenu();
-			}
+			show_entities_menu();
+			ImGui::Separator();
+			if (ImGui::MenuItem("Clear Selections"))
+				selection.clear("app"_h);
+			if (ImGui::MenuItem("Select Parent"))
+				;
+			if (ImGui::MenuItem("Select Children"))
+				;
+			if (ImGui::MenuItem("Invert Siblings"))
+				;
 			if (ImGui::MenuItem("Focus To Selected (F)"))
 				view_scene.focus_to_selected();
 			if (ImGui::MenuItem("Selected To Focus (G)"))
@@ -226,7 +186,7 @@ void App::init()
 				{
 					if (e_prefab)
 					{
-						if (auto comp = e_prefab->find_component(th<cNavScene>()); comp)
+						if (auto comp = e_prefab->find_component_recursively(th<cNavScene>()); comp)
 						{
 							auto nav_scene = (cNavScenePtr)comp;
 							sScene::instance()->generate_navmesh(nav_scene->agent_radius, nav_scene->agent_height, nav_scene->walkable_climb, nav_scene->walkable_slope_angle);
@@ -1420,6 +1380,48 @@ void App::open_message_dialog(const std::string& title, const std::string& messa
 	}
 	else
 		ImGui::OpenMessageDialog(title, message);
+}
+
+void App::show_entities_menu()
+{
+	if (ImGui::MenuItem("New Empty"))
+		cmd_new_entities(selection.get_entities());
+	if (ImGui::BeginMenu("New 3D"))
+	{
+		if (ImGui::MenuItem("Node"))
+			cmd_new_entities(selection.get_entities(), "node"_h);
+		if (ImGui::MenuItem("Plane"))
+			cmd_new_entities(selection.get_entities(), "plane"_h);
+		if (ImGui::MenuItem("Cube"))
+			cmd_new_entities(selection.get_entities(), "cube"_h);
+		if (ImGui::MenuItem("Sphere"))
+			cmd_new_entities(selection.get_entities(), "sphere"_h);
+		if (ImGui::MenuItem("Cylinder"))
+			cmd_new_entities(selection.get_entities(), "cylinder"_h);
+		if (ImGui::MenuItem("Triangular Prism"))
+			cmd_new_entities(selection.get_entities(), "tri_prism"_h);
+		if (ImGui::MenuItem("Directional Light"))
+			cmd_new_entities(selection.get_entities(), "dir_light"_h);
+		if (ImGui::MenuItem("Point Light"))
+			cmd_new_entities(selection.get_entities(), "pt_light"_h);
+		if (ImGui::MenuItem("Camera"))
+			cmd_new_entities(selection.get_entities(), "camera"_h);
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("New 2D"))
+	{
+		if (ImGui::MenuItem("Element"))
+			cmd_new_entities(selection.get_entities(), "element"_h);
+		if (ImGui::MenuItem("Image"))
+			cmd_new_entities(selection.get_entities(), "image"_h);
+		if (ImGui::MenuItem("Text"))
+			cmd_new_entities(selection.get_entities(), "text"_h);
+		ImGui::EndMenu();
+	}
+	if (ImGui::MenuItem("Duplicate (Shift+D)"))
+		cmd_duplicate_entities(selection.get_entities());
+	if (ImGui::MenuItem("Delete (Del)"))
+		cmd_delete_entities(selection.get_entities());
 }
 
 int main(int argc, char** args)
