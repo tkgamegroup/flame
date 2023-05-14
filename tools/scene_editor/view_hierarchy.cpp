@@ -208,8 +208,6 @@ void View_Hierarchy::on_draw()
 						auto idx = i;
 						for (auto _e : es)
 						{
-							if (_e->parent == e && _e->index < i)
-								idx--;
 							if (_e->parent)
 								_e->remove_from_parent(false);
 						}
