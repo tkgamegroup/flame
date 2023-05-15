@@ -13,8 +13,42 @@ namespace flame
 		});
 	}
 
-	void cTextPrivate::set_text(const std::wstring& str)
+	void cTextPrivate::on_active()
 	{
+		get_font_atlas();
+		if (auto_size)
+			element->set_ext(calc_text_size());
+		element->mark_drawing_dirty();
+	}
+
+	void cTextPrivate::set_text(const std::wstring& _str)
+	{
+		std::wstring str; int length = _str.size();
+		for (auto i = 0; i < length; i++)
+		{
+			auto ch = _str[i];
+			if (ch == L'\\')
+			{
+				if (i + 1 < length)
+				{
+					i++;
+					auto ch2 = _str[i];
+					if (ch2 == L'\\')
+					{
+						str += L'\\';
+						continue;
+					}
+					else if (ch2 == L'n')
+					{
+						str += L'\n';
+						continue;
+					}
+				}
+			}
+
+			str += ch;
+		}
+
 		if (text == str)
 			return;
 		text = str;
@@ -93,13 +127,20 @@ namespace flame
 
 		auto ret = vec2(0.f, font_size);
 		auto scale = font_atlas->get_scale(font_size);
-		auto p = vec2(0.f);
+		auto x = 0.f;
 		for (auto ch : text)
 		{
+			if (ch == L'\n')
+			{
+				ret.y += font_size;
+				x = 0.f;
+				continue;
+			}
+
 			auto& g = font_atlas->get_glyph(ch, font_size);
 			auto s = vec2(g.size) * scale;
-			ret.x = p.x + s.x;
-			p.x += g.advance * scale;
+			ret.x = max(ret.x, x + s.x);
+			x += g.advance * scale;
 		}
 		return ret;
 	}

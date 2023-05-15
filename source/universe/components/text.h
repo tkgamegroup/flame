@@ -21,7 +21,7 @@ namespace flame
 		virtual void set_col(const cvec4& col) = 0;
 
 		// Reflect
-		uint font_size = 14;
+		uint font_size = 16;
 		// Reflect
 		virtual void set_font_size(uint size) = 0;
 
@@ -31,12 +31,12 @@ namespace flame
 		virtual void set_font_names(const std::vector<std::filesystem::path>& names) = 0;
 
 		// Reflect
-		bool sdf = false;
+		bool sdf = true;
 		// Reflect
 		virtual void set_sdf(bool v) = 0;
 
 		// Reflect
-		float thickness = 0.f;
+		float thickness = 0.5f;
 		// Reflect
 		virtual void set_thickness(float thickness) = 0;
 		// Reflect

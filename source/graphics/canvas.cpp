@@ -357,6 +357,13 @@ namespace flame
 			auto p = pos;
 			for (auto ch : str)
 			{
+				if (ch == L'\n')
+				{
+					p.y += font_size;
+					p.x = pos.x;
+					continue;
+				}
+
 				auto& g = font_atlas->get_glyph(ch, font_size);
 				auto o = p + vec2(g.off) * scale;
 				auto s = vec2(g.size) * scale;

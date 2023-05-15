@@ -7,6 +7,7 @@ namespace flame
 	struct cTextPrivate : cText
 	{
 		void on_init() override;
+		void on_active() override;
 
 		void set_text(const std::wstring& str) override;
 		void set_col(const cvec4& col) override;
