@@ -414,6 +414,16 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				vec4 color = *(cvec4*)data;
 				color /= 255.f;
 				changed = ImGui::ColorEdit4(display_name.c_str(), &color[0]);
+				ImGui::SameLine();
+				static vec4 copied_color;
+				if (ImGui::Button("C"))
+					copied_color = color;
+				ImGui::SameLine();
+				if (ImGui::Button("P"))
+				{
+					color = copied_color;
+					changed = true;
+				}
 				if (changed)
 					*(cvec4*)data = color * 255.f;
 				if (ImGui::IsItemActivated())
