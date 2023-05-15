@@ -150,6 +150,8 @@ namespace flame
 								auto p = playout->entity;
 								for (auto i = 0; i < e->index; i++)
 								{
+									if (!p->children[i]->global_enable)
+										continue;
 									if (auto element = p->children[i]->element(); element && element->horizontal_alignment == ElementAlignNone)
 									{
 										x += playout->item_spacing;
@@ -163,6 +165,8 @@ namespace flame
 									auto w = 0.f;
 									for (auto& c : p->children)
 									{
+										if (!c->global_enable)
+											continue;
 										if (auto element = c->element(); element && element->horizontal_alignment == ElementAlignNone)
 											w = max(w, element->pos.x + element->ext.x);
 									}
@@ -180,6 +184,8 @@ namespace flame
 									auto w = 0.f;
 									for (auto& c : p->children)
 									{
+										if (!c->global_enable)
+											continue;
 										if (auto element = c->element(); element && element->horizontal_alignment == ElementAlignNone)
 											w = max(w, element->pos.x + element->ext.x);
 									}
@@ -224,6 +230,8 @@ namespace flame
 									auto h = 0.f;
 									for (auto& c : p->children)
 									{
+										if (!c->global_enable)
+											continue;
 										if (auto element = c->element(); element && element->horizontal_alignment == ElementAlignNone)
 											h = max(h, element->pos.y + element->ext.y);
 									}
@@ -237,6 +245,8 @@ namespace flame
 								auto p = playout->entity;
 								for (auto i = 0; i < e->index; i++)
 								{
+									if (!p->children[i]->global_enable)
+										continue;
 									if (auto element = p->children[i]->element(); element && element->vertical_alignment == ElementAlignNone)
 									{
 										y += playout->item_spacing;
@@ -250,6 +260,8 @@ namespace flame
 									auto h = 0.f;
 									for (auto& c : p->children)
 									{
+										if (!c->global_enable)
+											continue;
 										if (auto element = c->element(); element && element->horizontal_alignment == ElementAlignNone)
 											h = max(h, element->pos.y + element->ext.y);
 									}
