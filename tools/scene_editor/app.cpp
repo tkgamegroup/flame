@@ -618,8 +618,6 @@ void App::init()
 			cmd_undo();
 		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Y))
 			cmd_redo();
-		if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_D))
-			cmd_duplicate_entities(selection.get_entities());
 
 		if (e_preview)
 		{

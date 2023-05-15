@@ -68,29 +68,38 @@ void View_Hierarchy::on_draw()
 
 		if (ImGui::BeginDragDropSource())
 		{
-			auto found = false;
-			for (auto _e : selection.get_entities())
+			if (selection.type == Selection::tEntity)
 			{
-				if (e == _e)
+				auto found = false;
+				auto es = selection.get_entities();
+				for (auto _e : es)
 				{
-					found = true;
-					break;
+					if (e == _e)
+					{
+						found = true;
+						break;
+					}
 				}
-			}
-			if (!found)
-			{
-				ImGui::SetDragDropPayload("Entity", &e, sizeof(void*));
-				ImGui::TextUnformatted(e->name.c_str());
-				ImGui::EndDragDropSource();
-			}
-			else
-			{
-				Entities es;
-				es.p = (EntityPtr*)selection.objects.data();
-				es.n = selection.objects.size();
-				ImGui::SetDragDropPayload("Entities", &es, sizeof(Entities));
-				ImGui::Text("%d entities", es.n);
-				ImGui::EndDragDropSource();
+				if (!found)
+				{
+					es.push_back(e);
+					selection.select(es);
+				}
+				if (selection.objects.size() == 1)
+				{
+					ImGui::SetDragDropPayload("Entity", &es[0], sizeof(void*));
+					ImGui::TextUnformatted(e->name.c_str());
+					ImGui::EndDragDropSource();
+				}
+				else
+				{
+					Entities es;
+					es.p = (EntityPtr*)selection.objects.data();
+					es.n = selection.objects.size();
+					ImGui::SetDragDropPayload("Entities", &es, sizeof(Entities));
+					ImGui::Text("%d entities", es.n);
+					ImGui::EndDragDropSource();
+				}
 			}
 		}
 
@@ -185,10 +194,10 @@ void View_Hierarchy::on_draw()
 			ImGui::EndDragDropTarget();
 		}
 
-		if ((ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)) && ImGui::IsItemHovered())
+		if ((ImGui::IsMouseReleased(ImGuiMouseButton_Left) || ImGui::IsMouseReleased(ImGuiMouseButton_Right)) && ImGui::IsItemHovered())
 			select_entity = e;
 
-		if (ImGui::BeginPopupContextItem())
+		if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonRight))
 		{
 			app.show_entities_menu();
 			ImGui::EndPopup();
@@ -304,10 +313,17 @@ void View_Hierarchy::on_draw()
 			selection.select(select_entity, "hierarchy"_h);
 	}
 
+	auto& io = ImGui::GetIO();
+
 	if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered())
 	{
-		if (ImGui::IsKeyPressed(Keyboard_Del))
-			app.cmd_delete_entities(selection.get_entities());
+		if (!io.WantCaptureKeyboard)
+		{
+			if (ImGui::IsKeyPressed(Keyboard_Del))
+				app.cmd_delete_entities(selection.get_entities());
+			if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_D))
+				app.cmd_duplicate_entities(selection.get_entities());
+		}
 	}
 
 	selection_changed = false;

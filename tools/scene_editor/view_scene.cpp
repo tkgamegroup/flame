@@ -454,9 +454,8 @@ void View_Scene::on_draw()
 
 		auto& io = ImGui::GetIO();
 		auto& style = ImGui::GetStyle();
-		auto in_scene = ImGui::IsItemHovered();
 
-		if (in_scene)
+		if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered())
 		{
 			auto camera_node = camera->node;
 
@@ -554,6 +553,8 @@ void View_Scene::on_draw()
 						focus_to_selected();
 					if (ImGui::IsKeyPressed(Keyboard_Del))
 						app.cmd_delete_entities(selection.get_entities());
+					if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_D))
+						app.cmd_duplicate_entities(selection.get_entities());
 				}
 				if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && io.KeysDown[Keyboard_Shift])
 				{
@@ -799,7 +800,7 @@ void View_Scene::on_draw()
 				show_navigation_frames--;
 		}
 
-		if (in_scene && app.e_editing)
+		if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered() && app.e_editing)
 		{
 			if (auto terrain = app.e_editing->get_component_t<cTerrain>(); terrain)
 			{
