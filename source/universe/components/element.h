@@ -90,6 +90,10 @@ namespace flame
 		vec2 global_pos0() { return transform[2]; }
 		vec2 global_pos1() { return transform * vec3(ext, 1.f); }
 		virtual vec2 global_scl() = 0;
+		inline bool contains(const vec2& p)
+		{
+			return Rect(global_pos0(), global_pos1()).contains(p);
+		}
 
 		virtual void mark_transform_dirty() = 0;
 		virtual void mark_drawing_dirty() = 0;

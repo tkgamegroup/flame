@@ -2863,6 +2863,13 @@ namespace flame
 		}
 	};
 
+	struct Action
+	{
+		virtual ~Action() {}
+
+		virtual void exec() = 0;
+	};
+
 	inline void* TypeInfo_VirtualUdt::create(void* p) const
 	{
 		if (!p)

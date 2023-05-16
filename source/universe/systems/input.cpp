@@ -54,16 +54,16 @@ namespace flame
 		{
 			if (mpressed(Mouse_Left))
 			{
-				cElementPtr target = nullptr;
+				cReceiverPtr target = nullptr;
 
 				first_element->traversal_bfs([&](EntityPtr e, int depth) {
 					if (!e->global_enable)
 						return false;
 
-					if (auto element = e->element(); element)
+					if (auto receiver = target->entity->get_component_t<cReceiverT>(); receiver)
 					{
-						if (Rect(element->global_pos0(), element->global_pos1()).contains(mpos))
-							target = element;
+						if (receiver->element->contains(mpos))
+							target = receiver;
 					}
 
 					return true;
@@ -71,8 +71,10 @@ namespace flame
 
 				if (target && target->entity != first_element)
 				{
-					if (auto receiver = target->entity->get_component_t<cReceiverT>(); receiver)
-						receiver->click_listeners.call();
+					target->click_listeners.call();
+					if (target->click_action.type)
+						target->click_action.value().exec();
+
 					mouse_used = true;
 				}
 			}

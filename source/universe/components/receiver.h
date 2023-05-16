@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../foundation/typeinfo.h"
 #include "../component.h"
 
 namespace flame
@@ -11,6 +12,8 @@ namespace flame
 		cElementPtr element = nullptr;
 
 		Listeners<void()> click_listeners;
+		// Reflect
+		VirtualUdt<Action>	click_action;
 
 		struct Create
 		{
