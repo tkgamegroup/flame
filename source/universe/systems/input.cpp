@@ -60,7 +60,7 @@ namespace flame
 					if (!e->global_enable)
 						return false;
 
-					if (auto receiver = target->entity->get_component_t<cReceiverT>(); receiver)
+					if (auto receiver = e->get_component_t<cReceiverT>(); receiver)
 					{
 						if (receiver->element->contains(mpos))
 							target = receiver;

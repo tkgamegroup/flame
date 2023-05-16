@@ -623,6 +623,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 						available_types.push_back(&ui);
 				}
 			}
+			ImGui::SameLine();
+			if (ImGui::Button("X"))
+			{
+				if (vo.data)
+					vo.destroy();
+				changed = true;
+				app.prefab_unsaved = true;
+			}
 			if (ImGui::BeginPopup("select_type"))
 			{
 				for (auto ui : available_types)
