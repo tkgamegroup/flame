@@ -141,60 +141,7 @@ namespace flame
 					{
 					case ElementAlignNone:
 						if (playout)
-						{
-							switch (playout->type)
-							{
-							case ElementLayoutHorizontal:
-							{
-								auto x = 0.f;
-								auto p = playout->entity;
-								for (auto i = 0; i < e->index; i++)
-								{
-									if (!p->children[i]->global_enable)
-										continue;
-									if (auto element = p->children[i]->element(); element && element->horizontal_alignment == ElementAlignNone)
-									{
-										x += playout->item_spacing;
-										x += element->ext.x;
-									}
-								}
-								element->set_x(playout->padding.x + x);
-
-								if (playout->auto_width)
-								{
-									auto w = 0.f;
-									for (auto& c : p->children)
-									{
-										if (!c->global_enable)
-											continue;
-										if (auto element = c->element(); element && element->horizontal_alignment == ElementAlignNone)
-											w = max(w, element->pos.x + element->ext.x);
-									}
-									playout->element->set_w(w + playout->padding.z);
-								}
-							}
-								break;
-							case ElementLayoutVertical:
-							{
-								auto p = playout->entity;
-								element->set_x(playout->padding.x);
-
-								if (playout->auto_width)
-								{
-									auto w = 0.f;
-									for (auto& c : p->children)
-									{
-										if (!c->global_enable)
-											continue;
-										if (auto element = c->element(); element && element->horizontal_alignment == ElementAlignNone)
-											w = max(w, element->pos.x + element->ext.x);
-									}
-									playout->element->set_w(w + playout->padding.z);
-								}
-							}
-								break;
-							}
-						}
+							playout->update_layout();
 						break;
 					case ElementAlignCenter:
 						if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
@@ -217,60 +164,7 @@ namespace flame
 					{
 					case ElementAlignNone:
 						if (playout)
-						{
-							switch (playout->type)
-							{
-							case ElementLayoutHorizontal:
-							{
-								auto p = playout->entity;
-								element->set_y(playout->padding.y);
-
-								if (playout->auto_height)
-								{
-									auto h = 0.f;
-									for (auto& c : p->children)
-									{
-										if (!c->global_enable)
-											continue;
-										if (auto element = c->element(); element && element->horizontal_alignment == ElementAlignNone)
-											h = max(h, element->pos.y + element->ext.y);
-									}
-									playout->element->set_h(h + playout->padding.w);
-								}
-							}
-								break;
-							case ElementLayoutVertical:
-							{
-								auto y = 0.f;
-								auto p = playout->entity;
-								for (auto i = 0; i < e->index; i++)
-								{
-									if (!p->children[i]->global_enable)
-										continue;
-									if (auto element = p->children[i]->element(); element && element->vertical_alignment == ElementAlignNone)
-									{
-										y += playout->item_spacing;
-										y += element->ext.y;
-									}
-								}
-								element->set_y(playout->padding.y + y);
-
-								if (playout->auto_height)
-								{
-									auto h = 0.f;
-									for (auto& c : p->children)
-									{
-										if (!c->global_enable)
-											continue;
-										if (auto element = c->element(); element && element->horizontal_alignment == ElementAlignNone)
-											h = max(h, element->pos.y + element->ext.y);
-									}
-									playout->element->set_h(h + playout->padding.w);
-								}
-							}
-								break;
-							}
-						}
+							playout->update_layout();
 						break;
 					case ElementAlignCenter:
 						if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)

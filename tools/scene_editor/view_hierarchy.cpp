@@ -39,6 +39,7 @@ void View_Hierarchy::on_draw()
 	std::function<void(EntityPtr, bool)> show_entity;
 	show_entity = [&](EntityPtr e, bool in_prefab) {
 		auto flags = selection.selecting(e) ? ImGuiTreeNodeFlags_Selected : 0;
+		flags |= ImGuiTreeNodeFlags_SpanFullWidth;
 		if (e->children.empty())
 			flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		else
