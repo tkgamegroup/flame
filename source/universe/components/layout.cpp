@@ -168,6 +168,61 @@ namespace flame
 				h = y + row_height + padding.w;
 			}
 				break;
+			case ElementLayoutCircle:
+			{
+				auto max_ext = vec2(0.f);
+				for (auto& c : entity->children)
+				{
+					if (!c->global_enable)
+						continue;
+					if (auto element = c->element(); element)
+					{
+						if (element->horizontal_alignment == ElementAlignNone && element->vertical_alignment == ElementAlignNone)
+							max_ext = max(max_ext, element->ext);
+					}
+				}
+
+				auto hf_columns = columns >> 1;
+				auto idx = 0;
+				for (auto& c : entity->children)
+				{
+					if (!c->global_enable)
+						continue;
+					if (auto element = c->element(); element)
+					{
+						if (element->horizontal_alignment == ElementAlignNone && element->vertical_alignment == ElementAlignNone)
+						{
+							int x, y;
+							bool ok = true;
+							while (true)
+							{
+								x = (idx % columns) - hf_columns;
+								y = (idx / columns) - hf_columns;
+								if (x * x + y * y > hf_columns * hf_columns)
+									idx++;
+								else
+									break;
+								if (idx >= columns * columns)
+								{
+									ok = false;
+									break;
+								}
+							}
+							if (!ok)
+								break;
+
+							x += hf_columns;
+							y += hf_columns;
+							element->set_pos(vec2(x * max_ext.x + x * item_spacing, y * max_ext.y + y * item_spacing));
+							idx++;
+						}
+					}
+				}
+
+				w = columns * max_ext.x + (columns - 1) * item_spacing;
+				h = columns * max_ext.y + (columns - 1) * item_spacing;
+			}
+				break;
 		}
 
 		if (auto_width)

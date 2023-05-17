@@ -98,7 +98,8 @@ namespace flame
 		ElementLayoutFree,
 		ElementLayoutVertical,
 		ElementLayoutHorizontal,
-		ElementLayoutGrid
+		ElementLayoutGrid,
+		ElementLayoutCircle
 	};
 
 	enum ElementStateFlags
