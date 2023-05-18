@@ -561,6 +561,7 @@ namespace flame
 		inline void* get_value(void* obj, bool use_copy = false) const;
 		inline void set_value(void* obj, void* src = nullptr) const;
 		inline std::string serialize(void* obj) const;
+		inline void unserialize(void* obj, const std::string& str) const;
 	};
 
 	struct UdtInfo
@@ -685,6 +686,12 @@ namespace flame
 	std::string Attribute::serialize(void* obj) const
 	{
 		return type->serialize(get_value(obj));
+	}
+
+	void Attribute::unserialize(void* obj, const std::string& str) const
+	{
+		type->unserialize(str, nullptr);
+		set_value(type->get_v());
 	}
 
 	struct TypeInfoDataBase
