@@ -72,6 +72,12 @@ if(NOT EXISTS "${GLI_INCLUDE_DIR}")
 	message(SEND_ERROR "required GLI is invalid")
 endif()
 
+check_path("${parent_dir}/exprtk" p)
+set(EXPRTK_INCLUDE_DIR "${p}" CACHE PATH "exprtk include directory")
+if(NOT EXISTS "${EXPRTK_INCLUDE_DIR}")
+	message(SEND_ERROR "required exprtk is invalid")
+endif()
+
 check_path("C:/Program Files/NVIDIA Corporation/NVIDIA Texture Tools/include" p)
 set(NVTT_INCLUDE_DIR "${p}" CACHE PATH "NVIDIA Texture Tools include directory")
 check_path("C:/Program Files/NVIDIA Corporation/NVIDIA Texture Tools/lib/x64-v142/nvtt30106.lib" p)

@@ -208,6 +208,20 @@ if op != 4:
 	else:
 		print("%s exists, skip build" % str(bud_dir))
 	print("====\n")
+			
+	print("== library exprtk ==")
+	ok = True
+	address = "https://github.com/ArashPartow/exprtk"
+	lib_dir = parent_directory / "exprtk"
+	if not lib_dir.exists():
+		if op == 2:
+			print("Download exprtk from %s into %s ? y/n" % (address, str(lib_dir)))
+			ok = input() == "y"
+		if ok:
+			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
+	else:
+		print("%s exists, skip download" % str(lib_dir))
+	print("====\n")
 		
 	# (Optional)
 	if op != 3:

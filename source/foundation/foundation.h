@@ -405,6 +405,11 @@ namespace flame
 		FLAME_FOUNDATION_API static void release(const std::filesystem::path& path);
 	};
 
+	struct Expression
+	{
+		FLAME_FOUNDATION_API static Expression* create(const std::string& str);
+	};
+
 	FLAME_FOUNDATION_API extern uint frames;
 	FLAME_FOUNDATION_API extern uint fps;
 	FLAME_FOUNDATION_API extern float delta_time; // second
