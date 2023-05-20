@@ -66,6 +66,10 @@ namespace flame
 
 	void cLayoutPrivate::update_layout()
 	{
+		if (updated_frame == frames)
+			return;
+		updated_frame = frames;
+
 		float x = padding.x;				float y = padding.y;
 		float w = padding.x + padding.z;	float h = padding.y + padding.w;
 
@@ -182,7 +186,7 @@ namespace flame
 					}
 				}
 
-				auto hf_columns = columns >> 1;
+				auto hf_columns = columns * 0.5f;
 				auto idx = 0;
 				for (auto& c : entity->children)
 				{
@@ -192,16 +196,20 @@ namespace flame
 					{
 						if (element->horizontal_alignment == ElementAlignNone && element->vertical_alignment == ElementAlignNone)
 						{
-							int x, y;
+							auto x = 0.f, y = 0.f;
 							bool ok = true;
 							while (true)
 							{
-								x = (idx % columns) - hf_columns;
-								y = (idx / columns) - hf_columns;
+								x = (idx % columns) - hf_columns + 0.5f;
+								y = (idx / columns) - hf_columns + 0.5f;
 								if (x * x + y * y > hf_columns * hf_columns)
 									idx++;
 								else
+								{
+									x += hf_columns - 0.5f;
+									y += hf_columns - 0.5f;
 									break;
+								}
 								if (idx >= columns * columns)
 								{
 									ok = false;
@@ -211,16 +219,14 @@ namespace flame
 							if (!ok)
 								break;
 
-							x += hf_columns;
-							y += hf_columns;
-							element->set_pos(vec2(x * max_ext.x + x * item_spacing, y * max_ext.y + y * item_spacing));
+							element->set_pos(vec2(x * max_ext.x + x * item_spacing + padding.x, y * max_ext.y + y * item_spacing + padding.y));
 							idx++;
 						}
 					}
 				}
 
-				w = columns * max_ext.x + (columns - 1) * item_spacing;
-				h = columns * max_ext.y + (columns - 1) * item_spacing;
+				w = columns * max_ext.x + (columns - 1) * item_spacing + padding.x + padding.z;
+				h = columns * max_ext.y + (columns - 1) * item_spacing + padding.y + padding.w;
 			}
 				break;
 		}

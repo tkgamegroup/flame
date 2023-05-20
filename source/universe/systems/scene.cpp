@@ -102,20 +102,39 @@ namespace flame
 		}
 	}
 
-	static Rect parent_rect(cElementPtr element)
+	static void update_alignment(cElementPtr element, const vec2& parent_ext, const vec4& padding)
 	{
-		Rect ret;
-		if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
+		switch (element->horizontal_alignment)
 		{
-			ret.a = pelement->global_pos0();
-			ret.b = pelement->global_pos1();
+		case ElementAlignCenter:
+			element->set_x((parent_ext.x - (padding.x + padding.z) - element->ext.x) * 0.5f);
+			break;
+		case ElementAlignEnd0:
+			element->set_x(padding.x);
+			break;
+		case ElementAlignEnd1:
+			element->set_x(parent_ext.x - padding.x - element->ext.x);
+			break;
+		case ElementAlignFill:
+			element->set_w(parent_ext.x - padding.x + padding.z);
+			break;
 		}
-		else
+
+		switch (element->vertical_alignment)
 		{
-			ret.a = vec2(0.f);
-			ret.b = sRenderer::instance()->target_extent();
+		case ElementAlignCenter:
+			element->set_y((parent_ext.y - (padding.y + padding.w) - element->ext.y) * 0.5f);
+			break;
+		case ElementAlignEnd0:
+			element->set_y(padding.y);
+			break;
+		case ElementAlignEnd1:
+			element->set_y(parent_ext.y - padding.y - element->ext.y);
+			break;
+		case ElementAlignFill:
+			element->set_h(parent_ext.y - (padding.y + padding.w));
+			break;
 		}
-		return ret;
 	}
 
 	static void update_element_transform(cLayoutPtr playout, EntityPtr e, bool mark_dirty)
@@ -137,51 +156,14 @@ namespace flame
 
 				if (element->transform_dirty)
 				{
-					switch (element->horizontal_alignment)
+					if (playout)
 					{
-					case ElementAlignNone:
-						if (playout)
+						if (element->horizontal_alignment == ElementAlignNone || element->vertical_alignment == ElementAlignNone)
 							playout->update_layout();
-						break;
-					case ElementAlignCenter:
-						if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
-							element->set_x((pelement->ext.x - (playout ? playout->padding.x + playout->padding.z : 0.f) - element->ext.x) * 0.5f);
-						break;
-					case ElementAlignEnd0:
-						element->set_x(playout ? playout->padding.x : 0.f);
-						break;
-					case ElementAlignEnd1:
-						if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
-							element->set_x(pelement->ext.x - (playout ? playout->padding.x : 0.f) - element->ext.x);
-						break;
-					case ElementAlignFill:
-						if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
-							element->set_w(pelement->ext.x - (playout ? playout->padding.x + playout->padding.z : 0.f));
-						break;
 					}
 
-					switch (element->vertical_alignment)
-					{
-					case ElementAlignNone:
-						if (playout)
-							playout->update_layout();
-						break;
-					case ElementAlignCenter:
-						if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
-							element->set_y((pelement->ext.y - (playout ? playout->padding.y + playout->padding.w : 0.f) - element->ext.y) * 0.5f);
-						break;
-					case ElementAlignEnd0:
-						element->set_y(playout ? playout->padding.y : 0.f);
-						break;
-					case ElementAlignEnd1:
-						if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
-							element->set_y(pelement->ext.y - (playout ? playout->padding.y : 0.f) - element->ext.y);
-						break;
-					case ElementAlignFill:
-						if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
-							element->set_h(pelement->ext.y - (playout ? playout->padding.y + playout->padding.w : 0.f));
-						break;
-					}
+					if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
+						update_alignment(element, pelement->ext, playout ? playout->padding : vec4(0.f));
 				}
 
 				if (element->update_transform())
@@ -1212,7 +1194,7 @@ namespace flame
 		if (first_element)
 		{
 			auto target_extent = sRenderer::instance()->target_extent();
-			first_element->element()->set_ext(target_extent);
+			update_alignment(first_element->element(), target_extent, vec4(0.f));
 			update_element_transform(first_element->get_component_t<cLayoutT>(), first_element, false);
 		}
 

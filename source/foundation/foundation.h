@@ -407,6 +407,11 @@ namespace flame
 
 	struct Expression
 	{
+		virtual ~Expression() {}
+
+		virtual void set_variable(const std::string& name, const std::string& value) = 0;
+		virtual std::string get_value() = 0;
+
 		FLAME_FOUNDATION_API static Expression* create(const std::string& str);
 	};
 

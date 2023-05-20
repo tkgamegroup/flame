@@ -2,8 +2,6 @@
 #include "../entity_private.h"
 #include "list_private.h"
 
-#include <exprtk.hpp>
-
 namespace flame
 {
 	void cListPrivate::set_prefab_name(const std::filesystem::path& name)
@@ -55,17 +53,16 @@ namespace flame
 						auto attr_hash = sh(std::get<1>(mod).c_str());
 						if (auto attr = ui.find_attribute(attr_hash); attr)
 						{
-							auto expression_str = std::get<2>(mod);
-							exprtk::parser<std::string> parser;
-							exprtk::symbol_table<std::string> symbols;
-							auto expression = parser.compile(expression_str, symbols);
-							symbols.add_constant("i", str(i));
-							attr->unserialize(comp, str(expression.value()));
+							auto expression = Expression::create(std::get<2>(mod));
+							expression->set_variable("i", str(i));
+							attr->unserialize(comp, expression->get_value());
 						}
 					}
 				}
 			}
+			e->tag = e->tag | TagNotSerialized;
 			entity->add_child(e);
+			items.push_back(e);
 		}
 	}
 

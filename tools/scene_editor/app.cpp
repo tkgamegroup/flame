@@ -1026,6 +1026,7 @@ void App::open_prefab(const std::filesystem::path& path)
 		return;
 	close_prefab();
 	prefab_path = path;
+	prefab_unsaved = false;
 
 	ev_open_prefab = add_event([this]() {
 		e_prefab = Entity::create();

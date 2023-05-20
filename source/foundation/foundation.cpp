@@ -3,6 +3,8 @@
 #include "window_private.h"
 #include "application.h"
 
+#include <exprtk.hpp>
+
 namespace flame
 {
 	std::map<std::wstring, std::filesystem::path> Path::roots;
@@ -42,6 +44,66 @@ namespace flame
 			else  
 				it->second.ref--;
 		}
+	}
+
+	struct exprtk_string_assign_t : public exprtk::igeneric_function<float>
+	{
+		using exprtk::igeneric_function<float>::operator();
+
+		inline float operator() (igeneric_function<float>::parameter_list_t parameters)
+		{
+			if (parameters.size() == 2)
+			{
+				generic_type& arg0 = parameters[0];
+				generic_type& arg1 = parameters[1];
+				if (arg0.type == generic_type::e_string && arg1.type == generic_type::e_string)
+				{
+					auto addr_str = exprtk::to_str(generic_type::string_view(arg0));
+					auto str_value = exprtk::to_str(generic_type::string_view(arg1));
+					*(std::string*)(s2t<uint64>(addr_str)) = str_value;
+				}
+			}
+
+			return float(0);
+		}
+	}exprtk_string_assign;
+
+	struct ExpressionPrivate : Expression
+	{
+		exprtk::symbol_table<float> symbols;
+		exprtk::expression<float> expression;
+		std::string return_value;
+
+		ExpressionPrivate(const std::string& str);
+
+		void set_variable(const std::string& name, const std::string& value) override;
+		std::string get_value() override;
+	};
+
+	ExpressionPrivate::ExpressionPrivate(const std::string& expr_str)
+	{
+		expression.register_symbol_table(symbols);
+		auto addr_str = str((uint64)&return_value);
+		symbols.create_stringvar("return_value", addr_str);
+		symbols.add_function("string_assign", exprtk_string_assign);
+		exprtk::parser<float> parser;
+		parser.compile(expr_str, expression);
+	}
+
+	void ExpressionPrivate::set_variable(const std::string& name, const std::string& value)
+	{
+		symbols.create_stringvar(name, value);
+	}
+
+	std::string ExpressionPrivate::get_value()
+	{
+		expression.value();
+		return return_value;
+	}
+
+	Expression* Expression::create(const std::string& str)
+	{
+		return new ExpressionPrivate(str);
 	}
 
 	uint frames = 0;

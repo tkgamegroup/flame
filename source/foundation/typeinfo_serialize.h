@@ -241,14 +241,12 @@ namespace flame
 				for (auto i = 0; i < len; i++)
 				{
 					auto nn = n.append_child("item");
-
-					auto j = 0; auto p = (char*)src + offset;
+					auto j = 0;
 					for (auto& t : ti->tis)
 					{
 						nn.append_attribute(('_' + str(j)).c_str()).set_value(data_serialize(t.first, p + t.second).c_str());
 						j++;
 					}
-
 					p += ti->size;
 				}
 			}

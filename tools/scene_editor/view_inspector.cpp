@@ -423,6 +423,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				{
 					color = copied_color;
 					changed = true;
+					app.prefab_unsaved = true;
 				}
 				if (changed)
 					*(cvec4*)data = color * 255.f;
@@ -677,9 +678,9 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (ImGui::IsItemDeactivated())
 				sv.assign(nullptr, pv);
 			int n = sv.count();
-			ImGui::InputInt("size", &n, 1, 1);
+			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
 			ImGui::Separator();
-			if (ImGui::IsItemDeactivatedAfterEdit())
+			if (size_changed)
 			{
 				sv.resize(nullptr, n);
 				set_sv();
@@ -732,9 +733,9 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				sv.assign(nullptr, pv);
 			auto& ui = *ti->retrive_ui();
 			int n = sv.count();
-			ImGui::InputInt("size", &n, 1, 1);
+			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
 			ImGui::Separator();
-			if (ImGui::IsItemDeactivatedAfterEdit())
+			if (size_changed)
 			{
 				sv.resize(nullptr, n);
 				set_sv();
@@ -787,9 +788,9 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (ImGui::IsItemDeactivated())
 				sv.assign(nullptr, pv);
 			int n = sv.count();
-			ImGui::InputInt("size", &n, 1, 1);
+			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
 			ImGui::Separator();
-			if (ImGui::IsItemDeactivatedAfterEdit())
+			if (size_changed)
 			{
 				sv.resize(nullptr, n);
 				set_sv();
@@ -849,9 +850,9 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (ImGui::IsItemDeactivated())
 				sv.assign(nullptr, pv);
 			int n = sv.count();
-			ImGui::InputInt("size", &n, 1, 1);
+			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
 			ImGui::Separator();
-			if (ImGui::IsItemDeactivatedAfterEdit())
+			if (size_changed)
 			{
 				sv.resize(nullptr, n);
 				set_sv();

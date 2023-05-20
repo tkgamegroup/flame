@@ -6,6 +6,8 @@ namespace flame
 {
 	struct cLayoutPrivate : cLayout
 	{
+		int updated_frame = -1;
+
 		void set_type(ElementLayoutType type) override;
 		void set_padding(const vec4& padding) override;
 		void set_item_spacing(float spacing) override;
