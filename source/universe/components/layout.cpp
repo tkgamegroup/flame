@@ -90,9 +90,9 @@ namespace flame
 						if (element->vertical_alignment == ElementAlignNone)
 						{
 							element->set_y(y);
-							y += item_spacing;
 							y += element->ext.y;
 							h = max(h, y + padding.w);
+							y += item_spacing;
 						}
 					}
 				}
@@ -107,9 +107,9 @@ namespace flame
 						if (element->horizontal_alignment == ElementAlignNone)
 						{
 							element->set_x(x);
-							x += item_spacing;
 							x += element->ext.x;
 							w = max(w, x + padding.z);
+							x += item_spacing;
 						}
 						if (element->vertical_alignment == ElementAlignNone)
 						{
