@@ -653,12 +653,14 @@ namespace flame
 			return &attributes[it->second];
 		}
 
+		const Attribute* find_attribute(const std::vector<std::string>& chain, voidptr& obj) const;
+
 		FLAME_FOUNDATION_API void* create_object(void* p = nullptr) const;
 		FLAME_FOUNDATION_API void destroy_object(void* p, bool free_memory = true) const;
 		FLAME_FOUNDATION_API void copy_object(void* dst, const void* src) const;
 
 		// create a new type, and turn all pointer types(including vector of pointer ect.) into std::sting, so that you can use this type
-		// to read/edit from file. The new type will NOT add to database, when you don't need it anymore, just delete it.
+		// to read/edit from file. The new type will NOT add to database, when you don't need it anymore, you need to delete it.
 		FLAME_FOUNDATION_API UdtInfo* transform_to_serializable() const;
 	};
 
@@ -691,7 +693,7 @@ namespace flame
 	void Attribute::unserialize(void* obj, const std::string& str) const
 	{
 		type->unserialize(str, nullptr);
-		set_value(type->get_v());
+		set_value(obj);
 	}
 
 	struct TypeInfoDataBase
@@ -2876,6 +2878,42 @@ namespace flame
 
 		virtual void exec() = 0;
 	};
+
+	inline const Attribute* UdtInfo::find_attribute(const std::vector<std::string>& chain, voidptr& obj) const
+	{
+		if (chain.empty())
+			return nullptr;
+		auto ui = this;
+		auto i = 0;
+		while (true)
+		{
+			auto attr = ui->find_attribute(chain[i]);
+			if (!attr)
+				return nullptr;
+
+			i++;
+			if (i >= chain.size())
+				return attr;
+			if (attr->type->tag == TagO && obj)
+			{
+				auto& vo = *(VirtualUdt<int>*)((char*)obj + attr->var_off());
+				if (vo.type)
+				{
+					ui = vo.type->retrive_ui();
+					obj = vo.data;
+				}
+			}
+			else
+			{
+				ui = attr->type->retrive_ui();
+				if (obj)
+					obj = (char*)obj + attr->var_off();
+			}
+			if (!ui)
+				return nullptr;
+		}
+		return nullptr;
+	}
 
 	inline void* TypeInfo_VirtualUdt::create(void* p) const
 	{

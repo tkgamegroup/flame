@@ -46,64 +46,101 @@ namespace flame
 		}
 	}
 
-	struct exprtk_string_assign_t : public exprtk::igeneric_function<float>
+	struct exprtk_output_t : public exprtk::igeneric_function<float>
 	{
+		std::string* return_value;
+
 		using exprtk::igeneric_function<float>::operator();
+
+		exprtk_output_t()
+		{
+			exprtk::enable_zero_parameters(*this);
+		}
 
 		inline float operator() (igeneric_function<float>::parameter_list_t parameters)
 		{
-			if (parameters.size() == 2)
+			*return_value = "";
+			for (auto i = 0; i < parameters.size(); ++i)
 			{
-				generic_type& arg0 = parameters[0];
-				generic_type& arg1 = parameters[1];
-				if (arg0.type == generic_type::e_string && arg1.type == generic_type::e_string)
+				generic_type& gt = parameters[i];
+
+				switch (gt.type)
 				{
-					auto addr_str = exprtk::to_str(generic_type::string_view(arg0));
-					auto str_value = exprtk::to_str(generic_type::string_view(arg1));
-					*(std::string*)(s2t<uint64>(addr_str)) = str_value;
+				case generic_type::e_scalar: 
+					*return_value += str(generic_type::scalar_view(gt)());
+					break;
+				case generic_type::e_vector: 
+
+					break;
+				case generic_type::e_string: 
+					*return_value += exprtk::to_str(generic_type::string_view(gt));
+					break;
 				}
 			}
 
 			return float(0);
 		}
-	}exprtk_string_assign;
+	};
 
 	struct ExpressionPrivate : Expression
 	{
 		exprtk::symbol_table<float> symbols;
 		exprtk::expression<float> expression;
 		std::string return_value;
+		exprtk_output_t output_function;
 
-		ExpressionPrivate(const std::string& str);
+		ExpressionPrivate(const std::string& expression_string);
 
-		void set_variable(const std::string& name, const std::string& value) override;
+		void set_const_value(const std::string& name, float value) override;
+		void set_variable(const std::string& name, float* variable) override;
+		void set_const_string(const std::string& name, const std::string& value) override;
+		void compile() override;
 		std::string get_value() override;
 	};
 
-	ExpressionPrivate::ExpressionPrivate(const std::string& expr_str)
+	ExpressionPrivate::ExpressionPrivate(const std::string& _expression_string)
 	{
+		expression_string = _expression_string;
 		expression.register_symbol_table(symbols);
 		auto addr_str = str((uint64)&return_value);
 		symbols.create_stringvar("return_value", addr_str);
-		symbols.add_function("string_assign", exprtk_string_assign);
-		exprtk::parser<float> parser;
-		parser.compile(expr_str, expression);
+		output_function.return_value = &return_value;
+		symbols.add_function("output", output_function);
 	}
 
-	void ExpressionPrivate::set_variable(const std::string& name, const std::string& value)
+	void ExpressionPrivate::set_const_value(const std::string& name, float value)
+	{
+		symbols.add_constant(name, value);
+	}
+
+	void ExpressionPrivate::set_variable(const std::string& name, float* variable)
+	{
+		symbols.add_variable(name, *variable);
+	}
+
+	void ExpressionPrivate::compile()
+	{
+		exprtk::parser<float> parser; 
+		parser.compile(expression_string, expression);
+
+	}
+
+	void ExpressionPrivate::set_const_string(const std::string& name, const std::string& value)
 	{
 		symbols.create_stringvar(name, value);
 	}
 
 	std::string ExpressionPrivate::get_value()
 	{
-		expression.value();
-		return return_value;
+		auto float_ret = expression.value();
+		if (!return_value.empty())
+			return return_value;
+		return str(float_ret);
 	}
 
-	Expression* Expression::create(const std::string& str)
+	Expression* Expression::create(const std::string& expression_string)
 	{
-		return new ExpressionPrivate(str);
+		return new ExpressionPrivate(expression_string);
 	}
 
 	uint frames = 0;

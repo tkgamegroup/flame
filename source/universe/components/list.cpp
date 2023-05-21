@@ -50,12 +50,13 @@ namespace flame
 					if (auto comp = e->find_component_recursively(comp_hash); comp)
 					{
 						auto& ui = *find_udt(comp_hash);
-						auto attr_hash = sh(std::get<1>(mod).c_str());
-						if (auto attr = ui.find_attribute(attr_hash); attr)
+						voidptr obj = comp;
+						if (auto attr = ui.find_attribute(SUS::split(std::get<1>(mod), '.'), obj); attr && attr->type->tag == TagD)
 						{
 							auto expression = Expression::create(std::get<2>(mod));
-							expression->set_variable("i", str(i));
-							attr->unserialize(comp, expression->get_value());
+							expression->set_const_string("i", str(i));
+							expression->compile();
+							attr->unserialize(obj, expression->get_value());
 						}
 					}
 				}
