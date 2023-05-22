@@ -407,6 +407,21 @@ namespace flame
 			if (auto a = n_udt.attribute("source_file"); a)
 				u.source_file = a.value();
 		}
+		for (auto n_data : doc_root.child("datas"))
+		{
+			auto name = std::string(n_data.attribute("name").value());
+			auto& d = datas.emplace(sh(name.c_str()), DataInfo()).first->second;
+			d.db = this;
+			d.name = name;
+			d.name_hash = sh(name.c_str());
+			d.rva = n_data.attribute("rva").as_uint();
+			d.type = read_ti(n_data.attribute("type"));
+			if (auto a = n_data.attribute("metas"); a)
+				d.metas.from_string(a.value());
+			d.library = library;
+			if (auto a = n_data.attribute("source_file"); a)
+				d.source_file = a.value();
+		}
 		for (auto& pair : typeinfos)
 		{
 			if (pair.second->tag == TagU)
@@ -639,6 +654,19 @@ namespace flame
 				}
 				if (!ui.second->source_file.empty())
 					n_udt.append_attribute("source_file").set_value(ui.second->source_file.string().c_str());
+			}
+
+			auto n_datas = doc_root.append_child("datas");
+			for (auto& di : datas)
+			{
+				auto n_data = n_datas.append_child("data");
+				n_data.append_attribute("name").set_value(di.second.name.c_str());
+				n_data.append_attribute("rva").set_value(di.second.rva);
+				write_ti(di.second.type, n_data.append_attribute("type"));
+				if (auto str = di.second.metas.to_string(); !str.empty())
+					n_data.append_attribute("metas").set_value(str.c_str());
+				if (!di.second.source_file.empty())
+					n_data.append_attribute("source_file").set_value(di.second.source_file.string().c_str());
 			}
 		}
 

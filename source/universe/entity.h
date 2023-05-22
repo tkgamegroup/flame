@@ -12,7 +12,7 @@ namespace flame
 
 		inline PrefabInstance(EntityPtr e, const std::filesystem::path& filename);
 
-		void mark_modifier(const std::string& tar_id, const std::string& tar_comp, const std::string& attr_name)
+		void mark_modification(const std::string& tar_id, const std::string& tar_comp, const std::string& attr_name)
 		{
 			std::string target;
 			target = tar_id;

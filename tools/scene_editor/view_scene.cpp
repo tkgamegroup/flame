@@ -54,7 +54,7 @@ void View_Scene::selected_to_focus()
 		{
 			node->set_pos(camera_target_pos());
 			if (auto ins = get_root_prefab_instance(e); ins)
-				ins->mark_modifier(e->file_id.to_string(), "flame::cNode", "pos");
+				ins->mark_modification(e->file_id.to_string(), "flame::cNode", "pos");
 		}
 	}
 }
@@ -264,14 +264,14 @@ void View_Scene::on_draw()
 							{
 								t->add_pos(diff);
 								if (auto ins = get_root_prefab_instance(t->entity); ins)
-									ins->mark_modifier(node_targets[0]->entity->file_id.to_string(), "flame::cNode", "pos");
+									ins->mark_modification(node_targets[0]->entity->file_id.to_string(), "flame::cNode", "pos");
 							}
 						}
 						else
 						{
 							node_targets[0]->set_pos(pos);
 							if (auto ins = get_root_prefab_instance(node_targets[0]->entity); ins)
-								ins->mark_modifier(node_targets[0]->entity->file_id.to_string(), "flame::cNode", "pos");
+								ins->mark_modification(node_targets[0]->entity->file_id.to_string(), "flame::cNode", "pos");
 						}
 					}
 					if (app.tool == ToolRotate)
@@ -282,12 +282,12 @@ void View_Scene::on_draw()
 							{
 								t->mul_qut(qut);
 								if (auto ins = get_root_prefab_instance(t->entity); ins)
-									ins->mark_modifier(t->entity->file_id.to_string(), "flame::cNode", "qut");
+									ins->mark_modification(t->entity->file_id.to_string(), "flame::cNode", "qut");
 								if (app.tool_pivot == ToolCenter)
 								{
 									t->set_pos(center + qut * (t->global_pos() - center));
 									if (auto ins = get_root_prefab_instance(t->entity); ins)
-										ins->mark_modifier(t->entity->file_id.to_string(), "flame::cNode", "pos");
+										ins->mark_modification(t->entity->file_id.to_string(), "flame::cNode", "pos");
 								}
 							}
 						}
@@ -295,7 +295,7 @@ void View_Scene::on_draw()
 						{
 							node_targets[0]->set_qut(qut);
 							if (auto ins = get_root_prefab_instance(node_targets[0]->entity); ins)
-								ins->mark_modifier(node_targets[0]->entity->file_id.to_string(), "flame::cNode", "qut");
+								ins->mark_modification(node_targets[0]->entity->file_id.to_string(), "flame::cNode", "qut");
 						}
 					}
 					if (app.tool == ToolScale)
@@ -308,7 +308,7 @@ void View_Scene::on_draw()
 						{
 							node_targets[0]->set_scl(scl);
 							if (auto ins = get_root_prefab_instance(node_targets[0]->entity); ins)
-								ins->mark_modifier(node_targets[0]->entity->file_id.to_string(), "flame::cNode", "scl");
+								ins->mark_modification(node_targets[0]->entity->file_id.to_string(), "flame::cNode", "scl");
 						}
 					}
 				}
@@ -419,7 +419,7 @@ void View_Scene::on_draw()
 							{
 								t->add_pos(diff);
 								if (auto ins = get_root_prefab_instance(t->entity); ins)
-									ins->mark_modifier(element_targets[0]->entity->file_id.to_string(), "flame::cElement", "pos");
+									ins->mark_modification(element_targets[0]->entity->file_id.to_string(), "flame::cElement", "pos");
 							}
 						}
 						else
@@ -429,7 +429,7 @@ void View_Scene::on_draw()
 							else
 								element_targets[0]->set_pos(pos);
 							if (auto ins = get_root_prefab_instance(element_targets[0]->entity); ins)
-								ins->mark_modifier(element_targets[0]->entity->file_id.to_string(), "flame::cElement", "pos");
+								ins->mark_modification(element_targets[0]->entity->file_id.to_string(), "flame::cElement", "pos");
 						}
 					}
 					if (app.tool == ToolScale)
@@ -442,7 +442,7 @@ void View_Scene::on_draw()
 						{
 							element_targets[0]->set_scl(scl);
 							if (auto ins = get_root_prefab_instance(element_targets[0]->entity); ins)
-								ins->mark_modifier(element_targets[0]->entity->file_id.to_string(), "flame::cElement", "scl");
+								ins->mark_modification(element_targets[0]->entity->file_id.to_string(), "flame::cElement", "scl");
 						}
 					}
 				}

@@ -414,7 +414,7 @@ namespace flame
 		virtual void set_const_value(const std::string& name, float value) = 0;
 		virtual void set_variable(const std::string& name, float* variable) = 0;
 		virtual void set_const_string(const std::string& name, const std::string& value) = 0;
-		virtual void compile() = 0;
+		virtual bool compile() = 0;
 		virtual std::string get_value() = 0;
 
 		FLAME_FOUNDATION_API static Expression* create(const std::string& expression_string);

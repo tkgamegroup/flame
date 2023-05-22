@@ -50,14 +50,12 @@ namespace flame
 	{
 		std::string* return_value;
 
-		using exprtk::igeneric_function<float>::operator();
-
 		exprtk_output_t()
 		{
 			exprtk::enable_zero_parameters(*this);
 		}
 
-		inline float operator() (igeneric_function<float>::parameter_list_t parameters)
+		inline float operator() (parameter_list_t parameters)
 		{
 			*return_value = "";
 			for (auto i = 0; i < parameters.size(); ++i)
@@ -82,6 +80,21 @@ namespace flame
 		}
 	};
 
+	struct exprtk_to_str_t : public exprtk::igeneric_function<float>
+	{
+		exprtk_to_str_t()
+			: igeneric_function<float>("S", e_rtrn_string)
+		{
+		}
+
+		inline float operator()(std::string& result, parameter_list_t parameters)
+		{
+			result = str(generic_type::scalar_view(parameters[0])());
+
+			return float(0);
+		}
+	}exprtk_to_str;
+
 	struct ExpressionPrivate : Expression
 	{
 		exprtk::symbol_table<float> symbols;
@@ -94,18 +107,19 @@ namespace flame
 		void set_const_value(const std::string& name, float value) override;
 		void set_variable(const std::string& name, float* variable) override;
 		void set_const_string(const std::string& name, const std::string& value) override;
-		void compile() override;
+		bool compile() override;
 		std::string get_value() override;
 	};
 
 	ExpressionPrivate::ExpressionPrivate(const std::string& _expression_string)
 	{
 		expression_string = _expression_string;
-		expression.register_symbol_table(symbols);
+
 		auto addr_str = str((uint64)&return_value);
 		symbols.create_stringvar("return_value", addr_str);
 		output_function.return_value = &return_value;
 		symbols.add_function("output", output_function);
+		symbols.add_function("to_str", exprtk_to_str);
 	}
 
 	void ExpressionPrivate::set_const_value(const std::string& name, float value)
@@ -118,11 +132,26 @@ namespace flame
 		symbols.add_variable(name, *variable);
 	}
 
-	void ExpressionPrivate::compile()
+	bool ExpressionPrivate::compile()
 	{
-		exprtk::parser<float> parser; 
-		parser.compile(expression_string, expression);
+		exprtk::symbol_table<float> unknown_symbols;
+		expression.register_symbol_table(unknown_symbols);
+		expression.register_symbol_table(symbols);
 
+		exprtk::parser<float> parser;
+		parser.enable_unknown_symbol_resolver();
+		auto ok = parser.compile(expression_string, expression);
+		if (ok)
+		{
+			std::vector<std::string> variable_list;
+			unknown_symbols.get_variable_list(variable_list);
+			for (auto& var_name : variable_list)
+			{
+				float& v = unknown_symbols.variable_ref(var_name);
+
+			}
+		}
+		return ok;
 	}
 
 	void ExpressionPrivate::set_const_string(const std::string& name, const std::string& value)
@@ -132,6 +161,7 @@ namespace flame
 
 	std::string ExpressionPrivate::get_value()
 	{
+		return_value.clear();
 		auto float_ret = expression.value();
 		if (!return_value.empty())
 			return return_value;

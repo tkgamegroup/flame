@@ -1176,7 +1176,7 @@ struct EditingEntities
 			for (auto e : entities)
 			{
 				if (auto ins = get_root_prefab_instance(e); ins)
-					ins->mark_modifier(e->file_id.to_string(), "", str);
+					ins->mark_modification(e->file_id.to_string(), "", str);
 			}
 		}
 
@@ -1300,7 +1300,7 @@ struct EditingEntities
 					for (auto e : entities)
 					{
 						if (auto ins = get_root_prefab_instance(e); ins)
-							ins->mark_modifier(e->file_id.to_string(), ui.name, str);
+							ins->mark_modification(e->file_id.to_string(), ui.name, str);
 					}
 				}
 				ret_changed |= res.first;
@@ -1431,7 +1431,7 @@ struct EditingEntities
 					for (auto e : entities)
 					{
 						if (auto ins = get_root_prefab_instance(e); ins)
-							ins->mark_modifier(e->file_id.to_string(), ui.name, str);
+							ins->mark_modification(e->file_id.to_string(), ui.name, str);
 					}
 
 					if ((ui.name_hash == "flame::cNavAgent"_h || ui.name_hash == "flame::cNavObstacle"_h) &&

@@ -696,6 +696,18 @@ namespace flame
 		set_value(obj);
 	}
 
+	struct DataInfo
+	{
+		TypeInfoDataBase* db = nullptr;
+		std::string name;
+		uint name_hash;
+		uint rva = 0;
+		TypeInfo* type = nullptr;
+		Metas metas;
+		void* library = nullptr;
+		std::filesystem::path source_file;
+	};
+
 	struct TypeInfoDataBase
 	{
 		FLAME_FOUNDATION_API TypeInfoDataBase();
@@ -705,6 +717,7 @@ namespace flame
 		std::map<uint, EnumInfo> enums;
 		std::map<uint, FunctionInfo> functions;
 		std::map<uint, UdtInfo> udts;
+		std::map<uint, DataInfo> datas;
 
 		TypeInfoDataBase& operator=(TypeInfoDataBase&& oth)
 		{
@@ -752,6 +765,20 @@ namespace flame
 		{
 			it = tidb.udts.find(hash);
 			if (it != tidb.udts.end())
+				return &it->second;
+		}
+		return nullptr;
+	}
+
+	inline DataInfo* find_data(uint hash, TypeInfoDataBase& db = tidb)
+	{
+		auto it = db.datas.find(hash);
+		if (it != db.datas.end())
+			return &it->second;
+		if (&db != &tidb)
+		{
+			it = tidb.datas.find(hash);
+			if (it != tidb.datas.end())
 				return &it->second;
 		}
 		return nullptr;

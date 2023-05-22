@@ -71,7 +71,7 @@ TypeTag parse_vector(std::string& name)
 	return TagCount;
 }
 
-TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
+TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_sym)
 {
 	DWORD dw;
 	ULONG ul;
@@ -113,22 +113,22 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 		}
 	};
 
-	s_type->get_symTag(&dw);
+	s_sym->get_symTag(&dw);
 	switch (dw)
 	{
 	case SymTagEnum:
 	{
-		s_type->get_name(&pwname);
+		s_sym->get_name(&pwname);
 		return TypeInfo::get(TagE, TypeInfo::format_name(w2s(pwname)), db);
 	}
 	case SymTagBaseType:
-		return TypeInfo::get(TagD, base_type_name(s_type));
+		return TypeInfo::get(TagD, base_type_name(s_sym));
 	case SymTagPointerType:
 	{
 		std::string name;
 		TypeInfo* ret = nullptr;
 		IDiaSymbol* pointer_type;
-		s_type->get_type(&pointer_type);
+		s_sym->get_type(&pointer_type);
 		pointer_type->get_symTag(&dw);
 		switch (dw)
 		{
@@ -177,7 +177,7 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 	}
 	case SymTagUDT:
 	{
-		s_type->get_name(&pwname);
+		s_sym->get_name(&pwname);
 		auto name = TypeInfo::format_name(w2s(pwname));
 		if (TypeInfo::is_basic_type(name))
 			return TypeInfo::get(TagD, name, db);
@@ -196,12 +196,13 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 			return TypeInfo::get(TagU, name, db);
 		}
 	}
+	case SymTagData:
 	case SymTagFunctionArgType:
 	{
-		IDiaSymbol* s_arg_type;
-		s_type->get_type(&s_arg_type);
-		auto ret = typeinfo_from_symbol(s_arg_type);
-		s_arg_type->Release();
+		IDiaSymbol* s_type;
+		s_sym->get_type(&s_type);
+		auto ret = typeinfo_from_symbol(s_type);
+		s_type->Release();
 		return ret;
 	}
 	case SymTagArrayType:
@@ -209,11 +210,11 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_type)
 		TypeInfo* ret = nullptr;
 
 		std::string extent_str;
-		if (s_type->get_count(&dw) == S_OK)
+		if (s_sym->get_count(&dw) == S_OK)
 			extent_str = std::format("[{}]", dw);
 
 		IDiaSymbol* array_type;
-		s_type->get_type(&array_type);
+		s_sym->get_type(&array_type);
 		array_type->get_symTag(&dw);
 		switch (dw)
 		{
@@ -313,6 +314,137 @@ process:
 		}
 	}
 
+	if (FAILED(CoInitialize(NULL)))
+	{
+		printf("typeinfogen: com initial failed, exit\n");
+		return 1;
+	}
+
+	CComPtr<IDiaDataSource> dia_source;
+	if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)&dia_source)))
+	{
+		printf("typeinfogen: dia not found, exit\n");
+		return 1;
+	}
+
+	if (FAILED(dia_source->loadDataFromPdb(pdb_path.c_str())))
+	{
+		printf("pdb failed to open: %s\n", pdb_path.string().c_str());
+		return 1;
+	}
+
+	CComPtr<IDiaSession> dia_session;
+	if (FAILED(dia_source->openSession(&dia_session)))
+	{
+		printf("session failed to open\n");
+		return 1;
+	}
+
+	CComPtr<IDiaSymbol> dia_global;
+	if (FAILED(dia_session->get_globalScope(&dia_global)))
+	{
+		printf("failed to get global\n");
+		return 1;
+	}
+
+	BOOL b;
+	LONG l;
+	ULONG ul;
+	ULONGLONG ull;
+	DWORD dw;
+	wchar_t* pwname;
+	VARIANT variant;
+
+	auto library = load_library(input_path);
+
+	std::map<std::string, IDiaSymbol*> dia_enums;
+	std::map<std::string, IDiaSymbol*> dia_funcs;
+	std::map<std::string, IDiaSymbol*> dia_udts;
+	std::map<std::string, IDiaSymbol*> dia_datas;
+
+	IDiaEnumSymbols* symbols;
+	IDiaSymbol* s_obj;
+
+	auto skip_name = [](const std::string& name) {
+		return name.starts_with("std::") || name.starts_with("__") || name.starts_with("`")
+			|| name.starts_with("$") || name.starts_with("?") || name.starts_with("CLSID_")
+			|| name.starts_with("IID_") || name.contains("<lambda_")
+			|| name.starts_with("pugi::") || name.starts_with("nlohmann::") || name.starts_with("stbi__") || name.starts_with("exprtk::") || name.starts_with("glm::") || name.starts_with("ImGui::");
+	};
+
+	if (just_print_all_symbols)
+		printf("Enums:\n");
+	dia_global->findChildren(SymTagEnum, NULL, nsNone, &symbols);
+	while (SUCCEEDED(symbols->Next(1, &s_obj, &ul)) && (ul == 1))
+	{
+		s_obj->get_name(&pwname);
+		auto name = w2s(pwname);
+		if (!skip_name(name))
+		{
+			if (just_print_all_symbols)
+				printf("%s\n", name.c_str());
+			dia_enums[name] = s_obj;
+		}
+		else
+			s_obj->Release();
+	}
+	symbols->Release();
+
+	if (just_print_all_symbols)
+		printf("UDTs:\n");
+	dia_global->findChildren(SymTagUDT, NULL, nsNone, &symbols);
+	while (SUCCEEDED(symbols->Next(1, &s_obj, &ul)) && (ul == 1))
+	{
+		s_obj->get_name(&pwname);
+		auto name = w2s(pwname);
+		if (!skip_name(name))
+		{
+			if (just_print_all_symbols)
+				printf("%s\n", name.c_str());
+			dia_udts[name] = s_obj;
+		}
+		else
+			s_obj->Release();
+	}
+	symbols->Release();
+
+	if (just_print_all_symbols)
+		printf("Functions:\n");
+	dia_global->findChildren(SymTagFunction, NULL, nsNone, &symbols);
+	while (SUCCEEDED(symbols->Next(1, &s_obj, &ul)) && (ul == 1))
+	{
+		s_obj->get_name(&pwname);
+		auto name = w2s(pwname);
+		if (!skip_name(name))
+		{
+			if (just_print_all_symbols)
+				printf("%s\n", name.c_str());
+			dia_funcs[name] = s_obj;
+		}
+		else
+			s_obj->Release();
+	}
+
+	if (just_print_all_symbols)
+		printf("Datas:\n");
+	dia_global->findChildren(SymTagData, NULL, nsNone, &symbols);
+	while (SUCCEEDED(symbols->Next(1, &s_obj, &ul)) && (ul == 1))
+	{
+		s_obj->get_name(&pwname);
+		auto name = w2s(pwname);
+		if (!skip_name(name))
+		{
+			if (just_print_all_symbols)
+				printf("%s\n", name.c_str());
+			dia_datas[name] = s_obj;
+		}
+		else
+			s_obj->Release();
+	}
+
+	if (just_print_all_symbols)
+		return 0;
+
 	struct Rule
 	{
 		enum Type
@@ -387,6 +519,7 @@ process:
 
 	std::vector<Rule> enum_rules;
 	std::vector<Rule> udt_rules;
+	std::vector<Rule> data_rules;
 	auto need = [&](std::vector<Rule>& rules, const std::string& name, Rule** out_r) {
 		for (auto& r : rules)
 		{
@@ -399,28 +532,13 @@ process:
 		}
 		return false;
 	};
-	auto need_enum = [&](const std::string& name, Rule** out_r = nullptr) {
-		return need(enum_rules, name, out_r);
-	};
-	auto need_udt = [&](const std::string& name, Rule** out_r = nullptr) {
-		return need(udt_rules, name, out_r);
-	};
-	auto add_enum_rule = [&](const std::string& n) {
-		for (auto& r : enum_rules)
+	auto add_rule = [&](std::vector<Rule>& rules, const std::string& n) {
+		for (auto& r : rules)
 		{
 			if (r.name == n)
 				return;
 		}
-		auto& r = enum_rules.emplace_back();
-		r.name = n;
-	};
-	auto add_udt_rule = [&](const std::string& n) {
-		for (auto& r : udt_rules)
-		{
-			if (r.name == n)
-				return;
-		}
-		auto& r = udt_rules.emplace_back();
+		auto& r = rules.emplace_back();
 		r.name = n;
 	};
 
@@ -460,11 +578,19 @@ process:
 				auto& r = udt_rules.emplace_back();
 				read_rule(r);
 			}
+			else if (sp[0] == "data")
+			{
+				auto& r = data_rules.emplace_back();
+				read_rule(r);
+			}
 		}
 		desc.close();
 
 		if (std::filesystem::exists(sources_path))
 		{
+			static std::regex reg_var("[\\w*&>]\\s+(\\w+)\\s*(=.*)?;");
+			static std::regex reg_fun("\\s+(\\w+)\\s*\\(");
+
 			std::string line;
 			std::smatch res;
 			for (auto& it : std::filesystem::recursive_directory_iterator(sources_path))
@@ -553,12 +679,23 @@ process:
 									curr_rule = &r;
 								}
 							}
+							else if (SUS::strip_head_if(line, "extern "))
+							{
+								std::string name;
+								if (std::regex_search(line, res, reg_var))
+									name = res[1].str();
+
+								if (reflect_mark)
+								{
+									auto& r = data_rules.emplace_back();
+									r.type = Rule::Equal;
+									r.name = get_name(name);
+								}
+							}
 							else
 							{
 								if (reflect_mark)
 								{
-									static std::regex reg_var("[\\w*&>]\\s+(\\w+)\\s*(=.*)?;");
-									static std::regex reg_fun("\\s+(\\w+)\\s*\\(");
 									std::string name;
 									if (std::regex_search(line, res, reg_var))
 										name = res[1].str();
@@ -581,11 +718,14 @@ process:
 												}
 												if (!curr_rule)
 												{
-													auto& r = udt_rules.emplace_back();
-													r.type = Rule::Equal;
-													r.name = get_name(rule_name);
-													r.children_type = Rule::Any;
-													curr_rule = &r;
+													if (auto it = dia_udts.find(rule_name); it != dia_udts.end())
+													{
+														auto& r = udt_rules.emplace_back();
+														r.type = Rule::Equal;
+														r.name = rule_name;
+														r.children_type = Rule::Any;
+														curr_rule = &r;
+													}
 												}
 											}
 										}
@@ -628,118 +768,6 @@ process:
 		}
 	}
 
-	if (FAILED(CoInitialize(NULL)))
-	{
-		printf("typeinfogen: com initial failed, exit\n");
-		return 1;
-	}
-
-	CComPtr<IDiaDataSource> dia_source;
-	if (FAILED(CoCreateInstance(CLSID_DiaSource, NULL, CLSCTX_INPROC_SERVER, __uuidof(IDiaDataSource), (void**)&dia_source)))
-	{
-		printf("typeinfogen: dia not found, exit\n");
-		return 1;
-	}
-
-	if (FAILED(dia_source->loadDataFromPdb(pdb_path.c_str())))
-	{
-		printf("pdb failed to open: %s\n", pdb_path.string().c_str());
-		return 1;
-	}
-
-	CComPtr<IDiaSession> dia_session;
-	if (FAILED(dia_source->openSession(&dia_session)))
-	{
-		printf("session failed to open\n");
-		return 1;
-	}
-
-	CComPtr<IDiaSymbol> dia_global;
-	if (FAILED(dia_session->get_globalScope(&dia_global)))
-	{
-		printf("failed to get global\n");
-		return 1;
-	}
-
-	BOOL b;
-	LONG l;
-	ULONG ul;
-	ULONGLONG ull;
-	DWORD dw;
-	wchar_t* pwname;
-	VARIANT variant;
-
-	auto library = load_library(input_path);
-
-	std::map<std::string, IDiaSymbol*> dia_enums;
-	std::map<std::string, IDiaSymbol*> dia_funcs;
-	std::map<std::string, IDiaSymbol*> dia_udts;
-
-	IDiaEnumSymbols* symbols;
-	IDiaSymbol* s_obj;
-
-	auto skip_name = [](const std::string& name) {
-		return name.starts_with("std::") || name.starts_with("__") || name.starts_with("`")
-			|| name.contains("<lambda_")
-			|| name.starts_with("glm::") || name.starts_with("ImGui::");
-	};
-
-	if (just_print_all_symbols)
-		printf("Enums:\n");
-	dia_global->findChildren(SymTagEnum, NULL, nsNone, &symbols);
-	while (SUCCEEDED(symbols->Next(1, &s_obj, &ul)) && (ul == 1))
-	{
-		s_obj->get_name(&pwname);
-		auto name = w2s(pwname);
-		if (!skip_name(name))
-		{
-			if (just_print_all_symbols)
-				printf("%s\n", name.c_str());
-			dia_enums[name] = s_obj;
-		}
-		else
-			s_obj->Release();
-	}
-	symbols->Release();
-
-	if (just_print_all_symbols)
-		printf("UDTs:\n");
-	dia_global->findChildren(SymTagUDT, NULL, nsNone, &symbols);
-	while (SUCCEEDED(symbols->Next(1, &s_obj, &ul)) && (ul == 1))
-	{
-		s_obj->get_name(&pwname);
-		auto name = w2s(pwname);
-		if (!skip_name(name))
-		{
-			if (just_print_all_symbols)
-				printf("%s\n", name.c_str());
-			dia_udts[name] = s_obj;
-		}
-		else
-			s_obj->Release();
-	}
-	symbols->Release();
-
-	if (just_print_all_symbols)
-		printf("Functions:\n");
-	dia_global->findChildren(SymTagFunction, NULL, nsNone, &symbols);
-	while (SUCCEEDED(symbols->Next(1, &s_obj, &ul)) && (ul == 1))
-	{
-		s_obj->get_name(&pwname);
-		auto name = w2s(pwname);
-		if (!skip_name(name))
-		{
-			if (just_print_all_symbols)
-				printf("%s\n", name.c_str());
-			dia_funcs[name] = s_obj;
-		}
-		else
-			s_obj->Release();
-	}
-
-	if (just_print_all_symbols)
-		return 0;
-
 	for (auto& s_func : dia_funcs)
 	{
 		if (s_func.first.starts_with("flame::TypeInfo::get"))
@@ -750,7 +778,7 @@ process:
 			{
 				auto name = res[1].str();
 				if (SUS::strip_head_if(name, "enum "))
-					add_enum_rule(name);
+					add_rule(enum_rules, name);
 				else
 				{
 					name = TypeInfo::format_name(name);
@@ -761,12 +789,12 @@ process:
 							name = res[1].str();
 							auto tag = parse_vector(name);
 							if (tag == TagVE)
-								add_enum_rule(name);
+								add_rule(enum_rules, name);
 							else if (tag == TagVU)
-								add_udt_rule(name);
+								add_rule(udt_rules, name);
 						}
 						else
-							add_udt_rule(name);
+							add_rule(udt_rules, name);
 					}
 				}
 			}
@@ -790,7 +818,7 @@ process:
 		for (auto& s_enum : dia_enums)
 		{
 			Rule* er;
-			if (!find_enum(sh(s_enum.first.c_str()), db) && need_enum(s_enum.first, &er))
+			if (!find_enum(sh(s_enum.first.c_str()), db) && need(enum_rules, s_enum.first, &er))
 			{
 				EnumInfo e;
 				e.name = s_enum.first;
@@ -853,7 +881,7 @@ process:
 		for (auto& s_udt : dia_udts)
 		{
 			Rule* ur;
-			if (!find_udt(sh(s_udt.first.c_str()), db) && need_udt(s_udt.first, &ur))
+			if (!find_udt(sh(s_udt.first.c_str()), db) && need(udt_rules, s_udt.first, &ur))
 			{
 				UdtInfo u;
 				u.name = s_udt.first;
@@ -989,8 +1017,6 @@ process:
 
 						if (metas.get("static"_h))
 						{
-							IDiaEnumSymbols* symbols;
-							IDiaSymbol* symbol;
 							auto voff = -1;
 							auto rva = 0U;
 							TypeInfo* return_type = nullptr;
@@ -1024,15 +1050,11 @@ process:
 								s_functions->Release();
 							}
 
-							dia_global->findChildren(SymTagData, s2w(u.name + "::" + name).c_str(), nsNone, &symbols);
-							if (SUCCEEDED(symbols->Next(1, &symbol, &ul)) && (ul == 1))
+							if (auto it = dia_datas.find(u.name + "::" + name); it != dia_datas.end())
 							{
-								if (symbol->get_relativeVirtualAddress(&dw) == S_OK)
+								if (it->second->get_relativeVirtualAddress(&dw) == S_OK)
 									rva = dw;
-
-								symbol->Release();
 							}
-							symbols->Release();
 
 							if (rva && voff != -1)
 							{
@@ -1183,6 +1205,25 @@ process:
 			}
 		}
 
+		for (auto& s_data : dia_datas)
+		{
+			Rule* dr;
+			if (!find_data(sh(s_data.first.c_str()), db) && need(data_rules, s_data.first, &dr))
+			{
+				auto ti = typeinfo_from_symbol(s_data.second);
+				reference_type(ti);
+
+				DataInfo d;
+				d.name = s_data.first;
+				d.source_file = dr->source_file;
+				if (s_data.second->get_relativeVirtualAddress(&dw) == S_OK)
+					d.rva = dw;
+				d.type = ti;
+
+				db.datas.emplace(sh(d.name.c_str()), d);
+			}
+		}
+
 		enum_rules.clear();
 		udt_rules.clear();
 		for (auto t : referenced_types)
@@ -1196,7 +1237,7 @@ process:
 			case TagVE:
 				if (!find_enum(sh(name.c_str()), db))
 				{
-					add_enum_rule(name);
+					add_rule(enum_rules, name);
 					need_collect = true;
 				}
 				break;
@@ -1206,7 +1247,7 @@ process:
 			case TagVU:
 				if (!find_udt(sh(name.c_str()), db))
 				{
-					add_udt_rule(name);
+					add_rule(udt_rules, name);
 					need_collect = true;
 				}
 				break;
