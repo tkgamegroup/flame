@@ -1271,25 +1271,37 @@ struct EditingEntities
 				}
 				if (ImGui::Selectable("Remove"))
 				{
-					auto ok = true;
+					auto changed = false;
 					for (auto e : entities)
 					{
-						if (get_root_prefab_instance(e))
+						if (e->remove_component(cc.type_hash))
 						{
-							ok = false;
-							break;
+							if (auto ins = get_root_prefab_instance(e); ins)
+							{
+								auto idx = ins->find_modification(e->file_id.to_string(), ui.name, "add");
+								if (idx == -1)
+									ins->mark_modification(e->file_id.to_string(), ui.name, "remove");
+								else
+								{
+									auto target_string = PrefabInstance::form_target_string(e->file_id.to_string(), ui.name, "");
+									for (auto it = ins->modifications.begin(); it != ins->modifications.end();)
+									{
+										if (it->starts_with(target_string))
+											it = ins->modifications.erase(it);
+										else
+											it++;
+									}
+								}
+							}
+							changed = true;
 						}
 					}
-					if (ok)
+					if (changed)
 					{
-						for (auto e : entities)
-							e->remove_component(cc.type_hash);
 						refresh();
 						app.prefab_unsaved = true;
 						exit_editing = true;
 					}
-					else
-						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 				}
 				ImGui::EndPopup();
 			}
@@ -1532,24 +1544,27 @@ struct EditingEntities
 			{
 				if (ImGui::Selectable(ui->name.c_str()))
 				{
-					auto ok = true;
+					auto changed = false;
 					for (auto e : entities)
 					{
-						if (get_root_prefab_instance(e))
+						if (e->add_component(ui->name_hash))
 						{
-							ok = false;
-							break;
+							if (auto ins = get_root_prefab_instance(e); ins)
+							{
+								auto idx = ins->find_modification(e->file_id.to_string(), ui->name, "remove");
+								if (idx == -1)
+									ins->mark_modification(e->file_id.to_string(), ui->name, "add");
+								else
+									ins->modifications.erase(ins->modifications.begin() + idx);
+							}
+							changed = true;
 						}
 					}
-					if (ok)
+					if (changed)
 					{
-						for (auto e : entities)
-							e->add_component(ui->name_hash);
 						refresh();
 						app.prefab_unsaved = true;
 					}
-					else
-						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 				}
 			}
 			ImGui::EndPopup();

@@ -12,38 +12,45 @@ namespace flame
 
 		inline PrefabInstance(EntityPtr e, const std::filesystem::path& filename);
 
+		static std::string form_target_string(const std::string& tar_id, const std::string& tar_comp, const std::string& attr_name)
+		{
+			std::string ret;
+			ret = tar_id;
+			if (!tar_comp.empty())
+				ret = ret + "|" + tar_comp;
+			if (!attr_name.empty())
+				ret = ret + "|" + attr_name;
+			return ret;
+		}
+
+		int find_modification(const std::string& target_string)
+		{
+			for (auto i = 0; i < modifications.size(); i++)
+			{
+				if (modifications[i] == target_string)
+					return i;
+			}
+			return -1;
+		}
+
+		int find_modification(const std::string& tar_id, const std::string& tar_comp, const std::string& attr_name)
+		{
+			return find_modification(form_target_string(tar_id, tar_comp, attr_name));
+		}
+
 		void mark_modification(const std::string& tar_id, const std::string& tar_comp, const std::string& attr_name)
 		{
-			std::string target;
-			target = tar_id;
-			if (!tar_comp.empty())
-				target = target + "|" + tar_comp;
-			target = target + "|" + attr_name;
-
-			for (auto& m : modifications)
-			{
-				if (m == target)
-					return;
-			}
-			modifications.push_back(target);
+			auto target_string = form_target_string(tar_id, tar_comp, attr_name);
+			if (find_modification(target_string) == -1)
+				modifications.push_back(target_string);
 		}
 
 		void remove_modification(const std::string& tar_id, const std::string& tar_comp, const std::string& attr_name)
 		{
-			std::string target;
-			target = tar_id;
-			if (!tar_comp.empty())
-				target = target + "|" + tar_comp;
-			target = target + "|" + attr_name;
-
-			for (auto it = modifications.begin(); it != modifications.end(); it++)
-			{
-				if (*it == target)
-				{
-					modifications.erase(it);
-					return;
-				}
-			}
+			auto target_string = form_target_string(tar_id, tar_comp, attr_name);
+			auto idx = find_modification(target_string);
+			if (idx != -1)
+				modifications.erase(modifications.begin() + idx);
 		}
 	};
 
