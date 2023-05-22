@@ -19,12 +19,31 @@ namespace flame
 			if (!tar_comp.empty())
 				target = target + "|" + tar_comp;
 			target = target + "|" + attr_name;
+
 			for (auto& m : modifications)
 			{
 				if (m == target)
 					return;
 			}
 			modifications.push_back(target);
+		}
+
+		void remove_modification(const std::string& tar_id, const std::string& tar_comp, const std::string& attr_name)
+		{
+			std::string target;
+			target = tar_id;
+			if (!tar_comp.empty())
+				target = target + "|" + tar_comp;
+			target = target + "|" + attr_name;
+
+			for (auto it = modifications.begin(); it != modifications.end(); it++)
+			{
+				if (*it == target)
+				{
+					modifications.erase(it);
+					return;
+				}
+			}
 		}
 	};
 

@@ -1128,7 +1128,7 @@ struct EditingEntities
 								{
 									for (auto i : seize_indices)
 										root_ins_mods.erase(root_ins_mods.begin() + i);
-									entity->save(Path::get(ins->filename));   
+									entity->save(Path::get(ins->filename), true);   
 									ins->modifications.clear();
 								}
 						});
@@ -1141,7 +1141,7 @@ struct EditingEntities
 						ImGui::OpenYesNoDialog("Are you sure to apply all modifications?", "This action cannot be redo", [entity, ins](bool yes) {
 							if (yes)
 							{
-								entity->save(Path::get(ins->filename));
+								entity->save(Path::get(ins->filename), true);
 								ins->modifications.clear();
 							}
 						});
@@ -1154,9 +1154,11 @@ struct EditingEntities
 						if (yes)
 						{
 							add_event([this, ins, entity]() {
-								entity->remove_all_children();
+								entity->name = "";
+								entity->tag = TagGeneral;
+								entity->enable = true;
 								entity->remove_all_components();
-								entity->load(ins->filename);
+								entity->load(ins->filename, true);
 								refresh();
 								return false;
 							});
