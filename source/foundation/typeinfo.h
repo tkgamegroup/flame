@@ -706,6 +706,11 @@ namespace flame
 		Metas metas;
 		void* library = nullptr;
 		std::filesystem::path source_file;
+
+		inline void* address() const
+		{
+			return (char*)library + rva;
+		}
 	};
 
 	struct TypeInfoDataBase
@@ -2921,6 +2926,7 @@ namespace flame
 			i++;
 			if (i >= chain.size())
 				return attr;
+
 			if (attr->type->tag == TagO && obj)
 			{
 				auto& vo = *(VirtualUdt<int>*)((char*)obj + attr->var_off());

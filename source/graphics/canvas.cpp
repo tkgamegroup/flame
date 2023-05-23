@@ -203,13 +203,13 @@ namespace flame
 			{
 				auto& v = buf_vtx.add_t<DrawVert>();
 
-				v.pos = path[0] + first_normal * thickness + 0.5f;
+				v.pos = path[0] + first_normal * thickness;
 				v.uv = vec2(0.f);
 				v.col = col;
 			}
 			{
 				auto& v = buf_vtx.add_t<DrawVert>();
-				v.pos = path[0] - first_normal * thickness + 0.5f;
+				v.pos = path[0] - first_normal * thickness;
 				v.uv = vec2(0.f);
 				v.col = col;
 			}
@@ -220,17 +220,18 @@ namespace flame
 				auto n = last_normal;
 				last_normal = get_normal(path[i], path[i + 1]);
 				n = normalize(n + last_normal);
+				auto t = thickness / dot(n, last_normal);
 
 				vtx_off = buf_vtx.stag_top;
 				{
 					auto& v = buf_vtx.add_t<DrawVert>();
-					v.pos = path[i] + n * thickness + 0.5f;
+					v.pos = path[i] + n * t;
 					v.uv = vec2(0.f);
 					v.col = col;
 				}
 				{
 					auto& v = buf_vtx.add_t<DrawVert>();
-					v.pos = path[i] - n * thickness + 0.5f;
+					v.pos = path[i] - n * t;
 					v.uv = vec2(0.f);
 					v.col = col;
 				}
@@ -248,13 +249,13 @@ namespace flame
 			{
 				auto& v = buf_vtx.add_t<DrawVert>();
 
-				v.pos = path[n_pts - 1] + last_normal * thickness + 0.5f;
+				v.pos = path[n_pts - 1] + last_normal * thickness;
 				v.uv = vec2(0.f);
 				v.col = col;
 			}
 			{
 				auto& v = buf_vtx.add_t<DrawVert>();
-				v.pos = path[n_pts - 1] - last_normal * thickness + 0.5f;
+				v.pos = path[n_pts - 1] - last_normal * thickness;
 				v.uv = vec2(0.f);
 				v.col = col;
 			}
@@ -271,12 +272,14 @@ namespace flame
 				auto n = get_normal(path[n_pts - 1], path[0]);
 
 				auto n1 = normalize(n + last_normal);
-				buf_vtx.item_t<DrawVert>(vtx_off + 0).pos = path[n_pts - 1] + n1 * thickness + 0.5f;
-				buf_vtx.item_t<DrawVert>(vtx_off + 1).pos = path[n_pts - 1] - n1 * thickness + 0.5f;
+				auto t1 = thickness / dot(n1, last_normal);
+				buf_vtx.item_t<DrawVert>(vtx_off + 0).pos = path[n_pts - 1] + n1 * t1;
+				buf_vtx.item_t<DrawVert>(vtx_off + 1).pos = path[n_pts - 1] - n1 * t1;
 
 				auto n2 = normalize(n + first_normal);
-				buf_vtx.item_t<DrawVert>(vtx0_off + 0).pos = path[0] + n2 * thickness + 0.5f;
-				buf_vtx.item_t<DrawVert>(vtx0_off + 1).pos = path[0] - n2 * thickness + 0.5f;
+				auto t2 = thickness / dot(n2, first_normal);
+				buf_vtx.item_t<DrawVert>(vtx0_off + 0).pos = path[0] + n2 * t2;
+				buf_vtx.item_t<DrawVert>(vtx0_off + 1).pos = path[0] - n2 * t2;
 
 				buf_idx.add(vtx_off + 0);
 				buf_idx.add(vtx_off + 1);

@@ -1,4 +1,5 @@
 #include "foundation_private.h"
+#include "typeinfo_private.h"
 #include "system_private.h"
 #include "window_private.h"
 #include "application.h"
@@ -101,6 +102,7 @@ namespace flame
 		exprtk::expression<float> expression;
 		std::string return_value;
 		exprtk_output_t output_function;
+		std::list<std::tuple<float, DataType, void*>> convertions;
 
 		ExpressionPrivate(const std::string& expression_string);
 
@@ -145,11 +147,56 @@ namespace flame
 		{
 			std::vector<std::string> variable_list;
 			unknown_symbols.get_variable_list(variable_list);
+			unknown_symbols.clear();
 			for (auto& var_name : variable_list)
 			{
-				float& v = unknown_symbols.variable_ref(var_name);
+				auto chain = SUS::split(var_name, '.');
+				auto di = find_data(sh(chain[0].c_str()));
+				if (di)
+				{
+					auto bind_data = [&](void* address, TypeInfo_Data* ti) {
+						if (ti->data_type == DataFloat)
+							symbols.add_variable(var_name, *(float*)address);
+						else
+						{
+							auto& c = convertions.emplace_back();
+							symbols.add_variable(var_name, std::get<0>(c));
+							std::get<1>(c) = ti->data_type;
+							std::get<2>(c) = address;
+						}
+					};
+
+					switch (di->type->tag)
+					{
+					case TagD:
+					{
+						auto ti = (TypeInfo_Data*)di->type;
+						bind_data(di->address(), ti);
+					}
+						break;
+					case TagU:
+					{
+						if (auto ui = di->type->retrive_ui(); ui)
+						{
+							chain.erase(chain.begin());
+							voidptr obj = di->address();
+							if (auto attr = ui->find_attribute(chain, obj); attr)
+							{
+								if (attr->type->tag == TagD)
+								{
+									auto ti = (TypeInfo_Data*)attr->type;
+									bind_data((char*)obj + attr->var_off(), ti);
+								}
+							}
+						}
+					}
+						break;
+					}
+				}
 
 			}
+
+			ok = parser.compile(expression_string, expression);
 		}
 		return ok;
 	}
@@ -161,6 +208,16 @@ namespace flame
 
 	std::string ExpressionPrivate::get_value()
 	{
+		for (auto& c : convertions)
+		{
+			switch (std::get<1>(c))
+			{
+			case DataInt:
+				std::get<0>(c) = (float)*(int*)std::get<2>(c);
+				break;
+			}
+		}
+
 		return_value.clear();
 		auto float_ret = expression.value();
 		if (!return_value.empty())
