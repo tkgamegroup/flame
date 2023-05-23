@@ -383,7 +383,11 @@ namespace flame
 			}
 		}
 		for (auto& c : children)
+		{
+			if (c->tag & TagNotSerialized)
+				continue;
 			dst->add_child(c->copy());
+		}
 		return dst;
 	}
 
