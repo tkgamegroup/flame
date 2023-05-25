@@ -1840,7 +1840,7 @@ void View_Inspector::on_draw()
 
 				if (last_selection_changed)
 				{
-					sel_ref_obj = load_preset_file(path, &info.ui);
+					sel_ref_obj = load_preset_file(path, nullptr, &info.ui);
 					sel_ref_deletor = [](void* obj) {
 						auto& info = *(PresetInfo*)sel_info;
 						info.ui->destroy_object(obj);

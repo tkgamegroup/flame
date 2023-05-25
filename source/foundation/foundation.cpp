@@ -231,7 +231,7 @@ namespace flame
 		return new ExpressionPrivate(expression_string);
 	}
 
-	void* load_preset_file(const std::filesystem::path& _filename, UdtInfo** out_ui)
+	void* load_preset_file(const std::filesystem::path& _filename, void* obj, UdtInfo** out_ui)
 	{
 		pugi::xml_document doc;
 		pugi::xml_node doc_root;
@@ -258,7 +258,8 @@ namespace flame
 			return nullptr;
 		}
 
-		auto obj = ui->create_object();
+		if (!obj)
+			obj = ui->create_object();
 		if (out_ui)
 			*out_ui = ui;
 
