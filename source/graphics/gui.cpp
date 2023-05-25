@@ -153,6 +153,46 @@ namespace ImGui
 		}
 	};
 
+	struct SelectDialog : Dialog
+	{
+		std::string prompt;
+		std::vector<std::string> options;
+		int index = -1;
+		std::function<void(int)> callback;
+
+		void draw() override
+		{
+#ifdef USE_IMGUI
+			if (ImGui::BeginPopupModal(title.c_str()))
+			{
+				if (ImGui::BeginCombo(prompt.c_str(), index == -1 ? nullptr : options[index].c_str()))
+				{
+					for (auto i = 0; i < options.size(); i++)
+					{
+						if (ImGui::Selectable(options[i].c_str()))
+							index = i;
+					}
+					ImGui::EndCombo();
+				}
+				if (ImGui::Button("OK"))
+				{
+					if (callback)
+						callback(index);
+					close();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel"))
+				{
+					if (callback)
+						callback(-1);
+					close();
+				}
+				ImGui::EndPopup();
+			}
+#endif
+		}
+	};
+
 	struct FileDialog : Dialog
 	{
 		graphics::ExplorerAbstract explorer;
@@ -229,6 +269,16 @@ namespace ImGui
 				file.close();
 			}
 		}
+		Dialog::open(dialog);
+	}
+
+	void OpenSelectDialog(const std::string title, const std::string& prompt, const std::vector<std::string>& options, const std::function<void(int)>& callback)
+	{
+		auto dialog = new SelectDialog;
+		dialog->title = title;
+		dialog->prompt = prompt;
+		dialog->options = options;
+		dialog->callback = callback;
 		Dialog::open(dialog);
 	}
 

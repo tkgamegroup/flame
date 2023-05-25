@@ -420,6 +420,9 @@ namespace flame
 		FLAME_FOUNDATION_API static Expression* create(const std::string& expression_string);
 	};
 
+	FLAME_FOUNDATION_API void* load_preset_file(const std::filesystem::path& _filename, UdtInfo** out_ui = nullptr);
+	FLAME_FOUNDATION_API void save_preset_file(const std::filesystem::path& _filename, void* obj, UdtInfo* ui);
+
 	FLAME_FOUNDATION_API extern uint frames;
 	FLAME_FOUNDATION_API extern uint fps;
 	FLAME_FOUNDATION_API extern float delta_time; // second

@@ -27,6 +27,7 @@ namespace ImGui
 	FLAME_GRAPHICS_API void OpenMessageDialog(const std::string title, const std::string& message);
 	FLAME_GRAPHICS_API void OpenYesNoDialog(const std::string title, const std::string& prompt, const std::function<void(bool)>& callback);
 	FLAME_GRAPHICS_API void OpenInputDialog(const std::string title, const std::string& prompt, const std::function<void(bool, const std::string&)>& callback, const std::string default_value = "", bool archive = false);
+	FLAME_GRAPHICS_API void OpenSelectDialog(const std::string title, const std::string& prompt, const std::vector<std::string>& options, const std::function<void(int)>& callback);
 	FLAME_GRAPHICS_API void OpenFileDialog(const std::string title, const std::function<void(bool, const std::filesystem::path&)>& callback, const std::filesystem::path& start_dir = L"");
 }
 

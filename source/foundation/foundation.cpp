@@ -1,5 +1,6 @@
 #include "foundation_private.h"
 #include "typeinfo_private.h"
+#include "typeinfo_serialize.h"
 #include "system_private.h"
 #include "window_private.h"
 #include "application.h"
@@ -228,6 +229,69 @@ namespace flame
 	Expression* Expression::create(const std::string& expression_string)
 	{
 		return new ExpressionPrivate(expression_string);
+	}
+
+	void* load_preset_file(const std::filesystem::path& _filename, UdtInfo** out_ui)
+	{
+		pugi::xml_document doc;
+		pugi::xml_node doc_root;
+
+		auto filename = Path::get(_filename);
+		if (!std::filesystem::exists(filename))
+		{
+			wprintf(L"preset does not exist: %s\n", _filename.c_str());
+			return nullptr;
+		}
+		if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("preset"))
+		{
+			wprintf(L"preset is wrong format: %s\n", _filename.c_str());
+			return nullptr;
+		}
+
+		UdtInfo* ui = nullptr;
+		if (auto a = doc_root.attribute("type"); a)
+			ui = find_udt(sh(a.value()));
+
+		if (!ui)
+		{
+			wprintf(L"preset type is not found: %s\n", _filename.c_str());
+			return nullptr;
+		}
+
+		auto obj = ui->create_object();
+		if (out_ui)
+			*out_ui = ui;
+
+		auto base_path = Path::reverse(filename).parent_path();
+		UnserializeXmlSpec spec;
+		spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = [&](const std::string& str, void* dst) {
+			*(std::filesystem::path*)dst = Path::combine(base_path, str);
+		};
+
+		unserialize_xml(*ui, doc_root, obj, spec);
+
+		return obj;
+	}
+
+	void save_preset_file(const std::filesystem::path& _filename, void* obj, UdtInfo* ui)
+	{
+		pugi::xml_document doc;
+		pugi::xml_node doc_root = doc.append_child("preset");
+		doc_root.append_attribute("type").set_value(ui->name.c_str());
+
+		auto filename = Path::get(_filename);
+
+		SerializeXmlSpec spec;
+		auto base_path = Path::reverse(filename).parent_path();
+		spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = [&](void* src)->std::string {
+			auto& path = *(std::filesystem::path*)src;
+			if (path.native().starts_with(L"0x"))
+				return "";
+			return Path::rebase(base_path, path).string();
+		};
+
+		serialize_xml(*ui, obj, doc_root, spec);
+		doc.save_file(filename.c_str());
 	}
 
 	uint frames = 0;

@@ -1579,7 +1579,7 @@ void View_Inspector::on_draw()
 {
 	static void* sel_ref_obj = nullptr;
 	static void(*sel_ref_deletor)(void*) = nullptr;
-	static auto sel_ref_info = new char[1024];
+	static auto sel_info = new char[1024];
 	auto last_selection_changed = selection_changed;
 	selection_changed = false;
 
@@ -1640,13 +1640,13 @@ void View_Inspector::on_draw()
 			}
 			else if (is_image_file(ext))
 			{
-				struct ImageRefInfo
+				struct ImageInfo
 				{
 					uint chs;
 					uint bpp;
 					bool srgb;
 				};
-				auto& info = *(ImageRefInfo*)sel_ref_info;
+				auto& info = *(ImageInfo*)sel_info;
 
 				if (last_selection_changed)
 				{
@@ -1826,6 +1826,48 @@ void View_Inspector::on_draw()
 					editing_entities.prefab_path = path;
 					if (editing_entities.manipulate().first == 2)
 						entity->save(path, true);
+				}
+			}
+			else if (ext == L".preset")
+			{
+				struct PresetInfo
+				{
+					UdtInfo* ui;
+				};
+				auto& info = *(PresetInfo*)sel_info;
+
+				static bool modified = false;
+
+				if (last_selection_changed)
+				{
+					sel_ref_obj = load_preset_file(path, &info.ui);
+					sel_ref_deletor = [](void* obj) {
+						auto& info = *(PresetInfo*)sel_info;
+						info.ui->destroy_object(obj);
+					};
+					modified = false;
+				}
+
+				if (sel_ref_obj)
+				{
+					if (modified)
+					{
+						if (ImGui::Button("Save"))
+						{
+							save_preset_file(path, sel_ref_obj, info.ui);
+							auto asset = AssetManagemant::find(path);
+							if (asset)
+								asset->lwt = std::filesystem::last_write_time(path);
+							modified = false;
+						}
+					}
+
+					editing_objects.emplace(EditingObjects(0, info.ui->name_hash, &path, 1));
+					auto changed = manipulate_udt(*info.ui, (voidptr*)&sel_ref_obj, 1).first;
+					editing_objects.pop();
+
+					if (changed)
+						modified = true;
 				}
 			}
 			else if (ext == L".pipeline")

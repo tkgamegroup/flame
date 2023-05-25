@@ -524,6 +524,8 @@ void View_Project::init()
 							material->save(fn);
 							delete material;
 						}
+						else
+							ImGui::OpenMessageDialog("Failed to create Material", "Material already existed");
 					}
 				});
 			}
@@ -538,6 +540,8 @@ void View_Project::init()
 							fn.replace_extension(L".prefab");
 							if (!std::filesystem::exists(fn))
 								app.new_prefab(fn);
+							else
+								ImGui::OpenMessageDialog("Failed to create Prefab", "Prefab already existed");
 						}
 					});
 				}
@@ -550,10 +554,49 @@ void View_Project::init()
 							fn.replace_extension(L".prefab");
 							if (!std::filesystem::exists(fn))
 								app.new_prefab(fn, "general_3d_scene"_h);
+							else
+								ImGui::OpenMessageDialog("Failed to create Prefab", "Prefab already existed");
 						}
 					});
 				}
 				ImGui::EndMenu();
+			}
+			if (ImGui::MenuItem("New Preset"))
+			{
+				ImGui::OpenInputDialog("New Preset", "File Name", [path](bool ok, const std::string& str) {
+					if (ok && !str.empty())
+					{
+						auto fn = path / str;
+						fn.replace_extension(L".preset");
+						if (!std::filesystem::exists(fn))
+						{
+							std::vector<UdtInfo*> preset_udts;
+							for (auto& ui : tidb.udts)
+							{
+								if (ui.second.name.ends_with("Preset"))
+									preset_udts.push_back(&ui.second);
+							}
+							std::sort(preset_udts.begin(), preset_udts.end(), [](const auto& a, const auto& b) {
+								return a->name < b->name;
+							});
+
+							std::vector<std::string> names(preset_udts.size());
+							for (auto i = 0; i < names.size(); i++)
+								names[i] = preset_udts[i]->name;
+							ImGui::OpenSelectDialog("New Preset", "Type", names, [preset_udts, fn](int index) {
+								if (index != -1)
+								{
+									auto ui = preset_udts[index];
+									auto obj = ui->create_object();
+									save_preset_file(fn, obj, ui);
+									ui->destroy_object(obj);
+								}
+							});
+						}
+						else
+							ImGui::OpenMessageDialog("Failed to create Preset", "Preset already existed");
+					}
+				});
 			}
 		}
 		if (in_cpp)
@@ -645,7 +688,7 @@ void View_Project::init()
 						}
 					}
 					else
-						ImGui::OpenMessageDialog("Failed", "Already have this component");
+						ImGui::OpenMessageDialog("Failed to create Component", "Already have this component");
 				});
 			}
 		}
