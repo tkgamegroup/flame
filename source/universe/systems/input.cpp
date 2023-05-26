@@ -31,7 +31,7 @@ namespace flame
 	{
 		for (auto i = 0; i < MouseButton_Count; i++)
 		{
-			if (!mbtn[i] && mbtn_temp[i])
+			if (mbtn[i] != mbtn_temp[i])
 				mbtn_duration[i] = 0.f;
 			else
 				mbtn_duration[i] += delta_time;
@@ -41,7 +41,7 @@ namespace flame
 		mpos = mpos_temp;
 		for (auto i = 0; i < KeyboardKey_Count; i++)
 		{
-			if (!kbtn[i] && kbtn_temp[i])
+			if (kbtn[i] != kbtn_temp[i])
 				kbtn_duration[i] = 0.f;
 			else
 				kbtn_duration[i] += delta_time;
@@ -52,31 +52,103 @@ namespace flame
 		key_used = false;
 		if (auto first_element = sScene::instance()->first_element; first_element)
 		{
+			auto last_hovering = hovering_receiver;
+			auto last_hovering_valid = false;
+			auto last_active = active_receiver;
+			auto last_active_valid = false;
+			hovering_receiver = nullptr;
+
+			first_element->traversal_bfs([&](EntityPtr e, int depth) {
+				if (!e->global_enable)
+					return false;
+
+				if (auto receiver = e->get_component_t<cReceiverT>(); receiver)
+				{
+					if (receiver == last_hovering)
+						last_hovering_valid = true;
+					if (receiver == last_active)
+						last_active_valid = true;
+					if (receiver->element->contains(mpos))
+						hovering_receiver = receiver;
+				}
+
+				return true;
+			});
+
+			if (!last_hovering_valid)
+				last_hovering = nullptr;
+			if (!last_active_valid)
+				last_active = nullptr;
+
+			if (last_hovering != hovering_receiver)
+			{
+				if (last_hovering)
+				{
+					if (transfer_events)
+						last_hovering->event_listeners.call("mouse_left"_h, vec2(0.f));
+				}
+				if (hovering_receiver)
+				{
+					if (transfer_events)
+						hovering_receiver->event_listeners.call("mouse_entered"_h, vec2(0.f));
+				}
+			}
+			if (hovering_receiver)
+			{
+				if (transfer_events)
+					hovering_receiver->event_listeners.call("mouse_move"_h, mdisp);
+			}
+
 			if (mpressed(Mouse_Left))
 			{
-				cReceiverPtr target = nullptr;
-
-				first_element->traversal_bfs([&](EntityPtr e, int depth) {
-					if (!e->global_enable)
-						return false;
-
-					if (auto receiver = e->get_component_t<cReceiverT>(); receiver)
-					{
-						if (receiver->element->contains(mpos))
-							target = receiver;
-					}
-
-					return true;
-				});
-
-				if (target && target->entity != first_element)
+				if (hovering_receiver && hovering_receiver->entity != first_element)
 				{
-					target->click_listeners.call();
-					if (target->click_action.type)
-						target->click_action.value().exec();
+					if (transfer_events)
+					{
+						hovering_receiver->event_listeners.call("mouse_down"_h, vec2(0.f));
+
+						active_receiver = hovering_receiver;
+					}
 
 					mouse_used = true;
 				}
+			}
+
+			if (last_active != active_receiver)
+			{
+				if (last_active)
+				{
+					if (transfer_events)
+						last_active->event_listeners.call("lost_focus"_h, vec2(0.f));
+				}
+				if (active_receiver)
+				{
+					if (transfer_events)
+						active_receiver->event_listeners.call("gain_focus"_h, vec2(0.f));
+				}
+			}
+
+			if (mreleased(Mouse_Left))
+			{
+				if (hovering_receiver == active_receiver)
+				{
+					if (transfer_events)
+					{
+						hovering_receiver->event_listeners.call("mouse_up"_h, vec2(0.f));
+
+						if (active_receiver->click_action.type)
+							active_receiver->click_action.value().exec();
+					}
+				}
+
+				if (active_receiver)
+				{
+					auto target = active_receiver;
+					active_receiver = nullptr;
+					if (transfer_events)
+						target->event_listeners.call("lost_focus"_h, vec2(0.f));
+				}
+
 			}
 		}
 	}

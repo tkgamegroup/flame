@@ -35,6 +35,7 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cElement);
 	FLAME_UNIVERSE_TYPE(cText);
 	FLAME_UNIVERSE_TYPE(cImage);
+	FLAME_UNIVERSE_TYPE(cStretchedImage);
 	FLAME_UNIVERSE_TYPE(cReceiver);
 	FLAME_UNIVERSE_TYPE(cLayout);
 	FLAME_UNIVERSE_TYPE(cDataUpdater);

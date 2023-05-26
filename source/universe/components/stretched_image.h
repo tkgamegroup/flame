@@ -5,7 +5,7 @@
 namespace flame
 {
 	// Reflect ctor
-	struct cImage : Component
+	struct cStretchedImage : Component
 	{
 		// Reflect requires
 		cElementPtr element = nullptr;
@@ -16,15 +16,20 @@ namespace flame
 		virtual void set_image_name(const std::filesystem::path& image_name) = 0;
 
 		// Reflect
-		bool auto_size = true;
+		vec4 border = vec4(0.f);
 		// Reflect
-		virtual void set_auto_size(bool v) = 0;
+		virtual void set_border(const vec4& border) = 0;
+
+		// Reflect
+		float image_scale = 1.f;
+		// Reflect
+		virtual void set_image_scale(float scale) = 0;
 
 		graphics::ImagePtr image = nullptr;
 
 		struct Create
 		{
-			virtual cImagePtr operator()(EntityPtr) = 0;
+			virtual cStretchedImagePtr operator()(EntityPtr) = 0;
 		};
 		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;

@@ -6,6 +6,7 @@ namespace flame
 {
 	struct cTextPrivate : cText
 	{
+		~cTextPrivate();
 		void on_init() override;
 		void on_active() override;
 

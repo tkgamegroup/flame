@@ -1090,14 +1090,35 @@ process:
 				}
 				s_variables->Release();
 
+				auto has_dctor = false;
+				auto has_dtor = false;
 				for (auto& fi : u.functions)
 				{
 					if (fi.name == "ctor" && fi.parameters.empty() && fi.rva)
+					{
 						fi.name = "dctor";
+						has_dctor = true;
+						u.is_pod = false;
+					}
+					if (fi.name == "dtor")
+					{
+						has_dtor = true;
+						u.is_pod = false;
+					}
 					if (fi.voff > 0)
 						u.is_pod = false;
 					if (fi.name_hash == "create"_h && fi.metas.get("static"_h))
 						u.is_pod = false;
+				}
+				if (has_dtor && !has_dctor)
+				{
+					for (auto it = u.functions.begin(); it != u.functions.end(); )
+					{
+						if (it->name == "dtor")
+							it = u.functions.erase(it);
+						else
+							it++;
+					}
 				}
 				for (auto i = 0; i < u.functions.size(); i++)
 					u.functions_map.emplace(u.functions[i].name_hash, i);

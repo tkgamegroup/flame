@@ -11,7 +11,8 @@ namespace flame
 		// Reflect requires
 		cElementPtr element = nullptr;
 
-		Listeners<void()> click_listeners;
+		Listeners<void(uint type, const vec2& value)> event_listeners;
+
 		// Reflect
 		VirtualUdt<Action>	click_action;
 

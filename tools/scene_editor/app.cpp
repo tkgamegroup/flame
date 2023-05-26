@@ -47,6 +47,7 @@ void App::init()
 	create("Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized, true, graphics_debug, graphics_configs);
 	graphics::gui_set_clear(true, vec4(0.f));
 	world->update_components = false;
+	input->transfer_events = false;
 	always_render = false;
 	renderer->mode = sRenderer::CameraLight;
 
@@ -1258,6 +1259,7 @@ bool App::cmd_play()
 			e_playing = e_prefab->copy();
 			world->root->add_child(e_playing);
 			world->update_components = true;
+			input->transfer_events = true;
 			always_render = true;
 			paused = false;
 			auto& camera_list = cCamera::list();
@@ -1271,6 +1273,7 @@ bool App::cmd_play()
 	{
 		paused = false;
 		world->update_components = true;
+		input->transfer_events = true;
 		return true;
 	}
 	return false;
@@ -1282,6 +1285,7 @@ bool App::cmd_pause()
 		return false;
 	paused = true;
 	world->update_components = false;
+	input->transfer_events = false;
 	return true;
 }
 

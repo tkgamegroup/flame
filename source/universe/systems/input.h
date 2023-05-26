@@ -18,14 +18,28 @@ namespace flame
 		bool mouse_used = false;
 		bool key_used = false;
 
+		bool transfer_events = true;
+		cReceiverPtr hovering_receiver = nullptr;
+		cReceiverPtr active_receiver = nullptr;
+
 		inline bool mpressed(MouseButton btn)
 		{
 			return mbtn[btn] && mbtn_duration[btn] == 0.f;
 		}
 
+		inline bool mreleased(MouseButton btn)
+		{
+			return !mbtn[btn] && mbtn_duration[btn] == 0.f;
+		}
+
 		inline bool kpressed(KeyboardKey key)
 		{
 			return kbtn[key] && kbtn_duration[key] == 0.f;
+		}
+
+		inline bool kreleased(KeyboardKey key)
+		{
+			return !kbtn[key] && kbtn_duration[key] == 0.f;
 		}
 
 		struct Instance
