@@ -130,11 +130,11 @@ namespace flame
 
 			if (mreleased(Mouse_Left))
 			{
-				if (hovering_receiver == active_receiver)
+				if (active_receiver && hovering_receiver == active_receiver)
 				{
 					if (transfer_events)
 					{
-						hovering_receiver->event_listeners.call("mouse_up"_h, vec2(0.f));
+						active_receiver->event_listeners.call("mouse_up"_h, vec2(0.f));
 
 						if (active_receiver->click_action.type)
 							active_receiver->click_action.value().exec();
