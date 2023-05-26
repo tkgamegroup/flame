@@ -395,13 +395,22 @@ namespace flame
 	{
 		WrongModification,
 		AttributeModification,
+		EntityAdd,
 		ComponentAdd,
 		ComponentRemove
 	};
 
-	static ModificationType get_modification_target(const std::string& target, EntityPtr e, const Attribute*& attr, void*& obj)
+	union ModificationData
+	{
+		const Attribute* attr;
+		uint hash;
+		GUID guid;
+	};
+
+	static ModificationType get_modification_target(const std::string& target, EntityPtr e, ModificationData& out, void*& obj)
 	{
 		auto sp = SUS::split(target, '|');
+
 		GUID guid;
 		guid.from_string(sp.front());
 		auto te = e->find_with_file_id(guid);
@@ -411,49 +420,48 @@ namespace flame
 			return WrongModification;
 		}
 
-		obj = nullptr;
-		UdtInfo* ui = nullptr;
+		obj = te;
+		auto ui = TypeInfo::get<Entity>()->retrive_ui();
 
 		ModificationType type = AttributeModification;
-		if (sp.back() == "add")
-			type = ComponentAdd;
-		else if (sp.back() == "remove")
-			type = ComponentRemove;
 
-		if (sp.size() == 2)
+		auto name = sp.back();
+		if (name == "add_child")
 		{
-			obj = te;
-			ui = TypeInfo::get<Entity>()->retrive_ui();
+			type = EntityAdd;
+			out.guid.from_string(sp[1]);
 		}
-		else
+		else if (name == "add")
+		{
+			type = ComponentAdd;
+			out.hash = sh(sp[1].c_str());
+		}
+		else if (name == "remove")
+		{
+			type = ComponentRemove;
+			out.hash = sh(sp[1].c_str());
+		}
+		else if (sp.size() == 3)
 		{
 			auto hash = sh(sp[1].c_str());
-			if (type == ComponentAdd)
+			obj = te->get_component(hash);
+			ui = find_udt(hash);
+			if (!obj)
 			{
-				obj = te;
-				attr = (Attribute*)hash;
+				printf("prefab modification: cannot find component %s of target %s\n", sp[1].c_str(), sp.front().c_str());
+				return WrongModification;
 			}
-			else
+			if (!ui)
 			{
-				obj = te->get_component(hash);
-				ui = find_udt(hash);
-				if (!obj)
-				{
-					printf("prefab modification: cannot find component %s of target %s\n", sp[1].c_str(), sp.front().c_str());
-					return WrongModification;
-				}
-				if (!ui)
-				{
-					printf("prefab modification: cannot find UdtInfo of %s\n", sp[1].c_str());
-					return WrongModification;
-				}
+				printf("prefab modification: cannot find UdtInfo of %s\n", sp[1].c_str());
+				return WrongModification;
 			}
 		}
 
 		if (type == AttributeModification)
 		{
-			attr = ui->find_attribute(sp.back());
-			if (!attr)
+			out.attr = ui->find_attribute(sp.back());
+			if (!out.attr)
 			{
 				if (obj == te)
 					printf("prefab modification: cannot find attribute %s of target %s\n", sp.back().c_str(), sp.front().c_str());
@@ -525,13 +533,19 @@ namespace flame
 					{
 						std::string target = n.attribute("target").value();
 
-						const Attribute* attr; void* obj;
-						auto type = get_modification_target(target, e, attr, obj);
+						ModificationData data; void* obj;
+						auto type = get_modification_target(target, e, data, obj);
 						if (type == WrongModification)
 							continue;
 
-						if (type == ComponentAdd)
-							((EntityPtr)obj)->add_component((uint)attr);
+						if (type == EntityAdd)
+						{
+							auto new_one = Entity::create();
+							new_one->file_id = data.guid;
+							((EntityPtr)obj)->add_child(new_one);
+						}
+						else if (type == ComponentAdd)
+							((EntityPtr)obj)->add_component(data.hash);
 						else if (type == ComponentRemove)
 						{
 							auto comp = (Component*)obj;
@@ -541,7 +555,7 @@ namespace flame
 						{
 							UnserializeXmlSpec spec;
 							spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = path_delegate;
-							unserialize_xml(*attr->ui, attr->var_off(), attr->type, "value", 0, attr->setter_idx, n, obj, spec);
+							unserialize_xml(*data.attr->ui, data.attr->var_off(), data.attr->type, "value", 0, data.attr->setter_idx, n, obj, spec);
 						}
 						e->prefab_instance->modifications.push_back(target);
 					}
@@ -641,8 +655,8 @@ namespace flame
 					auto n_mod = dst.append_child("modifications");
 					for (auto& target : e->prefab_instance->modifications)
 					{
-						const Attribute* attr; void* obj;
-						auto type = get_modification_target(target, e, attr, obj);
+						ModificationData data; void* obj;
+						auto type = get_modification_target(target, e, data, obj);
 						if (type == WrongModification)
 							continue;
 
@@ -652,7 +666,7 @@ namespace flame
 						{
 							SerializeXmlSpec spec;
 							spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = path_delegate;
-							serialize_xml(*attr->ui, attr->var_off(), attr->type, "value", 0, "", attr->getter_idx, obj, n, spec);
+							serialize_xml(*data.attr->ui, data.attr->var_off(), data.attr->type, "value", 0, "", data.attr->getter_idx, obj, n, spec);
 						}
 					}
 				}
