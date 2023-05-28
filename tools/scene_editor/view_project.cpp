@@ -598,6 +598,18 @@ void View_Project::init()
 					}
 				});
 			}
+			if (ImGui::MenuItem("Import Scenes"))
+			{
+				ImGui::OpenFileDialog("Select Directory", [path](bool ok, const std::filesystem::path& dir) {
+					if (ok)
+					{
+						if (std::filesystem::exists(dir) && std::filesystem::is_directory(dir))
+						{
+
+						}
+					}
+				});
+			}
 		}
 		if (in_cpp)
 		{
@@ -962,6 +974,7 @@ void View_Project::on_draw()
 		}
 		if (!changed_assets.empty())
 		{
+			// empty the original references to thoese assets, and then assign again
 			if (app.e_prefab)
 			{
 				std::vector<std::tuple<void*, Attribute*, std::filesystem::path>> affected_attributes;

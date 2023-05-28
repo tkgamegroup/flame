@@ -283,24 +283,38 @@ namespace flame
 		{
 			std::transform(s.begin(), s.end(), s.begin(), [](uint c) {
 				return std::tolower(c);
-				});
+			});
+		}
+
+		static std::basic_string<CH> get_lowered(const std::basic_string<CH>& s)
+		{
+			auto ret = s;
+			to_lower(ret);
+			return ret;
 		}
 
 		static void to_upper(std::basic_string<CH>& s)
 		{
 			std::transform(s.begin(), s.end(), s.begin(), [](uint c) {
 				return std::toupper(c);
-				});
+			});
+		}
+
+		static std::basic_string<CH> get_uppered(const std::basic_string<CH>& s)
+		{
+			auto ret = s;
+			to_upper(ret);
+			return ret;
 		}
 
 		static void ltrim(std::basic_string<CH>& s)
 		{
 			s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](char ch) {
 				return !std::isspace(ch);
-				}));
+			}));
 		}
 
-		static std::string get_ltrimed(const std::basic_string<CH>& s)
+		static std::basic_string<CH> get_ltrimed(const std::basic_string<CH>& s)
 		{
 			auto ret = s;
 			ltrim(ret);
@@ -311,10 +325,10 @@ namespace flame
 		{
 			s.erase(std::find_if(s.rbegin(), s.rend(), [](char ch) {
 				return !std::isspace(ch);
-				}).base(), s.end());
+			}).base(), s.end());
 		}
 
-		static std::string get_rtrimed(const std::basic_string<CH>& s)
+		static std::basic_string<CH> get_rtrimed(const std::basic_string<CH>& s)
 		{
 			auto ret = s;
 			rtrim(ret);
@@ -327,7 +341,7 @@ namespace flame
 			rtrim(s);
 		}
 
-		static std::string get_trimed(const std::basic_string<CH>& s)
+		static std::basic_string<CH> get_trimed(const std::basic_string<CH>& s)
 		{
 			auto ret = s;
 			trim(ret);
@@ -473,7 +487,7 @@ namespace flame
 		{
 			return std::find_if(s.begin(), s.end(), [](char ch) {
 				return !std::isspace(ch);
-				}) - s.begin();
+			}) - s.begin();
 		}
 	};
 
