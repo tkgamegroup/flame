@@ -104,11 +104,12 @@ void View_Hierarchy::on_draw()
 			}
 		}
 
-		auto read_drop_entities = [e]()->std::vector<EntityPtr> {
+		auto e_dst = e;
+		auto read_drop_entities = [e_dst]()->std::vector<EntityPtr> {
 			std::vector<EntityPtr> ret;
 			if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
 			{
-				if (get_root_prefab_instance(e))
+				if (get_root_prefab_instance(e_dst))
 				{
 					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 					return ret;
@@ -119,13 +120,16 @@ void View_Hierarchy::on_draw()
 					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 					return ret;
 				}
-				if (is_ancestor(e, e))
+				if (is_ancestor(e, e_dst))
+				{
+					app.open_message_dialog("Cannot reparent", "The entity you select is the ancestor of the destination");
 					return ret;
+				}
 				ret.push_back(e);
 			}
-			if (auto payload = ImGui::AcceptDragDropPayload("Entities"); payload)
+			else if (auto payload = ImGui::AcceptDragDropPayload("Entities"); payload)
 			{
-				if (get_root_prefab_instance(e))
+				if (get_root_prefab_instance(e_dst))
 				{
 					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 					return ret;
@@ -153,15 +157,18 @@ void View_Hierarchy::on_draw()
 				}
 				for (auto i = 0; i < es.n; i++)
 				{
-					if (is_ancestor(es.p[i], e))
+					if (is_ancestor(es.p[i], e_dst))
+					{
+						app.open_message_dialog("Cannot reparent", "One or more entities you select are the ancestors of the destination");
 						return ret;
+					}
 				}
 				for (auto i = 0; i < es.n; i++)
 					ret.push_back(es.p[i]);
 			}
-			if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
+			else if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
 			{
-				if (get_root_prefab_instance(e))
+				if (get_root_prefab_instance(e_dst))
 				{
 					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 					return ret;

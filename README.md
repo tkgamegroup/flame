@@ -27,6 +27,8 @@ An ECS 3D-Game-Engine.
 
 - SPIRV-Cross https://github.com/KhronosGroup/SPIRV-Cross
 
+- exprtk https://github.com/ArashPartow/exprtk
+
 - Assimp https://github.com/assimp/assimp
 
 - FBX SDK https://www.autodesk.com/developer-network/platform-technologies/fbx-sdk-2020-2-1
