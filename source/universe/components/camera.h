@@ -16,7 +16,7 @@ namespace flame
 		float zNear = 1.f;
 		// Reflect
 		float zFar = 1000.f;
-
+		// x / y
 		float aspect = 1.f;
 
 		mat4 view_mat;

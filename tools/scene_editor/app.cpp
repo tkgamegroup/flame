@@ -134,6 +134,24 @@ void App::init()
 				view_scene.focus_to_selected();
 			if (ImGui::MenuItem("Selected To Focus (G)"))
 				view_scene.selected_to_focus();
+			if (ImGui::BeginMenu("Camera"))
+			{
+				if (ImGui::MenuItem("Reset"))
+					view_scene.reset_camera(""_h);
+				if (ImGui::MenuItem("X+"))
+					view_scene.reset_camera("X+"_h);
+				if (ImGui::MenuItem("X-"))
+					view_scene.reset_camera("X-"_h);
+				if (ImGui::MenuItem("Y+"))
+					view_scene.reset_camera("Y+"_h);
+				if (ImGui::MenuItem("Y-"))
+					view_scene.reset_camera("Y-"_h);
+				if (ImGui::MenuItem("Z+"))
+					view_scene.reset_camera("Z+"_h);
+				if (ImGui::MenuItem("Z-"))
+					view_scene.reset_camera("Z-"_h);
+				ImGui::EndMenu();
+			}
 			ImGui::Separator();
 			if (ImGui::BeginMenu("NavMesh"))
 			{

@@ -33,14 +33,69 @@ vec3 View_Scene::camera_target_pos()
 	return camera_node->global_pos() - camera_node->z_axis() * camera_zoom;
 }
 
+void View_Scene::reset_camera(uint op)
+{
+	auto camera_node = curr_camera()->node;
+
+	switch (op)
+	{
+	case ""_h:
+		camera_zoom = 5.f;
+		camera_node->set_qut(quat(1.f, 0.f, 0.f, 0.f));
+		camera_node->set_pos(vec3(0.f, 0.f, 5.f));
+		break;
+	case "X+"_h:
+		camera_node->set_qut(angleAxis(radians(+90.f), vec3(0.f, 1.f, 0.f)));
+		camera_node->set_pos(vec3(+camera_zoom, 0.f, 0.f));
+		break;
+	case "X-"_h:
+		camera_node->set_qut(angleAxis(radians(-90.f), vec3(0.f, 1.f, 0.f)));
+		camera_node->set_pos(vec3(-camera_zoom, 0.f, 0.f));
+		break;
+	case "Y+"_h:
+		camera_node->set_qut(angleAxis(radians(-90.f), vec3(1.f, 0.f, 0.f)));
+		camera_node->set_pos(vec3(0.f, +camera_zoom, 0.f));
+		break;
+	case "Y-"_h:
+		camera_node->set_qut(angleAxis(radians(+90.f), vec3(1.f, 0.f, 0.f)));
+		camera_node->set_pos(vec3(0.f, -camera_zoom, 0.f));
+		break;
+	case "Z+"_h:
+		camera_node->set_qut(quat(1.f, 0.f, 0.f, 0.f));
+		camera_node->set_pos(vec3(0.f, 0.f, +camera_zoom));
+		break;
+	case "Z-"_h:
+		camera_node->set_qut(angleAxis(radians(180.f), vec3(0.f, 1.f, 0.f)));
+		camera_node->set_pos(vec3(0.f, 0.f, -camera_zoom));
+		break;
+	}
+}
+
 void View_Scene::focus_to_selected()
 {
 	if (selection.type == Selection::tEntity)
 	{
 		if (auto node = selection.as_entity()->node(); node)
 		{
-			auto camera_node = curr_camera()->node;
-			camera_node->set_pos(node->global_pos() + camera_node->z_axis() * camera_zoom);
+			AABB bounds;
+			node->entity->forward_traversal([&](EntityPtr e) {
+				if (auto node = e->node(); node)
+				{
+					if (!node->bounds.invalid())
+						bounds.expand(node->bounds);
+				}
+			});
+
+			auto camera = curr_camera();
+			auto camera_node = camera->node;
+			if (!bounds.invalid())
+			{
+				auto pos = fit_camera_to_object(mat3(camera_node->g_qut), camera->fovy, camera->aspect, bounds);
+				camera_zoom = distance(pos, bounds.center());
+				camera_node->set_pos(pos);
+			}
+			else
+				camera_node->set_pos(node->global_pos() + camera_node->z_axis() * camera_zoom);
 		}
 	}
 }
@@ -549,13 +604,13 @@ void View_Scene::on_draw()
 						if (ImGui::IsKeyPressed(Keyboard_R))
 							app.tool = ToolScale;
 					}
-					if (io.KeysDown[Keyboard_F])
-						focus_to_selected();
 					if (ImGui::IsKeyPressed(Keyboard_Del))
 						app.cmd_delete_entities(selection.get_entities());
-					if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_D))
-						app.cmd_duplicate_entities(selection.get_entities());
 				}
+				if (!io.KeysDown[Keyboard_Ctrl] && !ImGui::IsKeyDown(Keyboard_Shift) && io.KeysDown[Keyboard_F])
+					focus_to_selected();
+				if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_D))
+					app.cmd_duplicate_entities(selection.get_entities());
 				if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && io.KeysDown[Keyboard_Shift])
 				{
 					if (io.KeysDown[Keyboard_G])

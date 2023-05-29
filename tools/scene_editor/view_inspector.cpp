@@ -414,6 +414,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				vec4 color = *(cvec4*)data;
 				color /= 255.f;
 				changed = ImGui::ColorEdit4(display_name.c_str(), &color[0]);
+				if (ImGui::IsItemActivated())
+				{
+					before_editing_values.resize(num);
+					before_editing_values[0] = str(*(cvec4*)data);
+					for (auto i = 1; i < num; i++)
+						before_editing_values[i] = str(*(cvec4*)type->get_value(objs[i], offset, getter));
+				}
+				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
 				ImGui::SameLine();
 				static vec4 copied_color;
 				if (ImGui::Button("C"))
@@ -427,14 +435,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				}
 				if (changed)
 					*(cvec4*)data = color * 255.f;
-				if (ImGui::IsItemActivated())
-				{
-					before_editing_values.resize(num);
-					before_editing_values[0] = str(*(cvec4*)data);
-					for (auto i = 1; i < num; i++)
-						before_editing_values[i] = str(*(cvec4*)type->get_value(objs[i], offset, getter));
-				}
-				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
 				if (changed)
 				{
 					if (!direct_io)
@@ -1620,8 +1620,8 @@ void View_Inspector::on_draw()
 				ImGui::Checkbox("Copy Textures", &copy_textures);
 				if (copy_textures)
 					ImGui::InputText("Texture Format", &texture_fmt);
-				if (ImGui::Button("Convert"))
-					graphics::Model::convert(path, rotation, scaling, only_animation, copy_textures, texture_fmt);
+				if (ImGui::Button("Import"))
+					graphics::import_scene(path, L"", rotation, scaling, only_animation, copy_textures, texture_fmt);
 			}
 			else if (ext == L".fmod")
 			{
