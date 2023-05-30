@@ -537,7 +537,7 @@ void App::init()
 					add_event([this]() {
 						cmd_play();
 						return false;
-						}, 0.f, 3);
+					}, 0.f, 3);
 				}
 				if (tool_button(graphics::FontAtlas::icon_s("play"_h)))
 					cmd_play();
@@ -873,7 +873,7 @@ endforeach()
 
 void App::open_project(const std::filesystem::path& path)
 {
-	if (!std::filesystem::exists(path) || !std::filesystem::is_directory(path))
+	if (!std::filesystem::is_directory(path))
 		return;
 	if (e_playing)
 		return;

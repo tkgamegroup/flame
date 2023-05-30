@@ -92,22 +92,23 @@ namespace flame
 			{
 				inline static auto size = 64.f;
 
-				std::filesystem::path	path;
-				std::string				label;
-				float					label_width;
-				graphics::ImagePtr		icon = nullptr;
+				std::filesystem::path				path;
+				std::string							label;
+				float								label_width;
+				graphics::ImagePtr					icon	= nullptr;
+				void(*icon_releaser)(graphics::Image*)		= nullptr;
 
 				bool has_children = false;
 
-				Item(const std::filesystem::path& path, const std::string& _text = "") :
+				Item(const std::filesystem::path& path, const std::string& text = "") :
 					path(path)
 				{
-					label = !_text.empty() ? _text : path.filename().string();
+					label = !text.empty() ? text : path.filename().string();
 #ifdef USE_IMGUI
 					auto font = ImGui::GetFont();
 					auto font_size = ImGui::GetFontSize();
 					const char* clipped_end;
-					label_width = font->CalcTextSizeA(font_size, size, 0.f, &*label.begin(), label.c_str() + label.size(), &clipped_end).x;
+					label_width = font->CalcTextSizeA(font_size, size, 0.f, label.c_str(), label.c_str() + label.size(), &clipped_end).x;
 					if (clipped_end != label.c_str() + label.size())
 					{
 						auto str = label.substr(0, clipped_end - label.c_str());
@@ -135,8 +136,13 @@ namespace flame
 
 				~Item()
 				{
-					if (icon)
-						release_icon((Image*)icon);
+					if (!icon_releaser)
+					{
+						if (icon)
+							release_icon((Image*)icon);
+					}
+					else
+						icon_releaser((Image*)icon);
 				}
 			};
 
@@ -275,10 +281,10 @@ namespace flame
 							}
 							std::sort(dirs.begin(), dirs.end(), [](const auto& a, const auto& b) {
 								return a->path < b->path;
-								});
+							});
 							std::sort(files.begin(), files.end(), [](const auto& a, const auto& b) {
 								return a->path < b->path;
-								});
+							});
 							for (auto i : dirs)
 							{
 								if (item_created_callback)

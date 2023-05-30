@@ -9,7 +9,10 @@
 #include <flame/graphics/material.h>
 #include <flame/graphics/model.h>
 #include <flame/graphics/shader.h>
+#include <flame/graphics/extension.h>
 #include <flame/graphics/debug.h>
+#include <flame/universe/components/node.h>
+#include <flame/universe/components/camera.h>
 
 View_Project view_project;
 static auto selection_changed = false;
@@ -36,6 +39,106 @@ static std::filesystem::path get_unique_filename(const std::filesystem::path& pr
 		p += ext;
 	}
 	return p;
+}
+
+static void update_thumbnail(const std::filesystem::path& path)
+{
+	auto ext = path.extension();
+	if (ext == L".prefab")
+	{
+		add_event([path]() {
+			app.e_prefab->remove_from_parent(false);
+			auto e = Entity::create();
+			e->add_component_t<cNode>();
+			auto e_camera = Entity::create();
+			e_camera->add_component_t<cNode>();
+			e_camera->add_component_t<cCamera>();
+			e->add_child(e_camera);
+			auto e_prefab = Entity::create();
+			e_prefab->load(path);
+			e->add_child(e_prefab);
+
+			app.world->root->add_child(e);
+			app.world->update_components = true;
+
+			// first update the scene to get the bounds
+			app.scene->update();
+			AABB bounds;
+			e_prefab->forward_traversal([&](EntityPtr e) {
+				if (auto node = e->node(); node)
+				{
+					if (!node->bounds.invalid())
+						bounds.expand(node->bounds);
+				}
+			});
+			auto camera_node = e_camera->node();
+			auto camera = e_camera->get_component_t<cCamera>();
+			if (!bounds.invalid())
+			{
+				auto pos = fit_camera_to_object(mat3(camera_node->g_qut), camera->fovy, camera->aspect, bounds);
+				camera_node->set_pos(pos);
+			}
+			// second update the scene to get the camera on the right place
+			app.scene->update();
+
+			auto previous_camera = app.renderer->camera;
+			auto previous_render_mode = app.renderer->mode;
+			app.renderer->camera = camera;
+			app.renderer->mode = sRenderer::CameraLight;
+			auto thumbnail = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(128, 128, 1), graphics::ImageUsageAttachment | 
+				graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
+			{
+				auto iv = thumbnail->get_view();
+				app.renderer->set_targets({ &iv, 1 }, graphics::ImageLayoutShaderReadOnly);
+				graphics::InstanceCommandBuffer cb;
+				app.renderer->render(0, cb.get());
+				cb->image_barrier(thumbnail, {}, graphics::ImageLayoutTransferSrc);
+				cb.excute();
+			}
+			auto thumbnails_dir = path.parent_path() / L".thumbnails";
+			if (!std::filesystem::exists(thumbnails_dir))
+				std::filesystem::create_directories(thumbnails_dir);
+			auto thumbnail_path = thumbnails_dir / (path.filename().wstring() + L".png");
+			thumbnail->save(thumbnail_path);
+			delete thumbnail;
+
+			app.renderer->camera = previous_camera;
+			app.renderer->mode = previous_render_mode;
+			if (view_scene.render_tar)
+			{
+				auto iv = view_scene.render_tar->get_view();
+				app.renderer->set_targets({ &iv, 1 }, graphics::ImageLayoutShaderReadOnly);
+			}
+			else
+				app.renderer->set_targets({}, graphics::ImageLayoutShaderReadOnly);
+
+			e->remove_from_parent();
+			app.world->root->add_child(app.e_prefab);
+			app.world->update_components = false;
+
+			for (auto& item : view_project.explorer.items)
+			{
+				if (item->path == path)
+				{
+					if (!item->icon_releaser)
+					{
+						if (item->icon)
+							graphics::release_icon(item->icon);
+					}
+					else
+						item->icon_releaser(item->icon);
+
+					item->icon = graphics::Image::get(thumbnail_path);
+					item->icon_releaser = [](graphics::Image* img) {
+						graphics::Image::release(img);
+					};
+
+					break;
+				}
+			}
+			return false;
+		});
+	}
 }
 
 View_Project::View_Project() :
@@ -312,6 +415,10 @@ void View_Project::init()
 					}
 				};
 			}
+		}
+		if (ImGui::MenuItem("Refresh"))
+		{
+			update_thumbnail(path);
 		}
 	};
 	explorer.folder_context_menu_callback = [this](const std::filesystem::path& path) {
@@ -603,7 +710,7 @@ void View_Project::init()
 				ImGui::OpenFileDialog("Select Directory", [path](bool ok, const std::filesystem::path& dir) {
 					if (ok)
 					{
-						if (std::filesystem::exists(dir) && std::filesystem::is_directory(dir))
+						if (std::filesystem::is_directory(dir))
 						{
 
 						}
@@ -704,6 +811,13 @@ void View_Project::init()
 				});
 			}
 		}
+		if (ImGui::MenuItem("Refresh"))
+		{
+			for (auto& it : std::filesystem::directory_iterator(path))
+			{
+				update_thumbnail(it.path());
+			}
+		}
 	};
 	explorer.folder_drop_callback = [this](const std::filesystem::path& path) {
 		if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
@@ -731,14 +845,31 @@ void View_Project::init()
 	};
 	using ExplorerItem = graphics::ExplorerAbstract::Item;
 	explorer.item_created_callback = [](ExplorerItem* item) {
+		if (auto thumbnails_dir = item->path.parent_path() / L".thumbnails"; std::filesystem::is_directory(thumbnails_dir))
+		{
+			if (auto thumbnail_path = thumbnails_dir / (item->path.filename().wstring() + L".png"); std::filesystem::exists(thumbnail_path))
+			{
+				item->icon = graphics::Image::get(thumbnail_path);
+				item->icon_releaser = [](graphics::Image* img) {
+					graphics::Image::release(img);
+				};
+			}
+		}
 		auto ext = item->path.extension();
 		if (ext == L".prefab")
-			item->icon = icon_prefab;
+		{
+			if (!item->icon)
+				item->icon = icon_prefab;
+		}
 		else if (ext == L".fmat")
-			item->icon = icon_material;
+		{
+			if (!item->icon)
+				item->icon = icon_material;
+		}
 		else if (ext == L".fmod")
 		{
-			item->icon = icon_model;
+			if (!item->icon)
+				item->icon = icon_model;
 			item->has_children = true;
 		}
 	};
