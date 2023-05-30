@@ -47,9 +47,8 @@ static void update_thumbnail(const std::filesystem::path& path)
 	if (ext == L".prefab")
 	{
 		add_event([path]() {
-			app.e_prefab->remove_from_parent(false);
 			auto e = Entity::create();
-			e->add_component_t<cNode>();
+			e->add_component_t<cNode>()->set_pos(vec3(2000.f));
 			auto e_camera = Entity::create();
 			e_camera->add_component_t<cNode>();
 			e_camera->add_component_t<cCamera>();
@@ -88,12 +87,14 @@ static void update_thumbnail(const std::filesystem::path& path)
 			auto thumbnail = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(128, 128, 1), graphics::ImageUsageAttachment | 
 				graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
 			{
+				graphics::Debug::start_capture_frame();
 				auto iv = thumbnail->get_view();
 				app.renderer->set_targets({ &iv, 1 }, graphics::ImageLayoutShaderReadOnly);
 				graphics::InstanceCommandBuffer cb;
 				app.renderer->render(0, cb.get());
 				cb->image_barrier(thumbnail, {}, graphics::ImageLayoutTransferSrc);
 				cb.excute();
+				graphics::Debug::end_capture_frame();
 			}
 			auto thumbnails_dir = path.parent_path() / L".thumbnails";
 			if (!std::filesystem::exists(thumbnails_dir))
@@ -113,7 +114,6 @@ static void update_thumbnail(const std::filesystem::path& path)
 				app.renderer->set_targets({}, graphics::ImageLayoutShaderReadOnly);
 
 			e->remove_from_parent();
-			app.world->root->add_child(app.e_prefab);
 			app.world->update_components = false;
 
 			for (auto& item : view_project.explorer.items)

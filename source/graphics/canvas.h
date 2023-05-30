@@ -15,6 +15,9 @@ namespace flame
 
 			virtual ~Canvas() {}
 
+			virtual void set_targets(std::span<ImageViewPtr> targets) = 0;
+			virtual void bind_window_targets() = 0;
+
 			virtual void add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col) = 0;
 			virtual void add_rect_filled(const vec2& a, const vec2& b, const cvec4& col) = 0;
 			virtual void add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness = 0.f, float border = 0.f) = 0;
@@ -23,7 +26,6 @@ namespace flame
 			struct Create
 			{
 				virtual CanvasPtr operator()(WindowPtr window) = 0;
-				virtual CanvasPtr operator()(WindowPtr window, std::span<ImageViewPtr> targets) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 		};

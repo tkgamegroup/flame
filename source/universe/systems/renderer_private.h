@@ -15,6 +15,7 @@ namespace flame
 
 		sRendererPrivate();
 		sRendererPrivate(graphics::WindowPtr w);
+		~sRendererPrivate();
 
 		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout) override;
 		void bind_window_targets() override;

@@ -52,16 +52,19 @@ namespace flame
 			RenderpassPtr rp_load = nullptr;
 			VertexBuffer buf_vtx;
 			IndexBuffer<> buf_idx;
-			FontAtlasPtr main_font_atlas = nullptr;
+			FontAtlasPtr default_font_atlas = nullptr;
 			ImagePtr main_img = nullptr;
 			std::unique_ptr<DescriptorSetT> main_ds;
 
 			std::vector<DrawCmd> draw_cmds;
 			std::vector<vec2> path;
 
-			CanvasPrivate(WindowPtr window, bool use_window_targets = true, std::span<ImageViewPtr> targets = {});
+			CanvasPrivate(WindowPtr window);
 			~CanvasPrivate();
-			void set_targets(std::span<ImageViewPtr> targets);
+
+			void create_rp(Format format);
+			void set_targets(std::span<ImageViewPtr> targets) override;
+			void bind_window_targets() override;
 			void reset();
 			DrawCmd& get_bmp_cmd(DescriptorSetPtr ds);
 			DrawCmd& get_sdf_cmd(DescriptorSetPtr ds, float sdf_scale, float thickness, float border);

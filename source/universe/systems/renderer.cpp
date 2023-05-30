@@ -712,13 +712,18 @@ namespace flame
 		}, 0, 0);
 	}
 
+	sRendererPrivate::~sRendererPrivate()
+	{
+		delete canvas;
+	}
+
 	void sRendererPrivate::set_targets(std::span<graphics::ImageViewPtr> _targets, graphics::ImageLayout _final_layout)
 	{
 		iv_tars.assign(_targets.begin(), _targets.end());
 
-		if (canvas)
-			delete canvas;
-		canvas = graphics::Canvas::create(window, _targets);
+		if (!canvas)
+			canvas = graphics::Canvas::create(window);
+		canvas->set_targets(_targets);
 		canvas->clear_framebuffer = false;
 
 		if (_targets.empty())
@@ -3003,7 +3008,7 @@ namespace flame
 			auto& windows = graphics::Window::get_list();
 			if (windows.empty())
 			{
-				printf("node renderer system needs graphics window\n");
+				printf("renderer system needs graphics window\n");
 				return nullptr;
 			}
 

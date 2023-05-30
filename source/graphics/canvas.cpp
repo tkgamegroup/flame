@@ -9,7 +9,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		CanvasPrivate::CanvasPrivate(WindowPtr _window, bool use_window_targets, std::span<ImageViewPtr> targets)
+		CanvasPrivate::CanvasPrivate(WindowPtr _window)
 		{
 			window = _window;
 
@@ -81,33 +81,7 @@ namespace flame
 				reset();
 			}, "Canvas"_h, gui_idx != -1 ? gui_idx : -1);
 
-			{
-				std::vector<std::string> defines;
-				defines.push_back("col_fmt=" + TypeInfo::serialize_t(use_window_targets ? Swapchain::format : Format_R8G8B8A8_UNORM));
-				defines.push_back("final_layout=ShaderReadOnly");
-				rp = Renderpass::get(L"flame\\shaders\\color.rp", defines);
-				defines.push_back("load_op=Load");
-				defines.push_back("initia_layout=Attachment");
-				rp_load = Renderpass::get(L"flame\\shaders\\color.rp", defines);
-			}
-
-			if (use_window_targets)
-			{
-				window->native->resize_listeners.add([this](const uvec2& sz) {
-					graphics::Queue::get()->wait_idle();
-					iv_tars.clear();
-					std::vector<graphics::ImageViewPtr> ivs;
-					for (auto& i : window->swapchain->images)
-						ivs.push_back(i->get_view());
-					set_targets(ivs);
-				});
-				std::vector<graphics::ImageViewPtr> ivs;
-				for (auto& i : window->swapchain->images)
-					ivs.push_back(i->get_view());
-				set_targets(ivs);
-			}
-			else
-				set_targets(targets);
+			create_rp(Format_R8G8B8A8_UNORM);
 
 			pl = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", { "rp=" + str(rp) });
 			pl_sdf = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", { "rp=" + str(rp), "frag:MSDF" });
@@ -115,10 +89,10 @@ namespace flame
 			buf_vtx.create(sizeof(DrawVert), 360000);
 			buf_idx.create(240000);
 			const auto font_size = 14;
-			main_font_atlas = FontAtlas::get({ L"flame\\fonts\\OpenSans-Regular.ttf" });
-			main_font_atlas->get_glyph(0, font_size); // get empty slot at first place to allow embed a white pixel in it
-			main_font_atlas->init_latin_glyphs(font_size);
-			main_img = main_font_atlas->image.get();
+			default_font_atlas = FontAtlas::get({ L"flame\\fonts\\OpenSans-Regular.ttf" });
+			default_font_atlas->get_glyph(0, font_size); // get empty slot at first place to allow embed a white pixel in it
+			default_font_atlas->init_latin_glyphs(font_size);
+			main_img = default_font_atlas->image.get();
 			main_img->set_pixel(0, 0, 0, 0, vec4(1.f));
 			main_img->upload_pixels(0, 0, 1, 1, 0, 0);
 			main_img->change_layout(ImageLayoutShaderReadOnly);
@@ -132,9 +106,20 @@ namespace flame
 		CanvasPrivate::~CanvasPrivate()
 		{
 			window->renderers.remove("Canvas"_h);
-			
+
 			GraphicsPipeline::release(pl);
-			FontAtlas::release(main_font_atlas);
+			FontAtlas::release(default_font_atlas);
+		}
+
+		void CanvasPrivate::create_rp(Format format)
+		{
+			std::vector<std::string> defines;
+			defines.push_back("col_fmt=" + TypeInfo::serialize_t(format));
+			defines.push_back("final_layout=ShaderReadOnly");
+			rp = Renderpass::get(L"flame\\shaders\\color.rp", defines);
+			defines.push_back("load_op=Load");
+			defines.push_back("initia_layout=Attachment");
+			rp_load = Renderpass::get(L"flame\\shaders\\color.rp", defines);
 		}
 
 		void CanvasPrivate::set_targets(std::span<ImageViewPtr> targets)
@@ -142,8 +127,27 @@ namespace flame
 			iv_tars.assign(targets.begin(), targets.end());
 			for (auto fb : fb_tars)
 				delete fb;
+			fb_tars.clear();
 			for (auto iv : iv_tars)
 				fb_tars.push_back(Framebuffer::create(rp, iv));
+		}
+
+		void CanvasPrivate::bind_window_targets()
+		{
+			create_rp(Swapchain::format);
+
+			window->native->resize_listeners.add([this](const uvec2& sz) {
+				graphics::Queue::get()->wait_idle();
+				iv_tars.clear();
+				std::vector<graphics::ImageViewPtr> ivs;
+				for (auto& i : window->swapchain->images)
+					ivs.push_back(i->get_view());
+				set_targets(ivs);
+			});
+			std::vector<graphics::ImageViewPtr> ivs;
+			for (auto& i : window->swapchain->images)
+				ivs.push_back(i->get_view());
+			set_targets(ivs);
 		}
 
 		void CanvasPrivate::reset()
@@ -350,11 +354,11 @@ namespace flame
 
 		void CanvasPrivate::add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness, float border)
 		{
-			font_atlas = font_atlas ? font_atlas : main_font_atlas;
+			font_atlas = font_atlas ? font_atlas : default_font_atlas;
 			thickness = clamp(thickness, -1.f, +1.f);
 			border = clamp(border, 0.f, 0.25f);
 			auto scale = font_atlas->get_scale(font_size);
-			auto ds = font_atlas == main_font_atlas ? main_ds.get() : font_atlas->view->get_shader_read_src(nullptr);
+			auto ds = font_atlas == default_font_atlas ? main_ds.get() : font_atlas->view->get_shader_read_src(nullptr);
 			auto& cmd = font_atlas->type == FontAtlasBitmap ? get_bmp_cmd(ds) : get_sdf_cmd(ds, scale, thickness, border);
 
 			auto p = pos;
@@ -402,11 +406,6 @@ namespace flame
 			CanvasPtr operator()(WindowPtr window) override
 			{
 				return new CanvasPrivate(window);
-			}
-
-			CanvasPtr operator()(WindowPtr window, std::span<ImageViewPtr> targets) override
-			{
-				return new CanvasPrivate(window, false, targets);
 			}
 		}Canvas_create;
 		Canvas::Create& Canvas::create = Canvas_create;

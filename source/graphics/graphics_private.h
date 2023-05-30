@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../foundation/system.h"
 #include "graphics.h"
 
 #define NOMINMAX
@@ -18,7 +19,14 @@ namespace flame
 		{
 			if (res != VK_SUCCESS)
 			{
+				printf("=======================\n");
 				printf("graphics error: %d\n", res);
+				printf("STACK TRACE:\n");
+				auto frames = get_call_frames();
+				auto frames_infos = get_call_frames_infos(frames);
+				for (auto& info : frames_infos)
+					printf("%s() %s:%d\n", info.function.c_str(), info.file.c_str(), info.lineno);
+				printf("=======================\n");
 				assert(0);
 			}
 		}
