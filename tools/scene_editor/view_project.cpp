@@ -48,7 +48,7 @@ static void update_thumbnail(const std::filesystem::path& path)
 	{
 		add_event([path]() {
 			auto e = Entity::create();
-			e->add_component_t<cNode>()->set_pos(vec3(2000.f));
+			e->add_component_t<cNode>()->set_pos(vec3(-2000.f));
 			auto e_camera = Entity::create();
 			e_camera->add_component_t<cNode>();
 			e_camera->add_component_t<cCamera>();

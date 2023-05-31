@@ -31,6 +31,7 @@ namespace flame
 				if (auto attr = ui.find_attribute(SUS::split(sp.back(), '.'), obj); attr && attr->type->tag == TagD)
 				{
 					auto expression = Expression::create(item.second);
+					expression->set_variable("time", &time);
 					if (expression->compile())
 					{
 						std::get<0>(dst) = attr;
@@ -46,8 +47,15 @@ namespace flame
 		data_changed("items"_h);
 	}
 
+	void cDataUpdaterPrivate::start()
+	{
+		time = 0.f;
+	}
+
 	void cDataUpdaterPrivate::update()
 	{
+		time += delta_time;
+
 		for (auto& e : expressions)
 		{
 			if (std::get<0>(e))
