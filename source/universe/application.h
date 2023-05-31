@@ -26,8 +26,8 @@ struct UniverseApplication : GraphicsApplication
 		GraphicsApplication::create(title, size, styles, use_gui, graphics_debug, graphics_configs);
 
 		world.reset(World::create());
+		scene = (sScenePtr)world->add_system<sScene>();
 		input	 = (sInputPtr)world->add_system<sInput>();
-		scene	 = (sScenePtr)world->add_system<sScene>();
 		renderer = (sRendererPtr)world->add_system<sRenderer>();
 		audio	 = (sAudioPtr)world->add_system<sAudio>();
 	}

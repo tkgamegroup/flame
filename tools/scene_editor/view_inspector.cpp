@@ -629,6 +629,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			{
 				if (vo.data)
 					vo.destroy();
+				vo.type = nullptr;
 				changed = true;
 				app.prefab_unsaved = true;
 			}
