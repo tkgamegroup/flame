@@ -626,7 +626,7 @@ namespace flame
 		if (xext / aspect > yext)
 			yext = xext / aspect;
 		auto l = (yext * 0.5f) / tan(radians(fovy * 0.5f)) + (transformed_bounds.b.z - transformed_bounds.a.z) * 0.5f;
-		return transformed_bounds.center() + camera_rotation[2] * l;
+		return object_bounds.center() + camera_rotation[2] * l;
 	}
 
 	struct Curve

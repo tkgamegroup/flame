@@ -8,9 +8,16 @@ namespace flame
 
 	struct cDataUpdaterPrivate : cDataUpdater
 	{
+		struct Modifier
+		{
+			const Attribute* attr = nullptr;
+			void* obj = nullptr;
+			std::unique_ptr<Expression> expr = nullptr;
+		};
+
 		float time = 0.f;
 
-		std::vector<std::tuple<const Attribute*, void*, std::unique_ptr<Expression>>> expressions;
+		std::vector<Modifier> modifiers;
 
 		void set_items(const std::vector<std::pair<std::string, std::string>>& items) override;
 

@@ -10,14 +10,11 @@ namespace flame
 			return;
 		items = _items;
 
-		expressions.clear();
-		expressions.resize(items.size());
+		modifiers.clear();
+		modifiers.resize(items.size());
 		for (auto i = 0; i < items.size(); ++i)
 		{
-			auto& dst = expressions[i];
-			std::get<0>(dst) = nullptr;
-			std::get<1>(dst) = nullptr;
-			std::get<2>(dst).reset();
+			auto& dst = modifiers[i];
 			
 			auto& item = items[i];
 			auto sp = SUS::split(item.first, '|');
@@ -30,16 +27,16 @@ namespace flame
 				voidptr obj = comp;
 				if (auto attr = ui.find_attribute(SUS::split(sp.back(), '.'), obj); attr && attr->type->tag == TagD)
 				{
-					auto expression = Expression::create(item.second);
-					expression->set_variable("time", &time);
-					if (expression->compile())
+					auto expr = Expression::create(item.second);
+					expr->set_variable("time", &time);
+					if (expr->compile())
 					{
-						std::get<0>(dst) = attr;
-						std::get<1>(dst) = obj;
-						std::get<2>(dst).reset(expression);
+						dst.attr = attr;
+						dst.obj = obj;
+						dst.expr.reset(expr);
 					}
 					else
-						delete expression;
+						delete expr;
 				}
 			}
 		}
@@ -50,18 +47,30 @@ namespace flame
 	void cDataUpdaterPrivate::start()
 	{
 		time = 0.f;
+
+		for (auto& m : modifiers)
+		{
+			if (m.attr)
+			{
+				auto value = m.expr->get_value();
+				m.attr->unserialize(m.obj, value);
+			}
+		}
 	}
 
 	void cDataUpdaterPrivate::update()
 	{
 		time += delta_time;
 
-		for (auto& e : expressions)
+		for (auto& m : modifiers)
 		{
-			if (std::get<0>(e))
+			if (m.attr)
 			{
-				auto value = std::get<2>(e)->get_value();
-				std::get<0>(e)->unserialize(std::get<1>(e), value);
+				if (m.expr->update_bindings())
+				{
+					auto value = m.expr->get_value(false);
+					m.attr->unserialize(m.obj, value);
+				}
 			}
 		}
 	}

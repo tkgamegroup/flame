@@ -99,11 +99,18 @@ namespace flame
 
 	struct ExpressionPrivate : Expression
 	{
+		struct Convertion
+		{
+			float v;
+			DataType type;
+			void* p;
+		};
+
 		exprtk::symbol_table<float> symbols;
 		exprtk::expression<float> expression;
 		std::string return_value;
 		exprtk_output_t output_function;
-		std::list<std::tuple<float, DataType, void*>> convertions;
+		std::list<Convertion> convertions;
 
 		ExpressionPrivate(const std::string& expression_string);
 
@@ -111,7 +118,8 @@ namespace flame
 		void set_variable(const std::string& name, float* variable) override;
 		void set_const_string(const std::string& name, const std::string& value) override;
 		bool compile() override;
-		std::string get_value() override;
+		bool update_bindings() override;
+		std::string get_value(bool update_bindings) override;
 	};
 
 	ExpressionPrivate::ExpressionPrivate(const std::string& _expression_string)
@@ -157,13 +165,11 @@ namespace flame
 				{
 					auto bind_data = [&](void* address, TypeInfo_Data* ti) {
 						if (ti->data_type == DataFloat)
-							symbols.add_variable(var_name, *(float*)address);
-						else
 						{
 							auto& c = convertions.emplace_back();
-							symbols.add_variable(var_name, std::get<0>(c));
-							std::get<1>(c) = ti->data_type;
-							std::get<2>(c) = address;
+							symbols.add_variable(var_name, c.v);
+							c.type = ti->data_type;
+							c.p = address;
 						}
 					};
 
@@ -207,17 +213,42 @@ namespace flame
 		symbols.create_stringvar(name, value);
 	}
 
-	std::string ExpressionPrivate::get_value()
+	bool ExpressionPrivate::update_bindings()
 	{
+		auto changed = false;
 		for (auto& c : convertions)
 		{
-			switch (std::get<1>(c))
+			switch (c.type)
 			{
 			case DataInt:
-				std::get<0>(c) = (float)*(int*)std::get<2>(c);
+			{
+				auto v = (float)*(int*)c.p;
+				if (c.v != v)
+				{
+					c.v = v;
+					changed = true;
+				}
+			}
+				break;
+			case DataFloat:
+			{
+				auto v = *(float*)c.p;
+				if (c.v != v)
+				{
+					c.v = *(float*)c.p;
+					changed = true;
+				}
+			}
 				break;
 			}
 		}
+		return changed;
+	}
+
+	std::string ExpressionPrivate::get_value(bool _update_bindings)
+	{
+		if (_update_bindings)
+			update_bindings();
 
 		return_value.clear();
 		auto float_ret = expression.value();

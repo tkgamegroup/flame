@@ -113,7 +113,7 @@ namespace flame
 			element->set_x(padding.x);
 			break;
 		case ElementAlignEnd1:
-			element->set_x(parent_ext.x - padding.x - element->ext.x);
+			element->set_x(parent_ext.x - padding.z - element->ext.x);
 			break;
 		case ElementAlignFill:
 			element->set_w(parent_ext.x - padding.x + padding.z);
@@ -129,7 +129,7 @@ namespace flame
 			element->set_y(padding.y);
 			break;
 		case ElementAlignEnd1:
-			element->set_y(parent_ext.y - padding.y - element->ext.y);
+			element->set_y(parent_ext.y - padding.w - element->ext.y);
 			break;
 		case ElementAlignFill:
 			element->set_h(parent_ext.y - (padding.y + padding.w));
