@@ -142,7 +142,7 @@ namespace flame
 		}
 		virtual bool remove_component(uint hash) = 0;
 		template<typename T>
-		inline bool remove_component()
+		inline bool remove_component_t()
 		{
 			return remove_component(th<T>());
 		}
@@ -303,7 +303,7 @@ namespace flame
 			return ret;
 		}
 
-		virtual EntityPtr copy(EntityPtr dst = nullptr) = 0;
+		virtual EntityPtr duplicate(EntityPtr dst = nullptr) = 0;
 
 		virtual bool load(const std::filesystem::path& filename, bool only_root = false) = 0;
 		virtual bool save(const std::filesystem::path& filename, bool only_root = false) = 0;

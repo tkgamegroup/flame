@@ -143,6 +143,7 @@ namespace flame
 				return (MaterialFlags)flags;
 			}
 
+			virtual void copy_from(MaterialPtr oth) = 0;
 			virtual void save(const std::filesystem::path& filename) = 0;
 
 			struct Create

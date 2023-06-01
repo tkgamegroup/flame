@@ -351,7 +351,7 @@ namespace flame
 		children.clear();
 	}
 
-	EntityPtr EntityPrivate::copy(EntityPtr dst)
+	EntityPtr EntityPrivate::duplicate(EntityPtr dst)
 	{
 		if (!dst)
 		{
@@ -386,7 +386,7 @@ namespace flame
 		{
 			if (c->tag & TagNotSerialized)
 				continue;
-			dst->add_child(c->copy());
+			dst->add_child(c->duplicate());
 		}
 		return dst;
 	}

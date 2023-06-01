@@ -218,6 +218,12 @@ namespace flame
 			data_changed("textures"_h);
 		}
 
+		void MaterialPrivate::copy_from(MaterialPtr oth)
+		{
+			auto ti = TypeInfo::get<decltype(*this)>();
+			ti->copy(this, oth);
+		}
+
 		void MaterialPrivate::save(const std::filesystem::path& filename)
 		{
 			auto base_path = Path::reverse(filename).parent_path();

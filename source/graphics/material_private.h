@@ -35,6 +35,7 @@ namespace flame
 
 			void set_textures(const std::vector<Texture>& textures) override;
 
+			void copy_from(MaterialPtr oth) override;
 			void save(const std::filesystem::path& filename) override;
 		};
 

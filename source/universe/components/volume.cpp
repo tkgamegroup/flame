@@ -70,26 +70,37 @@ namespace flame
 	{
 		if (material_name == name)
 			return;
-		if (!material_name.empty())
-			AssetManagemant::release(Path::get(material_name));
-		material_name = name;
-		if (!material_name.empty())
-			AssetManagemant::get(Path::get(material_name));
 
-		auto _material = !material_name.empty() ? graphics::Material::get(material_name) : nullptr;
-		if (material != _material)
+		auto old_one = material;
+		if (!material_name.empty())
+		{
+			if (!material_name.native().starts_with(L"0x"))
+				AssetManagemant::release(Path::get(material_name));
+			else
+				old_one = nullptr;
+		}
+		material_name = name;
+		material = nullptr;
+		if (!material_name.empty())
+		{
+			if (!material_name.native().starts_with(L"0x"))
+			{
+				AssetManagemant::get(Path::get(material_name));
+				material = !material_name.empty() ? graphics::Material::get(material_name) : nullptr;
+			}
+			else
+				material = (graphics::MaterialPtr)s2u_hex<uint64>(material_name.string());
+		}
+
+		if (material != old_one)
 		{
 			if (material_res_id != -1)
 				sRenderer::instance()->release_material_res(material_res_id);
-			if (material)
-				graphics::Material::release(material);
-			material = _material;
 			material_res_id = material ? sRenderer::instance()->get_material_res(material, -1) : -1;
 		}
-		else if (_material)
-			graphics::Material::release(_material);
+		if (old_one)
+			graphics::Material::release(old_one);
 
-		dirty = true;
 		node->mark_drawing_dirty();
 		data_changed("material_name"_h);
 	}
@@ -112,12 +123,18 @@ namespace flame
 		graphics::Queue::get()->wait_idle();
 		if (material_res_id != -1)
 			sRenderer::instance()->release_material_res(material_res_id);
-		if (!data_map_name.empty())
+		if (!data_map_name.empty() && !data_map_name.native().starts_with(L"0x"))
+		{
 			AssetManagemant::release(Path::get(data_map_name));
-		if (data_map && !data_map_name.native().starts_with(L"0x"))
-			graphics::Image::release(data_map);
-		if (material)
-			graphics::Material::release(material);
+			if (data_map)
+				graphics::Image::release(data_map);
+		}
+		if (!material_name.empty() && !material_name.native().starts_with(L"0x"))
+		{
+			AssetManagemant::release(Path::get(material_name));
+			if (material)
+				graphics::Material::release(material);
+		}
 	}
 
 #include "../systems/marching_cubes_lookup.h"

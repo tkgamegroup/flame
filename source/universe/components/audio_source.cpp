@@ -53,6 +53,11 @@ namespace flame
 
 	cAudioSourcePrivate::~cAudioSourcePrivate()
 	{
+		for (auto& n : buffer_names)
+		{
+			if (!n.first.empty())
+				AssetManagemant::release(Path::get(n.first));
+		}
 #if USE_AUDIO_MODULE
 		for (auto& src : sources)
 		{

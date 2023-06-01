@@ -7,6 +7,12 @@ namespace flame
 {
 	std::vector<cRendererSettingsPtr> settings;
 
+	cRendererSettingsPrivate::~cRendererSettingsPrivate()
+	{
+		if (!sky_map_name.empty())
+			AssetManagemant::release(Path::get(sky_map_name));
+	}
+
 	void cRendererSettingsPrivate::set_sky_map_name(const std::filesystem::path& name)
 	{
 		if (sky_map_name == name)

@@ -8,6 +8,13 @@ namespace flame
 	cStretchedImagePrivate::~cStretchedImagePrivate()
 	{
 		element->drawers.remove("stretched_image"_h);
+
+		if (!image_name.empty() && !image_name.native().starts_with(L"0x"))
+		{
+			AssetManagemant::release(Path::get(image_name));
+			if (image)
+				graphics::Image::release(image);
+		}
 	}
 
 	void cStretchedImagePrivate::on_init()
@@ -70,12 +77,6 @@ namespace flame
 			else
 				image = (graphics::ImagePtr)s2u_hex<uint64>(image_name.string());
 		}
-
-		if (!image_name.empty())
-			AssetManagemant::release(Path::get(image_name));
-		image_name = name;
-		if (!image_name.empty())
-			AssetManagemant::get(Path::get(image_name));
 
 		if (image != old_one)
 			element->mark_drawing_dirty();

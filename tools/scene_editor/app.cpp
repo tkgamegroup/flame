@@ -1257,7 +1257,7 @@ bool App::cmd_duplicate_entities(std::vector<EntityPtr>&& es)
 	std::vector<EntityPtr> new_entities;
 	for (auto t : es)
 	{
-		auto new_one = t->copy();
+		auto new_one = t->duplicate();
 		new_entities.push_back(new_one);
 		t->parent->add_child(new_one);
 	}
@@ -1274,7 +1274,7 @@ bool App::cmd_play()
 	{
 		add_event([this]() {
 			e_prefab->remove_from_parent(false);
-			e_playing = e_prefab->copy();
+			e_playing = e_prefab->duplicate();
 			world->root->add_child(e_playing);
 			world->update_components = true;
 			input->transfer_events = true;
