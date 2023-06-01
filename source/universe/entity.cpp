@@ -493,7 +493,14 @@ namespace flame
 
 		auto base_path = Path::reverse(filename).parent_path();
 		auto path_delegate = [&](const std::string& str, void* dst) {
-			*(std::filesystem::path*)dst = Path::combine(base_path, str);
+			auto sp = SUS::split(str, '#');
+			auto p = Path::combine(base_path, sp.front());
+			if (sp.size() > 1)
+			{
+				p += L'#';
+				p += sp.back();
+			}
+			*(std::filesystem::path*)dst = p;
 		};
 
 		UnserializeXmlSpec spec;

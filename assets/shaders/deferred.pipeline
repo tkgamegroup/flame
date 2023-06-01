@@ -56,6 +56,12 @@ void main()
 		o_color = vec4(shading(world_pos.xyz, N, metallic, albedo, spec, roughness, 1.0/*ao*/, emissive, (flags & MaterialFlagReceiveSSR) != 0), 1.0);
 	}
 	else
+	{
+	#ifndef NO_SKY
 		o_color = vec4(texture(sky_map, cube_coord(normalize(mat3(camera.view_inv) * vec3(view_pos)))).rgb * lighting.sky_intensity, 1.0);
+	#else
+		o_color = vec4(0.25, 0.2, 0.5, 1.0);
+	#endif
+	}
 }
 @

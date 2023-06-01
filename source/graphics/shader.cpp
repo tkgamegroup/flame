@@ -865,7 +865,6 @@ namespace flame
 			if (buf_updates.empty() && img_updates.empty())
 				return;
 
-			Queue::get()->wait_idle();
 			std::vector<VkDescriptorBufferInfo> vk_buf_infos;
 			std::vector<VkDescriptorImageInfo> vk_img_infos;
 			std::vector<VkWriteDescriptorSet> vk_writes;

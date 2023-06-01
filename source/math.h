@@ -618,7 +618,7 @@ namespace flame
 		return true;
 	}
 
-	inline vec3 fit_camera_to_object(const mat3& camera_rotation, float fovy, float aspect, const AABB& object_bounds)
+	inline vec3 fit_camera_to_object(const mat3& camera_rotation, float fovy, float zNear, float aspect, const AABB& object_bounds)
 	{
 		auto transformed_bounds = AABB(object_bounds.get_points(inverse(camera_rotation)));
 		auto xext = transformed_bounds.b.x - transformed_bounds.a.x;
@@ -626,6 +626,7 @@ namespace flame
 		if (xext / aspect > yext)
 			yext = xext / aspect;
 		auto l = (yext * 0.5f) / tan(radians(fovy * 0.5f)) + (transformed_bounds.b.z - transformed_bounds.a.z) * 0.5f;
+		l = max(l, zNear + 0.05f);
 		return object_bounds.center() + camera_rotation[2] * l;
 	}
 

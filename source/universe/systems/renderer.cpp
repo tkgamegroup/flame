@@ -369,6 +369,9 @@ namespace flame
 		std::vector<std::string> defines;
 		switch (modifier)
 		{
+		case "NO_SKY"_h:
+			defines.push_back("frag:NO_SKY");
+			break;
 		case "ALBEDO_DATA"_h:
 			defines.push_back("frag:ALBEDO_DATA");
 			break;
@@ -807,9 +810,11 @@ namespace flame
 	{
 		if (sky_map == _sky_map && sky_irr_map == _sky_irr_map && sky_rad_map == _sky_rad_map)
 			return;
+
 		sky_map = _sky_map;
 		sky_irr_map = _sky_irr_map;
 		sky_rad_map = _sky_rad_map;
+		graphics::Queue::get()->wait_idle();
 		ds_lighting->set_image("sky_map"_h, 0, sky_map ? sky_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
 		ds_lighting->set_image("sky_irr_map"_h, 0, sky_irr_map ? sky_irr_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
 		ds_lighting->set_image("sky_rad_map"_h, 0, sky_rad_map ? sky_rad_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
@@ -1102,6 +1107,7 @@ namespace flame
 		res.sp = sp;
 		res.ref = 1;
 
+		graphics::Queue::get()->wait_idle();
 		ds_material->set_image("material_maps"_h, id, iv, sp);
 		ds_material->update();
 
@@ -1703,6 +1709,7 @@ namespace flame
 		else
 		{
 			terrain_instances.release_item(id);
+			graphics::Queue::get()->wait_idle();
 			ds_instance->set_image("terrain_height_maps"_h, id, img_black->get_view(), nullptr);
 			ds_instance->set_image("terrain_normal_maps"_h, id, img_black->get_view(), nullptr);
 			ds_instance->set_image("terrain_tangent_maps"_h, id, img_black->get_view(), nullptr);
@@ -1723,6 +1730,7 @@ namespace flame
 		ins.child("grass_channel"_h).as<uint>() = grass_channel;
 		ins.child("grass_texture_id"_h).as<int>() = grass_texture_id;
 
+		graphics::Queue::get()->wait_idle();
 		ds_instance->set_image("terrain_height_maps"_h, id, height_map, nullptr);
 		ds_instance->set_image("terrain_normal_maps"_h, id, normal_map, nullptr);
 		ds_instance->set_image("terrain_tangent_maps"_h, id, tangent_map, nullptr);
@@ -1780,6 +1788,7 @@ namespace flame
 		else
 		{
 			volume_instances.release_item(id);
+			graphics::Queue::get()->wait_idle();
 			ds_instance->set_image("volume_data_maps"_h, id, img_black3D->get_view(), nullptr);
 			ds_instance->update();
 		}
@@ -1793,6 +1802,7 @@ namespace flame
 		ins.child("extent"_h).as<vec3>() = extent;
 		ins.child("blocks"_h).as<uvec3>() = blocks;
 
+		graphics::Queue::get()->wait_idle();
 		ds_instance->set_image("volume_data_maps"_h, id, data_map, graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToEdge, graphics::BorderColorBlack));
 		ds_instance->update();
 	}
@@ -1987,7 +1997,7 @@ namespace flame
 				buf_lighting.mark_dirty_c("dir_lights_count"_h).as<uint>() = n_dir_lights;
 				buf_lighting.mark_dirty_c("pt_lights_count"_h).as<uint>() = n_pt_lights;
 			}
-			else if (mode == CameraLight)
+			else if (mode == CameraLight || mode == CameraLightButNoSky)
 			{
 				auto ins = buf_lighting.mark_dirty_ci("dir_lights"_h, camera_light_id);
 				ins.child("dir"_h).as<vec3>() = camera->view_mat_inv[2];
@@ -2293,6 +2303,7 @@ namespace flame
 			auto pl_mod = 0;
 			switch (mode)
 			{
+			case CameraLightButNoSky: pl_mod = "NO_SKY"_h; break;
 			case AlbedoData: pl_mod = "ALBEDO_DATA"_h; break;
 			case NormalData: pl_mod = "NORMAL_DATA"_h; break;
 			case MetallicData: pl_mod = "METALLIC_DATA"_h; break;
@@ -2448,7 +2459,7 @@ namespace flame
 
 		// post processing
 		cb->begin_debug_label("Post Processing");
-		if (mode == Shaded || mode == CameraLight && post_processing_enable)
+		if ((mode == Shaded || mode == CameraLight || mode == CameraLightButNoSky) && post_processing_enable)
 		{
 			if (ssao_enable)
 			{

@@ -5,13 +5,13 @@
 
 #ifdef HAS_RENDERDOC
 #include RENDERDOC_HEADER
-RENDERDOC_API_1_5_0* rdoc_api = nullptr;
+RENDERDOC_API_1_6_0* rdoc_api = nullptr;
 void get_rdoc_api()
 {
 	if (auto mod = GetModuleHandleA("renderdoc.dll"))
 	{
 		auto get_api = (pRENDERDOC_GetAPI)GetProcAddress(mod, "RENDERDOC_GetAPI");
-		assert(get_api(eRENDERDOC_API_Version_1_5_0, (void**)&rdoc_api) == 1);
+		assert(get_api(eRENDERDOC_API_Version_1_6_0, (void**)&rdoc_api) == 1);
 	}
 }
 #endif

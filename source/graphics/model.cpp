@@ -432,6 +432,7 @@ namespace flame
 			auto models_destination = destination / L"models";
 			auto animations_destination = destination / L"animations";
 			auto ext = SUW::get_lowered(filename.extension().wstring());
+			filename.replace_extension(L".fmod");
 			auto model_name = filename.filename().string();
 
 			std::vector<std::unique_ptr<MaterialT>> materials;
@@ -1170,12 +1171,12 @@ namespace flame
 								{
 									auto n_mesh = n_components.append_child("item");
 									n_mesh.append_attribute("type_name").set_value("flame::cMesh");
-									n_mesh.append_attribute("mesh_name").set_value((model_name + "#mesh" + str(base_mesh_idx)).c_str());
+									n_mesh.append_attribute("mesh_name").set_value(("models\\" + model_name + "#mesh" + str(base_mesh_idx)).c_str());
 									std::string material_name = "default";
 									if (auto fbx_mat = src->GetMaterial(0); fbx_mat)
 									{
 										if (auto mat = (MaterialPtr)fbx_mat->GetUserDataPtr(); mat)
-											material_name = mat->filename.filename().string();
+											material_name = "materials\\" + mat->filename.filename().string();
 									}
 									n_mesh.append_attribute("material_name").set_value(material_name.c_str());
 								}
@@ -1192,12 +1193,12 @@ namespace flame
 										n_node.append_attribute("type_name").set_value("flame::cNode");
 										auto n_mesh = n_components.append_child("item");
 										n_mesh.append_attribute("type_name").set_value("flame::cMesh");
-										n_mesh.append_attribute("mesh_name").set_value((model_name + "#mesh" + str(base_mesh_idx + i)).c_str());
+										n_mesh.append_attribute("mesh_name").set_value(("models\\" + model_name + "#mesh" + str(base_mesh_idx + i)).c_str());
 										std::string material_name = "default";
 										if (auto fbx_mat = src->GetMaterial(i); fbx_mat)
 										{
 											if (auto mat = (MaterialPtr)fbx_mat->GetUserDataPtr(); mat)
-												material_name = mat->filename.filename().string();
+												material_name = "materials\\" + mat->filename.filename().string();
 										}
 										n_mesh.append_attribute("material_name").set_value(material_name.c_str());
 									}
@@ -1232,9 +1233,10 @@ namespace flame
 
 				if (!std::filesystem::exists(models_destination))
 					std::filesystem::create_directories(models_destination);
-				auto fn = models_destination / (model_name + ".fmod");
+				auto fn = models_destination / model_name;
 				model->save(fn, false);
-				fn = parent_path / (model_name + ".prefab");
+				fn = destination / model_name;
+				fn.replace_extension(L".prefab");
 				doc_prefab.save_file(fn.c_str());
 
 				scene->Destroy(true);
@@ -1488,8 +1490,8 @@ namespace flame
 							auto n_mesh = n_components.append_child("item");
 							n_mesh.append_attribute("type_name").set_value("flame::cMesh");
 							auto mesh_idx = src->mMeshes[0];
-							n_mesh.append_attribute("mesh_name").set_value((model_name + "#mesh" + str(mesh_idx)).c_str());
-							n_mesh.append_attribute("material_name").set_value(materials[scene->mMeshes[mesh_idx]->mMaterialIndex]->filename.string().c_str());
+							n_mesh.append_attribute("mesh_name").set_value(("models\\" + model_name + "#mesh" + str(mesh_idx)).c_str());
+							n_mesh.append_attribute("material_name").set_value(("materials\\" + (materials[scene->mMeshes[mesh_idx]->mMaterialIndex]->filename).string()).c_str());
 							if (name == "mesh_collider")
 							{
 								auto n_rigid = n_components.append_child("item");
@@ -1514,9 +1516,10 @@ namespace flame
 
 				if (!std::filesystem::exists(models_destination))
 					std::filesystem::create_directories(models_destination);
-				auto fn = models_destination / (model_name + ".fmod");
+				auto fn = models_destination / model_name;
 				model->save(fn, false);
-				fn = parent_path / (model_name + ".prefab");
+				fn = destination / model_name;
+				fn.replace_extension(L".prefab");
 				doc_prefab.save_file(fn.c_str());
 #endif
 			}

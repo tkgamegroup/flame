@@ -90,7 +90,7 @@ void View_Scene::focus_to_selected()
 			auto camera_node = camera->node;
 			if (!bounds.invalid())
 			{
-				auto pos = fit_camera_to_object(mat3(camera_node->g_qut), camera->fovy, camera->aspect, bounds);
+				auto pos = fit_camera_to_object(mat3(camera_node->g_qut), camera->fovy, camera->zNear, camera->aspect, bounds);
 				camera_zoom = distance(pos, bounds.center());
 				camera_node->set_pos(pos);
 			}

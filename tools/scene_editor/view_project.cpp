@@ -48,13 +48,19 @@ static void update_thumbnail(const std::filesystem::path& path)
 	{
 		add_event([path]() {
 			auto e = Entity::create();
-			e->add_component_t<cNode>()->set_pos(vec3(-2000.f));
+			e->add_component_t<cNode>();
 			auto e_camera = Entity::create();
-			e_camera->add_component_t<cNode>();
+			{
+				auto n = e_camera->add_component_t<cNode>();
+				auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
+				n->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
+			}
 			e_camera->add_component_t<cCamera>();
 			e->add_child(e_camera);
 			auto e_prefab = Entity::create();
 			e_prefab->load(path);
+			if (auto node = e_prefab->node(); node)
+				node->set_pos(vec3(-2000.f));
 			e->add_child(e_prefab);
 
 			app.world->root->add_child(e);
@@ -74,7 +80,7 @@ static void update_thumbnail(const std::filesystem::path& path)
 			auto camera = e_camera->get_component_t<cCamera>();
 			if (!bounds.invalid())
 			{
-				auto pos = fit_camera_to_object(mat3(camera_node->g_qut), camera->fovy, camera->aspect, bounds);
+				auto pos = fit_camera_to_object(mat3(camera_node->g_qut), camera->fovy, camera->zNear, camera->aspect, bounds);
 				camera_node->set_pos(pos);
 			}
 			// second update the scene to get the camera on the right place
@@ -83,7 +89,7 @@ static void update_thumbnail(const std::filesystem::path& path)
 			auto previous_camera = app.renderer->camera;
 			auto previous_render_mode = app.renderer->mode;
 			app.renderer->camera = camera;
-			app.renderer->mode = sRenderer::CameraLight;
+			app.renderer->mode = sRenderer::CameraLightButNoSky;
 			auto thumbnail = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(128, 128, 1), graphics::ImageUsageAttachment | 
 				graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
 			{
@@ -707,13 +713,78 @@ void View_Project::init()
 			}
 			if (ImGui::MenuItem("Import Scenes"))
 			{
-				ImGui::OpenFileDialog("Select Directory", [path](bool ok, const std::filesystem::path& dir) {
+				ImGui::OpenFileDialog("Select File or Directory", [path](bool ok, const std::filesystem::path& src_path) {
 					if (ok)
 					{
-						if (std::filesystem::is_directory(dir))
+						struct ImportSceneDialog : ImGui::Dialog
 						{
+							vec3 rotation = vec3(0.f);
+							vec3 scaling = vec3(1.f);
+							bool only_animation = false;
+							bool copy_textures = false;
+							std::string texture_format = "";
 
+							std::filesystem::path destination;
+							std::vector<std::filesystem::path> files;
+
+							static void open(const std::filesystem::path& _destination, const std::vector<std::filesystem::path>& _files)
+							{
+								auto dialog = new ImportSceneDialog;
+								dialog->title = "Import Scene";
+								dialog->destination = _destination;
+								dialog->files = _files;
+								Dialog::open(dialog);
+							}
+
+							void draw() override
+							{
+								bool open = true;
+								if (ImGui::Begin(title.c_str(), &open))
+								{
+									ImGui::TextUnformatted("Import Files:");
+									for (auto& file : files)
+										ImGui::TextUnformatted(file.string().c_str());
+									ImGui::TextUnformatted("Into:");
+									ImGui::TextUnformatted(destination.string().c_str());
+									ImGui::Separator();
+
+									ImGui::InputFloat3("Rotation", &rotation[0]);
+									ImGui::InputFloat3("Scaling", &scaling[0]);
+									ImGui::Checkbox("Only Animation", &only_animation);
+									ImGui::Checkbox("Copy Textures", &copy_textures);
+									if (copy_textures)
+									{
+										ImGui::InputText("Texture Format", &texture_format);
+										ImGui::SameLine();
+										ImGui::TextUnformatted("(empty for original format)");
+									}
+
+									if (ImGui::Button("OK"))
+									{
+										for (auto& file : files)
+											graphics::import_scene(file, destination, rotation, scaling, only_animation, copy_textures, texture_format);
+										close();
+									}
+									ImGui::SameLine();
+									if (ImGui::Button("Cancel"))
+										close();
+
+									ImGui::End();
+								}
+								if (!open)
+									close();
+							}
+						};
+
+						if (std::filesystem::is_directory(src_path))
+						{
+							std::vector<std::filesystem::path> files;
+							for (auto& e : std::filesystem::directory_iterator(src_path))
+								files.push_back(e.path());
+							ImportSceneDialog::open(path, files);
 						}
+						else if (std::filesystem::is_regular_file(src_path))
+							ImportSceneDialog::open(path, { src_path });
 					}
 				});
 			}

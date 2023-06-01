@@ -14,6 +14,7 @@ namespace flame
 		{
 			Shaded,
 			CameraLight,
+			CameraLightButNoSky,
 			AlbedoData,
 			NormalData,
 			MetallicData,
