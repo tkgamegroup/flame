@@ -216,8 +216,8 @@ namespace flame
 
 	std::vector<cNodePtr> camera_culled_nodes;
 	DrawData draw_data;
-	MeshBatcher opa_batcher;
-	MeshBatcher trs_batcher;
+	MeshBatcher gbuffer_batcher;
+	MeshBatcher transparent_batcher;
 	DirShadow dir_shadows[DirShadowMaxCount];
 	PointShadow pt_shadows[PtShadowMaxCount];
 
@@ -278,7 +278,7 @@ namespace flame
 				defines.push_back("pll=" + str(pll_fwd));
 				defines.push_back("cull_mode=" + TypeInfo::serialize_t(graphics::CullModeFront));
 			}
-			else if (res.mat->opaque)
+			else if (res.mat->render_queue == graphics::RenderQueue::Opaque)
 			{
 				defines.push_back("rp=" + str(rp_gbuf));
 				defines.push_back("pll=" + str(pll_gbuf));
@@ -288,9 +288,6 @@ namespace flame
 			{
 				defines.push_back("rp=" + str(rp_fwd));
 				defines.push_back("pll=" + str(pll_fwd));
-				defines.push_back("a2c=true");
-				if (res.mat->receive_ssr)
-					defines.push_back("frag:RECEIVE_SSR");
 			}
 			break;
 		case "grass_field"_h:
@@ -466,8 +463,8 @@ namespace flame
 		device->set_object_debug_name(img_black.get(), "Black");
 		img_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
 		device->set_object_debug_name(img_white.get(), "White");
-		img_cube_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
-		img_cube_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
+		img_cube_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1));
+		img_cube_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1));
 		img_black3D.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
 		img_white3D.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
 		img_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
@@ -567,10 +564,10 @@ namespace flame
 		imgs_pt_shadow.resize(dsl_lighting->get_binding("pt_shadow_maps"_h).count);
 		for (auto& i : imgs_pt_shadow)
 		{
-			i.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize / 2U, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
+			i.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize / 2U, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1));
 			i->change_layout(graphics::ImageLayoutShaderReadOnly);
 		}
-		img_pt_shadow_back.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize / 2U, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, 6, graphics::SampleCount_1, true));
+		img_pt_shadow_back.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize / 2U, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1));
 		ds_lighting->set_buffer("Lighting"_h, 0, buf_lighting.buf.get());
 		for (auto i = 0; i < imgs_dir_shadow.size(); i++)
 			ds_lighting->set_image("dir_shadow_maps"_h, i, imgs_dir_shadow[i]->get_view({ 0, 1, 0, DirShadowMaxLevels }), sp_shadow);
@@ -628,8 +625,8 @@ namespace flame
 		if (use_mesh_shader)
 			pl_MC_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep) });
 
-		opa_batcher.buf_idr.create(mesh_instances.capacity);
-		trs_batcher.buf_idr.create(mesh_instances.capacity);
+		gbuffer_batcher.buf_idr.create(mesh_instances.capacity);
+		transparent_batcher.buf_idr.create(mesh_instances.capacity);
 		for (auto& s : dir_shadows)
 		{
 			for (auto i = 0; i < DirShadowMaxLevels; i++)
@@ -1282,7 +1279,7 @@ namespace flame
 				auto& src = res.mat->textures[i];
 				if (!src.filename.empty())
 				{
-					if (auto image = graphics::Image::get(src.filename, src.srgb, src.auto_mipmap, i == res.mat->alpha_map ? res.mat->alpha_test : 0.f); image)
+					if (auto image = graphics::Image::get(src.filename); image)
 					{
 						res.texs[i].second = image;
 						res.texs[i].first = get_texture_res(image->get_view({ 0, image->n_levels, 0, image->n_layers }),
@@ -1424,32 +1421,6 @@ namespace flame
 						it++;
 				}
 			}
-			if (res.mat->alpha_test > 0.f)
-			{
-				auto found = false;
-				for (auto& d : res.mat->code_defines)
-				{
-					if (d.starts_with("frag:ALPHA_TEST"))
-					{
-						d = "frag:ALPHA_TEST=" + str(res.mat->alpha_test);
-						found = true;
-						break;
-					}
-				}
-				if (!found)
-					res.mat->code_defines.push_back("frag:ALPHA_TEST=" + str(res.mat->alpha_test));
-			}
-			else
-			{
-				auto& defines = res.mat->code_defines;
-				for (auto it = defines.begin(); it != defines.end(); )
-				{
-					if (it->starts_with("frag:ALPHA_TEST"))
-						it = defines.erase(it);
-					else
-						it++;
-				}
-			}
 			if (res.mat->splash_map != -1)
 			{
 				auto found = false;
@@ -1490,21 +1461,20 @@ namespace flame
 				}
 				return false;
 			};
-			for (auto it = opa_batcher.batches.begin(); it != opa_batcher.batches.end();)
+			for (auto it = gbuffer_batcher.batches.begin(); it != gbuffer_batcher.batches.end();)
 			{
 				if (has_pl(it->first))
-					it = opa_batcher.batches.erase(it);
+					it = gbuffer_batcher.batches.erase(it);
 				else
 					it++;
 			}
-			for (auto it = trs_batcher.batches.begin(); it != trs_batcher.batches.end();)
+			for (auto it = transparent_batcher.batches.begin(); it != transparent_batcher.batches.end();)
 			{
 				if (has_pl(it->first))
-					it = trs_batcher.batches.erase(it);
+					it = transparent_batcher.batches.erase(it);
 				else
 					it++;
 			}
-
 			for (auto& s : dir_shadows)
 			{
 				for (auto& mb : s.batcher)
@@ -1849,8 +1819,8 @@ namespace flame
 	{
 		if (mark_clear_pipelines)
 		{
-			opa_batcher.batches.clear();
-			trs_batcher.batches.clear();
+			gbuffer_batcher.batches.clear();
+			transparent_batcher.batches.clear();
 			for (auto& s : dir_shadows)
 			{
 				for (auto& mb : s.batcher)
@@ -2238,12 +2208,12 @@ namespace flame
 		// deferred shading pass
 		cb->begin_debug_label("Deferred Shading");
 		{
-			for (auto& b : opa_batcher.batches)
+			for (auto& b : gbuffer_batcher.batches)
 				b.second.draw_indices.clear();
 			draw_data.reset(PassGBuffer, CateMesh | CateTerrain | CateSDF | CateMarchingCubes);
 			for (auto n : camera_culled_nodes)
 				n->drawers.call<DrawData&>(draw_data);
-			opa_batcher.collect(draw_data, cb);
+			gbuffer_batcher.collect(draw_data, cb);
 
 			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
 			cb->set_viewport_and_scissor(Rect(vec2(0), ext));
@@ -2258,7 +2228,7 @@ namespace flame
 					vec4(1.f, 0.f, 0.f, 0.f) });
 
 				prm_gbuf.bind_dss(cb);
-				opa_batcher.draw(cb);
+				gbuffer_batcher.draw(cb);
 
 				for (auto& t : draw_data.terrains)
 				{
@@ -2342,12 +2312,12 @@ namespace flame
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 
-			for (auto& b : trs_batcher.batches)
+			for (auto& b : transparent_batcher.batches)
 				b.second.draw_indices.clear();
 			draw_data.reset(PassForward, CateMesh | CateGrassField | CateParticle);
 			for (auto n : camera_culled_nodes)
 				n->drawers.call<DrawData&>(draw_data);
-			trs_batcher.collect(draw_data, cb);
+			transparent_batcher.collect(draw_data, cb);
 
 			for (auto& p : draw_data.particles)
 			{
@@ -2370,7 +2340,7 @@ namespace flame
 			cb->begin_renderpass(nullptr, fb_fwd.get());
 			prm_fwd.bind_dss(cb);
 
-			trs_batcher.draw(cb);
+			transparent_batcher.draw(cb);
 
 			for (auto& t : draw_data.terrains)
 			{

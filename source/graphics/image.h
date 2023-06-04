@@ -99,8 +99,6 @@ namespace flame
 			Format format = Format_R8G8B8A8_UNORM;
 			ImageUsageFlags usage;
 			uvec3 extent = uvec3(0);
-			bool is_cube = false;
-			bool srgb = false;
 			uint n_channels = 0;
 			uint pixel_size = 0;
 			uint n_levels = 1;
@@ -134,15 +132,14 @@ namespace flame
 
 			struct Create
 			{
-				virtual ImagePtr operator()(Format format, const uvec3& extent, ImageUsageFlags usage, uint levels = 1, uint layers = 1, SampleCount sample_count = SampleCount_1, bool is_cube = false) = 0;
+				virtual ImagePtr operator()(Format format, const uvec3& extent, ImageUsageFlags usage, uint levels = 1, uint layers = 1, SampleCount sample_count = SampleCount_1) = 0;
 				virtual ImagePtr operator()(Format format, const uvec3& extent, void* data) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 
 			struct Get
 			{
-				// alpha_test: when above 0, then the coverage of alpha test will be reserved in auto mipmaping
-				virtual ImagePtr operator()(const std::filesystem::path& filename, bool srgb = false, bool auto_mipmapping = false, float alpha_test = 0.f, ImageUsageFlags additional_usage = ImageUsageNone) = 0;
+				virtual ImagePtr operator()(const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 

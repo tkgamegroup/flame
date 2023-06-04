@@ -18,7 +18,7 @@ namespace flame
 	namespace graphics
 	{
 		std::vector<ImagePtr> images;
-		std::vector<LoadedImage> loaded_images;
+		std::vector<std::unique_ptr<ImageT>> loaded_images;
 		std::vector<std::unique_ptr<SamplerT>> samplers;
 
 		ImagePrivate::ImagePrivate()
@@ -133,7 +133,7 @@ namespace flame
 			info.components.b = to_backend(swizzle.b);
 			info.components.a = to_backend(swizzle.a);
 			info.image = vk_image;
-			if (is_cube && sub.base_layer == 0 && sub.layer_count == 6)
+			if (n_layers == (uint)-6 && sub.base_layer == 0 && sub.layer_count == 6)
 				info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
 			else if (sub.layer_count > 1)
 				info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
@@ -396,7 +396,7 @@ namespace flame
 			if (ext == L".dds")
 			{
 				auto gli_target = gli::TARGET_2D;
-				if (is_cube)
+				if (n_layers == (uint)-6)
 					gli_target = gli::TARGET_CUBE;
 				else if (n_layers > 1)
 					gli_target = gli::TARGET_2D_ARRAY;
@@ -578,7 +578,7 @@ namespace flame
 
 		struct ImageCreate : Image::Create
 		{
-			ImagePtr operator()(Format format, const uvec3& extent, ImageUsageFlags usage, uint levels, uint layers, SampleCount sample_count, bool is_cube) override
+			ImagePtr operator()(Format format, const uvec3& extent, ImageUsageFlags usage, uint levels, uint layers, SampleCount sample_count) override
 			{
 				auto ret = new ImagePrivate;
 				ret->format = format;
@@ -586,7 +586,6 @@ namespace flame
 				ret->n_layers = layers;
 				ret->sample_count = sample_count;
 				ret->usage = usage;
-				ret->is_cube = is_cube;
 				ret->extent = extent;
 				ret->initialize();
 
@@ -596,7 +595,7 @@ namespace flame
 
 				VkImageCreateInfo imageInfo;
 				imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-				imageInfo.flags = is_cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
+				imageInfo.flags = layers == (uint)-6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 				imageInfo.pNext = nullptr;
 				imageInfo.imageType = image_type;
 				imageInfo.format = to_backend(format);
@@ -652,16 +651,16 @@ namespace flame
 
 		struct ImageGet : Image::Get
 		{
-			ImagePtr operator()(const std::filesystem::path& _filename, bool srgb, bool auto_mipmapping, float alpha_test, ImageUsageFlags additional_usage) override
+			ImagePtr operator()(const std::filesystem::path& _filename) override
 			{
 				auto filename = Path::get(_filename);
 
 				for (auto& i : loaded_images)
 				{
-					if (i.v->filename == filename && i.srgb == srgb && i.auto_mipmapping == auto_mipmapping && i.alpha_test == alpha_test && i.additional_usage == additional_usage)
+					if (i->filename == filename)
 					{
-						i.v->ref++;
-						return i.v.get();
+						i->ref++;
+						return i.get();
 					}
 				}
 
@@ -669,6 +668,27 @@ namespace flame
 				{
 					wprintf(L"cannot find image: %s\n", _filename.c_str());
 					return nullptr;
+				}
+
+				auto srgb = false;
+				auto auto_mipmapping = false;
+				float alpha_test = 0.f;
+				ImageUsageFlags additional_usage = ImageUsageNone;
+				auto sp = SUS::split(filename.filename().string(), '%');
+				if (sp.size() > 1)
+				{
+					for (auto i = 0; i < sp.size(); i++)
+					{
+						auto str = sp[i];
+						if (str == "s")
+							srgb = true;
+						else if (str == "m")
+							auto_mipmapping = true;
+						else if (SUS::strip_head_if(str, "at"))
+							;
+						else if (SUS::strip_head_if(str, "au"))
+							;
+					}
 				}
 
 				ImagePtr ret = nullptr;
@@ -695,7 +715,7 @@ namespace flame
 						layers = faces;
 					}
 					if (layers == 6)
-						is_cube = true;
+						layers = (uint)-6;
 
 					auto gli_format = gli_texture.format();
 					Format format = Format_Undefined;
@@ -723,7 +743,7 @@ namespace flame
 					assert(format != Format_Undefined);
 
 					ret = Image::create(format, ext, ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc | additional_usage,
-						levels, layers, SampleCount_1, is_cube);
+						levels, layers, SampleCount_1);
 
 					StagingBuffer sb(ret->data_size, nullptr);
 					InstanceCommandBuffer cb;
@@ -808,15 +828,8 @@ namespace flame
 				}
 
 				ret->filename = filename;
-				ret->srgb = srgb;
 				ret->ref = 1;
-				LoadedImage i;
-				i.v.reset(ret);
-				i.srgb = srgb;
-				i.auto_mipmapping = auto_mipmapping;
-				i.alpha_test = alpha_test;
-				i.additional_usage = additional_usage;
-				loaded_images.push_back(std::move(i));
+				loaded_images.emplace_back(ret);
 				return ret;
 			}
 		}Image_get;
@@ -830,7 +843,7 @@ namespace flame
 				{
 					graphics::Queue::get()->wait_idle();
 					std::erase_if(loaded_images, [&](const auto& i) {
-						return i.v.get() == image;
+						return i.get() == image;
 					});
 				}
 				else

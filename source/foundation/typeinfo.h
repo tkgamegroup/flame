@@ -271,7 +271,7 @@ namespace flame
 		}
 
 		FLAME_FOUNDATION_API static TypeInfo* get(TypeTag tag, const std::string& name, TypeInfoDataBase& db = tidb);
-		inline static				TypeInfo* get(const std::string& name, TypeInfoDataBase& db = tidb);
+		inline				 static	TypeInfo* get(const std::string& name, TypeInfoDataBase& db = tidb);
 		FLAME_FOUNDATION_API static TypeInfo* void_type;
 
 		template<enum_type T>

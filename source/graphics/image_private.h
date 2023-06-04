@@ -70,17 +70,8 @@ namespace flame
 			~SamplerPrivate();
 		};
 
-		struct LoadedImage
-		{
-			std::unique_ptr<ImageT> v;
-			bool srgb;
-			bool auto_mipmapping;
-			float alpha_test;
-			ImageUsageFlags additional_usage;
-		};
-
 		extern std::vector<ImagePtr> images;
-		extern std::vector<LoadedImage> loaded_images;
+		extern std::vector<std::unique_ptr<ImageT>> loaded_images;
 		extern std::vector<std::unique_ptr<SamplerT>> samplers;
 	}
 }

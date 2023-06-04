@@ -53,7 +53,7 @@ void main()
 		vec3 emissive = gbuffer_dataD.rgb;
 		
 		vec4 world_pos = camera.view_inv * view_pos;
-		o_color = vec4(shading(world_pos.xyz, N, metallic, albedo, spec, roughness, 1.0/*ao*/, emissive, (flags & MaterialFlagReceiveSSR) != 0), 1.0);
+		o_color = vec4(shading(world_pos.xyz, N, metallic, albedo, spec, roughness, 1.0/*ao*/, emissive, (flags & MaterialFlagReflective) != 0), 1.0);
 	}
 	else
 	{

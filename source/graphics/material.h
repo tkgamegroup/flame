@@ -10,20 +10,24 @@ namespace flame
 		enum MaterialFlags
 		{
 			MaterialFlagNone = 0,
-			MaterialFlagOpaque = 1 << 0,
-			MaterialFlagSort = 1 << 1,
-			MaterialFlagReceiveSSR = 1 << 2
+			MaterialFlagMirror = 1 << 0
+		};
+
+		enum class RenderQueue
+		{
+			Opaque,
+			AlphaTest,
+			Transparent,
+			Count
 		};
 
 		struct Texture
 		{
 			std::filesystem::path filename;
-			bool srgb = false;
 			Filter mag_filter = FilterLinear;
 			Filter min_filter = FilterLinear;
 			bool linear_mipmap = true;
 			AddressMode address_mode = AddressRepeat;
-			bool auto_mipmap = false;
 		};
 
 		// Reflect
@@ -50,17 +54,13 @@ namespace flame
 			// Reflect
 			virtual void set_tiling(float v) = 0;
 			// Reflect
-			bool opaque = true;
+			RenderQueue render_queue = RenderQueue::Opaque;
 			// Reflect
-			virtual void set_opaque(bool v) = 0;
+			virtual void set_render_queue(RenderQueue q) = 0;
 			// Reflect
-			bool sort = false;
+			bool mirror = false;
 			// Reflect
-			virtual void set_sort(bool v) = 0;
-			// Reflect
-			bool receive_ssr = false;
-			// Reflect
-			virtual void set_receive_ssr(bool v) = 0;
+			virtual void set_mirror(bool v) = 0;
 			// Reflect
 			int color_map = -1;
 			// Reflect
@@ -93,10 +93,6 @@ namespace flame
 			int alpha_map = -1;
 			// Reflect
 			virtual void set_alpha_map(int i) = 0;
-			// Reflect
-			float alpha_test = 0.f;
-			// Reflect
-			virtual void set_alpha_test(float v) = 0;
 			// Reflect
 			int splash_map = -1;
 			// Reflect
@@ -137,13 +133,10 @@ namespace flame
 			MaterialFlags get_flags() const
 			{
 				uint flags = 0;
-				if (opaque) flags |= MaterialFlagOpaque;
-				if (sort) flags |= MaterialFlagSort;
-				if (receive_ssr) flags |= MaterialFlagReceiveSSR;
+				if (reflective) flags |= MaterialFlagReflective;
 				return (MaterialFlags)flags;
 			}
 
-			virtual void copy_from(MaterialPtr oth) = 0;
 			virtual void save(const std::filesystem::path& filename) = 0;
 
 			struct Create

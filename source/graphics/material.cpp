@@ -71,22 +71,13 @@ namespace flame
 			data_changed("tiling"_h);
 		}
 
-		void MaterialPrivate::set_opaque(bool v)
+		void MaterialPrivate::set_render_queue(RenderQueue q)
 		{
-			if (opaque == v)
+			if (render_queue == q)
 				return;
-			opaque = v;
+			render_queue = q;
 
-			data_changed("opaque"_h);
-		}
-
-		void MaterialPrivate::set_sort(bool v) 
-		{
-			if (sort == v)
-				return;
-			sort = v;
-
-			data_changed("sort"_h);
+			data_changed("render_queue"_h);
 		}
 
 		void MaterialPrivate::set_receive_ssr(bool v) 
@@ -216,12 +207,6 @@ namespace flame
 			textures = _textures;
 
 			data_changed("textures"_h);
-		}
-
-		void MaterialPrivate::copy_from(MaterialPtr oth)
-		{
-			auto ti = TypeInfo::get<decltype(*this)>();
-			ti->copy(this, oth);
 		}
 
 		void MaterialPrivate::save(const std::filesystem::path& filename)
