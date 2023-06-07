@@ -721,8 +721,6 @@ void View_Project::init()
 							vec3 rotation = vec3(0.f);
 							vec3 scaling = vec3(1.f);
 							bool only_animation = false;
-							bool copy_textures = false;
-							std::string texture_format = "";
 
 							std::filesystem::path destination;
 							std::vector<std::filesystem::path> files;
@@ -751,18 +749,11 @@ void View_Project::init()
 									ImGui::InputFloat3("Rotation", &rotation[0]);
 									ImGui::InputFloat3("Scaling", &scaling[0]);
 									ImGui::Checkbox("Only Animation", &only_animation);
-									ImGui::Checkbox("Copy Textures", &copy_textures);
-									if (copy_textures)
-									{
-										ImGui::InputText("Texture Format", &texture_format);
-										ImGui::SameLine();
-										ImGui::TextUnformatted("(empty for original format)");
-									}
 
 									if (ImGui::Button("OK"))
 									{
 										for (auto& file : files)
-											graphics::import_scene(file, destination, rotation, scaling, only_animation, copy_textures, texture_format);
+											graphics::import_scene(file, destination, rotation, scaling, only_animation);
 										close();
 									}
 									ImGui::SameLine();

@@ -80,13 +80,13 @@ namespace flame
 			data_changed("render_queue"_h);
 		}
 
-		void MaterialPrivate::set_receive_ssr(bool v) 
+		void MaterialPrivate::set_mirror(bool v) 
 		{
-			if (receive_ssr == v)
+			if (mirror == v)
 				return;
-			receive_ssr = v;
+			mirror = v;
 
-			data_changed("receive_ssr"_h);
+			data_changed("mirror"_h);
 		}
 
 		void MaterialPrivate::set_color_map(int i)
@@ -167,15 +167,6 @@ namespace flame
 			data_changed("alpha_map"_h);
 		}
 
-		void MaterialPrivate::set_alpha_test(float v) 
-		{
-			if (alpha_test == v)
-				return;
-			alpha_test = v;
-
-			data_changed("alpha_test"_h);
-		}
-
 		void MaterialPrivate::set_splash_map(int i)
 		{
 			i = clamp(i, -1, (int)textures.size() - 1);
@@ -195,11 +186,11 @@ namespace flame
 			data_changed("code_file"_h);
 		}
 
-		void MaterialPrivate::set_code_defines(const std::vector<std::string>& defines)
+		void MaterialPrivate::set_defines(const std::vector<std::string>& _defines)
 		{
-			code_defines = defines;
+			defines = _defines;
 
-			data_changed("code_defines"_h);
+			data_changed("defines"_h);
 		}
 
 		void MaterialPrivate::set_textures(const std::vector<Texture>& _textures)
@@ -222,10 +213,10 @@ namespace flame
 				return Path::rebase(base_path, path).string();
 			};
 
-			for (auto it = code_defines.begin(); it != code_defines.end();)
+			for (auto it = defines.begin(); it != defines.end();)
 			{
 				if (it->empty() || (it->starts_with("frag:") && it->contains("_MAP=")))
-					it = code_defines.erase(it);
+					it = defines.erase(it);
 				else
 					it++;
 			}

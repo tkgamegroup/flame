@@ -62,7 +62,7 @@ namespace flame
 		void release_mesh_res(uint id) override;
 		const MeshRes& get_mesh_res_info(uint id) override;
 
-		void update_mat_res(uint id, bool update_parameters = true, bool update_textures = true, bool update_pipelines = true);
+		void update_mat_res(uint id, bool update_parameters = true, bool update_textures = true, bool update_pipeline = true);
 		int get_material_res(graphics::Material* mat, int id) override;
 		void release_material_res(uint id) override;
 		const MatRes& get_material_res_info(uint id) override;

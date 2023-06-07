@@ -48,7 +48,12 @@ namespace flame
 			if (!data_map_name.native().starts_with(L"0x"))
 			{
 				AssetManagemant::get(Path::get(data_map_name));
-				data_map = !data_map_name.empty() ? graphics::Image::get(data_map_name, false, false, 0.f, graphics::ImageUsageAttachment | graphics::ImageUsageStorage) : nullptr;
+				data_map = !data_map_name.empty() ? graphics::Image::get(data_map_name) : nullptr;
+				if (data_map && ((data_map->usage & graphics::ImageUsageAttachment) == 0 || (data_map->usage & graphics::ImageUsageAttachment) == 0))
+				{
+					printf("The data map used by volumn must have attachement and storage usage\n");
+					data_map = nullptr;
+				}
 			}
 			else
 				data_map = (graphics::ImagePtr)s2u_hex<uint64>(data_map_name.string());

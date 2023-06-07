@@ -17,7 +17,7 @@ namespace flame
 			void set_emissive(const vec4& v) override;
 			void set_tiling(float v) override;
 			void set_render_queue(RenderQueue q) override;
-			void set_reflective(bool v) override;
+			void set_mirror(bool v) override;
 			void set_color_map(int i) override;
 			void set_normal_map(int i) override;
 			void set_normal_map_strength(float v) override;
@@ -29,7 +29,7 @@ namespace flame
 			void set_splash_map(int i)override;
 
 			void set_code_file(const std::filesystem::path& path) override;
-			void set_code_defines(const std::vector<std::string>& defines) override;
+			void set_defines(const std::vector<std::string>& defines) override;
 
 			void set_textures(const std::vector<Texture>& textures) override;
 

@@ -414,7 +414,7 @@ namespace flame
 		}Model_release;
 		Model::Release& Model::release = Model_release;
 
-		void import_scene(const std::filesystem::path& _filename, const std::filesystem::path& _destination, const vec3& rotation, const vec3& scaling, bool only_animation, bool copy_textures, const std::filesystem::path& texture_format)
+		void import_scene(const std::filesystem::path& _filename, const std::filesystem::path& _destination, const vec3& rotation, const vec3& scaling, bool only_animation)
 		{
 			auto filename = Path::get(_filename);
 			if (!std::filesystem::exists(filename))
@@ -792,26 +792,13 @@ namespace flame
 										if (!tex_name.empty())
 										{
 											auto fn = find_file(parent_path, tex_name);
-											if (copy_textures && std::filesystem::exists(fn))
+											if (std::filesystem::exists(fn))
 											{
-												auto copied = false;
 												if (!std::filesystem::exists(textures_destination))
 													std::filesystem::create_directories(textures_destination);
 												auto dst = textures_destination / fn.filename();
-												if (!texture_format.empty())
-												{
-													auto ext = fn.extension();
-													if (ext != texture_format)
-													{
-														dst.replace_extension(texture_format);
-														auto bmp = Bitmap::create(fn);
-														bmp->save(dst);
-														delete bmp;
-														fn = dst;
-														copied = true;
-													}
-												}
-												if (!copied && dst != fn)
+												dst.replace_filename(dst.filename().wstring() + L"%s%m");
+												if (dst != fn)
 												{
 													std::filesystem::copy_file(fn, dst, std::filesystem::copy_options::overwrite_existing);
 													fn = dst;
@@ -821,8 +808,6 @@ namespace flame
 												material->textures.resize(map_id + 1);
 											auto& texture = material->textures[map_id];
 											texture.filename = Path::rebase(materials_destination, fn);
-											texture.srgb = true;
-											texture.auto_mipmap = true;
 											material->color_map = map_id++;
 										}
 									}

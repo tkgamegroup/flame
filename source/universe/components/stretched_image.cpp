@@ -72,7 +72,7 @@ namespace flame
 			if (!image_name.native().starts_with(L"0x"))
 			{
 				AssetManagemant::get(Path::get(image_name));
-				image = !image_name.empty() ? graphics::Image::get(image_name, false) : nullptr;
+				image = !image_name.empty() ? graphics::Image::get(image_name) : nullptr;
 			}
 			else
 				image = (graphics::ImagePtr)s2u_hex<uint64>(image_name.string());

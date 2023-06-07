@@ -52,6 +52,9 @@ namespace flame
 		{
 			graphics::MaterialPtr mat = nullptr;
 			std::vector<std::pair<int, graphics::ImagePtr>> texs;
+			std::vector<std::string> defines;
+			std::vector<float> float_values;
+			std::vector<int> int_values;
 			std::unordered_map<uint, graphics::GraphicsPipelinePtr> pls;
 			uint ref = 0;
 		};

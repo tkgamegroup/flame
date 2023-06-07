@@ -71,11 +71,11 @@ namespace flame
 				}
 				break;
 			case PassGBuffer:
-				if ((draw_data.categories & CateMesh) && enable && material->opaque)
+				if ((draw_data.categories & CateMesh) && enable && (material->render_queue == graphics::RenderQueue::Opaque || material->render_queue == graphics::RenderQueue::AlphaTest))
 					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			case PassForward:
-				if ((draw_data.categories & CateMesh) && enable && !material->opaque)
+				if ((draw_data.categories & CateMesh) && enable && material->render_queue == graphics::RenderQueue::Transparent)
 					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			case PassOcculder:

@@ -67,7 +67,12 @@ namespace flame
 			if (!height_map_name.native().starts_with(L"0x"))
 			{
 				AssetManagemant::get(Path::get(height_map_name));
-				height_map = !height_map_name.empty() ? graphics::Image::get(height_map_name, false, false, 0.f, graphics::ImageUsageAttachment) : nullptr;
+				height_map = !height_map_name.empty() ? graphics::Image::get(height_map_name) : nullptr;
+				if (height_map && (height_map->usage & graphics::ImageUsageAttachment) == 0)
+				{
+					printf("The height map used by terrain must have attachement usage\n");
+					height_map = nullptr;
+				}
 			}
 			else
 				height_map = (graphics::ImagePtr)s2u_hex<uint64>(height_map_name.string());
@@ -174,7 +179,7 @@ namespace flame
 		if (!grass_texture_name.empty())
 			AssetManagemant::get(Path::get(grass_texture_name));
 
-		auto _texture = !grass_texture_name.empty() ? graphics::Image::get(grass_texture_name, true, true, 0.5f) : nullptr;
+		auto _texture = !grass_texture_name.empty() ? graphics::Image::get(grass_texture_name) : nullptr;
 		if (grass_texture != _texture)
 		{
 			if (grass_texture_id != -1)

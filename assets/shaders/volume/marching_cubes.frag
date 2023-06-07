@@ -27,7 +27,7 @@ void main()
 {
 #ifdef MAT_CODE
 	MaterialInfo material = material.infos[pc.index >> 16];
-	float tiling = float(material.f[0]);
+	float tiling = material.tiling;
 	vec4 weights = texture(volume_splash_maps[pc.index & 0xffff], i_uv);
 
 	#include MAT_CODE

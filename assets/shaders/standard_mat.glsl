@@ -5,13 +5,13 @@
 	#define SAMPLE_MAP(ID) textureTriPlanar(material.map_indices[ID], i_normal, i_coordw, tiling)
 #endif
 
-#ifdef ALPHA_TEST
+#ifdef ALPHA_TEST_V
 	#ifdef ALPHA_MAP
 		float alpha = SAMPLE_MAP(ALPHA_MAP).r;
 		#ifdef TINT_COLOR
 			alpha *= material.color.a;
 		#endif
-		if (alpha < ALPHA_TEST)
+		if (alpha < material.f[ALPHA_TEST_V])
 			discard;
 	#endif
 #endif
@@ -24,8 +24,8 @@
 			color *= material.color;
 		#endif
 		#ifndef ALPHA_MAP
-			#ifdef ALPHA_TEST
-				if (color.a < ALPHA_TEST)
+			#ifdef ALPHA_TEST_V
+				if (color.a < material.f[ALPHA_TEST_V])
 					discard;
 			#endif
 		#else

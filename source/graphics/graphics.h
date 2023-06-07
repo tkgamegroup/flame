@@ -430,6 +430,14 @@ namespace flame
 			FontAtlasSDF
 		};
 
+		enum class RenderQueue
+		{
+			Opaque,
+			AlphaTest,
+			Transparent,
+			Count
+		};
+
 		struct Glyph
 		{
 			ushort code = 0;

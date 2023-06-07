@@ -13,14 +13,6 @@ namespace flame
 			MaterialFlagMirror = 1 << 0
 		};
 
-		enum class RenderQueue
-		{
-			Opaque,
-			AlphaTest,
-			Transparent,
-			Count
-		};
-
 		struct Texture
 		{
 			std::filesystem::path filename;
@@ -99,9 +91,9 @@ namespace flame
 			virtual void set_splash_map(int i) = 0;
 
 			// Reflect
-			vec4 float_values = vec4(0.f);
+			std::vector<std::pair<std::string, float>> float_variables;
 			// Reflect
-			ivec4 int_values = ivec4(0);
+			std::vector<std::pair<std::string, int>> int_variables;
 
 			// shader will insert this file to its content
 			// Reflect
@@ -109,9 +101,9 @@ namespace flame
 			// Reflect
 			virtual void set_code_file(const std::filesystem::path& path) = 0;
 			// Reflect
-			std::vector<std::string> code_defines;
+			std::vector<std::string> defines;
 			// Reflect
-			virtual void set_code_defines(const std::vector<std::string>& defines) = 0;
+			virtual void set_defines(const std::vector<std::string>& defines) = 0;
 
 			// Reflect
 			std::vector<Texture> textures;
@@ -130,10 +122,10 @@ namespace flame
 				data_listeners.call(h);
 			}
 
-			MaterialFlags get_flags() const
+			inline MaterialFlags get_flags() const
 			{
 				uint flags = 0;
-				if (reflective) flags |= MaterialFlagReflective;
+				if (mirror) flags |= MaterialFlagMirror;
 				return (MaterialFlags)flags;
 			}
 

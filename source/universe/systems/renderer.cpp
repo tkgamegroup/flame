@@ -301,7 +301,7 @@ namespace flame
 		combine_global_defines(defines);
 		if (!res.mat->code_file.empty())
 			defines.push_back(std::format("frag:MAT_CODE={}", Path::get(res.mat->code_file).string()));
-		for (auto& d : res.mat->code_defines)
+		for (auto& d : res.defines)
 		{
 			if (!d.empty())
 				defines.push_back(d);
@@ -1251,7 +1251,7 @@ namespace flame
 		return mesh_reses[id]; 
 	}
 
-	void sRendererPrivate::update_mat_res(uint id, bool update_parameters, bool update_textures, bool update_pipelines)
+	void sRendererPrivate::update_mat_res(uint id, bool update_parameters, bool update_textures, bool update_pipeline)
 	{
 		auto& res = mat_reses[id];
 
@@ -1276,177 +1276,70 @@ namespace flame
 			{
 				res.texs[i].first = -1;
 				res.texs[i].second = nullptr;
-				auto& src = res.mat->textures[i];
-				if (!src.filename.empty())
+				auto& tex = res.mat->textures[i];
+				if (!tex.filename.empty())
 				{
-					if (auto image = graphics::Image::get(src.filename); image)
+					if (auto image = graphics::Image::get(tex.filename); image)
 					{
 						res.texs[i].second = image;
 						res.texs[i].first = get_texture_res(image->get_view({ 0, image->n_levels, 0, image->n_layers }),
-							graphics::Sampler::get(src.mag_filter, src.min_filter, src.linear_mipmap, src.address_mode), -1);
+							graphics::Sampler::get(tex.mag_filter, tex.min_filter, tex.linear_mipmap, tex.address_mode), -1);
 						image->dependencies.emplace_back("flame::Graphics::Material"_h, res.mat);
 					}
 				}
 			}
 		}
-		if (update_pipelines)
+		if (update_pipeline)
 		{
+			res.defines = res.mat->defines;
+			res.float_values.clear();
+			res.int_values.clear();
+			auto add_float = [&](const std::string& name, float v) {
+				res.defines.push_back("frag:" + name + "_V=" + str((int)res.float_values.size()));
+				res.float_values.push_back(v);
+			};
+			auto add_int = [&](const std::string& name, int v) {
+				res.defines.push_back("frag:" + name + "_V=" + str((int)res.int_values.size()));
+				res.int_values.push_back(v);
+			};
+
 			if (res.mat->color_map != -1)
-			{
-				auto found = false;
-				for (auto& d : res.mat->code_defines)
-				{
-					if (d.starts_with("frag:COLOR_MAP"))
-					{
-						d = "frag:COLOR_MAP=" + str(res.mat->color_map);
-						found = true;
-						break;
-					}
-				}
-				if (!found)
-					res.mat->code_defines.push_back("frag:COLOR_MAP=" + str(res.mat->color_map));
-			}
-			else
-			{
-				auto& defines = res.mat->code_defines;
-				for (auto it = defines.begin(); it != defines.end(); )
-				{
-					if (it->starts_with("frag:COLOR_MAP"))
-						it = defines.erase(it);
-					else
-						it++;
-				}
-			}
+				res.defines.push_back("frag:COLOR_MAP=" + str(res.mat->color_map));
 			if (res.mat->normal_map != -1)
-			{
-				auto found = false;
-				for (auto& d : res.mat->code_defines)
-				{
-					if (d.starts_with("frag:NORMAL_MAP"))
-					{
-						d = "frag:NORMAL_MAP=" + str(res.mat->normal_map);
-						found = true;
-						break;
-					}
-				}
-				if (!found)
-					res.mat->code_defines.push_back("frag:NORMAL_MAP=" + str(res.mat->normal_map));
-			}
-			else
-			{
-				auto& defines = res.mat->code_defines;
-				for (auto it = defines.begin(); it != defines.end(); )
-				{
-					if (it->starts_with("frag:NORMAL_MAP"))
-						it = defines.erase(it);
-					else
-						it++;
-				}
-			}
+				res.mat->defines.push_back("frag:NORMAL_MAP=" + str(res.mat->normal_map));
 			if (res.mat->metallic_map != -1)
-			{
-				auto found = false;
-				for (auto& d : res.mat->code_defines)
-				{
-					if (d.starts_with("frag:METALLIC_MAP"))
-					{
-						d = "frag:METALLIC_MAP=" + str(res.mat->metallic_map);
-						found = true;
-						break;
-					}
-				}
-				if (!found)
-					res.mat->code_defines.push_back("frag:METALLIC_MAP=" + str(res.mat->metallic_map));
-			}
-			else
-			{
-				auto& defines = res.mat->code_defines;
-				for (auto it = defines.begin(); it != defines.end(); )
-				{
-					if (it->starts_with("frag:METALLIC_MAP"))
-						it = defines.erase(it);
-					else
-						it++;
-				}
-			}
+				res.mat->defines.push_back("frag:METALLIC_MAP=" + str(res.mat->metallic_map));
 			if (res.mat->roughness_map != -1)
-			{
-				auto found = false;
-				for (auto& d : res.mat->code_defines)
-				{
-					if (d.starts_with("frag:ROUGHNESS_MAP"))
-					{
-						d = "frag:ROUGHNESS_MAP=" + str(res.mat->roughness_map);
-						found = true;
-						break;
-					}
-				}
-				if (!found)
-					res.mat->code_defines.push_back("frag:ROUGHNESS_MAP=" + str(res.mat->roughness_map));
-			}
-			else
-			{
-				auto& defines = res.mat->code_defines;
-				for (auto it = defines.begin(); it != defines.end(); )
-				{
-					if (it->starts_with("frag:ROUGHNESS_MAP"))
-						it = defines.erase(it);
-					else
-						it++;
-				}
-			}
+				res.mat->defines.push_back("frag:ROUGHNESS_MAP=" + str(res.mat->roughness_map));
 			if (res.mat->emissive_map != -1)
-			{
-				auto found = false;
-				for (auto& d : res.mat->code_defines)
-				{
-					if (d.starts_with("frag:EMISSIVE_MAP"))
-					{
-						d = "frag:EMISSIVE_MAP=" + str(res.mat->emissive_map);
-						found = true;
-						break;
-					}
-				}
-				if (!found)
-					res.mat->code_defines.push_back("frag:EMISSIVE_MAP=" + str(res.mat->emissive_map));
-			}
-			else
-			{
-				auto& defines = res.mat->code_defines;
-				for (auto it = defines.begin(); it != defines.end(); )
-				{
-					if (it->starts_with("frag:EMISSIVE_MAP"))
-						it = defines.erase(it);
-					else
-						it++;
-				}
-			}
+				res.mat->defines.push_back("frag:EMISSIVE_MAP=" + str(res.mat->emissive_map));
+			if (res.mat->alpha_map != -1)
+				res.mat->defines.push_back("frag:ALPHA_MAP=" + str(res.mat->alpha_map));
 			if (res.mat->splash_map != -1)
+				res.mat->defines.push_back("frag:SPLASH_MAP=" + str(res.mat->splash_map));
+			if (auto alpha_map = res.mat->alpha_map != -1 ? res.mat->alpha_map : res.mat->color_map; alpha_map != -1)
 			{
-				auto found = false;
-				for (auto& d : res.mat->code_defines)
+				auto& tex = res.mat->textures[alpha_map];
+				auto sp = SUS::split(tex.filename.filename().string(), '%');
+
+				float alpha_test = 0.f;
+				if (sp.size() > 1)
 				{
-					if (d.starts_with("frag:SPLASH_MAP"))
+					for (auto i = 1; i < sp.size(); i++)
 					{
-						d = "frag:SPLASH_MAP=" + str(res.mat->splash_map);
-						found = true;
-						break;
+						auto t = sp[i];
+						if (SUS::strip_head_if(t, "at"))
+							alpha_test = s2t<int>(t) / 10.f;
 					}
 				}
-				if (!found)
-					res.mat->code_defines.push_back("frag:SPLASH_MAP=" + str(res.mat->splash_map));
+				if (alpha_test > 0.f)
+					add_float("ALPHA_TEST", alpha_test);
 			}
-			else
-			{
-				auto& defines = res.mat->code_defines;
-				for (auto it = defines.begin(); it != defines.end(); )
-				{
-					if (it->starts_with("frag:SPLASH_MAP"))
-						it = defines.erase(it);
-					else
-						it++;
-				}
-			}
+
+			for (auto& v : res.mat->float_variables)
+				add_float(v.first, v.second);
+			for (auto& v : res.mat->int_variables)
+				add_int(v.first, v.second);
 
 			graphics::Queue::get()->wait_idle();
 
@@ -1502,8 +1395,8 @@ namespace flame
 			info.child("normal_map_strength"_h).as<float>() = res.mat->normal_map_strength;
 			info.child("emissive_map_strength"_h).as<float>() = res.mat->emissive_map_strength;
 			info.child("flags"_h).as<int>() = res.mat->get_flags();
-			info.child("f"_h).as<vec4>() = res.mat->float_values;
-			info.child("i"_h).as<ivec4>() = res.mat->int_values;
+			memcpy(info.child("f"_h).data, res.float_values.data(), sizeof(float) * res.float_values.size());
+			memcpy(info.child("i"_h).data, res.int_values.data(), sizeof(int) * res.int_values.size());
 			auto ids = (int*)info.child("map_indices"_h).data;
 			for (auto i = 0; i < res.texs.size(); i++)
 				ids[i] = res.texs[i].first;
@@ -1552,7 +1445,7 @@ namespace flame
 			case "alpha_map"_h:
 			case "splash_map"_h:
 			case "code_file"_h:
-			case "code_defines"_h:
+			case "defines"_h:
 				update_mat_res(id, false, false, true);
 				break;
 			case "textures"_h:

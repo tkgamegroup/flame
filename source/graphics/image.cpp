@@ -677,16 +677,16 @@ namespace flame
 				auto sp = SUS::split(filename.filename().string(), '%');
 				if (sp.size() > 1)
 				{
-					for (auto i = 0; i < sp.size(); i++)
+					for (auto i = 1; i < sp.size(); i++)
 					{
-						auto str = sp[i];
-						if (str == "s")
+						auto t = sp[i];
+						if (t == "s")
 							srgb = true;
-						else if (str == "m")
+						else if (t == "m")
 							auto_mipmapping = true;
-						else if (SUS::strip_head_if(str, "at"))
-							;
-						else if (SUS::strip_head_if(str, "au"))
+						else if (SUS::strip_head_if(t, "at"))
+							alpah_test = s2t<int>(t) / 10.f;
+						else if (SUS::strip_head_if(t, "au"))
 							;
 					}
 				}

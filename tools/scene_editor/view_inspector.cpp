@@ -1613,16 +1613,11 @@ void View_Inspector::on_draw()
 				static vec3 rotation = vec3(0, 0, 0);
 				static vec3 scaling = vec3(0.01f, 0.01f, 0.01f);
 				static bool only_animation = false;
-				static bool copy_textures = false;
-				static std::string texture_fmt = "";
 				ImGui::DragFloat3("Rotation", (float*)&rotation);
 				ImGui::DragFloat3("Scaling", (float*)&scaling);
 				ImGui::Checkbox("Only Animation", &only_animation);
-				ImGui::Checkbox("Copy Textures", &copy_textures);
-				if (copy_textures)
-					ImGui::InputText("Texture Format", &texture_fmt);
 				if (ImGui::Button("Import"))
-					graphics::import_scene(path, L"", rotation, scaling, only_animation, copy_textures, texture_fmt);
+					graphics::import_scene(path, L"", rotation, scaling, only_animation);
 			}
 			else if (ext == L".fmod")
 			{

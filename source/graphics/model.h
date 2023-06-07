@@ -118,6 +118,6 @@ namespace flame
 		};
 
 		FLAME_GRAPHICS_API void import_scene(const std::filesystem::path& filename, const std::filesystem::path& destination = L"", const vec3& rotation = vec3(0.f), const vec3& scaling = vec3(1.f),
-			bool only_animation = false, bool copy_textures = false, const std::filesystem::path& texture_format = L"");
+			bool only_animation = false);
 	}
 }
