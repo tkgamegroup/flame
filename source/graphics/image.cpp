@@ -99,7 +99,7 @@ namespace flame
 			return ret;
 		}
 
-		ImageViewPtr ImagePrivate::get_view(const ImageSub& sub, const ImageSwizzle& swizzle)
+		ImageViewPtr ImagePrivate::get_view(const ImageSub& sub, const ImageSwizzle& swizzle, bool cube)
 		{
 			uint64 key;
 			{
@@ -133,8 +133,11 @@ namespace flame
 			info.components.b = to_backend(swizzle.b);
 			info.components.a = to_backend(swizzle.a);
 			info.image = vk_image;
-			if (n_layers == (uint)-6 && sub.base_layer == 0 && sub.layer_count == 6)
+			if (cube)
+			{
+				assert(sub.base_layer == 0 && sub.layer_count == 6);
 				info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+			}
 			else if (sub.layer_count > 1)
 				info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 			else if (extent.z > 1)
@@ -396,7 +399,7 @@ namespace flame
 			if (ext == L".dds")
 			{
 				auto gli_target = gli::TARGET_2D;
-				if (n_layers == (uint)-6)
+				if (n_layers == 6)
 					gli_target = gli::TARGET_CUBE;
 				else if (n_layers > 1)
 					gli_target = gli::TARGET_2D_ARRAY;
@@ -580,6 +583,15 @@ namespace flame
 		{
 			ImagePtr operator()(Format format, const uvec3& extent, ImageUsageFlags usage, uint levels, uint layers, SampleCount sample_count) override
 			{
+				VkImageCreateInfo imageInfo;
+				imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+				imageInfo.flags = 0;
+				if (layers == (uint)-6)
+				{
+					imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+					layers = 6;
+				}
+
 				auto ret = new ImagePrivate;
 				ret->format = format;
 				ret->n_levels = levels;
@@ -593,9 +605,6 @@ namespace flame
 				if (extent.z > 1)
 					image_type = VK_IMAGE_TYPE_3D;
 
-				VkImageCreateInfo imageInfo;
-				imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-				imageInfo.flags = layers == (uint)-6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 				imageInfo.pNext = nullptr;
 				imageInfo.imageType = image_type;
 				imageInfo.format = to_backend(format);
@@ -654,6 +663,7 @@ namespace flame
 			ImagePtr operator()(const std::filesystem::path& _filename) override
 			{
 				auto filename = Path::get(_filename);
+				auto ext = filename.extension();
 
 				for (auto& i : loaded_images)
 				{
@@ -671,10 +681,12 @@ namespace flame
 				}
 
 				auto srgb = false;
+				if (ext == L".jpg")
+					srgb = true;
 				auto auto_mipmapping = false;
 				float alpha_test = 0.f;
 				ImageUsageFlags additional_usage = ImageUsageNone;
-				auto sp = SUS::split(filename.filename().string(), '%');
+				auto sp = SUS::split(filename.filename().stem().string(), '%');
 				if (sp.size() > 1)
 				{
 					for (auto i = 1; i < sp.size(); i++)
@@ -685,7 +697,7 @@ namespace flame
 						else if (t == "m")
 							auto_mipmapping = true;
 						else if (SUS::strip_head_if(t, "at"))
-							alpah_test = s2t<int>(t) / 10.f;
+							alpha_test = s2t<int>(t) / 10.f;
 						else if (SUS::strip_head_if(t, "au"))
 							;
 					}
@@ -693,11 +705,8 @@ namespace flame
 
 				ImagePtr ret = nullptr;
 
-				auto ext = filename.extension();
 				if (ext == L".ktx" || ext == L".dds")
 				{
-					auto is_cube = false;
-
 					auto gli_texture = gli::load(filename.string());
 					if (gli_texture.empty())
 					{
@@ -714,8 +723,6 @@ namespace flame
 						assert(layers == 1);
 						layers = faces;
 					}
-					if (layers == 6)
-						layers = (uint)-6;
 
 					auto gli_format = gli_texture.format();
 					Format format = Format_Undefined;
@@ -743,7 +750,7 @@ namespace flame
 					assert(format != Format_Undefined);
 
 					ret = Image::create(format, ext, ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc | additional_usage,
-						levels, layers, SampleCount_1);
+						levels, layers == 6 ? (uint)-6 : layers, SampleCount_1);
 
 					StagingBuffer sb(ret->data_size, nullptr);
 					InstanceCommandBuffer cb;

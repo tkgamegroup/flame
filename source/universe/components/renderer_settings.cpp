@@ -251,9 +251,9 @@ namespace flame
 
 	void cRendererSettingsPrivate::update_sky()
 	{
-		sRenderer::instance()->set_sky_maps(sky_map ? sky_map->get_view({ 0, 1, 0, 6 }) : nullptr,
-			sky_irr_map ? sky_irr_map->get_view({ 0, 1, 0, 6 }) : nullptr,
-			sky_rad_map ? sky_rad_map->get_view({ 0, sky_rad_map->n_levels, 0, 6 }) : nullptr);
+		sRenderer::instance()->set_sky_maps(sky_map ? sky_map->get_view({ 0, 1, 0, 6 }, {}, true) : nullptr,
+			sky_irr_map ? sky_irr_map->get_view({ 0, 1, 0, 6 }, {}, true) : nullptr,
+			sky_rad_map ? sky_rad_map->get_view({ 0, sky_rad_map->n_levels, 0, 6 }, {}, true) : nullptr);
 	}
 
 	void cRendererSettingsPrivate::on_active()

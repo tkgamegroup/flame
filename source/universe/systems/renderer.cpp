@@ -572,10 +572,10 @@ namespace flame
 		for (auto i = 0; i < imgs_dir_shadow.size(); i++)
 			ds_lighting->set_image("dir_shadow_maps"_h, i, imgs_dir_shadow[i]->get_view({ 0, 1, 0, DirShadowMaxLevels }), sp_shadow);
 		for (auto i = 0; i < imgs_pt_shadow.size(); i++)
-			ds_lighting->set_image("pt_shadow_maps"_h, i, imgs_pt_shadow[i]->get_view({ 0, 1, 0, 6 }), sp_shadow);
-		ds_lighting->set_image("sky_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_lighting->set_image("sky_irr_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_lighting->set_image("sky_rad_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+			ds_lighting->set_image("pt_shadow_maps"_h, i, imgs_pt_shadow[i]->get_view({ 0, 1, 0, 6 }, {}, true), sp_shadow);
+		ds_lighting->set_image("sky_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }, {}, true), nullptr);
+		ds_lighting->set_image("sky_irr_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }, {}, true), nullptr);
+		ds_lighting->set_image("sky_rad_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }, {}, true), nullptr);
 		{
 			auto img = graphics::Image::get(L"flame\\brdf.dds");
 			ds_lighting->set_image("brdf_map"_h, 0, img ? img->get_view() : img_black->get_view(), nullptr);
@@ -812,9 +812,9 @@ namespace flame
 		sky_irr_map = _sky_irr_map;
 		sky_rad_map = _sky_rad_map;
 		graphics::Queue::get()->wait_idle();
-		ds_lighting->set_image("sky_map"_h, 0, sky_map ? sky_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_lighting->set_image("sky_irr_map"_h, 0, sky_irr_map ? sky_irr_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
-		ds_lighting->set_image("sky_rad_map"_h, 0, sky_rad_map ? sky_rad_map : img_cube_black->get_view({ 0, 1, 0, 6 }), nullptr);
+		ds_lighting->set_image("sky_map"_h, 0, sky_map ? sky_map : img_cube_black->get_view({ 0, 1, 0, 6 }, {}, true), nullptr);
+		ds_lighting->set_image("sky_irr_map"_h, 0, sky_irr_map ? sky_irr_map : img_cube_black->get_view({ 0, 1, 0, 6 }, {}, true), nullptr);
+		ds_lighting->set_image("sky_rad_map"_h, 0, sky_rad_map ? sky_rad_map : img_cube_black->get_view({ 0, 1, 0, 6 }, {}, true), nullptr);
 		ds_lighting->update();
 
 		sky_rad_levels = sky_rad_map ? sky_rad_map->sub.level_count : 1.f;
@@ -1320,9 +1320,8 @@ namespace flame
 			if (auto alpha_map = res.mat->alpha_map != -1 ? res.mat->alpha_map : res.mat->color_map; alpha_map != -1)
 			{
 				auto& tex = res.mat->textures[alpha_map];
-				auto sp = SUS::split(tex.filename.filename().string(), '%');
-
 				float alpha_test = 0.f;
+				auto sp = SUS::split(tex.filename.filename().stem().string(), '%');
 				if (sp.size() > 1)
 				{
 					for (auto i = 1; i < sp.size(); i++)

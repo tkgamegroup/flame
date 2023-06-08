@@ -20,7 +20,7 @@ namespace flame
 			void initialize();
 
 			ImageLayout get_layout(const ImageSub& sub = {}) override;
-			ImageViewPtr get_view(const ImageSub& sub = {}, const ImageSwizzle& swizzle = {}) override;
+			ImageViewPtr get_view(const ImageSub& sub = {}, const ImageSwizzle& swizzle = {}, bool cube = false) override;
 			DescriptorSetPtr get_shader_read_src(uint base_level = 0, uint base_layer = 0, SamplerPtr sp = nullptr, const ImageSwizzle& swizzle = {}) override;
 			FramebufferPtr get_shader_write_dst(uint base_level = 0, uint base_layer = 0, AttachmentLoadOp load_op = AttachmentLoadDontCare) override;
 
