@@ -401,6 +401,38 @@ namespace flame
 			buf_vtx.item_t<DrawVert>(-1).uv = uvs.zy;
 		}
 
+		void CanvasPrivate::add_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, float angle)
+		{
+			auto& cmd = get_bmp_cmd(view->get_shader_read_src(nullptr));
+
+			path_rect(a, b);
+			fill_path(cmd, cvec4(255));
+			path.clear();
+			auto c = (a + b) * 0.5f;
+			auto r = rotate(mat3(1.f), radians(angle));
+			{
+				auto& vtx = buf_vtx.item_t<DrawVert>(-4);
+				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
+				vtx.uv = uvs.xy;
+			}
+			{
+				auto& vtx = buf_vtx.item_t<DrawVert>(-3);
+				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
+				vtx.uv = uvs.xw;
+			}
+			{
+				auto& vtx = buf_vtx.item_t<DrawVert>(-2);
+				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
+				vtx.uv = uvs.zw;
+			}
+			{
+				auto& vtx = buf_vtx.item_t<DrawVert>(-1);
+				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
+				vtx.uv = uvs.zy;
+			}
+
+		}
+
 		struct CanvasCreate : Canvas::Create
 		{
 			CanvasPtr operator()(WindowPtr window) override

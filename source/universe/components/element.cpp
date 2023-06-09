@@ -115,6 +115,15 @@ namespace flame
 		data_changed("vertical_alignment"_h);
 	}
 
+	void cElementPrivate::set_alignment_offset(const vec2& offset)
+	{
+		if (alignment_offset == offset)
+			return;
+		alignment_offset = offset;
+		mark_transform_dirty();
+		data_changed("alignment_offset"_h);
+	}
+
 	vec2 cElementPrivate::global_scl()
 	{
 		auto ret = scl;

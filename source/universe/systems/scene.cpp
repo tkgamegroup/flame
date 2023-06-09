@@ -107,32 +107,34 @@ namespace flame
 		switch (element->horizontal_alignment)
 		{
 		case ElementAlignCenter:
-			element->set_x((parent_ext.x - (padding.x + padding.z) - element->ext.x) * 0.5f);
+			element->set_x((parent_ext.x - (padding.x + padding.z) - element->ext.x) * 0.5f + element->alignment_offset.x);
 			break;
 		case ElementAlignEnd0:
-			element->set_x(padding.x);
+			element->set_x(padding.x + element->alignment_offset.x);
 			break;
 		case ElementAlignEnd1:
-			element->set_x(parent_ext.x - padding.z - element->ext.x);
+			element->set_x(parent_ext.x - padding.z - element->ext.x - element->alignment_offset.x);
 			break;
 		case ElementAlignFill:
-			element->set_w(parent_ext.x - padding.x + padding.z);
+			element->set_x(element->alignment_offset.x);
+			element->set_w(parent_ext.x - padding.x + padding.z - element->alignment_offset.x * 2.f);
 			break;
 		}
 
 		switch (element->vertical_alignment)
 		{
 		case ElementAlignCenter:
-			element->set_y((parent_ext.y - (padding.y + padding.w) - element->ext.y) * 0.5f);
+			element->set_y((parent_ext.y - (padding.y + padding.w) - element->ext.y) * 0.5f + element->alignment_offset.y);
 			break;
 		case ElementAlignEnd0:
-			element->set_y(padding.y);
+			element->set_y(padding.y + element->alignment_offset.y);
 			break;
 		case ElementAlignEnd1:
-			element->set_y(parent_ext.y - padding.w - element->ext.y);
+			element->set_y(parent_ext.y - padding.w - element->ext.y - element->alignment_offset.y);
 			break;
 		case ElementAlignFill:
-			element->set_h(parent_ext.y - (padding.y + padding.w));
+			element->set_y(element->alignment_offset.y);
+			element->set_h(parent_ext.y - (padding.y + padding.w) - element->alignment_offset.y * 2.f);
 			break;
 		}
 	}

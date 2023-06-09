@@ -73,6 +73,15 @@ namespace flame
 		data_changed("auto_size"_h);
 	}
 
+	void cImagePrivate::set_angle(float v)
+	{
+		if (angle == v)
+			return;
+		angle = v;
+		element->mark_drawing_dirty();
+		data_changed("angle"_h);
+	}
+
 	struct cImageCreate : cImage::Create
 	{
 		cImagePtr operator()(EntityPtr) override

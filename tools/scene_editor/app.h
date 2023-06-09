@@ -84,6 +84,7 @@ struct App : UniverseApplication
 	void cmake_project();
 	void build_project();
 	void close_project();
+	void toggle_selection_lock();
 	void new_prefab(const std::filesystem::path& path, uint type = "empty"_h);
 	void open_prefab(const std::filesystem::path& path);
 	bool save_prefab();
@@ -105,9 +106,9 @@ struct App : UniverseApplication
 	bool cmd_stop_preview();
 	bool cmd_restart_preview();
 
-	void open_message_dialog(const std::string& title, const std::string& message);
-
+	bool tool_button(const std::string& name, bool selected = false, float rotate = 0.f);
 	void show_entities_menu();
+	void open_message_dialog(const std::string& title, const std::string& message);
 };
 
 extern App app;

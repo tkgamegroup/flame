@@ -410,34 +410,18 @@ void App::init()
 			ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus);
 		ImGui::PopStyleVar(2);
 
-		auto tool_button = [](const std::string& name, bool selected = false, float rotate = 0.f) {
-			ImGui::SameLine();
-			if (selected)
-			{
-				ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1, 1, 0, 1));
-				ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2);
-			}
-			if (rotate != 0.f)
-				ImGui::BeginRotation(rotate);
-			auto clicked = ImGui::Button(name.c_str());
-			if (selected)
-			{
-				ImGui::PopStyleColor();
-				ImGui::PopStyleVar();
-			}
-			if (rotate != 0.f)
-				ImGui::EndRotation();
-			return clicked;
-		};
-
 		// toolbar begin
 		ImGui::Dummy(vec2(0.f, 20.f));
+		ImGui::SameLine();
 		if (tool_button(graphics::FontAtlas::icon_s("arrow-pointer"_h), app.tool == ToolSelect))
 			tool = ToolSelect;
+		ImGui::SameLine();
 		if (tool_button(graphics::FontAtlas::icon_s("arrows-up-down-left-right"_h), app.tool == ToolMove))
 			tool = ToolMove;
+		ImGui::SameLine();
 		if (tool_button(graphics::FontAtlas::icon_s("rotate"_h), app.tool == ToolRotate))
 			tool = ToolRotate;
+		ImGui::SameLine();
 		if (tool_button(graphics::FontAtlas::icon_s("down-left-and-up-right-to-center"_h), app.tool == ToolScale))
 			tool = ToolScale;
 		ImGui::SameLine();
@@ -492,19 +476,25 @@ void App::init()
 		{
 			if (auto terrain = e_editing->get_component_t<cTerrain>(); terrain)
 			{
+				ImGui::SameLine();
 				if (tool_button(graphics::FontAtlas::icon_s("mound"_h) + "##up", app.tool == ToolTerrainUp))
 					tool = ToolTerrainUp;
+				ImGui::SameLine();
 				if (tool_button(graphics::FontAtlas::icon_s("mound"_h) + "##down", app.tool == ToolTerrainDown, 180.f))
 					tool = ToolTerrainDown;
+				ImGui::SameLine();
 				if (tool_button(graphics::FontAtlas::icon_s("paintbrush"_h), app.tool == ToolTerrainPaint))
 					tool = ToolTerrainPaint;
 			}
 			if (auto tile_map = e_editing->get_component_t<cTileMap>(); tile_map)
 			{
+				ImGui::SameLine();
 				if (tool_button(graphics::FontAtlas::icon_s("up-long"_h), app.tool == ToolTileMapLevelUp))
 					tool = ToolTileMapLevelUp;
+				ImGui::SameLine();
 				if (tool_button(graphics::FontAtlas::icon_s("down-long"_h), app.tool == ToolTileMapLevelDown))
 					tool = ToolTileMapLevelDown;
+				ImGui::SameLine();
 				if (tool_button(graphics::FontAtlas::icon_s("stairs"_h), app.tool == ToolTileMapSlope))
 					tool = ToolTileMapSlope;
 			}
@@ -517,8 +507,8 @@ void App::init()
 		{
 			if (tool_button(graphics::FontAtlas::icon_s("right-from-bracket"_h), false, 180.f))
 			{
-				e_editing = nullptr;
 				selection.lock = false;
+				e_editing = nullptr;
 			}
 			else
 			{
@@ -539,8 +529,10 @@ void App::init()
 						return false;
 					}, 0.f, 3);
 				}
+				ImGui::SameLine();
 				if (tool_button(graphics::FontAtlas::icon_s("play"_h)))
 					cmd_play();
+				ImGui::SameLine();
 				if (tool_button(graphics::FontAtlas::icon_s("circle-play"_h)))
 					cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : e_prefab);
 				ImGui::PopStyleColor();
@@ -552,6 +544,7 @@ void App::init()
 					if (!paused)
 					{
 						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1));
+						ImGui::SameLine();
 						if (tool_button(graphics::FontAtlas::icon_s("pause"_h)))
 							cmd_pause();
 						ImGui::PopStyleColor();
@@ -559,6 +552,7 @@ void App::init()
 					else
 					{
 						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
+						ImGui::SameLine();
 						if (tool_button(graphics::FontAtlas::icon_s("play"_h)))
 							cmd_play();
 						ImGui::PopStyleColor();
@@ -567,11 +561,13 @@ void App::init()
 				else if (e_preview)
 				{
 					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 1, 1));
+					ImGui::SameLine();
 					if (tool_button(graphics::FontAtlas::icon_s("rotate"_h)))
 						cmd_restart_preview();
 					ImGui::PopStyleColor();
 				}
 				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
+				ImGui::SameLine();
 				if (tool_button(graphics::FontAtlas::icon_s("stop"_h)))
 				{
 					if (e_playing)
@@ -595,21 +591,7 @@ void App::init()
 
 		auto& io = ImGui::GetIO();
 		if (ImGui::IsKeyPressed(Keyboard_Tab))
-		{
-			if (e_editing)
-			{
-				e_editing = nullptr;
-				selection.lock = false;
-			}
-			else
-			{
-				if (selection.type == Selection::tEntity)
-				{
-					e_editing = selection.as_entity();
-					selection.lock = true;
-				}
-			}
-		}
+			toggle_selection_lock();
 		if (ImGui::IsKeyPressed(Keyboard_F5))
 		{
 			if (!e_playing)
@@ -1009,6 +991,21 @@ void App::close_project()
 	unload_project_cpp();
 }
 
+void App::toggle_selection_lock()
+{
+	if (selection.lock)
+	{
+		selection.lock = false;
+		e_editing = nullptr;
+	}
+	else
+	{
+		if (selection.type == Selection::tEntity)
+			e_editing = selection.as_entity();
+		selection.lock = true;
+	}
+}
+
 void App::new_prefab(const std::filesystem::path& path, uint type)
 {
 	auto e = Entity::create();
@@ -1156,11 +1153,10 @@ bool App::cmd_new_entities(std::vector<EntityPtr>&& es, uint type)
 		else
 			return false;
 	}
-	static int id = 0;
 	for (auto t : es)
 	{
 		auto e = Entity::create();
-		e->name = "Entity " + str(id++);
+		e->name = "Entity";
 		switch (type)
 		{
 		case "empty"_h:
@@ -1210,6 +1206,10 @@ bool App::cmd_new_entities(std::vector<EntityPtr>&& es, uint type)
 		case "text"_h:
 			e->add_component_t<cElement>();
 			e->add_component_t<cText>();
+			break;
+		case "layout"_h:
+			e->add_component_t<cElement>();
+			e->add_component_t<cLayout>();
 			break;
 		}
 		t->add_child(e);
@@ -1391,16 +1391,24 @@ bool App::cmd_restart_preview()
 	return true;
 }
 
-void App::open_message_dialog(const std::string& title, const std::string& message)
+bool App::tool_button(const std::string& name, bool selected, float rotate)
 {
-	if (title == "[RestructurePrefabInstanceWarnning]")
+	if (selected)
 	{
-		ImGui::OpenMessageDialog("Cannot restructure Prefab Instance", 
-			"You cannot remove/reposition entities in Prefab Instance\n"
-			"Edit it in that prefab");
+		ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1, 1, 0, 1));
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2);
 	}
-	else
-		ImGui::OpenMessageDialog(title, message);
+	if (rotate != 0.f)
+		ImGui::BeginRotation(rotate);
+	auto clicked = ImGui::Button(name.c_str());
+	if (selected)
+	{
+		ImGui::PopStyleColor();
+		ImGui::PopStyleVar();
+	}
+	if (rotate != 0.f)
+		ImGui::EndRotation();
+	return clicked;
 }
 
 void App::show_entities_menu()
@@ -1437,12 +1445,26 @@ void App::show_entities_menu()
 			cmd_new_entities(selection.get_entities(), "image"_h);
 		if (ImGui::MenuItem("Text"))
 			cmd_new_entities(selection.get_entities(), "text"_h);
+		if (ImGui::MenuItem("Layout"))
+			cmd_new_entities(selection.get_entities(), "layout"_h);
 		ImGui::EndMenu();
 	}
 	if (ImGui::MenuItem("Duplicate (Shift+D)"))
 		cmd_duplicate_entities(selection.get_entities());
 	if (ImGui::MenuItem("Delete (Del)"))
 		cmd_delete_entities(selection.get_entities());
+}
+
+void App::open_message_dialog(const std::string& title, const std::string& message)
+{
+	if (title == "[RestructurePrefabInstanceWarnning]")
+	{
+		ImGui::OpenMessageDialog("Cannot restructure Prefab Instance",
+			"You cannot remove/reposition entities in Prefab Instance\n"
+			"Edit it in that prefab");
+	}
+	else
+		ImGui::OpenMessageDialog(title, message);
 }
 
 int main(int argc, char** args)

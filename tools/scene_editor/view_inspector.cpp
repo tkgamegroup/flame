@@ -967,10 +967,10 @@ struct EditingEntities
 			void* obj0 = comp_hash == 0 ? entt0 : (void*)entt0->get_component(comp_hash);
 			uint state = 1;
 
-			auto var0 = a.type->create();
-			a.type->copy(var0, a.get_value(obj0));
 			if (a.type->tag == TagD)
 			{
+				auto var0 = a.type->create();
+				a.type->copy(var0, a.get_value(obj0));
 				auto ti = (TypeInfo_Data*)a.type;
 				switch (ti->data_type)
 				{
@@ -1012,9 +1012,8 @@ struct EditingEntities
 						}
 					}
 				}
-
+				a.type->destroy(var0);
 			}
-			a.type->destroy(var0);
 
 			sync_states[&a] = state;
 		};
@@ -1593,6 +1592,12 @@ void View_Inspector::on_draw()
 			sel_ref_deletor(sel_ref_obj);
 		sel_ref_deletor = nullptr;
 		sel_ref_obj = nullptr;
+	}
+
+	if (selection.type != Selection::tNothing)
+	{
+		if (app.tool_button(graphics::FontAtlas::icon_s(selection.lock ? "unlock"_h : "lock"_h)))
+			app.toggle_selection_lock();
 	}
 
 	switch (selection.type)

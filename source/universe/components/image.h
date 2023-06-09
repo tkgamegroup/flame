@@ -20,6 +20,11 @@ namespace flame
 		// Reflect
 		virtual void set_auto_size(bool v) = 0;
 
+		// Reflect
+		float angle = 0.f;
+		// Reflect
+		virtual void set_angle(float v) = 0;
+
 		graphics::ImagePtr image = nullptr;
 
 		struct Create
