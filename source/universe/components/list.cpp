@@ -1,4 +1,5 @@
 #include "../../foundation/typeinfo.h"
+#include "../universe_private.h"
 #include "../entity_private.h"
 #include "list_private.h"
 
@@ -22,7 +23,7 @@ namespace flame
 		data_changed("count"_h);
 	}
 
-	void cListPrivate::set_modifiers(const std::vector<std::pair<std::string, std::string>>& _modifiers)
+	void cListPrivate::set_modifiers(const std::vector<Modifier>& _modifiers)
 	{
 		if (modifiers == _modifiers)
 			return;
@@ -44,28 +45,10 @@ namespace flame
 			if (!prefab_name.empty())
 			{
 				e->load(prefab_name);
-				for (auto& mod : modifiers)
+				for (auto& m : modifiers)
 				{
-					auto sp = SUS::split(mod.first, '|');
-					if (sp.size() != 2)
-						continue;
-					auto comp_hash = sh(sp.front().c_str());
-					if (auto comp = e->find_component_recursively(comp_hash); comp)
-					{
-						auto& ui = *find_udt(comp_hash);
-						voidptr obj = comp;
-						if (auto attr = ui.find_attribute(SUS::split(sp.back(), '.'), obj); attr && attr->type->tag == TagD)
-						{
-							auto expression = Expression::create(mod.second);
-							expression->set_const_value("i", i);
-							if (expression->compile())
-							{
-								auto value = expression->get_value();
-								attr->unserialize(obj, value);
-							}
-							delete expression;
-						}
-					}
+					ModifierPrivate mp(m, e, {}, { std::make_pair("i", i) });
+					mp.update(true);
 				}
 			}
 			e->tag = e->tag | TagNotSerialized;

@@ -25,8 +25,6 @@
 
 namespace flame
 {
-	struct DrawData;
-
 	FLAME_UNIVERSE_TYPE(Entity);
 	FLAME_UNIVERSE_TYPE(Component);
 	FLAME_UNIVERSE_TYPE(System);
@@ -38,7 +36,7 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cStretchedImage);
 	FLAME_UNIVERSE_TYPE(cReceiver);
 	FLAME_UNIVERSE_TYPE(cLayout);
-	FLAME_UNIVERSE_TYPE(cDataUpdater);
+	FLAME_UNIVERSE_TYPE(cAnimator);
 	FLAME_UNIVERSE_TYPE(cList);
 	FLAME_UNIVERSE_TYPE(cNode);
 	FLAME_UNIVERSE_TYPE(cMesh);
@@ -115,6 +113,27 @@ namespace flame
 	};
 
 	inline ElementStateFlags operator| (ElementStateFlags a, ElementStateFlags b) { return (ElementStateFlags)((int)a | (int)b); }
+
+	enum ModifierType
+	{
+		ModifierLinear,
+		ModifierDataBinding,
+		ModifierExpression
+	};
+
+	struct Modifier
+	{
+		ModifierType type;
+		std::string address;
+		std::string data;
+	};
+
+	inline bool operator==(const Modifier& a, const Modifier& b)
+	{
+		return a.type == b.type && a.address == b.address && a.data == b.data;
+	}
+
+	struct DrawData;
 
 	enum LightType
 	{

@@ -416,7 +416,8 @@ namespace flame
 		virtual void set_const_string(const std::string& name, const std::string& value) = 0;
 		virtual bool compile() = 0;
 		virtual bool update_bindings() = 0;
-		virtual std::string get_value(bool update_bindings = true) = 0;
+		virtual float get_value() = 0;
+		virtual std::string get_string_value() = 0;
 
 		FLAME_FOUNDATION_API static Expression* create(const std::string& expression_string);
 	};

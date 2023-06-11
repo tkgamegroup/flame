@@ -119,7 +119,8 @@ namespace flame
 		void set_const_string(const std::string& name, const std::string& value) override;
 		bool compile() override;
 		bool update_bindings() override;
-		std::string get_value(bool update_bindings) override;
+		float get_value() override;
+		std::string get_string_value() override;
 	};
 
 	ExpressionPrivate::ExpressionPrivate(const std::string& _expression_string)
@@ -245,11 +246,13 @@ namespace flame
 		return changed;
 	}
 
-	std::string ExpressionPrivate::get_value(bool _update_bindings)
+	float ExpressionPrivate::get_value()
 	{
-		if (_update_bindings)
-			update_bindings();
+		return expression.value();
+	}
 
+	std::string ExpressionPrivate::get_string_value()
+	{
 		return_value.clear();
 		auto float_ret = expression.value();
 		if (!return_value.empty())

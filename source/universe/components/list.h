@@ -18,9 +18,9 @@ namespace flame
 		virtual void set_count(uint count) = 0;
 
 		// Reflect
-		std::vector<std::pair<std::string, std::string>> modifiers; // address(component_name|attribute_chain), expression (use i for item index)
+		std::vector<Modifier> modifiers; // (use i for item index)
 		// Reflect
-		virtual void set_modifiers(const std::vector<std::pair<std::string, std::string>>& modifiers) = 0;
+		virtual void set_modifiers(const std::vector<Modifier>& modifiers) = 0;
 
 		struct Create
 		{

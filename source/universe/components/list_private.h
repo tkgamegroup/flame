@@ -10,7 +10,8 @@ namespace flame
 
 		void set_prefab_name(const std::filesystem::path& name) override;
 		void set_count(uint count) override;
-		void set_modifiers(const std::vector<std::pair<std::string, std::string>>& modifiers) override;
+
+		void set_modifiers(const std::vector<Modifier>& modifiers) override;
 
 		void refresh_items();
 	};
