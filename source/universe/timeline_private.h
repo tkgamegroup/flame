@@ -4,31 +4,29 @@
 
 namespace flame
 {
+	struct ExecutingAction;
+
 	struct Action
 	{
 		float start_time;
 		float duration;
 
-		virtual void start(EntityPtr e) = 0;
-		virtual void update(float t) = 0;
+		virtual ExecutingAction* make_executing(EntityPtr e) = 0;
 	};
 
 	struct MoveToAction : Action
 	{
 		std::string name;
-		EntityPtr target;
 		vec2 disp;
 
-		void start(EntityPtr e) override;
-		void update(float t) override;
+		ExecutingAction* make_executing(EntityPtr e) override;
 	};
 
 	struct CallbackAction : Action
 	{
 		std::function<void()> cb;
 
-		void start(EntityPtr e) override;
-		void update(float t) override;
+		ExecutingAction* make_executing(EntityPtr e) override;
 	};
 
 	struct TimelinePrivate : Timeline
@@ -39,17 +37,41 @@ namespace flame
 
 		void insert_action(Action* action, float delay);
 		TimelinePtr move_to(const std::string& name, const vec2& disp, float duration, float delay) override;
-		void add_callback(const std::function<void()>& cb, float delay) override;
+		TimelinePtr add_callback(const std::function<void()>& cb, float delay) override;
 
 		void save(const std::filesystem::path& filename) override;
+	};
+
+	struct ExecutingAction
+	{
+		float start_time;
+		float duration;
+
+		virtual void update(float t) = 0;
+	};
+
+	struct MoveToExecutingAction : ExecutingAction
+	{
+		cElementPtr target;
+		vec2 p0, p1;
+
+		void update(float t) override;
+	};
+
+	struct CallbackExecutingAction : ExecutingAction
+	{
+		std::function<void()> cb;
+
+		void update(float t) override;
 	};
 
 	struct ExecutingTimeline
 	{
 		float time = 0.f;
 		bool paused = false;
-		std::list<Action*> actions;
+		std::list<std::unique_ptr<ExecutingAction>> actions;
 
+		ExecutingTimeline(TimelinePtr tl, EntityPtr e);
 		bool update();
 	};
 }

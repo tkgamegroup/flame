@@ -1,13 +1,41 @@
 #include "timeline_private.h"
+#include "entity_private.h"
+#include "components/element_private.h"
 
 namespace flame
 {
+	ExecutingAction* MoveToAction::make_executing(EntityPtr e)
+	{
+		auto a = new MoveToExecutingAction;
+		if (name.empty())
+			a->target = e->element();
+		else
+		{
+			e = e->find_child_recursively(name);
+			a->target = e ? e->element() : nullptr;
+		}
+		if (a->target)
+		{
+			a->p0 = a->target->pos;
+			a->p1 = a->p0 + disp;
+		}
+		return a;
+	}
+
+	ExecutingAction* CallbackAction::make_executing(EntityPtr e)
+	{
+		auto a = new CallbackExecutingAction;
+		a->cb = cb;
+		return a;
+	}
+
 	void* TimelinePrivate::start_play(EntityPtr e, float speed)
 	{
-		auto et = new ExecutingTimeline;
+		auto et = new ExecutingTimeline(this, e);
 		add_event([et]() {
 			return et->update();
 		});
+		return et;
 	}
 
 	void TimelinePrivate::insert_action(Action* action, float delay)
@@ -33,11 +61,16 @@ namespace flame
 		a->name = name;
 		a->disp = disp;
 		insert_action(a, delay);
+		return this;
 	}
 
-	void TimelinePrivate::add_callback(const std::function<void()>& cb, float delay)
+	TimelinePtr TimelinePrivate::add_callback(const std::function<void()>& cb, float delay)
 	{
-
+		auto a = new CallbackAction();
+		a->duration = 0.f;
+		a->cb = cb;
+		insert_action(a, delay);
+		return this;
 	}
 
 	void TimelinePrivate::save(const std::filesystem::path& filename)
@@ -58,6 +91,29 @@ namespace flame
 	void Timeline::stop(void* et)
 	{
 
+	}
+
+	void MoveToExecutingAction::update(float t)
+	{
+		if (target)
+			target->set_pos(mix(p0, p1, t / duration));
+	}
+
+	void CallbackExecutingAction::update(float t)
+	{
+		cb();
+	}
+
+	ExecutingTimeline::ExecutingTimeline(TimelinePtr tl, EntityPtr e)
+	{
+
+		for (auto& a : tl->actions)
+		{
+			auto ea = a->make_executing(e);
+			ea->start_time = a->start_time;
+			ea->duration = a->duration;
+			actions.emplace_back(ea);
+		}
 	}
 
 	bool ExecutingTimeline::update()

@@ -9,7 +9,7 @@ namespace flame
 		virtual void* start_play(EntityPtr e, float speed = 1.f) = 0;
 
 		virtual TimelinePtr move_to(const std::string& name, const vec2& disp, float duration, float delay = 0.f) = 0;
-		virtual void add_callback(const std::function<void()>& cb, float delay = 0.f) = 0;
+		virtual TimelinePtr add_callback(const std::function<void()>& cb, float delay = 0.f) = 0;
 
 		virtual void save(const std::filesystem::path& filename) = 0;
 
@@ -29,6 +29,6 @@ namespace flame
 			virtual TimelinePtr operator()(const std::filesystem::path& filename) = 0;
 		};
 		// Reflect static
-		FLAME_UNIVERSE_API static Load& create;
+		FLAME_UNIVERSE_API static Load& load;
 	};
 }
