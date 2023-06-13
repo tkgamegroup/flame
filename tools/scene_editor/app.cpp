@@ -472,9 +472,10 @@ void App::init()
 		ImGui::SameLine();
 		ImGui::Dummy(vec2(0.f, 20.f));
 
-		if (e_editing)
+		if (selection.lock && selection.type == Selection::tEntity)
 		{
-			if (auto terrain = e_editing->get_component_t<cTerrain>(); terrain)
+			auto e = selection.as_entity();
+			if (auto terrain = e->get_component_t<cTerrain>(); terrain)
 			{
 				ImGui::SameLine();
 				if (tool_button(graphics::FontAtlas::icon_s("mound"_h) + "##up", app.tool == ToolTerrainUp))
@@ -486,7 +487,7 @@ void App::init()
 				if (tool_button(graphics::FontAtlas::icon_s("paintbrush"_h), app.tool == ToolTerrainPaint))
 					tool = ToolTerrainPaint;
 			}
-			if (auto tile_map = e_editing->get_component_t<cTileMap>(); tile_map)
+			if (auto tile_map = e->get_component_t<cTileMap>(); tile_map)
 			{
 				ImGui::SameLine();
 				if (tool_button(graphics::FontAtlas::icon_s("up-long"_h), app.tool == ToolTileMapLevelUp))
@@ -503,84 +504,68 @@ void App::init()
 		ImGui::SameLine();
 		ImGui::Dummy(vec2(50.f, 20.f));
 		ImGui::SameLine();
-		if (e_editing)
+		if (!e_playing && !e_preview)
 		{
-			if (tool_button(graphics::FontAtlas::icon_s("right-from-bracket"_h), false, 180.f))
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
+			if (tool_button(graphics::FontAtlas::icon_s("play"_h) + " Build And Play"))
 			{
-				selection.lock = false;
-				e_editing = nullptr;
+				build_project();
+				add_event([this]() {
+					cmd_play();
+					return false;
+					}, 0.f, 3);
 			}
-			else
-			{
-				ImGui::SameLine();
-				ImGui::Text("[%s]", e_editing->name.c_str());
-			}
+			ImGui::SameLine();
+			if (tool_button(graphics::FontAtlas::icon_s("play"_h)))
+				cmd_play();
+			ImGui::SameLine();
+			if (tool_button(graphics::FontAtlas::icon_s("circle-play"_h)))
+				cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : e_prefab);
+			ImGui::PopStyleColor();
 		}
 		else
 		{
-			if (!e_playing && !e_preview)
+			if (e_playing)
 			{
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
-				if (tool_button(graphics::FontAtlas::icon_s("play"_h) + " Build And Play"))
+				if (!paused)
 				{
-					build_project();
-					add_event([this]() {
-						cmd_play();
-						return false;
-					}, 0.f, 3);
-				}
-				ImGui::SameLine();
-				if (tool_button(graphics::FontAtlas::icon_s("play"_h)))
-					cmd_play();
-				ImGui::SameLine();
-				if (tool_button(graphics::FontAtlas::icon_s("circle-play"_h)))
-					cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : e_prefab);
-				ImGui::PopStyleColor();
-			}
-			else
-			{
-				if (e_playing)
-				{
-					if (!paused)
-					{
-						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1));
-						ImGui::SameLine();
-						if (tool_button(graphics::FontAtlas::icon_s("pause"_h)))
-							cmd_pause();
-						ImGui::PopStyleColor();
-					}
-					else
-					{
-						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
-						ImGui::SameLine();
-						if (tool_button(graphics::FontAtlas::icon_s("play"_h)))
-							cmd_play();
-						ImGui::PopStyleColor();
-					}
-				}
-				else if (e_preview)
-				{
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 1, 1));
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1));
 					ImGui::SameLine();
-					if (tool_button(graphics::FontAtlas::icon_s("rotate"_h)))
-						cmd_restart_preview();
+					if (tool_button(graphics::FontAtlas::icon_s("pause"_h)))
+						cmd_pause();
 					ImGui::PopStyleColor();
 				}
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
-				ImGui::SameLine();
-				if (tool_button(graphics::FontAtlas::icon_s("stop"_h)))
+				else
 				{
-					if (e_playing)
-						cmd_stop();
-					else if (e_preview)
-						cmd_stop_preview();
-				}
-				ImGui::PopStyleColor();
-				if (e_preview)
-				{
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
 					ImGui::SameLine();
-					ImGui::Text("[%s]", e_preview->name.c_str());
+					if (tool_button(graphics::FontAtlas::icon_s("play"_h)))
+						cmd_play();
+					ImGui::PopStyleColor();
 				}
+			}
+			else if (e_preview)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 1, 1));
+				ImGui::SameLine();
+				if (tool_button(graphics::FontAtlas::icon_s("rotate"_h)))
+					cmd_restart_preview();
+				ImGui::PopStyleColor();
+			}
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
+			ImGui::SameLine();
+			if (tool_button(graphics::FontAtlas::icon_s("stop"_h)))
+			{
+				if (e_playing)
+					cmd_stop();
+				else if (e_preview)
+					cmd_stop_preview();
+			}
+			ImGui::PopStyleColor();
+			if (e_preview)
+			{
+				ImGui::SameLine();
+				ImGui::Text("[%s]", e_preview->name.c_str());
 			}
 		}
 
@@ -994,16 +979,9 @@ void App::close_project()
 void App::toggle_selection_lock()
 {
 	if (selection.lock)
-	{
 		selection.lock = false;
-		e_editing = nullptr;
-	}
 	else
-	{
-		if (selection.type == Selection::tEntity)
-			e_editing = selection.as_entity();
 		selection.lock = true;
-	}
 }
 
 void App::new_prefab(const std::filesystem::path& path, uint type)
@@ -1278,7 +1256,7 @@ bool App::cmd_duplicate_entities(std::vector<EntityPtr>&& es)
 
 bool App::cmd_play()
 {
-	if (e_editing || e_preview)
+	if (e_preview)
 		return false;
 	if (!e_playing && e_prefab)
 	{
@@ -1346,8 +1324,6 @@ bool App::cmd_stop()
 
 bool App::cmd_start_preview(EntityPtr e)
 {
-	if (e_editing)
-		return false;
 	if (e_preview)
 		cmd_stop_preview();
 
@@ -1389,8 +1365,6 @@ bool App::cmd_stop_preview()
 
 bool App::cmd_restart_preview()
 {
-	if (e_editing)
-		return false;
 	if (!e_preview)
 		return false;
 

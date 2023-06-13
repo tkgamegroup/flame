@@ -855,12 +855,13 @@ void View_Scene::on_draw()
 				show_navigation_frames--;
 		}
 
-		if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered() && app.e_editing)
+		if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered() && selection.lock && selection.type == Selection::tEntity)
 		{
-			if (auto terrain = app.e_editing->get_component_t<cTerrain>(); terrain)
+			auto e = selection.as_entity();
+			if (auto terrain = e->get_component_t<cTerrain>(); terrain)
 			{
 			}
-			if (auto tile_map = app.e_editing->get_component_t<cTileMap>(); tile_map)
+			if (auto tile_map = e->get_component_t<cTileMap>(); tile_map)
 			{
 				tile_map_editing();
 			}

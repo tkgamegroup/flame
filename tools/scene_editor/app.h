@@ -57,7 +57,6 @@ struct App : UniverseApplication
 	void* project_cpp_library = nullptr;
 	EntityPtr e_editor = nullptr;
 	EntityPtr e_prefab = nullptr;
-	EntityPtr e_editing = nullptr;
 	EntityPtr e_playing = nullptr;
 	EntityPtr e_preview = nullptr;
 	bool paused = false;

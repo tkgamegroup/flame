@@ -34,11 +34,11 @@ namespace flame
 
 	}
 
-	void ExecutingStrip::update(float t)
+	void ExecutingTimeline::Strip::update(float t)
 	{
 		if (attr)
 		{
-
+			auto ti = (TypeInfo_Data*)attr->type;
 		}
 	}
 
@@ -46,7 +46,13 @@ namespace flame
 	{
 		for (auto& s : tl->strips)
 		{
-			auto& es = strips.emplace_back();
+			auto it = strips.begin();
+			for (; it != strips.end(); it++)
+			{
+				if (it->start_time > s.start_time)
+					break;
+			}
+			auto& es = *strips.emplace(it);
 			es.start_time = s.start_time;
 			es.duration = s.duration;
 			resolve_address(s.address, e, es.attr, es.obj, es.index);
@@ -57,9 +63,22 @@ namespace flame
 				else
 				{
 					auto ti = (TypeInfo_Data*)es.attr->type;
-					switch (ti->data_type)
+					for (auto& k : s.keyframes)
 					{
-
+						auto& ek = es.keyframes.emplace_back();
+						ek.time = k.time;
+						switch (ti->data_type)
+						{
+						case DataFloat:
+								if (k.value == "-")
+								{
+									auto v = *(float*)es.attr->get_value(es.obj);
+									ek.value = v;
+								}
+								else
+									ek.value = s2t<float>(k.value);
+							break;
+						}
 					}
 				}
 			}

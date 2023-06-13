@@ -5,13 +5,19 @@
 namespace flame
 {
 	// Reflect
+	struct Keyframe
+	{
+		float time;
+		std::string value;
+	};
+
+	// Reflect
 	struct Strip
 	{
 		float start_time;
 		float duration;
 		std::string address;
-		std::string value0;
-		std::string value1;
+		std::vector<Keyframe> keyframes;
 
 		// Reflect
 		VirtualUdt<Action>	finished_action;

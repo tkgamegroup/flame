@@ -12,26 +12,31 @@ namespace flame
 		void save(const std::filesystem::path& filename) override;
 	};
 
-	struct ExecutingStrip 
-	{
-		float start_time;
-		float duration;
-		const Attribute* attr;
-		void* obj;
-		uint index;
-		float value0;
-		float value1;
-
-		std::function<void()> finished_action;
-
-		void update(float t);
-	};
-
 	struct ExecutingTimeline
 	{
+		struct Keyframe
+		{
+			float time;
+			float value;
+		};
+
+		struct Strip
+		{
+			float start_time;
+			float duration;
+			const Attribute* attr;
+			void* obj;
+			uint index;
+			std::vector<Keyframe> keyframes;
+
+			std::function<void()> finished_action;
+
+			void update(float t);
+		};
+
 		float time = 0.f;
 		bool paused = false;
-		std::list<ExecutingStrip> strips;
+		std::list<Strip> strips;
 
 		ExecutingTimeline(TimelinePtr tl, EntityPtr e);
 		bool update();
