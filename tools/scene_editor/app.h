@@ -62,6 +62,7 @@ struct App : UniverseApplication
 	EntityPtr e_preview = nullptr;
 	bool paused = false;
 	void* ev_open_prefab = nullptr;
+	TimelinePtr opened_timeline = nullptr;
 
 	ProjectSettings project_settings;
 
@@ -91,6 +92,8 @@ struct App : UniverseApplication
 	void close_prefab();
 	void load_project_cpp();
 	void unload_project_cpp();
+	void open_timeline(const std::filesystem::path& path);
+	void close_timeline();
 	void open_file_in_vs(const std::filesystem::path& path);
 	void vs_automate(const std::vector<std::wstring>& cl);
 

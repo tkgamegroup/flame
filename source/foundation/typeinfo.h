@@ -653,7 +653,7 @@ namespace flame
 			return &attributes[it->second];
 		}
 
-		const Attribute* find_attribute(const std::vector<std::string>& chain, voidptr& obj) const;
+		const Attribute* find_attribute(const std::vector<std::string>& chain, voidptr& obj, uint* out_index = nullptr) const;
 
 		FLAME_FOUNDATION_API void* create_object(void* p = nullptr) const;
 		FLAME_FOUNDATION_API void destroy_object(void* p, bool free_memory = true) const;
@@ -2911,7 +2911,7 @@ namespace flame
 		virtual void exec() = 0;
 	};
 
-	inline const Attribute* UdtInfo::find_attribute(const std::vector<std::string>& chain, voidptr& obj) const
+	inline const Attribute* UdtInfo::find_attribute(const std::vector<std::string>& chain, voidptr& obj, uint* out_index) const
 	{
 		if (chain.empty())
 			return nullptr;
@@ -2927,20 +2927,42 @@ namespace flame
 			if (i >= chain.size())
 				return attr;
 
-			if (attr->type->tag == TagO && obj)
+			switch (attr->type->tag)
 			{
-				auto& vo = *(VirtualUdt<int>*)((char*)obj + attr->var_off());
-				if (vo.type)
+			case TagD:
+				if (out_index)
 				{
-					ui = vo.type->retrive_ui();
-					obj = vo.data;
+					if (i + 1 == chain.size() && chain[i].size() == 1)
+					{
+						auto ch = chain[i][0];
+						switch (ch)
+						{
+						case 'x': *out_index = 0; break;
+						case 'y': *out_index = 1; break;
+						case 'z': *out_index = 2; break;
+						case 'w': *out_index = 3; break;
+						}
+						if (auto ti = (TypeInfo_Data*)attr->type; ti->vec_size > *out_index)
+							return attr;
+					}
 				}
-			}
-			else
-			{
+				return nullptr;
+			case TagO:
+				if (obj)
+				{
+					auto& vo = *(VirtualUdt<int>*)((char*)obj + attr->var_off());
+					if (vo.type)
+					{
+						ui = vo.type->retrive_ui();
+						obj = vo.data;
+					}
+				}
+				break;
+			case TagU:
 				ui = attr->type->retrive_ui();
 				if (obj)
 					obj = (char*)obj + attr->var_off();
+				break;
 			}
 			if (!ui)
 				return nullptr;

@@ -1098,6 +1098,16 @@ void App::unload_project_cpp()
 	}
 }
 
+void App::open_timeline(const std::filesystem::path& path)
+{
+
+}
+
+void App::close_timeline()
+{
+
+}
+
 void App::open_file_in_vs(const std::filesystem::path& path)
 {
 	vs_automate({ L"open_file", path.wstring() });

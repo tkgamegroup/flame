@@ -4,12 +4,26 @@
 
 namespace flame
 {
+	// Reflect
+	struct Strip
+	{
+		float start_time;
+		float duration;
+		std::string address;
+		std::string value0;
+		std::string value1;
+
+		// Reflect
+		VirtualUdt<Action>	finished_action;
+	};
+
 	struct Timeline
 	{
-		virtual void* start_play(EntityPtr e, float speed = 1.f) = 0;
+		virtual ~Timeline() {}
 
-		virtual TimelinePtr move_to(const std::string& name, const vec2& disp, float duration, float delay = 0.f) = 0;
-		virtual TimelinePtr add_callback(const std::function<void()>& cb, float delay = 0.f) = 0;
+		std::vector<Strip> strips;
+
+		virtual void* start_play(EntityPtr e, float speed = 1.f) = 0;
 
 		virtual void save(const std::filesystem::path& filename) = 0;
 

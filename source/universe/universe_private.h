@@ -1,9 +1,12 @@
 #pragma once
 
+#include "../foundation/typeinfo.h"
 #include "universe.h"
 
 namespace flame
 {
+	void resolve_address(const std::string& address, EntityPtr e, const Attribute*& attr, voidptr& obj, uint& index);
+
 	struct ModifierPrivate
 	{
 		const Attribute* attr = nullptr;

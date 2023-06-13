@@ -1,34 +1,10 @@
+#include "universe_private.h"
 #include "timeline_private.h"
 #include "entity_private.h"
 #include "components/element_private.h"
 
 namespace flame
 {
-	ExecutingAction* MoveToAction::make_executing(EntityPtr e)
-	{
-		auto a = new MoveToExecutingAction;
-		if (name.empty())
-			a->target = e->element();
-		else
-		{
-			e = e->find_child_recursively(name);
-			a->target = e ? e->element() : nullptr;
-		}
-		if (a->target)
-		{
-			a->p0 = a->target->pos;
-			a->p1 = a->p0 + disp;
-		}
-		return a;
-	}
-
-	ExecutingAction* CallbackAction::make_executing(EntityPtr e)
-	{
-		auto a = new CallbackExecutingAction;
-		a->cb = cb;
-		return a;
-	}
-
 	void* TimelinePrivate::start_play(EntityPtr e, float speed)
 	{
 		auto et = new ExecutingTimeline(this, e);
@@ -36,41 +12,6 @@ namespace flame
 			return et->update();
 		});
 		return et;
-	}
-
-	void TimelinePrivate::insert_action(Action* action, float delay)
-	{
-		action->start_time = 0.f;
-		if (!actions.empty())
-		{
-			auto& last = actions.back();
-			action->start_time = last->start_time + last->duration;
-		}
-		action->start_time += delay;
-
-		auto it = std::lower_bound(actions.begin(), actions.end(), action, [](const auto& a, const auto& b) {
-			return a->start_time < b->start_time;
-		});
-		actions.emplace(it, action);
-	}
-
-	TimelinePtr TimelinePrivate::move_to(const std::string& name, const vec2& disp, float duration, float delay)
-	{
-		auto a = new MoveToAction();
-		a->duration = duration;
-		a->name = name;
-		a->disp = disp;
-		insert_action(a, delay);
-		return this;
-	}
-
-	TimelinePtr TimelinePrivate::add_callback(const std::function<void()>& cb, float delay)
-	{
-		auto a = new CallbackAction();
-		a->duration = 0.f;
-		a->cb = cb;
-		insert_action(a, delay);
-		return this;
 	}
 
 	void TimelinePrivate::save(const std::filesystem::path& filename)
@@ -93,56 +34,82 @@ namespace flame
 
 	}
 
-	void MoveToExecutingAction::update(float t)
+	void ExecutingStrip::update(float t)
 	{
-		if (target)
-			target->set_pos(mix(p0, p1, t / duration));
-	}
+		if (attr)
+		{
 
-	void CallbackExecutingAction::update(float t)
-	{
-		cb();
+		}
 	}
 
 	ExecutingTimeline::ExecutingTimeline(TimelinePtr tl, EntityPtr e)
 	{
-
-		for (auto& a : tl->actions)
+		for (auto& s : tl->strips)
 		{
-			auto ea = a->make_executing(e);
-			ea->start_time = a->start_time;
-			ea->duration = a->duration;
-			actions.emplace_back(ea);
+			auto& es = strips.emplace_back();
+			es.start_time = s.start_time;
+			es.duration = s.duration;
+			resolve_address(s.address, e, es.attr, es.obj, es.index);
+			if (es.attr)
+			{
+				if (es.attr->type->tag != TagD)
+					es.attr = nullptr;
+				else
+				{
+					auto ti = (TypeInfo_Data*)es.attr->type;
+					switch (ti->data_type)
+					{
+
+					}
+				}
+			}
 		}
 	}
 
 	bool ExecutingTimeline::update()
 	{
-		if (actions.empty())
+		if (strips.empty())
 		{
 			delete this;
 			return false;
 		}
-		for (auto it = actions.begin(); it != actions.end();)
+		for (auto it = strips.begin(); it != strips.end();)
 		{
-			auto& a = *it;
-			if (time < a->start_time)
+			auto& m = *it;
+			if (time < m.start_time)
 				break;
-			if (a->duration == 0.f)
+			if (time < m.start_time + m.duration)
 			{
-				a->update(0.f);
-				it = actions.erase(it);
-				continue;
-			}
-			if (time < a->start_time + a->duration)
-			{
-				a->update(time - a->start_time);
+				m.update(time - m.start_time);
 				++it;
 			}
 			else
-				it = actions.erase(it);
+			{
+				if (m.finished_action)
+					m.finished_action();
+				it = strips.erase(it);
+			}
 		}
 		time += delta_time;
 		return true;
 	}
+
+	struct TimelineCreate : Timeline::Create
+	{
+		TimelinePtr operator()() override
+		{
+			return new TimelinePrivate();
+		}
+	}Timeline_create;
+	Timeline::Create& Timeline::create = Timeline_create;
+
+	struct TimelineLoad : Timeline::Load
+	{
+		TimelinePtr operator()(const std::filesystem::path& filename) override
+		{
+			auto ret = new TimelinePrivate();
+			return ret;
+		}
+	}Timeline_load;
+	Timeline::Load& Timeline::load = Timeline_load;
 }

@@ -11,6 +11,7 @@
 #include <flame/graphics/shader.h>
 #include <flame/graphics/extension.h>
 #include <flame/graphics/debug.h>
+#include <flame/universe/timeline.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
 
@@ -422,6 +423,11 @@ void View_Project::init()
 				};
 			}
 		}
+		else if (ext == L".timeline")
+		{
+			if (ImGui::MenuItem("Open"))
+				app.open_timeline(path);
+		}
 		if (ImGui::MenuItem("Refresh"))
 		{
 			update_thumbnail(path);
@@ -708,6 +714,24 @@ void View_Project::init()
 						}
 						else
 							ImGui::OpenMessageDialog("Failed to create Preset", "Preset already existed");
+					}
+				});
+			}
+			if (ImGui::MenuItem("New Timeline"))
+			{
+				ImGui::OpenInputDialog("New Timeline", "File Name", [path](bool ok, const std::string& str) {
+					if (ok && !str.empty())
+					{
+						auto fn = path / str;
+						fn.replace_extension(L".timeline");
+						if (!std::filesystem::exists(fn))
+						{
+							auto timeline = Timeline::create();
+							timeline->save(fn);
+							delete timeline;
+						}
+						else
+							ImGui::OpenMessageDialog("Failed to create Timeline", "Timeline already existed");
 					}
 				});
 			}

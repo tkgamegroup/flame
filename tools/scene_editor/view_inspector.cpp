@@ -1963,7 +1963,7 @@ target_include_directories({0} PUBLIC "${{GLM_INCLUDE_DIR}}")
 			}
 		}
 		else
-			ImGui::Text("Multiple Files Selected");
+			ImGui::Text("Multiple files selected.");
 	}
 		break;
 	}
