@@ -61,7 +61,12 @@ struct App : UniverseApplication
 	EntityPtr e_preview = nullptr;
 	bool paused = false;
 	void* ev_open_prefab = nullptr;
+
 	TimelinePtr opened_timeline = nullptr;
+	bool timeline_preview = true;
+	EntityPtr e_timeline_host = nullptr;
+	uint timeline_current_frame = 0;
+	bool timeline_recording = false;
 
 	ProjectSettings project_settings;
 
@@ -93,6 +98,9 @@ struct App : UniverseApplication
 	void unload_project_cpp();
 	void open_timeline(const std::filesystem::path& path);
 	void close_timeline();
+	void set_timeline_host(EntityPtr e);
+	void timeline_start_record();
+	void timeline_stop_record();
 	void open_file_in_vs(const std::filesystem::path& path);
 	void vs_automate(const std::vector<std::wstring>& cl);
 

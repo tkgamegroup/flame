@@ -20,7 +20,7 @@ namespace flame
 			float value;
 		};
 
-		struct Strip
+		struct Track
 		{
 			float start_time;
 			float duration;
@@ -29,14 +29,12 @@ namespace flame
 			uint index;
 			std::vector<Keyframe> keyframes;
 
-			std::function<void()> finished_action;
-
 			void update(float t);
 		};
 
 		float time = 0.f;
 		bool paused = false;
-		std::list<Strip> strips;
+		std::list<Track> tracks;
 
 		ExecutingTimeline(TimelinePtr tl, EntityPtr e);
 		bool update();

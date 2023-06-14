@@ -253,6 +253,8 @@ void View_Project::init()
 			app.open_prefab(path);
 		else if (ext == L".h" || ext == L".cpp")
 			app.open_file_in_vs(path);
+		else if (ext == L".timeline")
+			app.open_timeline(path);
 		
 		auto it = std::find(recent_paths.begin(), recent_paths.end(), path);
 		if (it == recent_paths.end())

@@ -10,6 +10,7 @@
 #include <flame/foundation/typeinfo.h>
 #include <flame/foundation/typeinfo_serialize.h>
 #include <flame/universe/draw_data.h>
+#include <flame/universe/timeline.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
@@ -1078,12 +1079,56 @@ void App::unload_project_cpp()
 
 void App::open_timeline(const std::filesystem::path& path)
 {
+	close_timeline();
 
+	opened_timeline = Timeline::load(path);
 }
 
 void App::close_timeline()
 {
+	if (opened_timeline)
+	{
+		delete opened_timeline;
+		opened_timeline = nullptr;
+		timeline_recording = false;
+	}
+}
 
+void App::set_timeline_host(EntityPtr e)
+{
+	if (e_timeline_host)
+	{
+		e_timeline_host->message_listeners.remove("timeline_host"_h);
+		e_timeline_host = nullptr;
+	}
+	if (e)
+	{
+		e->message_listeners.add([this](uint hash, void*, void*) {
+			if (hash == "destroyed"_h)
+			{
+				e_timeline_host = nullptr;
+				if (timeline_recording)
+					timeline_recording = false;
+			}
+		}, "timeline_host"_h);
+		e_timeline_host = e;
+	}
+	timeline_recording = false;
+}
+
+void App::timeline_start_record()
+{
+	if (timeline_recording)
+		return;
+	if (e_timeline_host)
+		timeline_recording = true;
+}
+
+void App::timeline_stop_record()
+{
+	if (!timeline_recording)
+		return;
+	timeline_recording = false;
 }
 
 void App::open_file_in_vs(const std::filesystem::path& path)

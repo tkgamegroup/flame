@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../foundation/typeinfo.h"
 #include "universe.h"
 
 namespace flame
@@ -12,22 +13,21 @@ namespace flame
 	};
 
 	// Reflect
-	struct Strip
+	struct Track
 	{
 		float start_time;
 		float duration;
 		std::string address;
 		std::vector<Keyframe> keyframes;
-
-		// Reflect
-		VirtualUdt<Action>	finished_action;
 	};
 
 	struct Timeline
 	{
-		virtual ~Timeline() {}
+		std::vector<Track> tracks;
 
-		std::vector<Strip> strips;
+		std::filesystem::path filename;
+
+		virtual ~Timeline() {}
 
 		virtual void* start_play(EntityPtr e, float speed = 1.f) = 0;
 

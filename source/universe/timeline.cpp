@@ -1,3 +1,4 @@
+#include "../xml.h"
 #include "universe_private.h"
 #include "timeline_private.h"
 #include "entity_private.h"
@@ -14,9 +15,14 @@ namespace flame
 		return et;
 	}
 
-	void TimelinePrivate::save(const std::filesystem::path& filename)
+	void TimelinePrivate::save(const std::filesystem::path& _filename)
 	{
+		pugi::xml_document doc;
+		pugi::xml_node doc_root;
+		auto filename = Path::get(_filename);
 
+		doc_root = doc.append_child("timeline");
+		doc.save_file(filename.c_str());
 	}
 
 	void Timeline::pause(void* et)
@@ -34,7 +40,7 @@ namespace flame
 
 	}
 
-	void ExecutingTimeline::Strip::update(float t)
+	void ExecutingTimeline::Track::update(float t)
 	{
 		if (attr)
 		{
@@ -44,35 +50,35 @@ namespace flame
 
 	ExecutingTimeline::ExecutingTimeline(TimelinePtr tl, EntityPtr e)
 	{
-		for (auto& s : tl->strips)
+		for (auto& t : tl->tracks)
 		{
-			auto it = strips.begin();
-			for (; it != strips.end(); it++)
+			auto it = tracks.begin();
+			for (; it != tracks.end(); it++)
 			{
-				if (it->start_time > s.start_time)
+				if (it->start_time > t.start_time)
 					break;
 			}
-			auto& es = *strips.emplace(it);
-			es.start_time = s.start_time;
-			es.duration = s.duration;
-			resolve_address(s.address, e, es.attr, es.obj, es.index);
-			if (es.attr)
+			auto& et = *tracks.emplace(it);
+			et.start_time = t.start_time;
+			et.duration = t.duration;
+			resolve_address(t.address, e, et.attr, et.obj, et.index);
+			if (et.attr)
 			{
-				if (es.attr->type->tag != TagD)
-					es.attr = nullptr;
+				if (et.attr->type->tag != TagD)
+					et.attr = nullptr;
 				else
 				{
-					auto ti = (TypeInfo_Data*)es.attr->type;
-					for (auto& k : s.keyframes)
+					auto ti = (TypeInfo_Data*)et.attr->type;
+					for (auto& k : t.keyframes)
 					{
-						auto& ek = es.keyframes.emplace_back();
+						auto& ek = et.keyframes.emplace_back();
 						ek.time = k.time;
 						switch (ti->data_type)
 						{
 						case DataFloat:
 								if (k.value == "-")
 								{
-									auto v = *(float*)es.attr->get_value(es.obj);
+									auto v = *(float*)et.attr->get_value(et.obj);
 									ek.value = v;
 								}
 								else
@@ -87,27 +93,23 @@ namespace flame
 
 	bool ExecutingTimeline::update()
 	{
-		if (strips.empty())
+		if (tracks.empty())
 		{
 			delete this;
 			return false;
 		}
-		for (auto it = strips.begin(); it != strips.end();)
+		for (auto it = tracks.begin(); it != tracks.end();)
 		{
-			auto& m = *it;
-			if (time < m.start_time)
+			auto& t = *it;
+			if (time < t.start_time)
 				break;
-			if (time < m.start_time + m.duration)
+			if (time < t.start_time + t.duration)
 			{
-				m.update(time - m.start_time);
+				t.update(time - t.start_time);
 				++it;
 			}
 			else
-			{
-				if (m.finished_action)
-					m.finished_action();
-				it = strips.erase(it);
-			}
+				it = tracks.erase(it);
 		}
 		time += delta_time;
 		return true;
@@ -124,9 +126,25 @@ namespace flame
 
 	struct TimelineLoad : Timeline::Load
 	{
-		TimelinePtr operator()(const std::filesystem::path& filename) override
+		TimelinePtr operator()(const std::filesystem::path& _filename) override
 		{
+			pugi::xml_document doc;
+			pugi::xml_node doc_root;
+
+			auto filename = Path::get(_filename);
+			if (!std::filesystem::exists(filename))
+			{
+				wprintf(L"timeline does not exist: %s\n", _filename.c_str());
+				return nullptr;
+			}
+			if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("timeline"))
+			{
+				wprintf(L"timeline is wrong format: %s\n", _filename.c_str());
+				return nullptr;
+			}
+
 			auto ret = new TimelinePrivate();
+			ret->filename = filename;
 			return ret;
 		}
 	}Timeline_load;

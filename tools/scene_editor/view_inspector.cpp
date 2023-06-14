@@ -405,6 +405,31 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (just_exit_editing)
 				add_modify_history(name_hash, str(ti->vec_size, (float*)data));
 			changed = just_exit_editing ? 2 : changed > 0;
+			if (auto& eos = editing_objects.top(); eos.type == 1 && eos.num > 0)
+			{
+				if (app.timeline_recording)
+				{
+					auto can_record = true;
+					for (auto i = 0; i < eos.num; i++)
+					{
+						auto e = ((EntityPtr*)eos.objs)[i];
+						if (e != app.e_timeline_host && !is_ancestor(app.e_timeline_host, e))
+						{
+							can_record = false;
+							break;
+						}
+					}
+
+					if (can_record)
+					{
+						ImGui::SameLine();
+						if (ImGui::SmallButton(graphics::FontAtlas::icon_s("square"_h).c_str()))
+						{
+
+						}
+					}
+				}
+			}
 			break;
 		case DataChar:
 			switch (ti->vec_size)
