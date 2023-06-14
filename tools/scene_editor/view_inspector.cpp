@@ -13,6 +13,7 @@
 #include <flame/graphics/animation.h>
 #include <flame/graphics/shader.h>
 #include <flame/graphics/debug.h>
+#include <flame/universe/timeline.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/mesh.h>
 #include <flame/universe/components/armature.h>
@@ -186,12 +187,60 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		same[0] = 1; same[1] = 1; same[2] = 1; same[3] = 1;
 	}
 
-	auto input_int_n = [](const char* name, uint n, int* data, char* same) {
+	auto enable_record = false;
+	if (eos.type == 1 && eos.num > 0)
+	{
+		if (app.timeline_recording)
+		{
+			enable_record = true;
+			for (auto i = 0; i < eos.num; i++)
+			{
+				auto e = ((EntityPtr*)eos.objs)[i];
+				if (e != app.e_timeline_host && !is_ancestor(app.e_timeline_host, e))
+				{
+					enable_record = false;
+					break;
+				}
+			}
+		}
+	}
+
+	auto get_keyframe_adress = [](EntityPtr t, EntityPtr e, uint comp_hash, const std::string& attr_name, int vector_component_index = -1)->std::string {
+		std::string ret;
+		if (t != e)
+		{
+			while (e->parent != t)
+			{
+				if (!ret.empty())
+					ret = '.' + ret;
+				ret = e->name + ret;
+				e = e->parent;
+			}
+		}
+		if (comp_hash)
+		{
+			if (!ret.empty())
+				ret += '.';
+			ret += find_udt(comp_hash)->name;
+		}
+		if (!ret.empty())
+			ret += '|';
+		ret += attr_name;
+		static const char vector_component_names[] = { 'x', 'y', 'z', 'w' };
+		if (vector_component_index != -1)
+		{
+			ret += '.';
+			ret += vector_component_names[vector_component_index];
+		}
+		return ret;
+	};
+
+	auto input_int_n = [&](uint n, int* data) {
 		auto ret = false;
 
 		auto inner_spaceing = ImGui::GetStyle().ItemInnerSpacing.x;
 		ImGui::BeginGroup();
-		ImGui::PushID(name);
+		ImGui::PushID(name.c_str());
 		ImGui::PushMultiItemsWidths(n, ImGui::CalcItemWidth());
 		for (int i = 0; i < n; i++)
 		{
@@ -199,6 +248,13 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (i > 0)
 				ImGui::SameLine(0.f, inner_spaceing);
 			auto changed = ImGui::InputScalar("", ImGuiDataType_S32, &data[i], nullptr, nullptr, same[i] ? "%d" : "-", 0);
+			if (enable_record)
+			{
+				ImGui::SameLine();
+				if (ImGui::SmallButton(graphics::FontAtlas::icon_s("diamond"_h).c_str()))
+				{
+				}
+			}
 			if (changed)
 				same[i] = 0;
 			ret |= changed;
@@ -208,18 +264,18 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		ImGui::PopID();
 
 		ImGui::SameLine(0.f, inner_spaceing);
-		ImGui::TextEx(name);
+		ImGui::TextEx(display_name.c_str());
 
 		ImGui::EndGroup();
 		return ret;
 	};
 
-	auto input_float_n = [](const char* name, uint n, float* data, char* same) {
+	auto input_float_n = [&](uint n, float* data) {
 		auto ret = 0;
 
 		auto inner_spaceing = ImGui::GetStyle().ItemInnerSpacing.x;
 		ImGui::BeginGroup();
-		ImGui::PushID(name);
+		ImGui::PushID(name.c_str());
 		ImGui::PushMultiItemsWidths(n, ImGui::CalcItemWidth());
 		for (int i = 0; i < n; i++)
 		{
@@ -227,6 +283,42 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (i > 0)
 				ImGui::SameLine(0.f, inner_spaceing);
 			auto changed = ImGui::DragScalar("", ImGuiDataType_Float, &data[i], 0.1f, nullptr, nullptr, same[i] ? "%.3f" : "-", 0);
+			if (enable_record)
+			{
+				ImGui::SameLine();
+				if (ImGui::SmallButton(graphics::FontAtlas::icon_s("diamond"_h).c_str()))
+				{
+					auto current_time = app.timeline_current_frame / 60.f;
+					for (auto j = 0; j < eos.num; j++)
+					{
+						auto address = get_keyframe_adress(app.e_timeline_host, ((EntityPtr*)eos.objs)[j], eos.type2, name, i);
+						auto it = std::find_if(app.opened_timeline->tracks.begin(), app.opened_timeline->tracks.end(), [&](const auto& i) { 
+							return i.address == address; 
+						});
+						if (it == app.opened_timeline->tracks.end())
+						{
+							auto& t = app.opened_timeline->tracks.emplace_back();
+							t.address = address;
+							t.keyframes.emplace_back(current_time, str(data[i]));
+						}
+						else
+						{
+							auto& t = *it;
+							auto it2 = std::find_if(t.keyframes.begin(), t.keyframes.end(), [&](const auto& i) {
+								return i.time == current_time;
+							});
+							if (it2 == t.keyframes.end())
+								t.keyframes.emplace_back(current_time, str(data[i]));
+							else
+							{
+								t.keyframes.erase(it2);
+								if (t.keyframes.empty())
+									app.opened_timeline->tracks.erase(it);
+							}
+						}
+					}
+				}
+			}
 			if (changed)
 			{
 				same[i] = 0;
@@ -240,7 +332,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		ImGui::PopID();
 
 		ImGui::SameLine(0.f, inner_spaceing);
-		ImGui::TextEx(name);
+		ImGui::TextEx(display_name.c_str());
 
 		ImGui::EndGroup();
 		return ret;
@@ -355,7 +447,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 			break;
 		case DataInt:
-			changed = input_int_n(display_name.c_str(), ti->vec_size, (int*)data, same);
+			changed = input_int_n(ti->vec_size, (int*)data);
 			if (ImGui::IsItemActivated())
 			{
 				before_editing_values.resize(num);
@@ -381,7 +473,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			changed = just_exit_editing ? 2 : changed > 0;
 			break;
 		case DataFloat:
-			changed = input_float_n(display_name.c_str(), ti->vec_size, (float*)data, same);
+			changed = input_float_n(ti->vec_size, (float*)data);
 			if (ImGui::IsItemActivated())
 			{
 				before_editing_values.resize(num);
@@ -405,31 +497,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (just_exit_editing)
 				add_modify_history(name_hash, str(ti->vec_size, (float*)data));
 			changed = just_exit_editing ? 2 : changed > 0;
-			if (auto& eos = editing_objects.top(); eos.type == 1 && eos.num > 0)
-			{
-				if (app.timeline_recording)
-				{
-					auto can_record = true;
-					for (auto i = 0; i < eos.num; i++)
-					{
-						auto e = ((EntityPtr*)eos.objs)[i];
-						if (e != app.e_timeline_host && !is_ancestor(app.e_timeline_host, e))
-						{
-							can_record = false;
-							break;
-						}
-					}
-
-					if (can_record)
-					{
-						ImGui::SameLine();
-						if (ImGui::SmallButton(graphics::FontAtlas::icon_s("square"_h).c_str()))
-						{
-
-						}
-					}
-				}
-			}
 			break;
 		case DataChar:
 			switch (ti->vec_size)

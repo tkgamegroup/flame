@@ -12,11 +12,14 @@ View_Timeline::View_Timeline() :
 
 void View_Timeline::on_draw()
 {
+	static auto frame_width = 10.f;
+	const auto left_width = 200.f;
+	const auto right_width = 150.f;
+	const auto bar_height = 20.f;
+	const auto offset = 8.f;
 	auto dl = ImGui::GetWindowDrawList();
 
-	ImGui::BeginGroup();
-	ImGui::Button("Preview");
-	ImGui::SameLine();
+	ImGui::BeginChild("##left", ImVec2(left_width, 0.f));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 	ImGui::SmallButton(graphics::FontAtlas::icon_s("backward-fast"_h).c_str());
 	ImGui::SameLine();
@@ -45,13 +48,23 @@ void View_Timeline::on_draw()
 	}
 	if (app.opened_timeline)
 	{
-
+		auto i = 0;
+		for (auto& t : app.opened_timeline->tracks)
+		{
+			ImGui::InvisibleButton(("##track" + str(i)).c_str(), ImVec2(left_width, bar_height));
+			auto p0 = ImGui::GetItemRectMin();
+			auto p1 = ImGui::GetItemRectMax();
+			dl->AddRectFilled(p0, p1, ImColor(55, 55, 55));
+			dl->AddText(ImVec2(p0.x + 4.f, p0.y + 2.f), ImColor(255, 255, 255), t.address.c_str());
+			i++;
+		}
 	}
-	ImGui::EndGroup();
+	else
+		ImGui::Dummy(ImVec2(left_width, bar_height));
+	ImGui::EndChild();
 
 	ImGui::SameLine();
-
-	ImGui::BeginGroup();
+	ImGui::BeginChild("##middle", ImVec2(-right_width, 0.f));
 	ImGui::PushItemWidth(200.f);
 	if (ImGui::BeginCombo("##asset", app.opened_timeline ? app.opened_timeline->filename.filename().string().c_str() : "[None]"))
 	{
@@ -86,19 +99,18 @@ void View_Timeline::on_draw()
 	{
 
 	}
-	ImGui::InvisibleButton("##timeline", ImVec2(ImGui::GetContentRegionAvailWidth(), 20.f));
+	ImVec2 timeline_p0;
+	ImVec2 timeline_p1;
+	ImGui::InvisibleButton("##timeline", ImVec2(ImGui::GetContentRegionAvailWidth(), bar_height));
 	{
-		auto p0 = ImGui::GetItemRectMin();
-		auto p1 = ImGui::GetItemRectMax();
-		dl->AddRectFilled(p0, p1, ImColor(55, 55, 55));
-		static auto frame_width = 10.f;
-		const auto bar_height = 20.f;
-		const auto offset = 8.f;
-		auto visible_frames_count = (p1.x - p0.x - offset) / frame_width;
+		timeline_p0 = ImGui::GetItemRectMin();
+		timeline_p1 = ImGui::GetItemRectMax();
+		dl->AddRectFilled(timeline_p0, timeline_p1, ImColor(55, 55, 55));
+		auto visible_frames_count = (timeline_p1.x - timeline_p0.x - offset) / frame_width;
 		for (auto i = 0; i < visible_frames_count; i++)
 		{
-			auto x = p0.x + offset + i * frame_width;
-			auto y = p1.y;
+			auto x = timeline_p0.x + offset + i * frame_width;
+			auto y = timeline_p1.y;
 			auto h = 4.f;
 			if (i % 10 == 0)
 				h = 14.f;
@@ -109,16 +121,51 @@ void View_Timeline::on_draw()
 				dl->AddText(ImVec2(x + 2.f, y - bar_height), ImColor(200, 200, 200), str(i).c_str());
 		}
 		{
-			auto x = p0.x + offset + app.timeline_current_frame * frame_width;
-			dl->AddText(ImVec2(x - 4.5f, p1.y - bar_height - 4.f), ImColor(200, 200, 200), graphics::FontAtlas::icon_s("chevron-down"_h).c_str());
-			dl->AddLine(ImVec2(x, p1.y), ImVec2(x, p1.y + ImGui::GetContentRegionAvail().y), ImColor(200, 200, 200));
+			auto x = timeline_p0.x + offset + app.timeline_current_frame * frame_width;
+			dl->AddText(ImVec2(x - 4.5f, timeline_p1.y - bar_height - 4.f), ImColor(200, 200, 200), graphics::FontAtlas::icon_s("chevron-down"_h).c_str());
+			dl->AddLine(ImVec2(x, timeline_p1.y), ImVec2(x, timeline_p1.y + ImGui::GetContentRegionAvail().y), ImColor(200, 200, 200));
 		}
 
 		if (ImGui::IsItemActive())
 		{
 			auto px = ImGui::GetMousePos().x;
-			app.timeline_current_frame = max(0.f, px - p0.x - offset) / frame_width;
+			app.timeline_current_frame = max(0.f, px - timeline_p0.x - offset) / frame_width;
 		}
 	}
-	ImGui::EndGroup();
+	if (app.opened_timeline)
+	{
+		auto i = 0;
+		for (auto& t : app.opened_timeline->tracks)
+		{
+			ImGui::PushID(i);
+			auto j = 0;
+			ImGui::NewLine();
+			for (auto& f : t.keyframes)
+			{
+				ImGui::SameLine(offset + f.time * 60.f * frame_width - 2.f);
+				ImGui::InvisibleButton(("##frame" + str(j)).c_str(), ImVec2(4.f, bar_height));
+				auto p0 = ImGui::GetItemRectMin();
+				auto p1 = ImGui::GetItemRectMax();
+				dl->AddRectFilled(p0, p1, ImColor(38, 40, 56));
+
+				if (ImGui::IsItemActive())
+				{
+					auto px = ImGui::GetMousePos().x;
+					f.time = (max(0.f, px - timeline_p0.x - offset) / frame_width) / 60.f;
+				}
+				j++;
+			}
+			ImGui::PopID();
+			i++;
+		}
+	}
+	ImGui::EndChild();
+
+	ImGui::SameLine();
+	ImGui::BeginChild("##right");
+	if (ImGui::CollapsingHeader("Active Keyframe"))
+	{
+
+	}
+	ImGui::EndChild();
 }

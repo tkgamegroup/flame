@@ -63,7 +63,6 @@ struct App : UniverseApplication
 	void* ev_open_prefab = nullptr;
 
 	TimelinePtr opened_timeline = nullptr;
-	bool timeline_preview = true;
 	EntityPtr e_timeline_host = nullptr;
 	uint timeline_current_frame = 0;
 	bool timeline_recording = false;
