@@ -1,8 +1,6 @@
 #include "selection.h"
 #include "history.h"
 
-#include <flame/foundation/typeinfo.h>
-
 SelectHistory::~SelectHistory()
 {
 	auto destroy = [](Selection::Type& type, std::vector<void*>& objects) {

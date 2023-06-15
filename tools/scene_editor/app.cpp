@@ -7,10 +7,10 @@
 
 #include <flame/xml.h>
 #include <flame/foundation/system.h>
-#include <flame/foundation/typeinfo.h>
 #include <flame/foundation/typeinfo_serialize.h>
 #include <flame/universe/draw_data.h>
 #include <flame/universe/timeline.h>
+#include <flame/universe/entity.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
@@ -630,6 +630,21 @@ void App::init()
 	});
 }
 
+bool App::on_update()
+{
+	if (timeline_playing)
+	{
+		if (opened_timeline && e_timeline_host)
+		{
+			set_timeline_current_frame(timeline_current_frame + 1);
+			render_frames++;
+		}
+		else
+			timeline_playing = false;
+	}
+	return UniverseApplication::on_update();
+}
+
 void App::new_project(const std::filesystem::path& path)
 {
 	if (!std::filesystem::exists(path))
@@ -1116,6 +1131,69 @@ void App::set_timeline_host(EntityPtr e)
 	timeline_recording = false;
 }
 
+void App::set_timeline_current_frame(uint frame)
+{
+	if (timeline_current_frame == frame)
+		return;
+	timeline_current_frame = frame;
+	if (opened_timeline && e_timeline_host)
+	{
+		auto current_time = frame / 60.f;
+		for (auto& t : opened_timeline->tracks)
+		{
+			float value; auto ok = false;
+			auto& keyframes = t.keyframes;
+			auto it = std::lower_bound(keyframes.begin(), keyframes.end(), current_time, [](const auto& a, auto t) {
+				return a.time < t;
+			});
+			if (it == keyframes.end())
+			{
+				if (!keyframes.empty())
+				{
+					value = s2t<float>(keyframes.back().value);
+					ok = true;
+				}
+			}
+			else if (it == keyframes.begin())
+			{
+				value = s2t<float>(keyframes.front().value);
+				ok = true;
+			}
+			else
+			{
+				auto it2 = it - 1;
+				auto t1 = it2->time;
+				auto t2 = it->time;
+				auto v1 = s2t<float>(it2->value);
+				auto v2 = s2t<float>(it->value);
+				value = mix(v1, v2, (current_time - t1) / (t2 - t1));
+				ok = true;
+			}
+
+			if (ok)
+			{
+				const Attribute* attr = nullptr; void* obj = nullptr; uint component_index;
+				resolve_address(t.address, e_timeline_host, attr, obj, component_index);
+				if (attr && attr->type->tag == TagD)
+				{
+					auto ti = (TypeInfo_Data*)attr->type;
+					if (component_index < ti->vec_size)
+					{
+						auto pdata = attr->get_value(obj, true);
+						switch (ti->data_type)
+						{
+						case DataFloat:
+							((float*)pdata)[component_index] = value;
+							break;
+						}
+						attr->set_value(obj, pdata);
+					}
+				}
+			}
+		}
+	}
+}
+
 void App::timeline_start_record()
 {
 	if (timeline_recording)
@@ -1129,6 +1207,54 @@ void App::timeline_stop_record()
 	if (!timeline_recording)
 		return;
 	timeline_recording = false;
+}
+
+KeyframePtr App::get_keyframe(const std::string& address, bool toggle)
+{
+	auto current_time = timeline_current_frame / 60.f;
+	auto it = std::find_if(opened_timeline->tracks.begin(), opened_timeline->tracks.end(), [&](const auto& i) {
+		return i.address == address;
+	});
+	if (it == opened_timeline->tracks.end())
+	{
+		auto& t = opened_timeline->tracks.emplace_back();
+		t.address = address;
+		return &t.keyframes.emplace_back(current_time, "");
+	}
+
+	auto& t = *it;
+	auto it2 = std::find_if(t.keyframes.begin(), t.keyframes.end(), [&](const auto& i) {
+		return i.time == current_time;
+	});
+	if (it2 == t.keyframes.end())
+	{
+		auto it3 = std::lower_bound(t.keyframes.begin(), t.keyframes.end(), current_time, [&](const auto& i, auto v) {
+			return i.time < v;
+		});
+		return &*t.keyframes.emplace(it3, current_time, "");
+	}
+
+	if (toggle)
+	{
+		t.keyframes.erase(it2);
+		if (t.keyframes.empty())
+			opened_timeline->tracks.erase(it);
+		return nullptr;
+	}
+
+	return &*it2;
+}
+
+void App::timeline_toggle_playing()
+{
+	if (timeline_playing)
+	{
+		timeline_playing = false;
+		return;
+	}
+
+	if (opened_timeline && e_timeline_host)
+		timeline_playing = true;
 }
 
 void App::open_file_in_vs(const std::filesystem::path& path)

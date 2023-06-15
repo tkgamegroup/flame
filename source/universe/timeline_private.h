@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../foundation/typeinfo.h"
 #include "timeline.h"
 
 namespace flame

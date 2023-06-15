@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../foundation/foundation.h"
+#include "../foundation/typeinfo.h"
 #include "../graphics/graphics.h"
 #ifdef USE_AUDIO_MODULE
 #include "../audio/audio.h"
@@ -29,6 +30,8 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(Component);
 	FLAME_UNIVERSE_TYPE(System);
 	FLAME_UNIVERSE_TYPE(World);
+	FLAME_UNIVERSE_TYPE(Keyframe);
+	FLAME_UNIVERSE_TYPE(Track);
 	FLAME_UNIVERSE_TYPE(Timeline);
 
 	FLAME_UNIVERSE_TYPE(cElement);

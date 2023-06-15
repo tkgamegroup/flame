@@ -3,7 +3,6 @@
 #include "history.h"
 #include "tile_map_editing.h"
 
-#include <flame/foundation/typeinfo.h>
 #include <flame/universe/draw_data.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/element.h>

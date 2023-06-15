@@ -1,5 +1,4 @@
 #include "../xml.h"
-#include "../foundation/typeinfo.h"
 #include "../foundation/typeinfo_serialize.h"
 #include "../foundation/system.h"
 #include "entity_private.h"

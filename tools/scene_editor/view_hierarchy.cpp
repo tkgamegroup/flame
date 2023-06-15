@@ -105,7 +105,7 @@ void View_Hierarchy::on_draw()
 		}
 
 		auto e_dst = e;
-		auto read_drop_entities = [e_dst]()->std::vector<EntityPtr> {
+		auto read_drops = [e_dst]()->std::vector<EntityPtr> {
 			std::vector<EntityPtr> ret;
 			if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
 			{
@@ -168,18 +168,25 @@ void View_Hierarchy::on_draw()
 			}
 			else if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
 			{
-				if (get_root_prefab_instance(e_dst))
+				auto path = Path::reverse(std::wstring((wchar_t*)payload->Data));
+				auto ext = path.extension();
+				if (ext == L".prefab")
 				{
-					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-					return ret;
-				}
-				auto str = std::wstring((wchar_t*)payload->Data);
-				auto path = Path::reverse(str);
-				if (path.extension() == L".prefab")
-				{
+					if (get_root_prefab_instance(e_dst))
+					{
+						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+						return ret;
+					}
+
 					auto e = Entity::create(path);
 					new PrefabInstance(e, path);
 					ret.push_back(e);
+				}
+				else if (ext == L".timeline")
+				{
+					app.open_timeline(path);
+					if (app.opened_timeline)
+						app.set_timeline_host(e_dst);
 				}
 			}
 			return ret;
@@ -187,7 +194,7 @@ void View_Hierarchy::on_draw()
 
 		if (ImGui::BeginDragDropTarget())
 		{
-			auto es = read_drop_entities();
+			auto es = read_drops();
 			if (!es.empty())
 			{
 				for (auto _e : es)
@@ -219,7 +226,7 @@ void View_Hierarchy::on_draw()
 				ImGui::PopID();
 				if (ImGui::BeginDragDropTarget())
 				{
-					auto es = read_drop_entities();
+					auto es = read_drops();
 					if (!es.empty())
 					{
 						auto idx = i;

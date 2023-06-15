@@ -66,6 +66,7 @@ struct App : UniverseApplication
 	EntityPtr e_timeline_host = nullptr;
 	uint timeline_current_frame = 0;
 	bool timeline_recording = false;
+	bool timeline_playing = false;
 
 	ProjectSettings project_settings;
 
@@ -82,6 +83,7 @@ struct App : UniverseApplication
 	float scale_snap_value = 0.1f;
 
 	void init();
+	bool on_update() override;
 
 	void new_project(const std::filesystem::path& path);
 	void open_project(const std::filesystem::path& path);
@@ -98,8 +100,11 @@ struct App : UniverseApplication
 	void open_timeline(const std::filesystem::path& path);
 	void close_timeline();
 	void set_timeline_host(EntityPtr e);
+	void set_timeline_current_frame(uint frame);
 	void timeline_start_record();
 	void timeline_stop_record();
+	KeyframePtr get_keyframe(const std::string& address, bool toggle = false);
+	void timeline_toggle_playing();
 	void open_file_in_vs(const std::filesystem::path& path);
 	void vs_automate(const std::vector<std::wstring>& cl);
 

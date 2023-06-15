@@ -2932,6 +2932,7 @@ namespace flame
 			case TagD:
 				if (out_index)
 				{
+					*out_index = 0xffffffff;
 					if (i + 1 == chain.size() && chain[i].size() == 1)
 					{
 						auto ch = chain[i][0];

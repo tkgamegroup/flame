@@ -1,4 +1,3 @@
-#include "../../foundation/typeinfo.h"
 #include "../universe_private.h"
 #include "../entity_private.h"
 #include "list_private.h"
@@ -47,7 +46,7 @@ namespace flame
 				e->load(prefab_name);
 				for (auto& m : modifiers)
 				{
-					ModifierPrivate mp(m, e, {}, { std::make_pair("i", i) });
+					ModifierPrivate mp(m, e, {}, { std::make_pair("i", (float)i) });
 					mp.update(true);
 				}
 			}

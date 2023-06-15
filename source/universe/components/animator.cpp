@@ -1,4 +1,3 @@
-#include "../../foundation/typeinfo.h"
 #include "../entity_private.h"
 #include "animator_private.h"
 

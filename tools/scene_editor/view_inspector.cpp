@@ -4,7 +4,6 @@
 #include "view_inspector.h"
 #include "view_scene.h"
 
-#include <flame/foundation/typeinfo.h>
 #include <flame/foundation/typeinfo_serialize.h>
 #include <flame/foundation/bitmap.h>
 #include <flame/graphics/extension.h>
@@ -253,6 +252,12 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				ImGui::SameLine();
 				if (ImGui::SmallButton(graphics::FontAtlas::icon_s("diamond"_h).c_str()))
 				{
+					for (auto j = 0; j < eos.num; j++)
+					{
+						auto address = get_keyframe_adress(app.e_timeline_host, ((EntityPtr*)eos.objs)[j], eos.type2, name, i);
+						if (auto kf = app.get_keyframe(address, true); kf)
+							kf->value = str(data[i]);
+					}
 				}
 			}
 			if (changed)
@@ -288,34 +293,11 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				ImGui::SameLine();
 				if (ImGui::SmallButton(graphics::FontAtlas::icon_s("diamond"_h).c_str()))
 				{
-					auto current_time = app.timeline_current_frame / 60.f;
 					for (auto j = 0; j < eos.num; j++)
 					{
 						auto address = get_keyframe_adress(app.e_timeline_host, ((EntityPtr*)eos.objs)[j], eos.type2, name, i);
-						auto it = std::find_if(app.opened_timeline->tracks.begin(), app.opened_timeline->tracks.end(), [&](const auto& i) { 
-							return i.address == address; 
-						});
-						if (it == app.opened_timeline->tracks.end())
-						{
-							auto& t = app.opened_timeline->tracks.emplace_back();
-							t.address = address;
-							t.keyframes.emplace_back(current_time, str(data[i]));
-						}
-						else
-						{
-							auto& t = *it;
-							auto it2 = std::find_if(t.keyframes.begin(), t.keyframes.end(), [&](const auto& i) {
-								return i.time == current_time;
-							});
-							if (it2 == t.keyframes.end())
-								t.keyframes.emplace_back(current_time, str(data[i]));
-							else
-							{
-								t.keyframes.erase(it2);
-								if (t.keyframes.empty())
-									app.opened_timeline->tracks.erase(it);
-							}
-						}
+						if (auto kf = app.get_keyframe(address, true); kf)
+							kf->value = str(data[i]);
 					}
 				}
 			}
@@ -451,7 +433,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (ImGui::IsItemActivated())
 			{
 				before_editing_values.resize(num);
-				before_editing_values[0] = str(*(int*)data);
+				before_editing_values[0] = str(ti->vec_size, (int*)data);
 				for (auto i = 1; i < num; i++)
 					before_editing_values[i] = str(ti->vec_size, (int*)type->get_value(objs[i], offset, getter));
 			}
@@ -477,7 +459,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (ImGui::IsItemActivated())
 			{
 				before_editing_values.resize(num);
-				before_editing_values[0] = str(*(float*)data);
+				before_editing_values[0] = str(ti->vec_size, (float*)data);
 				for (auto i = 1; i < num; i++)
 					before_editing_values[i] = str(ti->vec_size, (float*)type->get_value(objs[i], offset, getter));
 			}
@@ -495,7 +477,24 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					eos.sync_states->at(id) = 1;
 			}
 			if (just_exit_editing)
-				add_modify_history(name_hash, str(ti->vec_size, (float*)data));
+			{
+				auto new_value = str(ti->vec_size, (float*)data);
+				add_modify_history(name_hash, new_value);
+				auto sp = SUS::split(new_value, ',');
+				for (auto i = 0; i < eos.num; i++)
+				{
+					auto sp2 = SUS::split(before_editing_values[i], ',');
+					for (auto j = 0; j < sp.size(); j++)
+					{
+						if (sp[j] != sp2[j])
+						{
+							auto address = get_keyframe_adress(app.e_timeline_host, ((EntityPtr*)eos.objs)[i], eos.type2, name, j);
+							if (auto kf = app.get_keyframe(address, false); kf)
+								kf->value = sp[j];
+						}
+					}
+				}
+			}
 			changed = just_exit_editing ? 2 : changed > 0;
 			break;
 		case DataChar:
@@ -1053,7 +1052,7 @@ struct EditingEntities
 		if (entities.empty())
 			return;
 
-		static auto& ui_entity = *TypeInfo::get<Entity>()->retrive_ui();
+		static auto ui_entity = TypeInfo::get<Entity>()->retrive_ui();
 		auto entt0 = entities[0];
 		auto process_attribute = [&](const Attribute& a, uint comp_hash) {
 			void* obj0 = comp_hash == 0 ? entt0 : (void*)entt0->get_component(comp_hash);
@@ -1112,7 +1111,7 @@ struct EditingEntities
 
 		if (entities.size() > 1)
 		{
-			for (auto& a : ui_entity.attributes)
+			for (auto& a : ui_entity->attributes)
 				process_attribute(a, 0);
 		}
 
@@ -1139,12 +1138,12 @@ struct EditingEntities
 		}
 		if (entities.size() > 1)
 		{
-			static auto& ui_component = *TypeInfo::get<Component>()->retrive_ui();
+			static auto ui_component = TypeInfo::get<Component>()->retrive_ui();
 			for (auto& cc : common_components)
 			{
 				auto comp0 = entt0->get_component(cc.type_hash);
 				auto& ui = *find_udt(cc.type_hash);
-				for (auto& a : ui_component.attributes)
+				for (auto& a : ui_component->attributes)
 					process_attribute(a, cc.type_hash);
 				for (auto& a : ui.attributes)
 					process_attribute(a, cc.type_hash);
@@ -1163,8 +1162,8 @@ struct EditingEntities
 		uint ret_changed_name = 0;
 		std::pair<uint, uint> res;
 
-		static auto& ui_entity = *TypeInfo::get<Entity>()->retrive_ui();
-		static auto& ui_component = *TypeInfo::get<Component>()->retrive_ui();
+		static auto ui_entity = TypeInfo::get<Entity>()->retrive_ui();
+		static auto ui_component = TypeInfo::get<Component>()->retrive_ui();
 		auto entity = entities[0];
 
 		if (prefab_path.empty())
@@ -1172,7 +1171,7 @@ struct EditingEntities
 		else
 			editing_objects.emplace(EditingObjects(2, 0, &prefab_path, 1, nullptr));
 		ImGui::PushID("flame::Entity"_h);
-		res = manipulate_udt(ui_entity, (voidptr*)entities.data(), entities.size());
+		res = manipulate_udt(*ui_entity, (voidptr*)entities.data(), entities.size());
 		ret_changed |= res.first;
 		ret_changed_name |= res.second;
 		if (entities.size() == 1 && entity->prefab_instance)
@@ -1266,7 +1265,7 @@ struct EditingEntities
 
 		if (res.second != 0)
 		{
-			auto& str = ui_entity.find_attribute(res.second)->name;
+			auto& str = ui_entity->find_attribute(res.second)->name;
 			for (auto e : entities)
 			{
 				if (auto ins = get_root_prefab_instance(e); ins)
@@ -1399,10 +1398,10 @@ struct EditingEntities
 			}
 			if (open && !exit_editing)
 			{
-				res = manipulate_udt(ui_component, (voidptr*)cc.components.data(), cc.components.size());
+				res = manipulate_udt(*ui_component, (voidptr*)cc.components.data(), cc.components.size());
 				if (res.second != 0)
 				{
-					auto& str = ui_component.find_attribute(res.second)->name;
+					auto& str = ui_component->find_attribute(res.second)->name;
 					for (auto e : entities)
 					{
 						if (auto ins = get_root_prefab_instance(e); ins)

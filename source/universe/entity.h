@@ -325,4 +325,46 @@ namespace flame
 		assert(!e->prefab_instance);
 		e->prefab_instance.reset(this);
 	}
+
+	inline void resolve_address(const std::string& address, Entity* e, const Attribute*& attr, voidptr& obj, uint& index)
+	{
+		auto sp = SUS::split(address, '|');
+
+		auto ui = TypeInfo::get<Entity>()->retrive_ui();
+		obj = e;
+		if (sp.size() > 1)
+		{
+			if (auto entity_chain = SUS::split(sp.front(), '.'); !entity_chain.empty())
+			{
+				auto i = 0;
+				while (true)
+				{
+					auto e1 = (Entity*)e->find_child(entity_chain[i]);
+					if (!e1)
+					{
+						if (i == entity_chain.size() - 1)
+						{
+							auto comp_hash = sh(entity_chain[i].c_str());
+							if (auto comp = e->find_component(comp_hash); comp)
+							{
+								ui = find_udt(comp_hash);
+								obj = comp;
+								break;
+							}
+						}
+						return;
+					}
+
+					e = e1;
+
+					i++;
+					if (i >= entity_chain.size())
+						break;
+				}
+			}
+		}
+
+		if (!sp.empty())
+			attr = ui->find_attribute(SUS::split(sp.back(), '.'), obj, &index);
+	}
 }

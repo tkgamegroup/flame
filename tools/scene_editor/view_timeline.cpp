@@ -129,7 +129,7 @@ void View_Timeline::on_draw()
 		if (ImGui::IsItemActive())
 		{
 			auto px = ImGui::GetMousePos().x;
-			app.timeline_current_frame = max(0.f, px - timeline_p0.x - offset) / frame_width;
+			app.set_timeline_current_frame(max(0.f, px - timeline_p0.x - offset) / frame_width);
 		}
 	}
 	if (app.opened_timeline)
@@ -151,7 +151,7 @@ void View_Timeline::on_draw()
 				if (ImGui::IsItemActive())
 				{
 					auto px = ImGui::GetMousePos().x;
-					f.time = (max(0.f, px - timeline_p0.x - offset) / frame_width) / 60.f;
+					f.time = floor(max(0.f, px - timeline_p0.x - offset) / frame_width) / 60.f;
 				}
 				j++;
 			}

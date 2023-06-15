@@ -1,4 +1,3 @@
-#include "../../foundation/typeinfo.h"
 #include "../world_private.h"
 #include "node_private.h"
 #include "../systems/renderer_private.h"

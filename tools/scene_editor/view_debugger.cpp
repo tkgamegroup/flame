@@ -1,6 +1,5 @@
 #include "view_debugger.h"
 
-#include <flame/foundation/typeinfo.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/debug.h>
 

@@ -7,7 +7,6 @@
 #include "../components/element_private.h"
 #include "../components/camera_private.h"
 
-#include "../../foundation/typeinfo.h"
 #include "../../foundation/typeinfo_serialize.h"
 #include "../../foundation/window.h"
 #include "../../graphics/device.h"

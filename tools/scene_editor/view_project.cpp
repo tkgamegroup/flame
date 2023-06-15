@@ -4,7 +4,6 @@
 
 #include <flame/foundation/bitmap.h>
 #include <flame/foundation/system.h>
-#include <flame/foundation/typeinfo.h>
 #include <flame/graphics/extension.h>
 #include <flame/graphics/material.h>
 #include <flame/graphics/model.h>
@@ -384,11 +383,9 @@ void View_Project::init()
 							return;
 						}
 
-						static auto& ui_component = *TypeInfo::get<Component>()->retrive_ui();
-						for (auto& fi : ui_component.functions)
-						{
+						static auto ui_component = TypeInfo::get<Component>()->retrive_ui();
+						for (auto& fi : ui_component->functions)
 							overrides.emplace_back(fi.name, false);
-						}
 					}
 
 					void draw() override
