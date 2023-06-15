@@ -9,6 +9,9 @@ namespace flame
 	{
 		float time;
 		std::string value;
+		bool incremental = false;
+
+		Keyframe() {}
 
 		Keyframe(float t, const std::string& v) :
 			time(t),
@@ -53,5 +56,10 @@ namespace flame
 		};
 		// Reflect static
 		FLAME_UNIVERSE_API static Load& load;
+	};
+
+	struct BoundTimeline
+	{
+
 	};
 }
