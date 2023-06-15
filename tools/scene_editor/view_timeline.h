@@ -4,6 +4,8 @@
 
 struct View_Timeline : graphics::GuiView
 {
+	std::vector<std::pair<int, int>> selected_keyframes;
+
 	View_Timeline();
 
 	void on_draw() override;

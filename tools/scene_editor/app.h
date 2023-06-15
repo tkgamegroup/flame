@@ -100,7 +100,7 @@ struct App : UniverseApplication
 	void open_timeline(const std::filesystem::path& path);
 	void close_timeline();
 	void set_timeline_host(EntityPtr e);
-	void set_timeline_current_frame(uint frame);
+	void set_timeline_current_frame(int frame);
 	void timeline_start_record();
 	void timeline_stop_record();
 	KeyframePtr get_keyframe(const std::string& address, bool toggle = false);

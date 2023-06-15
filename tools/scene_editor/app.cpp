@@ -636,7 +636,7 @@ bool App::on_update()
 	{
 		if (opened_timeline && e_timeline_host)
 		{
-			set_timeline_current_frame(timeline_current_frame + 1);
+			set_timeline_current_frame((int)timeline_current_frame + 1);
 			render_frames++;
 		}
 		else
@@ -1131,9 +1131,9 @@ void App::set_timeline_host(EntityPtr e)
 	timeline_recording = false;
 }
 
-void App::set_timeline_current_frame(uint frame)
+void App::set_timeline_current_frame(int frame)
 {
-	if (timeline_current_frame == frame)
+	if (timeline_current_frame == frame || frame < 0)
 		return;
 	timeline_current_frame = frame;
 	if (opened_timeline && e_timeline_host)
@@ -1141,24 +1141,17 @@ void App::set_timeline_current_frame(uint frame)
 		auto current_time = frame / 60.f;
 		for (auto& t : opened_timeline->tracks)
 		{
-			float value; auto ok = false;
+			float value;
 			auto& keyframes = t.keyframes;
+			if (keyframes.empty())
+				continue;
 			auto it = std::lower_bound(keyframes.begin(), keyframes.end(), current_time, [](const auto& a, auto t) {
 				return a.time < t;
 			});
 			if (it == keyframes.end())
-			{
-				if (!keyframes.empty())
-				{
-					value = s2t<float>(keyframes.back().value);
-					ok = true;
-				}
-			}
+				value = s2t<float>(keyframes.back().value);
 			else if (it == keyframes.begin())
-			{
 				value = s2t<float>(keyframes.front().value);
-				ok = true;
-			}
 			else
 			{
 				auto it2 = it - 1;
@@ -1167,27 +1160,23 @@ void App::set_timeline_current_frame(uint frame)
 				auto v1 = s2t<float>(it2->value);
 				auto v2 = s2t<float>(it->value);
 				value = mix(v1, v2, (current_time - t1) / (t2 - t1));
-				ok = true;
 			}
 
-			if (ok)
+			const Attribute* attr = nullptr; void* obj = nullptr; uint component_index;
+			resolve_address(t.address, e_timeline_host, attr, obj, component_index);
+			if (attr && attr->type->tag == TagD)
 			{
-				const Attribute* attr = nullptr; void* obj = nullptr; uint component_index;
-				resolve_address(t.address, e_timeline_host, attr, obj, component_index);
-				if (attr && attr->type->tag == TagD)
+				auto ti = (TypeInfo_Data*)attr->type;
+				if (component_index < ti->vec_size)
 				{
-					auto ti = (TypeInfo_Data*)attr->type;
-					if (component_index < ti->vec_size)
+					auto pdata = attr->get_value(obj, true);
+					switch (ti->data_type)
 					{
-						auto pdata = attr->get_value(obj, true);
-						switch (ti->data_type)
-						{
-						case DataFloat:
-							((float*)pdata)[component_index] = value;
-							break;
-						}
-						attr->set_value(obj, pdata);
+					case DataFloat:
+						((float*)pdata)[component_index] = value;
+						break;
 					}
+					attr->set_value(obj, pdata);
 				}
 			}
 		}

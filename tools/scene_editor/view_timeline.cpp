@@ -23,11 +23,14 @@ void View_Timeline::on_draw()
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 	ImGui::SmallButton(graphics::FontAtlas::icon_s("backward-fast"_h).c_str());
 	ImGui::SameLine();
-	ImGui::SmallButton(graphics::FontAtlas::icon_s("backward-step"_h).c_str());
+	if (ImGui::SmallButton(graphics::FontAtlas::icon_s("backward-step"_h).c_str()))
+		app.set_timeline_current_frame((int)app.timeline_current_frame - 1);
 	ImGui::SameLine();
-	ImGui::SmallButton(graphics::FontAtlas::icon_s("play"_h).c_str());
+	if (ImGui::SmallButton(graphics::FontAtlas::icon_s("play"_h).c_str()))
+		app.timeline_toggle_playing();
 	ImGui::SameLine();
-	ImGui::SmallButton(graphics::FontAtlas::icon_s("forward-step"_h).c_str());
+	if (ImGui::SmallButton(graphics::FontAtlas::icon_s("forward-step"_h).c_str()))
+		app.set_timeline_current_frame((int)app.timeline_current_frame + 1);
 	ImGui::SameLine();
 	ImGui::SmallButton(graphics::FontAtlas::icon_s("forward-fast"_h).c_str());
 	ImGui::PopStyleVar();
@@ -56,6 +59,25 @@ void View_Timeline::on_draw()
 			auto p1 = ImGui::GetItemRectMax();
 			dl->AddRectFilled(p0, p1, ImColor(55, 55, 55));
 			dl->AddText(ImVec2(p0.x + 4.f, p0.y + 2.f), ImColor(255, 255, 255), t.address.c_str());
+
+			if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonRight))
+			{
+				if (ImGui::MenuItem("Remove"))
+				{
+					app.opened_timeline->tracks.erase(app.opened_timeline->tracks.begin() + i);
+					for (auto it = selected_keyframes.begin(); it != selected_keyframes.end();)
+					{
+						if (it->first == i)
+							it = selected_keyframes.erase(it);
+						else
+							it++;
+					}
+					break;
+				}
+
+				ImGui::EndPopup();
+			}
+
 			i++;
 		}
 	}
@@ -129,8 +151,35 @@ void View_Timeline::on_draw()
 		if (ImGui::IsItemActive())
 		{
 			auto px = ImGui::GetMousePos().x;
-			app.set_timeline_current_frame(max(0.f, px - timeline_p0.x - offset) / frame_width);
+			app.set_timeline_current_frame((int)max(0.f, px - timeline_p0.x - offset) / frame_width);
 		}
+	}
+
+	static auto box_select_p0 = vec2(-1.f);
+	static auto box_select_p1 = vec2(-1.f);
+	auto do_select = false;
+	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+	{
+		auto p = ImGui::GetMousePos();
+		if (p.x > timeline_p0.x && p.x < timeline_p1.x &&
+			p.y > timeline_p1.y)
+		{
+			box_select_p0 = p;
+			selected_keyframes.clear();
+		}
+	}
+	if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
+	{
+		if (box_select_p0.x > 0.f)
+		{
+			selected_keyframes.clear();
+			do_select = true;
+		}
+	}
+	if (box_select_p0.x > 0.f)
+	{
+		box_select_p1 = ImGui::GetMousePos();
+		dl->AddRectFilled(box_select_p0, box_select_p1, ImColor(38, 79, 120, 128));
 	}
 	if (app.opened_timeline)
 	{
@@ -138,34 +187,121 @@ void View_Timeline::on_draw()
 		for (auto& t : app.opened_timeline->tracks)
 		{
 			ImGui::PushID(i);
-			auto j = 0;
 			ImGui::NewLine();
+			auto j = 0;
 			for (auto& f : t.keyframes)
 			{
 				ImGui::SameLine(offset + f.time * 60.f * frame_width - 2.f);
 				ImGui::InvisibleButton(("##frame" + str(j)).c_str(), ImVec2(4.f, bar_height));
 				auto p0 = ImGui::GetItemRectMin();
 				auto p1 = ImGui::GetItemRectMax();
-				dl->AddRectFilled(p0, p1, ImColor(38, 40, 56));
+				auto selected = std::find(selected_keyframes.begin(), selected_keyframes.end(), std::make_pair(i, j)) != selected_keyframes.end();
+				dl->AddRectFilled(p0, p1, selected ? ImColor(255, 190, 51) : ImColor(191, 191, 191));
 
+				if (do_select && !(p1.x < min(box_select_p0.x, box_select_p1.x) ||
+					p0.x > max(box_select_p0.x, box_select_p1.x) ||
+					p1.y < min(box_select_p0.y, box_select_p1.y) ||
+					p0.y > max(box_select_p0.y, box_select_p1.y)))
+					selected_keyframes.push_back({ i, j });
+				if (ImGui::IsItemClicked())
+				{
+					box_select_p0 = vec2(-1.f);
+					selected_keyframes.clear();
+					selected_keyframes.push_back({ i, j });
+				}
 				if (ImGui::IsItemActive())
 				{
 					auto px = ImGui::GetMousePos().x;
-					f.time = floor(max(0.f, px - timeline_p0.x - offset) / frame_width) / 60.f;
+					auto diff = int(round(max(0.f, px - timeline_p0.x - offset) / frame_width)) - int(round(f.time * 60.f));
+					if (diff != 0)
+					{
+						auto ok = true;
+						for (auto& pair : selected_keyframes)
+						{
+							auto& t = app.opened_timeline->tracks[pair.first];
+							auto& kf = t.keyframes[pair.second];
+							auto target_time = (int(round(kf.time * 60.f)) + diff) / 60.f;
+							if (target_time < 0.f)
+							{
+								ok = false;
+								break;
+							}
+							for (auto& kf : t.keyframes)
+							{
+								if (kf.time == target_time)
+								{
+									ok = false;
+									break;
+								}
+							}
+							if (!ok)
+								break;
+						}
+						if (ok)
+						{
+							for (auto& pair : selected_keyframes)
+							{
+								auto& t = app.opened_timeline->tracks[pair.first];
+								t.keyframes.erase(t.keyframes.begin() + pair.second);
+								auto kf = t.keyframes[pair.second];
+								kf.time = (int(round(kf.time * 60.f)) + diff) / 60.f;
+								auto it = std::lower_bound(t.keyframes.begin(), t.keyframes.end(), kf.time, [](const auto& a, auto t) {
+									return a.time < t;
+								});
+								t.keyframes.insert(it, kf);
+								pair.second = it - t.keyframes.begin();
+							}
+						}
+					}
 				}
+
 				j++;
 			}
 			ImGui::PopID();
+
 			i++;
 		}
 	}
+	if (do_select)
+		box_select_p0 = vec2(-1.f);
 	ImGui::EndChild();
 
 	ImGui::SameLine();
 	ImGui::BeginChild("##right");
 	if (ImGui::CollapsingHeader("Active Keyframe"))
 	{
-
+		if (selected_keyframes.empty())
+			ImGui::TextUnformatted("No keyframes selected");
+		else if (selected_keyframes.size() > 1)
+			ImGui::TextUnformatted("Multiple keyframes selected");
+		else
+		{
+			auto& pair = selected_keyframes[0];
+			auto& kf = app.opened_timeline->tracks[pair.first].keyframes[pair.second];
+			ImGui::Text("Time: %f", kf.time);
+			ImGui::Text("Value: %s", kf.value.c_str());
+		}
 	}
 	ImGui::EndChild();
+
+	auto& io = ImGui::GetIO();
+
+	if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered())
+	{
+		if (!io.WantCaptureKeyboard)
+		{
+			if (ImGui::IsKeyPressed(Keyboard_Del))
+			{
+				for (auto it = selected_keyframes.rbegin(); it != selected_keyframes.rend(); it++)
+				{
+					auto& pair = *it;
+					auto& track = app.opened_timeline->tracks[pair.first];
+					track.keyframes.erase(track.keyframes.begin() + pair.second);
+					if (track.keyframes.empty())
+						app.opened_timeline->tracks.erase(app.opened_timeline->tracks.begin() + pair.first);
+				}
+				selected_keyframes.clear();
+			}
+		}
+	}
 }
