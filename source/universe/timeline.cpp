@@ -22,6 +22,21 @@ namespace flame
 		auto filename = Path::get(_filename);
 
 		doc_root = doc.append_child("timeline");
+
+		auto n_tracks = doc_root.append_child("tracks");
+		for (auto& t : tracks)
+		{
+			auto n_track = n_tracks.append_child("track");
+			n_track.append_attribute("address").set_value(t.address.c_str());
+			auto n_keyframes = n_track.append_child("keyframes");
+			for (auto& kf : t.keyframes)
+			{
+				auto n_keyframe = n_track.append_child("keyframe");
+				n_keyframe.append_attribute("time").set_value(kf.time);
+				n_keyframe.append_attribute("value").set_value(kf.value.c_str());
+			}
+		}
+
 		doc.save_file(filename.c_str());
 	}
 
@@ -52,15 +67,17 @@ namespace flame
 	{
 		for (auto& t : tl->tracks)
 		{
-			auto it = tracks.begin();
-			for (; it != tracks.end(); it++)
-			{
-				if (it->start_time > t.start_time)
-					break;
-			}
+			if (t.keyframes.empty())
+				continue;
+			auto start_time = t.keyframes.front().time;
+			auto duration = t.keyframes.back().time - start_time;
+
+			auto it = std::lower_bound(tracks.begin(), tracks.end(), start_time, [](const auto& a, auto t) { 
+				return a.start_time < t; 
+			});
 			auto& et = *tracks.emplace(it);
-			et.start_time = t.start_time;
-			et.duration = t.duration;
+			et.start_time = start_time;
+			et.duration = duration;
 			resolve_address(t.address, e, et.attr, et.obj, et.index);
 			if (et.attr)
 			{
@@ -144,6 +161,19 @@ namespace flame
 			}
 
 			auto ret = new TimelinePrivate();
+
+			for (auto n_track : doc_root.child("tracks"))
+			{
+				auto& t = ret->tracks.emplace_back();
+				t.address = n_track.attribute("address").as_string();
+				for (auto n_keyframe : n_track.child("keyframes"))
+				{
+					auto& kf = t.keyframes.emplace_back();
+					kf.time = n_keyframe.attribute("time").as_float();
+					kf.value = n_keyframe.attribute("value").as_string();
+				}
+			}
+
 			ret->filename = filename;
 			return ret;
 		}

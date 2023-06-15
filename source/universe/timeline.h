@@ -20,8 +20,6 @@ namespace flame
 	// Reflect
 	struct Track
 	{
-		float start_time;
-		float duration;
 		std::string address;
 		std::vector<Keyframe> keyframes;
 	};

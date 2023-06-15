@@ -102,7 +102,10 @@ void View_Timeline::on_draw()
 		app.close_timeline();
 	ImGui::SameLine();
 	if (ImGui::SmallButton(graphics::FontAtlas::icon_s("floppy-disk"_h).c_str()))
-		app.set_timeline_host(nullptr);
+	{
+		if (app.opened_timeline)
+			app.opened_timeline->save(app.opened_timeline->filename);
+	}
 	ImGui::SameLine();
 	ImGui::PushItemWidth(100.f);
 	auto s = app.e_timeline_host ? app.e_timeline_host->name : "[None]";
@@ -118,9 +121,7 @@ void View_Timeline::on_draw()
 	ImGui::PopItemWidth();
 	ImGui::SameLine();
 	if (ImGui::SmallButton((graphics::FontAtlas::icon_s("xmark"_h) + "##host").c_str()))
-	{
-
-	}
+		app.set_timeline_host(nullptr);
 	ImVec2 timeline_p0;
 	ImVec2 timeline_p1;
 	ImGui::InvisibleButton("##timeline", ImVec2(ImGui::GetContentRegionAvailWidth(), bar_height));
