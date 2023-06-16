@@ -234,9 +234,9 @@ void View_Hierarchy::on_draw()
 						{
 							if (_e->parent)
 							{
-								_e->remove_from_parent(false);
-								if (_e->parent == e)
+								if (_e->parent == e && idx > _e->index)
 									idx--;
+								_e->remove_from_parent(false);
 							}
 						}
 						for (auto _e : es)
