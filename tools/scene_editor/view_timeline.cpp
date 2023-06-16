@@ -12,6 +12,7 @@ View_Timeline::View_Timeline() :
 
 void View_Timeline::on_draw()
 {
+	auto& io = ImGui::GetIO();
 	static auto frame_width = 10.f;
 	const auto left_width = 200.f;
 	const auto right_width = 150.f;
@@ -249,8 +250,8 @@ void View_Timeline::on_draw()
 								auto it = std::lower_bound(t.keyframes.begin(), t.keyframes.end(), kf.time, [](const auto& a, auto t) {
 									return a.time < t;
 								});
-								t.keyframes.insert(it, kf);
 								pair.second = it - t.keyframes.begin();
+								t.keyframes.insert(it, kf);
 							}
 						}
 					}
@@ -265,27 +266,6 @@ void View_Timeline::on_draw()
 	}
 	if (do_select)
 		box_select_p0 = vec2(-1.f);
-	ImGui::EndChild();
-
-	ImGui::SameLine();
-	ImGui::BeginChild("##right");
-	if (ImGui::CollapsingHeader("Active Keyframe"))
-	{
-		if (selected_keyframes.empty())
-			ImGui::TextUnformatted("No keyframes selected");
-		else if (selected_keyframes.size() > 1)
-			ImGui::TextUnformatted("Multiple keyframes selected");
-		else
-		{
-			auto& pair = selected_keyframes[0];
-			auto& kf = app.opened_timeline->tracks[pair.first].keyframes[pair.second];
-			ImGui::Text("Time: %f", kf.time);
-			ImGui::Text("Value: %s", kf.value.c_str());
-		}
-	}
-	ImGui::EndChild();
-
-	auto& io = ImGui::GetIO();
 
 	if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered())
 	{
@@ -305,4 +285,24 @@ void View_Timeline::on_draw()
 			}
 		}
 	}
+
+	ImGui::EndChild();
+
+	ImGui::SameLine();
+	ImGui::BeginChild("##right");
+	if (ImGui::CollapsingHeader("Active Keyframe"))
+	{
+		if (selected_keyframes.empty())
+			ImGui::TextUnformatted("No keyframes selected");
+		else if (selected_keyframes.size() > 1)
+			ImGui::TextUnformatted("Multiple keyframes selected");
+		else
+		{
+			auto& pair = selected_keyframes[0];
+			auto& kf = app.opened_timeline->tracks[pair.first].keyframes[pair.second];
+			ImGui::Text("Time: %f", kf.time);
+			ImGui::Text("Value: %s", kf.value.c_str());
+		}
+	}
+	ImGui::EndChild();
 }

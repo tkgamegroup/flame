@@ -10,6 +10,8 @@ namespace flame
 		float time;
 		std::string value;
 
+		Keyframe() {}
+
 		Keyframe(float t, const std::string& v) :
 			time(t),
 			value(v)
