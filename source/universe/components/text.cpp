@@ -26,6 +26,17 @@ namespace flame
 		element->mark_drawing_dirty();
 	}
 
+	void cTextPrivate::set_auto_size(bool v)
+	{
+		if (auto_size == v)
+			return;
+		auto_size = v;
+		element->mark_drawing_dirty();
+		if (auto_size)
+			element->set_ext(calc_text_size());
+		data_changed("auto_size"_h);
+	}
+
 	void cTextPrivate::set_text(const std::wstring& _str)
 	{
 		std::wstring str; int length = _str.size();
@@ -148,17 +159,6 @@ namespace flame
 			x += g.advance * scale;
 		}
 		return ret;
-	}
-
-	void cTextPrivate::set_auto_size(bool v)
-	{
-		if (auto_size == v)
-			return;
-		auto_size = v;
-		element->mark_drawing_dirty();
-		if (auto_size)
-			element->set_ext(calc_text_size());
-		data_changed("auto_size"_h);
 	}
 
 	void cTextPrivate::get_font_atlas()

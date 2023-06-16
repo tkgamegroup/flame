@@ -13,8 +13,6 @@ namespace flame
 
 		Keyframe() {}
 
-		Keyframe() {}
-
 		Keyframe(float t, const std::string& v) :
 			time(t),
 			value(v)
@@ -37,13 +35,7 @@ namespace flame
 
 		virtual ~Timeline() {}
 
-		virtual void* start_play(EntityPtr e, float speed = 1.f) = 0;
-
 		virtual void save(const std::filesystem::path& filename) = 0;
-
-		FLAME_UNIVERSE_API static void pause(void* et);
-		FLAME_UNIVERSE_API static void resume(void* et);
-		FLAME_UNIVERSE_API static void stop(void* et);
 
 		struct Create
 		{
@@ -62,6 +54,18 @@ namespace flame
 
 	struct BoundTimeline
 	{
+		bool playing = false;
 
+		virtual ~BoundTimeline() {}
+
+		virtual void play() = 0;
+		virtual void stop() = 0;
+
+		struct Create
+		{
+			virtual BoundTimelinePtr operator()(TimelinePtr timeline, EntityPtr e) = 0;
+		};
+		// Reflect static
+		FLAME_UNIVERSE_API static Create& create;
 	};
 }

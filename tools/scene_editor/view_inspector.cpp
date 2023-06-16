@@ -451,7 +451,27 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					eos.sync_states->at(id) = 1;
 			}
 			if (just_exit_editing)
-				add_modify_history(name_hash, str(ti->vec_size, (int*)data));
+			{
+				auto new_value = str(ti->vec_size, (int*)data);
+				add_modify_history(name_hash, new_value);
+				if (enable_record)
+				{
+					auto sp = SUS::split(new_value, ',');
+					for (auto i = 0; i < eos.num; i++)
+					{
+						auto sp2 = SUS::split(before_editing_values[i], ',');
+						for (auto j = 0; j < sp.size(); j++)
+						{
+							if (sp[j] != sp2[j])
+							{
+								auto address = get_keyframe_adress(app.e_timeline_host, ((EntityPtr*)eos.objs)[i], eos.type2, name, j);
+								if (auto kf = app.get_keyframe(address, false); kf)
+									kf->value = sp[j];
+							}
+						}
+					}
+				}
+			}
 			changed = just_exit_editing ? 2 : changed > 0;
 			break;
 		case DataFloat:
@@ -480,17 +500,20 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			{
 				auto new_value = str(ti->vec_size, (float*)data);
 				add_modify_history(name_hash, new_value);
-				auto sp = SUS::split(new_value, ',');
-				for (auto i = 0; i < eos.num; i++)
+				if (enable_record)
 				{
-					auto sp2 = SUS::split(before_editing_values[i], ',');
-					for (auto j = 0; j < sp.size(); j++)
+					auto sp = SUS::split(new_value, ',');
+					for (auto i = 0; i < eos.num; i++)
 					{
-						if (sp[j] != sp2[j])
+						auto sp2 = SUS::split(before_editing_values[i], ',');
+						for (auto j = 0; j < sp.size(); j++)
 						{
-							auto address = get_keyframe_adress(app.e_timeline_host, ((EntityPtr*)eos.objs)[i], eos.type2, name, j);
-							if (auto kf = app.get_keyframe(address, false); kf)
-								kf->value = sp[j];
+							if (sp[j] != sp2[j])
+							{
+								auto address = get_keyframe_adress(app.e_timeline_host, ((EntityPtr*)eos.objs)[i], eos.type2, name, j);
+								if (auto kf = app.get_keyframe(address, false); kf)
+									kf->value = sp[j];
+							}
 						}
 					}
 				}

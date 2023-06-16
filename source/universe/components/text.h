@@ -11,6 +11,11 @@ namespace flame
 		cElementPtr element = nullptr;
 
 		// Reflect
+		bool auto_size = true;
+		// Reflect
+		virtual void set_auto_size(bool v) = 0;
+
+		// Reflect
 		std::wstring text;
 		// Reflect
 		virtual void set_text(const std::wstring& str) = 0;
@@ -43,11 +48,6 @@ namespace flame
 		float border = 0.f;
 		// Reflect
 		virtual void set_border(float border) = 0;
-
-		// Reflect
-		bool auto_size = true;
-		// Reflect
-		virtual void set_auto_size(bool v) = 0;
 
 		graphics::FontAtlas* font_atlas = nullptr;
 

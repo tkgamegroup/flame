@@ -6,12 +6,10 @@ namespace flame
 {
 	struct TimelinePrivate : Timeline
 	{
-		void* start_play(EntityPtr e, float speed) override;
-
 		void save(const std::filesystem::path& filename) override;
 	};
 
-	struct ExecutingTimeline
+	struct BoundTimelinePrivate : BoundTimeline
 	{
 		struct Keyframe
 		{
@@ -32,11 +30,14 @@ namespace flame
 			void update(float t);
 		};
 
+		void* ev = nullptr;
 		float time = 0.f;
-		bool paused = false;
 		std::list<Track> tracks;
 
-		ExecutingTimeline(TimelinePtr tl, EntityPtr e);
+		BoundTimelinePrivate(TimelinePtr tl, EntityPtr e);
+
+		void play() override;
+		void stop() override;
 		bool update();
 	};
 }

@@ -33,6 +33,7 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(Keyframe);
 	FLAME_UNIVERSE_TYPE(Track);
 	FLAME_UNIVERSE_TYPE(Timeline);
+	FLAME_UNIVERSE_TYPE(BoundTimeline);
 
 	FLAME_UNIVERSE_TYPE(cElement);
 	FLAME_UNIVERSE_TYPE(cText);

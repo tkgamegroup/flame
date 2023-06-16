@@ -6,15 +6,6 @@
 
 namespace flame
 {
-	void* TimelinePrivate::start_play(EntityPtr e, float speed)
-	{
-		auto et = new ExecutingTimeline(this, e);
-		add_event([et]() {
-			return et->update();
-		});
-		return et;
-	}
-
 	void TimelinePrivate::save(const std::filesystem::path& _filename)
 	{
 		pugi::xml_document doc;
@@ -40,22 +31,7 @@ namespace flame
 		doc.save_file(filename.c_str());
 	}
 
-	void Timeline::pause(void* et)
-	{
-
-	}
-
-	void Timeline::resume(void* et)
-	{
-
-	}
-
-	void Timeline::stop(void* et)
-	{
-
-	}
-
-	void ExecutingTimeline::Track::update(float t)
+	void BoundTimelinePrivate::Track::update(float t)
 	{
 		if (attr)
 		{
@@ -89,7 +65,27 @@ namespace flame
 		}
 	}
 
-	ExecutingTimeline::ExecutingTimeline(TimelinePtr tl, EntityPtr e)
+	void BoundTimelinePrivate::play()
+	{
+		if (playing)
+			return;
+		playing = true;
+
+		ev = add_event([this]() {
+			return update();
+		});
+	}
+
+	void BoundTimelinePrivate::stop()
+	{
+		if (!playing)
+			return;
+		playing = false;
+
+		remove_event(ev);
+	}
+
+	BoundTimelinePrivate::BoundTimelinePrivate(TimelinePtr tl, EntityPtr e)
 	{
 		for (auto& t : tl->tracks)
 		{
@@ -133,11 +129,11 @@ namespace flame
 		}
 	}
 
-	bool ExecutingTimeline::update()
+	bool BoundTimelinePrivate::update()
 	{
 		if (tracks.empty())
 		{
-			delete this;
+			playing = false;
 			return false;
 		}
 		for (auto it = tracks.begin(); it != tracks.end();)
@@ -204,4 +200,13 @@ namespace flame
 		}
 	}Timeline_load;
 	Timeline::Load& Timeline::load = Timeline_load;
+
+	struct BoundTimelineCreate : BoundTimeline::Create
+	{
+		BoundTimelinePtr operator()(TimelinePtr timeline, EntityPtr e) override
+		{
+			return new BoundTimelinePrivate(timeline, e);
+		}
+	}BoundTimeline_create;
+	BoundTimeline::Create& BoundTimeline::create = BoundTimeline_create;
 }
