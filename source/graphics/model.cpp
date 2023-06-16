@@ -796,8 +796,10 @@ namespace flame
 											{
 												if (!std::filesystem::exists(textures_destination))
 													std::filesystem::create_directories(textures_destination);
-												auto dst = textures_destination / fn.filename();
-												dst.replace_filename(dst.filename().wstring() + L"%s%m");
+												auto dst = fn.filename().stem();
+												dst += L"%s%m";
+												dst += fn.extension();
+												dst = textures_destination / dst;
 												if (dst != fn)
 												{
 													std::filesystem::copy_file(fn, dst, std::filesystem::copy_options::overwrite_existing);
