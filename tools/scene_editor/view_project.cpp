@@ -463,7 +463,18 @@ void View_Project::init()
 			}
 		}
 		if (ImGui::MenuItem("New Folder"))
-			std::filesystem::create_directory(get_unique_filename(path / L"new_foler_"));
+		{
+			ImGui::OpenInputDialog("New Folder", "Name", [path](bool ok, const std::string& str) {
+				if (ok && !str.empty())
+				{
+					auto fn = path / str;
+					if (!std::filesystem::exists(fn))
+						std::filesystem::create_directory(fn);
+					else
+						ImGui::OpenMessageDialog("Failed to create folder", "Folder already existed");
+				}
+			});
+		}
 		if (in_assets)
 		{
 			if (ImGui::MenuItem("New Image"))
