@@ -25,8 +25,9 @@ namespace flame
 			float duration;
 			const Attribute* attr;
 			void* obj;
-			uint index;
+			uint component_index;
 			std::vector<Keyframe> keyframes;
+			uint current_keyframe = 0;
 
 			void update(float t);
 		};

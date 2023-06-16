@@ -59,7 +59,33 @@ namespace flame
 	{
 		if (attr)
 		{
+			if (t > keyframes[current_keyframe].time)
+			{
+				current_keyframe++;
+				if (current_keyframe >= keyframes.size())
+					current_keyframe = 0;
+			}
+
+			auto pdata = attr->get_value(obj, true);
 			auto ti = (TypeInfo_Data*)attr->type;
+			switch (ti->data_type)
+			{
+			case DataFloat:
+			{
+				float v;
+				if (keyframes.size() == 1)
+					v = keyframes[current_keyframe].value;
+				else
+				{
+					auto& k0 = keyframes[current_keyframe];
+					auto& k1 = keyframes[current_keyframe + 1];
+					v = mix(k0.value, k1.value, (t - k0.time) / (k1.time - k0.time));
+				}
+				((float*)pdata)[component_index] = v;
+			}
+				break;
+			}
+			attr->set_value(obj, pdata);
 		}
 	}
 
@@ -78,7 +104,7 @@ namespace flame
 			auto& et = *tracks.emplace(it);
 			et.start_time = start_time;
 			et.duration = duration;
-			resolve_address(t.address, e, et.attr, et.obj, et.index);
+			resolve_address(t.address, e, et.attr, et.obj, et.component_index);
 			if (et.attr)
 			{
 				if (et.attr->type->tag != TagD)
@@ -93,13 +119,12 @@ namespace flame
 						switch (ti->data_type)
 						{
 						case DataFloat:
-								if (k.value == "-")
-								{
-									auto v = *(float*)et.attr->get_value(et.obj);
-									ek.value = v;
-								}
-								else
-									ek.value = s2t<float>(k.value);
+							ek.value = s2t<float>(k.value);
+							if (k.incremental)
+							{
+								auto pdata = et.attr->get_value(et.obj, true);
+								ek.value += ((float*)pdata)[et.component_index];
+							}
 							break;
 						}
 					}
@@ -122,7 +147,7 @@ namespace flame
 				break;
 			if (time < t.start_time + t.duration)
 			{
-				t.update(time - t.start_time);
+				t.update(time);
 				++it;
 			}
 			else
