@@ -713,7 +713,7 @@ namespace flame
 
 	sRendererPrivate::~sRendererPrivate()
 	{
-		delete canvas;
+		//delete canvas;
 	}
 
 	void sRendererPrivate::set_targets(std::span<graphics::ImageViewPtr> _targets, graphics::ImageLayout _final_layout)

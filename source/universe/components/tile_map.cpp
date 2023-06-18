@@ -210,10 +210,6 @@ namespace flame
 			{
 				dst->remove_all_children();
 				dst->add_child(Entity::create(it->second.path));
-				dst->forward_traversal([](EntityPtr e) {
-					if (e->get_component_t<cMesh>())
-						e->tag = e->tag | TagMarkNavMesh;
-				});
 
 				switch (name == "0_0_0_0" ? linearRand(0, 3) : it->second.rotation)
 				{

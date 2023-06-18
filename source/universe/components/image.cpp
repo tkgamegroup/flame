@@ -21,7 +21,12 @@ namespace flame
 	{
 		element->drawers.add([this](graphics::CanvasPtr canvas) {
 			if (image)
-				canvas->add_image(image->get_view(), element->global_pos0(), element->global_pos1(), vec4(0.f, 0.f, 1.f, 1.f));
+			{
+				if (angle == 0.f)
+					canvas->add_image(image->get_view(), element->global_pos0(), element->global_pos1(), vec4(0.f, 0.f, 1.f, 1.f), tint_col);
+				else
+					canvas->add_image_rotated(image->get_view(), element->global_pos0(), element->global_pos1(), vec4(0.f, 0.f, 1.f, 1.f), tint_col, angle);
+			}
 		}, "image"_h);
 	}
 
@@ -71,6 +76,15 @@ namespace flame
 		if (old_one)
 			graphics::Image::release(old_one);
 		data_changed("image_name"_h);
+	}
+
+	void cImagePrivate::set_tint_col(const cvec4& col)
+	{
+		if (tint_col == col)
+			return;
+		tint_col = col;
+		element->mark_drawing_dirty();
+		data_changed("tint_col"_h);
 	}
 
 	void cImagePrivate::set_angle(float v)

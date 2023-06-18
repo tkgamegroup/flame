@@ -16,6 +16,11 @@ namespace flame
 		virtual void set_image_name(const std::filesystem::path& image_name) = 0;
 
 		// Reflect
+		cvec4 tint_col = cvec4(255);
+		// Reflect
+		virtual void set_tint_col(const cvec4& col) = 0;
+
+		// Reflect
 		vec4 border = vec4(0.f);
 		// Reflect
 		virtual void set_border(const vec4& border) = 0;

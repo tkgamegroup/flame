@@ -59,7 +59,7 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cPhysicsCController);
 	FLAME_UNIVERSE_TYPE(cNavAgent);
 	FLAME_UNIVERSE_TYPE(cNavObstacle);
-	FLAME_UNIVERSE_TYPE(cNavScene);
+	FLAME_UNIVERSE_TYPE(cNavMesh);
 	FLAME_UNIVERSE_TYPE(cAudioSource);
 	FLAME_UNIVERSE_TYPE(cAudioListener);
 	FLAME_UNIVERSE_TYPE(cDirLight);
@@ -83,9 +83,8 @@ namespace flame
 	{
 		TagNone = 0,
 		TagGeneral = 1 << 0,
-		TagNotSerialized,
-		TagMarkNavMesh = 1 << 2,
-		TagUser = 1 << 3
+		TagNotSerialized = 1 << 1,
+		TagUser = 1 << 2
 	};
 
 	inline TagFlags operator| (TagFlags a, TagFlags b) { return (TagFlags)((int)a | (int)b); }

@@ -24,8 +24,8 @@
 #include <DetourTileCache.h>
 #include <DetourTileCacheBuilder.h>
 rcContext rc_ctx;
-dtTileCache* dt_tile_cache = nullptr;
 dtNavMesh* dt_nav_mesh = nullptr;
+dtTileCache* dt_tile_cache = nullptr;
 dtNavMeshQuery* dt_nav_query = nullptr;
 dtQueryFilter dt_filter;
 dtCrowd* dt_crowd = nullptr;
@@ -52,6 +52,8 @@ namespace flame
 	sScenePrivate::~sScenePrivate()
 	{
 #ifdef USE_RECASTNAV
+		if (dt_tile_cache)
+			dtFreeTileCache(dt_tile_cache);
 		if (dt_nav_mesh)
 			dtFreeNavMesh(dt_nav_mesh);
 		if (dt_nav_query)
@@ -491,23 +493,59 @@ namespace flame
 		}
 	}
 
-	void sScenePrivate::generate_navmesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle)
+	bool sScenePrivate::init_dt_nav_query()
 	{
 #ifdef USE_RECASTNAV
+		dt_nav_query = dtAllocNavMeshQuery();
+		return !dtStatusFailed(dt_nav_query->init(dt_nav_mesh, 2048));
+#else
+		return false;
+#endif
+	}
+
+	bool sScenePrivate::init_dt_crowd()
+	{
+#ifdef USE_RECASTNAV
+		for (auto ag : nav_agents)
+			ag->dt_id = -1;
+		for (auto ob : nav_obstacles)
+			ob->dt_id = -1;
+
+		dt_crowd = dtAllocCrowd();
+		if (dtStatusFailed(dt_crowd->init(128, 2.f/*max agent radius*/, dt_nav_mesh)))
+			return false;
+		dtObstacleAvoidanceParams avoid_params;
+		memcpy(&avoid_params, dt_crowd->getObstacleAvoidanceParams(0), sizeof(dtObstacleAvoidanceParams));
+		avoid_params.velBias = 0.5f;
+		avoid_params.adaptiveDivs = 7;
+		avoid_params.adaptiveRings = 2;
+		avoid_params.adaptiveDepth = 3;
+		dt_crowd->setObstacleAvoidanceParams(0, &avoid_params);
+
+		return true;
+#else
+		return false;
+#endif
+	}
+
+	void sScenePrivate::navmesh_generate(const std::vector<EntityPtr>& nodes, float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle)
+	{
+#ifdef USE_RECASTNAV
+		navmesh_clear();
+
 		std::vector<vec3> positions;
 		std::vector<uint> indices;
 
-		std::function<void(EntityPtr e)> form_mesh;
-		form_mesh = [&](EntityPtr e) {
-			if (!e->global_enable)
-				return;
+		for (auto& n : nodes)
+		{
+			n->forward_traversal([&](EntityPtr e) {
+				if (!e->global_enable)
+					return;
 
-			if (auto node = e->node(); node)
-			{
-				auto& mat = node->transform;
-
-				if (e->tag & TagMarkNavMesh)
+				if (auto node = e->node(); node)
 				{
+					auto& mat = node->transform;
+
 					if (auto cmesh = e->get_component_t<cMesh>(); cmesh)
 					{
 						auto mesh = cmesh->mesh;
@@ -592,13 +630,9 @@ namespace flame
 							indices[idx_off + i] = pos_off + i;
 					}
 				}
+			});
+		}
 
-				for (auto& c : e->children)
-					form_mesh(c.get());
-			}
-		};
-
-		form_mesh(world->root.get());
 		if (positions.empty())
 		{
 			printf("generate navmesh: no vertices.\n");
@@ -644,7 +678,6 @@ namespace flame
 		memcpy(&cfg.bmin, &bounds.a, sizeof(vec3));
 		memcpy(&cfg.bmax, &bounds.b, sizeof(vec3));
 
-		dtFreeTileCache(dt_tile_cache);
 		dt_tile_cache = dtAllocTileCache();
 		dtTileCacheParams tcparams;
 		memset(&tcparams, 0, sizeof(dtTileCacheParams));
@@ -667,7 +700,6 @@ namespace flame
 			return;
 		}
 
-		dtFreeNavMesh(dt_nav_mesh);
 		dt_nav_mesh = dtAllocNavMesh();
 		dtNavMeshParams params;
 		memset(&params, 0, sizeof(params));
@@ -829,24 +861,43 @@ namespace flame
 				dt_tile_cache->buildNavMeshTilesAt(x, y, dt_nav_mesh);
 		}
 
-		if (!dt_nav_query)
-			dt_nav_query = dtAllocNavMeshQuery();
-		dt_nav_query->init(dt_nav_mesh, 2048);
+		if (!init_dt_nav_query())
+		{
+			printf("generate navmesh: Could not init query.\n");
+			return;
+		}
 
-		if (!dt_crowd)
-			dt_crowd = dtAllocCrowd();
-		for (auto ag : nav_agents)
-			ag->dt_id = -1;
-		for (auto ob : nav_obstacles)
-			ob->dt_id = -1;
-		dt_crowd->init(128, 2.f/*max agent radius*/, dt_nav_mesh);
-		dtObstacleAvoidanceParams avoid_params;
-		memcpy(&avoid_params, dt_crowd->getObstacleAvoidanceParams(0), sizeof(dtObstacleAvoidanceParams));
-		avoid_params.velBias = 0.5f;
-		avoid_params.adaptiveDivs = 7;
-		avoid_params.adaptiveRings = 2;
-		avoid_params.adaptiveDepth = 3;
-		dt_crowd->setObstacleAvoidanceParams(0, &avoid_params);
+		if (!init_dt_crowd())
+		{
+			printf("generate navmesh: Could not init crowd.\n");
+			return;
+		}
+#endif
+	}
+
+	void sScenePrivate::navmesh_clear()
+	{
+#ifdef USE_RECASTNAV
+		if (dt_tile_cache)
+		{
+			dtFreeTileCache(dt_tile_cache);
+			dt_tile_cache = nullptr;
+		}
+		if (dt_nav_mesh)
+		{
+			dtFreeNavMesh(dt_nav_mesh);
+			dt_nav_mesh = nullptr;
+		}
+		if (dt_nav_query)
+		{
+			dtFreeNavMeshQuery(dt_nav_query);
+			dt_nav_query = nullptr;
+		}
+		if (dt_crowd)
+		{
+			dtFreeCrowd(dt_crowd);
+			dt_crowd = nullptr;
+		}
 #endif
 	}
 
@@ -998,7 +1049,7 @@ namespace flame
 		return true;
 	}
 
-	std::vector<vec3> sScenePrivate::query_navmesh_path(const vec3& start, const vec3& end, uint max_smooth)
+	std::vector<vec3> sScenePrivate::navmesh_query_path(const vec3& start, const vec3& end, uint max_smooth)
 	{
 		std::vector<vec3> ret;
 		if (!dt_nav_query)
@@ -1112,7 +1163,7 @@ namespace flame
 		return ret;
 	}
 
-	bool sScenePrivate::navmesh_check_agents_and_obstacles(const vec3& pos, float radius)
+	bool sScenePrivate::navmesh_check_free_space(const vec3& pos, float radius)
 	{
 		for (auto ag : nav_agents)
 		{
@@ -1125,6 +1176,104 @@ namespace flame
 				return false;
 		}
 		return true;
+	}
+
+	void sScenePrivate::navmesh_save(const std::filesystem::path& filename)
+	{
+#ifdef USE_RECASTNAV
+		if (!dt_nav_mesh)
+			return;
+
+		auto mesh = (const dtNavMesh*)dt_nav_mesh;
+		std::ofstream file(filename, std::ios::binary);
+		dtNavMeshParams params;
+		memcpy(&params, mesh->getParams(), sizeof(dtNavMeshParams));
+		auto num_tiles = 0;
+		for (int i = 0; i < dt_nav_mesh->getMaxTiles(); ++i)
+		{
+			auto tile = mesh->getTile(i);
+			if (!tile || !tile->header || !tile->dataSize) 
+				continue;
+			num_tiles++;
+		}
+		file.write((char*)&params, sizeof(dtNavMeshParams));
+		file.write((char*)&num_tiles, sizeof(num_tiles));
+		for (int i = 0; i < mesh->getMaxTiles(); ++i)
+		{
+			auto tile = mesh->getTile(i);
+			if (!tile || !tile->header || !tile->dataSize) 
+				continue;
+
+			uint ref = mesh->getTileRef(tile);
+			uint data_size = tile->dataSize;
+			file.write((char*)&ref, sizeof(ref));
+			file.write((char*)&data_size, sizeof(data_size));
+			file.write((char*)tile->data, data_size);
+		}
+		file.close();
+#endif
+	}
+
+	void sScenePrivate::navmesh_load(const std::filesystem::path& filename)
+	{
+#ifdef USE_RECASTNAV
+		std::ifstream file(filename);
+		if (!file.good())
+			return;
+
+		navmesh_clear();
+
+		dtNavMeshParams params;
+		file.read((char*)&params, sizeof(dtNavMeshParams));
+
+		dt_nav_mesh = dtAllocNavMesh();
+		if (dtStatusFailed(dt_nav_mesh->init(&params)))
+		{
+			printf("load navmesh: Could not init navmesh.\n");
+			file.close();
+			return;
+		}
+
+		uint num_tiles;
+		file.read((char*)&num_tiles, sizeof(num_tiles));
+		for (auto i = 0; i < num_tiles; ++i)
+		{
+			uint ref, data_size;
+			file.read((char*)&ref, sizeof(ref));
+			file.read((char*)&data_size, sizeof(data_size));
+			auto data = dtAlloc(data_size, DT_ALLOC_PERM);
+			if (!data)
+			{
+				printf("load navmesh: Could not alloc data.\n");
+				file.close();
+				return;
+			}
+			file.read((char*)data, data_size);
+			if (dtStatusFailed(dt_nav_mesh->addTile((uchar*)data, data_size, DT_TILE_FREE_DATA, ref, 0)))
+			{
+				printf("load navmesh: Could not add tile.\n");
+				dtFree(data);
+				file.close();
+				return;
+			}
+		}
+
+		file.close();
+
+		dt_tile_cache = dtAllocTileCache();
+
+		if (!init_dt_nav_query())
+		{
+			printf("load navmesh: Could not init query\n");
+			return;
+		}
+
+		if (!init_dt_crowd())
+		{
+			printf("load navmesh: Could not init crowd\n");
+			return;
+		}
+#endif
 	}
 
 	void sScenePrivate::draw_debug_primitives()

@@ -26,10 +26,15 @@ namespace flame
 		sScenePrivate();
 		~sScenePrivate();
 
-		void generate_navmesh(float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle) override;
+		bool init_dt_nav_query();
+		bool init_dt_crowd();
+		void navmesh_generate(const std::vector<EntityPtr>& nodes, float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle) override;
+		void navmesh_clear() override;
 		bool navmesh_nearest_point(const vec3& center, const vec3& ext, vec3& res) override;
-		std::vector<vec3> query_navmesh_path(const vec3& start, const vec3& end, uint max_smooth) override;
-		bool navmesh_check_agents_and_obstacles(const vec3& pos, float radius) override;
+		std::vector<vec3> navmesh_query_path(const vec3& start, const vec3& end, uint max_smooth) override;
+		bool navmesh_check_free_space(const vec3& pos, float radius) override;
+		void navmesh_save(const std::filesystem::path& filename) override;
+		void navmesh_load(const std::filesystem::path& filename) override;
 		void draw_debug_primitives() override;
 
 		void update() override;

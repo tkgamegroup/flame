@@ -790,8 +790,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				else
 					type->set_value(objs[0], offset, setter, &sv.v);
 			};
-			if (ImGui::IsItemDeactivated())
-				sv.assign(nullptr, pv);
 			int n = sv.count();
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
 			ImGui::Separator();
@@ -844,8 +842,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				else
 					type->set_value(objs[0], offset, setter, &sv.v);
 			};
-			if (ImGui::IsItemDeactivated())
-				sv.assign(nullptr, pv);
 			auto& ui = *ti->retrive_ui();
 			int n = sv.count();
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
@@ -900,8 +896,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				else
 					type->set_value(objs[0], offset, setter, &sv.v);
 			};
-			if (ImGui::IsItemDeactivated())
-				sv.assign(nullptr, pv);
 			int n = sv.count();
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
 			ImGui::Separator();
@@ -1730,10 +1724,10 @@ void View_Inspector::on_draw()
 			if (ext == L".obj" || ext == L".fbx" || ext == L".gltf" || ext == L".glb")
 			{
 				static vec3 rotation = vec3(0, 0, 0);
-				static vec3 scaling = vec3(0.01f, 0.01f, 0.01f);
+				static float scaling = 1.f;
 				static bool only_animation = false;
 				ImGui::DragFloat3("Rotation", (float*)&rotation);
-				ImGui::DragFloat3("Scaling", (float*)&scaling);
+				ImGui::DragFloat("Scaling", &scaling);
 				ImGui::Checkbox("Only Animation", &only_animation);
 				if (ImGui::Button("Import"))
 					graphics::import_scene(path, L"", rotation, scaling, only_animation);

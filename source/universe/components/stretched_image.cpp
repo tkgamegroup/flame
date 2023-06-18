@@ -30,23 +30,23 @@ namespace flame
 					auto img_ext = vec2(image->extent) * image_scale;
 					auto iv = image->get_view();
 					// top border
-					canvas->add_image(iv, vec2(p0.x + b.x, p0.y),		vec2(p1.x - b.z, p0.y + b.y),	vec4(b.x / img_ext.x, 0.f, 1.f - b.z / img_ext.x, b.y / img_ext.y));
+					canvas->add_image(iv, vec2(p0.x + b.x, p0.y),		vec2(p1.x - b.z, p0.y + b.y),	vec4(b.x / img_ext.x, 0.f, 1.f - b.z / img_ext.x, b.y / img_ext.y), tint_col);
 					// bottom border
-					canvas->add_image(iv, vec2(p0.x + b.x, p1.y - b.w),	vec2(p1.x - b.z, p1.y),			vec4(b.x / img_ext.x, 1.f - b.w / img_ext.y, 1.f - b.w / img_ext.x, 1.f));
+					canvas->add_image(iv, vec2(p0.x + b.x, p1.y - b.w),	vec2(p1.x - b.z, p1.y),			vec4(b.x / img_ext.x, 1.f - b.w / img_ext.y, 1.f - b.w / img_ext.x, 1.f), tint_col);
 					// left border
-					canvas->add_image(iv, vec2(p0.x, p0.y + b.y),		vec2(p0.x + b.x, p1.y - b.w),	vec4(0.f, b.y / img_ext.y, b.x / img_ext.x, 1.f - b.w / img_ext.y));
+					canvas->add_image(iv, vec2(p0.x, p0.y + b.y),		vec2(p0.x + b.x, p1.y - b.w),	vec4(0.f, b.y / img_ext.y, b.x / img_ext.x, 1.f - b.w / img_ext.y), tint_col);
 					// right border
-					canvas->add_image(iv, vec2(p1.x - b.z, p0.y + b.y), vec2(p1.x, p1.y - b.w),			vec4(1.f - b.w / img_ext.x, b.y / img_ext.y, 1.f, 1.f - b.w / img_ext.y));
+					canvas->add_image(iv, vec2(p1.x - b.z, p0.y + b.y), vec2(p1.x, p1.y - b.w),			vec4(1.f - b.w / img_ext.x, b.y / img_ext.y, 1.f, 1.f - b.w / img_ext.y), tint_col);
 					// left-top corner
-					canvas->add_image(iv, vec2(p0.x, p0.y),				vec2(p0.x + b.x, p0.y + b.y),	vec4(0.f, 0.f, b.x / img_ext.x, b.y / img_ext.y));
+					canvas->add_image(iv, vec2(p0.x, p0.y),				vec2(p0.x + b.x, p0.y + b.y),	vec4(0.f, 0.f, b.x / img_ext.x, b.y / img_ext.y), tint_col);
 					// right-top corner
-					canvas->add_image(iv, vec2(p1.x - b.z, p0.y),		vec2(p1.x, p0.y + b.y),			vec4(1.f - b.w / img_ext.x, 0.f, 1.f, b.y / img_ext.y));
+					canvas->add_image(iv, vec2(p1.x - b.z, p0.y),		vec2(p1.x, p0.y + b.y),			vec4(1.f - b.w / img_ext.x, 0.f, 1.f, b.y / img_ext.y), tint_col);
 					// left-bottom corner
-					canvas->add_image(iv, vec2(p0.x, p1.y - b.w),		vec2(p0.x + b.x, p1.y),			vec4(0.f, 1.f - b.w / img_ext.y, b.x / img_ext.x, 1.f));
+					canvas->add_image(iv, vec2(p0.x, p1.y - b.w),		vec2(p0.x + b.x, p1.y),			vec4(0.f, 1.f - b.w / img_ext.y, b.x / img_ext.x, 1.f), tint_col);
 					// right-bottom corner
-					canvas->add_image(iv, vec2(p1.x - b.z, p1.y - b.w), vec2(p1.x, p1.y),				vec4(1.f - b.w / img_ext.x, 1.f - b.w / img_ext.y, 1.f, 1.f));
+					canvas->add_image(iv, vec2(p1.x - b.z, p1.y - b.w), vec2(p1.x, p1.y),				vec4(1.f - b.w / img_ext.x, 1.f - b.w / img_ext.y, 1.f, 1.f), tint_col);
 					// middle
-					canvas->add_image(iv, vec2(p0.x + b.x, p0.y + b.y), vec2(p1.x - b.z, p1.y - b.w),	vec4(vec2(b.x, b.y) / img_ext, 1.f - vec2(b.z, b.w) / img_ext));
+					canvas->add_image(iv, vec2(p0.x + b.x, p0.y + b.y), vec2(p1.x - b.z, p1.y - b.w),	vec4(vec2(b.x, b.y) / img_ext, 1.f - vec2(b.z, b.w) / img_ext), tint_col);
 				}
 			}
 		}, "stretched_image"_h);
@@ -84,6 +84,15 @@ namespace flame
 		if (old_one)
 			graphics::Image::release(old_one);
 		data_changed("image_name"_h);
+	}
+
+	void cStretchedImagePrivate::set_tint_col(const cvec4& col)
+	{
+		if (tint_col == col)
+			return;
+		tint_col = col;
+		element->mark_drawing_dirty();
+		data_changed("tint_col"_h);
 	}
 
 	void cStretchedImagePrivate::set_border(const vec4& _border)

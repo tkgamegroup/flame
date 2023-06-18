@@ -415,6 +415,8 @@ void View_Project::init()
 								if (ImGui::Button("Refresh"))
 									;
 							}
+
+							ImGui::End();
 						}
 						if (!open)
 							close();
@@ -753,7 +755,7 @@ void View_Project::init()
 						struct ImportSceneDialog : ImGui::Dialog
 						{
 							vec3 rotation = vec3(0.f);
-							vec3 scaling = vec3(1.f);
+							float scaling = 1.f;
 							bool only_animation = false;
 
 							std::filesystem::path destination;
@@ -781,7 +783,7 @@ void View_Project::init()
 									ImGui::Separator();
 
 									ImGui::InputFloat3("Rotation", &rotation[0]);
-									ImGui::InputFloat3("Scaling", &scaling[0]);
+									ImGui::InputFloat("Scaling", &scaling);
 									ImGui::Checkbox("Only Animation", &only_animation);
 
 									if (ImGui::Button("OK"))

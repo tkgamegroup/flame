@@ -15,7 +15,6 @@
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
 #include <flame/universe/components/dir_light.h>
-#include <flame/universe/components/nav_scene.h>
 #include <flame/universe/systems/renderer.h>
 
 App app;
@@ -156,122 +155,166 @@ void App::init()
 			ImGui::Separator();
 			if (ImGui::BeginMenu("NavMesh"))
 			{
-				struct GenerateDialog
+				struct GenerateDialog : ImGui::Dialog
 				{
-					bool open = false;
-
+					std::vector<EntityPtr> nodes;
 					float agent_radius = 0.6f;
 					float agent_height = 1.8f;
 					float walkable_climb = 0.5f;
 					float walkable_slope_angle = 45.f;
+
+					static void open()
+					{
+						auto dialog = new GenerateDialog;
+						dialog->title = "Generate Navmesh";
+						Dialog::open(dialog);
+					}
+
+					void draw() override
+					{
+						bool open = true;
+						if (ImGui::Begin(title.c_str(), &open))
+						{
+							if (ImGui::TreeNode("Nodes"))
+							{
+								auto n = (int)nodes.size();
+								auto size_changed = ImGui::InputInt("size", &n, 1, 1);
+								ImGui::Separator();
+								if (size_changed)
+									nodes.resize(n);
+								else
+								{
+									n = nodes.size();
+									for (auto i = 0; i < n; i++)
+									{
+										ImGui::PushID(i);
+										ImGui::TextUnformatted(nodes[i] ? nodes[i]->name.c_str() : "[None]");
+										if (ImGui::BeginDragDropTarget())
+										{
+											if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
+											{
+												auto entity = *(EntityPtr*)payload->Data;
+												nodes[i] = entity;
+											}
+										}
+										ImGui::PopID();
+									}
+								}
+								ImGui::TreePop();
+							}
+							ImGui::InputFloat("Agent Radius", &agent_radius);
+							ImGui::InputFloat("Agent Height", &agent_height);
+							ImGui::InputFloat("Walkable Climb", &walkable_climb);
+							ImGui::InputFloat("Walkable Slope Angle", &walkable_slope_angle);
+							if (ImGui::Button("Generate"))
+							{
+								sScene::instance()->navmesh_generate(nodes, agent_radius, agent_height, walkable_climb, walkable_slope_angle);
+								ImGui::CloseCurrentPopup();
+								open = false;
+							}
+							ImGui::SameLine();
+							if (ImGui::Button("Cancel"))
+							{
+								ImGui::CloseCurrentPopup();
+								open = false;
+							}
+
+							ImGui::End();
+						}
+						if (!open)
+							close();
+					}
 				};
-				static GenerateDialog generate_dialog;
+
 				if (ImGui::MenuItem("Generate"))
 				{
 					if (e_prefab)
-					{
-						dialogs.push_back([&]() {
-							if (!generate_dialog.open)
-							{
-								generate_dialog.open = true;
-								ImGui::OpenPopup("NavMesh Generate");
-							}
-
-							if (ImGui::BeginPopupModal("NavMesh Generate"))
-							{
-								ImGui::InputFloat("Agent Radius", &generate_dialog.agent_radius);
-								ImGui::InputFloat("Agent Height", &generate_dialog.agent_height);
-								ImGui::InputFloat("Walkable Climb", &generate_dialog.walkable_climb);
-								ImGui::InputFloat("Walkable Slope Angle", &generate_dialog.walkable_slope_angle);
-								if (ImGui::Button("Generate"))
-								{
-									sScene::instance()->generate_navmesh(generate_dialog.agent_radius, generate_dialog.agent_height, generate_dialog.walkable_climb, generate_dialog.walkable_slope_angle);
-									ImGui::CloseCurrentPopup();
-									generate_dialog.open = false;
-								}
-								ImGui::SameLine();
-								if (ImGui::Button("Cancel"))
-								{
-									ImGui::CloseCurrentPopup();
-									generate_dialog.open = false;
-								}
-								ImGui::End();
-							}
-							return generate_dialog.open;
-							});
-					}
+						GenerateDialog::open();
 				}
 
-				if (ImGui::MenuItem("Generate Using cNavScene's values"))
+				if (ImGui::MenuItem("Save"))
 				{
-					if (e_prefab)
-					{
-						if (auto comp = e_prefab->find_component_recursively(th<cNavScene>()); comp)
-						{
-							auto nav_scene = (cNavScenePtr)comp;
-							sScene::instance()->generate_navmesh(nav_scene->agent_radius, nav_scene->agent_height, nav_scene->walkable_climb, nav_scene->walkable_slope_angle);
-						}
-					}
+					ImGui::OpenFileDialog("Save Navmesh", [](bool ok, const std::filesystem::path& path) {
+						if (ok)
+							sScene::instance()->navmesh_save(path);
+					});
 				}
 
-				struct TestDialog
+				if (ImGui::MenuItem("Load"))
 				{
-					bool open = false;
+					ImGui::OpenFileDialog("Load Navmesh", [](bool ok, const std::filesystem::path& path) {
+						if (ok)
+							sScene::instance()->navmesh_load(path);
+					});
+				}
 
+				struct TestDialog : ImGui::Dialog
+				{
 					vec3 start = vec3(0.f);
 					vec3 end = vec3(0.f);
 					std::vector<vec3> points;
-				};
-				static TestDialog test_dialog;
-				if (ImGui::MenuItem("Test", nullptr, &test_dialog.open))
-				{
-					auto node = e_editor->get_component_i<cNode>(0);
-					if (test_dialog.open)
-					{
-						dialogs.push_back([&]() {
-							if (test_dialog.open)
-							{
-								ImGui::Begin("NavMesh Test", &test_dialog.open);
-								static int v = 0;
-								ImGui::TextUnformatted("use ctrl+click to set start/end");
-								ImGui::RadioButton("Start", &v, 0);
-								ImGui::TextUnformatted(("    " + str(test_dialog.start)).c_str());
-								ImGui::RadioButton("End", &v, 1);
-								ImGui::TextUnformatted(("    " + str(test_dialog.end)).c_str());
-								if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsKeyDown(Keyboard_Ctrl))
-								{
-									if (v == 0)
-										test_dialog.start = view_scene.hovering_pos;
-									else
-										test_dialog.end = view_scene.hovering_pos;
-									if (distance(test_dialog.start, test_dialog.end) > 0.f)
-										test_dialog.points = sScene::instance()->query_navmesh_path(test_dialog.start, test_dialog.end);
-								}
-								ImGui::End();
 
-								{
-									std::vector<vec3> points;
-									points.push_back(test_dialog.start - vec3(1, 0, 0));
-									points.push_back(test_dialog.start + vec3(1, 0, 0));
-									points.push_back(test_dialog.start - vec3(0, 0, 1));
-									points.push_back(test_dialog.start + vec3(0, 0, 1));
-									sRenderer::instance()->draw_primitives("LineList"_h, points.data(), points.size(), cvec4(0, 255, 0, 255));
-								}
-								{
-									std::vector<vec3> points;
-									points.push_back(test_dialog.end - vec3(1, 0, 0));
-									points.push_back(test_dialog.end + vec3(1, 0, 0));
-									points.push_back(test_dialog.end - vec3(0, 0, 1));
-									points.push_back(test_dialog.end + vec3(0, 0, 1));
-									sRenderer::instance()->draw_primitives("LineList"_h, points.data(), points.size(), cvec4(0, 0, 255, 255));
-								}
-								if (!test_dialog.points.empty())
-									sRenderer::instance()->draw_primitives("LineList"_h, test_dialog.points.data(), test_dialog.points.size(), cvec4(255, 0, 0, 255));
-							}
-							return test_dialog.open;
-							});
+					static void open()
+					{
+						auto dialog = new TestDialog;
+						dialog->title = "Navmesh Test";
+						Dialog::open(dialog);
 					}
+
+					void draw() override
+					{
+						bool open = true;
+						if (ImGui::Begin(title.c_str(), &open))
+						{
+							static int v = 0;
+							ImGui::TextUnformatted("use ctrl+click to set start/end");
+							ImGui::RadioButton("Start", &v, 0);
+							ImGui::TextUnformatted(("    " + str(start)).c_str());
+							ImGui::RadioButton("End", &v, 1);
+							ImGui::TextUnformatted(("    " + str(end)).c_str());
+							if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsKeyDown(Keyboard_Ctrl))
+							{
+								if (v == 0)
+									start = view_scene.hovering_pos;
+								else
+									end = view_scene.hovering_pos;
+								if (distance(start, end) > 0.f)
+									points = sScene::instance()->navmesh_query_path(start, end);
+							}
+
+
+							{
+								std::vector<vec3> points;
+								points.push_back(start - vec3(1, 0, 0));
+								points.push_back(start + vec3(1, 0, 0));
+								points.push_back(start - vec3(0, 0, 1));
+								points.push_back(start + vec3(0, 0, 1));
+								sRenderer::instance()->draw_primitives("LineList"_h, points.data(), points.size(), cvec4(0, 255, 0, 255));
+							}
+							{
+								std::vector<vec3> points;
+								points.push_back(end - vec3(1, 0, 0));
+								points.push_back(end + vec3(1, 0, 0));
+								points.push_back(end - vec3(0, 0, 1));
+								points.push_back(end + vec3(0, 0, 1));
+								sRenderer::instance()->draw_primitives("LineList"_h, points.data(), points.size(), cvec4(0, 0, 255, 255));
+							}
+							if (!points.empty())
+								sRenderer::instance()->draw_primitives("LineList"_h, points.data(), points.size(), cvec4(255, 0, 0, 255));
+
+							ImGui::End();
+						}
+						if (!open)
+							close();
+					}
+				};
+
+				if (ImGui::MenuItem("Test"))
+				{
+					if (e_prefab)
+						TestDialog::open();
 				}
+
 				ImGui::EndMenu();
 			}
 			ImGui::Separator();
@@ -1007,7 +1050,6 @@ void App::new_prefab(const std::filesystem::path& path, uint type)
 	{
 	case "general_3d_scene"_h:
 		e->add_component_t<cNode>();
-		e->add_component_t<cNavScene>()->generate_delay_frames = 1;
 		auto e_camera = Entity::create();
 		e_camera->name = "Camera";
 		e_camera->add_component_t<cNode>();
@@ -1020,7 +1062,7 @@ void App::new_prefab(const std::filesystem::path& path, uint type)
 		e->add_child(e_light);
 		auto e_plane = Entity::create();
 		e_plane->name = "Plane";
-		e_plane->tag = e_plane->tag | TagMarkNavMesh;
+		e_plane->tag = e_plane->tag;
 		e_plane->add_component_t<cNode>();
 		e_plane->add_component_t<cMesh>()->set_mesh_and_material(L"standard_plane", L"default");
 		e->add_child(e_plane);

@@ -414,7 +414,7 @@ namespace flame
 		}Model_release;
 		Model::Release& Model::release = Model_release;
 
-		void import_scene(const std::filesystem::path& _filename, const std::filesystem::path& _destination, const vec3& rotation, const vec3& scaling, bool only_animation)
+		void import_scene(const std::filesystem::path& _filename, const std::filesystem::path& _destination, const vec3& rotation, float scaling, bool only_animation)
 		{
 			auto filename = Path::get(_filename);
 			if (!std::filesystem::exists(filename))
@@ -486,7 +486,7 @@ namespace flame
 				}
 			};
 
-			auto need_wrap_root = rotation != vec3(0.f) || scaling != vec3(1.f);
+			auto need_wrap_root = rotation != vec3(0.f) || scaling != 1.f;
 			auto preprocess = [&](pugi::xml_node first_node)->pugi::xml_node {
 				if (need_wrap_root)
 				{
@@ -505,8 +505,8 @@ namespace flame
 				auto n_node = n_components.first_child();
 				if (rotation != vec3(0.f))
 					n_node.append_attribute("eul").set_value(str(rotation).c_str());
-				if (scaling != vec3(1.f))
-					n_node.append_attribute("scl").set_value(str(scaling).c_str());
+				if (scaling != 1.f)
+					n_node.append_attribute("scl").set_value(str(vec3(scaling)).c_str());
 				if (!model->bones.empty())
 				{
 					auto n_armature = n_components.append_child("item");

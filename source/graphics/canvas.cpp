@@ -388,20 +388,36 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs)
+		void CanvasPrivate::add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col)
 		{
 			auto& cmd = get_bmp_cmd(view->get_shader_read_src(nullptr));
 
 			path_rect(a, b);
 			fill_path(cmd, cvec4(255));
 			path.clear();
-			buf_vtx.item_t<DrawVert>(-4).uv = uvs.xy;
-			buf_vtx.item_t<DrawVert>(-3).uv = uvs.xw;
-			buf_vtx.item_t<DrawVert>(-2).uv = uvs.zw;
-			buf_vtx.item_t<DrawVert>(-1).uv = uvs.zy;
+			{
+				auto& vtx = buf_vtx.item_t<DrawVert>(-4);
+				vtx.uv = uvs.xy;
+				vtx.col = tint_col;
+			}
+			{
+				auto& vtx = buf_vtx.item_t<DrawVert>(-3);
+				vtx.uv = uvs.xw;
+				vtx.col = tint_col;
+			}
+			{
+				auto& vtx = buf_vtx.item_t<DrawVert>(-2);
+				vtx.uv = uvs.zw;
+				vtx.col = tint_col;
+			}
+			{
+				auto& vtx = buf_vtx.item_t<DrawVert>(-1);
+				vtx.uv = uvs.zy;
+				vtx.col = tint_col;
+			}
 		}
 
-		void CanvasPrivate::add_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, float angle)
+		void CanvasPrivate::add_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle)
 		{
 			auto& cmd = get_bmp_cmd(view->get_shader_read_src(nullptr));
 
@@ -414,23 +430,26 @@ namespace flame
 				auto& vtx = buf_vtx.item_t<DrawVert>(-4);
 				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
 				vtx.uv = uvs.xy;
+				vtx.col = tint_col;
 			}
 			{
 				auto& vtx = buf_vtx.item_t<DrawVert>(-3);
 				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
 				vtx.uv = uvs.xw;
+				vtx.col = tint_col;
 			}
 			{
 				auto& vtx = buf_vtx.item_t<DrawVert>(-2);
 				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
 				vtx.uv = uvs.zw;
+				vtx.col = tint_col;
 			}
 			{
 				auto& vtx = buf_vtx.item_t<DrawVert>(-1);
 				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
 				vtx.uv = uvs.zy;
+				vtx.col = tint_col;
 			}
-
 		}
 
 		struct CanvasCreate : Canvas::Create
