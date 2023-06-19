@@ -31,6 +31,9 @@ struct GraphicsApplication : Application
 		{
 			graphics::gui_initialize();
 			graphics::gui_set_current();
+			graphics::gui_callbacks.add([this]() {
+				on_gui();
+			}, "app"_h);
 		}
 	}
 
@@ -54,5 +57,9 @@ struct GraphicsApplication : Application
 		}
 		main_window->render();
 		return true;
+	}
+
+	virtual void on_gui()
+	{
 	}
 };

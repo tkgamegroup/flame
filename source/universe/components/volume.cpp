@@ -234,36 +234,35 @@ namespace flame
 			case PassInstance:
 				if (dirty)
 				{
-					if (enable)
-						sRenderer::instance()->set_volume_instance(instance_id, node->transform, extent, blocks, data_map->get_view());
+					sRenderer::instance()->set_volume_instance(instance_id, node->transform, extent, blocks, data_map->get_view());
 					dirty = false;
 				}
 				break;
 			case PassGBuffer:
 				if (marching_cubes)
 				{
-					if ((draw_data.categories & CateMarchingCubes) && enable)
+					if ((draw_data.categories & CateMarchingCubes))
 						draw_data.volumes.emplace_back(instance_id, blocks, material_res_id);
 				}
 				break;
 			case PassOcculder:
 				if (marching_cubes)
 				{
-					if ((draw_data.categories & CateMarchingCubes) && enable && cast_shadow)
+					if ((draw_data.categories & CateMarchingCubes) && cast_shadow)
 						draw_data.volumes.emplace_back(instance_id, blocks, material_res_id);
 				}
 				break;
 			case PassPickUp:
 				if (marching_cubes)
 				{
-					if ((draw_data.categories & CateMarchingCubes) && enable)
+					if ((draw_data.categories & CateMarchingCubes))
 						draw_data.volumes.emplace_back(instance_id, blocks, material_res_id);
 				}
 				break;
 			case PassTransformFeedback:
 				if (marching_cubes)
 				{
-					if ((draw_data.categories & CateMarchingCubes) && enable)
+					if ((draw_data.categories & CateMarchingCubes))
 						draw_data.volumes.emplace_back(instance_id, blocks, material_res_id);
 				}
 				break;

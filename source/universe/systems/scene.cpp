@@ -40,6 +40,32 @@ dtPolyRef dt_nearest_poly(const vec3& pos, const vec3& ext, vec3* pt)
 	return ret;
 }
 
+
+bool dt_init_nav_query()
+{
+	dt_nav_query = dtAllocNavMeshQuery();
+	return !dtStatusFailed(dt_nav_query->init(dt_nav_mesh, 2048));
+}
+
+bool dt_init_crowd()
+{
+	for (auto ag : flame::nav_agents)
+		ag->dt_id = -1;
+	for (auto ob : flame::nav_obstacles)
+		ob->dt_id = -1;
+
+	dt_crowd = dtAllocCrowd();
+	if (dtStatusFailed(dt_crowd->init(128, 2.f/*max agent radius*/, dt_nav_mesh)))
+		return false;
+	dtObstacleAvoidanceParams avoid_params;
+	memcpy(&avoid_params, dt_crowd->getObstacleAvoidanceParams(0), sizeof(dtObstacleAvoidanceParams));
+	avoid_params.velBias = 0.5f;
+	avoid_params.adaptiveDivs = 7;
+	avoid_params.adaptiveRings = 2;
+	avoid_params.adaptiveDepth = 3;
+	dt_crowd->setObstacleAvoidanceParams(0, &avoid_params);
+}
+
 #endif
 
 namespace flame
@@ -493,41 +519,6 @@ namespace flame
 		}
 	}
 
-	bool sScenePrivate::init_dt_nav_query()
-	{
-#ifdef USE_RECASTNAV
-		dt_nav_query = dtAllocNavMeshQuery();
-		return !dtStatusFailed(dt_nav_query->init(dt_nav_mesh, 2048));
-#else
-		return false;
-#endif
-	}
-
-	bool sScenePrivate::init_dt_crowd()
-	{
-#ifdef USE_RECASTNAV
-		for (auto ag : nav_agents)
-			ag->dt_id = -1;
-		for (auto ob : nav_obstacles)
-			ob->dt_id = -1;
-
-		dt_crowd = dtAllocCrowd();
-		if (dtStatusFailed(dt_crowd->init(128, 2.f/*max agent radius*/, dt_nav_mesh)))
-			return false;
-		dtObstacleAvoidanceParams avoid_params;
-		memcpy(&avoid_params, dt_crowd->getObstacleAvoidanceParams(0), sizeof(dtObstacleAvoidanceParams));
-		avoid_params.velBias = 0.5f;
-		avoid_params.adaptiveDivs = 7;
-		avoid_params.adaptiveRings = 2;
-		avoid_params.adaptiveDepth = 3;
-		dt_crowd->setObstacleAvoidanceParams(0, &avoid_params);
-
-		return true;
-#else
-		return false;
-#endif
-	}
-
 	void sScenePrivate::navmesh_generate(const std::vector<EntityPtr>& nodes, float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle)
 	{
 #ifdef USE_RECASTNAV
@@ -536,8 +527,10 @@ namespace flame
 		std::vector<vec3> positions;
 		std::vector<uint> indices;
 
-		for (auto& n : nodes)
+		for (auto n : nodes)
 		{
+			if (!n)
+				continue;
 			n->forward_traversal([&](EntityPtr e) {
 				if (!e->global_enable)
 					return;
@@ -861,13 +854,13 @@ namespace flame
 				dt_tile_cache->buildNavMeshTilesAt(x, y, dt_nav_mesh);
 		}
 
-		if (!init_dt_nav_query())
+		if (!dt_init_nav_query())
 		{
 			printf("generate navmesh: Could not init query.\n");
 			return;
 		}
 
-		if (!init_dt_crowd())
+		if (!dt_init_crowd())
 		{
 			printf("generate navmesh: Could not init crowd.\n");
 			return;
@@ -1178,6 +1171,46 @@ namespace flame
 		return true;
 	}
 
+	std::vector<vec3> sScenePrivate::navmesh_get_mesh() 
+	{
+		std::vector<vec3> points;
+#ifdef USE_RECASTNAV
+		if (dt_nav_mesh)
+		{
+			auto& navmesh = (const dtNavMesh&)*dt_nav_mesh;
+			auto ntiles = navmesh.getMaxTiles();
+			for (auto i = 0; i < ntiles; i++)
+			{
+				auto tile = navmesh.getTile(i);
+				if (tile->header)
+				{
+					auto npolys = tile->header->polyCount;
+					for (auto n = 0; n < npolys; n++)
+					{
+						auto& p = tile->polys[n];
+						if (p.getType() != DT_POLYTYPE_OFFMESH_CONNECTION)
+						{
+							auto& pd = tile->detailMeshes[n];
+							for (auto j = 0; j < pd.triCount; j++)
+							{
+								auto t = &tile->detailTris[(pd.triBase + j) * 4];
+								for (int k = 0; k < 3; ++k)
+								{
+									if (t[k] < p.vertCount)
+										points.push_back(*(vec3*)&tile->verts[p.verts[t[k]] * 3]);
+									else
+										points.push_back(*(vec3*)&tile->detailVerts[(pd.vertBase + t[k] - p.vertCount) * 3]);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+#endif
+		return points;
+	}
+
 	void sScenePrivate::navmesh_save(const std::filesystem::path& filename)
 	{
 #ifdef USE_RECASTNAV
@@ -1188,7 +1221,7 @@ namespace flame
 		std::ofstream file(filename, std::ios::binary);
 		dtNavMeshParams params;
 		memcpy(&params, mesh->getParams(), sizeof(dtNavMeshParams));
-		auto num_tiles = 0;
+		uint num_tiles = 0;
 		for (int i = 0; i < dt_nav_mesh->getMaxTiles(); ++i)
 		{
 			auto tile = mesh->getTile(i);
@@ -1197,7 +1230,7 @@ namespace flame
 			num_tiles++;
 		}
 		file.write((char*)&params, sizeof(dtNavMeshParams));
-		file.write((char*)&num_tiles, sizeof(num_tiles));
+		file.write((char*)&num_tiles, sizeof(uint));
 		for (int i = 0; i < mesh->getMaxTiles(); ++i)
 		{
 			auto tile = mesh->getTile(i);
@@ -1206,20 +1239,24 @@ namespace flame
 
 			uint ref = mesh->getTileRef(tile);
 			uint data_size = tile->dataSize;
-			file.write((char*)&ref, sizeof(ref));
-			file.write((char*)&data_size, sizeof(data_size));
+			file.write((char*)&ref, sizeof(uint));
+			file.write((char*)&data_size, sizeof(uint));
 			file.write((char*)tile->data, data_size);
 		}
 		file.close();
 #endif
 	}
 
-	void sScenePrivate::navmesh_load(const std::filesystem::path& filename)
+	void sScenePrivate::navmesh_load(const std::filesystem::path& _filename)
 	{
 #ifdef USE_RECASTNAV
-		std::ifstream file(filename);
+		auto filename = Path::get(_filename);
+		std::ifstream file(filename, std::ios::binary);
 		if (!file.good())
+		{
+			wprintf(L"load navmesh: file not found: %s\n", _filename.c_str());
 			return;
+		}
 
 		navmesh_clear();
 
@@ -1229,32 +1266,34 @@ namespace flame
 		dt_nav_mesh = dtAllocNavMesh();
 		if (dtStatusFailed(dt_nav_mesh->init(&params)))
 		{
-			printf("load navmesh: Could not init navmesh.\n");
+			wprintf(L"load navmesh: could not init navmesh: %s\n", _filename.c_str());
 			file.close();
 			return;
 		}
 
 		uint num_tiles;
-		file.read((char*)&num_tiles, sizeof(num_tiles));
+		file.read((char*)&num_tiles, sizeof(uint));
 		for (auto i = 0; i < num_tiles; ++i)
 		{
 			uint ref, data_size;
-			file.read((char*)&ref, sizeof(ref));
+			file.read((char*)&ref, sizeof(uint));
 			file.read((char*)&data_size, sizeof(data_size));
+
+			if (!ref || !data_size)
+				break;
+
 			auto data = dtAlloc(data_size, DT_ALLOC_PERM);
 			if (!data)
 			{
-				printf("load navmesh: Could not alloc data.\n");
+				printf("load navmesh: could not alloc data\n");
 				file.close();
 				return;
 			}
 			file.read((char*)data, data_size);
 			if (dtStatusFailed(dt_nav_mesh->addTile((uchar*)data, data_size, DT_TILE_FREE_DATA, ref, 0)))
 			{
-				printf("load navmesh: Could not add tile.\n");
+				printf("load navmesh: could not add tile: %d\n", ref);
 				dtFree(data);
-				file.close();
-				return;
 			}
 		}
 
@@ -1262,15 +1301,15 @@ namespace flame
 
 		dt_tile_cache = dtAllocTileCache();
 
-		if (!init_dt_nav_query())
+		if (!dt_init_nav_query())
 		{
-			printf("load navmesh: Could not init query\n");
+			printf("load navmesh: could not init query\n");
 			return;
 		}
 
-		if (!init_dt_crowd())
+		if (!dt_init_crowd())
 		{
-			printf("load navmesh: Could not init crowd\n");
+			printf("load navmesh: could not init crowd\n");
 			return;
 		}
 #endif
@@ -1280,40 +1319,9 @@ namespace flame
 	{
 		if (auto renderer = sRenderer::instance(); renderer)
 		{
-			if (dt_nav_mesh)
-			{
-				std::vector<vec3> points;
-				auto& navmesh = (const dtNavMesh&)*dt_nav_mesh;
-				auto ntiles = navmesh.getMaxTiles();
-				for (auto i = 0; i < ntiles; i++)
-				{
-					auto tile = navmesh.getTile(i);
-					if (tile->header)
-					{
-						auto npolys = tile->header->polyCount;
-						for (auto n = 0; n < npolys; n++)
-						{
-							auto& p = tile->polys[n];
-							if (p.getType() != DT_POLYTYPE_OFFMESH_CONNECTION)
-							{
-								auto& pd = tile->detailMeshes[n];
-								for (auto j = 0; j < pd.triCount; j++)
-								{
-									auto t = &tile->detailTris[(pd.triBase + j) * 4];
-									for (int k = 0; k < 3; ++k)
-									{
-										if (t[k] < p.vertCount)
-											points.push_back(*(vec3*)&tile->verts[p.verts[t[k]] * 3]);
-										else
-											points.push_back(*(vec3*)&tile->detailVerts[(pd.vertBase + t[k] - p.vertCount) * 3]);
-									}
-								}
-							}
-						}
-					}
-				}
+			auto points = navmesh_get_mesh();
+			if (!points.empty())
 				renderer->draw_primitives("TriangleList"_h, points.data(), points.size(), cvec4(0, 127, 255, 127), false);
-			}
 		}
 	}
 

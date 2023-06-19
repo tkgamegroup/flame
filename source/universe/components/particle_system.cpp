@@ -77,13 +77,13 @@ namespace flame
 	void cParticleSystemPrivate::on_init()
 	{
 		node->drawers.add([this](DrawData& draw_data) {
-			if (material_res_id == -1)
+			if (material_res_id == -1 || !enable)
 				return;
 
 			switch (draw_data.pass)
 			{
 			case PassForward:
-				if ((draw_data.categories & CateParticle) && enable)
+				if ((draw_data.categories & CateParticle))
 				{
 					auto& mat = node->transform;
 					auto& d = draw_data.particles.emplace_back();

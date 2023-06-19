@@ -684,6 +684,26 @@ void View_Scene::on_draw()
 						selection.select(entities, "scene"_h);
 					}
 				}
+				else if (ImGui::IsKeyDown(Keyboard_Shift))
+				{
+					if (hovering_entity)
+					{
+						auto e = get_top_entity(hovering_entity);
+						auto entities = selection.get_entities();
+						auto found = false;
+						for (auto e2 : entities)
+						{
+							if (e2 == e)
+							{
+								found = true;
+								break;
+							}
+						}
+						if (!found)
+							entities.push_back(e);
+						selection.select(entities, "scene"_h);
+					}
+				}
 				else
 				{
 					if (hovering_entity)

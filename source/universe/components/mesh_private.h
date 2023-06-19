@@ -16,6 +16,7 @@ namespace flame
 		void set_material_name(const std::filesystem::path& material_name) override;
 
 		void set_cast_shadow(bool v) override;
+		void set_enable_render(bool v) override;
 
 		void on_active() override;
 		void on_inactive() override;

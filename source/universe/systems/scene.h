@@ -24,6 +24,8 @@ namespace flame
 		// Reflect
 		virtual bool				navmesh_check_free_space(const vec3& pos, float radius) = 0;
 		// Reflect
+		virtual std::vector<vec3>	navmesh_get_mesh() = 0;
+		// Reflect
 		virtual void				navmesh_save(const std::filesystem::path& filename) = 0;
 		// Reflect
 		virtual void				navmesh_load(const std::filesystem::path& filename) = 0;

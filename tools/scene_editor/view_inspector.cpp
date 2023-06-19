@@ -1704,7 +1704,7 @@ void View_Inspector::on_draw()
 
 	if (selection.type != Selection::tNothing)
 	{
-		if (app.tool_button(graphics::FontAtlas::icon_s(selection.lock ? "unlock"_h : "lock"_h)))
+		if (app.tool_button(graphics::FontAtlas::icon_s(selection.lock ? "lock"_h : "unlock"_h)))
 			app.toggle_selection_lock();
 	}
 

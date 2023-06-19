@@ -84,6 +84,7 @@ struct App : UniverseApplication
 
 	void init();
 	bool on_update() override;
+	void on_gui() override;
 
 	void new_project(const std::filesystem::path& path);
 	void open_project(const std::filesystem::path& path);

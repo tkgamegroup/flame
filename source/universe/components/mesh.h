@@ -31,6 +31,11 @@ namespace flame
 		// Reflect
 		virtual void set_cast_shadow(bool v) = 0;
 
+		// Reflect
+		bool enable_render = true;
+		// Reflect
+		virtual void set_enable_render(bool v) = 0;
+
 		graphics::MeshPtr mesh = nullptr;
 		graphics::MaterialPtr material = nullptr;
 		int mesh_res_id = -1;

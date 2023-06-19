@@ -8,6 +8,7 @@
 #include <flame/xml.h>
 #include <flame/foundation/system.h>
 #include <flame/foundation/typeinfo_serialize.h>
+#include <flame/graphics/model.h>
 #include <flame/universe/draw_data.h>
 #include <flame/universe/timeline.h>
 #include <flame/universe/entity.h>
@@ -40,11 +41,13 @@ struct Preferences
 };
 static Preferences preferences;
 
+static std::filesystem::path preferences_path = L"preferences.ini";
+
 static std::vector<std::function<bool()>> dialogs;
 
 void App::init()
 {
-	create("Scene Editor", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized, true, graphics_debug, graphics_configs);
+	create("Scene Editor", uvec2(800, 600), WindowFrame | WindowResizable, true, graphics_debug, graphics_configs);
 	graphics::gui_set_clear(true, vec4(0.f));
 	world->update_components = false;
 	input->transfer_events = false;
@@ -62,111 +65,261 @@ void App::init()
 	for (auto& v : graphics::gui_views)
 		v->init();
 
-	graphics::gui_callbacks.add([this]() {
-		editor_selecting_entity = selection.type == Selection::tEntity ? selection.as_entity() : nullptr;
+	auto native_window = main_window->native;
+	main_window->native->destroy_listeners.add([this, native_window]() {
+		for (auto& p : project_settings.favorites)
+			p = Path::reverse(p);
+		project_settings.save();
 
-		ImGui::BeginMainMenuBar();
-		if (ImGui::BeginMenu("File"))
+		std::ofstream preferences_o(preferences_path);
+		preferences_o << "window_pos=" + str(native_window->pos) << "\n";
+		preferences_o << "use_flame_debugger=" + str(preferences.use_flame_debugger) << "\n";
+		preferences_o << "[opened_views]\n";
+		for (auto w : graphics::gui_views)
 		{
-			if (ImGui::MenuItem("New Project"))
-			{
-				ImGui::OpenFileDialog("New Project", [this](bool ok, const std::filesystem::path& path) {
-					if (ok)
-						new_project(path);
+			if (w->opened)
+				preferences_o << w->name << "\n";
+		}
+		if (!project_path.empty())
+		{
+			preferences_o << "[project_path]\n";
+			preferences_o << project_path.string() << "\n";
+		}
+		if (view_project.explorer.opened_folder)
+		{
+			preferences_o << "[opened_folder]\n";
+			preferences_o << view_project.explorer.opened_folder->path.string() << "\n";
+		}
+		if (e_prefab)
+		{
+			preferences_o << "[opened_prefab]\n";
+			preferences_o << prefab_path.string() << "\n";
+		}
+		preferences_o.close();
+	}, "app"_h);
+}
+
+bool App::on_update()
+{
+	if (timeline_playing)
+	{
+		if (opened_timeline && e_timeline_host)
+		{
+			set_timeline_current_frame((int)timeline_current_frame + 1);
+			render_frames++;
+		}
+		else
+			timeline_playing = false;
+	}
+	return UniverseApplication::on_update();
+}
+
+void App::on_gui()
+{
+	editor_selecting_entity = selection.type == Selection::tEntity ? selection.as_entity() : nullptr;
+
+	ImGui::BeginMainMenuBar();
+	if (ImGui::BeginMenu("File"))
+	{
+		if (ImGui::MenuItem("New Project"))
+		{
+			ImGui::OpenFileDialog("New Project", [this](bool ok, const std::filesystem::path& path) {
+				if (ok)
+					new_project(path);
 				});
-			}
-			if (ImGui::MenuItem("Open Project"))
-			{
-				ImGui::OpenFileDialog("Open Project", [this](bool ok, const std::filesystem::path& path) {
-					if (ok)
-						open_project(path);
+		}
+		if (ImGui::MenuItem("Open Project"))
+		{
+			ImGui::OpenFileDialog("Open Project", [this](bool ok, const std::filesystem::path& path) {
+				if (ok)
+					open_project(path);
 				});
-			}
-			if (ImGui::MenuItem("Close Project"))
-				close_project();
-			ImGui::Separator();
-			if (ImGui::MenuItem("New Prefab"))
-			{
-				ImGui::OpenFileDialog("New Prefab", [this](bool ok, const std::filesystem::path& path) {
-					if (ok)
-					{
-						new_prefab(path);
-						open_prefab(path);
-					}
+		}
+		if (ImGui::MenuItem("Close Project"))
+			close_project();
+		ImGui::Separator();
+		if (ImGui::MenuItem("New Prefab"))
+		{
+			ImGui::OpenFileDialog("New Prefab", [this](bool ok, const std::filesystem::path& path) {
+				if (ok)
+				{
+					new_prefab(path);
+					open_prefab(path);
+				}
 				});
-			}
-			if (ImGui::MenuItem("Open Prefab"))
-			{
-				ImGui::OpenFileDialog("Open Prefab", [this](bool ok, const std::filesystem::path& path) {
-					if (ok)
-						open_prefab(path);
+		}
+		if (ImGui::MenuItem("Open Prefab"))
+		{
+			ImGui::OpenFileDialog("Open Prefab", [this](bool ok, const std::filesystem::path& path) {
+				if (ok)
+					open_prefab(path);
 				});
-			}
-			if (ImGui::MenuItem("Save Prefab (Ctrl+S)"))
-				save_prefab();
-			if (ImGui::MenuItem("Close Prefab"))
-				close_prefab();
+		}
+		if (ImGui::MenuItem("Save Prefab (Ctrl+S)"))
+			save_prefab();
+		if (ImGui::MenuItem("Close Prefab"))
+			close_prefab();
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("Edit"))
+	{
+		if (ImGui::MenuItem("Undo (Ctrl+Z)"))
+			cmd_undo();
+		if (ImGui::MenuItem("Redo (Ctrl+Y)"))
+			cmd_redo();
+		if (ImGui::MenuItem(std::format("Clear Histories ({})", (int)histories.size()).c_str()))
+		{
+			history_idx = -1;
+			histories.clear();
+		}
+		ImGui::Separator();
+		show_entities_menu();
+		ImGui::Separator();
+		if (ImGui::MenuItem("Clear Selections"))
+			selection.clear("app"_h);
+		if (ImGui::MenuItem("Select Parent"))
+			;
+		if (ImGui::MenuItem("Select Children"))
+			;
+		if (ImGui::MenuItem("Invert Siblings"))
+			;
+		if (ImGui::MenuItem("Focus To Selected (F)"))
+			view_scene.focus_to_selected();
+		if (ImGui::MenuItem("Selected To Focus (G)"))
+			view_scene.selected_to_focus();
+		if (ImGui::BeginMenu("Camera"))
+		{
+			if (ImGui::MenuItem("Reset"))
+				view_scene.reset_camera(""_h);
+			if (ImGui::MenuItem("X+"))
+				view_scene.reset_camera("X+"_h);
+			if (ImGui::MenuItem("X-"))
+				view_scene.reset_camera("X-"_h);
+			if (ImGui::MenuItem("Y+"))
+				view_scene.reset_camera("Y+"_h);
+			if (ImGui::MenuItem("Y-"))
+				view_scene.reset_camera("Y-"_h);
+			if (ImGui::MenuItem("Z+"))
+				view_scene.reset_camera("Z+"_h);
+			if (ImGui::MenuItem("Z-"))
+				view_scene.reset_camera("Z-"_h);
 			ImGui::EndMenu();
 		}
-		if (ImGui::BeginMenu("Edit"))
+		ImGui::Separator();
+		if (ImGui::BeginMenu("NavMesh"))
 		{
-			if (ImGui::MenuItem("Undo (Ctrl+Z)"))
-				cmd_undo();
-			if (ImGui::MenuItem("Redo (Ctrl+Y)"))
-				cmd_redo();
-			if (ImGui::MenuItem(std::format("Clear Histories ({})", (int)histories.size()).c_str()))
+			struct GenerateDialog : ImGui::Dialog
 			{
-				history_idx = -1;
-				histories.clear();
-			}
-			ImGui::Separator();
-			show_entities_menu();
-			ImGui::Separator();
-			if (ImGui::MenuItem("Clear Selections"))
-				selection.clear("app"_h);
-			if (ImGui::MenuItem("Select Parent"))
-				;
-			if (ImGui::MenuItem("Select Children"))
-				;
-			if (ImGui::MenuItem("Invert Siblings"))
-				;
-			if (ImGui::MenuItem("Focus To Selected (F)"))
-				view_scene.focus_to_selected();
-			if (ImGui::MenuItem("Selected To Focus (G)"))
-				view_scene.selected_to_focus();
-			if (ImGui::BeginMenu("Camera"))
-			{
-				if (ImGui::MenuItem("Reset"))
-					view_scene.reset_camera(""_h);
-				if (ImGui::MenuItem("X+"))
-					view_scene.reset_camera("X+"_h);
-				if (ImGui::MenuItem("X-"))
-					view_scene.reset_camera("X-"_h);
-				if (ImGui::MenuItem("Y+"))
-					view_scene.reset_camera("Y+"_h);
-				if (ImGui::MenuItem("Y-"))
-					view_scene.reset_camera("Y-"_h);
-				if (ImGui::MenuItem("Z+"))
-					view_scene.reset_camera("Z+"_h);
-				if (ImGui::MenuItem("Z-"))
-					view_scene.reset_camera("Z-"_h);
-				ImGui::EndMenu();
-			}
-			ImGui::Separator();
-			if (ImGui::BeginMenu("NavMesh"))
-			{
-				struct GenerateDialog : ImGui::Dialog
+				std::vector<EntityPtr> nodes;
+				float agent_radius = 0.6f;
+				float agent_height = 1.8f;
+				float walkable_climb = 0.5f;
+				float walkable_slope_angle = 45.f;
+
+				static void open()
 				{
-					std::vector<EntityPtr> nodes;
-					float agent_radius = 0.6f;
-					float agent_height = 1.8f;
-					float walkable_climb = 0.5f;
-					float walkable_slope_angle = 45.f;
+					auto dialog = new GenerateDialog;
+					dialog->title = "Generate Navmesh";
+					Dialog::open(dialog);
+				}
+
+				void draw() override
+				{
+					bool open = true;
+					if (ImGui::Begin(title.c_str(), &open))
+					{
+						if (ImGui::TreeNode("Nodes"))
+						{
+							if (ImGui::Button("From Selection"))
+							{
+								auto entities = selection.get_entities();
+								nodes = entities;
+							}
+
+							auto n = (int)nodes.size();
+							auto size_changed = ImGui::InputInt("size", &n, 1, 1);
+							ImGui::Separator();
+							if (size_changed)
+								nodes.resize(n);
+							else
+							{
+								n = nodes.size();
+								for (auto i = 0; i < n; i++)
+								{
+									ImGui::PushID(i);
+									std::string name = nodes[i] ? nodes[i]->name : "[None]";
+									ImGui::InputText(nodes[i] ? "" : "Drop Entity Here", &name, ImGuiInputTextFlags_ReadOnly);
+									if (ImGui::BeginDragDropTarget())
+									{
+										if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
+										{
+											auto entity = *(EntityPtr*)payload->Data;
+											nodes[i] = entity;
+										}
+									}
+									ImGui::PopID();
+								}
+							}
+							ImGui::TreePop();
+						}
+						ImGui::InputFloat("Agent Radius", &agent_radius);
+						ImGui::InputFloat("Agent Height", &agent_height);
+						ImGui::InputFloat("Walkable Climb", &walkable_climb);
+						ImGui::InputFloat("Walkable Slope Angle", &walkable_slope_angle);
+						if (ImGui::Button("Generate"))
+						{
+							sScene::instance()->navmesh_generate(nodes, agent_radius, agent_height, walkable_climb, walkable_slope_angle);
+							ImGui::CloseCurrentPopup();
+							open = false;
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("Cancel"))
+						{
+							ImGui::CloseCurrentPopup();
+							open = false;
+						}
+
+						ImGui::End();
+					}
+					if (!open)
+						close();
+				}
+			};
+
+			if (ImGui::MenuItem("Generate"))
+			{
+				if (e_prefab)
+					GenerateDialog::open();
+			}
+
+			if (ImGui::MenuItem("Save"))
+			{
+				ImGui::OpenFileDialog("Save Navmesh", [](bool ok, const std::filesystem::path& path) {
+					if (ok)
+						sScene::instance()->navmesh_save(path);
+				}, Path::get(L"assets"));
+			}
+
+			if (ImGui::MenuItem("Load"))
+			{
+				ImGui::OpenFileDialog("Load Navmesh", [](bool ok, const std::filesystem::path& path) {
+					if (ok)
+						sScene::instance()->navmesh_load(path);
+				}, Path::get(L"assets"));
+			}
+
+			if (ImGui::MenuItem("Export Model"))
+			{
+				struct ExportDialog : ImGui::Dialog
+				{
+					std::filesystem::path filename;
+					bool merge_vertices = false;
+					bool calculate_normals = false;
 
 					static void open()
 					{
-						auto dialog = new GenerateDialog;
-						dialog->title = "Generate Navmesh";
+						auto dialog = new ExportDialog;
+						dialog->title = "Navmesh Export Model";
 						Dialog::open(dialog);
 					}
 
@@ -175,40 +328,84 @@ void App::init()
 						bool open = true;
 						if (ImGui::Begin(title.c_str(), &open))
 						{
-							if (ImGui::TreeNode("Nodes"))
+							auto s = filename.string();
+							ImGui::InputText("File Name", s.data(), ImGuiInputTextFlags_ReadOnly);
+							ImGui::SameLine();
+							if (ImGui::Button("..."))
 							{
-								auto n = (int)nodes.size();
-								auto size_changed = ImGui::InputInt("size", &n, 1, 1);
-								ImGui::Separator();
-								if (size_changed)
-									nodes.resize(n);
-								else
-								{
-									n = nodes.size();
-									for (auto i = 0; i < n; i++)
-									{
-										ImGui::PushID(i);
-										ImGui::TextUnformatted(nodes[i] ? nodes[i]->name.c_str() : "[None]");
-										if (ImGui::BeginDragDropTarget())
-										{
-											if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
-											{
-												auto entity = *(EntityPtr*)payload->Data;
-												nodes[i] = entity;
-											}
-										}
-										ImGui::PopID();
-									}
-								}
-								ImGui::TreePop();
+								ImGui::OpenFileDialog("File Name", [this](bool ok, const std::filesystem::path& path) {
+									if (ok)
+										filename = path;
+								}, Path::get(L"assets"));
 							}
-							ImGui::InputFloat("Agent Radius", &agent_radius);
-							ImGui::InputFloat("Agent Height", &agent_height);
-							ImGui::InputFloat("Walkable Climb", &walkable_climb);
-							ImGui::InputFloat("Walkable Slope Angle", &walkable_slope_angle);
-							if (ImGui::Button("Generate"))
+							ImGui::Checkbox("Merge Vertices", &merge_vertices);
+							ImGui::Checkbox("Calculate Normals", &calculate_normals);
+							if (ImGui::Button("Export"))
 							{
-								sScene::instance()->navmesh_generate(nodes, agent_radius, agent_height, walkable_climb, walkable_slope_angle);
+								auto points = sScene::instance()->navmesh_get_mesh();
+								if (!points.empty())
+								{
+									std::vector<uint> indices;
+									std::vector<vec3> normals;
+									if (merge_vertices)
+									{
+										// TODO: fix bugs
+										//struct Vec3Hasher
+										//{
+										//	bool operator()(const vec3& a, const vec3& b) const
+										//	{
+										//		return (std::hash<float>{}(a[0]) ^ std::hash<float>{}(a[1]) ^ std::hash<float>{}(a[2])) <
+										//			(std::hash<float>{}(b[0]) ^ std::hash<float>{}(b[1]) ^ std::hash<float>{}(b[2]));
+										//	}
+										//};
+
+										//std::map<vec3, uint, Vec3Hasher> map;
+										//for (auto& p : points)
+										//{
+										//	auto it = map.find(p);
+										//	if (it == map.end())
+										//	{
+										//		auto index = (uint)map.size();
+										//		map[p] = index;
+										//		indices.push_back(index);
+										//	}
+										//	else
+										//		indices.push_back(it->second);
+										//}
+										//points.clear();
+										//for (auto& [p, i] : map)
+										//	points.push_back(p);
+									}
+									else
+									{
+										for (auto i = 0; i < points.size(); i++)
+											indices.push_back(i);
+									}
+									if (calculate_normals)
+									{
+										normals.resize(points.size());
+										for (auto i = 0; i < indices.size(); i += 3)
+										{
+											auto& a = points[indices[i]];
+											auto& b = points[indices[i + 1]];
+											auto& c = points[indices[i + 2]];
+											auto n = normalize(cross(b - a, c - a));
+											normals[indices[i]] += n;
+											normals[indices[i + 1]] += n;
+											normals[indices[i + 2]] += n;
+										}
+										for (auto& n : normals)
+											n = normalize(n);
+									}
+
+									auto model = graphics::Model::create();
+									auto& mesh = model->meshes.emplace_back();
+									mesh.positions = std::move(points);
+									mesh.indices = std::move(indices);
+									mesh.normals = std::move(normals);
+									model->save(filename);
+									delete model;
+								}
 								ImGui::CloseCurrentPopup();
 								open = false;
 							}
@@ -221,33 +418,17 @@ void App::init()
 
 							ImGui::End();
 						}
+
 						if (!open)
 							close();
 					}
 				};
 
-				if (ImGui::MenuItem("Generate"))
-				{
-					if (e_prefab)
-						GenerateDialog::open();
-				}
+				ExportDialog::open();
+			}
 
-				if (ImGui::MenuItem("Save"))
-				{
-					ImGui::OpenFileDialog("Save Navmesh", [](bool ok, const std::filesystem::path& path) {
-						if (ok)
-							sScene::instance()->navmesh_save(path);
-					});
-				}
-
-				if (ImGui::MenuItem("Load"))
-				{
-					ImGui::OpenFileDialog("Load Navmesh", [](bool ok, const std::filesystem::path& path) {
-						if (ok)
-							sScene::instance()->navmesh_load(path);
-					});
-				}
-
+			if (ImGui::MenuItem("Test"))
+			{
 				struct TestDialog : ImGui::Dialog
 				{
 					vec3 start = vec3(0.f);
@@ -309,383 +490,365 @@ void App::init()
 					}
 				};
 
-				if (ImGui::MenuItem("Test"))
-				{
-					if (e_prefab)
-						TestDialog::open();
-				}
+				if (e_prefab)
+					TestDialog::open();
+			}
 
-				ImGui::EndMenu();
-			}
-			ImGui::Separator();
-			if (ImGui::MenuItem("Preferences"))
-			{
-				struct PreferencesDialog
-				{
-					bool open = false;
-				};
-				static PreferencesDialog preferences_dialog;
-				dialogs.push_back([&]() {
-					if (!preferences_dialog.open)
-					{
-						preferences_dialog.open = true;
-						ImGui::OpenPopup("Preferences");
-					}
-
-					if (ImGui::BeginPopupModal("Preferences"))
-					{
-						ImGui::Checkbox("Use Flame Debugger", &preferences.use_flame_debugger);
-						if (ImGui::Button("Close"))
-						{
-							preferences_dialog.open = false;
-							ImGui::CloseCurrentPopup();
-						}
-						ImGui::End();
-					}
-					return preferences_dialog.open;
-				});
-			}
 			ImGui::EndMenu();
 		}
-		if (ImGui::BeginMenu("Project"))
+		ImGui::Separator();
+		if (ImGui::MenuItem("Preferences"))
 		{
-			if (ImGui::MenuItem("Open In VS"))
-			{
-				auto vs_path = get_special_path("Visual Studio Installation Location");
-				auto devenv_path = vs_path / L"Common7\\IDE\\devenv.exe";
-				auto sln_path = project_path / L"build";
-				sln_path = glob_files(sln_path, L".sln")[0];
-				exec(devenv_path, std::format(L"\"{}\"", sln_path.wstring()));
-			}
-			if (ImGui::MenuItem("Attach Debugger"))
-				vs_automate({ L"attach_debugger" });
-			if (ImGui::MenuItem("Detach Debugger"))
-				vs_automate({ L"detach_debugger" });
-			if (ImGui::MenuItem("Do CMake"))
-				cmake_project();
-			if (ImGui::MenuItem("Build (Ctrl+B)"))
-				build_project();
-			if (ImGui::MenuItem("Clean"))
-			{
-				if (!project_path.empty())
-				{
-					auto cpp_path = project_path / L"bin/debug/cpp.dll";
-					cpp_path.replace_extension(L".pdb");
-					if (std::filesystem::exists(cpp_path))
-						std::filesystem::remove(cpp_path);
-				}
-			}
-			ImGui::EndMenu();
-		}
-		if (ImGui::BeginMenu("Window"))
-		{
-			for (auto w : graphics::gui_views)
-			{
-				auto selected = (bool)w->opened;
-				if (ImGui::MenuItem(w->name.c_str(), nullptr, &selected))
-					w->open();
-			}
-			ImGui::EndMenu();
-		}
-		if (ImGui::BeginMenu("Render"))
-		{
-			if (ImGui::MenuItem("Shaded", nullptr, renderer->mode == sRenderer::Shaded))
-				renderer->mode = sRenderer::Shaded;
-			if (ImGui::MenuItem("Camera Light", nullptr, renderer->mode == sRenderer::CameraLight))
-				renderer->mode = sRenderer::CameraLight;
-			if (ImGui::MenuItem("Albedo Data", nullptr, renderer->mode == sRenderer::AlbedoData))
-				renderer->mode = sRenderer::AlbedoData;
-			if (ImGui::MenuItem("Normal Data", nullptr, renderer->mode == sRenderer::NormalData))
-				renderer->mode = sRenderer::NormalData;
-			if (ImGui::MenuItem("Metallic Data", nullptr, renderer->mode == sRenderer::MetallicData))
-				renderer->mode = sRenderer::MetallicData;
-			if (ImGui::MenuItem("Roughness Data", nullptr, renderer->mode == sRenderer::RoughnessData))
-				renderer->mode = sRenderer::RoughnessData;
-			if (ImGui::MenuItem("IBL Value", nullptr, renderer->mode == sRenderer::IBLValue))
-				renderer->mode = sRenderer::IBLValue;
-			if (ImGui::MenuItem("Fog Value", nullptr, renderer->mode == sRenderer::FogValue))
-				renderer->mode = sRenderer::FogValue;
-			ImGui::EndMenu();
-		}
-		if (ImGui::BeginMenu("Debug"))
-		{
-			struct UIStatusDialog
+			struct PreferencesDialog
 			{
 				bool open = false;
-
 			};
-			static UIStatusDialog ui_status_dialog;
-
-			if (ImGui::MenuItem("UI Status", nullptr, &ui_status_dialog.open))
-			{
-				if (ui_status_dialog.open)
+			static PreferencesDialog preferences_dialog;
+			dialogs.push_back([&]() {
+				if (!preferences_dialog.open)
 				{
-					dialogs.push_back([&]() {
-						if (ui_status_dialog.open)
-						{
-							ImGui::Begin("UI Status", &ui_status_dialog.open);
-							ImGui::Text("Want Capture Mouse: %d", (int)graphics::gui_want_mouse());
-							ImGui::Text("Want Capture Keyboard: %d", (int)graphics::gui_want_keyboard());
-							ImGui::End();
-						}
-						return ui_status_dialog.open;
-					});
+					preferences_dialog.open = true;
+					ImGui::OpenPopup("Preferences");
 				}
-			}
-			if (ImGui::MenuItem("Send Debug Cmd"))
+
+				if (ImGui::BeginPopupModal("Preferences"))
+				{
+					ImGui::Checkbox("Use Flame Debugger", &preferences.use_flame_debugger);
+					if (ImGui::Button("Close"))
+					{
+						preferences_dialog.open = false;
+						ImGui::CloseCurrentPopup();
+					}
+					ImGui::End();
+				}
+				return preferences_dialog.open;
+				});
+		}
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("Project"))
+	{
+		if (ImGui::MenuItem("Open In VS"))
+		{
+			auto vs_path = get_special_path("Visual Studio Installation Location");
+			auto devenv_path = vs_path / L"Common7\\IDE\\devenv.exe";
+			auto sln_path = project_path / L"build";
+			sln_path = glob_files(sln_path, L".sln")[0];
+			exec(devenv_path, std::format(L"\"{}\"", sln_path.wstring()));
+		}
+		if (ImGui::MenuItem("Attach Debugger"))
+			vs_automate({ L"attach_debugger" });
+		if (ImGui::MenuItem("Detach Debugger"))
+			vs_automate({ L"detach_debugger" });
+		if (ImGui::MenuItem("Do CMake"))
+			cmake_project();
+		if (ImGui::MenuItem("Build (Ctrl+B)"))
+			build_project();
+		if (ImGui::MenuItem("Clean"))
+		{
+			if (!project_path.empty())
 			{
-				ImGui::OpenInputDialog("Send Debug Cmd", "Cmd", [](bool ok, const std::string& str) {
-					if (ok)
-						sRenderer::instance()->send_debug_string(str);
+				auto cpp_path = project_path / L"bin/debug/cpp.dll";
+				cpp_path.replace_extension(L".pdb");
+				if (std::filesystem::exists(cpp_path))
+					std::filesystem::remove(cpp_path);
+			}
+		}
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("Window"))
+	{
+		for (auto w : graphics::gui_views)
+		{
+			auto selected = (bool)w->opened;
+			if (ImGui::MenuItem(w->name.c_str(), nullptr, &selected))
+				w->open();
+		}
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("Render"))
+	{
+		if (ImGui::MenuItem("Shaded", nullptr, renderer->mode == sRenderer::Shaded))
+			renderer->mode = sRenderer::Shaded;
+		if (ImGui::MenuItem("Camera Light", nullptr, renderer->mode == sRenderer::CameraLight))
+			renderer->mode = sRenderer::CameraLight;
+		if (ImGui::MenuItem("Albedo Data", nullptr, renderer->mode == sRenderer::AlbedoData))
+			renderer->mode = sRenderer::AlbedoData;
+		if (ImGui::MenuItem("Normal Data", nullptr, renderer->mode == sRenderer::NormalData))
+			renderer->mode = sRenderer::NormalData;
+		if (ImGui::MenuItem("Metallic Data", nullptr, renderer->mode == sRenderer::MetallicData))
+			renderer->mode = sRenderer::MetallicData;
+		if (ImGui::MenuItem("Roughness Data", nullptr, renderer->mode == sRenderer::RoughnessData))
+			renderer->mode = sRenderer::RoughnessData;
+		if (ImGui::MenuItem("IBL Value", nullptr, renderer->mode == sRenderer::IBLValue))
+			renderer->mode = sRenderer::IBLValue;
+		if (ImGui::MenuItem("Fog Value", nullptr, renderer->mode == sRenderer::FogValue))
+			renderer->mode = sRenderer::FogValue;
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("Debug"))
+	{
+		struct UIStatusDialog
+		{
+			bool open = false;
+
+		};
+		static UIStatusDialog ui_status_dialog;
+
+		if (ImGui::MenuItem("UI Status", nullptr, &ui_status_dialog.open))
+		{
+			if (ui_status_dialog.open)
+			{
+				dialogs.push_back([&]() {
+					if (ui_status_dialog.open)
+					{
+						ImGui::Begin("UI Status", &ui_status_dialog.open);
+						ImGui::Text("Want Capture Mouse: %d", (int)graphics::gui_want_mouse());
+						ImGui::Text("Want Capture Keyboard: %d", (int)graphics::gui_want_keyboard());
+						ImGui::End();
+					}
+					return ui_status_dialog.open;
+					});
+			}
+		}
+		if (ImGui::MenuItem("Send Debug Cmd"))
+		{
+			ImGui::OpenInputDialog("Send Debug Cmd", "Cmd", [](bool ok, const std::string& str) {
+				if (ok)
+					sRenderer::instance()->send_debug_string(str);
 				}, "", true);
-			}
-			ImGui::EndMenu();
 		}
-		ImGui::EndMainMenuBar();
+		ImGui::EndMenu();
+	}
+	ImGui::EndMainMenuBar();
 
-		const ImGuiViewport* viewport = ImGui::GetMainViewport();
-		ImGui::SetNextWindowPos(viewport->WorkPos);
-		ImGui::SetNextWindowSize(viewport->WorkSize);
-		ImGui::SetNextWindowViewport(viewport->ID);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-		ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
-			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus);
-		ImGui::PopStyleVar(2);
+	const ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(viewport->WorkPos);
+	ImGui::SetNextWindowSize(viewport->WorkSize);
+	ImGui::SetNextWindowViewport(viewport->ID);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus);
+	ImGui::PopStyleVar(2);
 
-		// toolbar begin
-		ImGui::Dummy(vec2(0.f, 20.f));
-		ImGui::SameLine();
-		if (tool_button(graphics::FontAtlas::icon_s("arrow-pointer"_h), app.tool == ToolSelect))
-			tool = ToolSelect;
-		ImGui::SameLine();
-		if (tool_button(graphics::FontAtlas::icon_s("arrows-up-down-left-right"_h), app.tool == ToolMove))
-			tool = ToolMove;
-		ImGui::SameLine();
-		if (tool_button(graphics::FontAtlas::icon_s("rotate"_h), app.tool == ToolRotate))
-			tool = ToolRotate;
-		ImGui::SameLine();
-		if (tool_button(graphics::FontAtlas::icon_s("down-left-and-up-right-to-center"_h), app.tool == ToolScale))
-			tool = ToolScale;
-		ImGui::SameLine();
-		const char* tool_pivot_names[] = {
-			"Individual",
-			"Center"
-		};
-		const char* tool_mode_names[] = {
-			"Local",
-			"World"
-		};
-		ImGui::SetNextItemWidth(100.f);
-		ImGui::Combo("##pivot", (int*)&tool_pivot, tool_pivot_names, countof(tool_pivot_names));
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100.f);
-		ImGui::Combo("##mode", (int*)&tool_mode, tool_mode_names, countof(tool_mode_names));
-		bool* p_snap = nullptr;
-		float* p_snap_value = nullptr;
-		switch (tool)
+	// toolbar begin
+	ImGui::Dummy(vec2(0.f, 20.f));
+	ImGui::SameLine();
+	if (tool_button(graphics::FontAtlas::icon_s("arrow-pointer"_h), app.tool == ToolSelect))
+		tool = ToolSelect;
+	ImGui::SameLine();
+	if (tool_button(graphics::FontAtlas::icon_s("arrows-up-down-left-right"_h), app.tool == ToolMove))
+		tool = ToolMove;
+	ImGui::SameLine();
+	if (tool_button(graphics::FontAtlas::icon_s("rotate"_h), app.tool == ToolRotate))
+		tool = ToolRotate;
+	ImGui::SameLine();
+	if (tool_button(graphics::FontAtlas::icon_s("down-left-and-up-right-to-center"_h), app.tool == ToolScale))
+		tool = ToolScale;
+	ImGui::SameLine();
+	const char* tool_pivot_names[] = {
+		"Individual",
+		"Center"
+	};
+	const char* tool_mode_names[] = {
+		"Local",
+		"World"
+	};
+	ImGui::SetNextItemWidth(100.f);
+	ImGui::Combo("##pivot", (int*)&tool_pivot, tool_pivot_names, countof(tool_pivot_names));
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(100.f);
+	ImGui::Combo("##mode", (int*)&tool_mode, tool_mode_names, countof(tool_mode_names));
+	bool* p_snap = nullptr;
+	float* p_snap_value = nullptr;
+	switch (tool)
+	{
+	case ToolMove:
+		p_snap = &move_snap;
+		p_snap_value = view_scene.element_targets.empty() ? &move_snap_value : &move_snap_2d_value;
+		break;
+	case ToolRotate:
+		p_snap = &rotate_snap;
+		p_snap_value = &rotate_snap_value;
+		break;
+	case ToolScale:
+		p_snap = &scale_snap;
+		p_snap_value = &scale_snap_value;
+		break;
+	}
+	ImGui::SameLine();
+	if (p_snap)
+	{
+		ImGui::Checkbox("Snap", p_snap);
+		if (*p_snap)
 		{
-		case ToolMove:
-			p_snap = &move_snap;
-			p_snap_value = view_scene.element_targets.empty() ? &move_snap_value : &move_snap_2d_value;
-			break;
-		case ToolRotate:
-			p_snap = &rotate_snap;
-			p_snap_value = &rotate_snap_value;
-			break;
-		case ToolScale:
-			p_snap = &scale_snap;
-			p_snap_value = &scale_snap_value;
-			break;
-		}
-		ImGui::SameLine();
-		if (p_snap)
-		{
-			ImGui::Checkbox("Snap", p_snap);
-			if (*p_snap)
-			{
-				ImGui::SameLine();
-				ImGui::SetNextItemWidth(80.f);
-				ImGui::InputFloat("##snap_value", p_snap_value);
-			}
-		}
-		ImGui::SameLine();
-		if (tool_button(graphics::FontAtlas::icon_s("floppy-disk"_h)))
-			save_prefab();
-		ImGui::SameLine();
-		ImGui::Dummy(vec2(0.f, 20.f));
-
-		if (selection.lock && selection.type == Selection::tEntity)
-		{
-			auto e = selection.as_entity();
-			if (auto terrain = e->get_component_t<cTerrain>(); terrain)
-			{
-				ImGui::SameLine();
-				if (tool_button(graphics::FontAtlas::icon_s("mound"_h) + "##up", app.tool == ToolTerrainUp))
-					tool = ToolTerrainUp;
-				ImGui::SameLine();
-				if (tool_button(graphics::FontAtlas::icon_s("mound"_h) + "##down", app.tool == ToolTerrainDown, 180.f))
-					tool = ToolTerrainDown;
-				ImGui::SameLine();
-				if (tool_button(graphics::FontAtlas::icon_s("paintbrush"_h), app.tool == ToolTerrainPaint))
-					tool = ToolTerrainPaint;
-			}
-			if (auto tile_map = e->get_component_t<cTileMap>(); tile_map)
-			{
-				ImGui::SameLine();
-				if (tool_button(graphics::FontAtlas::icon_s("up-long"_h), app.tool == ToolTileMapLevelUp))
-					tool = ToolTileMapLevelUp;
-				ImGui::SameLine();
-				if (tool_button(graphics::FontAtlas::icon_s("down-long"_h), app.tool == ToolTileMapLevelDown))
-					tool = ToolTileMapLevelDown;
-				ImGui::SameLine();
-				if (tool_button(graphics::FontAtlas::icon_s("stairs"_h), app.tool == ToolTileMapSlope))
-					tool = ToolTileMapSlope;
-			}
-		}
-
-		ImGui::SameLine();
-		ImGui::Dummy(vec2(50.f, 20.f));
-		ImGui::SameLine();
-		if (!e_playing && !e_preview)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
-			if (tool_button(graphics::FontAtlas::icon_s("play"_h) + " Build And Play"))
-			{
-				build_project();
-				add_event([this]() {
-					cmd_play();
-					return false;
-					}, 0.f, 3);
-			}
 			ImGui::SameLine();
-			if (tool_button(graphics::FontAtlas::icon_s("play"_h)))
+			ImGui::SetNextItemWidth(80.f);
+			ImGui::InputFloat("##snap_value", p_snap_value);
+		}
+	}
+	ImGui::SameLine();
+	if (tool_button(graphics::FontAtlas::icon_s("floppy-disk"_h)))
+		save_prefab();
+	ImGui::SameLine();
+	ImGui::Dummy(vec2(0.f, 20.f));
+
+	if (selection.lock && selection.type == Selection::tEntity)
+	{
+		auto e = selection.as_entity();
+		if (auto terrain = e->get_component_t<cTerrain>(); terrain)
+		{
+			ImGui::SameLine();
+			if (tool_button(graphics::FontAtlas::icon_s("mound"_h) + "##up", app.tool == ToolTerrainUp))
+				tool = ToolTerrainUp;
+			ImGui::SameLine();
+			if (tool_button(graphics::FontAtlas::icon_s("mound"_h) + "##down", app.tool == ToolTerrainDown, 180.f))
+				tool = ToolTerrainDown;
+			ImGui::SameLine();
+			if (tool_button(graphics::FontAtlas::icon_s("paintbrush"_h), app.tool == ToolTerrainPaint))
+				tool = ToolTerrainPaint;
+		}
+		if (auto tile_map = e->get_component_t<cTileMap>(); tile_map)
+		{
+			ImGui::SameLine();
+			if (tool_button(graphics::FontAtlas::icon_s("up-long"_h), app.tool == ToolTileMapLevelUp))
+				tool = ToolTileMapLevelUp;
+			ImGui::SameLine();
+			if (tool_button(graphics::FontAtlas::icon_s("down-long"_h), app.tool == ToolTileMapLevelDown))
+				tool = ToolTileMapLevelDown;
+			ImGui::SameLine();
+			if (tool_button(graphics::FontAtlas::icon_s("stairs"_h), app.tool == ToolTileMapSlope))
+				tool = ToolTileMapSlope;
+		}
+	}
+
+	ImGui::SameLine();
+	ImGui::Dummy(vec2(50.f, 20.f));
+	ImGui::SameLine();
+	if (!e_playing && !e_preview)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
+		if (tool_button(graphics::FontAtlas::icon_s("play"_h) + " Build And Play"))
+		{
+			build_project();
+			add_event([this]() {
 				cmd_play();
+				return false;
+				}, 0.f, 3);
+		}
+		ImGui::SameLine();
+		if (tool_button(graphics::FontAtlas::icon_s("play"_h)))
+			cmd_play();
+		ImGui::SameLine();
+		if (tool_button(graphics::FontAtlas::icon_s("circle-play"_h)))
+			cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : e_prefab);
+		ImGui::PopStyleColor();
+	}
+	else
+	{
+		if (e_playing)
+		{
+			if (!paused)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1));
+				ImGui::SameLine();
+				if (tool_button(graphics::FontAtlas::icon_s("pause"_h)))
+					cmd_pause();
+				ImGui::PopStyleColor();
+			}
+			else
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
+				ImGui::SameLine();
+				if (tool_button(graphics::FontAtlas::icon_s("play"_h)))
+					cmd_play();
+				ImGui::PopStyleColor();
+			}
+		}
+		else if (e_preview)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 1, 1));
 			ImGui::SameLine();
-			if (tool_button(graphics::FontAtlas::icon_s("circle-play"_h)))
-				cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : e_prefab);
+			if (tool_button(graphics::FontAtlas::icon_s("rotate"_h)))
+				cmd_restart_preview();
 			ImGui::PopStyleColor();
 		}
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
+		ImGui::SameLine();
+		if (tool_button(graphics::FontAtlas::icon_s("stop"_h)))
+		{
+			if (e_playing)
+				cmd_stop();
+			else if (e_preview)
+				cmd_stop_preview();
+		}
+		ImGui::PopStyleColor();
+		if (e_preview)
+		{
+			ImGui::SameLine();
+			ImGui::Text("[%s]", e_preview->name.c_str());
+		}
+	}
+
+	// toolbar end
+
+	ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+	ImGui::End();
+
+	auto& io = ImGui::GetIO();
+	if (ImGui::IsKeyPressed(Keyboard_Tab))
+		toggle_selection_lock();
+	if (ImGui::IsKeyPressed(Keyboard_F5))
+	{
+		if (!e_playing)
+			cmd_play();
 		else
 		{
 			if (e_playing)
-			{
-				if (!paused)
-				{
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1));
-					ImGui::SameLine();
-					if (tool_button(graphics::FontAtlas::icon_s("pause"_h)))
-						cmd_pause();
-					ImGui::PopStyleColor();
-				}
-				else
-				{
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
-					ImGui::SameLine();
-					if (tool_button(graphics::FontAtlas::icon_s("play"_h)))
-						cmd_play();
-					ImGui::PopStyleColor();
-				}
-			}
+				cmd_stop();
 			else if (e_preview)
-			{
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 1, 1));
-				ImGui::SameLine();
-				if (tool_button(graphics::FontAtlas::icon_s("rotate"_h)))
-					cmd_restart_preview();
-				ImGui::PopStyleColor();
-			}
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
-			ImGui::SameLine();
-			if (tool_button(graphics::FontAtlas::icon_s("stop"_h)))
-			{
-				if (e_playing)
-					cmd_stop();
-				else if (e_preview)
-					cmd_stop_preview();
-			}
-			ImGui::PopStyleColor();
-			if (e_preview)
-			{
-				ImGui::SameLine();
-				ImGui::Text("[%s]", e_preview->name.c_str());
-			}
+				cmd_stop_preview();
 		}
-
-		// toolbar end
-
-		ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
-		ImGui::End();
-
-		auto& io = ImGui::GetIO();
-		if (ImGui::IsKeyPressed(Keyboard_Tab))
-			toggle_selection_lock();
-		if (ImGui::IsKeyPressed(Keyboard_F5))
-		{
-			if (!e_playing)
-				cmd_play();
-			else
-			{
-				if (e_playing)
-					cmd_stop();
-				else if (e_preview)
-					cmd_stop_preview();
-			}
-		}
-		if (ImGui::IsKeyPressed(Keyboard_F6))
-		{
-			if (!e_preview)
-				cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : e_prefab);
-			else
-				cmd_restart_preview();
-		}
-		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
-			save_prefab();
-		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_B))
-			build_project();
-		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Z))
-			cmd_undo();
-		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Y))
-			cmd_redo();
-
-		if (e_preview)
-		{
-			e_preview->forward_traversal([](EntityPtr e) {
-				if (!e->global_enable)
-					return;
-				for (auto& c : e->components)
-				{
-					if (c->enable)
-						c->update();
-				}
-			});
-			render_frames++;
-		}
-
-		for (auto it = dialogs.begin(); it != dialogs.end();)
-		{
-			if (!(*it)())
-				it = dialogs.erase(it);
-			else
-				it++;
-		}
-	});
-}
-
-bool App::on_update()
-{
-	if (timeline_playing)
-	{
-		if (opened_timeline && e_timeline_host)
-		{
-			set_timeline_current_frame((int)timeline_current_frame + 1);
-			render_frames++;
-		}
-		else
-			timeline_playing = false;
 	}
-	return UniverseApplication::on_update();
+	if (ImGui::IsKeyPressed(Keyboard_F6))
+	{
+		if (!e_preview)
+			cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : e_prefab);
+		else
+			cmd_restart_preview();
+	}
+	if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
+		save_prefab();
+	if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_B))
+		build_project();
+	if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Z))
+		cmd_undo();
+	if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Y))
+		cmd_redo();
+
+	if (e_preview)
+	{
+		e_preview->forward_traversal([](EntityPtr e) {
+			if (!e->global_enable)
+				return;
+			for (auto& c : e->components)
+			{
+				if (c->enable)
+					c->update();
+			}
+			});
+		render_frames++;
+	}
+
+	for (auto it = dialogs.begin(); it != dialogs.end();)
+	{
+		if (!(*it)())
+			it = dialogs.erase(it);
+		else
+			it++;
+	}
 }
 
 void App::new_project(const std::filesystem::path& path)
@@ -1667,15 +1830,15 @@ int main(int argc, char** args)
 
 	app.init();
 
-	std::filesystem::path preferences_path = L"preferences.ini";
-
 	auto preferences_i = parse_ini_file(preferences_path);
 	for (auto& e : preferences_i.get_section_entries(""))
 	{
+		if (e.key == "window_pos")
+			app.main_window->native->set_pos(s2t<2, int>(e.values[0]));
 		if (e.key == "use_flame_debugger")
 			preferences.use_flame_debugger = s2t<bool>(e.values[0]);
 	}
-	for (auto& e : preferences_i.get_section_entries("opened_windows"))
+	for (auto& e : preferences_i.get_section_entries("opened_views"))
 	{
 		for (auto w : graphics::gui_views)
 		{
@@ -1703,35 +1866,6 @@ int main(int argc, char** args)
 	}
 
 	app.run();
-
-	for (auto& p : app.project_settings.favorites)
-		p = Path::reverse(p);
-	app.project_settings.save();
-
-	std::ofstream preferences_o(preferences_path);
-	preferences_o << "use_flame_debugger=" + str(preferences.use_flame_debugger) << "\n";
-	preferences_o << "[opened_windows]\n";
-	for (auto w : graphics::gui_views)
-	{
-		if (w->opened)
-			preferences_o << w->name << "\n";
-	}
-	if (!app.project_path.empty())
-	{
-		preferences_o << "[project_path]\n";
-		preferences_o << app.project_path.string() << "\n";
-	}
-	if (view_project.explorer.opened_folder)
-	{
-		preferences_o << "[opened_folder]\n";
-		preferences_o << view_project.explorer.opened_folder->path.string() << "\n";
-	}
-	if (app.e_prefab)
-	{
-		preferences_o << "[opened_prefab]\n";
-		preferences_o << app.prefab_path.string() << "\n";
-	}
-	preferences_o.close();
 
 	return 0;
 }

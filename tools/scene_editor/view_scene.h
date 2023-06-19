@@ -9,6 +9,7 @@ struct View_Scene : graphics::GuiView
 
 	bool show_outline = true;
 	bool show_AABB = false;
+	bool show_AABB_only_selected = false;
 	bool show_axis = true;
 	bool show_bones = false;
 	bool show_navigation = false;

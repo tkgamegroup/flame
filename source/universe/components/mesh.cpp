@@ -64,26 +64,25 @@ namespace flame
 				{
 					if (dirty)
 					{
-						if (enable)
-							sRenderer::instance()->set_mesh_instance(instance_id, node->transform, transpose(inverse(mat3(node->transform))));
+						sRenderer::instance()->set_mesh_instance(instance_id, node->transform, transpose(inverse(mat3(node->transform))));
 						dirty = false;
 					}
 				}
 				break;
 			case PassGBuffer:
-				if ((draw_data.categories & CateMesh) && enable && (material->render_queue == graphics::RenderQueue::Opaque || material->render_queue == graphics::RenderQueue::AlphaTest))
+				if (enable_render && (draw_data.categories & CateMesh) && (material->render_queue == graphics::RenderQueue::Opaque || material->render_queue == graphics::RenderQueue::AlphaTest))
 					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			case PassForward:
-				if ((draw_data.categories & CateMesh) && enable && material->render_queue == graphics::RenderQueue::Transparent)
+				if (enable_render && (draw_data.categories & CateMesh) && material->render_queue == graphics::RenderQueue::Transparent)
 					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			case PassOcculder:
-				if ((draw_data.categories & CateMesh) && enable && cast_shadow)
+				if (enable_render && (draw_data.categories & CateMesh) && cast_shadow)
 					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			case PassPickUp:
-				if ((draw_data.categories & CateMesh) && enable)
+				if ((draw_data.categories & CateMesh))
 					draw_data.meshes.emplace_back(instance_id, mesh_res_id, material_res_id);
 				break;
 			}
@@ -204,7 +203,17 @@ namespace flame
 		if (cast_shadow == v)
 			return;
 		cast_shadow = v;
+		node->mark_drawing_dirty();
 		data_changed("cast_shadow"_h);
+	}
+
+	void cMeshPrivate::set_enable_render(bool v) 
+	{
+		if (enable_render == v)
+			return;
+		enable_render = v;
+		node->mark_drawing_dirty();
+		data_changed("enable_render"_h);
 	}
 
 	void cMeshPrivate::on_active()
