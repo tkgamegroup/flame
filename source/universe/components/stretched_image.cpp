@@ -57,18 +57,18 @@ namespace flame
 		if (image_name == name)
 			return;
 
-		auto raw = image_name.native().starts_with(L"0x");
 		auto old_one = image;
+		auto old_raw = !image_name.empty() && image_name.native().starts_with(L"0x");
 		if (!image_name.empty())
 		{
-			if (!raw)
+			if (!old_raw)
 				AssetManagemant::release(Path::get(image_name));
 		}
 		image_name = name;
 		image = nullptr;
 		if (!image_name.empty())
 		{
-			if (!raw)
+			if (!image_name.native().starts_with(L"0x"))
 			{
 				AssetManagemant::get(Path::get(image_name));
 				image = !image_name.empty() ? graphics::Image::get(image_name) : nullptr;
@@ -80,7 +80,7 @@ namespace flame
 		if (image != old_one)
 			element->mark_drawing_dirty();
 
-		if (!raw && old_one)
+		if (!old_raw && old_one)
 			graphics::Image::release(old_one);
 		data_changed("image_name"_h);
 	}

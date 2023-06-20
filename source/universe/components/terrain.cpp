@@ -52,18 +52,18 @@ namespace flame
 		if (height_map_name == name)
 			return;
 
-		auto raw = height_map_name.native().starts_with(L"0x");
 		auto old_one = height_map;
+		auto old_raw = !height_map_name.empty() && height_map_name.native().starts_with(L"0x");
 		if (!height_map_name.empty())
 		{
-			if (!raw)
+			if (!old_raw)
 				AssetManagemant::release(Path::get(height_map_name));
 		}
 		height_map_name = name;
 		height_map = nullptr;
 		if (!height_map_name.empty())
 		{
-			if (!raw)
+			if (!height_map_name.native().starts_with(L"0x"))
 			{
 				AssetManagemant::get(Path::get(height_map_name));
 				height_map = !height_map_name.empty() ? graphics::Image::get(height_map_name) : nullptr;
@@ -84,7 +84,7 @@ namespace flame
 			node->mark_transform_dirty();
 		}
 
-		if (!raw && old_one)
+		if (!old_raw && old_one)
 			graphics::Image::release(old_one);
 		data_changed("height_map_name"_h);
 	}
@@ -94,18 +94,18 @@ namespace flame
 		if (material_name == name)
 			return;
 
-		auto raw = material_name.native().starts_with(L"0x");
 		auto old_one = material;
+		auto old_raw = !material_name.empty() && material_name.native().starts_with(L"0x");
 		if (!material_name.empty())
 		{
-			if (!raw)
+			if (!old_raw)
 				AssetManagemant::release(Path::get(material_name));
 		}
 		material_name = name;
 		material = nullptr;
 		if (!material_name.empty())
 		{
-			if (!raw)
+			if (!material_name.native().starts_with(L"0x"))
 			{
 				AssetManagemant::get(Path::get(material_name));
 				material = !material_name.empty() ? graphics::Material::get(material_name) : nullptr;
@@ -120,7 +120,7 @@ namespace flame
 				sRenderer::instance()->release_material_res(material_res_id);
 			material_res_id = material ? sRenderer::instance()->get_material_res(material, -1) : -1;
 		}
-		if (!raw && old_one)
+		if (!old_raw && old_one)
 			graphics::Material::release(old_one);
 
 		node->mark_drawing_dirty();
