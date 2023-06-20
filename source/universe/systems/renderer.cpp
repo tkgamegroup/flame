@@ -277,16 +277,18 @@ namespace flame
 				defines.push_back("pll=" + str(pll_fwd));
 				defines.push_back("cull_mode=" + TypeInfo::serialize_t(graphics::CullModeFront));
 			}
-			else if (res.mat->render_queue == graphics::RenderQueue::Opaque)
+			else if (res.mat->render_queue == graphics::RenderQueue::Opaque || 
+				res.mat->render_queue == graphics::RenderQueue::AlphaTest)
 			{
 				defines.push_back("rp=" + str(rp_gbuf));
 				defines.push_back("pll=" + str(pll_gbuf));
 				defines.push_back("all_shader:GBUFFER_PASS");
 			}
-			else
+			else if (res.mat->render_queue == graphics::RenderQueue::Transparent)
 			{
 				defines.push_back("rp=" + str(rp_fwd));
 				defines.push_back("pll=" + str(pll_fwd));
+				defines.push_back("blend=true");
 			}
 			break;
 		case "grass_field"_h:

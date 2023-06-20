@@ -2,6 +2,7 @@
 %pll=../forward.pll
 %cull_mode=Back
 %a2c=false
+%blend=false
 layout
   {pll}
 shaders
@@ -14,3 +15,14 @@ cull_mode
   {cull_mode}
 alpha_to_coverage
   {a2c}
+blend_options
+  enable
+    {blend}
+  src_color
+    SrcAlpha
+  dst_color
+    OneMinusSrcAlpha
+  src_alpha
+    Zero
+  dst_alpha
+    Zero
