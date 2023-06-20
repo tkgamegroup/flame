@@ -31,6 +31,7 @@ namespace flame
 
 		EntityPtr duplicate(EntityPtr dst = nullptr) override;
 
+		ModificationType parse_modification_target(const std::string& target, ModificationParsedData& out, voidptr& obj) override;
 		bool load(const std::filesystem::path& filename, bool only_root = false) override;
 		bool save(const std::filesystem::path& filename, bool only_root = false) override;
 	};

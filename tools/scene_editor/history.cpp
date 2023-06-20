@@ -88,11 +88,13 @@ void SelectHistory::select(Selection::Type type, const std::vector<void*> object
 void SelectHistory::undo()
 {
 	select(old_type, old_objects);
+	app.last_status = "Undo select";
 }
 
 void SelectHistory::redo()
 {
 	select(new_type, new_objects);
+	app.last_status = "Redo select";
 }
 
 void AssetModifyHistory::set_value(const std::string& value)
@@ -116,11 +118,13 @@ void AssetModifyHistory::set_value(const std::string& value)
 void AssetModifyHistory::undo()
 {
 	set_value(old_value);
+	app.last_status = "Undo modify asset";
 }
 
 void AssetModifyHistory::redo()
 {
 	set_value(new_value);
+	app.last_status = "Redo modify asset";
 }
 
 void EntityModifyHistory::set_value(const std::vector<std::string>& values)
@@ -131,22 +135,20 @@ void EntityModifyHistory::set_value(const std::vector<std::string>& values)
 		{
 			if (auto e = app.e_prefab->find_with_instance_id(ids[i]))
 			{
-				UdtInfo* ui = nullptr;
-				void* obj = nullptr;
-				if (comp_type == 0)
-				{
-					ui = TypeInfo::get<Entity>()->retrive_ui();
-					obj = e;
-				}
-				else
+				UdtInfo* ui = TypeInfo::get<Entity>()->retrive_ui();
+				void* obj = e;
+				if (comp_type)
 				{
 					ui = find_udt(comp_type);
 					obj = e->find_component(comp_type);
 				}
-				if (auto a = ui->find_attribute(attr_hash); a)
+				if (ui && obj)
 				{
-					a->type->unserialize(values.size() == 1 ? values[0] : values[i], nullptr);
-					a->set_value(obj, nullptr);
+					if (auto a = ui->find_attribute(attr_hash); a)
+					{
+						a->type->unserialize(values.size() == 1 ? values[0] : values[i], nullptr);
+						a->set_value(obj, nullptr);
+					}
 				}
 			}
 		}
@@ -158,21 +160,53 @@ void EntityModifyHistory::set_value(const std::vector<std::string>& values)
 void EntityModifyHistory::undo()
 {
 	set_value(old_values);
+	app.last_status = "Undo modify entity";
 }
 
 void EntityModifyHistory::redo()
 {
 	set_value(new_values);
+	app.last_status = "Redo modify entity";
+}
+
+void PrefabModifyHistory::set_value(const std::string& value)
+{
+	if (std::filesystem::exists(path))
+	{
+		auto e = Entity::create();
+		e->load(path, true);
+
+		UdtInfo* ui = TypeInfo::get<Entity>()->retrive_ui();
+		void* obj = e;
+		if (comp_type)
+		{
+			ui = find_udt(comp_type);
+			obj = e->find_component(comp_type);
+		}
+		if (ui && obj)
+		{
+			if (auto a = ui->find_attribute(attr_hash); a)
+			{
+				a->type->unserialize(value, nullptr);
+				a->set_value(obj, nullptr);
+			}
+		}
+
+		e->save(path, true);
+		delete e;
+	}
 }
 
 void PrefabModifyHistory::undo()
 {
-
+	set_value(old_value);
+	app.last_status = "Undo modify prefab";
 }
 
 void PrefabModifyHistory::redo()
 {
-
+	set_value(new_value);
+	app.last_status = "Redo modify prefab";
 }
 
 int history_idx = -1;

@@ -136,6 +136,7 @@ struct PrefabModifyHistory : History
 	{
 	}
 
+	void set_value(const std::string& value);
 	void undo() override;
 	void redo() override;
 };

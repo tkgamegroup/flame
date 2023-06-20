@@ -45,19 +45,18 @@ namespace flame
 		if (image_name == name)
 			return;
 
+		auto raw = image_name.native().starts_with(L"0x");
 		auto old_one = image;
 		if (!image_name.empty())
 		{
-			if (!image_name.native().starts_with(L"0x"))
+			if (!raw)
 				AssetManagemant::release(Path::get(image_name));
-			else
-				old_one = nullptr;
 		}
 		image_name = name;
 		image = nullptr;
 		if (!image_name.empty())
 		{
-			if (!image_name.native().starts_with(L"0x"))
+			if (!raw)
 			{
 				AssetManagemant::get(Path::get(image_name));
 				image = !image_name.empty() ? graphics::Image::get(image_name) : nullptr;
@@ -73,7 +72,7 @@ namespace flame
 				element->set_ext(image->extent);
 		}
 
-		if (old_one)
+		if (!raw && old_one)
 			graphics::Image::release(old_one);
 		data_changed("image_name"_h);
 	}

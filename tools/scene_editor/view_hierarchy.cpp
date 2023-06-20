@@ -111,18 +111,18 @@ void View_Hierarchy::on_draw()
 			{
 				if (get_root_prefab_instance(e_dst))
 				{
-					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+					open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 					return ret;
 				}
 				auto e = *(EntityPtr*)payload->Data;
 				if (!e->prefab_instance && get_root_prefab_instance(e))
 				{
-					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+					open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 					return ret;
 				}
 				if (is_ancestor(e, e_dst))
 				{
-					app.open_message_dialog("Cannot reparent", "The entity you select is the ancestor of the destination");
+					open_message_dialog("Cannot reparent", "The entity you select is the ancestor of the destination");
 					return ret;
 				}
 				ret.push_back(e);
@@ -131,7 +131,7 @@ void View_Hierarchy::on_draw()
 			{
 				if (get_root_prefab_instance(e_dst))
 				{
-					app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+					open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 					return ret;
 				}
 				auto& es = *(Entities*)payload->Data;
@@ -140,7 +140,7 @@ void View_Hierarchy::on_draw()
 					auto e = es.p[i];
 					if (!e->prefab_instance && get_root_prefab_instance(e))
 					{
-						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+						open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 						return ret;
 					}
 				}
@@ -150,7 +150,7 @@ void View_Hierarchy::on_draw()
 					{
 						if (is_ancestor(es.p[i], es.p[j]))
 						{
-							app.open_message_dialog("Cannot reparent", "The entities you select must not have parentships");
+							open_message_dialog("Cannot reparent", "The entities you select must not have parentships");
 							return ret;
 						}
 					}
@@ -159,7 +159,7 @@ void View_Hierarchy::on_draw()
 				{
 					if (is_ancestor(es.p[i], e_dst))
 					{
-						app.open_message_dialog("Cannot reparent", "One or more entities you select are the ancestors of the destination");
+						open_message_dialog("Cannot reparent", "One or more entities you select are the ancestors of the destination");
 						return ret;
 					}
 				}
@@ -174,7 +174,7 @@ void View_Hierarchy::on_draw()
 				{
 					if (get_root_prefab_instance(e_dst))
 					{
-						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+						open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 						return ret;
 					}
 
@@ -214,7 +214,7 @@ void View_Hierarchy::on_draw()
 
 		if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonRight))
 		{
-			app.show_entities_menu();
+			show_entities_menu();
 			ImGui::EndPopup();
 		}
 

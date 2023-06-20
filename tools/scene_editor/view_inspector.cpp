@@ -149,18 +149,51 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 	switch (eos.type)
 	{
 	case 0:
-		add_history(new AssetModifyHistory(*(std::filesystem::path*)eos.objs, eos.type2, attr_hash, before_editing_values[0], new_value));
+	{
+		auto h = new AssetModifyHistory(*(std::filesystem::path*)eos.objs, eos.type2, attr_hash, before_editing_values[0], new_value);
+		add_history(h);
+		auto ui = find_udt(h->asset_type);
+		auto attr = ui->find_attribute(h->attr_hash);
+		app.last_status = std::format("Modified Asset: {}, ({}), {}: {} -> {}", h->path.string(), ui->name, attr->name, h->old_value, h->new_value);
+	}
 		break;
 	case 1:
 	{
 		std::vector<GUID> ids(eos.num);
 		for (auto i = 0; i < eos.num; i++)
 			ids[i] = ((EntityPtr*)eos.objs)[i]->instance_id;
-		add_history(new EntityModifyHistory(ids, eos.type2, attr_hash, before_editing_values, { new_value }));
+		auto h = new EntityModifyHistory(ids, eos.type2, attr_hash, before_editing_values, { new_value });
+		add_history(h);
+		auto ui = h->comp_type ? find_udt(h->comp_type) : TypeInfo::get<Entity>()->retrive_ui();
+		auto attr = ui->find_attribute(h->attr_hash);
+		if (h->ids.size() == 1)
+		{
+			auto e = ((EntityPtr*)eos.objs)[0];
+			if (h->comp_type)
+				app.last_status = std::format("Modified Component: {}, ({}), {}: {} -> {}", e->name, ui->name, attr->name, h->old_values[0], h->new_values[0]);
+			else
+				app.last_status = std::format("Modified Entity: {}, {}: {} -> {}", e->name, attr->name, h->old_values[0], h->new_values[0]);
+		}
+		else
+		{
+			if (h->comp_type)
+				app.last_status = std::format("Modified {} Components: ({}), {}: {} -> {}", (int)h->ids.size(), ui->name, attr->name, h->old_values[0], h->new_values[0]);
+			else
+				app.last_status = std::format("Modified {} Entities: {}: * -> {}", (int)h->ids.size(), attr->name, h->new_values[0]);
+		}
 	}
 		break;
 	case 2:
-		add_history(new PrefabModifyHistory(*(std::filesystem::path*)eos.objs, eos.type2, attr_hash, before_editing_values[0], new_value));
+	{
+		auto h = new PrefabModifyHistory(*(std::filesystem::path*)eos.objs, eos.type2, attr_hash, before_editing_values[0], new_value);
+		add_history(h);
+		auto ui = h->comp_type ? find_udt(h->comp_type) : TypeInfo::get<Entity>()->retrive_ui();
+		auto attr = ui->find_attribute(h->attr_hash);
+		if (h->comp_type)
+			app.last_status = std::format("Modified Prefab Component: {}, ({}), {}: {} -> {}", h->path.string(), ui->name, attr->name, h->old_value, h->new_value);
+		else
+			app.last_status = std::format("Modified Prefab Entity: {}, {}: {} -> {}", h->path.string(), attr->name, h->old_value, h->new_value);
+	}
 		break;
 	}
 	app.prefab_unsaved = true;
@@ -1232,7 +1265,7 @@ struct EditingEntities
 							"{} modifications will be seized and apply:\n{}", (int)seize_indices.size(), str);
 
 						ImGui::OpenYesNoDialog("Are you sure to seize modificaitons and apply?", prompt, [entity, ins, &root_ins_mods, seize_indices](bool yes) {
-								if (yes)
+								if (yes && !seize_indices.empty())
 								{
 									for (auto i : seize_indices)
 										root_ins_mods.erase(root_ins_mods.begin() + i);
@@ -1247,7 +1280,7 @@ struct EditingEntities
 					if (ImGui::Button("Apply"))
 					{
 						ImGui::OpenYesNoDialog("Are you sure to apply all modifications?", "This action cannot be redo", [entity, ins](bool yes) {
-							if (yes)
+							if (yes && !ins->modifications.empty())
 							{
 								entity->save(Path::get(ins->filename), true);
 								ins->modifications.clear();
@@ -1261,16 +1294,16 @@ struct EditingEntities
 					ImGui::OpenYesNoDialog("Are you sure to revert all modifications?", "This action cannot be redo", [this, entity, ins](bool yes) {
 						if (yes)
 						{
-							add_event([this, ins, entity]() {
-								entity->name = "";
-								entity->tag = TagGeneral;
-								entity->enable = true;
-								entity->remove_all_components();
-								entity->load(ins->filename, true);
-								refresh();
-								return false;
-							});
-							ins->modifications.clear();
+							if (!ins->modifications.empty())
+							{
+								add_event([this, ins, entity]() {
+									empty_entity(entity);
+									entity->load(ins->filename);
+									refresh();
+									return false;
+								});
+								ins->modifications.clear();
+							}
 						}
 					});
 				}
@@ -1342,7 +1375,7 @@ struct EditingEntities
 						}
 					}
 					else
-						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+						open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 				}
 				if (ImGui::Selectable("Move Down"))
 				{
@@ -1375,7 +1408,7 @@ struct EditingEntities
 						}
 					}
 					else
-						app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+						open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 				}
 				if (ImGui::Selectable("Remove"))
 				{
@@ -1704,7 +1737,7 @@ void View_Inspector::on_draw()
 
 	if (selection.type != Selection::tNothing)
 	{
-		if (app.tool_button(graphics::FontAtlas::icon_s(selection.lock ? "lock"_h : "unlock"_h)))
+		if (tool_button(graphics::FontAtlas::icon_s(selection.lock ? "lock"_h : "unlock"_h)))
 			app.toggle_selection_lock();
 	}
 

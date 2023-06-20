@@ -129,7 +129,22 @@ void View_Scene::on_draw()
 	ImGui::SameLine();
 	ImGui::Checkbox("Outline", &show_outline);
 	ImGui::SameLine();
-	ImGui::Checkbox("AABB", &show_AABB);
+	if (!show_AABB)
+		ImGui::Checkbox("AABB", &show_AABB);
+	else
+	{
+		ImGui::Checkbox("##AABB_check", &show_AABB);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(50.f);
+		if (ImGui::BeginCombo("AABB", !show_AABB_only_selected ? "All" : "Only Selected"))
+		{
+			if (ImGui::Selectable("All", !show_AABB_only_selected))
+				show_AABB_only_selected = false;
+			if (ImGui::Selectable("Only Selected", show_AABB_only_selected))
+				show_AABB_only_selected = true;
+			ImGui::EndCombo();
+		}
+	}
 	ImGui::SameLine();
 	ImGui::Checkbox("Axis", &show_axis);
 	ImGui::SameLine();
@@ -761,9 +776,7 @@ void View_Scene::on_draw()
 		}
 		if (show_AABB)
 		{
-			World::instance()->root->forward_traversal([](EntityPtr e) {
-				if (!e->global_enable)
-					return false;
+			auto draw_aabb = [](EntityPtr e) {
 				if (auto node = e->node(); node)
 				{
 					if (!node->bounds.invalid())
@@ -773,8 +786,29 @@ void View_Scene::on_draw()
 						sRenderer::instance()->draw_primitives("LineList"_h, line_pts.data(), line_pts.size(), cvec4(255, 127, 127, 255));
 					}
 				}
-				return true;
-			});
+			};
+			if (show_AABB_only_selected)
+			{
+				if (selection.type == Selection::tEntity)
+				{
+					for (auto i = 0; i < selection.objects.size(); i++)
+					{
+						auto e = selection.as_entity(i);
+						if (!e->global_enable)
+							break;
+						draw_aabb(e);
+					}
+				}
+			}
+			else
+			{
+				World::instance()->root->forward_traversal([&](EntityPtr e) {
+					if (!e->global_enable)
+						return false;
+					draw_aabb(e);
+					return true;
+				});
+			}
 		}
 		if (show_axis)
 		{

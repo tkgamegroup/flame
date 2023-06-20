@@ -45,6 +45,82 @@ static std::filesystem::path preferences_path = L"preferences.ini";
 
 static std::vector<std::function<bool()>> dialogs;
 
+bool tool_button(const std::string& name, bool selected, float rotate)
+{
+	if (selected)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1, 1, 0, 1));
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2);
+	}
+	if (rotate != 0.f)
+		ImGui::BeginRotation(rotate);
+	auto clicked = ImGui::Button(name.c_str());
+	if (selected)
+	{
+		ImGui::PopStyleColor();
+		ImGui::PopStyleVar();
+	}
+	if (rotate != 0.f)
+		ImGui::EndRotation();
+	return clicked;
+}
+
+void show_entities_menu()
+{
+	if (ImGui::MenuItem("New Empty"))
+		app.cmd_new_entities(selection.get_entities());
+	if (ImGui::BeginMenu("New 3D"))
+	{
+		if (ImGui::MenuItem("Node"))
+			app.cmd_new_entities(selection.get_entities(), "node"_h);
+		if (ImGui::MenuItem("Plane"))
+			app.cmd_new_entities(selection.get_entities(), "plane"_h);
+		if (ImGui::MenuItem("Cube"))
+			app.cmd_new_entities(selection.get_entities(), "cube"_h);
+		if (ImGui::MenuItem("Sphere"))
+			app.cmd_new_entities(selection.get_entities(), "sphere"_h);
+		if (ImGui::MenuItem("Cylinder"))
+			app.cmd_new_entities(selection.get_entities(), "cylinder"_h);
+		if (ImGui::MenuItem("Triangular Prism"))
+			app.cmd_new_entities(selection.get_entities(), "tri_prism"_h);
+		if (ImGui::MenuItem("Directional Light"))
+			app.cmd_new_entities(selection.get_entities(), "dir_light"_h);
+		if (ImGui::MenuItem("Point Light"))
+			app.cmd_new_entities(selection.get_entities(), "pt_light"_h);
+		if (ImGui::MenuItem("Camera"))
+			app.cmd_new_entities(selection.get_entities(), "camera"_h);
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("New 2D"))
+	{
+		if (ImGui::MenuItem("Element"))
+			app.cmd_new_entities(selection.get_entities(), "element"_h);
+		if (ImGui::MenuItem("Image"))
+			app.cmd_new_entities(selection.get_entities(), "image"_h);
+		if (ImGui::MenuItem("Text"))
+			app.cmd_new_entities(selection.get_entities(), "text"_h);
+		if (ImGui::MenuItem("Layout"))
+			app.cmd_new_entities(selection.get_entities(), "layout"_h);
+		ImGui::EndMenu();
+	}
+	if (ImGui::MenuItem("Duplicate (Shift+D)"))
+		app.cmd_duplicate_entities(selection.get_entities());
+	if (ImGui::MenuItem("Delete (Del)"))
+		app.cmd_delete_entities(selection.get_entities());
+}
+
+void open_message_dialog(const std::string& title, const std::string& message)
+{
+	if (title == "[RestructurePrefabInstanceWarnning]")
+	{
+		ImGui::OpenMessageDialog("Cannot restructure Prefab Instance",
+			"You cannot remove/reposition entities in Prefab Instance\n"
+			"Edit it in that prefab");
+	}
+	else
+		ImGui::OpenMessageDialog(title, message);
+}
+
 void App::init()
 {
 	create("Scene Editor", uvec2(800, 600), WindowFrame | WindowResizable, true, graphics_debug, graphics_configs);
@@ -126,14 +202,14 @@ void App::on_gui()
 			ImGui::OpenFileDialog("New Project", [this](bool ok, const std::filesystem::path& path) {
 				if (ok)
 					new_project(path);
-				});
+			});
 		}
 		if (ImGui::MenuItem("Open Project"))
 		{
 			ImGui::OpenFileDialog("Open Project", [this](bool ok, const std::filesystem::path& path) {
 				if (ok)
 					open_project(path);
-				});
+			});
 		}
 		if (ImGui::MenuItem("Close Project"))
 			close_project();
@@ -146,14 +222,14 @@ void App::on_gui()
 					new_prefab(path);
 					open_prefab(path);
 				}
-				});
+			});
 		}
 		if (ImGui::MenuItem("Open Prefab"))
 		{
 			ImGui::OpenFileDialog("Open Prefab", [this](bool ok, const std::filesystem::path& path) {
 				if (ok)
 					open_prefab(path);
-				});
+			});
 		}
 		if (ImGui::MenuItem("Save Prefab (Ctrl+S)"))
 			save_prefab();
@@ -794,7 +870,17 @@ void App::on_gui()
 
 	// toolbar end
 
-	ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+	// dock space
+	ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, -20.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+	// status bar
+	ImGui::InvisibleButton("##status_bar", ImGui::GetContentRegionAvail());
+	{
+		auto dl = ImGui::GetWindowDrawList();
+		auto p0 = ImGui::GetItemRectMin();
+		auto p1 = ImGui::GetItemRectMax();
+		dl->AddRectFilled(p0, p1, ImGui::GetColorU32(ImGuiCol_MenuBarBg));
+		dl->AddText(p0, ImColor(255, 255, 255, 255), !last_status.empty() ? last_status.c_str() : "OK");
+	}
 	ImGui::End();
 
 	auto& io = ImGui::GetIO();
@@ -1147,8 +1233,13 @@ void App::cmake_project()
 
 void App::build_project()
 {
-	if (project_path.empty() || e_playing)
+	if (project_path.empty())
 		return;
+	if (e_playing)
+	{
+		printf("Cannot build project while playing\n");
+		return;
+	}
 
 	auto old_prefab_path = prefab_path;
 	if (!old_prefab_path.empty())
@@ -1258,6 +1349,7 @@ bool App::save_prefab()
 	{
 		e_prefab->save(prefab_path);
 		prefab_unsaved = false;
+		last_status = std::format("Saved prefab: {}", prefab_path.string());
 	}
 	return true;
 }
@@ -1579,7 +1671,7 @@ bool App::cmd_delete_entities(std::vector<EntityPtr>&& es)
 	{
 		if (t == e_prefab || !t->prefab_instance && get_root_prefab_instance(t))
 		{
-			app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+			open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 			return false;
 		}
 	}
@@ -1603,7 +1695,7 @@ bool App::cmd_duplicate_entities(std::vector<EntityPtr>&& es)
 	{
 		if (t == e_prefab || !t->prefab_instance && get_root_prefab_instance(t))
 		{
-			app.open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+			open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 			return false;
 		}
 	}
@@ -1738,82 +1830,6 @@ bool App::cmd_restart_preview()
 	cmd_start_preview(e);
 
 	return true;
-}
-
-bool App::tool_button(const std::string& name, bool selected, float rotate)
-{
-	if (selected)
-	{
-		ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1, 1, 0, 1));
-		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2);
-	}
-	if (rotate != 0.f)
-		ImGui::BeginRotation(rotate);
-	auto clicked = ImGui::Button(name.c_str());
-	if (selected)
-	{
-		ImGui::PopStyleColor();
-		ImGui::PopStyleVar();
-	}
-	if (rotate != 0.f)
-		ImGui::EndRotation();
-	return clicked;
-}
-
-void App::show_entities_menu()
-{
-	if (ImGui::MenuItem("New Empty"))
-		cmd_new_entities(selection.get_entities());
-	if (ImGui::BeginMenu("New 3D"))
-	{
-		if (ImGui::MenuItem("Node"))
-			cmd_new_entities(selection.get_entities(), "node"_h);
-		if (ImGui::MenuItem("Plane"))
-			cmd_new_entities(selection.get_entities(), "plane"_h);
-		if (ImGui::MenuItem("Cube"))
-			cmd_new_entities(selection.get_entities(), "cube"_h);
-		if (ImGui::MenuItem("Sphere"))
-			cmd_new_entities(selection.get_entities(), "sphere"_h);
-		if (ImGui::MenuItem("Cylinder"))
-			cmd_new_entities(selection.get_entities(), "cylinder"_h);
-		if (ImGui::MenuItem("Triangular Prism"))
-			cmd_new_entities(selection.get_entities(), "tri_prism"_h);
-		if (ImGui::MenuItem("Directional Light"))
-			cmd_new_entities(selection.get_entities(), "dir_light"_h);
-		if (ImGui::MenuItem("Point Light"))
-			cmd_new_entities(selection.get_entities(), "pt_light"_h);
-		if (ImGui::MenuItem("Camera"))
-			cmd_new_entities(selection.get_entities(), "camera"_h);
-		ImGui::EndMenu();
-	}
-	if (ImGui::BeginMenu("New 2D"))
-	{
-		if (ImGui::MenuItem("Element"))
-			cmd_new_entities(selection.get_entities(), "element"_h);
-		if (ImGui::MenuItem("Image"))
-			cmd_new_entities(selection.get_entities(), "image"_h);
-		if (ImGui::MenuItem("Text"))
-			cmd_new_entities(selection.get_entities(), "text"_h);
-		if (ImGui::MenuItem("Layout"))
-			cmd_new_entities(selection.get_entities(), "layout"_h);
-		ImGui::EndMenu();
-	}
-	if (ImGui::MenuItem("Duplicate (Shift+D)"))
-		cmd_duplicate_entities(selection.get_entities());
-	if (ImGui::MenuItem("Delete (Del)"))
-		cmd_delete_entities(selection.get_entities());
-}
-
-void App::open_message_dialog(const std::string& title, const std::string& message)
-{
-	if (title == "[RestructurePrefabInstanceWarnning]")
-	{
-		ImGui::OpenMessageDialog("Cannot restructure Prefab Instance",
-			"You cannot remove/reposition entities in Prefab Instance\n"
-			"Edit it in that prefab");
-	}
-	else
-		ImGui::OpenMessageDialog(title, message);
 }
 
 int main(int argc, char** args)

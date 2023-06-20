@@ -4,6 +4,25 @@
 
 namespace flame
 {
+	enum ModificationType
+	{
+		ModificationWrong,
+		ModificationAttributeModify,
+		ModificationEntityAdd,
+		ModificationComponentAdd,
+		ModificationComponentRemove
+	};
+
+	struct ModificationParsedData
+	{
+		union
+		{
+			const Attribute* attr;
+			uint hash;
+			GUID guid;
+		}d;
+	};
+
 	struct PrefabInstance
 	{
 		EntityPtr e;
@@ -305,6 +324,7 @@ namespace flame
 
 		virtual EntityPtr duplicate(EntityPtr dst = nullptr) = 0;
 
+		virtual ModificationType parse_modification_target(const std::string& target, ModificationParsedData& out, voidptr& obj) = 0;
 		virtual bool load(const std::filesystem::path& filename, bool only_root = false) = 0;
 		virtual bool save(const std::filesystem::path& filename, bool only_root = false) = 0;
 

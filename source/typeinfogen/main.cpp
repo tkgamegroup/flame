@@ -125,7 +125,6 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_sym)
 		return TypeInfo::get(TagD, base_type_name(s_sym));
 	case SymTagPointerType:
 	{
-		std::string name;
 		TypeInfo* ret = nullptr;
 		IDiaSymbol* pointer_type;
 		s_sym->get_type(&pointer_type);
@@ -140,7 +139,7 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_sym)
 			ret = TypeInfo::get(TagPD, TypeInfo::format_name(base_type_name(pointer_type)), db);
 			break;
 		case SymTagPointerType:
-			assert(0);
+			ret = TypeInfo::get(TagPD, "pointer", db);
 			break;
 		case SymTagUDT:
 		{

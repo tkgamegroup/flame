@@ -922,7 +922,7 @@ void View_Project::init()
 		{
 			auto e_src = *(EntityPtr*)payload->Data;
 			if (e_src->prefab_instance)
-				app.open_message_dialog("Error", "Entity is already a prefab instance");
+				open_message_dialog("Error", "Entity is already a prefab instance");
 			else
 			{
 				auto fn = std::filesystem::path(e_src->name);
@@ -1127,7 +1127,59 @@ void View_Project::on_draw()
 						changed_assets.emplace_back(asset, p.first);
 				}
 				auto ext = p.first.extension();
-				if (ext == L".glsl")
+				if (ext == L".prefab")
+				{
+					if (p.second & FileModified)
+					{
+						if (app.e_prefab)
+						{
+							app.e_prefab->backward_traversal([p](EntityPtr e) {
+								if (e->prefab_instance && e->prefab_instance->filename == p.first)
+								{
+									auto ins = get_root_prefab_instance(e);
+									std::vector<std::tuple<GUID, std::string, std::string>> staging_values; // guid, target, value
+									if (ins)
+									{
+										for (auto& m : ins->modifications)
+										{
+											ModificationParsedData data; voidptr obj;
+											auto type = e->parse_modification_target(m, data, obj);
+											if (auto t = e->find_with_file_id(data.d.guid); t)
+											{
+												auto& sv = staging_values.emplace_back();
+												std::get<0>(sv) = data.d.guid;
+												std::get<1>(sv) = m;
+												if (type == ModificationAttributeModify)
+													std::get<2>(sv) = data.d.attr->serialize(obj);
+											}
+										}
+									}
+
+									empty_entity(e);
+									e->load(p.first);
+
+									if (ins)
+									{
+										for (auto& sv : staging_values)
+										{
+											if (auto t = e->find_with_file_id(std::get<0>(sv)); t)
+											{
+												ModificationParsedData data; voidptr obj;
+												auto type = e->parse_modification_target(std::get<1>(sv), data, obj);
+												if (type == ModificationAttributeModify)
+													data.d.attr->unserialize(obj, std::get<2>(sv));
+											}
+										}
+									}
+
+									if (selection.selecting(e))
+										selection.clear();
+								}
+							});
+						}
+					}
+				}
+				else if (ext == L".glsl")
 				{
 					get_materials();
 					get_shaders();

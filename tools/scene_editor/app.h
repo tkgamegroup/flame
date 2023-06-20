@@ -46,10 +46,46 @@ struct DropEnitities
 	int count;
 };
 
+inline PrefabInstance* get_root_prefab_instance(EntityPtr e)
+{
+	PrefabInstance* ret = nullptr;
+	while (e)
+	{
+		if (e->prefab_instance)
+			ret = e->prefab_instance.get();
+		e = e->parent;
+	}
+	return ret;
+}
+
+inline bool is_ancestor(EntityPtr t, EntityPtr e)
+{
+	if (!e->parent)
+		return false;
+	if (e->parent == t)
+		return true;
+	return is_ancestor(t, e->parent);
+};
+
+inline void empty_entity(EntityPtr e)
+{
+	e->name = "";
+	e->tag = TagGeneral;
+	e->enable = true;
+	e->remove_all_components();
+	e->remove_all_children();
+}
+
+bool tool_button(const std::string& name, bool selected = false, float rotate = 0.f);
+void show_entities_menu();
+void open_message_dialog(const std::string& title, const std::string& message);
+
 struct App : UniverseApplication
 {
 	bool graphics_debug = true;
 	std::vector<std::pair<uint, uint>> graphics_configs;
+
+	std::string last_status;
 
 	std::filesystem::path project_path;
 	std::filesystem::path prefab_path;
@@ -120,31 +156,6 @@ struct App : UniverseApplication
 	bool cmd_start_preview(EntityPtr e);
 	bool cmd_stop_preview();
 	bool cmd_restart_preview();
-
-	bool tool_button(const std::string& name, bool selected = false, float rotate = 0.f);
-	void show_entities_menu();
-	void open_message_dialog(const std::string& title, const std::string& message);
 };
 
 extern App app;
-
-inline PrefabInstance* get_root_prefab_instance(EntityPtr e)
-{
-	PrefabInstance* ret = nullptr;
-	while (e)
-	{
-		if (e->prefab_instance)
-			ret = e->prefab_instance.get();
-		e = e->parent;
-	}
-	return ret;
-}
-
-inline bool is_ancestor(EntityPtr t, EntityPtr e)
-{
-	if (!e->parent)
-		return false;
-	if (e->parent == t)
-		return true;
-	return is_ancestor(t, e->parent);
-};
