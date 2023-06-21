@@ -18,6 +18,9 @@ namespace flame
 			virtual void set_targets(std::span<ImageViewPtr> targets) = 0;
 			virtual void bind_window_targets() = 0;
 
+			virtual void push_scissor(const Rect& rect) = 0;
+			virtual void pop_scissor() = 0;
+
 			virtual void add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col) = 0;
 			virtual void add_rect_filled(const vec2& a, const vec2& b, const cvec4& col) = 0;
 			virtual void add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness = 0.f, float border = 0.f) = 0;

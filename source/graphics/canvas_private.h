@@ -23,16 +23,21 @@ namespace flame
 			{
 				enum Type
 				{
+					SetScissor,
 					DrawBmp,
 					DrawSdf
 				};
 
 				Type type = DrawBmp;
 				uint idx_cnt = 0;
-				DescriptorSetPtr ds;
+				DescriptorSetPtr ds = nullptr;
 
 				union
 				{
+					struct
+					{
+						vec4 rect;
+					}scissor;
 					struct
 					{
 					}bmp;
@@ -56,6 +61,7 @@ namespace flame
 			ImagePtr main_img = nullptr;
 			std::unique_ptr<DescriptorSetT> main_ds;
 
+			std::stack<Rect> scissor_stack;
 			std::vector<DrawCmd> draw_cmds;
 			std::vector<vec2> path;
 
@@ -68,6 +74,9 @@ namespace flame
 			void reset();
 			DrawCmd& get_bmp_cmd(DescriptorSetPtr ds);
 			DrawCmd& get_sdf_cmd(DescriptorSetPtr ds, float sdf_scale, float thickness, float border);
+
+			void push_scissor(const Rect& rect) override;
+			void pop_scissor() override;
 
 			void path_rect(const vec2& a, const vec2& b);
 			void stroke_path(DrawCmd& cmd, float thickness, const cvec4& col, bool closed);

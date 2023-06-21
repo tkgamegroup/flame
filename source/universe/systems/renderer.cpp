@@ -1708,6 +1708,25 @@ namespace flame
 		return gauss_blur_weights[radius].data();
 	}
 
+	static void render_element(graphics::CanvasPtr canvas, EntityPtr e)
+	{
+		if (!e->global_enable)
+			return;
+
+		if (auto element = e->element(); element)
+		{
+			if (element->scissor)
+				canvas->push_scissor(Rect(element->global_pos0(), element->global_pos1()));
+
+			element->drawers.call(canvas);
+			for (auto& c : e->children)
+				render_element(canvas, c.get());
+
+			if (element->scissor)
+				canvas->pop_scissor();
+		}
+	}
+
 	void sRendererPrivate::render(int tar_idx, graphics::CommandBufferPtr cb)
 	{
 		if (mark_clear_pipelines)
@@ -2586,17 +2605,7 @@ namespace flame
 		cb->begin_debug_label("Elements");
 		{
 			if (auto first_element = sScene::instance()->first_element; first_element)
-			{
-				first_element->traversal_bfs([this](EntityPtr e, int depth) {
-					if (!e->global_enable)
-						return false;
-
-					if (auto element = e->element(); element)
-						element->drawers.call(canvas);
-
-					return true;
-				});
-			}
+				render_element(canvas, first_element);
 		}
 		cb->end_debug_label();
 

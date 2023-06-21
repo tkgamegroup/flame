@@ -313,12 +313,10 @@ namespace flame
 			reset();
 		}
 
-		Rect(float LT_x, float LT_y, float RB_x, float RB_y)
+		Rect(float LT_x, float LT_y, float RB_x, float RB_y) :
+			a(LT_x, LT_y),
+			b(RB_x, RB_y)
 		{
-			a.x = LT_x;
-			a.y = LT_y;
-			b.x = RB_x;
-			b.y = RB_y;
 		}
 
 		Rect(const vec2& a, const vec2& b) :
@@ -342,12 +340,6 @@ namespace flame
 			return vec4(a.x, a.y, b.x, b.y);
 		}
 
-		bool operator==(const Rect& rhs)
-		{
-			return a.x == rhs.a.x && a.y == rhs.a.y &&
-				b.x == rhs.b.x && b.y == rhs.b.y;
-		}
-
 		void expand(float length)
 		{
 			a.x -= length;
@@ -362,17 +354,23 @@ namespace flame
 			b = max(b, p);
 		}
 
-		bool contains(const vec2& p)
+		bool contains(const vec2& p) const
 		{
 			return p.x > a.x && p.x < b.x &&
 				p.y > a.y && p.y < b.y;
 		}
 
-		bool overlapping(const Rect& rhs)
+		bool overlapping(const Rect& rhs) const
 		{
-			return !(rhs.a.x > b.x || rhs.a.y > b.y);
+			return !(rhs.a.x > b.x || rhs.a.y > b.y || rhs.b.x < a.x || rhs.b.y < a.y);
 		}
 	};
+
+	inline bool operator==(const Rect& lhs, const Rect& rhs)
+	{
+		return lhs.a.x == rhs.a.x && lhs.a.y == rhs.a.y &&
+			lhs.b.x == rhs.b.x && lhs.b.y == rhs.b.y;
+	}
 
 	struct AABB
 	{
@@ -390,10 +388,10 @@ namespace flame
 		{
 		}
 
-		AABB(const vec3& center, float size)
+		AABB(const vec3& center, float size) :
+			a(center - size),
+			b(center + size)
 		{
-			a = center - size;
-			b = center + size;
 		}
 
 		AABB(uint count, const vec3* points, const mat3& mat = mat3(1.f))
@@ -414,7 +412,7 @@ namespace flame
 			b = vec3(-10000.f);
 		}
 
-		bool invalid()
+		bool invalid() const
 		{
 			return any(greaterThan(a, b));
 		}
@@ -461,22 +459,22 @@ namespace flame
 			b = max(b, oth.b);
 		}
 
-		bool contains(const vec3& p)
+		bool contains(const vec3& p) const
 		{
 			return all(greaterThan(p, a)) && all(greaterThan(b, p));
 		}
 
-		bool contains(const AABB& oth)
+		bool contains(const AABB& oth) const
 		{
 			return contains(oth.a) && contains(oth.b);
 		}
 
-		bool intersects(const AABB& oth)
+		bool intersects(const AABB& oth) const
 		{
 			return !(any(greaterThan(oth.a, b)) || any(lessThan(oth.b, a)));
 		}
 
-		bool intersects(const vec3& center, float radius)
+		bool intersects(const vec3& center, float radius) const
 		{
 			auto d = 0.f;
 			if		(center.x < a.x) d += square(center.x - a.x);
@@ -488,7 +486,7 @@ namespace flame
 			return square(radius) > d;
 		}
 
-		bool intersects(const vec2& center, float radius)
+		bool intersects(const vec2& center, float radius) const
 		{
 			auto d = 0.f;
 			if		(center.x < a.x) d += square(center.x - a.x);
@@ -518,10 +516,10 @@ namespace flame
 		{
 		}
 
-		Plane(const vec3& a, const vec3& b, const vec3& c)
+		Plane(const vec3& a, const vec3& b, const vec3& c) :
+			n(normalize(cross(b - a, c - a))),
+			d(-dot(n, a))
 		{
-			n = normalize(cross(b - a, c - a));
-			d = -dot(n, a);
 		}
 
 		float distance(const vec3& p) const

@@ -28,7 +28,7 @@ namespace flame
 
 				cb->begin_debug_label("Canvas");
 				idx = fb_tars.size() > 1 ? idx : 0;
-				auto vp = Rect(vec2(0), window->native->size);
+				auto vp = Rect(vec2(0.f), iv_tars.front()->image->extent.xy());
 				cb->set_viewport_and_scissor(vp);
 				if (clear_framebuffer)
 				{
@@ -49,18 +49,32 @@ namespace flame
 				auto idx_off = 0;
 				for (auto& cmd : draw_cmds)
 				{
-					if (cmd.idx_cnt > 0)
+					switch (cmd.type)
 					{
-						switch (cmd.type)
+					case DrawCmd::SetScissor:
+						if (!(cmd.data.scissor.rect == vp))
 						{
-						case DrawCmd::DrawBmp:
+							vp = cmd.data.scissor.rect;
+							cb->set_scissor(vp);
+						}
+						break;
+					case DrawCmd::DrawBmp:
+						if (cmd.idx_cnt > 0)
+						{
 							if (last_pl != pl)
 							{
 								cb->bind_pipeline(pl);
 								last_pl = pl;
 							}
-							break;
-						case DrawCmd::DrawSdf:
+
+							cb->bind_descriptor_set(0, cmd.ds);
+							cb->draw_indexed(cmd.idx_cnt, idx_off, 0, 1, 0);
+							idx_off += cmd.idx_cnt;
+						}
+						break;
+					case DrawCmd::DrawSdf:
+						if (cmd.idx_cnt > 0)
+						{
 							if (last_pl != pl_sdf)
 							{
 								cb->bind_pipeline(pl_sdf);
@@ -68,11 +82,12 @@ namespace flame
 							}
 							prm.pc.mark_dirty_c("data"_h).as<vec4>() = vec4(1.f / cmd.data.sdf.scale / 4.f, cmd.data.sdf.thickness, cmd.data.sdf.border, 0.f);
 							prm.push_constant(cb);
-							break;
+
+							cb->bind_descriptor_set(0, cmd.ds);
+							cb->draw_indexed(cmd.idx_cnt, idx_off, 0, 1, 0);
+							idx_off += cmd.idx_cnt;
 						}
-						cb->bind_descriptor_set(0, cmd.ds);
-						cb->draw_indexed(cmd.idx_cnt, idx_off, 0, 1, 0);
-						idx_off += cmd.idx_cnt;
+						break;
 					}
 				}
 				cb->end_renderpass();
@@ -130,6 +145,8 @@ namespace flame
 			fb_tars.clear();
 			for (auto iv : iv_tars)
 				fb_tars.push_back(Framebuffer::create(rp, iv));
+
+			reset();
 		}
 
 		void CanvasPrivate::bind_window_targets()
@@ -152,6 +169,10 @@ namespace flame
 
 		void CanvasPrivate::reset()
 		{
+			while (!scissor_stack.empty())
+				scissor_stack.pop();
+			if (!iv_tars.empty())
+				push_scissor(Rect(vec2(0.f), iv_tars.front()->image->extent.xy()));
 			draw_cmds.clear();
 			draw_cmds.emplace_back().ds = main_ds.get();
 		}
@@ -162,6 +183,7 @@ namespace flame
 			if (cmd.ds == ds && cmd.type == DrawCmd::DrawBmp)
 				return cmd;
 			auto& new_cmd = draw_cmds.emplace_back();
+			new_cmd.type = DrawCmd::DrawBmp;
 			new_cmd.ds = ds;
 			return new_cmd;
 		}
@@ -338,6 +360,33 @@ namespace flame
 			auto& cmd = get_bmp_cmd(main_ds.get());
 			fill_path(cmd, col);
 			path.clear();
+		}
+
+		void CanvasPrivate::push_scissor(const Rect& _rect)
+		{
+			Rect rect;
+			if (scissor_stack.empty())
+				rect = _rect;
+			else
+			{
+				auto& curr = scissor_stack.top();
+				rect.a = max(_rect.a, curr.a);
+				rect.b = min(_rect.b, curr.b);
+			}
+			scissor_stack.push(rect);
+
+			auto& new_cmd = draw_cmds.emplace_back();
+			new_cmd.type = DrawCmd::SetScissor;
+			new_cmd.data.scissor.rect = rect;
+		}
+
+		void CanvasPrivate::pop_scissor()
+		{
+			scissor_stack.pop();
+
+			auto& new_cmd = draw_cmds.emplace_back();
+			new_cmd.type = DrawCmd::SetScissor;
+			new_cmd.data.scissor.rect = scissor_stack.top();
 		}
 		
 		void CanvasPrivate::add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col)
