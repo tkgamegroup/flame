@@ -1349,7 +1349,7 @@ bool App::save_prefab()
 	{
 		e_prefab->save(prefab_path);
 		prefab_unsaved = false;
-		last_status = std::format("Saved prefab: {}", prefab_path.string());
+		last_status = std::format("Prefab Saved : {}", prefab_path.string());
 	}
 	return true;
 }

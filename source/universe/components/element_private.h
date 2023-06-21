@@ -24,7 +24,7 @@ namespace flame
 
 		void set_horizontal_alignment(ElementAlignment alignment) override;
 		void set_vertical_alignment(ElementAlignment alignment) override;
-		void set_alignment_offset(const vec2& offset) override;
+		void set_margin(const vec4& margin) override;
 
 		vec2 global_scl() override;
 

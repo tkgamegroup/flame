@@ -115,13 +115,13 @@ namespace flame
 		data_changed("vertical_alignment"_h);
 	}
 
-	void cElementPrivate::set_alignment_offset(const vec2& offset)
+	void cElementPrivate::set_margin(const vec4& _margin)
 	{
-		if (alignment_offset == offset)
+		if (margin == _margin)
 			return;
-		alignment_offset = offset;
+		margin = _margin;
 		mark_transform_dirty();
-		data_changed("alignment_offset"_h);
+		data_changed("margin"_h);
 	}
 
 	vec2 cElementPrivate::global_scl()

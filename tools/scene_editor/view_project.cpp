@@ -749,71 +749,75 @@ void View_Project::init()
 			}
 			if (ImGui::MenuItem("Import Scenes"))
 			{
-				ImGui::OpenFileDialog("Select File or Directory", [path](bool ok, const std::filesystem::path& src_path) {
-					if (ok)
+				struct ImportSceneDialog : ImGui::Dialog
+				{
+					vec3 rotation = vec3(0.f);
+					float scaling = 1.f;
+					bool only_animation = false;
+
+					std::filesystem::path source_path; // a file or directory
+					std::filesystem::path destination;
+
+					static void open(const std::filesystem::path& _destination)
 					{
-						struct ImportSceneDialog : ImGui::Dialog
-						{
-							vec3 rotation = vec3(0.f);
-							float scaling = 1.f;
-							bool only_animation = false;
-
-							std::filesystem::path destination;
-							std::vector<std::filesystem::path> files;
-
-							static void open(const std::filesystem::path& _destination, const std::vector<std::filesystem::path>& _files)
-							{
-								auto dialog = new ImportSceneDialog;
-								dialog->title = "Import Scene";
-								dialog->destination = _destination;
-								dialog->files = _files;
-								Dialog::open(dialog);
-							}
-
-							void draw() override
-							{
-								bool open = true;
-								if (ImGui::Begin(title.c_str(), &open))
-								{
-									ImGui::TextUnformatted("Import Files:");
-									for (auto& file : files)
-										ImGui::TextUnformatted(file.string().c_str());
-									ImGui::TextUnformatted("Into:");
-									ImGui::TextUnformatted(destination.string().c_str());
-									ImGui::Separator();
-
-									ImGui::InputFloat3("Rotation", &rotation[0]);
-									ImGui::InputFloat("Scaling", &scaling);
-									ImGui::Checkbox("Only Animation", &only_animation);
-
-									if (ImGui::Button("OK"))
-									{
-										for (auto& file : files)
-											graphics::import_scene(file, destination, rotation, scaling, only_animation);
-										close();
-									}
-									ImGui::SameLine();
-									if (ImGui::Button("Cancel"))
-										close();
-
-									ImGui::End();
-								}
-								if (!open)
-									close();
-							}
-						};
-
-						if (std::filesystem::is_directory(src_path))
-						{
-							std::vector<std::filesystem::path> files;
-							for (auto& e : std::filesystem::directory_iterator(src_path))
-								files.push_back(e.path());
-							ImportSceneDialog::open(path, files);
-						}
-						else if (std::filesystem::is_regular_file(src_path))
-							ImportSceneDialog::open(path, { src_path });
+						auto dialog = new ImportSceneDialog;
+						dialog->title = "Import Scene";
+						dialog->destination = _destination;
+						Dialog::open(dialog);
 					}
-				});
+
+					void draw() override
+					{
+						bool open = true;
+						if (ImGui::Begin(title.c_str(), &open))
+						{
+							auto s = source_path.string();
+							ImGui::InputText("Source Path (file or directory)", s.data(), ImGuiInputTextFlags_ReadOnly);
+							ImGui::SameLine();
+							if (ImGui::Button("..."))
+							{
+								ImGui::OpenFileDialog("Path", [this](bool ok, const std::filesystem::path& path) {
+									if (ok)
+										source_path = path;
+									}, Path::get(L"assets"));
+							}
+
+							ImGui::TextUnformatted("Destination:");
+							ImGui::TextUnformatted(destination.string().c_str());
+							ImGui::Separator();
+
+							ImGui::InputFloat3("Rotation", &rotation[0]);
+							ImGui::InputFloat("Scaling", &scaling);
+							ImGui::Checkbox("Only Animation", &only_animation);
+
+							if (ImGui::Button("OK"))
+							{
+								std::vector<std::filesystem::path> files;
+								if (std::filesystem::is_directory(source_path))
+								{
+									std::vector<std::filesystem::path> files;
+									for (auto& e : std::filesystem::directory_iterator(source_path))
+										files.push_back(e.path());
+								}
+								else if (std::filesystem::is_regular_file(source_path))
+									files.push_back(source_path);
+								for (auto& p : files)
+									graphics::import_scene(p, destination, rotation, scaling, only_animation);
+
+								close();
+							}
+							ImGui::SameLine();
+							if (ImGui::Button("Cancel"))
+								close();
+
+							ImGui::End();
+						}
+						if (!open)
+							close();
+					}
+				};
+
+				ImportSceneDialog::open(path);
 			}
 		}
 		if (in_cpp)

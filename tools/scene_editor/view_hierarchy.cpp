@@ -88,7 +88,7 @@ void View_Hierarchy::on_draw()
 				}
 				if (selection.objects.size() == 1)
 				{
-					ImGui::SetDragDropPayload("Entity", &es[0], sizeof(void*));
+					ImGui::SetDragDropPayload("Entity", &e, sizeof(void*));
 					ImGui::TextUnformatted(e->name.c_str());
 					ImGui::EndDragDropSource();
 				}

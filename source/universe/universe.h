@@ -41,6 +41,7 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cStretchedImage);
 	FLAME_UNIVERSE_TYPE(cReceiver);
 	FLAME_UNIVERSE_TYPE(cLayout);
+	FLAME_UNIVERSE_TYPE(cScrollView);
 	FLAME_UNIVERSE_TYPE(cAnimator);
 	FLAME_UNIVERSE_TYPE(cList);
 	FLAME_UNIVERSE_TYPE(cNode);

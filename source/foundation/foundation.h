@@ -125,7 +125,18 @@ namespace flame
 	{
 		char d[16];
 
-		inline std::string to_string()
+		void reset()
+		{
+			memset(d, 0, sizeof(d));
+		}
+
+		GUID& operator=(const GUID& oth)
+		{
+			memcpy(d, oth.d, sizeof(d));
+			return *this;
+		}
+
+		std::string to_string() const
 		{
 			std::string ret;
 			ret += str_hex(*(uint64*)(d));
@@ -133,7 +144,7 @@ namespace flame
 			return ret;
 		}
 
-		inline void from_string(const std::string& str)
+		void from_string(const std::string& str)
 		{
 			*(uint64*)d = s2u_hex<uint64>(str.substr(0, sizeof(uint64) * 2));
 			*(uint64*)(d + sizeof(uint64)) = s2u_hex<uint64>(str.substr(sizeof(uint64) * 2, sizeof(uint64) * 2));
@@ -166,6 +177,11 @@ namespace flame
 		std::sort(ret.begin(), ret.end());
 		return ret;
 	}
+
+	using basic_foundation_types = type_list<GUID>;
+
+	template<typename T>
+	concept basic_foundation_type = is_one_of_t<T>(basic_foundation_types());
 
 	struct Path
 	{

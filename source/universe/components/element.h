@@ -86,9 +86,9 @@ namespace flame
 		// Reflect
 		virtual void set_vertical_alignment(ElementAlignment alignment) = 0;
 		// Reflect
-		vec2 alignment_offset = vec2(0.f);
+		vec4 margin = vec4(0.f);
 		// Reflect
-		virtual void set_alignment_offset(const vec2& offset) = 0;
+		virtual void set_margin(const vec4& margin) = 0;
 
 		mat3x2 transform;
 		vec2 global_pos0() { return transform[2]; }

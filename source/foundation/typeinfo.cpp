@@ -244,6 +244,7 @@ namespace flame
 	thread_local AABB TypeInfo_AABB::v;
 	thread_local Plane TypeInfo_Plane::v;
 	thread_local Frustum TypeInfo_Frustum::v;
+	thread_local GUID TypeInfo_GUID::v;
 
 	TypeInfoDataBase::TypeInfoDataBase()
 	{
@@ -303,6 +304,7 @@ namespace flame
 		add_ti(new TypeInfo_AABB);
 		add_ti(new TypeInfo_Plane);
 		add_ti(new TypeInfo_Frustum);
+		add_ti(new TypeInfo_GUID);
 	}
 
 	bool TypeInfoDataBase::load_from_string(const std::string& content, void* library)

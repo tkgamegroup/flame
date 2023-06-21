@@ -452,7 +452,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					before_editing_values[i] = str(*(bool*)type->get_value(objs[i], offset, getter));
 				for (auto i = 0; i < num; i++)
 					type->set_value(objs[i], offset, setter, &value);
-				add_modify_history(name_hash, str(*(bool*)data));
+				add_modify_history(name_hash, str(value));
 				if (num > 1)
 					eos.sync_states->at(id) = 1;
 			}
@@ -716,6 +716,60 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				path = L"";
 				changed = true;
 				add_modify_history(name_hash, path.string());
+			}
+			if (changed)
+			{
+				if (!direct_io)
+					type->set_value(objs[0], offset, setter, data);
+				for (auto i = 1; i < num; i++)
+					type->set_value(objs[i], offset, setter, data);
+				if (num > 1)
+					eos.sync_states->at(id) = 1;
+
+				changed = 2;
+			}
+		}
+			break;
+		case DataGUID:
+		{
+			GUID& guid = *(GUID*)data;
+			auto s = guid.to_string();
+			ImGui::InputText(display_name.c_str(), s.data(), ImGuiInputTextFlags_ReadOnly);
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
+				{
+					before_editing_values.resize(num);
+					before_editing_values[0] = guid.to_string();
+					for (auto i = 1; i < num; i++)
+						before_editing_values[i] = (*(GUID*)type->get_value(objs[i], offset, getter)).to_string();
+
+					auto entity = *(EntityPtr*)payload->Data;
+
+					guid = entity->file_id;
+					changed = true;
+					add_modify_history(name_hash, guid.to_string());
+				}
+				ImGui::EndDragDropTarget();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("P"))
+			{
+				add_event([guid]() {
+					auto e = app.e_prefab ? app.e_prefab->find_with_file_id(guid) : nullptr;
+					selection.select(e, "app"_h);
+					return false;
+				});
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("X"))
+			{
+				before_editing_values.resize(1);
+				before_editing_values[0] = guid.to_string();
+
+				guid.reset();
+				changed = true;
+				add_modify_history(name_hash, guid.to_string());
 			}
 			if (changed)
 			{

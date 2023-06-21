@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<prefab file_id="4563241e6ac237f5ec6ac5de1a7429aa" name="scroll_view">
+	<components>
+		<item type_name="flame::cElement" ext="100,100" background_col="200,200,200,255" />
+		<item type_name="flame::cScrollView" content_container="44937688b563c11a672335876bf6b18f" content_viewport="4be639138fd1ab4f222de613f7c1f89a" vertical_scroller="4e629cbefb49ace56b9181bbb40c0da8" vertical_scroller_slider="40aa8e3955b67356e15b0f8bcf8731b5" />
+	</components>
+	<children>
+		<item file_id="4be639138fd1ab4f222de613f7c1f89a" name="content_viewport">
+			<components>
+				<item type_name="flame::cElement" ext="100,100" scissor="true" horizontal_alignment="Fill" vertical_alignment="Fill" />
+			</components>
+			<children>
+				<item file_id="44937688b563c11a672335876bf6b18f" name="content_container">
+					<components>
+						<item type_name="flame::cElement" ext="58,208" />
+						<item type_name="flame::cLayout" />
+					</components>
+					<children>
+						<item file_id="45036ac0cc2ae5125eb000eaad58349a" name="item">
+							<components>
+								<item type_name="flame::cElement" pos="4,4" ext="50,200" background_col="255,255,255,255" />
+							</components>
+						</item>
+					</children>
+				</item>
+			</children>
+		</item>
+		<item file_id="4e629cbefb49ace56b9181bbb40c0da8" name="scroller">
+			<components>
+				<item type_name="flame::cElement" pos="92,0" ext="8,100" background_col="100,100,100,255" horizontal_alignment="End1" vertical_alignment="Fill" />
+			</components>
+			<children>
+				<item file_id="40aa8e3955b67356e15b0f8bcf8731b5" name="slider">
+					<components>
+						<item type_name="flame::cElement" ext="8,48.0769" background_col="50,50,50,255" />
+						<item type_name="flame::cReceiver">
+							<click_action type="" />
+						</item>
+					</components>
+				</item>
+			</children>
+		</item>
+	</children>
+</prefab>

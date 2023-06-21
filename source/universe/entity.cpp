@@ -364,6 +364,7 @@ namespace flame
 			dst->remove_all_children();
 			dst->remove_all_components();
 		}
+		dst->file_id = file_id;
 		for (auto& c : components)
 		{
 			auto cc = dst->add_component(c->type_hash);

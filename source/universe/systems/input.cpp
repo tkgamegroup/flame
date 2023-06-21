@@ -98,6 +98,14 @@ namespace flame
 				if (transfer_events)
 					hovering_receiver->event_listeners.call("mouse_move"_h, mdisp);
 			}
+			if (active_receiver)
+			{
+				if (mdisp.x != 0.f || mdisp.y != 0.f)
+				{
+					if (transfer_events)
+						active_receiver->event_listeners.call("drag"_h, mdisp);
+				}
+			}
 
 			if (mpressed(Mouse_Left))
 			{

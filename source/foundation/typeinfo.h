@@ -66,11 +66,12 @@ namespace flame
 		DataFloat,
 		DataString,
 		DataWString,
-		DataPath
+		DataPath,
+		DataGUID
 	};
 
 	template<typename T>
-	concept basic_type = basic_std_type<T> || basic_math_type<T>;
+	concept basic_type = basic_std_type<T> || basic_math_type<T> || basic_foundation_type<T>;
 
 	template<typename T>
 	concept pointer_of_enum_type = pointer_type<T> && enum_type<std::remove_pointer_t<T>>;
@@ -2229,6 +2230,44 @@ namespace flame
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<Frustum*>() }));
 			if (!src) src = &v;
 			fi->call<void, const Frustum&>(obj, *(Frustum*)src);
+		}
+	};
+
+	struct TypeInfo_GUID : TypeInfo_Data
+	{
+		thread_local static GUID v;
+
+		TypeInfo_GUID() :
+			TypeInfo_Data("flame::GUID", sizeof(GUID))
+		{
+			data_type = DataGUID;
+		}
+
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			return (*(GUID*)p).to_string();
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			(*(GUID*)p).from_string(str);
+		}
+		void* get_v() const override
+		{
+			return &v;
+		}
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(GUID*)dst = fi->call<GUID>(obj);
+		}
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
+		{
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<GUID*>() }));
+			if (!src) src = &v;
+			fi->call<void, const GUID&>(obj, *(GUID*)src);
 		}
 	};
 
