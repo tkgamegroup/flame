@@ -5,8 +5,6 @@
 
 namespace flame
 {
-	struct Attribute;
-
 	struct cAnimatorPrivate : cAnimator
 	{
 		float time = 0.f;
