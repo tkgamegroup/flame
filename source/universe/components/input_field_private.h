@@ -6,5 +6,6 @@ namespace flame
 {
 	struct cInputFieldPrivate : cInputField
 	{
+		void set_text_component(const GUID& guid) override;
 	};
 }

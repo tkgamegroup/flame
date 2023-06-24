@@ -2,6 +2,10 @@
 
 namespace flame
 {
+	void cInputFieldPrivate::set_text_component(const GUID& guid)
+	{
+
+	}
 
 	struct cInputFieldCreate : cInputField::Create
 	{

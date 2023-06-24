@@ -779,7 +779,7 @@ void View_Project::init()
 								ImGui::OpenFileDialog("Path", [this](bool ok, const std::filesystem::path& path) {
 									if (ok)
 										source_path = path;
-									}, Path::get(L"assets"));
+								});
 							}
 
 							ImGui::TextUnformatted("Destination:");
@@ -795,14 +795,18 @@ void View_Project::init()
 								std::vector<std::filesystem::path> files;
 								if (std::filesystem::is_directory(source_path))
 								{
-									std::vector<std::filesystem::path> files;
 									for (auto& e : std::filesystem::directory_iterator(source_path))
 										files.push_back(e.path());
 								}
 								else if (std::filesystem::is_regular_file(source_path))
 									files.push_back(source_path);
 								for (auto& p : files)
-									graphics::import_scene(p, destination, rotation, scaling, only_animation);
+								{
+									auto ext = p.extension();
+									ext = SUW::get_lowered(ext.wstring());
+									if (is_model_file(ext))
+										graphics::import_scene(p, destination, rotation, scaling, only_animation);
+								}
 
 								close();
 							}

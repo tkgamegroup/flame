@@ -566,7 +566,7 @@ namespace flame
 
 	inline bool is_model_file(const std::filesystem::path& ext)
 	{
-		if (ext == L".obj" || ext == L".dae")
+		if (ext == L".obj" || ext == L".dae" || ext == L".gltf" || ext == L".glb" || ext == L".fbx")
 			return true;
 		return false;
 	}

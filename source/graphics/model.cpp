@@ -511,7 +511,7 @@ namespace flame
 				{
 					auto n_armature = n_components.append_child("item");
 					n_armature.append_attribute("type_name").set_value("flame::cArmature");
-					n_armature.append_attribute("armature_name").set_value(model_name.c_str());
+					n_armature.append_attribute("armature_name").set_value(("models\\" + model_name).c_str());
 					for (auto& m : model->meshes)
 					{
 						for (auto i = 0; i < m.bone_ids.size(); i++)
@@ -635,6 +635,8 @@ namespace flame
 				FbxAxisSystem our_axis_system(FbxAxisSystem::eYAxis, FbxAxisSystem::eParityOdd, FbxAxisSystem::eRightHanded);
 				if (scene->GetGlobalSettings().GetAxisSystem() != our_axis_system)
 					our_axis_system.ConvertScene(scene);
+				FbxSystemUnit our_system_unit(100.0);
+				our_system_unit.ConvertScene(scene);
 
 				FbxArray<FbxString*> anim_names;
 				scene->FillAnimStackNameArray(anim_names);
