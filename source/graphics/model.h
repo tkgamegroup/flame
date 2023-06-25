@@ -118,6 +118,6 @@ namespace flame
 		};
 
 		FLAME_GRAPHICS_API void import_scene(const std::filesystem::path& filename, const std::filesystem::path& destination = L"", const vec3& rotation = vec3(0.f), float scaling = 1.f,
-			bool only_animation = false);
+			bool only_animations = false);
 	}
 }

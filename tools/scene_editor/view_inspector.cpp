@@ -1793,11 +1793,24 @@ void View_Inspector::on_draw()
 	{
 		if (tool_button(graphics::FontAtlas::icon_s(selection.lock ? "lock"_h : "unlock"_h)))
 			app.toggle_selection_lock();
+		ImGui::SameLine();
 	}
 
 	switch (selection.type)
 	{
 	case Selection::tEntity:
+		if (editing_entities.entities.size() == 1)
+		{
+			static bool id_switch = true;
+			if (id_switch)
+				ImGui::Text("Instance ID: %s", editing_entities.entities.front()->instance_id.to_string().c_str());
+			else
+				ImGui::Text("File ID: %s", editing_entities.entities.front()->file_id.to_string().c_str());
+			if (ImGui::IsItemClicked())
+				id_switch = !id_switch;
+		}
+		else
+			ImGui::Text("%d entities", (int)editing_entities.entities.size());
 		editing_entities.manipulate();
 		break;
 	case Selection::tPath:
@@ -2158,7 +2171,7 @@ target_include_directories({0} PUBLIC "${{GLM_INCLUDE_DIR}}")
 			}
 		}
 		else
-			ImGui::Text("Multiple files selected.");
+			ImGui::TextUnformatted("Multiple files selected.");
 	}
 		break;
 	}

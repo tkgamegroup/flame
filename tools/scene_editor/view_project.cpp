@@ -753,7 +753,7 @@ void View_Project::init()
 				{
 					vec3 rotation = vec3(0.f);
 					float scaling = 1.f;
-					bool only_animation = false;
+					bool only_animations = false;
 
 					std::filesystem::path source_path; // a file or directory
 					std::filesystem::path destination;
@@ -782,20 +782,19 @@ void View_Project::init()
 								});
 							}
 
-							ImGui::TextUnformatted("Destination:");
-							ImGui::TextUnformatted(destination.string().c_str());
+							ImGui::Text("Destination: %s", destination.string().c_str());
 							ImGui::Separator();
 
 							ImGui::InputFloat3("Rotation", &rotation[0]);
 							ImGui::InputFloat("Scaling", &scaling);
-							ImGui::Checkbox("Only Animation", &only_animation);
+							ImGui::Checkbox("Only Animations", &only_animations);
 
 							if (ImGui::Button("OK"))
 							{
 								std::vector<std::filesystem::path> files;
 								if (std::filesystem::is_directory(source_path))
 								{
-									for (auto& e : std::filesystem::directory_iterator(source_path))
+									for (auto& e : std::filesystem::recursive_directory_iterator(source_path))
 										files.push_back(e.path());
 								}
 								else if (std::filesystem::is_regular_file(source_path))
@@ -805,7 +804,7 @@ void View_Project::init()
 									auto ext = p.extension();
 									ext = SUW::get_lowered(ext.wstring());
 									if (is_model_file(ext))
-										graphics::import_scene(p, destination, rotation, scaling, only_animation);
+										graphics::import_scene(p, destination, rotation, scaling, only_animations);
 								}
 
 								close();

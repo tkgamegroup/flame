@@ -414,7 +414,7 @@ namespace flame
 		}Model_release;
 		Model::Release& Model::release = Model_release;
 
-		void import_scene(const std::filesystem::path& _filename, const std::filesystem::path& _destination, const vec3& rotation, float scaling, bool only_animation)
+		void import_scene(const std::filesystem::path& _filename, const std::filesystem::path& _destination, const vec3& rotation, float scaling, bool only_animations)
 		{
 			auto filename = Path::get(_filename);
 			if (!std::filesystem::exists(filename))
@@ -727,7 +727,7 @@ namespace flame
 				}
 				scene->SetCurrentAnimationStack(nullptr);
 
-				if (only_animation)
+				if (only_animations)
 				{
 					scene->Destroy();
 					return;
@@ -1287,7 +1287,7 @@ namespace flame
 					animations.emplace_back(animation);
 				}
 
-				if (only_animation)
+				if (only_animations)
 					return;
 
 				for (auto i = 0; i < scene->mNumMaterials; i++)
