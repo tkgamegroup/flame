@@ -711,8 +711,10 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			ImGui::SameLine();
 			if (ImGui::Button("X"))
 			{
-				before_editing_values.resize(1);
+				before_editing_values.resize(num);
 				before_editing_values[0] = path.string();
+				for (auto i = 1; i < num; i++)
+					before_editing_values[i] = (*(std::filesystem::path*)type->get_value(objs[i], offset, getter)).string();
 
 				path = L"";
 				changed = true;
@@ -765,8 +767,10 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			ImGui::SameLine();
 			if (ImGui::Button("X"))
 			{
-				before_editing_values.resize(1);
+				before_editing_values.resize(num);
 				before_editing_values[0] = guid.to_string();
+				for (auto i = 1; i < num; i++)
+					before_editing_values[i] = (*(GUID*)type->get_value(objs[i], offset, getter)).to_string();
 
 				guid.reset();
 				changed = true;
@@ -1547,49 +1551,55 @@ struct EditingEntities
 							exit_editing = true;
 						}
 					}
-					static uint copied_component = 0;
-					static std::vector<std::pair<uint, std::string>> copied_values;
-					if (cc.components.size() == 1)
-					{
-						if (ImGui::Selectable("Copy Values"))
-						{
-							copied_component = cc.type_hash;
-							copied_values.clear();
-							auto obj = cc.components[0];
-							for (auto& a : ui.attributes)
-							{
-								auto& v = copied_values.emplace_back();
-								v.first = a.name_hash;
-								v.second = a.serialize(obj);
-							}
-						}
-					}
-					if (ImGui::Selectable("Paste Values"))
-					{
-						if (cc.type_hash == copied_component)
-						{
-							for (auto obj : cc.components)
-							{
-								auto changed = false;
-								for (auto& v : copied_values)
-								{
-									if (auto a = ui.find_attribute(v.first); a)
-									{
-										if (a->serialize(obj) != v.second)
-										{
-											a->unserialize(obj, v.second);
-											changed = true;
-											add_modify_history(a->name_hash, v.second);
-										}
-									}
-								}
-								if (changed)
-									ret_changed |= 2;
-							}
-						}
-					}
-					ImGui::EndPopup();
 				}
+				static uint copied_component = 0;
+				static std::vector<std::pair<uint, std::string>> copied_values;
+				if (cc.components.size() == 1)
+				{
+					if (ImGui::Selectable("Copy Values"))
+					{
+						copied_component = cc.type_hash;
+						copied_values.clear();
+						auto obj = cc.components[0];
+						for (auto& a : ui.attributes)
+						{
+							if (a.type->tag >= TagP_Beg && a.type->tag <= TagP_End)
+								continue;
+							auto& v = copied_values.emplace_back();
+							v.first = a.name_hash;
+							v.second = a.serialize(obj);
+						}
+					}
+				}
+				if (ImGui::Selectable("Paste Values"))
+				{
+					if (cc.type_hash == copied_component)
+					{
+						auto changed = false;
+						for (auto& v : copied_values)
+						{
+							if (auto a = ui.find_attribute(v.first); a)
+							{
+								before_editing_values.resize(cc.components.size());
+								for (auto i = 0; i < cc.components.size(); i++)
+									before_editing_values[i] = a->serialize(cc.components[i]);
+
+								for (auto obj : cc.components)
+								{
+									a->unserialize(obj, v.second);
+									changed = true;
+								}
+								add_modify_history(a->name_hash, v.second);
+							}
+						}
+						if (changed)
+						{
+							ret_changed |= 2;
+							staging_vectors.clear();
+						}
+					}
+				}
+				ImGui::EndPopup();
 			}
 
 			if (open && !exit_editing)

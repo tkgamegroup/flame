@@ -475,7 +475,7 @@ namespace flame
 			std::vector<std::basic_string_view<CH>> ret;
 
 			std::size_t prev = 0, pos;
-			while ((pos = str.find_first_of(delimiter, prev)) != std::string::npos)
+			while ((pos = str.find_first_of(delimiter, prev)) != std::basic_string<CH>::npos)
 			{
 				if (pos > prev)
 					ret.emplace_back(str.begin() + prev, str.begin() + pos);
@@ -499,27 +499,27 @@ namespace flame
 			return ret;
 		}
 
-		static std::vector<std::basic_string_view<CH>> split_quot(std::basic_string_view<CH> str)
+		static std::vector<std::basic_string_view<CH>> split_quot(std::basic_string_view<CH> str, CH quot = '\"', CH delimiter = ' ')
 		{
 			std::vector<std::basic_string_view<CH>> ret;
-			std::vector<int> in_quot_spaces;
+			std::vector<int> in_quot_delimiters;
 			auto in_quot = false;
 
 			for (auto i = 0; i < str.size(); i++)
 			{
 				auto ch = str[i];
-				if (in_quot && ch == ' ')
-					in_quot_spaces.push_back(i);
-				else if (ch == '\"')
+				if (in_quot && ch == delimiter)
+					in_quot_delimiters.push_back(i);
+				else if (ch == quot)
 					in_quot = !in_quot;
 
 			}
 
 			{
 				std::size_t prev = 0, pos;
-				while ((pos = str.find_first_of(" \t", prev)) != std::string::npos)
+				while ((pos = str.find_first_of(delimiter, prev)) != std::basic_string<CH>::npos)
 				{
-					if (std::find(in_quot_spaces.begin(), in_quot_spaces.end(), pos) != in_quot_spaces.end())
+					if (std::find(in_quot_delimiters.begin(), in_quot_delimiters.end(), pos) != in_quot_delimiters.end())
 					{
 						prev = pos + 1;
 						continue;
@@ -532,6 +532,43 @@ namespace flame
 					ret.emplace_back(str.begin() + prev, str.end());
 			}
 
+			return ret;
+		}
+
+		static inline int first_parentheses_token_pos(std::basic_string_view<CH> str, CH left_parenthesis, CH right_parenthesis, CH delimiter)
+		{
+			auto p = 0, lv = 0;
+			while (p < str.size())
+			{
+				auto ch = str[p];
+				if (ch == delimiter && lv == 0)
+					return p;
+				else if (p == (int)str.size() - 1 && lv == 0)
+					return p + 1;
+				else if (ch == left_parenthesis)
+					lv++;
+				else if (ch == right_parenthesis)
+					lv--;
+				p++;
+			}
+			return -1;
+		}
+
+		static std::vector<std::basic_string_view<CH>> split_parentheses(std::basic_string_view<CH> str, CH left_parenthesis, CH right_parenthesis, CH delimiter = ' ')
+		{
+			std::vector<std::basic_string_view<CH>> ret;
+			auto off = 0;
+			while (off < str.size())
+			{
+				auto n = first_parentheses_token_pos({ str.begin() + off, str.end() }, left_parenthesis, right_parenthesis, delimiter);
+				if (n == -1)
+				{
+					ret.push_back(str.substr(off));
+					break;
+				}
+				ret.push_back(str.substr(off, n));
+				off += n + 1;
+			}
 			return ret;
 		}
 

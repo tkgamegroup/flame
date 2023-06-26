@@ -215,7 +215,7 @@ namespace flame
 			else if (SUS::strip_head_if(ret, "std::pair<") || SUS::strip_head_if(ret, "std::tuple<"))
 			{
 				ret.pop_back();
-				auto args = parse_template_arguments(ret);
+				auto args = SUS::split_parentheses(ret, '<', '>', ',');
 				std::string temp;
 				for (auto& a : args)
 					temp += TypeInfo::format_name(a) + ';';
@@ -2329,6 +2329,24 @@ namespace flame
 		{
 			ui->copy_object(dst, src);
 		}
+		std::string serialize(const void* p) const override
+		{
+			std::string ret;
+			for (auto& v : ui->variables)
+			{
+				if (!ret.empty())
+					ret += ',';
+				ret += v.type->serialize((char*)p + v.offset);
+			}
+			return ret;
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			auto sp = SUS::split(str, ',');
+			assert(sp.size() == ui->variables.size());
+			for (size_t i = 0; i < sp.size(); ++i)
+				ui->variables[i].type->unserialize(std::string(sp[i]), (char*)p + ui->variables[i].offset);
+		}
 	};
 
 	struct TypeInfo_Pair : TypeInfo
@@ -2375,6 +2393,21 @@ namespace flame
 		{
 			ti1->copy(first(dst), first(src));
 			ti2->copy(second(dst), second(src));
+		}
+		std::string serialize(const void* p) const override
+		{
+			std::string ret;
+			ret += ti1->serialize(first(p));
+			ret += ',';
+			ret += ti2->serialize(second(p));
+			return ret;
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			auto sp = SUS::split(str, ',');
+			assert(sp.size() == 2);
+			ti1->unserialize(std::string(sp[0]), first(p));
+			ti2->unserialize(std::string(sp[1]), second(p));
 		}
 	};
 
@@ -2427,6 +2460,24 @@ namespace flame
 		{
 			for (auto& t : tis)
 				t.first->copy((char*)dst + t.second, (char*)src + t.second);
+		}
+		std::string serialize(const void* p) const override
+		{
+			std::string ret;
+			for (auto& t : tis)
+			{
+				if (!ret.empty())
+					ret += ',';
+				ret += t.first->serialize((char*)p + t.second);
+			}
+			return ret;
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			auto sp = SUS::split(str, ',');
+			assert(sp.size() == tis.size());
+			for (auto i = 0; i < tis.size(); i++)
+				tis[i].first->unserialize(std::string(sp[i]), (char*)p + tis[i].second);
 		}
 	};
 
@@ -2550,8 +2601,13 @@ namespace flame
 		}
 		void unserialize(const std::string& str, void* p) const override
 		{
-			auto sp = SUS::to_string_vector(SUS::split(str));
-
+			auto& vec = *(std::vector<int>*)p;
+			for (auto v : SUS::split(str, ','))
+			{
+				int i;
+				ti->unserialize(std::string(v), &i);
+				vec.push_back(i);
+			}
 		}
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
@@ -2594,12 +2650,31 @@ namespace flame
 		{
 			std::string ret;
 			auto& vec = *(std::vector<char>*)p;
-
+			auto len = vec.size() / ti->size;
+			for (auto i = 0; i < len; i++)
+			{
+				auto s = ti->serialize(vec.data() + i * ti->size);
+				if (ti->vec_size > 1 || ti->col_size > 1)
+					s = '(' + s + ')';
+				if (!ret.empty())
+					ret += ',';
+				ret += s;
+			}
 			return ret;
 		}
 		void unserialize(const std::string& str, void* p) const override
 		{
-
+			auto& vec = *(std::vector<char>*)p;
+			for (auto v : SUS::split_parentheses(str, '(', ')', ','))
+			{
+				if (ti->vec_size > 1 || ti->col_size > 1)
+					v = v.substr(1, v.size() - 2);
+				vec.resize(vec.size() + ti->size);
+				auto pd = vec.data() + vec.size() - ti->size;
+				if (!ti->pod)
+					ti->create(pd);
+				ti->unserialize(std::string(v), pd);
+			}
 		}
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
@@ -2643,6 +2718,34 @@ namespace flame
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVU);
 			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
 		}
+		std::string serialize(const void* p) const override
+		{
+			std::string ret;
+			auto& vec = *(std::vector<char>*)p;
+			auto len = vec.size() / ti->size;
+			for (auto i = 0; i < len; i++)
+			{
+				auto s = ti->serialize(vec.data() + i * ti->size);
+				s = '(' + s + ')';
+				if (!ret.empty())
+					ret += ',';
+				ret += s;
+			}
+			return ret;
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			auto& vec = *(std::vector<char>*)p;
+			for (auto v : SUS::split_parentheses(str, '(', ')', ','))
+			{
+				v = v.substr(1, v.size() - 2);
+				vec.resize(vec.size() + ti->size);
+				auto pd = vec.data() + vec.size() - ti->size;
+				if (!ti->pod)
+					ti->create(pd);
+				ti->unserialize(std::string(v), pd);
+			}
+		}
 
 		TypeInfo* get_wrapped() const override
 		{
@@ -2677,6 +2780,34 @@ namespace flame
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVR);
 			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
 		}
+		std::string serialize(const void* p) const override
+		{
+			std::string ret;
+			auto& vec = *(std::vector<char>*)p;
+			auto len = vec.size() / ti->size;
+			for (auto i = 0; i < len; i++)
+			{
+				auto s = ti->serialize(vec.data() + i * ti->size);
+				s = '(' + s + ')';
+				if (!ret.empty())
+					ret += ',';
+				ret += s;
+			}
+			return ret;
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			auto& vec = *(std::vector<char>*)p;
+			for (auto v : SUS::split_parentheses(str, '(', ')', ','))
+			{
+				v = v.substr(1, v.size() - 2);
+				vec.resize(vec.size() + ti->size);
+				auto pd = vec.data() + vec.size() - ti->size;
+				if (!ti->pod)
+					ti->create(pd);
+				ti->unserialize(std::string(v), pd);
+			}
+		}
 
 		TypeInfo* get_wrapped() const override
 		{
@@ -2710,6 +2841,34 @@ namespace flame
 		{
 			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVT);
 			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
+		}
+		std::string serialize(const void* p) const override
+		{
+			std::string ret;
+			auto& vec = *(std::vector<char>*)p;
+			auto len = vec.size() / ti->size;
+			for (auto i = 0; i < len; i++)
+			{
+				auto s = ti->serialize(vec.data() + i * ti->size);
+				s = '(' + s + ')';
+				if (!ret.empty())
+					ret += ',';
+				ret += s;
+			}
+			return ret;
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			auto& vec = *(std::vector<char>*)p;
+			for (auto v : SUS::split_parentheses(str, '(', ')', ','))
+			{
+				v = v.substr(1, v.size() - 2);
+				vec.resize(vec.size() + ti->size);
+				auto pd = vec.data() + vec.size() - ti->size;
+				if (!ti->pod)
+					ti->create(pd);
+				ti->unserialize(std::string(v), pd);
+			}
 		}
 
 		TypeInfo* get_wrapped() const override

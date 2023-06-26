@@ -13,7 +13,7 @@ TypeInfoDataBase db;
 TypeTag parse_vector(std::string& name)
 {
 	SUS::strip_head_if(name, "std::vector<");
-	name = name.substr(0, first_template_argument_pos(name));
+	name = name.substr(0, SUS::first_parentheses_token_pos(name, '<', '>', ','));
 
 	auto is_pointer = false;
 	auto is_pair = false;
@@ -22,20 +22,20 @@ TypeTag parse_vector(std::string& name)
 	if (SUS::strip_head_if(name, "std::unique_ptr<"))
 	{
 		is_pointer = true;
-		name = name.substr(0, first_template_argument_pos(name));
+		name = name.substr(0, SUS::first_parentheses_token_pos(name, '<', '>', ','));
 	}
 	else if (SUS::strip_head_if(name, "std::pair<"))
 	{
 		is_pair = true;
 		name.pop_back();
-		auto args = parse_template_arguments(name);
+		auto args = SUS::split_parentheses(name, '<', '>', ',');
 		name = TypeInfo::format_name(args[0]) + ";" + TypeInfo::format_name(args[1]);
 	}
 	else if (SUS::strip_head_if(name, "std::tuple<"))
 	{
 		is_tuple = true;
 		name.pop_back();
-		auto args = parse_template_arguments(name);
+		auto args = SUS::split_parentheses(name, '<', '>', ',');
 		std::string temp;
 		for (auto& a : args)
 			temp += TypeInfo::format_name(a) + ';';
@@ -1212,9 +1212,15 @@ process:
 				if (obj)
 				{
 					for (auto& vi : u.variables)
-						vi.default_value = vi.type->serialize((char*)obj + vi.offset);
+					{
+						if (vi.type->tag == TagE || vi.type->tag == TagD)
+							vi.default_value = vi.type->serialize((char*)obj + vi.offset);
+					}
 					for (auto& a : u.attributes)
-						a.default_value = a.var_idx != -1 ? a.var()->default_value : a.serialize(obj);
+					{
+						if (a.type->tag == TagE || a.type->tag == TagD)
+							a.default_value = a.var_idx != -1 ? a.var()->default_value : a.serialize(obj);
+					}
 
 					if (auto fi = u.find_function("dtor"_h); fi && fi->rva)
 						fi->call<void>(obj);
