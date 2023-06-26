@@ -35,7 +35,7 @@ namespace flame
 
 	static std::string rotate_name(const std::string& name)
 	{
-		auto sp = SUS::split(name, '_');
+		auto sp = SUS::to_string_vector(SUS::split(name, '_'));
 		std::rotate(sp.rbegin(), sp.rbegin() + 1, sp.rend());
 		for (auto& t : sp)
 		{

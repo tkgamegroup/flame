@@ -127,7 +127,7 @@ namespace flame
 		else
 		{
 			memset(p, 0, size);
-			if (!is_pod)
+			if (!pod)
 			{
 				for (auto& v : variables)
 					v.type->create((char*)p + v.offset);
@@ -147,7 +147,7 @@ namespace flame
 			fi->call<void>(p);
 		else
 		{
-			if (!is_pod)
+			if (!pod)
 			{
 				for (auto& v : variables)
 					v.type->destroy((char*)p + v.offset, false);
@@ -163,7 +163,7 @@ namespace flame
 			fi->call<void*>(dst, src);
 		else
 		{
-			if (!is_pod)
+			if (!pod)
 			{
 				for (auto& v : variables)
 					v.type->copy((char*)dst + v.offset, (char*)src + v.offset);
@@ -176,7 +176,7 @@ namespace flame
 	UdtInfo* UdtInfo::transform_to_serializable() const
 	{
 		auto ret = new UdtInfo;
-		ret->is_pod = is_pod;
+		ret->pod = pod;
 		for (auto& svi : variables)
 		{
 			auto& dvi = ret->variables.emplace_back();
@@ -192,11 +192,11 @@ namespace flame
 			case TagPR:
 			case TagPT:
 				dvi.type = TypeInfo::get(TagD, "std::string");
-				ret->is_pod = false;
+				ret->pod = false;
 				break;
 			case TagVPU:
 				dvi.type = TypeInfo::get(TagVD, "std::string");
-				ret->is_pod = false;
+				ret->pod = false;
 				break;
 			}
 			dvi.offset = ret->size;
@@ -315,7 +315,7 @@ namespace flame
 			return false;
 
 		auto read_ti = [&](pugi::xml_attribute a) {
-			auto sp = SUS::split(a.value(), '@');
+			auto sp = SUS::to_string_vector(SUS::split(a.value(), '@'));
 			TypeTag tag;
 			TypeInfo::unserialize_t(sp[0], tag, *this);
 			return TypeInfo::get(tag, sp[1], *this);
@@ -351,7 +351,7 @@ namespace flame
 			u.size = n_udt.attribute("size").as_uint();
 			if (auto a = n_udt.attribute("base_class_name"); a)
 				u.base_class_name = a.value();
-			u.is_pod = n_udt.attribute("is_pod").as_bool();
+			u.pod = n_udt.attribute("pod").as_bool();
 			for (auto n_variable : n_udt.child("variables"))
 			{
 				auto& v = u.variables.emplace_back();
@@ -598,7 +598,7 @@ namespace flame
 					n_udt.append_attribute("size").set_value(ui.second->size);
 				if (!ui.second->base_class_name.empty())
 					n_udt.append_attribute("base_class_name").set_value(ui.second->base_class_name.c_str());
-				n_udt.append_attribute("is_pod").set_value(ui.second->is_pod);
+				n_udt.append_attribute("pod").set_value(ui.second->pod);
 				if (!ui.second->variables.empty())
 				{
 					auto n_variables = n_udt.prepend_child("variables");

@@ -307,10 +307,10 @@ namespace flame
 				if (sp.front() == "__add_line__")
 				{
 					if (sp.size() > 1)
-						additional_lines.push_back(sp.back());
+						additional_lines.push_back(std::string(sp.back()));
 					continue;
 				}
-				defines.emplace_back(sp.front(), sp.size() > 1 ? sp.back() : "");
+				defines.emplace_back(std::string(sp.front()), sp.size() > 1 ? std::string(sp.back()) : "");
 			}
 			for (auto& d : defines)
 			{
@@ -1379,7 +1379,7 @@ namespace flame
 					for (auto& s : sp)
 					{
 						auto form_define = [&]() {
-							auto ret = scope_and_name[1];
+							auto ret = std::string(scope_and_name[1]);
 							if (dst_and_value.size() > 1)
 							{
 								ret += '=';

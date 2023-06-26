@@ -1097,17 +1097,17 @@ process:
 					{
 						fi.name = "dctor";
 						has_dctor = true;
-						u.is_pod = false;
+						u.pod = false;
 					}
 					if (fi.name == "dtor")
 					{
 						has_dtor = true;
-						u.is_pod = false;
+						u.pod = false;
 					}
 					if (fi.voff > 0)
-						u.is_pod = false;
+						u.pod = false;
 					if (fi.name_hash == "create"_h && fi.metas.get("static"_h))
-						u.is_pod = false;
+						u.pod = false;
 				}
 				if (has_dtor && !has_dctor)
 				{
@@ -1126,14 +1126,14 @@ process:
 				{
 					if (!is_in(v.type->tag, TagE, TagD))
 					{
-						u.is_pod = false;
+						u.pod = false;
 						break;
 					}
 					if (v.type == TypeInfo::get<std::string>() ||
 						v.type == TypeInfo::get<std::wstring>() ||
 						v.type == TypeInfo::get<std::filesystem::path>())
 					{
-						u.is_pod = false;
+						u.pod = false;
 						break;
 					}
 				}

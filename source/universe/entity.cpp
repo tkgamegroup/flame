@@ -395,7 +395,7 @@ namespace flame
 	{
 		auto sp = SUS::split(target, '|');
 
-		GUID guid; guid.from_string(sp.front());
+		GUID guid; guid.from_string(std::string(sp.front()));
 		auto te = find_with_file_id(guid);
 		if (!te)
 			return ModificationWrong;
@@ -409,21 +409,21 @@ namespace flame
 		if (name == "add_child")
 		{
 			type = ModificationEntityAdd;
-			out.d.guid.from_string(sp[1]);
+			out.d.guid.from_string(std::string(sp[1]));
 		}
 		else if (name == "add")
 		{
 			type = ModificationComponentAdd;
-			out.d.hash = sh(sp[1].c_str());
+			out.d.hash = sh(sp[1].data());
 		}
 		else if (name == "remove")
 		{
 			type = ModificationComponentRemove;
-			out.d.hash = sh(sp[1].c_str());
+			out.d.hash = sh(sp[1].data());
 		}
 		else if (sp.size() == 3)
 		{
-			auto hash = sh(sp[1].c_str());
+			auto hash = sh(sp[1].data());
 			obj = te->get_component(hash);
 			ui = find_udt(hash);
 			if (!obj)

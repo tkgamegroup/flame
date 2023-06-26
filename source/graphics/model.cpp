@@ -346,7 +346,7 @@ namespace flame
 					pugi::xml_node doc_root;
 					if (!doc.load_string(src.to_string().c_str()) || (doc_root = doc.first_child()).name() != std::string("model"))
 					{
-						printf("model format is incorrect: %s\n", filename.string().c_str());
+						wprintf(L"model format is incorrect: %s\n", _filename.c_str());
 						delete ret;
 						return nullptr;
 					}
@@ -434,6 +434,7 @@ namespace flame
 			auto ext = SUW::get_lowered(filename.extension().wstring());
 			filename.replace_extension(L".fmod");
 			auto model_name = filename.filename().string();
+			auto model_name_without_ext = filename.filename().stem().string();
 
 			std::vector<std::unique_ptr<MaterialT>> materials;
 			std::vector<std::unique_ptr<AnimationT>> animations;
@@ -451,7 +452,7 @@ namespace flame
 							ch = '_';
 					}
 				}
-				ret = std::format("{}.{}", ret, ext);
+				ret = ret + '.' + ext;
 				return ret;
 			};
 
@@ -620,13 +621,15 @@ namespace flame
 				auto importer = FbxImporter::Create(sdk_manager, "");
 				if (!importer->Initialize(_filename.string().c_str(), -1, sdk_manager->GetIOSettings()))
 				{
-					printf("cannot import model %s: %s\n", _filename.string().c_str(), importer->GetStatus().GetErrorString());
+					wprintf(L"cannot import model %s: ", _filename.c_str());
+					printf("%s\n", importer->GetStatus().GetErrorString());
 					return;
 				}
 
 				if (!importer->Import(scene))
 				{
-					printf("cannot import model %s: %s\n", _filename.string().c_str(), importer->GetStatus().GetErrorString());
+					wprintf(L"cannot import model %s: ", _filename.c_str());
+					printf("%s\n", importer->GetStatus().GetErrorString());
 					return;
 				}
 
@@ -720,7 +723,7 @@ namespace flame
 
 					if (!std::filesystem::exists(animations_destination))
 						std::filesystem::create_directories(animations_destination);
-					auto fn = animations_destination / format_res_name(anim_stack->GetName(), "fani", i);
+					auto fn = animations_destination / (model_name_without_ext + '_' + format_res_name(anim_stack->GetName(), "fani", i));
 					animation->save(fn);
 					animation->filename = Path::reverse(fn);
 					animations.emplace_back(animation);
@@ -740,7 +743,7 @@ namespace flame
 				}
 				catch (std::runtime_error)
 				{
-					printf("FBX SDK: cannot triangulate %s\n", _filename.string().c_str());
+					wprintf(L"FBX SDK: cannot triangulate %s\n", _filename.c_str());
 					return;
 				}
 
@@ -1247,7 +1250,8 @@ namespace flame
 				auto scene = importer.ReadFile(_filename.string(), load_flags);
 				if (!scene)
 				{
-					printf("cannot import model %s: %s\n", _filename.string().c_str(), importer.GetErrorString());
+					wprintf(L"cannot import model %s: ", _filename.c_str());
+					printf("%s\n", importer.GetErrorString());
 					return;
 				}
 
@@ -1281,7 +1285,7 @@ namespace flame
 						}
 					}
 
-					auto fn = parent_path / format_res_name(ai_ani->mName.C_Str(), "fani", i);
+					auto fn = parent_path / (model_name_without_ext + '_' + format_res_name(ai_ani->mName.C_Str(), "fani", i));
 					animation->save(fn);
 					animation->filename = Path::reverse(fn);
 					animations.emplace_back(animation);

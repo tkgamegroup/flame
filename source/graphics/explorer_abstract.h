@@ -178,11 +178,12 @@ namespace flame
 					n->read = true;
 					for (auto& p : paths)
 					{
-						auto sp = SUW::split(p, '=');
+						auto s = p.wstring();
+						auto sp = SUW::split(s, L'=');
 						if (sp.size() == 1)
 							n->children.emplace_back(new FolderTreeNode(p));
 						else if (sp.size() == 2)
-							n->children.emplace_back(new FolderTreeNode(w2s(sp[1]), sp[0]));
+							n->children.emplace_back(new FolderTreeNode(w2s(std::wstring(sp[1])), sp[0]));
 					}
 					folder_tree.reset(n);
 				}
@@ -281,10 +282,10 @@ namespace flame
 							}
 							std::sort(dirs.begin(), dirs.end(), [](const auto& a, const auto& b) {
 								return a->path < b->path;
-							});
+								});
 							std::sort(files.begin(), files.end(), [](const auto& a, const auto& b) {
 								return a->path < b->path;
-							});
+								});
 							for (auto i : dirs)
 							{
 								if (item_created_callback)
@@ -317,7 +318,8 @@ namespace flame
 			void ping(const std::filesystem::path& path)
 			{
 				std::filesystem::path p;
-				auto sp = SUW::split(path.wstring(), '#');
+				auto s = path.wstring();
+				auto sp = SUW::split(s, '#');
 				if (sp.size() > 1)
 					p = sp.front();
 				else

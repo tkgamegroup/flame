@@ -686,12 +686,10 @@ namespace flame
 				auto auto_mipmapping = false;
 				float alpha_test = 0.f;
 				ImageUsageFlags additional_usage = ImageUsageNone;
-				auto sp = SUS::split(filename.filename().stem().string(), '%');
-				if (sp.size() > 1)
 				{
-					for (auto i = 1; i < sp.size(); i++)
+					auto s = filename.filename().stem().string();
+					for (auto t : SUS::to_string_vector(SUS::split(s, '%')))
 					{
-						auto t = sp[i];
 						if (t == "s")
 							srgb = true;
 						else if (t == "m")

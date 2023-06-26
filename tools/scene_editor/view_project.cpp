@@ -1267,7 +1267,8 @@ void View_Project::on_draw()
 								auto& value = *(std::filesystem::path*)a.get_value(c.get(), true);
 								if (!value.empty())
 								{
-									auto abs_value = Path::get(std::filesystem::path(SUW::split(value.wstring(), '#').front()));
+									auto s = value.wstring();
+									auto abs_value = Path::get(std::filesystem::path(SUW::split(s, '#').front()));
 									for (auto& asset : changed_assets)
 									{
 										if (abs_value == asset.second)

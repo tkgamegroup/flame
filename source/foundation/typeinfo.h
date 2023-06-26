@@ -64,11 +64,20 @@ namespace flame
 		DataShort,
 		DataLong, // long long
 		DataFloat,
+		DataGUID,
 		DataString,
 		DataWString,
 		DataPath,
-		DataGUID
+
+		DataTypePod_Beg = DataBool,
+		DataTypePod_End = DataGUID,
+		DataTypeCount
 	};
+
+	inline bool is_pod(DataType dt)
+	{
+		return dt >= DataTypePod_Beg && dt <= DataTypePod_End;
+	}
 
 	template<typename T>
 	concept basic_type = basic_std_type<T> || basic_math_type<T> || basic_foundation_type<T>;
@@ -153,6 +162,7 @@ namespace flame
 		TypeTag tag;
 		std::string name;
 		uint size;
+		bool pod = true;
 
 		inline static std::string format_name(std::string_view name)
 		{
@@ -405,9 +415,11 @@ namespace flame
 
 		void from_string(const std::string& str)
 		{
-			for (auto& t : SUS::split(SUS::get_trimed(str)))
+			for (auto t : SUS::split(str))
 			{
-				auto sp = SUS::split(t, '=');
+				if (t.empty())
+					continue;
+				auto sp = SUS::to_string_vector(SUS::split(t, '='));
 				uint key;
 				if (isdigit(sp[0][0]))
 					key = s2t<uint>(sp[0]);
@@ -561,6 +573,8 @@ namespace flame
 		inline int var_off() const;
 		inline void* get_value(void* obj, bool use_copy = false) const;
 		inline void set_value(void* obj, void* src = nullptr) const;
+		inline bool compare(void* obj0, void* obj1) const;
+		inline bool compare_to_value(void* obj0, void* val) const;
 		inline std::string serialize(void* obj) const;
 		inline void unserialize(void* obj, const std::string& str) const;
 	};
@@ -572,7 +586,7 @@ namespace flame
 		uint name_hash;
 		uint size = 0;
 		std::string base_class_name;
-		bool is_pod = true;
+		bool pod = true;
 		std::vector<VariableInfo> variables;
 		std::vector<FunctionInfo> functions;
 		std::vector<Attribute> attributes;
@@ -654,7 +668,7 @@ namespace flame
 			return &attributes[it->second];
 		}
 
-		const Attribute* find_attribute(const std::vector<std::string>& chain, voidptr& obj, uint* out_index = nullptr) const;
+		const Attribute* find_attribute(const std::vector<std::string_view>& chain, voidptr& obj, uint* out_index = nullptr) const;
 
 		FLAME_FOUNDATION_API void* create_object(void* p = nullptr) const;
 		FLAME_FOUNDATION_API void destroy_object(void* p, bool free_memory = true) const;
@@ -684,6 +698,20 @@ namespace flame
 	void Attribute::set_value(void* obj, void* src) const
 	{
 		type->set_value(obj, var_off(), setter_idx != -1 ? &ui->functions[setter_idx] : nullptr, src);
+	}
+
+	bool Attribute::compare(void* obj0, void* obj1) const
+	{
+		auto v = type->create();
+		type->copy(v, get_value(obj0));
+		auto ret = type->compare(v, get_value(obj1));
+		type->destroy(v);
+		return ret;
+	}
+
+	bool Attribute::compare_to_value(void* obj0, void* val) const
+	{
+		return type->compare(get_value(obj0), val);
 	}
 
 	std::string Attribute::serialize(void* obj) const
@@ -1910,183 +1938,6 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_string : TypeInfo_Data
-	{
-		thread_local static std::string v;
-
-		TypeInfo_string() :
-			TypeInfo_Data("std::string", sizeof(std::string))
-		{
-			data_type = DataString;
-		}
-
-		void* create(void* p = nullptr) const override
-		{
-			if (!p)
-				return new std::string;
-			new(p) std::string;
-			return p;
-		}
-		void destroy(void* p, bool free_memory = true) const override
-		{
-			((std::string*)p)->~basic_string();
-			if (free_memory)
-				free(p);
-		}
-		void copy(void* dst, const void* src) const override
-		{
-			*(std::string*)dst = *(src ? (std::string*)src : &v);
-		}
-		bool compare(const void* d1, const void* d2) const override
-		{
-			return *(std::string*)d1 == *(std::string*)d2;
-		}
-		std::string serialize(const void* p) const override
-		{
-			if (!p) p = &v;
-			return *(std::string*)p;
-		}
-		void unserialize(const std::string& str, void* p) const override
-		{
-			if (!p) p = &v;
-			*(std::string*)p = str;
-		}
-		void* get_v() const override
-		{
-			return &v;
-		}
-		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
-		{
-			assert(fi->return_type == this);
-			if (!dst) dst = &v;
-			*(std::string*)dst = fi->call<std::string>(obj);
-		}
-		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
-		{
-			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<std::string*>() }));
-			if (!src) src = &v;
-			fi->call<void, const std::string&>(obj, *(std::string*)src);
-		}
-	};
-
-	struct TypeInfo_wstring : TypeInfo_Data
-	{
-		thread_local static std::wstring v;
-
-		TypeInfo_wstring() :
-			TypeInfo_Data("std::wstring", sizeof(std::string))
-		{
-			data_type = DataWString;
-		}
-
-		void* create(void* p = nullptr) const override
-		{
-			if (!p)
-				return new std::wstring;
-			new(p) std::wstring;
-			return p;
-		}
-		void destroy(void* p, bool free_memory = true) const override
-		{
-			((std::wstring*)p)->~basic_string();
-			if (free_memory)
-				free(p);
-		}
-		void copy(void* dst, const void* src) const override
-		{
-			*(std::wstring*)dst = *(src ? (std::wstring*)src : &v);
-		}
-		bool compare(const void* d1, const void* d2) const override
-		{
-			return *(std::wstring*)d1 == *(std::wstring*)d2;
-		}
-		std::string serialize(const void* p) const override
-		{
-			if (!p) p = &v;
-			return w2s(*(std::wstring*)p);
-		}
-		void unserialize(const std::string& str, void* p) const override
-		{
-			if (!p) p = &v;
-			*(std::wstring*)p = s2w(str);
-		}
-		void* get_v() const override
-		{
-			return &v;
-		}
-		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
-		{
-			assert(fi->return_type == this);
-			if (!dst) dst = &v;
-			*(std::wstring*)dst = fi->call<std::wstring>(obj);
-		}
-		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
-		{
-			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<std::wstring*>() }));
-			if (!src) src = &v;
-			fi->call<void, const std::wstring&>(obj, *(std::wstring*)src);
-		}
-	};
-
-	struct TypeInfo_path : TypeInfo_Data
-	{
-		thread_local static std::filesystem::path v;
-
-		TypeInfo_path() :
-			TypeInfo_Data("std::filesystem::path", sizeof(std::filesystem::path))
-		{
-			data_type = DataPath;
-		}
-
-		void* create(void* p = nullptr) const override
-		{
-			if (!p)
-				return new std::filesystem::path;
-			new(p) std::filesystem::path;
-			return p;
-		}
-		void destroy(void* p, bool free_memory = true) const override
-		{
-			((std::filesystem::path*)p)->~path();
-			if (free_memory)
-				free(p);
-		}
-		void copy(void* dst, const void* src) const override
-		{
-			*(std::filesystem::path*)dst = *(src ? (std::filesystem::path*)src : &v);
-		}
-		bool compare(const void* d1, const void* d2) const override
-		{
-			return *(std::filesystem::path*)d1 == *(std::filesystem::path*)d2;
-		}
-		std::string serialize(const void* p) const override
-		{
-			if (!p) p = &v;
-			return (*(std::filesystem::path*)p).string();
-		}
-		void unserialize(const std::string& str, void* p) const override
-		{
-			if (!p) p = &v;
-			*(std::filesystem::path*)p = str;
-		}
-		void* get_v() const override
-		{
-			return &v;
-		}
-		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
-		{
-			assert(fi->return_type == this);
-			if (!dst) dst = &v;
-			*(std::filesystem::path*)dst = fi->call<std::filesystem::path>(obj);
-		}
-		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
-		{
-			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<std::filesystem::path*>() }));
-			if (!src) src = &v;
-			fi->call<void, const std::filesystem::path&>(obj, *(std::filesystem::path*)src);
-		}
-	};
-
 	struct TypeInfo_Rect : TypeInfo_Data
 	{
 		thread_local static Rect v;
@@ -2271,6 +2122,186 @@ namespace flame
 		}
 	};
 
+	struct TypeInfo_string : TypeInfo_Data
+	{
+		thread_local static std::string v;
+
+		TypeInfo_string() :
+			TypeInfo_Data("std::string", sizeof(std::string))
+		{
+			data_type = DataString;
+			pod = false;
+		}
+
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return new std::string;
+			new(p) std::string;
+			return p;
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			((std::string*)p)->~basic_string();
+			if (free_memory)
+				free(p);
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			*(std::string*)dst = *(src ? (std::string*)src : &v);
+		}
+		bool compare(const void* d1, const void* d2) const override
+		{
+			return *(std::string*)d1 == *(std::string*)d2;
+		}
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			return *(std::string*)p;
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			*(std::string*)p = str;
+		}
+		void* get_v() const override
+		{
+			return &v;
+		}
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(std::string*)dst = fi->call<std::string>(obj);
+		}
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
+		{
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<std::string*>() }));
+			if (!src) src = &v;
+			fi->call<void, const std::string&>(obj, *(std::string*)src);
+		}
+	};
+
+	struct TypeInfo_wstring : TypeInfo_Data
+	{
+		thread_local static std::wstring v;
+
+		TypeInfo_wstring() :
+			TypeInfo_Data("std::wstring", sizeof(std::string))
+		{
+			data_type = DataWString;
+			pod = false;
+		}
+
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return new std::wstring;
+			new(p) std::wstring;
+			return p;
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			((std::wstring*)p)->~basic_string();
+			if (free_memory)
+				free(p);
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			*(std::wstring*)dst = *(src ? (std::wstring*)src : &v);
+		}
+		bool compare(const void* d1, const void* d2) const override
+		{
+			return *(std::wstring*)d1 == *(std::wstring*)d2;
+		}
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			return w2s(*(std::wstring*)p);
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			*(std::wstring*)p = s2w(str);
+		}
+		void* get_v() const override
+		{
+			return &v;
+		}
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(std::wstring*)dst = fi->call<std::wstring>(obj);
+		}
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
+		{
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<std::wstring*>() }));
+			if (!src) src = &v;
+			fi->call<void, const std::wstring&>(obj, *(std::wstring*)src);
+		}
+	};
+
+	struct TypeInfo_path : TypeInfo_Data
+	{
+		thread_local static std::filesystem::path v;
+
+		TypeInfo_path() :
+			TypeInfo_Data("std::filesystem::path", sizeof(std::filesystem::path))
+		{
+			data_type = DataPath;
+			pod = false;
+		}
+
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return new std::filesystem::path;
+			new(p) std::filesystem::path;
+			return p;
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			((std::filesystem::path*)p)->~path();
+			if (free_memory)
+				free(p);
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			*(std::filesystem::path*)dst = *(src ? (std::filesystem::path*)src : &v);
+		}
+		bool compare(const void* d1, const void* d2) const override
+		{
+			return *(std::filesystem::path*)d1 == *(std::filesystem::path*)d2;
+		}
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			return (*(std::filesystem::path*)p).string();
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			*(std::filesystem::path*)p = str;
+		}
+		void* get_v() const override
+		{
+			return &v;
+		}
+		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
+		{
+			assert(fi->return_type == this);
+			if (!dst) dst = &v;
+			*(std::filesystem::path*)dst = fi->call<std::filesystem::path>(obj);
+		}
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
+		{
+			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<std::filesystem::path*>() }));
+			if (!src) src = &v;
+			fi->call<void, const std::filesystem::path&>(obj, *(std::filesystem::path*)src);
+		}
+	};
+
 	struct TypeInfo_Udt : TypeInfo
 	{
 		UdtInfo* ui = nullptr;
@@ -2280,7 +2311,10 @@ namespace flame
 		{
 			ui = find_udt(sh(name.c_str()), db);
 			if (ui)
+			{
 				size = ui->size;
+				pod = ui->pod;
+			}
 		}
 
 		void* create(void* p = nullptr) const override
@@ -2305,11 +2339,12 @@ namespace flame
 		TypeInfo_Pair(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TagR, base_name, 0)
 		{
-			auto sp = SUS::split(name, ';');
+			auto sp = SUS::to_string_vector(SUS::split(name, ';'));
 			assert(sp.size() == 2);
 			ti1 = get(sp[0], db);
 			ti2 = get(sp[1], db);
 			size = ti1->size + ti2->size;
+			pod = ti1->pod && ti2->pod;
 		}
 
 		void* first(const void* p) const
@@ -2350,7 +2385,7 @@ namespace flame
 		TypeInfo_Tuple(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TagT, base_name, 0)
 		{
-			auto sp = SUS::split(name, ';');
+			auto sp = SUS::to_string_vector(SUS::split(name, ';'));
 			auto align = 4U;
 			for (auto& t : sp)
 			{
@@ -2369,6 +2404,7 @@ namespace flame
 				auto& t = tis[i];
 				t.second = size;
 				size += max(t.first->size, align);
+				pod = pod && t.first->pod;
 			}
 		}
 
@@ -2399,6 +2435,7 @@ namespace flame
 		TypeInfo_VirtualUdt(std::string_view base_name, TypeInfoDataBase& db) :
 			TypeInfo(TagO, base_name, 0)
 		{
+			pod = false;
 		}
 
 		void* create(void* p = nullptr) const override;
@@ -2454,40 +2491,13 @@ namespace flame
 		}
 	};
 
-	struct TypeInfo_VectorOfEnum : TypeInfo
+	inline void copy_pod_vector(void* dst, const void* src)
 	{
-		TypeInfo_Enum* ti = nullptr;
-
-		TypeInfo_VectorOfEnum(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagVE, base_name, sizeof(std::vector<int>))
-		{
-			ti = (TypeInfo_Enum*)get(TagE, name, db);
-		}
-
-		void* create(void* p = nullptr) const override
-		{
-			if (!p)
-				return new std::vector<int>();
-			new(p) std::vector<char>();
-			return p;
-		}
-		void copy(void* dst, const void* src) const override
-		{
-			auto& dst_vec = *(std::vector<int>*)dst;
-			auto& src_vec = *(std::vector<int>*)src;
-			dst_vec = src_vec;
-		}
-		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
-		{
-			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVE);
-			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
-		}
-
-		TypeInfo* get_wrapped() const override
-		{
-			return ti;
-		}
-	};
+		auto& dst_vec = *(std::vector<char>*)dst;
+		auto& src_vec = *(std::vector<char>*)src;
+		dst_vec.resize(src_vec.size());
+		memcpy(dst_vec.data(), src_vec.data(), src_vec.size());
+	}
 
 	inline void copy_npod_vector(void* dst, const void* src, TypeInfo* ti)
 	{
@@ -2504,14 +2514,15 @@ namespace flame
 			ti->copy((char*)dst_vec.data() + i * ti->size, (char*)src_vec.data() + i * ti->size);
 	}
 
-	struct TypeInfo_VectorOfData : TypeInfo
+	struct TypeInfo_VectorOfEnum : TypeInfo
 	{
-		TypeInfo_Data* ti = nullptr;
+		TypeInfo_Enum* ti = nullptr;
 
-		TypeInfo_VectorOfData(std::string_view base_name, TypeInfoDataBase& db) :
-			TypeInfo(TagVD, base_name, sizeof(std::vector<int>))
+		TypeInfo_VectorOfEnum(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVE, base_name, sizeof(std::vector<int>))
 		{
-			ti = (TypeInfo_Data*)get(TagD, name, db);
+			ti = (TypeInfo_Enum*)get(TagE, name, db);
+			pod = false;
 		}
 
 		void* create(void* p = nullptr) const override
@@ -2523,7 +2534,72 @@ namespace flame
 		}
 		void copy(void* dst, const void* src) const override
 		{
-			copy_npod_vector(dst, src, ti);
+			copy_pod_vector(dst, src);
+		}
+		std::string serialize(const void* p) const override
+		{
+			std::string ret;
+			auto& vec = *(std::vector<int>*)p;
+			for (auto v : vec)
+			{
+				if (!ret.empty())
+					ret += ',';
+				ret += ti->serialize(&v);
+			}
+			return ret;
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			auto sp = SUS::to_string_vector(SUS::split(str));
+
+		}
+		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
+		{
+			assert(fi->return_type == TypeInfo::void_type && fi->parameters.size() == 1 && fi->parameters[0]->tag == TagPVE);
+			fi->call<void, const std::vector<int>&>(obj, *(std::vector<int>*)src);
+		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
+		}
+	};
+
+	struct TypeInfo_VectorOfData : TypeInfo
+	{
+		TypeInfo_Data* ti = nullptr;
+
+		TypeInfo_VectorOfData(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVD, base_name, sizeof(std::vector<int>))
+		{
+			ti = (TypeInfo_Data*)get(TagD, name, db);
+			pod = false;
+		}
+
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return new std::vector<int>();
+			new(p) std::vector<char>();
+			return p;
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			if (ti->pod)
+				copy_pod_vector(dst, src);
+			else
+				copy_npod_vector(dst, src, ti);
+		}
+		std::string serialize(const void* p) const override
+		{
+			std::string ret;
+			auto& vec = *(std::vector<char>*)p;
+
+			return ret;
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+
 		}
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
@@ -2545,6 +2621,7 @@ namespace flame
 			TypeInfo(TagVU, base_name, sizeof(std::vector<int>))
 		{
 			ti = (TypeInfo_Udt*)get(TagU, name, db);
+			pod = false;
 		}
 
 		void* create(void* p = nullptr) const override
@@ -2556,7 +2633,10 @@ namespace flame
 		}
 		void copy(void* dst, const void* src) const override
 		{
-			copy_npod_vector(dst, src, ti);
+			if (ti->ui->pod)
+				copy_pod_vector(dst, src);
+			else
+				copy_npod_vector(dst, src, ti);
 		}
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
@@ -2578,6 +2658,7 @@ namespace flame
 			TypeInfo(TagVR, base_name, sizeof(std::vector<int>))
 		{
 			ti = (TypeInfo_Pair*)get(TagR, name, db);
+			pod = false;
 		}
 
 		void* create(void* p = nullptr) const override
@@ -2611,6 +2692,7 @@ namespace flame
 			TypeInfo(TagVT, base_name, sizeof(std::vector<int>))
 		{
 			ti = (TypeInfo_Tuple*)get(TagT, name, db);
+			pod = false;
 		}
 
 		void* create(void* p = nullptr) const override
@@ -2644,6 +2726,7 @@ namespace flame
 			TypeInfo(TagVPU, base_name, sizeof(std::vector<int>))
 		{
 			ti = (TypeInfo_PointerOfUdt*)get(TagPU, name, db);
+			pod = false;
 		}
 
 		void* create(void* p = nullptr) const override
@@ -2759,6 +2842,7 @@ namespace flame
 				if (res[3].matched)
 					stride = stoi(res[3].str());
 			}
+			pod = false;
 		}
 	};
 
@@ -2774,6 +2858,7 @@ namespace flame
 			if (stride == 0)
 				stride = ti->size;
 			size = stride * extent;
+			pod = false;
 		}
 
 		TypeInfo* get_wrapped() const override
@@ -2794,6 +2879,7 @@ namespace flame
 			if (stride == 0)
 				stride = ti->size;
 			size = stride * extent;
+			pod = false;
 		}
 
 		TypeInfo* get_wrapped() const override
@@ -2950,7 +3036,7 @@ namespace flame
 		virtual void exec() = 0;
 	};
 
-	inline const Attribute* UdtInfo::find_attribute(const std::vector<std::string>& chain, voidptr& obj, uint* out_index) const
+	inline const Attribute* UdtInfo::find_attribute(const std::vector<std::string_view>& chain, voidptr& obj, uint* out_index) const
 	{
 		if (chain.empty())
 			return nullptr;

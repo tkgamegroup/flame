@@ -10,7 +10,8 @@ namespace flame
 {
 	std::filesystem::path parse_name(const std::filesystem::path& src)
 	{
-		auto sp = SUW::split(src.wstring(), '#');
+		auto s = src.wstring();
+		auto sp = SUW::split(s, '#');
 		return Path::get(sp.empty() ? L"" : sp.front());
 	}
 

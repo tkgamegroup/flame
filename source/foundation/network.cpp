@@ -45,9 +45,9 @@ namespace flame
 			std::regex reg_key(R"(Sec-WebSocket-Key: (.*))");
 
 			std::string req((char*)p);
-			auto lines = SUS::split(req, '\n');
-			for (auto& l : lines)
+			for (auto view : SUS::split(req, '\n'))
 			{
+				auto l = std::string(view);
 				std::smatch res;
 				if (std::regex_search(l, res, reg_key))
 				{

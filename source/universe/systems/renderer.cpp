@@ -1322,12 +1322,10 @@ namespace flame
 			{
 				auto& tex = res.mat->textures[alpha_map];
 				float alpha_test = 0.f;
-				auto sp = SUS::split(tex.filename.filename().stem().string(), '%');
-				if (sp.size() > 1)
 				{
-					for (auto i = 1; i < sp.size(); i++)
+					auto s = tex.filename.filename().stem().string();
+					for (auto t : SUS::to_string_vector(SUS::split(s, '%')))
 					{
-						auto t = sp[i];
 						if (SUS::strip_head_if(t, "at"))
 							alpha_test = s2t<int>(t) / 10.f;
 					}

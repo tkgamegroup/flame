@@ -13,15 +13,17 @@ namespace flame
 {
 	std::pair<std::filesystem::path, uint> parse_name(const std::filesystem::path& src)
 	{
-		auto sp = SUW::split(src.wstring(), '#');
-		auto name = sp.empty() ? L"" : sp.front();
+		auto s = src.wstring();
+		auto sp = SUW::split(s, '#');
+		std::wstring name = sp.empty() ? L"" : std::wstring(sp.front());
 		if (!name.starts_with(L"standard_"))
 			name = Path::get(name);
 		auto idx = 0;
 		if (sp.size() > 1)
 		{
-			SUW::strip_head_if(sp[1], L"mesh");
-			idx = s2t<uint>(sp[1]);
+			auto mesh_name = std::wstring(sp[1]);
+			SUW::strip_head_if(mesh_name, L"mesh");
+			idx = s2t<uint>(mesh_name);
 		}
 		return std::make_pair(name, idx);
 	}

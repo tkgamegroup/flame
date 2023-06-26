@@ -364,7 +364,7 @@ namespace flame
 					{
 						if (i == entity_chain.size() - 1)
 						{
-							auto comp_hash = sh(entity_chain[i].c_str());
+							auto comp_hash = sh(entity_chain[i].data());
 							if (auto comp = e->find_component(comp_hash); comp)
 							{
 								ui = find_udt(comp_hash);

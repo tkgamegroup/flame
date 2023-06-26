@@ -358,20 +358,23 @@ namespace flame
 
 			auto& io = ImGui::GetIO();
 			io.DeltaTime = delta_time;
-			io.DisplaySize = ImVec2(main_window->native->size);
+			io.DisplaySize = ImVec2(nw->size);
 
 			ImGui::NewFrame();
 
-			gui_callbacks.call();
-
-			if (!ImGui::peeding_dialogs.empty())
+			if (nw->size.x > 0 && nw->size.y > 0)
 			{
-				for (auto& name : ImGui::peeding_dialogs)
-					ImGui::OpenPopup(name.c_str());
-				ImGui::peeding_dialogs.clear();
+				gui_callbacks.call();
+
+				if (!ImGui::peeding_dialogs.empty())
+				{
+					for (auto& name : ImGui::peeding_dialogs)
+						ImGui::OpenPopup(name.c_str());
+					ImGui::peeding_dialogs.clear();
+				}
+				for (auto& d : ImGui::dialogs)
+					d->draw();
 			}
-			for (auto& d : ImGui::dialogs)
-				d->draw();
 
 			want_mouse = io.WantCaptureMouse;
 			want_keyboard = io.WantCaptureKeyboard;

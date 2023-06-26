@@ -161,7 +161,7 @@ namespace flame
 			for (auto& var_name : variable_list)
 			{
 				auto chain = SUS::split(var_name, '.');
-				auto di = find_data(sh(chain[0].c_str()));
+				auto di = find_data(sh(chain[0].data()));
 				if (di)
 				{
 					auto bind_data = [&](void* address, TypeInfo_Data* ti) {

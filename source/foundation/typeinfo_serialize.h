@@ -796,8 +796,8 @@ namespace flame
 			auto ilen = SUS::indent_length(src.line());
 			if (ilen == 0 && src.line()[0] == '%')
 			{
-				auto sp = SUS::split(src.line().substr(1), '=');
-				if (sp.size() == 2)
+				auto s = src.line().substr(1);
+				if (auto sp = SUS::split(s, '='); sp.size() == 2)
 				{
 					auto found = false;
 					for (auto& d : defines)
@@ -1172,7 +1172,7 @@ namespace flame
 						auto len = vec.size() / ui->size;
 						writter(&len, length_bytes);
 						p = (char*)vec.data();
-						if (ui->is_pod)
+						if (ui->pod)
 							writter(vec.data(), vec.size());
 						else
 						{
@@ -1331,7 +1331,7 @@ namespace flame
 					{
 						auto& vec = *(std::vector<char>*)p;
 						vec.resize(len * ui->size);
-						if (ui->is_pod)
+						if (ui->pod)
 							reader(vec.data(), vec.size());
 						else
 						{

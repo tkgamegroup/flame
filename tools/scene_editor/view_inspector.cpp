@@ -196,14 +196,15 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 	}
 		break;
 	}
-	app.prefab_unsaved = true;
 }
 
-std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num = 1, const std::function<void(uint)>& cb = {});
+std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num = 1, const std::vector<uint> excludes = {}, const std::function<void(uint)>&cb = {});
 
-int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash, int offset, const FunctionInfo* getter, const FunctionInfo* setter, voidptr* objs, uint num, const void* id)
+int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash, int offset, const FunctionInfo* getter, const FunctionInfo* setter, voidptr* objs, uint num, const void* id, bool hide_name = false)
 {
 	auto display_name = get_display_name(name);
+	if (hide_name)
+		display_name = "##" + display_name;
 	auto changed = 0;
 	bool just_exit_editing;
 	auto direct_io = !getter && !setter;
@@ -796,10 +797,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 
 			voidptr ptr = (char*)objs[0] + offset;
 			if (manipulate_udt(*ui, &ptr).first)
-			{
 				changed = true;
-				app.prefab_unsaved = true;
-			}
 
 			editing_objects.pop();
 			ImGui::TreePop();
@@ -832,7 +830,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					vo.destroy();
 				vo.type = nullptr;
 				changed = true;
-				app.prefab_unsaved = true;
 			}
 			if (ImGui::BeginPopup("select_type"))
 			{
@@ -845,7 +842,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 						vo.type = TypeInfo::get(TagU, ui->name, *ui->db);
 						vo.create();
 						changed = true;
-						app.prefab_unsaved = true;
 					}
 				}
 				ImGui::EndPopup();
@@ -854,10 +850,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			{
 				voidptr ptr = vo.data;
 				if (manipulate_udt(*vo.type->retrive_ui(), &ptr).first)
-				{
 					changed = true;
-					app.prefab_unsaved = true;
-				}
 			}
 
 			editing_objects.pop();
@@ -886,7 +879,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				set_sv();
 
 				changed = 2;
-				app.prefab_unsaved = true;
 			}
 			else
 				n = sv.count();
@@ -898,10 +890,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					ImGui::PushID(i);
 					auto ptr = sv.v.data();
 					if (manipulate_variable(ti, str(i), 0, i * ti->size, nullptr, nullptr, (voidptr*)&ptr, 1, id) > 1)
-					{
 						changed = true;
-						app.prefab_unsaved = true;
-					}
 					ImGui::PopID();
 				}
 				editing_objects.pop();
@@ -910,7 +899,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					set_sv();
 
 					changed = 2;
-					app.prefab_unsaved = true;
 				}
 			}
 			ImGui::TreePop();
@@ -939,7 +927,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				set_sv();
 
 				changed = 2;
-				app.prefab_unsaved = true;
 			}
 			else
 				n = sv.count();
@@ -952,10 +939,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					ImGui::PushID(i);
 					voidptr obj = sv.v.data() + ui.size * i;
 					if (manipulate_udt(ui, &obj).first)
-					{
 						changed = true;
-						app.prefab_unsaved = true;
-					}
 					ImGui::PopID();
 				}
 				editing_objects.pop();
@@ -964,7 +948,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					set_sv();
 
 					changed = 2;
-					app.prefab_unsaved = true;
 				}
 			}
 			ImGui::TreePop();
@@ -992,7 +975,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				set_sv();
 
 				changed = 2;
-				app.prefab_unsaved = true;
 			}
 			else
 				n = sv.count();
@@ -1007,15 +989,9 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					auto ptr0 = ti->first(p);
 					auto ptr1 = ti->second(p);
 					if (manipulate_variable(ti->ti1, "First", 0, 0, nullptr, nullptr, (voidptr*)&ptr0, 1, id) > 1)
-					{
 						changed = true;
-						app.prefab_unsaved = true;
-					}
 					if (manipulate_variable(ti->ti2, "Second", 0, 0, nullptr, nullptr, (voidptr*)&ptr1, 1, id) > 1)
-					{
 						changed = true;
-						app.prefab_unsaved = true;
-					}
 					ImGui::PopID();
 				}
 				editing_objects.pop();
@@ -1024,7 +1000,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					set_sv();
 
 					changed = 2;
-					app.prefab_unsaved = true;
 				}
 			}
 			ImGui::TreePop();
@@ -1054,7 +1029,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				set_sv();
 
 				changed = 2;
-				app.prefab_unsaved = true;
 			}
 			else
 				n = sv.count();
@@ -1071,10 +1045,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					{
 						auto ptr = p + t.second;
 						if (manipulate_variable(t.first, "Item " + str(j), 0, 0, nullptr, nullptr, (voidptr*)&ptr, 1, id) > 1)
-						{
 							changed = true;
-							app.prefab_unsaved = true;
-						}
 						j++;
 					}
 					ImGui::PopID();
@@ -1097,7 +1068,20 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 	return changed;
 }
 
-std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num, const std::function<void(uint)>& cb)
+int manipulate_variable(const VariableInfo& v, voidptr* objs, uint num)
+{
+	return manipulate_variable(v.type, v.name, v.name_hash, v.offset, nullptr, nullptr, objs, num, &v);
+}
+
+int manipulate_attribute(const Attribute& a, voidptr* objs, uint num, bool hide_name = false)
+{
+	return manipulate_variable(a.type, a.name, a.name_hash, a.var_off(),
+		a.getter_idx != -1 ? &a.ui->functions[a.getter_idx] : nullptr,
+		a.setter_idx != -1 ? &a.ui->functions[a.setter_idx] : nullptr,
+		objs, num, &a, hide_name);
+}
+
+std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num, const std::vector<uint> excludes, const std::function<void(uint)>& cb)
 {
 	uint ret_changed = 0;
 	uint ret_changed_name = 0;
@@ -1106,7 +1090,21 @@ std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num,
 	{
 		for (auto& v : ui.variables)
 		{
-			auto changed = manipulate_variable(v.type, v.name, v.name_hash, v.offset, nullptr, nullptr, objs, num, &v);
+			bool skip = false;
+			if (!excludes.empty())
+			{
+				for (auto h : excludes)
+				{
+					if (h == v.name_hash)
+					{
+						skip = true;
+						break;
+					}
+				}
+			}
+			if (skip)
+				continue;
+			auto changed = manipulate_variable(v, objs, num);
 			ret_changed |= changed;
 			if (changed)
 				ret_changed_name = v.name_hash;
@@ -1118,10 +1116,21 @@ std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num,
 	{
 		for (auto& a : ui.attributes)
 		{
-			auto changed = manipulate_variable(a.type, a.name, a.name_hash, a.var_off(),
-				a.getter_idx != -1 ? &ui.functions[a.getter_idx] : nullptr,
-				a.setter_idx != -1 ? &ui.functions[a.setter_idx] : nullptr,
-				objs, num, &a);
+			bool skip = false;
+			if (!excludes.empty())
+			{
+				for (auto h : excludes)
+				{
+					if (h == a.name_hash)
+					{
+						skip = true;
+						break;
+					}
+				}
+			}
+			if (skip)
+				continue;
+			auto changed = manipulate_attribute(a, objs, num);
 			ret_changed |= changed;
 			if (changed)
 				ret_changed_name = a.name_hash;
@@ -1131,6 +1140,9 @@ std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num,
 	}
 	return std::make_pair(ret_changed, ret_changed_name);
 }
+
+static auto ui_entity = TypeInfo::get<Entity>()->retrive_ui();
+static auto ui_component = TypeInfo::get<Component>()->retrive_ui();
 
 struct CommonComponents
 {
@@ -1156,7 +1168,6 @@ struct EditingEntities
 		if (entities.empty())
 			return;
 
-		static auto ui_entity = TypeInfo::get<Entity>()->retrive_ui();
 		auto entt0 = entities[0];
 		auto process_attribute = [&](const Attribute& a, uint comp_hash) {
 			void* obj0 = comp_hash == 0 ? entt0 : (void*)entt0->get_component(comp_hash);
@@ -1242,7 +1253,6 @@ struct EditingEntities
 		}
 		if (entities.size() > 1)
 		{
-			static auto ui_component = TypeInfo::get<Component>()->retrive_ui();
 			for (auto& cc : common_components)
 			{
 				auto comp0 = entt0->get_component(cc.type_hash);
@@ -1264,10 +1274,16 @@ struct EditingEntities
 	{
 		uint ret_changed = 0;
 		uint ret_changed_name = 0;
-		std::pair<uint, uint> res;
+		auto get_changed = [&](const std::pair<uint, uint>& res) {
+			ret_changed |= res.first;
+			ret_changed_name = res.second;
+		};
+		auto get_changed2 = [&](uint changed, uint hash) {
+			ret_changed |= changed;
+			if (changed)
+				ret_changed_name = hash;
+		};
 
-		static auto ui_entity = TypeInfo::get<Entity>()->retrive_ui();
-		static auto ui_component = TypeInfo::get<Component>()->retrive_ui();
 		auto entity = entities[0];
 
 		if (prefab_path.empty())
@@ -1275,9 +1291,21 @@ struct EditingEntities
 		else
 			editing_objects.emplace(EditingObjects(2, 0, &prefab_path, 1, nullptr));
 		ImGui::PushID("flame::Entity"_h);
-		res = manipulate_udt(*ui_entity, (voidptr*)entities.data(), entities.size());
-		ret_changed |= res.first;
-		ret_changed_name |= res.second;
+		{
+			auto hash = "enable"_h;
+			get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
+		}
+		ImGui::SameLine();
+		{
+			auto hash = "name"_h;
+			get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
+		}
+		ImGui::SameLine();
+		{
+			ImGui::SetNextItemWidth(100.f);
+			auto hash = "tag"_h;
+			get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
+		}
 		if (entities.size() == 1 && entity->prefab_instance)
 		{
 			auto ins = entity->prefab_instance.get();
@@ -1305,7 +1333,7 @@ struct EditingEntities
 						{
 							auto sp = SUS::split(root_ins_mods[i], '|');
 							GUID guid;
-							guid.from_string(sp.front());
+							guid.from_string(std::string(sp.front()));
 							if (entity->find_with_file_id(guid))
 							{
 								str += root_ins_mods[i] + "\n";
@@ -1319,13 +1347,13 @@ struct EditingEntities
 							"{} modifications will be seized and apply:\n{}", (int)seize_indices.size(), str);
 
 						ImGui::OpenYesNoDialog("Are you sure to seize modificaitons and apply?", prompt, [entity, ins, &root_ins_mods, seize_indices](bool yes) {
-								if (yes && !seize_indices.empty())
-								{
-									for (auto i : seize_indices)
-										root_ins_mods.erase(root_ins_mods.begin() + i);
-									entity->save(Path::get(ins->filename), true);   
-									ins->modifications.clear();
-								}
+							if (yes && !seize_indices.empty())
+							{
+								for (auto i : seize_indices)
+									root_ins_mods.erase(root_ins_mods.begin() + i);
+								entity->save(Path::get(ins->filename), true);
+								ins->modifications.clear();
+							}
 						});
 					}
 				}
@@ -1353,7 +1381,8 @@ struct EditingEntities
 								add_event([this, ins, entity]() {
 									empty_entity(entity);
 									entity->load(ins->filename);
-									refresh();
+									auto es = entities;
+									refresh(es);
 									return false;
 								});
 								ins->modifications.clear();
@@ -1367,9 +1396,9 @@ struct EditingEntities
 		ImGui::PopID();
 		editing_objects.pop();
 
-		if (res.second != 0)
+		if (ret_changed_name != 0)
 		{
-			auto& str = ui_entity->find_attribute(res.second)->name;
+			auto& str = ui_entity->find_attribute(ret_changed_name)->name;
 			for (auto e : entities)
 			{
 				if (auto ins = get_root_prefab_instance(e); ins)
@@ -1386,7 +1415,14 @@ struct EditingEntities
 				editing_objects.emplace(EditingObjects(2, cc.type_hash, &prefab_path, 1, nullptr));
 			ImGui::PushID(cc.type_hash);
 			auto& ui = *find_udt(cc.type_hash);
-			auto open = ImGui::CollapsingHeader(ui.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
+			auto open = ImGui::CollapsingHeader("", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
+			ImGui::SameLine();
+			{
+				auto hash = "enable"_h;
+				get_changed2(manipulate_attribute(*ui_component->find_attribute(hash), (voidptr*)cc.components.data(), cc.components.size(), true), hash);
+			}
+			ImGui::SameLine();
+			ImGui::TextUnformatted(ui.name.c_str());
 			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 40);
 			if (ImGui::Button("P"))
 			{
@@ -1411,6 +1447,7 @@ struct EditingEntities
 					}
 					if (ok)
 					{
+						auto changed = false;
 						auto e0 = entities[0];
 						for (auto i = 0; i < e0->components.size(); i++)
 						{
@@ -1421,11 +1458,16 @@ struct EditingEntities
 									for (auto e : entities)
 										std::swap(e->components[i], e->components[i - 1]);
 								}
-								refresh();
-								app.prefab_unsaved = true;
-								exit_editing = true;
+								changed = true;
 								break;
 							}
+						}
+						if (changed)
+						{
+							ret_changed |= 2;
+							auto es = entities;
+							refresh(es);
+							exit_editing = true;
 						}
 					}
 					else
@@ -1444,6 +1486,7 @@ struct EditingEntities
 					}
 					if (ok)
 					{
+						auto changed = false;
 						auto e0 = entities[0];
 						for (auto i = 0; i < e0->components.size(); i++)
 						{
@@ -1454,11 +1497,16 @@ struct EditingEntities
 									for (auto e : entities)
 										std::swap(e->components[i], e->components[i + 1]);
 								}
-								refresh();
-								app.prefab_unsaved = true;
-								exit_editing = true;
+								changed = true;
 								break;
 							}
+						}
+						if (changed)
+						{
+							ret_changed |= 2;
+							auto es = entities;
+							refresh(es);
+							exit_editing = true;
 						}
 					}
 					else
@@ -1485,41 +1533,72 @@ struct EditingEntities
 											it = ins->modifications.erase(it);
 										else
 											it++;
+
 									}
 								}
+								changed = true;
 							}
-							changed = true;
+						}
+						if (changed)
+						{
+							ret_changed |= 2;
+							auto es = entities;
+							refresh(es);
+							exit_editing = true;
 						}
 					}
-					if (changed)
+					static uint copied_component = 0;
+					static std::vector<std::pair<uint, std::string>> copied_values;
+					if (cc.components.size() == 1)
 					{
-						refresh();
-						app.prefab_unsaved = true;
-						exit_editing = true;
+						if (ImGui::Selectable("Copy Values"))
+						{
+							copied_component = cc.type_hash;
+							copied_values.clear();
+							auto obj = cc.components[0];
+							for (auto& a : ui.attributes)
+							{
+								auto& v = copied_values.emplace_back();
+								v.first = a.name_hash;
+								v.second = a.serialize(obj);
+							}
+						}
 					}
+					if (ImGui::Selectable("Paste Values"))
+					{
+						if (cc.type_hash == copied_component)
+						{
+							for (auto obj : cc.components)
+							{
+								auto changed = false;
+								for (auto& v : copied_values)
+								{
+									if (auto a = ui.find_attribute(v.first); a)
+									{
+										if (a->serialize(obj) != v.second)
+										{
+											a->unserialize(obj, v.second);
+											changed = true;
+											add_modify_history(a->name_hash, v.second);
+										}
+									}
+								}
+								if (changed)
+									ret_changed |= 2;
+							}
+						}
+					}
+					ImGui::EndPopup();
 				}
-				ImGui::EndPopup();
 			}
+
 			if (open && !exit_editing)
 			{
-				res = manipulate_udt(*ui_component, (voidptr*)cc.components.data(), cc.components.size());
-				if (res.second != 0)
-				{
-					auto& str = ui_component->find_attribute(res.second)->name;
-					for (auto e : entities)
-					{
-						if (auto ins = get_root_prefab_instance(e); ins)
-							ins->mark_modification(e->file_id.to_string(), ui.name, str);
-					}
-				}
-				ret_changed |= res.first;
-				ret_changed_name |= res.second;
-
 				static bool open_select_standard_model = false;
 				static bool open_select_hash = false;
 				static std::vector<std::string> hash_candidates;
-				static const Attribute* op_attr; 
-				res = manipulate_udt(ui, (voidptr*)cc.components.data(), cc.components.size(), [&ui, &cc](uint name) {
+				static const Attribute* op_attr;
+				get_changed(manipulate_udt(ui, (voidptr*)cc.components.data(), cc.components.size(), {}, [&ui, &cc](uint name) {
 					ImGui::PushID(name);
 					if (name == "mesh_name"_h)
 					{
@@ -1528,7 +1607,6 @@ struct EditingEntities
 						{
 							open_select_standard_model = true;
 							op_attr = ui.find_attribute(name);
-							app.prefab_unsaved = true;
 						}
 					}
 					else if (name == "material_name"_h)
@@ -1541,7 +1619,7 @@ struct EditingEntities
 						}
 
 						auto& name = *(std::filesystem::path*)ui.find_attribute("material_name"_h)->get_value(cc.components[0]);
-						if (!name.empty() && name != L"default")
+						if (!name.empty() && name != L"default" && !name.native().starts_with(L"0x"))
 						{
 							if (ImGui::TreeNode("##embed"))
 							{
@@ -1577,16 +1655,14 @@ struct EditingEntities
 								if (ImGui::Button("S"))
 								{
 									open_select_hash = true;
-									hash_candidates = SUS::split(meta, '|');
+									hash_candidates = SUS::to_string_vector(SUS::split(meta, '|'));
 									op_attr = &a;
 								}
 							}
 						}
 					}
 					ImGui::PopID();
-				});
-				ret_changed |= res.first;
-				ret_changed_name |= res.second;
+				}));
 
 				if (open_select_standard_model)
 				{
@@ -1612,9 +1688,17 @@ struct EditingEntities
 						if (ImGui::Selectable(n))
 						{
 							std::filesystem::path v(n);
+							auto changed = false;
 							for (auto c : cc.components)
-								op_attr->set_value(c, &v);
-							app.prefab_unsaved = true;
+							{
+								if (!op_attr->compare_to_value(c, &v))
+								{
+									op_attr->set_value(c, &v);
+									changed = true;
+								}
+							}
+							if (changed)
+								ret_changed |= 2;
 						}
 					}
 
@@ -1627,16 +1711,24 @@ struct EditingEntities
 						if (ImGui::Selectable(c.c_str()))
 						{
 							uint v = sh(c.c_str());
+							auto changed = false;
 							for (auto c : cc.components)
-								op_attr->set_value(c, &v);
-							app.prefab_unsaved = true;
+							{
+								if (!op_attr->compare_to_value(c, &v))
+								{
+									op_attr->set_value(c, &v);
+									changed = true;
+								}
+							}
+							if (changed)
+								ret_changed |= 2;
 						}
 					}
 					ImGui::EndPopup();
 				}
-				if (res.second != 0)
+				if (ret_changed_name != 0)
 				{
-					auto& str = ui.find_attribute(res.second)->name;
+					auto& str = ui.find_attribute(ret_changed_name)->name;
 					for (auto e : entities)
 					{
 						if (auto ins = get_root_prefab_instance(e); ins)
@@ -1644,7 +1736,7 @@ struct EditingEntities
 					}
 
 					if ((ui.name_hash == "flame::cNavAgent"_h || ui.name_hash == "flame::cNavObstacle"_h) &&
-						(res.second == "radius"_h || res.second == "height"_h))
+						(ret_changed_name == "radius"_h || ret_changed_name == "height"_h))
 						view_scene.show_navigation_frames = 3;
 				}
 
@@ -1696,6 +1788,7 @@ struct EditingEntities
 					}
 				}
 			}
+
 			ImGui::PopID();
 			editing_objects.pop();
 			if (exit_editing)
@@ -1757,8 +1850,8 @@ struct EditingEntities
 					}
 					if (changed)
 					{
-						refresh();
-						app.prefab_unsaved = true;
+						auto es = entities;
+						refresh(es);
 					}
 				}
 			}
@@ -1811,7 +1904,8 @@ void View_Inspector::on_draw()
 		}
 		else
 			ImGui::Text("%d entities", (int)editing_entities.entities.size());
-		editing_entities.manipulate();
+		if (editing_entities.manipulate().first == 2)
+			app.prefab_unsaved = true;
 		break;
 	case Selection::tPath:
 	{
@@ -2045,8 +2139,6 @@ void View_Inspector::on_draw()
 				};
 				auto& info = *(PresetInfo*)sel_info;
 
-				static bool modified = false;
-
 				if (last_selection_changed)
 				{
 					sel_ref_obj = load_preset_file(path, nullptr, &info.ui);
@@ -2054,29 +2146,21 @@ void View_Inspector::on_draw()
 						auto& info = *(PresetInfo*)sel_info;
 						info.ui->destroy_object(obj);
 					};
-					modified = false;
 				}
 
 				if (sel_ref_obj)
 				{
-					if (modified)
-					{
-						if (ImGui::Button("Save"))
-						{
-							save_preset_file(path, sel_ref_obj, info.ui);
-							auto asset = AssetManagemant::find(path);
-							if (asset)
-								asset->lwt = std::filesystem::last_write_time(path);
-							modified = false;
-						}
-					}
-
 					editing_objects.emplace(EditingObjects(0, info.ui->name_hash, &path, 1));
 					auto changed = manipulate_udt(*info.ui, (voidptr*)&sel_ref_obj, 1).first;
 					editing_objects.pop();
 
 					if (changed)
-						modified = true;
+					{
+						save_preset_file(path, sel_ref_obj, info.ui);
+						auto asset = AssetManagemant::find(path);
+						if (asset)
+							asset->lwt = std::filesystem::last_write_time(path);
+					}
 				}
 			}
 			else if (ext == L".pipeline")

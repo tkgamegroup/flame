@@ -53,7 +53,7 @@ namespace flame
 			system(std::format("{} -latest -property installationPath > temp.txt", (engine_path / L"vswhere.exe").string()).c_str());
 			if (!std::filesystem::exists(L"temp.txt"))
 				return L"";
-			auto ret = SUS::split(get_file_content(L"temp.txt"), '\n')[0];
+			auto ret = std::string(SUS::split(get_file_content(L"temp.txt"), '\n')[0]);
 			ret.pop_back();
 			std::filesystem::remove(L"temp.txt");
 			return ret;
@@ -405,13 +405,13 @@ namespace flame
 		auto& df = *(DROPFILES*)gdata;
 		if (df.fWide)
 		{
-			for (auto& str : SUW::split_dbnull((wchar_t*)((char*)gdata + df.pFiles)))
-				ret.push_back(str);
+			for (auto view : SUW::split_dbnull((wchar_t*)((char*)gdata + df.pFiles)))
+				ret.push_back(std::wstring(view));
 		}
 		else
 		{
-			for (auto& str : SUS::split_dbnull((char*)gdata + df.pFiles))
-				ret.push_back(str);
+			for (auto view : SUS::split_dbnull((char*)gdata + df.pFiles))
+				ret.push_back(std::string(view));
 		}
 		GlobalUnlock(hMemory);
 

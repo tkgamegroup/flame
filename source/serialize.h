@@ -50,7 +50,7 @@ namespace flame
 		ret += str(v[0]);
 		for (auto i = 1; i < N; i++)
 		{
-			ret += ",";
+			ret += ',';
 			ret += str(v[i]);
 		}
 		return ret;
@@ -63,7 +63,7 @@ namespace flame
 		ret += str(v[0]);
 		for (auto i = 1; i < N; i++)
 		{
-			ret += ",";
+			ret += ',';
 			ret += str(v[i]);
 		}
 		return ret;
@@ -76,7 +76,7 @@ namespace flame
 		ret += str(v[0]);
 		for (auto i = 1; i < N; i++)
 		{
-			ret += ",";
+			ret += ',';
 			ret += str(v[i]);
 		}
 		return ret;
@@ -91,7 +91,7 @@ namespace flame
 			for (auto j = 0; j < R; j++)
 			{
 				if (i > 0 || j > 0)
-					ret += ",";
+					ret += ',';
 				ret += str(v[i][j]);
 			}
 		}
@@ -129,6 +129,32 @@ namespace flame
 		return L"0x" + wstr_hex((uint64)v);
 	}
 
+	template<typename T>
+	std::wstring wstr(uint N, T* v)
+	{
+		std::wstring ret;
+		ret += wstr(v[0]);
+		for (auto i = 1; i < N; i++)
+		{
+			ret += L',';
+			ret += wstr(v[i]);
+		}
+		return ret;
+	}
+
+	template<uint N, typename T>
+	std::wstring wstr(T* v)
+	{
+		std::wstring ret;
+		ret += wstr(v[0]);
+		for (auto i = 1; i < N; i++)
+		{
+			ret += L',';
+			ret += wstr(v[i]);
+		}
+		return ret;
+	}
+
 	template<uint N, typename T>
 	std::wstring wstr(const vec<N, T>& v)
 	{
@@ -136,8 +162,24 @@ namespace flame
 		ret += wstr(v[0]);
 		for (auto i = 1; i < N; i++)
 		{
-			ret += L",";
+			ret += L',';
 			ret += wstr(v[i]);
+		}
+		return ret;
+	}
+
+	template<uint C, uint R, typename T>
+	std::wstring wstr(const mat<C, R, T>& v)
+	{
+		std::wstring ret;
+		for (auto i = 0; i < C; i++)
+		{
+			for (auto j = 0; j < R; j++)
+			{
+				if (i > 0 || j > 0)
+					ret += L',';
+				ret += wstr(v[i][j]);
+			}
 		}
 		return ret;
 	}
@@ -286,9 +328,9 @@ namespace flame
 			});
 		}
 
-		static std::basic_string<CH> get_lowered(const std::basic_string<CH>& s)
+		static std::basic_string<CH> get_lowered(std::basic_string_view<CH> s)
 		{
-			auto ret = s;
+			auto ret = std::basic_string<CH>(s);
 			to_lower(ret);
 			return ret;
 		}
@@ -300,9 +342,9 @@ namespace flame
 			});
 		}
 
-		static std::basic_string<CH> get_uppered(const std::basic_string<CH>& s)
+		static std::basic_string<CH> get_uppered(std::basic_string_view<CH> s)
 		{
-			auto ret = s;
+			auto ret = std::basic_string<CH>(s);
 			to_upper(ret);
 			return ret;
 		}
@@ -314,9 +356,9 @@ namespace flame
 			}));
 		}
 
-		static std::basic_string<CH> get_ltrimed(const std::basic_string<CH>& s)
+		static std::basic_string<CH> get_ltrimed(std::basic_string_view<CH> s)
 		{
-			auto ret = s;
+			auto ret = std::basic_string<CH>(s);
 			ltrim(ret);
 			return ret;
 		}
@@ -328,9 +370,9 @@ namespace flame
 			}).base(), s.end());
 		}
 
-		static std::basic_string<CH> get_rtrimed(const std::basic_string<CH>& s)
+		static std::basic_string<CH> get_rtrimed(std::basic_string_view<CH> s)
 		{
-			auto ret = s;
+			auto ret = std::basic_string<CH>(s);
 			rtrim(ret);
 			return ret;
 		}
@@ -341,9 +383,9 @@ namespace flame
 			rtrim(s);
 		}
 
-		static std::basic_string<CH> get_trimed(const std::basic_string<CH>& s)
+		static std::basic_string<CH> get_trimed(std::basic_string_view<CH> s)
 		{
-			auto ret = s;
+			auto ret = std::basic_string<CH>(s);
 			trim(ret);
 			return ret;
 		}
@@ -373,12 +415,12 @@ namespace flame
 			return str.substr(str.size() - len - off, len);
 		}
 
-		static bool match_head_tail(const std::basic_string<CH>& str, const std::basic_string<CH>& head, const std::basic_string<CH>& tail)
+		static bool match_head_tail(const std::basic_string<CH>& str, std::basic_string_view<CH> head, std::basic_string_view<CH> tail)
 		{
 			return str.starts_with(head) && str.ends_with(tail);
 		}
 
-		static bool strip_head_if(std::basic_string<CH>& str, const std::basic_string<CH>& head)
+		static bool strip_head_if(std::basic_string<CH>& str, std::basic_string_view<CH> head)
 		{
 			if (str.starts_with(head))
 			{
@@ -388,7 +430,7 @@ namespace flame
 			return false;
 		}
 
-		static bool strip_tail_if(std::basic_string<CH>& str, const std::basic_string<CH>& tail)
+		static bool strip_tail_if(std::basic_string<CH>& str, std::basic_string_view<CH> tail)
 		{
 			if (str.ends_with(tail))
 			{
@@ -398,7 +440,7 @@ namespace flame
 			return false;
 		}
 
-		static bool strip_head_tail_if(std::basic_string<CH>& str, const std::basic_string<CH>& head, const std::basic_string<CH>& tail)
+		static bool strip_head_tail_if(std::basic_string<CH>& str, std::basic_string_view<CH> head, std::basic_string_view<CH> tail)
 		{
 			if (str.starts_with(head) && str.ends_with(tail))
 			{
@@ -408,7 +450,7 @@ namespace flame
 			return false;
 		}
 
-		static void replace_all(std::basic_string<CH>& str, const std::basic_string<CH>& from, const std::basic_string<CH>& to)
+		static void replace_all(std::basic_string<CH>& str, std::basic_string_view<CH> from, std::basic_string_view<CH> to)
 		{
 			if (from.empty())
 				return;
@@ -420,41 +462,54 @@ namespace flame
 			}
 		}
 
-		static std::vector<std::basic_string<CH>> split(const std::basic_string<CH>& str, CH delimiter = ' ')
+		static std::vector<std::basic_string<CH>> to_string_vector(const std::vector<std::basic_string_view<CH>>& views)
 		{
-			std::basic_istringstream<CH> iss(str);
 			std::vector<std::basic_string<CH>> ret;
+			for (auto view : views)
+				ret.push_back(std::basic_string<CH>(view));
+			return ret;
+		}
 
-			std::basic_string<CH> s;
-			while (std::getline(iss, s, delimiter))
-				ret.push_back(s);
+		static std::vector<std::basic_string_view<CH>> split(std::basic_string_view<CH> str, CH delimiter = ' ')
+		{
+			std::vector<std::basic_string_view<CH>> ret;
+
+			std::size_t prev = 0, pos;
+			while ((pos = str.find_first_of(delimiter, prev)) != std::string::npos)
+			{
+				if (pos > prev)
+					ret.emplace_back(str.begin() + prev, str.begin() + pos);
+				prev = pos + 1;
+			}
+			if (prev < str.length())
+				ret.emplace_back(str.begin() + prev, str.end());
 
 			return ret;
 		}
 
-		static std::vector<std::basic_string<CH>> split_dbnull(const CH* str)
+		static std::vector<std::basic_string_view<CH>> split_dbnull(const CH* str)
 		{
-			std::vector<std::basic_string<CH>> ret;
+			std::vector<std::basic_string_view<CH>> ret;
 			auto p = str;
 			while (*p)
 			{
-				ret.push_back(std::basic_string<CH>(p));
+				ret.push_back(std::basic_string_view<CH>(p));
 				p += ret.back().size() + 1;
 			}
 			return ret;
 		}
 
-		static std::vector<std::basic_string<CH>> split_quot(const std::basic_string<CH>& _str)
+		static std::vector<std::basic_string_view<CH>> split_quot(std::basic_string_view<CH> str)
 		{
-			auto str = _str;
-			std::basic_istringstream<CH> iss(str);
-			std::vector<std::basic_string<CH>> ret;
+			std::vector<std::basic_string_view<CH>> ret;
+			std::vector<int> in_quot_spaces;
 			auto in_quot = false;
 
-			for (auto& ch : str)
+			for (auto i = 0; i < str.size(); i++)
 			{
+				auto ch = str[i];
 				if (in_quot && ch == ' ')
-					ch = '?';
+					in_quot_spaces.push_back(i);
 				else if (ch == '\"')
 					in_quot = !in_quot;
 
@@ -464,22 +519,19 @@ namespace flame
 				std::size_t prev = 0, pos;
 				while ((pos = str.find_first_of(" \t", prev)) != std::string::npos)
 				{
+					if (std::find(in_quot_spaces.begin(), in_quot_spaces.end(), pos) != in_quot_spaces.end())
+					{
+						prev = pos + 1;
+						continue;
+					}
 					if (pos > prev)
-						ret.push_back(str.substr(prev, pos - prev));
+						ret.emplace_back(str.begin() + prev, str.begin() + pos);
 					prev = pos + 1;
 				}
 				if (prev < str.length())
-					ret.push_back(str.substr(prev, std::string::npos));
+					ret.emplace_back(str.begin() + prev, str.end());
 			}
 
-			for (auto& t : ret)
-			{
-				for (auto& ch : t)
-				{
-					if (ch == '?')
-						ch = ' ';
-				}
-			}
 			return ret;
 		}
 
@@ -859,7 +911,7 @@ namespace flame
 						line += line2;
 					}
 					SUS::trim(line);
-					entry.values = SUS::split_quot(line);
+					entry.values = SUS::to_string_vector(SUS::split_quot(line));
 					for (auto& t : entry.values)
 					{
 						if (t.size() > 2 && t.front() == '\"' && t.back() == '\"')
