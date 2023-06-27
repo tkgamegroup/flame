@@ -355,6 +355,16 @@ namespace flame
 		}
 	}
 
+	void cArmaturePrivate::reset()
+	{
+		if (!bones.empty())
+		{
+			for (auto& b : bones)
+				b.pose.m = mat4(1.f);
+		}
+		dirty = true;
+	}
+
 	void cArmaturePrivate::play(uint name)
 	{
 		if (playing_name == name)

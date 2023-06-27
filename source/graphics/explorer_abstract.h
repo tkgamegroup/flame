@@ -156,6 +156,7 @@ namespace flame
 
 			std::vector<std::unique_ptr<Item>>	items;
 			std::filesystem::path				selected_path;
+			std::string							filter;
 
 			std::function<void(const std::filesystem::path&)>							select_callback;
 			std::function<void(const std::filesystem::path&)>							dbclick_callback;
@@ -337,6 +338,8 @@ namespace flame
 
 			void enter_rename(const std::filesystem::path& path)
 			{
+				if (!rename_callback)
+					return;
 				rename_path = path;
 				rename_string = rename_path.filename().string();
 				rename_start_frame = frames;
@@ -439,8 +442,31 @@ namespace flame
 					}
 					if (opened_folder)
 					{
-						ImGui::SameLine();
-						ImGui::TextUnformatted(Path::reverse(opened_folder->path).string().c_str());
+						auto lv = 0; int jump_lv = -1;
+						for (auto& stem : Path::reverse(opened_folder->path))
+						{
+							ImGui::SameLine();
+							if (ImGui::SmallButton(stem.string().c_str()))
+								jump_lv = lv;
+							ImGui::SameLine();
+							ImGui::TextUnformatted("\\");
+							lv++;
+						}
+						if (jump_lv != -1)
+						{
+							jump_lv = lv - jump_lv;
+							auto n = opened_folder;
+							while (jump_lv > 0)
+							{
+								n = n->parent;
+								jump_lv--;
+							}
+							peeding_open_node = { n, false };
+						}
+					}
+					if (auto w = ImGui::GetContentRegionAvail().x; w > 50.f)
+					{
+
 					}
 
 					content_pos = ImGui::GetCursorPos();
@@ -453,7 +479,7 @@ namespace flame
 						{
 							auto item = items[i].get();
 							auto selected = selected_path == item->path;
-							auto renaming = rename_path == item->path;
+							auto renaming = rename_callback && rename_path == item->path;
 
 							ImGui::TableNextColumn();
 							ImGui::PushID(i);
@@ -475,7 +501,10 @@ namespace flame
 							if (item->icon)
 								draw_list->AddImage(item->icon, ImVec2(p0.x + padding.x, p0.y + padding.y), ImVec2(p0.x + padding.x + Item::size, p0.y + padding.y + Item::size));
 							if (!renaming)
-								draw_list->AddText(ImVec2(p0.x + padding.x + (Item::size - item->label_width) / 2, p0.y + Item::size + padding.y * 2), ImColor(255, 255, 255), item->label.c_str(), item->label.c_str() + item->label.size());
+							{
+								draw_list->AddText(ImVec2(p0.x + padding.x + (Item::size - item->label_width) / 2, p0.y + Item::size + padding.y * 2), ImColor(255, 255, 255),
+									item->label.c_str(), item->label.c_str() + item->label.size());
+							}
 
 							if (hovered)
 							{
@@ -488,7 +517,7 @@ namespace flame
 										if (dbclick_callback)
 											dbclick_callback(item->path);
 									}
-									else if (io.MouseClicked[ImGuiMouseButton_Left])
+									else if (rename_callback && io.MouseClicked[ImGuiMouseButton_Left])
 									{
 										auto mpos = ImGui::GetMousePos();
 										if (mpos.y > p1.y - line_height - padding.y)
@@ -538,11 +567,14 @@ namespace flame
 								if (frames == rename_start_frame)
 									ImGui::SetKeyboardFocusHere();
 								if (ImGui::InputText("##rename", &rename_string, ImGuiInputTextFlags_AutoSelectAll))
-									;
+									rename_callback(rename_path, rename_string);
 								if (frames != rename_start_frame)
 								{
 									if (ImGui::IsItemDeactivated() || (!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))
+									{
+										rename_callback(rename_path, "");
 										rename_path = L"";
+									}
 								}
 								ImGui::PopItemWidth();
 								ImGui::PopStyleVar();

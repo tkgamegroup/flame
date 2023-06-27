@@ -1769,6 +1769,8 @@ struct EditingEntities
 					if (cc.components.size() == 1)
 					{
 						auto armature = (cArmaturePtr)cc.components[0];
+						if (ImGui::Button("Reset"))
+							armature->reset();
 						if (!armature->animation_names.empty())
 						{
 							static int idx = 0;

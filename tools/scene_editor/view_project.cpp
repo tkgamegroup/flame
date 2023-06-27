@@ -1031,7 +1031,12 @@ void View_Project::init()
 		return false;
 	};
 	explorer.rename_callback = [](const std::filesystem::path& path, const std::string& name) {
-
+		if (!name.empty())
+		{
+			auto new_path = path.parent_path() / name;
+			if (!std::filesystem::exists(new_path))
+				std::filesystem::rename(path, new_path);
+		}
 	};
 }
 
