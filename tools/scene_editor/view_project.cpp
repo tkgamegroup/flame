@@ -218,33 +218,37 @@ void View_Project::init()
 	icon_mesh = graphics::Image::get(L"flame\\icon_mesh.png");
 	icon_armature = graphics::Image::get(L"flame\\icon_armature.png");
 
+	explorer.do_select = 1;
 	explorer.select_callback = [this](const std::filesystem::path& path) {
+		if (selection.lock)
+			return;
 		if (path.empty())
-			selection.clear("project"_h);
-		else
 		{
-			if (ImGui::IsKeyDown(Keyboard_Ctrl))
-			{
-				auto paths = selection.get_paths();
-				auto found = false;
-				for (auto it = paths.begin(); it != paths.end();)
-				{
-					if (*it == path)
-					{
-						found = true;
-						it = paths.erase(it);
-						break;
-					}
-					else
-						it++;
-				}
-				if (!found)
-					paths.push_back(path);
-				selection.select(paths);
-			}
-			else
-				selection.select(path, "project"_h);
+			selection.clear("project"_h);
+			return;
 		}
+		if (ImGui::IsKeyDown(Keyboard_Ctrl))
+		{
+			auto paths = selection.get_paths();
+			auto found = false;
+			for (auto it = paths.begin(); it != paths.end();)
+			{
+				if (*it == path)
+				{
+					found = true;
+					it = paths.erase(it);
+					break;
+				}
+				else
+					it++;
+			}
+			if (!found)
+				paths.push_back(path);
+			selection.select(paths);
+		}
+		else
+			selection.select(path, "project"_h);
+		explorer.selected_paths = selection.get_paths();
 	};
 	explorer.dbclick_callback = [this](const std::filesystem::path& path) {
 		auto ext = path.extension();
@@ -1087,7 +1091,7 @@ void View_Project::on_draw()
 			}
 		}
 		if (!current_path.empty())
-			explorer.open_folder(explorer.find_folder(current_path));
+			explorer.peeding_open_path = current_path;
 
 		std::vector<std::pair<AssetManagemant::Asset*, std::filesystem::path>>	changed_assets;
 		std::pair<std::vector<graphics::MaterialPtr>, uint>						materials;
@@ -1322,12 +1326,11 @@ void View_Project::on_draw()
 
 	if (selection.type == Selection::tPath)
 	{
-		explorer.selected_path = selection.as_path();
 		if (selection_changed)
-			explorer.ping(explorer.selected_path);
+			explorer.ping(selection.as_path());
 	}
 	else
-		explorer.selected_path.clear();
+		explorer.selected_paths.clear();
 
 	explorer.draw();
 

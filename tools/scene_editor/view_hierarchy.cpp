@@ -93,7 +93,7 @@ void View_Hierarchy::on_draw()
 					{
 						auto x = ImGui::GetMousePos().x;
 						auto p0 = ImGui::GetItemRectMin();
-						if (x > p0.x + 28 && x < p0.x + 28.f + ImGui::CalcTextSize(e->name.c_str()).x + 4.f)
+						if (x > p0.x + 28.f && x < p0.x + 28.f + ImGui::CalcTextSize(e->name.c_str()).x + 4.f)
 						{
 							rename_entity = e;
 							rename_string = e->name;

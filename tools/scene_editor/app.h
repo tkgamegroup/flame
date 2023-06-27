@@ -76,7 +76,6 @@ inline void empty_entity(EntityPtr e)
 	e->remove_all_children();
 }
 
-bool tool_button(const std::string& name, bool selected = false, float rotate = 0.f);
 void show_entities_menu();
 void open_message_dialog(const std::string& title, const std::string& message);
 

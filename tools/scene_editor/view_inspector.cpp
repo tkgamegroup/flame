@@ -3,6 +3,7 @@
 #include "history.h"
 #include "view_inspector.h"
 #include "view_scene.h"
+#include "view_project.h"
 
 #include <flame/foundation/typeinfo_serialize.h>
 #include <flame/foundation/bitmap.h>
@@ -354,6 +355,9 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		return ret;
 	};
 
+	static TypeInfo* copied_data_type = nullptr;
+	static std::string copied_data_value;
+
 	ImGui::PushID(id);
 	switch (type->tag)
 	{
@@ -572,10 +576,10 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
 				ImGui::SameLine();
 				static vec4 copied_color;
-				if (ImGui::Button("C"))
+				if (ImGui::Button(graphics::FontAtlas::icon_s("copy"_h).c_str()))
 					copied_color = color;
 				ImGui::SameLine();
-				if (ImGui::Button("P"))
+				if (ImGui::Button(graphics::FontAtlas::icon_s("paste"_h).c_str()))
 				{
 					color = copied_color;
 					changed = true;
@@ -701,15 +705,12 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				ImGui::EndDragDropTarget();
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("P"))
+			if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
 			{
-				add_event([path]() {
-					selection.select(Path::get(path), "app"_h);
-					return false;
-				});
+				view_project.explorer.ping(Path::get(path));
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("X"))
+			if (ImGui::Button(graphics::FontAtlas::icon_s("xmark"_h).c_str()))
 			{
 				before_editing_values.resize(num);
 				before_editing_values[0] = path.string();
@@ -756,7 +757,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				ImGui::EndDragDropTarget();
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("P"))
+			if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
 			{
 				add_event([guid]() {
 					auto e = app.e_prefab ? app.e_prefab->find_with_file_id(guid) : nullptr;
@@ -765,7 +766,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				});
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("X"))
+			if (ImGui::Button(graphics::FontAtlas::icon_s("xmark"_h).c_str()))
 			{
 				before_editing_values.resize(num);
 				before_editing_values[0] = guid.to_string();
@@ -828,7 +829,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				}
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("X"))
+			if (ImGui::Button(graphics::FontAtlas::icon_s("xmark"_h).c_str()))
 			{
 				if (vo.data)
 					vo.destroy();
@@ -876,6 +877,12 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			};
 			int n = sv.count();
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
+			ImGui::SameLine();
+			if (ImGui::Button(graphics::FontAtlas::icon_s("copy"_h).c_str()))
+				;
+			ImGui::SameLine();
+			if (ImGui::Button(graphics::FontAtlas::icon_s("paste"_h).c_str()))
+				;
 			ImGui::Separator();
 			if (size_changed)
 			{
@@ -924,6 +931,12 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			auto& ui = *ti->retrive_ui();
 			int n = sv.count();
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
+			ImGui::SameLine();
+			if (ImGui::Button(graphics::FontAtlas::icon_s("copy"_h).c_str()))
+				;
+			ImGui::SameLine();
+			if (ImGui::Button(graphics::FontAtlas::icon_s("paste"_h).c_str()))
+				;
 			ImGui::Separator();
 			if (size_changed)
 			{
@@ -972,6 +985,12 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			};
 			int n = sv.count();
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
+			ImGui::SameLine();
+			if (ImGui::Button(graphics::FontAtlas::icon_s("copy"_h).c_str()))
+				;
+			ImGui::SameLine();
+			if (ImGui::Button(graphics::FontAtlas::icon_s("paste"_h).c_str()))
+				;
 			ImGui::Separator();
 			if (size_changed)
 			{
@@ -1026,6 +1045,12 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				sv.assign(nullptr, pv);
 			int n = sv.count();
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
+			ImGui::SameLine();
+			if (ImGui::Button(graphics::FontAtlas::icon_s("copy"_h).c_str()))
+				;
+			ImGui::SameLine();
+			if (ImGui::Button(graphics::FontAtlas::icon_s("paste"_h).c_str()))
+				;
 			ImGui::Separator();
 			if (size_changed)
 			{
@@ -1317,8 +1342,8 @@ struct EditingEntities
 			auto str = path.string();
 			ImGui::InputText("Prefab", str.data(), ImGuiInputTextFlags_ReadOnly);
 			ImGui::SameLine();
-			if (ImGui::Button("P"))
-				selection.select(Path::get(path), "app"_h);
+			if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
+				view_project.explorer.ping(Path::get(path));
 			ImGui::SameLine();
 			ImGui::Button(("Modifications " + graphics::FontAtlas::icon_s("angle-down"_h)).c_str());
 			if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft))
@@ -1428,10 +1453,10 @@ struct EditingEntities
 			ImGui::SameLine();
 			ImGui::TextUnformatted(ui.name.c_str());
 			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 40);
-			if (ImGui::Button("P"))
+			if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
 			{
 				if (!ui.source_file.empty())
-					selection.select(ui.source_file, "app"_h);
+					view_project.explorer.ping(ui.source_file);
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("..."))
@@ -1613,7 +1638,7 @@ struct EditingEntities
 					if (name == "mesh_name"_h)
 					{
 						ImGui::SameLine();
-						if (ImGui::Button("S"))
+						if (ImGui::Button("..."))
 						{
 							open_select_standard_model = true;
 							op_attr = ui.find_attribute(name);
@@ -1896,7 +1921,7 @@ void View_Inspector::on_draw()
 
 	if (selection.type != Selection::tNothing)
 	{
-		if (tool_button(graphics::FontAtlas::icon_s(selection.lock ? "lock"_h : "unlock"_h)))
+		if (ImGui::ToolButton(graphics::FontAtlas::icon_s(selection.lock ? "lock"_h : "unlock"_h).c_str()))
 			app.toggle_selection_lock();
 		ImGui::SameLine();
 	}

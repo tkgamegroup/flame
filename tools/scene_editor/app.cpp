@@ -45,26 +45,6 @@ static std::filesystem::path preferences_path = L"preferences.ini";
 
 static std::vector<std::function<bool()>> dialogs;
 
-bool tool_button(const std::string& name, bool selected, float rotate)
-{
-	if (selected)
-	{
-		ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1, 1, 0, 1));
-		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2);
-	}
-	if (rotate != 0.f)
-		ImGui::BeginRotation(rotate);
-	auto clicked = ImGui::Button(name.c_str());
-	if (selected)
-	{
-		ImGui::PopStyleColor();
-		ImGui::PopStyleVar();
-	}
-	if (rotate != 0.f)
-		ImGui::EndRotation();
-	return clicked;
-}
-
 void show_entities_menu()
 {
 	if (ImGui::MenuItem("New Empty"))
@@ -712,16 +692,16 @@ void App::on_gui()
 	// toolbar begin
 	ImGui::Dummy(vec2(0.f, 20.f));
 	ImGui::SameLine();
-	if (tool_button(graphics::FontAtlas::icon_s("arrow-pointer"_h), app.tool == ToolSelect))
+	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("arrow-pointer"_h).c_str(), app.tool == ToolSelect))
 		tool = ToolSelect;
 	ImGui::SameLine();
-	if (tool_button(graphics::FontAtlas::icon_s("arrows-up-down-left-right"_h), app.tool == ToolMove))
+	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("arrows-up-down-left-right"_h).c_str(), app.tool == ToolMove))
 		tool = ToolMove;
 	ImGui::SameLine();
-	if (tool_button(graphics::FontAtlas::icon_s("rotate"_h), app.tool == ToolRotate))
+	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("rotate"_h).c_str(), app.tool == ToolRotate))
 		tool = ToolRotate;
 	ImGui::SameLine();
-	if (tool_button(graphics::FontAtlas::icon_s("down-left-and-up-right-to-center"_h), app.tool == ToolScale))
+	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("down-left-and-up-right-to-center"_h).c_str(), app.tool == ToolScale))
 		tool = ToolScale;
 	ImGui::SameLine();
 	const char* tool_pivot_names[] = {
@@ -766,7 +746,7 @@ void App::on_gui()
 		}
 	}
 	ImGui::SameLine();
-	if (tool_button(graphics::FontAtlas::icon_s("floppy-disk"_h)))
+	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("floppy-disk"_h).c_str()))
 		save_prefab();
 	ImGui::SameLine();
 	ImGui::Dummy(vec2(0.f, 20.f));
@@ -777,25 +757,25 @@ void App::on_gui()
 		if (auto terrain = e->get_component_t<cTerrain>(); terrain)
 		{
 			ImGui::SameLine();
-			if (tool_button(graphics::FontAtlas::icon_s("mound"_h) + "##up", app.tool == ToolTerrainUp))
+			if (ImGui::ToolButton((graphics::FontAtlas::icon_s("mound"_h) + "##up").c_str(), app.tool == ToolTerrainUp))
 				tool = ToolTerrainUp;
 			ImGui::SameLine();
-			if (tool_button(graphics::FontAtlas::icon_s("mound"_h) + "##down", app.tool == ToolTerrainDown, 180.f))
+			if (ImGui::ToolButton((graphics::FontAtlas::icon_s("mound"_h) + "##down").c_str(), app.tool == ToolTerrainDown, 180.f))
 				tool = ToolTerrainDown;
 			ImGui::SameLine();
-			if (tool_button(graphics::FontAtlas::icon_s("paintbrush"_h), app.tool == ToolTerrainPaint))
+			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("paintbrush"_h).c_str(), app.tool == ToolTerrainPaint))
 				tool = ToolTerrainPaint;
 		}
 		if (auto tile_map = e->get_component_t<cTileMap>(); tile_map)
 		{
 			ImGui::SameLine();
-			if (tool_button(graphics::FontAtlas::icon_s("up-long"_h), app.tool == ToolTileMapLevelUp))
+			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("up-long"_h).c_str(), app.tool == ToolTileMapLevelUp))
 				tool = ToolTileMapLevelUp;
 			ImGui::SameLine();
-			if (tool_button(graphics::FontAtlas::icon_s("down-long"_h), app.tool == ToolTileMapLevelDown))
+			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("down-long"_h).c_str(), app.tool == ToolTileMapLevelDown))
 				tool = ToolTileMapLevelDown;
 			ImGui::SameLine();
-			if (tool_button(graphics::FontAtlas::icon_s("stairs"_h), app.tool == ToolTileMapSlope))
+			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("stairs"_h).c_str(), app.tool == ToolTileMapSlope))
 				tool = ToolTileMapSlope;
 		}
 	}
@@ -806,7 +786,7 @@ void App::on_gui()
 	if (!e_playing && !e_preview)
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
-		if (tool_button(graphics::FontAtlas::icon_s("play"_h) + " Build And Play"))
+		if (ImGui::ToolButton((graphics::FontAtlas::icon_s("play"_h) + " Build And Play").c_str()))
 		{
 			build_project();
 			add_event([this]() {
@@ -815,10 +795,10 @@ void App::on_gui()
 				}, 0.f, 3);
 		}
 		ImGui::SameLine();
-		if (tool_button(graphics::FontAtlas::icon_s("play"_h)))
+		if (ImGui::ToolButton(graphics::FontAtlas::icon_s("play"_h).c_str()))
 			cmd_play();
 		ImGui::SameLine();
-		if (tool_button(graphics::FontAtlas::icon_s("circle-play"_h)))
+		if (ImGui::ToolButton(graphics::FontAtlas::icon_s("circle-play"_h).c_str()))
 			cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : e_prefab);
 		ImGui::PopStyleColor();
 	}
@@ -830,7 +810,7 @@ void App::on_gui()
 			{
 				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1));
 				ImGui::SameLine();
-				if (tool_button(graphics::FontAtlas::icon_s("pause"_h)))
+				if (ImGui::ToolButton(graphics::FontAtlas::icon_s("pause"_h).c_str()))
 					cmd_pause();
 				ImGui::PopStyleColor();
 			}
@@ -838,7 +818,7 @@ void App::on_gui()
 			{
 				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
 				ImGui::SameLine();
-				if (tool_button(graphics::FontAtlas::icon_s("play"_h)))
+				if (ImGui::ToolButton(graphics::FontAtlas::icon_s("play"_h).c_str()))
 					cmd_play();
 				ImGui::PopStyleColor();
 			}
@@ -847,13 +827,13 @@ void App::on_gui()
 		{
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 1, 1));
 			ImGui::SameLine();
-			if (tool_button(graphics::FontAtlas::icon_s("rotate"_h)))
+			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("rotate"_h).c_str()))
 				cmd_restart_preview();
 			ImGui::PopStyleColor();
 		}
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
 		ImGui::SameLine();
-		if (tool_button(graphics::FontAtlas::icon_s("stop"_h)))
+		if (ImGui::ToolButton(graphics::FontAtlas::icon_s("stop"_h).c_str()))
 		{
 			if (e_playing)
 				cmd_stop();

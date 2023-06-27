@@ -147,16 +147,19 @@ namespace flame
 			};
 
 			std::unique_ptr<FolderTreeNode>		folder_tree;
-			FolderTreeNode* opened_folder = nullptr;
+			FolderTreeNode*						opened_folder = nullptr;
 			std::filesystem::path				peeding_open_path;
 			std::pair<FolderTreeNode*, bool>	peeding_open_node;
-			FolderTreeNode* peeding_scroll_here_folder = nullptr;
 			std::vector<FolderTreeNode*>		folder_history;
 			int									folder_history_idx = -1;
 
 			std::vector<std::unique_ptr<Item>>	items;
-			std::filesystem::path				selected_path;
+			std::vector<std::filesystem::path>	selected_paths;
+			std::filesystem::path				pinged_path;
+			uint								ping_frame = 0;
 			std::string							filter;
+			int									do_select = -1; // -1 not showing option and true, 0 - false, 1 - true
+			bool								show_as_list = false;
 
 			std::function<void(const std::filesystem::path&)>							select_callback;
 			std::function<void(const std::filesystem::path&)>							dbclick_callback;
@@ -320,20 +323,8 @@ namespace flame
 
 			void ping(const std::filesystem::path& path)
 			{
-				std::filesystem::path p;
-				auto s = path.wstring();
-				auto sp = SUW::split(s, '#');
-				if (sp.size() > 1)
-					p = sp.front();
-				else
-					p = path.parent_path();
-				auto folder = find_folder(p);
-				if (folder)
-				{
-					folder->mark_upstream_open();
-					peeding_scroll_here_folder = folder;
-					open_folder(folder);
-				}
+				pinged_path = path;
+				ping_frame = frames;
 			}
 
 			void enter_rename(const std::filesystem::path& path)
@@ -347,10 +338,35 @@ namespace flame
 
 			void draw()
 			{
-				if (!peeding_open_path.empty())
+				FolderTreeNode* scroll_here_folder = nullptr;
+				if (!peeding_open_path.empty() && !peeding_open_node.first)
 				{
-					open_folder(find_folder(peeding_open_path));
+					peeding_open_node = { find_folder(peeding_open_path), false };
 					peeding_open_path.clear();
+
+					pinged_path = L"";
+				}
+				else if (peeding_open_node.first)
+					pinged_path = L"";
+				else
+				{
+					if (!pinged_path.empty() && ping_frame == frames)
+					{
+						std::filesystem::path p;
+						auto s = pinged_path.wstring();
+						auto sp = SUW::split(s, '#');
+						if (sp.size() > 1)
+							p = sp.front();
+						else
+							p = pinged_path.parent_path();
+						auto folder = find_folder(p);
+						if (folder)
+						{
+							folder->mark_upstream_open();
+							scroll_here_folder = folder;
+							peeding_open_node = { folder, false };
+						}
+					}
 				}
 				if (peeding_open_node.first)
 				{
@@ -388,11 +404,8 @@ namespace flame
 								node->peeding_open = false;
 							}
 							auto opened = ImGui::TreeNodeEx(node->name.c_str(), flags) && !(flags & ImGuiTreeNodeFlags_Leaf);
-							if (peeding_scroll_here_folder == node)
-							{
+							if (node == scroll_here_folder)
 								ImGui::SetScrollHereY();
-								peeding_scroll_here_folder = nullptr;
-							}
 							if (ImGui::IsItemClicked())
 							{
 								if (opened_folder != node)
@@ -454,7 +467,7 @@ namespace flame
 						}
 						if (jump_lv != -1)
 						{
-							jump_lv = lv - jump_lv;
+							jump_lv = lv - jump_lv - 1;
 							auto n = opened_folder;
 							while (jump_lv > 0)
 							{
@@ -464,51 +477,77 @@ namespace flame
 							peeding_open_node = { n, false };
 						}
 					}
-					if (auto w = ImGui::GetContentRegionAvail().x; w > 50.f)
+					ImGui::SameLine();
+					if (auto w = ImGui::GetContentRegionAvail().x; w > 112.f)
 					{
-
+						auto bar_w = min(w, 400.f);
+						ImGui::SameLine(0.f, w - bar_w);
+						ImGui::SetNextItemWidth(bar_w - 94.f);
+						ImGui::InputText(FontAtlas::icon_s("magnifying-glass"_h).c_str(), &filter);
+						if (do_select != -1 && select_callback)
+						{
+							ImGui::SameLine();
+							if (ImGui::ToolButton(FontAtlas::icon_s("arrow-pointer"_h).c_str(), do_select))
+								do_select = 1 - do_select;
+						}
+						ImGui::SameLine();
+						if (ImGui::ToolButton(FontAtlas::icon_s("grip"_h).c_str(), !show_as_list))
+							show_as_list = false;
+						ImGui::SameLine();
+						if (ImGui::ToolButton(FontAtlas::icon_s("list"_h).c_str(), show_as_list))
+							show_as_list = true;
 					}
+					else
+						ImGui::NewLine();
 
 					content_pos = ImGui::GetCursorPos();
 					content_size = ImGui::GetContentRegionAvail();
 					content_size.y -= 2;
 
-					if (ImGui::BeginTable("contents", clamp(uint(content_size.x / (Item::size + padding.x * 2 + style.ItemSpacing.x)), 1U, 64U), ImGuiTableFlags_ScrollY, content_size))
+					if (!show_as_list)
 					{
-						for (auto i = 0; i < items.size(); i++)
+						if (ImGui::BeginTable("contents", clamp(uint(content_size.x / (Item::size + padding.x * 2 + style.ItemSpacing.x)), 1U, 64U), ImGuiTableFlags_ScrollY, content_size))
 						{
-							auto item = items[i].get();
-							auto selected = selected_path == item->path;
-							auto renaming = rename_callback && rename_path == item->path;
-
-							ImGui::TableNextColumn();
-							ImGui::PushID(i);
-
-							auto item_size = ImVec2(Item::size + padding.x * 2, Item::size + padding.y * 2);
-							if (!renaming)
-								item_size.y += line_height + padding.y;
-							ImGui::InvisibleButton("", item_size);
-							auto p0 = ImGui::GetItemRectMin();
-							auto p1 = ImGui::GetItemRectMax();
-							auto hovered = ImGui::IsItemHovered();
-							auto active = ImGui::IsItemActive();
-							ImU32 col;
-							if (active)						col = ImGui::GetColorU32(ImGuiCol_ButtonActive);
-							else if (hovered || selected)	col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
-							else							col = ImColor(0, 0, 0, 0);
-							auto draw_list = ImGui::GetWindowDrawList();
-							draw_list->AddRectFilled(p0, p1, col);
-							if (item->icon)
-								draw_list->AddImage(item->icon, ImVec2(p0.x + padding.x, p0.y + padding.y), ImVec2(p0.x + padding.x + Item::size, p0.y + padding.y + Item::size));
-							if (!renaming)
+							for (auto i = 0; i < items.size(); i++)
 							{
-								draw_list->AddText(ImVec2(p0.x + padding.x + (Item::size - item->label_width) / 2, p0.y + Item::size + padding.y * 2), ImColor(255, 255, 255),
-									item->label.c_str(), item->label.c_str() + item->label.size());
-							}
+								auto item = items[i].get();
+								if (!filter.empty())
+								{
+									if (!item->path.string().contains(filter))
+										continue;
+								}
+								auto selected = std::find(selected_paths.begin(), selected_paths.end(), item->path) != selected_paths.end();
+								auto pinged = pinged_path == item->path;
+								auto renaming = rename_callback && rename_path == item->path;
 
-							if (hovered)
-							{
-								if (selected)
+								ImGui::TableNextColumn();
+								ImGui::PushID(i);
+
+								auto item_size = ImVec2(Item::size + padding.x * 2, Item::size + padding.y * 2);
+								if (!renaming)
+									item_size.y += line_height + padding.y;
+								ImGui::InvisibleButton("", item_size);
+								auto p0 = ImGui::GetItemRectMin();
+								auto p1 = ImGui::GetItemRectMax();
+								auto hovered = ImGui::IsItemHovered();
+								auto active = ImGui::IsItemActive();
+								ImU32 col;
+								if (active)						col = ImGui::GetColorU32(ImGuiCol_ButtonActive);
+								else if (hovered || selected)	col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
+								else							col = ImColor(0, 0, 0, 0);
+								auto draw_list = ImGui::GetWindowDrawList();
+								draw_list->AddRectFilled(p0, p1, col);
+								if (item->icon)
+									draw_list->AddImage(item->icon, ImVec2(p0.x + padding.x, p0.y + padding.y), ImVec2(p0.x + padding.x + Item::size, p0.y + padding.y + Item::size));
+								if (pinged)
+									draw_list->AddRect(p0, p1, ImColor(200, 200, 0));
+								if (!renaming)
+								{
+									draw_list->AddText(ImVec2(p0.x + padding.x + (Item::size - item->label_width) / 2, p0.y + Item::size + padding.y * 2), ImColor(255, 255, 255),
+										item->label.c_str(), item->label.c_str() + item->label.size());
+								}
+
+								if (hovered)
 								{
 									if (io.MouseDoubleClicked[ImGuiMouseButton_Left])
 									{
@@ -517,25 +556,144 @@ namespace flame
 										if (dbclick_callback)
 											dbclick_callback(item->path);
 									}
-									else if (rename_callback && io.MouseClicked[ImGuiMouseButton_Left])
+									else
 									{
-										auto mpos = ImGui::GetMousePos();
-										if (mpos.y > p1.y - line_height - padding.y)
+										if (selected)
 										{
-											renaming = true;
-											enter_rename(item->path);
+											if (rename_callback && io.MouseClicked[ImGuiMouseButton_Left])
+											{
+												auto mpos = ImGui::GetMousePos();
+												if (mpos.y > p1.y - line_height - padding.y)
+												{
+													renaming = true;
+													enter_rename(item->path);
+												}
+											}
+										}
+										if (io.MouseClicked[ImGuiMouseButton_Left] || io.MouseClicked[ImGuiMouseButton_Right])
+										{
+											if (select_callback && do_select)
+												select_callback(item->path);
+											else
+												selected_paths = { item->path };
 										}
 									}
+									if (pinged)
+										pinged_path = L"";
+								}
+
+								if (ImGui::BeginDragDropSource())
+								{
+									auto str = item->path.wstring();
+									ImGui::SetDragDropPayload("File", str.c_str(), sizeof(wchar_t) * (str.size() + 1));
+									ImGui::TextUnformatted("File");
+									ImGui::EndDragDropSource();
+								}
+
+								if (hovered)
+									ImGui::SetTooltip("%s", item->path.filename().string().c_str());
+
+								ImGui::PopID();
+
+								if (item_context_menu_callback)
+								{
+									if (ImGui::BeginPopupContextItem())
+									{
+										item_context_menu_callback(item->path);
+										ImGui::EndPopup();
+									}
+								}
+
+								if (renaming)
+								{
+									ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+									ImGui::SetNextItemWidth(Item::size + padding.x * 2);
+									if (frames == rename_start_frame)
+										ImGui::SetKeyboardFocusHere();
+									if (ImGui::InputText("##rename", &rename_string, ImGuiInputTextFlags_AutoSelectAll))
+										rename_callback(rename_path, rename_string);
+									if (frames != rename_start_frame)
+									{
+										if (ImGui::IsItemDeactivated() || (!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))
+										{
+											rename_callback(rename_path, "");
+											rename_path = L"";
+										}
+									}
+									ImGui::PopStyleVar();
+								}
+							}
+
+							if (opened_folder && folder_context_menu_callback)
+							{
+								if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverExistingPopup))
+								{
+									folder_context_menu_callback(opened_folder->path);
+									ImGui::EndPopup();
+								}
+							}
+
+							ImGui::EndTable();
+						}
+					}
+					else
+					{
+						ImGui::BeginChild("contents", content_size);
+
+						for (auto i = 0; i < items.size(); i++)
+						{
+							auto item = items[i].get();
+							if (!filter.empty())
+							{
+								if (!item->path.string().contains(filter))
+									continue;
+							}
+
+							auto selected = std::find(selected_paths.begin(), selected_paths.end(), item->path) != selected_paths.end();
+							auto pinged = pinged_path == item->path;
+							auto renaming = rename_callback && rename_path == item->path;
+
+							ImGui::PushID(i);
+
+							auto label = item->path.filename().string();
+							ImGui::Selectable(label.c_str(), selected);
+							auto p0 = ImGui::GetItemRectMin();
+							auto hovered = ImGui::IsItemHovered();
+							auto active = ImGui::IsItemActive();
+
+							if (hovered)
+							{
+								if (io.MouseDoubleClicked[ImGuiMouseButton_Left])
+								{
+									if (item->has_children)
+										peeding_open_path = item->path;
+									if (dbclick_callback)
+										dbclick_callback(item->path);
 								}
 								else
 								{
+									if (selected)
+									{
+										if (rename_callback && io.MouseClicked[ImGuiMouseButton_Left])
+										{
+											auto x = ImGui::GetMousePos().x;
+											if (x > p0.x + 4.f && x < p0.x + 4.f + ImGui::CalcTextSize(label.c_str()).x + 4.f)
+											{
+												renaming = true;
+												enter_rename(item->path);
+											}
+										}
+									}
 									if (io.MouseClicked[ImGuiMouseButton_Left] || io.MouseClicked[ImGuiMouseButton_Right])
 									{
-										selected_path = item->path;
-										if (select_callback)
-											select_callback(selected_path);
+										if (select_callback && do_select)
+											select_callback(item->path);
+										else
+											selected_paths = { item->path };
 									}
 								}
+								if (pinged)
+									pinged_path = L"";
 							}
 
 							if (ImGui::BeginDragDropSource())
@@ -545,9 +703,6 @@ namespace flame
 								ImGui::TextUnformatted("File");
 								ImGui::EndDragDropSource();
 							}
-
-							if (hovered)
-								ImGui::SetTooltip("%s", item->path.filename().string().c_str());
 
 							ImGui::PopID();
 
@@ -562,35 +717,20 @@ namespace flame
 
 							if (renaming)
 							{
-								ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-								ImGui::PushItemWidth(Item::size + padding.x * 2);
-								if (frames == rename_start_frame)
-									ImGui::SetKeyboardFocusHere();
-								if (ImGui::InputText("##rename", &rename_string, ImGuiInputTextFlags_AutoSelectAll))
-									rename_callback(rename_path, rename_string);
-								if (frames != rename_start_frame)
-								{
-									if (ImGui::IsItemDeactivated() || (!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))
-									{
-										rename_callback(rename_path, "");
-										rename_path = L"";
-									}
-								}
-								ImGui::PopItemWidth();
-								ImGui::PopStyleVar();
+
 							}
 						}
 
-						if (opened_folder)
+						if (opened_folder && folder_context_menu_callback)
 						{
 							if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverExistingPopup))
 							{
-								if (folder_context_menu_callback)
-									folder_context_menu_callback(opened_folder->path);
+								folder_context_menu_callback(opened_folder->path);
 								ImGui::EndPopup();
 							}
 						}
-						ImGui::EndTable();
+
+						ImGui::EndChild();
 					}
 
 					ImGui::EndTable();
@@ -600,9 +740,10 @@ namespace flame
 				ImGui::InvisibleButton("background", content_size);
 				if (io.MouseClicked[ImGuiMouseButton_Left] && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlapped))
 				{
-					selected_path = L"";
-					if (select_callback)
-						select_callback(selected_path);
+					if (select_callback && do_select)
+						select_callback(L"");
+					else
+						selected_paths.clear();
 				}
 				if (opened_folder && folder_drop_callback)
 				{

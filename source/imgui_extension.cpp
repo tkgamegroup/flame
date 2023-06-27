@@ -39,6 +39,20 @@ namespace ImGui
 		}
 	}
 
+	bool ToolButton(const char* label, bool selected, float rotate)
+	{
+		if (selected)
+			PushStyleColor(ImGuiCol_Button, GetStyleColorVec4(ImGuiCol_ButtonActive));
+		if (rotate != 0.f)
+			BeginRotation(rotate);
+		auto clicked = Button(label);
+		if (selected)
+			PopStyleColor();
+		if (rotate != 0.f)
+			EndRotation();
+		return clicked;
+	}
+
 	std::stack<ImageViewType> image_view_types;
 
 	ImageViewType GetCurrentImageViewType()
