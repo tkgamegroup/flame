@@ -95,8 +95,8 @@ namespace flame
 				std::filesystem::path				path;
 				std::string							label;
 				float								label_width;
-				graphics::ImagePtr					icon	= nullptr;
-				void(*icon_releaser)(graphics::Image*)		= nullptr;
+				graphics::ImagePtr					icon = nullptr;
+				void(*icon_releaser)(graphics::Image*) = nullptr;
 
 				bool has_children = false;
 
@@ -148,7 +148,6 @@ namespace flame
 
 			std::unique_ptr<FolderTreeNode>		folder_tree;
 			FolderTreeNode* opened_folder = nullptr;
-			uint								open_folder_frame = 0;
 			std::filesystem::path				peeding_open_path;
 			std::pair<FolderTreeNode*, bool>	peeding_open_node;
 			FolderTreeNode* peeding_scroll_here_folder = nullptr;
@@ -158,13 +157,17 @@ namespace flame
 			std::vector<std::unique_ptr<Item>>	items;
 			std::filesystem::path				selected_path;
 
-			std::function<void(const std::filesystem::path&)>						select_callback;
-			std::function<void(const std::filesystem::path&)>						dbclick_callback;
-			std::function<void(const std::filesystem::path&)>						item_context_menu_callback;
-			std::function<void(const std::filesystem::path&)>						folder_context_menu_callback;
-			std::function<void(const std::filesystem::path&)>						folder_drop_callback;
-			std::function<void(Item*)>												item_created_callback;
-			std::function<bool(const std::filesystem::path&, std::vector<Item*>&)>	special_folder_provider;
+			std::function<void(const std::filesystem::path&)>							select_callback;
+			std::function<void(const std::filesystem::path&)>							dbclick_callback;
+			std::function<void(const std::filesystem::path&)>							item_context_menu_callback;
+			std::function<void(const std::filesystem::path&)>							folder_context_menu_callback;
+			std::function<void(const std::filesystem::path&)>							folder_drop_callback;
+			std::function<void(Item*)>													item_created_callback;
+			std::function<bool(const std::filesystem::path&, std::vector<Item*>&)>		special_folder_provider;
+			std::function<void(const std::filesystem::path&, const std::string& name)>	rename_callback;
+			std::filesystem::path														rename_path;
+			std::string																	rename_string;
+			uint																		rename_start_frame;
 
 			void reset_n(const std::vector<std::filesystem::path>& paths)
 			{
@@ -240,7 +243,6 @@ namespace flame
 				}
 
 				opened_folder = folder;
-				open_folder_frame = frames;
 
 				std::vector<Item*> dead_items(items.size());
 				for (auto i = 0; i < items.size(); i++)
@@ -333,6 +335,13 @@ namespace flame
 				}
 			}
 
+			void enter_rename(const std::filesystem::path& path)
+			{
+				rename_path = path;
+				rename_string = rename_path.filename().string();
+				rename_start_frame = frames;
+			}
+
 			void draw()
 			{
 				if (!peeding_open_path.empty())
@@ -347,11 +356,16 @@ namespace flame
 				}
 
 #ifdef USE_IMGUI
+				auto& io = ImGui::GetIO();
+				auto& style = ImGui::GetStyle();
+				auto padding = style.FramePadding;
+				auto line_height = ImGui::GetTextLineHeight();
+
+				ImVec2 content_pos;
+				ImVec2 content_size;
+
 				if (ImGui::BeginTable("main", 2, ImGuiTableFlags_Resizable))
 				{
-					auto& io = ImGui::GetIO();
-					auto& style = ImGui::GetStyle();
-
 					ImGui::TableNextRow();
 
 					ImGui::TableSetColumnIndex(0);
@@ -429,97 +443,112 @@ namespace flame
 						ImGui::TextUnformatted(Path::reverse(opened_folder->path).string().c_str());
 					}
 
-					auto content_pos = ImGui::GetCursorPos();
-					auto content_size = ImGui::GetContentRegionAvail();
-					content_size.y -= 4;
-					ImGui::InvisibleButton("background", content_size);
-					if (opened_folder && folder_drop_callback)
-					{
-						if (ImGui::BeginDragDropTarget())
-						{
-							folder_drop_callback(opened_folder->path);
-							ImGui::EndDragDropTarget();
-						}
-					}
-					ImGui::SetCursorPos(content_pos);
-					auto padding = style.FramePadding;
-					auto line_height = ImGui::GetTextLineHeight();
+					content_pos = ImGui::GetCursorPos();
+					content_size = ImGui::GetContentRegionAvail();
+					content_size.y -= 2;
+
 					if (ImGui::BeginTable("contents", clamp(uint(content_size.x / (Item::size + padding.x * 2 + style.ItemSpacing.x)), 1U, 64U), ImGuiTableFlags_ScrollY, content_size))
 					{
-						auto just_selected = false;
-						if (!items.empty())
+						for (auto i = 0; i < items.size(); i++)
 						{
-							for (auto i = 0; i < items.size(); i++)
-							{
-								auto item = items[i].get();
+							auto item = items[i].get();
+							auto selected = selected_path == item->path;
+							auto renaming = rename_path == item->path;
 
-								ImGui::TableNextColumn();
-								ImGui::PushID(i);
+							ImGui::TableNextColumn();
+							ImGui::PushID(i);
 
-								auto selected = false;
-								ImGui::InvisibleButton("", ImVec2(Item::size + padding.x * 2, Item::size + line_height + padding.y * 3));
-								auto p0 = ImGui::GetItemRectMin();
-								auto p1 = ImGui::GetItemRectMax();
-								auto hovered = ImGui::IsItemHovered();
-								auto active = ImGui::IsItemActive();
-								ImU32 col;
-								if (active)											col = ImGui::GetColorU32(ImGuiCol_ButtonActive);
-								else if (hovered || selected_path == item->path)	col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
-								else												col = ImColor(0, 0, 0, 0);
-								auto draw_list = ImGui::GetWindowDrawList();
-								draw_list->AddRectFilled(p0, p1, col);
-								if (item->icon)
-									draw_list->AddImage(item->icon, ImVec2(p0.x + padding.x, p0.y + padding.y), ImVec2(p1.x - padding.x, p1.y - line_height - padding.y * 2));
+							auto item_size = ImVec2(Item::size + padding.x * 2, Item::size + padding.y * 2);
+							if (!renaming)
+								item_size.y += line_height + padding.y;
+							ImGui::InvisibleButton("", item_size);
+							auto p0 = ImGui::GetItemRectMin();
+							auto p1 = ImGui::GetItemRectMax();
+							auto hovered = ImGui::IsItemHovered();
+							auto active = ImGui::IsItemActive();
+							ImU32 col;
+							if (active)						col = ImGui::GetColorU32(ImGuiCol_ButtonActive);
+							else if (hovered || selected)	col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
+							else							col = ImColor(0, 0, 0, 0);
+							auto draw_list = ImGui::GetWindowDrawList();
+							draw_list->AddRectFilled(p0, p1, col);
+							if (item->icon)
+								draw_list->AddImage(item->icon, ImVec2(p0.x + padding.x, p0.y + padding.y), ImVec2(p0.x + padding.x + Item::size, p0.y + padding.y + Item::size));
+							if (!renaming)
 								draw_list->AddText(ImVec2(p0.x + padding.x + (Item::size - item->label_width) / 2, p0.y + Item::size + padding.y * 2), ImColor(255, 255, 255), item->label.c_str(), item->label.c_str() + item->label.size());
 
-								if (frames > open_folder_frame + 3 && (io.MouseReleased[ImGuiMouseButton_Left] || io.MouseReleased[ImGuiMouseButton_Right])
-									&& hovered && ImGui::IsItemDeactivated())
-								{
-									selected_path = item->path;
-									if (select_callback)
-										select_callback(selected_path);
-									selected = true;
-								}
-								if (io.MouseDoubleClicked[ImGuiMouseButton_Left] && active)
-								{
-									if (item->has_children)
-										peeding_open_path = item->path;
-									if (dbclick_callback)
-										dbclick_callback(item->path);
-								}
-
-								if (ImGui::BeginDragDropSource())
-								{
-									auto str = item->path.wstring();
-									ImGui::SetDragDropPayload("File", str.c_str(), sizeof(wchar_t) * (str.size() + 1));
-									ImGui::TextUnformatted("File");
-									ImGui::EndDragDropSource();
-								}
-
-								if (hovered)
-									ImGui::SetTooltip("%s", item->path.filename().string().c_str());
-
+							if (hovered)
+							{
 								if (selected)
-									just_selected = true;
-								ImGui::PopID();
-
-								if (item_context_menu_callback)
 								{
-									if (ImGui::BeginPopupContextItem())
+									if (io.MouseDoubleClicked[ImGuiMouseButton_Left])
 									{
-										item_context_menu_callback(item->path);
-										ImGui::EndPopup();
+										if (item->has_children)
+											peeding_open_path = item->path;
+										if (dbclick_callback)
+											dbclick_callback(item->path);
+									}
+									else if (io.MouseClicked[ImGuiMouseButton_Left])
+									{
+										auto mpos = ImGui::GetMousePos();
+										if (mpos.y > p1.y - line_height - padding.y)
+										{
+											renaming = true;
+											enter_rename(item->path);
+										}
+									}
+								}
+								else
+								{
+									if (io.MouseClicked[ImGuiMouseButton_Left] || io.MouseClicked[ImGuiMouseButton_Right])
+									{
+										selected_path = item->path;
+										if (select_callback)
+											select_callback(selected_path);
 									}
 								}
 							}
+
+							if (ImGui::BeginDragDropSource())
+							{
+								auto str = item->path.wstring();
+								ImGui::SetDragDropPayload("File", str.c_str(), sizeof(wchar_t) * (str.size() + 1));
+								ImGui::TextUnformatted("File");
+								ImGui::EndDragDropSource();
+							}
+
+							if (hovered)
+								ImGui::SetTooltip("%s", item->path.filename().string().c_str());
+
+							ImGui::PopID();
+
+							if (item_context_menu_callback)
+							{
+								if (ImGui::BeginPopupContextItem())
+								{
+									item_context_menu_callback(item->path);
+									ImGui::EndPopup();
+								}
+							}
+
+							if (renaming)
+							{
+								ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+								ImGui::PushItemWidth(Item::size + padding.x * 2);
+								if (frames == rename_start_frame)
+									ImGui::SetKeyboardFocusHere();
+								if (ImGui::InputText("##rename", &rename_string, ImGuiInputTextFlags_AutoSelectAll))
+									;
+								if (frames != rename_start_frame)
+								{
+									if (ImGui::IsItemDeactivated() || (!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))
+										rename_path = L"";
+								}
+								ImGui::PopItemWidth();
+								ImGui::PopStyleVar();
+							}
 						}
-						auto disp = (vec2)io.MouseClickedPos[ImGuiMouseButton_Left] - (vec2)io.MousePos;
-						if (disp == vec2(0.f) && io.MouseReleased[ImGuiMouseButton_Left] && ImGui::IsWindowHovered() && !just_selected)
-						{
-							selected_path = L"";
-							if (select_callback)
-								select_callback(selected_path);
-						}
+
 						if (opened_folder)
 						{
 							if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverExistingPopup))
@@ -533,6 +562,23 @@ namespace flame
 					}
 
 					ImGui::EndTable();
+				}
+
+				ImGui::SetCursorPos(content_pos);
+				ImGui::InvisibleButton("background", content_size);
+				if (io.MouseClicked[ImGuiMouseButton_Left] && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlapped))
+				{
+					selected_path = L"";
+					if (select_callback)
+						select_callback(selected_path);
+				}
+				if (opened_folder && folder_drop_callback)
+				{
+					if (ImGui::BeginDragDropTarget())
+					{
+						folder_drop_callback(opened_folder->path);
+						ImGui::EndDragDropTarget();
+					}
 				}
 #endif
 			}

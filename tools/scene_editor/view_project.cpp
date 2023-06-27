@@ -321,15 +321,8 @@ void View_Project::init()
 		}
 		if (paths.size() == 1 && ImGui::MenuItem("Rename"))
 		{
-			ImGui::OpenInputDialog("Rename", "New Name", [path](bool ok, const std::string& text) {
-				if (ok)
-				{
-					auto new_name = path;
-					new_name.replace_filename(text);
-					std::error_code ec;
-					std::filesystem::rename(path, new_name, ec);
-				}
-			}, path.filename().string());
+			explorer.enter_rename(path);
+			explorer.rename_start_frame++;
 		}
 		if (ImGui::MenuItem("Delete"))
 		{
@@ -508,7 +501,7 @@ void View_Project::init()
 						if (extent.x <= 0 || extent.y <= 0 || extent.z <= 0)
 							return nullptr;
 
-						graphics::Format fmt;
+						graphics::Format fmt = graphics::Format_Undefined;
 						switch (format)
 						{
 						case 0: fmt = graphics::Format_R8G8B8A8_UNORM; break;
@@ -1036,6 +1029,9 @@ void View_Project::init()
 			}
 		}
 		return false;
+	};
+	explorer.rename_callback = [](const std::filesystem::path& path, const std::string& name) {
+
 	};
 }
 
