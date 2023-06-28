@@ -201,7 +201,8 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 
 std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num = 1, const std::vector<uint> excludes = {}, const std::function<void(uint)>&cb = {});
 
-int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash, int offset, const FunctionInfo* getter, const FunctionInfo* setter, voidptr* objs, uint num, const void* id, bool hide_name = false)
+int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash, int offset, const FunctionInfo* getter, const FunctionInfo* setter, const std::string& default_value, 
+	voidptr* objs, uint num, const void* id, bool hide_name = false)
 {
 	auto display_name = get_display_name(name);
 	if (hide_name)
@@ -355,8 +356,45 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		return ret;
 	};
 
-	static TypeInfo* copied_data_type = nullptr;
-	static std::string copied_data_value;
+	static TypeInfo* copied_type = nullptr;
+	auto context_menu = [&](void* data) {
+		ImGui::SameLine();
+		if (name_hash && ImGui::Button("..."))
+			ImGui::OpenPopup("context_menu");
+		if (ImGui::BeginPopup("context_menu"))
+		{
+			if (ImGui::MenuItem("Reset Value"))
+			{
+				auto dv = !default_value.empty() ? default_value : type->serialize(nullptr);
+				if (type->serialize(data) != dv)
+				{
+					type->unserialize(dv, data);
+					changed = 2;
+				}
+
+			}
+			if (ImGui::MenuItem("Copy Value"))
+			{
+				if (num == 1)
+				{
+					copied_type = type;
+					set_clipboard(s2w(type->serialize(data)));
+				}
+			}
+			if (ImGui::MenuItem("Paste Value"))
+			{
+				if (copied_type == type)
+				{
+					if (auto copied_value = w2s(get_clipboard()); type->serialize(data) != copied_value)
+					{
+						type->unserialize(copied_value, data);
+						changed = 2;
+					}
+				}
+			}
+			ImGui::EndPopup();
+		}
+	};
 
 	ImGui::PushID(id);
 	switch (type->tag)
@@ -365,7 +403,8 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 	{
 		auto ti = (TypeInfo_Enum*)type;
 		auto ei = ti->ei;
-		int value = *(int*)type->get_value(objs[0], offset, getter);
+		auto data = type->get_value(objs[0], offset, getter, getter);
+		int value = *(int*)data;
 		if (!ei->is_flags)
 		{
 			if (ImGui::BeginCombo(display_name.c_str(), same[0] ? ei->items[value].name.c_str() : "-"))
@@ -383,6 +422,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				}
 				ImGui::EndCombo();
 			}
+			context_menu(data);
 		}
 		else
 		{
@@ -419,6 +459,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				}
 				ImGui::EndCombo();
 			}
+			context_menu(data);
 		}
 		if (changed)
 		{
@@ -450,6 +491,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			changed = ImGui::Checkbox(display_name.c_str(), &value);
 			if (!same[0])
 				ImGui::PopItemFlag();
+			context_menu(data);
 			if (changed)
 			{
 				before_editing_values.resize(num);
@@ -488,6 +530,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				if (num > 1)
 					eos.sync_states->at(id) = 1;
 			}
+			context_menu(data);
 			if (just_exit_editing)
 			{
 				auto new_value = str(ti->vec_size, (int*)data);
@@ -522,6 +565,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					before_editing_values[i] = str(ti->vec_size, (float*)type->get_value(objs[i], offset, getter));
 			}
 			just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
+			context_menu(data);
 			if (changed)
 			{
 				if ((changed > 1 || just_exit_editing) && !direct_io)
@@ -574,17 +618,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 						before_editing_values[i] = str(*(cvec4*)type->get_value(objs[i], offset, getter));
 				}
 				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
-				ImGui::SameLine();
-				static vec4 copied_color;
-				if (ImGui::Button(graphics::FontAtlas::icon_s("copy"_h).c_str()))
-					copied_color = color;
-				ImGui::SameLine();
-				if (ImGui::Button(graphics::FontAtlas::icon_s("paste"_h).c_str()))
-				{
-					color = copied_color;
-					changed = true;
-					app.prefab_unsaved = true;
-				}
+				context_menu(data);
 				if (changed)
 					*(cvec4*)data = color * 255.f;
 				if (changed)
@@ -626,6 +660,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					before_editing_values[i] = *(std::string*)type->get_value(objs[i], offset, getter);
 			}
 			just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
+			context_menu(data);
 			if (changed)
 			{
 				if (just_exit_editing && !direct_io)
@@ -667,6 +702,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					before_editing_values[i] = w2s(*(std::wstring*)type->get_value(objs[i], offset, getter));
 			}
 			just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
+			context_menu(data);
 			if (changed)
 			{
 				if (just_exit_editing && !direct_io)
@@ -721,6 +757,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				changed = true;
 				add_modify_history(name_hash, path.string());
 			}
+			context_menu(data);
 			if (changed)
 			{
 				if (!direct_io)
@@ -777,6 +814,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				changed = true;
 				add_modify_history(name_hash, guid.to_string());
 			}
+			context_menu(data);
 			if (changed)
 			{
 				if (!direct_io)
@@ -877,12 +915,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			};
 			int n = sv.count();
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
-			ImGui::SameLine();
-			if (ImGui::Button(graphics::FontAtlas::icon_s("copy"_h).c_str()))
-				;
-			ImGui::SameLine();
-			if (ImGui::Button(graphics::FontAtlas::icon_s("paste"_h).c_str()))
-				;
+			context_menu(pv);
 			ImGui::Separator();
 			if (size_changed)
 			{
@@ -900,7 +933,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				{
 					ImGui::PushID(i);
 					auto ptr = sv.v.data();
-					if (manipulate_variable(ti, str(i), 0, i * ti->size, nullptr, nullptr, (voidptr*)&ptr, 1, id) > 1)
+					if (manipulate_variable(ti, str(i), 0, i * ti->size, nullptr, nullptr, "", (voidptr*)&ptr, 1, id) > 1)
 						changed = true;
 					ImGui::PopID();
 				}
@@ -931,12 +964,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			auto& ui = *ti->retrive_ui();
 			int n = sv.count();
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
-			ImGui::SameLine();
-			if (ImGui::Button(graphics::FontAtlas::icon_s("copy"_h).c_str()))
-				;
-			ImGui::SameLine();
-			if (ImGui::Button(graphics::FontAtlas::icon_s("paste"_h).c_str()))
-				;
+			context_menu(pv);
 			ImGui::Separator();
 			if (size_changed)
 			{
@@ -985,12 +1013,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			};
 			int n = sv.count();
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
-			ImGui::SameLine();
-			if (ImGui::Button(graphics::FontAtlas::icon_s("copy"_h).c_str()))
-				;
-			ImGui::SameLine();
-			if (ImGui::Button(graphics::FontAtlas::icon_s("paste"_h).c_str()))
-				;
+			context_menu(pv);
 			ImGui::Separator();
 			if (size_changed)
 			{
@@ -1011,9 +1034,9 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					auto p = sv.v.data() + ti->size * i;
 					auto ptr0 = ti->first(p);
 					auto ptr1 = ti->second(p);
-					if (manipulate_variable(ti->ti1, "First", 0, 0, nullptr, nullptr, (voidptr*)&ptr0, 1, id) > 1)
+					if (manipulate_variable(ti->ti1, "First", 0, 0, nullptr, nullptr, "", (voidptr*)&ptr0, 1, id) > 1)
 						changed = true;
-					if (manipulate_variable(ti->ti2, "Second", 0, 0, nullptr, nullptr, (voidptr*)&ptr1, 1, id) > 1)
+					if (manipulate_variable(ti->ti2, "Second", 0, 0, nullptr, nullptr, "", (voidptr*)&ptr1, 1, id) > 1)
 						changed = true;
 					ImGui::PopID();
 				}
@@ -1045,12 +1068,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				sv.assign(nullptr, pv);
 			int n = sv.count();
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
-			ImGui::SameLine();
-			if (ImGui::Button(graphics::FontAtlas::icon_s("copy"_h).c_str()))
-				;
-			ImGui::SameLine();
-			if (ImGui::Button(graphics::FontAtlas::icon_s("paste"_h).c_str()))
-				;
+			context_menu(pv);
 			ImGui::Separator();
 			if (size_changed)
 			{
@@ -1073,7 +1091,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					for (auto& t : ti->tis)
 					{
 						auto ptr = p + t.second;
-						if (manipulate_variable(t.first, "Item " + str(j), 0, 0, nullptr, nullptr, (voidptr*)&ptr, 1, id) > 1)
+						if (manipulate_variable(t.first, "Item " + str(j), 0, 0, nullptr, nullptr, "", (voidptr*)&ptr, 1, id) > 1)
 							changed = true;
 						j++;
 					}
@@ -1085,7 +1103,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					set_sv();
 
 					changed = 2;
-					app.prefab_unsaved = true;
 				}
 			}
 			ImGui::TreePop();
@@ -1099,7 +1116,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 
 int manipulate_variable(const VariableInfo& v, voidptr* objs, uint num)
 {
-	return manipulate_variable(v.type, v.name, v.name_hash, v.offset, nullptr, nullptr, objs, num, &v);
+	return manipulate_variable(v.type, v.name, v.name_hash, v.offset, nullptr, nullptr, v.default_value, objs, num, &v);
 }
 
 int manipulate_attribute(const Attribute& a, voidptr* objs, uint num, bool hide_name = false)
@@ -1107,6 +1124,7 @@ int manipulate_attribute(const Attribute& a, voidptr* objs, uint num, bool hide_
 	return manipulate_variable(a.type, a.name, a.name_hash, a.var_off(),
 		a.getter_idx != -1 ? &a.ui->functions[a.getter_idx] : nullptr,
 		a.setter_idx != -1 ? &a.ui->functions[a.setter_idx] : nullptr,
+		a.default_value,
 		objs, num, &a, hide_name);
 }
 
@@ -1638,7 +1656,7 @@ struct EditingEntities
 					if (name == "mesh_name"_h)
 					{
 						ImGui::SameLine();
-						if (ImGui::Button("..."))
+						if (ImGui::Button("S"))
 						{
 							open_select_standard_model = true;
 							op_attr = ui.find_attribute(name);
@@ -2229,7 +2247,7 @@ void View_Inspector::on_draw()
 
 				if (sel_ref_obj)
 				{
-					uint changed = manipulate_variable(TypeInfo::get<decltype(default_defines)>(), "default defines", 0, 0, nullptr, nullptr, (voidptr*)&default_defines, 1, nullptr);
+					uint changed = manipulate_variable(TypeInfo::get<decltype(default_defines)>(), "default defines", 0, 0, nullptr, nullptr, "", (voidptr*)&default_defines, 1, nullptr);
 					changed |= manipulate_udt(*ser_ui, (voidptr*)&sel_ref_obj, 1).first;
 					if (changed == 2)
 					{

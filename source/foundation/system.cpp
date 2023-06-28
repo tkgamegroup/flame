@@ -372,9 +372,10 @@ namespace flame
 
 	void set_clipboard(std::wstring_view str)
 	{
-		auto hMemory = GlobalAlloc(GHND, str.size());
-		auto gdata = GlobalLock(hMemory);
-		memcpy(gdata, str.data(), str.size());
+		auto hMemory = GlobalAlloc(GHND, (str.size() + 1) * sizeof(wchar_t));
+		auto gdata = (wchar_t*)GlobalLock(hMemory);
+		memcpy(gdata, str.data(), str.size() * sizeof(wchar_t));
+		gdata[str.size()] = 0;
 		GlobalUnlock(hMemory);
 
 		OpenClipboard(NULL);
