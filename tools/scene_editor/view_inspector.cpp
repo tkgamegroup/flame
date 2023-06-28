@@ -358,8 +358,10 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 
 	static TypeInfo* copied_type = nullptr;
 	auto context_menu = [&](void* data) {
+		if (!name_hash)
+			return;
 		ImGui::SameLine();
-		if (name_hash && ImGui::Button("..."))
+		if (ImGui::Button("..."))
 			ImGui::OpenPopup("context_menu");
 		if (ImGui::BeginPopup("context_menu"))
 		{
@@ -370,6 +372,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				{
 					type->unserialize(dv, data);
 					changed = 2;
+					view_inspector.refresh();
 				}
 
 			}
@@ -389,6 +392,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					{
 						type->unserialize(copied_value, data);
 						changed = 2;
+						view_inspector.refresh();
 					}
 				}
 			}
@@ -1312,11 +1316,6 @@ struct EditingEntities
 		}
 	}
 
-	void refresh()
-	{
-		refresh(selection.get_entities());
-	}
-
 	std::pair<uint, uint> manipulate()
 	{
 		uint ret_changed = 0;
@@ -1470,13 +1469,7 @@ struct EditingEntities
 			}
 			ImGui::SameLine();
 			ImGui::TextUnformatted(ui.name.c_str());
-			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 40);
-			if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
-			{
-				if (!ui.source_file.empty())
-					view_project.explorer.ping(ui.source_file);
-			}
-			ImGui::SameLine();
+			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 20);
 			if (ImGui::Button("..."))
 				ImGui::OpenPopup("component_menu");
 			if (ImGui::BeginPopup("component_menu"))
@@ -1597,6 +1590,41 @@ struct EditingEntities
 				}
 				static uint copied_component = 0;
 				static std::vector<std::pair<uint, std::string>> copied_values;
+				if (ImGui::Selectable("Reset Values"))
+				{
+					auto changed = false;
+					for (auto& a : ui.attributes)
+					{
+						auto different = false;
+						for (auto obj : cc.components)
+						{
+							if (a.serialize(obj) != a.default_value)
+							{
+								different = true;
+								break;
+							}
+						}
+
+						if (different)
+						{
+							before_editing_values.resize(cc.components.size());
+							for (auto i = 0; i < cc.components.size(); i++)
+								before_editing_values[i] = a.serialize(cc.components[i]);
+
+							for (auto obj : cc.components)
+							{
+								a.unserialize(obj, a.default_value);
+								changed = true;
+							}
+							add_modify_history(a.name_hash, a.default_value);
+						}
+					}
+					if (changed)
+					{
+						ret_changed |= 2;
+						view_inspector.refresh();
+					}
+				}
 				if (cc.components.size() == 1)
 				{
 					if (ImGui::Selectable("Copy Values"))
@@ -1623,22 +1651,35 @@ struct EditingEntities
 						{
 							if (auto a = ui.find_attribute(v.first); a)
 							{
-								before_editing_values.resize(cc.components.size());
-								for (auto i = 0; i < cc.components.size(); i++)
-									before_editing_values[i] = a->serialize(cc.components[i]);
-
+								auto different = false;
 								for (auto obj : cc.components)
 								{
-									a->unserialize(obj, v.second);
-									changed = true;
+									if (a->serialize(obj) != v.second)
+									{
+										different = true;
+										break;
+									}
 								}
-								add_modify_history(a->name_hash, v.second);
+
+								if (different)
+								{
+									before_editing_values.resize(cc.components.size());
+									for (auto i = 0; i < cc.components.size(); i++)
+										before_editing_values[i] = a->serialize(cc.components[i]);
+
+									for (auto obj : cc.components)
+									{
+										a->unserialize(obj, v.second);
+										changed = true;
+									}
+									add_modify_history(a->name_hash, v.second);
+								}
 							}
 						}
 						if (changed)
 						{
 							ret_changed |= 2;
-							staging_vectors.clear();
+							view_inspector.refresh();
 						}
 					}
 				}
@@ -1918,6 +1959,12 @@ struct EditingEntities
 };
 static EditingEntities editing_entities;
 
+void View_Inspector::refresh()
+{
+	staging_vectors.clear();
+	editing_entities.refresh(editing_entities.entities);
+}
+
 void View_Inspector::on_draw()
 {
 	static void* sel_ref_obj = nullptr;
@@ -1928,8 +1975,7 @@ void View_Inspector::on_draw()
 
 	if (last_selection_changed)
 	{
-		staging_vectors.clear();
-		editing_entities.refresh();
+		editing_entities.entities = selection.get_entities();
 
 		if (sel_ref_deletor && sel_ref_obj)
 			sel_ref_deletor(sel_ref_obj);
@@ -2188,7 +2234,10 @@ void View_Inspector::on_draw()
 					editing_entities.refresh({ entity });
 					editing_entities.prefab_path = path;
 					if (editing_entities.manipulate().first == 2)
+					{
 						entity->save(path, true);
+						app.last_status = std::format("prefab saved: {}", path.string());
+					}
 				}
 			}
 			else if (ext == L".preset")
