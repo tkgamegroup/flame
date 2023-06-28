@@ -358,7 +358,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 
 	static TypeInfo* copied_type = nullptr;
 	auto context_menu = [&](void* data) {
-		if (!name_hash)
+		if (!name_hash || hide_name)
 			return;
 		ImGui::SameLine();
 		if (ImGui::Button("..."))
@@ -1962,7 +1962,8 @@ static EditingEntities editing_entities;
 void View_Inspector::refresh()
 {
 	staging_vectors.clear();
-	editing_entities.refresh(editing_entities.entities);
+	auto es = editing_entities.entities;
+	editing_entities.refresh(es);
 }
 
 void View_Inspector::on_draw()
@@ -1976,6 +1977,7 @@ void View_Inspector::on_draw()
 	if (last_selection_changed)
 	{
 		editing_entities.entities = selection.get_entities();
+		refresh();
 
 		if (sel_ref_deletor && sel_ref_obj)
 			sel_ref_deletor(sel_ref_obj);
@@ -2031,21 +2033,6 @@ void View_Inspector::on_draw()
 				ImGui::Checkbox("Only Animation", &only_animation);
 				if (ImGui::Button("Import"))
 					graphics::import_scene(path, L"", rotation, scaling, only_animation);
-			}
-			else if (ext == L".fmod")
-			{
-				if (ImGui::Button("To Text"))
-				{
-					auto model = graphics::Model::get(path);
-					model->save(path, false);
-					graphics::Model::release(model);
-				}
-				if (ImGui::Button("To Binary"))
-				{
-					auto model = graphics::Model::get(path);
-					model->save(path, true);
-					graphics::Model::release(model);
-				}
 			}
 			else if (is_image_file(ext))
 			{
@@ -2169,6 +2156,10 @@ void View_Inspector::on_draw()
 						ImGui::Text("Attributes: %s", attr_str.data());
 						i++;
 					}
+					if (ImGui::Button("To Text"))
+						model->save(path, false);
+					if (ImGui::Button("To Binary"))
+						model->save(path, true);
 				}
 			}
 			else if (ext == L".fani")
