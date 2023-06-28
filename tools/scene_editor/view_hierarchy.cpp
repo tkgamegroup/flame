@@ -21,6 +21,165 @@ struct Entities
 	uint n;
 };
 
+std::vector<EntityPtr> read_drops(EntityPtr e_dst) 
+{
+	std::vector<EntityPtr> ret;
+	if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
+	{
+		if (get_root_prefab_instance(e_dst))
+		{
+			open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+			return ret;
+		}
+		auto e = *(EntityPtr*)payload->Data;
+		if (!e->prefab_instance && get_root_prefab_instance(e))
+		{
+			open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+			return ret;
+		}
+		if (is_ancestor(e, e_dst))
+		{
+			open_message_dialog("Cannot reparent", "The entity you select is the ancestor of the destination");
+			return ret;
+		}
+		ret.push_back(e);
+	}
+	else if (auto payload = ImGui::AcceptDragDropPayload("Entities"); payload)
+	{
+		if (get_root_prefab_instance(e_dst))
+		{
+			open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+			return ret;
+		}
+		auto& es = *(Entities*)payload->Data;
+		for (auto i = 0; i < es.n; i++)
+		{
+			auto e = es.p[i];
+			if (!e->prefab_instance && get_root_prefab_instance(e))
+			{
+				open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+				return ret;
+			}
+		}
+		for (auto i = 0; i < es.n; i++)
+		{
+			for (auto j = 0; j < es.n; j++)
+			{
+				if (is_ancestor(es.p[i], es.p[j]))
+				{
+					open_message_dialog("Cannot reparent", "The entities you select must not have parentships");
+					return ret;
+				}
+			}
+		}
+		for (auto i = 0; i < es.n; i++)
+		{
+			if (is_ancestor(es.p[i], e_dst))
+			{
+				open_message_dialog("Cannot reparent", "One or more entities you select are the ancestors of the destination");
+				return ret;
+			}
+		}
+		for (auto i = 0; i < es.n; i++)
+			ret.push_back(es.p[i]);
+	}
+	else if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
+	{
+		auto path = Path::reverse(std::wstring((wchar_t*)payload->Data));
+		auto ext = path.extension();
+		if (ext == L".prefab")
+		{
+			if (get_root_prefab_instance(e_dst))
+			{
+				open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+				return ret;
+			}
+
+			auto e = Entity::create(path);
+			new PrefabInstance(e, path);
+			ret.push_back(e);
+		}
+		else if (ext == L".timeline")
+		{
+			app.open_timeline(path);
+			if (app.opened_timeline)
+				app.set_timeline_host(e_dst);
+		}
+	}
+	return ret;
+}
+
+void entity_drag_behaviour(EntityPtr e)
+{
+	if (ImGui::BeginDragDropSource())
+	{
+		auto in_selection = false;
+		if (selection.type == Selection::tEntity && !selection.lock)
+		{
+			auto found = false;
+			auto es = selection.get_entities();
+			for (auto _e : es)
+			{
+				if (e == _e)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				es.push_back(e);
+				selection.select(es, "hierarchy"_h);
+			}
+			in_selection = true;
+		}
+		if (!in_selection || selection.objects.size() == 1)
+		{
+			ImGui::SetDragDropPayload("Entity", &e, sizeof(void*));
+			ImGui::TextUnformatted(e->name.c_str());
+			ImGui::EndDragDropSource();
+		}
+		else
+		{
+			Entities es;
+			es.p = (EntityPtr*)selection.objects.data();
+			es.n = selection.objects.size();
+			ImGui::SetDragDropPayload("Entities", &es, sizeof(Entities));
+			ImGui::Text("%d entities", es.n);
+			ImGui::EndDragDropSource();
+		}
+	}
+}
+
+void entity_drop_behaviour(EntityPtr e)
+{
+	if (ImGui::BeginDragDropTarget())
+	{
+		auto es = read_drops(e);
+		if (!es.empty())
+		{
+			for (auto _e : es)
+			{
+				if (_e->parent)
+					_e->remove_from_parent(false);
+			}
+			for (auto _e : es)
+				e->add_child(_e);
+			app.prefab_unsaved = true;
+		}
+		ImGui::EndDragDropTarget();
+	}
+}
+
+void entity_context_menu_behaviour(EntityPtr e)
+{
+	if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonRight))
+	{
+		show_entities_menu();
+		ImGui::EndPopup();
+	}
+}
+
 void View_Hierarchy::on_draw()
 {
 	EntityPtr select_entity = nullptr;
@@ -40,10 +199,9 @@ void View_Hierarchy::on_draw()
 
 	auto content_pos = ImGui::GetCursorPos();
 
-	std::function<void(EntityPtr, bool)> show_entity;
-	show_entity = [&](EntityPtr e, bool in_prefab) {
-		if (e->prefab_instance)
-			in_prefab = true;
+	std::function<void(EntityPtr)> show_entity;
+	show_entity = [&](EntityPtr e) {
+		auto in_prefab = get_root_prefab_instance(e);
 
 		std::string display_name;
 		if (e != rename_entity)
@@ -78,9 +236,6 @@ void View_Hierarchy::on_draw()
 		if (in_prefab)
 			ImGui::PopStyleColor();
 
-		static std::string rename_string;
-		static uint rename_start_frame = 0;
-
 		if (ImGui::IsItemHovered())
 		{
 			if (selected)
@@ -93,7 +248,8 @@ void View_Hierarchy::on_draw()
 					{
 						auto x = ImGui::GetMousePos().x;
 						auto p0 = ImGui::GetItemRectMin();
-						if (x > p0.x + 28.f && x < p0.x + 28.f + ImGui::CalcTextSize(e->name.c_str()).x + 4.f)
+						auto indent = ImGui::GetCurrentWindow()->DC.Indent.x;
+						if (x > p0.x + indent + 28.f && x < p0.x + indent + 28.f + ImGui::CalcTextSize(e->name.c_str()).x + 4.f)
 						{
 							rename_entity = e;
 							rename_string = e->name;
@@ -106,44 +262,7 @@ void View_Hierarchy::on_draw()
 				select_entity = e;
 		}
 
-		if (ImGui::BeginDragDropSource())
-		{
-			auto in_selection = false;
-			if (selection.type == Selection::tEntity && !selection.lock)
-			{
-				auto found = false;
-				auto es = selection.get_entities();
-				for (auto _e : es)
-				{
-					if (e == _e)
-					{
-						found = true;
-						break;
-					}
-				}
-				if (!found)
-				{
-					es.push_back(e);
-					selection.select(es, "hierarchy"_h);
-				}
-				in_selection = true;
-			}
-			if (!in_selection || selection.objects.size() == 1)
-			{
-				ImGui::SetDragDropPayload("Entity", &e, sizeof(void*));
-				ImGui::TextUnformatted(e->name.c_str());
-				ImGui::EndDragDropSource();
-			}
-			else
-			{
-				Entities es;
-				es.p = (EntityPtr*)selection.objects.data();
-				es.n = selection.objects.size();
-				ImGui::SetDragDropPayload("Entities", &es, sizeof(Entities));
-				ImGui::Text("%d entities", es.n);
-				ImGui::EndDragDropSource();
-			}
-		}
+		entity_drag_behaviour(e);
 
 		if (rename_entity == e)
 		{
@@ -163,116 +282,8 @@ void View_Hierarchy::on_draw()
 			ImGui::PopStyleVar();
 		}
 
-		auto e_dst = e;
-		auto read_drops = [e_dst]()->std::vector<EntityPtr> {
-			std::vector<EntityPtr> ret;
-			if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
-			{
-				if (get_root_prefab_instance(e_dst))
-				{
-					open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-					return ret;
-				}
-				auto e = *(EntityPtr*)payload->Data;
-				if (!e->prefab_instance && get_root_prefab_instance(e))
-				{
-					open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-					return ret;
-				}
-				if (is_ancestor(e, e_dst))
-				{
-					open_message_dialog("Cannot reparent", "The entity you select is the ancestor of the destination");
-					return ret;
-				}
-				ret.push_back(e);
-			}
-			else if (auto payload = ImGui::AcceptDragDropPayload("Entities"); payload)
-			{
-				if (get_root_prefab_instance(e_dst))
-				{
-					open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-					return ret;
-				}
-				auto& es = *(Entities*)payload->Data;
-				for (auto i = 0; i < es.n; i++)
-				{
-					auto e = es.p[i];
-					if (!e->prefab_instance && get_root_prefab_instance(e))
-					{
-						open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-						return ret;
-					}
-				}
-				for (auto i = 0; i < es.n; i++)
-				{
-					for (auto j = 0; j < es.n; j++)
-					{
-						if (is_ancestor(es.p[i], es.p[j]))
-						{
-							open_message_dialog("Cannot reparent", "The entities you select must not have parentships");
-							return ret;
-						}
-					}
-				}
-				for (auto i = 0; i < es.n; i++)
-				{
-					if (is_ancestor(es.p[i], e_dst))
-					{
-						open_message_dialog("Cannot reparent", "One or more entities you select are the ancestors of the destination");
-						return ret;
-					}
-				}
-				for (auto i = 0; i < es.n; i++)
-					ret.push_back(es.p[i]);
-			}
-			else if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
-			{
-				auto path = Path::reverse(std::wstring((wchar_t*)payload->Data));
-				auto ext = path.extension();
-				if (ext == L".prefab")
-				{
-					if (get_root_prefab_instance(e_dst))
-					{
-						open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-						return ret;
-					}
-
-					auto e = Entity::create(path);
-					new PrefabInstance(e, path);
-					ret.push_back(e);
-				}
-				else if (ext == L".timeline")
-				{
-					app.open_timeline(path);
-					if (app.opened_timeline)
-						app.set_timeline_host(e_dst);
-				}
-			}
-			return ret;
-		};
-
-		if (ImGui::BeginDragDropTarget())
-		{
-			auto es = read_drops();
-			if (!es.empty())
-			{
-				for (auto _e : es)
-				{
-					if (_e->parent)
-						_e->remove_from_parent(false);
-				}
-				for (auto _e : es)
-					e->add_child(_e);
-				app.prefab_unsaved = true;
-			}
-			ImGui::EndDragDropTarget();
-		}
-
-		if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonRight))
-		{
-			show_entities_menu();
-			ImGui::EndPopup();
-		}
+		entity_drop_behaviour(e);
+		entity_context_menu_behaviour(e);
 
 		if (opened)
 		{
@@ -282,7 +293,7 @@ void View_Hierarchy::on_draw()
 				ImGui::PopID();
 				if (ImGui::BeginDragDropTarget())
 				{
-					auto es = read_drops();
+					auto es = read_drops(e);
 					if (!es.empty())
 					{
 						auto idx = i;
@@ -309,7 +320,7 @@ void View_Hierarchy::on_draw()
 			for (; i < e->children.size(); i++)
 			{
 				gap_item(i);
-				show_entity(e->children[i].get(), in_prefab);
+				show_entity(e->children[i].get());
 			}
 			gap_item(i);
 			ImGui::TreePop();
@@ -318,11 +329,63 @@ void View_Hierarchy::on_draw()
 
 	if (auto root = app.e_playing ? app.e_playing : app.e_prefab; root)
 	{
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.f));
+		auto w = ImGui::GetContentRegionAvail().x;
+		auto filter_w = w - 20.f;
+		if (!filter.empty())
+		{
+			auto cursor_pos = ImGui::GetCursorPos();
+			ImGui::SetCursorPos(ImVec2(cursor_pos.x + filter_w - 19.f, cursor_pos.y + 3));
+			if (ImGui::SmallButton(graphics::FontAtlas::icon_s("xmark"_h).c_str()))
+				filter.clear();
+			ImGui::SetCursorPos(cursor_pos);
+		}
+		ImGui::SetNextItemWidth(filter_w);
+		ImGui::InputText(graphics::FontAtlas::icon_s("magnifying-glass"_h).c_str(), &filter);
+
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.f, 0.f));
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, 0.f));
-		show_entity(root, false);
-		ImGui::PopStyleVar(3);
+		if (filter.empty())
+			show_entity(root);
+		else
+		{
+			root->forward_traversal([&](EntityPtr e) {
+				if (e->name.contains(filter))
+				{
+					auto in_prefab = get_root_prefab_instance(e);
+
+					std::string display_name;
+					if (e != rename_entity)
+						display_name = e->name;
+					if (e->prefab_instance)
+						display_name = "[-] " + display_name;
+					else
+						display_name = "[ ] " + display_name;
+
+					auto selected = selection.selecting(e);
+
+					if (in_prefab)
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.f, 0.8f, 1.f, 1.f));
+					ImGui::Selectable(display_name.c_str(), selected);
+					if (in_prefab)
+						ImGui::PopStyleColor();
+					if (ImGui::IsItemHovered())
+					{
+						if (selected)
+						{
+
+						}
+						else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+							select_entity = e;
+					}
+
+					entity_drag_behaviour(e);
+
+					entity_drop_behaviour(e);
+					entity_context_menu_behaviour(e);
+				}
+			});
+		}
+		ImGui::PopStyleVar(2);
 	}
 
 	ImGui::SetCursorPos(content_pos);

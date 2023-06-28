@@ -121,22 +121,23 @@ void View_Scene::on_draw()
 		auto n = min(countof(names), camera_list.size());
 		for (auto i = 0; i < n; i++)
 			names[i] = camera_list[i]->entity->name.c_str();
+		ImGui::SetNextItemWidth(100.f);
 		ImGui::Combo("Camera", (int*)&camera_idx, names, n);
 	}
 	auto camera = camera_list[camera_idx];
 	app.renderer->camera = camera;
 
 	ImGui::SameLine();
-	ImGui::Checkbox("Outline", &show_outline);
+	if (ImGui::ToolButton("Outline", show_outline))
+		show_outline = !show_outline;
 	ImGui::SameLine();
-	if (!show_AABB)
-		ImGui::Checkbox("AABB", &show_AABB);
-	else
+	if (ImGui::ToolButton("AABB", show_AABB))
+		show_AABB = !show_AABB;
+	if (show_AABB)
 	{
-		ImGui::Checkbox("##AABB_check", &show_AABB);
 		ImGui::SameLine();
-		ImGui::SetNextItemWidth(50.f);
-		if (ImGui::BeginCombo("AABB", !show_AABB_only_selected ? "All" : "Only Selected"))
+		ImGui::SetNextItemWidth(100.f);
+		if (ImGui::BeginCombo("##AABB_combo", !show_AABB_only_selected ? "All" : "Only Selected"))
 		{
 			if (ImGui::Selectable("All", !show_AABB_only_selected))
 				show_AABB_only_selected = false;
@@ -146,11 +147,14 @@ void View_Scene::on_draw()
 		}
 	}
 	ImGui::SameLine();
-	ImGui::Checkbox("Axis", &show_axis);
+	if (ImGui::ToolButton("Axis", show_axis))
+		show_axis = !show_axis;
 	ImGui::SameLine();
-	ImGui::Checkbox("Bones", &show_bones);
+	if (ImGui::ToolButton("Bones", show_bones))
+		show_bones = !show_bones;
 	ImGui::SameLine();
-	ImGui::Checkbox("Navigation", &show_navigation);
+	if (ImGui::ToolButton("Navigation", show_navigation))
+		show_navigation = !show_navigation;
 
 	auto render_target_extent = vec2(ImGui::GetContentRegionAvail());
 	if (fixed_render_target_size)

@@ -1950,6 +1950,11 @@ void View_Inspector::on_draw()
 		{
 			auto path = selection.as_path();
 			ImGui::TextUnformatted(Path::reverse(path).string().c_str());
+			ImGui::SameLine();
+			if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
+			{
+				view_project.explorer.ping(Path::get(path));
+			}
 			auto ext = path.extension().wstring();
 			SUW::to_lower(ext);
 			if (ext == L".obj" || ext == L".fbx" || ext == L".gltf" || ext == L".glb")

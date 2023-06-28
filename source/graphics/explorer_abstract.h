@@ -481,8 +481,17 @@ namespace flame
 					if (auto w = ImGui::GetContentRegionAvail().x; w > 112.f)
 					{
 						auto bar_w = min(w, 400.f);
+						auto filter_w = bar_w - 94.f;
 						ImGui::SameLine(0.f, w - bar_w);
-						ImGui::SetNextItemWidth(bar_w - 94.f);
+						if (!filter.empty())
+						{
+							auto cursor_pos = ImGui::GetCursorPos();
+							ImGui::SetCursorPos(ImVec2(cursor_pos.x + filter_w - 19.f, cursor_pos.y));
+							if (ImGui::SmallButton(FontAtlas::icon_s("xmark"_h).c_str()))
+								filter.clear();
+							ImGui::SetCursorPos(cursor_pos);
+						}
+						ImGui::SetNextItemWidth(filter_w);
 						ImGui::InputText(FontAtlas::icon_s("magnifying-glass"_h).c_str(), &filter);
 						if (do_select != -1 && select_callback)
 						{
@@ -508,6 +517,7 @@ namespace flame
 					{
 						if (ImGui::BeginTable("contents", clamp(uint(content_size.x / (Item::size + padding.x * 2 + style.ItemSpacing.x)), 1U, 64U), ImGuiTableFlags_ScrollY, content_size))
 						{
+							auto dl = ImGui::GetWindowDrawList();
 							for (auto i = 0; i < items.size(); i++)
 							{
 								auto item = items[i].get();
@@ -535,15 +545,14 @@ namespace flame
 								if (active)						col = ImGui::GetColorU32(ImGuiCol_ButtonActive);
 								else if (hovered || selected)	col = ImGui::GetColorU32(ImGuiCol_ButtonHovered);
 								else							col = ImColor(0, 0, 0, 0);
-								auto draw_list = ImGui::GetWindowDrawList();
-								draw_list->AddRectFilled(p0, p1, col);
+								dl->AddRectFilled(p0, p1, col);
 								if (item->icon)
-									draw_list->AddImage(item->icon, ImVec2(p0.x + padding.x, p0.y + padding.y), ImVec2(p0.x + padding.x + Item::size, p0.y + padding.y + Item::size));
+									dl->AddImage(item->icon, ImVec2(p0.x + padding.x, p0.y + padding.y), ImVec2(p0.x + padding.x + Item::size, p0.y + padding.y + Item::size));
 								if (pinged)
-									draw_list->AddRect(p0, p1, ImColor(200, 200, 0));
+									dl->AddRect(p0, p1, ImColor(200, 200, 0));
 								if (!renaming)
 								{
-									draw_list->AddText(ImVec2(p0.x + padding.x + (Item::size - item->label_width) / 2, p0.y + Item::size + padding.y * 2), ImColor(255, 255, 255),
+									dl->AddText(ImVec2(p0.x + padding.x + (Item::size - item->label_width) / 2, p0.y + Item::size + padding.y * 2), ImColor(255, 255, 255),
 										item->label.c_str(), item->label.c_str() + item->label.size());
 								}
 
@@ -610,13 +619,13 @@ namespace flame
 									ImGui::SetNextItemWidth(Item::size + padding.x * 2);
 									if (frames == rename_start_frame)
 										ImGui::SetKeyboardFocusHere();
-									if (ImGui::InputText("##rename", &rename_string, ImGuiInputTextFlags_AutoSelectAll))
-										rename_callback(rename_path, rename_string);
+									ImGui::InputText("##rename", &rename_string, ImGuiInputTextFlags_AutoSelectAll);
 									if (frames != rename_start_frame)
 									{
 										if (ImGui::IsItemDeactivated() || (!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))
 										{
-											rename_callback(rename_path, "");
+											if (!ImGui::IsKeyPressed(Keyboard_Esc))
+												rename_callback(rename_path, rename_string);
 											rename_path = L"";
 										}
 									}
@@ -640,6 +649,9 @@ namespace flame
 					{
 						ImGui::BeginChild("contents", content_size);
 
+						auto icon_size = line_height + padding.y * 2;
+						auto dl = ImGui::GetWindowDrawList();
+
 						for (auto i = 0; i < items.size(); i++)
 						{
 							auto item = items[i].get();
@@ -655,11 +667,18 @@ namespace flame
 
 							ImGui::PushID(i);
 
-							auto label = item->path.filename().string();
-							ImGui::Selectable(label.c_str(), selected);
+							std::string label = "      ";
+							if (!renaming)
+								label += item->path.filename().string();
+							ImGui::Selectable(label.c_str(), selected, ImGuiSelectableFlags_AllowItemOverlap);
 							auto p0 = ImGui::GetItemRectMin();
+							auto p1 = ImGui::GetItemRectMax();
 							auto hovered = ImGui::IsItemHovered();
 							auto active = ImGui::IsItemActive();
+							if (item->icon)
+								dl->AddImage(item->icon, ImVec2(p0.x, p0.y), ImVec2(p0.x + icon_size, p0.y + icon_size));
+							if (pinged)
+								dl->AddRect(ImVec2(p0.x + 2, p0.y + 2), ImVec2(p1.x - 2, p1.y - 2), ImColor(200, 200, 0));
 
 							if (hovered)
 							{
@@ -677,7 +696,7 @@ namespace flame
 										if (rename_callback && io.MouseClicked[ImGuiMouseButton_Left])
 										{
 											auto x = ImGui::GetMousePos().x;
-											if (x > p0.x + 4.f && x < p0.x + 4.f + ImGui::CalcTextSize(label.c_str()).x + 4.f)
+											if (x > p0.x + icon_size && x < p0.x + icon_size + ImGui::CalcTextSize(label.c_str()).x + 4.f)
 											{
 												renaming = true;
 												enter_rename(item->path);
@@ -717,7 +736,24 @@ namespace flame
 
 							if (renaming)
 							{
-
+								ImGui::SameLine();
+								ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+								ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+								ImGui::PushItemWidth(-1);
+								if (frames == rename_start_frame)
+									ImGui::SetKeyboardFocusHere();
+								ImGui::InputText("##rename", &rename_string, ImGuiInputTextFlags_AutoSelectAll);
+								if (frames != rename_start_frame)
+								{
+									if (ImGui::IsItemDeactivated() || (!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))
+									{
+										if (!ImGui::IsKeyPressed(Keyboard_Esc))
+											rename_callback(rename_path, rename_string);
+										rename_path = L"";
+									}
+								}
+								ImGui::PopItemWidth(); 
+								ImGui::PopStyleVar(2);
 							}
 						}
 
