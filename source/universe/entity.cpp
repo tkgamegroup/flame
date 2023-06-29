@@ -409,7 +409,8 @@ namespace flame
 		if (name == "add_child")
 		{
 			type = ModificationEntityAdd;
-			out.d.guid.from_string(std::string(sp[1]));
+			if (sp.size() == 3)
+				out.d.guid.from_string(std::string(sp[1]));
 		}
 		else if (name == "add")
 		{
@@ -423,7 +424,8 @@ namespace flame
 		}
 		else if (sp.size() == 3)
 		{
-			auto hash = sh(sp[1].data());
+			auto name = std::string(sp[1]);
+			auto hash = sh(name.data());
 			obj = te->get_component(hash);
 			ui = find_udt(hash);
 			if (!obj)
@@ -519,8 +521,15 @@ namespace flame
 						if (type == ModificationEntityAdd)
 						{
 							auto new_one = Entity::create();
-							new_one->file_id = data.d.guid;
 							((EntityPtr)obj)->add_child(new_one);
+							if (auto a = n.attribute("filename"); a)
+							{
+								auto path = Path::combine(base_path, a.value());
+								new_one->load(path, false);
+								new PrefabInstance(new_one, path);
+							}
+							else
+								new_one->file_id = data.d.guid;
 						}
 						else if (type == ModificationComponentAdd)
 							((EntityPtr)obj)->add_component(data.d.hash);

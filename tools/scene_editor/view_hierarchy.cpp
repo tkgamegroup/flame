@@ -201,15 +201,14 @@ void View_Hierarchy::on_draw()
 
 	std::function<void(EntityPtr)> show_entity;
 	show_entity = [&](EntityPtr e) {
-		auto in_prefab = get_root_prefab_instance(e);
+		auto root_ins = get_root_prefab_instance(e);
+		auto is_added_to_ins = (e->parent && root_ins) ? 
+			root_ins->find_modification(e->parent->file_id.to_string() + 
+				(!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child") != -1 : false;
 
-		std::string display_name;
-		if (e != rename_entity)
-			display_name = e->name;
-		if (e->prefab_instance)
-			display_name = "[-] " + display_name;
-		else
-			display_name = "[ ] " + display_name;
+		std::string icon_string = is_added_to_ins ? "[+] " : "[ ] ";
+		ImColor icon_color = (e->prefab_instance.get() == root_ins && root_ins) ? ImColor(127, 214, 252, 255) : (ImColor)ImGui::GetStyleColorVec4(ImGuiCol_Text);
+		ImColor name_color = root_ins && (e->prefab_instance || !is_added_to_ins) ? ImColor(127, 214, 252, 255) : (ImColor)ImGui::GetStyleColorVec4(ImGuiCol_Text);
 
 		auto selected = selection.selecting(e);
 
@@ -225,16 +224,22 @@ void View_Hierarchy::on_draw()
 			if (std::find(open_nodes.begin(), open_nodes.end(), e) != open_nodes.end())
 				ImGui::SetNextItemOpen(true);
 		}
-		if (in_prefab)
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.f, 0.8f, 1.f, 1.f));
-		display_name += "###";
-		display_name += str((uint64)e);
-		auto opened = ImGui::TreeNodeEx(display_name.c_str(), flags);
+		ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)icon_color);
+		icon_string += "###";
+		icon_string += str((uint64)e);
+		auto indent = ImGui::GetCurrentWindow()->DC.Indent.x;
+		const auto name_offset = 22.f;
+		auto opened = ImGui::TreeNodeEx(icon_string.c_str(), flags);
 		opened = opened && !(flags & ImGuiTreeNodeFlags_Leaf);
+		if (rename_entity != e)
+		{
+			auto p0 = ImGui::GetItemRectMin();
+			auto dl = ImGui::GetWindowDrawList();
+			dl->AddText(ImVec2(p0.x + indent + name_offset, p0.y), name_color, e->name.c_str());
+		}
 		if (e == focus_entity)
 			ImGui::SetScrollHereY();
-		if (in_prefab)
-			ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
 
 		if (ImGui::IsItemHovered())
 		{
@@ -248,8 +253,7 @@ void View_Hierarchy::on_draw()
 					{
 						auto x = ImGui::GetMousePos().x;
 						auto p0 = ImGui::GetItemRectMin();
-						auto indent = ImGui::GetCurrentWindow()->DC.Indent.x;
-						if (x > p0.x + indent + 28.f && x < p0.x + indent + 28.f + ImGui::CalcTextSize(e->name.c_str()).x + 4.f)
+						if (x > p0.x + indent + name_offset && x < p0.x + indent + name_offset + ImGui::CalcTextSize(e->name.c_str()).x)
 						{
 							rename_entity = e;
 							rename_string = e->name;

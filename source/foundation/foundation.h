@@ -130,6 +130,8 @@ namespace flame
 			memset(d, 0, sizeof(d));
 		}
 
+		bool is_zero();
+
 		GUID& operator=(const GUID& oth)
 		{
 			memcpy(d, oth.d, sizeof(d));
@@ -154,6 +156,13 @@ namespace flame
 	inline bool operator==(const GUID& a, const GUID& b)
 	{
 		return *(uint64*)a.d == *(uint64*)b.d && *(uint64*)(a.d + sizeof(uint64)) == *(uint64*)(b.d + sizeof(uint64));
+	}
+
+	inline bool GUID::is_zero()
+	{
+		GUID zero;
+		zero.reset();
+		return *this == zero;
 	}
 
 	inline uint64 current_time()

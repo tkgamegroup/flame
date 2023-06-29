@@ -1448,7 +1448,7 @@ struct EditingEntities
 			for (auto e : entities)
 			{
 				if (auto ins = get_root_prefab_instance(e); ins)
-					ins->mark_modification(e->file_id.to_string(), "", str);
+					ins->mark_modification(e->file_id.to_string() + '|' + str);
 			}
 		}
 
@@ -1561,12 +1561,12 @@ struct EditingEntities
 						{
 							if (auto ins = get_root_prefab_instance(e); ins)
 							{
-								auto idx = ins->find_modification(e->file_id.to_string(), ui.name, "add");
+								auto idx = ins->find_modification(e->file_id.to_string() + '|' + ui.name + "|add");
 								if (idx == -1)
-									ins->mark_modification(e->file_id.to_string(), ui.name, "remove");
+									ins->mark_modification(e->file_id.to_string() + '|' + ui.name + "|remove");
 								else
 								{
-									auto target_string = PrefabInstance::form_target_string(e->file_id.to_string(), ui.name, "");
+									auto target_string = e->file_id.to_string() + '|' + ui.name;
 									for (auto it = ins->modifications.begin(); it != ins->modifications.end();)
 									{
 										if (it->starts_with(target_string))
@@ -1826,7 +1826,7 @@ struct EditingEntities
 					for (auto e : entities)
 					{
 						if (auto ins = get_root_prefab_instance(e); ins)
-							ins->mark_modification(e->file_id.to_string(), ui.name, str);
+							ins->mark_modification(e->file_id.to_string() + '|' + ui.name + '|' + str);
 					}
 
 					if ((ui.name_hash == "flame::cNavAgent"_h || ui.name_hash == "flame::cNavObstacle"_h) &&
@@ -1935,9 +1935,9 @@ struct EditingEntities
 						{
 							if (auto ins = get_root_prefab_instance(e); ins)
 							{
-								auto idx = ins->find_modification(e->file_id.to_string(), ui->name, "remove");
+								auto idx = ins->find_modification(e->file_id.to_string() + '|' + ui->name + "|remove");
 								if (idx == -1)
-									ins->mark_modification(e->file_id.to_string(), ui->name, "add");
+									ins->mark_modification(e->file_id.to_string() + '|' + ui->name + "|add");
 								else
 									ins->modifications.erase(ins->modifications.begin() + idx);
 							}
