@@ -94,7 +94,8 @@ void open_message_dialog(const std::string& title, const std::string& message)
 	if (title == "[RestructurePrefabInstanceWarnning]")
 	{
 		ImGui::OpenMessageDialog("Cannot restructure Prefab Instance",
-			"You cannot remove/reposition entities in Prefab Instance\n"
+			"You cannot remove/reposition entities in a Prefab Instance\n"
+			"And added entitie must be at the end\n"
 			"Edit it in that prefab");
 	}
 	else

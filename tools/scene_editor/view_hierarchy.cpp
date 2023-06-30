@@ -32,7 +32,8 @@ std::vector<EntityPtr> read_drops(EntityPtr e_dst)
 			return ret;
 		}
 		auto e = *(EntityPtr*)payload->Data;
-		if (!e->prefab_instance && get_root_prefab_instance(e))
+		if (auto ins = get_root_prefab_instance(e); ins && ins != e->prefab_instance.get() && 
+			ins->find_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child") != -1)
 		{
 			open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 			return ret;
@@ -55,7 +56,8 @@ std::vector<EntityPtr> read_drops(EntityPtr e_dst)
 		for (auto i = 0; i < es.n; i++)
 		{
 			auto e = es.p[i];
-			if (!e->prefab_instance && get_root_prefab_instance(e))
+			if (auto ins = get_root_prefab_instance(e); ins && ins != e->prefab_instance.get() &&
+				ins->find_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child") != -1)
 			{
 				open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 				return ret;
@@ -109,7 +111,7 @@ std::vector<EntityPtr> read_drops(EntityPtr e_dst)
 	return ret;
 }
 
-void entity_drag_behaviour(EntityPtr e)
+bool entity_drag_behaviour(EntityPtr e)
 {
 	if (ImGui::BeginDragDropSource())
 	{
@@ -148,7 +150,9 @@ void entity_drag_behaviour(EntityPtr e)
 			ImGui::Text("%d entities", es.n);
 			ImGui::EndDragDropSource();
 		}
+		return true;
 	}
+	return false;
 }
 
 void entity_drop_behaviour(EntityPtr e)
@@ -183,6 +187,7 @@ void entity_context_menu_behaviour(EntityPtr e)
 void View_Hierarchy::on_draw()
 {
 	EntityPtr select_entity = nullptr;
+	static bool released_after_select = false;
 	EntityPtr focus_entity = selection_changed ? (selection.type == Selection::tEntity ? selection.as_entity(-1) : nullptr) : nullptr;
 	static EntityPtr rename_entity = nullptr;
 
@@ -202,9 +207,8 @@ void View_Hierarchy::on_draw()
 	std::function<void(EntityPtr)> show_entity;
 	show_entity = [&](EntityPtr e) {
 		auto root_ins = get_root_prefab_instance(e);
-		auto is_added_to_ins = (e->parent && root_ins) ? 
-			root_ins->find_modification(e->parent->file_id.to_string() + 
-				(!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child") != -1 : false;
+		auto is_added_to_ins = root_ins ? root_ins->find_modification(
+			e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child") != -1 : false;
 
 		std::string icon_string = is_added_to_ins ? "[+] " : "[ ] ";
 		ImColor icon_color = (e->prefab_instance.get() == root_ins && root_ins) ? ImColor(127, 214, 252, 255) : (ImColor)ImGui::GetStyleColorVec4(ImGuiCol_Text);
@@ -245,9 +249,7 @@ void View_Hierarchy::on_draw()
 		{
 			if (selected)
 			{
-				if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-					;
-				else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+				if (released_after_select && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 				{
 					if (rename_entity != e)
 					{
@@ -266,7 +268,8 @@ void View_Hierarchy::on_draw()
 				select_entity = e;
 		}
 
-		entity_drag_behaviour(e);
+		if (entity_drag_behaviour(e))
+			released_after_select = false;
 
 		if (rename_entity == e)
 		{
@@ -382,7 +385,8 @@ void View_Hierarchy::on_draw()
 							select_entity = e;
 					}
 
-					entity_drag_behaviour(e);
+					if (entity_drag_behaviour(e))
+						released_after_select = false;
 
 					entity_drop_behaviour(e);
 					entity_context_menu_behaviour(e);
@@ -395,74 +399,77 @@ void View_Hierarchy::on_draw()
 	ImGui::SetCursorPos(content_pos);
 	ImGui::InvisibleButton("##background", ImGui::GetContentRegionAvail());
 	if (ImGui::IsItemClicked())
-		selection.clear("hierarchy"_h);
-	else
 	{
-		if (select_entity)
+		released_after_select = false;
+		selection.clear("hierarchy"_h);
+	}
+	else if (select_entity)
+	{
+		released_after_select = false;
+		if (ImGui::IsKeyDown(Keyboard_Ctrl))
 		{
-			if (ImGui::IsKeyDown(Keyboard_Ctrl))
+			auto entities = selection.get_entities();
+			auto found = false;
+			for (auto it = entities.begin(); it != entities.end();)
 			{
-				auto entities = selection.get_entities();
-				auto found = false;
-				for (auto it = entities.begin(); it != entities.end();)
+				if (*it == select_entity)
 				{
-					if (*it == select_entity)
-					{
-						found = true;
-						it = entities.erase(it);
-						break;
-					}
-					else
-						it++;
+					found = true;
+					it = entities.erase(it);
+					break;
 				}
-				if (!found)
-					entities.push_back(select_entity);
+				else
+					it++;
+			}
+			if (!found)
+				entities.push_back(select_entity);
+			selection.select(entities, "hierarchy"_h);
+		}
+		else if (ImGui::IsKeyDown(Keyboard_Shift))
+		{
+			auto entities = selection.get_entities();
+			if (entities.empty())
+				selection.select(select_entity, "hierarchy"_h);
+			else
+			{
+				auto begin = entities.front();
+				auto end = select_entity;
+				if (end->compare_depth(begin))
+					std::swap(begin, end);
+				entities.clear();
+
+				auto root = app.e_playing ? app.e_playing : app.e_prefab;
+				bool select = false;
+				std::function<void(EntityPtr)> process_entity;
+				process_entity = [&](EntityPtr e) {
+					if (e == begin)
+						select = true;
+					if (select)
+						entities.push_back(e);
+					if (e == end)
+						select = false;
+					auto window = ImGui::GetCurrentWindow();
+					if (!e->children.empty())
+					{
+						auto id = window->GetIDNoKeepAlive(("###" + str((uint64)e)).c_str());
+						if (ImGui::TreeNodeBehaviorIsOpen(id))
+						{
+							ImGui::PushOverrideID(id);
+							for (auto& c : e->children)
+								process_entity(c.get());
+							ImGui::PopID();
+						}
+					}
+				};
+				process_entity(root);
 				selection.select(entities, "hierarchy"_h);
 			}
-			else if (ImGui::IsKeyDown(Keyboard_Shift))
-			{
-				auto entities = selection.get_entities();
-				if (entities.empty())
-					selection.select(select_entity, "hierarchy"_h);
-				else
-				{
-					auto begin = entities.front();
-					auto end = select_entity;
-					if (end->compare_depth(begin))
-						std::swap(begin, end);
-					entities.clear();
-
-					auto root = app.e_playing ? app.e_playing : app.e_prefab;
-					bool select = false;
-					std::function<void(EntityPtr)> process_entity;
-					process_entity = [&](EntityPtr e) {
-						if (e == begin)
-							select = true;
-						if (select)
-							entities.push_back(e);
-						if (e == end)
-							select = false;
-						auto window = ImGui::GetCurrentWindow();
-						if (!e->children.empty())
-						{
-							auto id = window->GetIDNoKeepAlive(("###" + str((uint64)e)).c_str());
-							if (ImGui::TreeNodeBehaviorIsOpen(id))
-							{
-								ImGui::PushOverrideID(id);
-								for (auto& c : e->children)
-									process_entity(c.get());
-								ImGui::PopID();
-							}
-						}
-					};
-					process_entity(root);
-					selection.select(entities, "hierarchy"_h);
-				}
-			}
-			else
-				selection.select(select_entity, "hierarchy"_h);
 		}
+		else
+			selection.select(select_entity, "hierarchy"_h);
 	}
+	if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) || ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+		released_after_select = true;
 
 	auto& io = ImGui::GetIO();
 
