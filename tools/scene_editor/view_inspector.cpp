@@ -1576,8 +1576,8 @@ struct EditingEntities
 
 									}
 								}
-								changed = true;
 							}
+							changed = true;
 						}
 						if (changed)
 						{
@@ -2008,7 +2008,10 @@ void View_Inspector::on_draw()
 		else
 			ImGui::Text("%d entities", (int)editing_entities.entities.size());
 		if (editing_entities.manipulate().first == 2)
-			app.prefab_unsaved = true;
+		{
+			if (!app.e_playing)
+				app.prefab_unsaved = true;
+		}
 		break;
 	case Selection::tPath:
 	{

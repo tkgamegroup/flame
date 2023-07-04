@@ -26,11 +26,6 @@ std::vector<EntityPtr> read_drops(EntityPtr e_dst)
 	std::vector<EntityPtr> ret;
 	if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
 	{
-		if (get_root_prefab_instance(e_dst))
-		{
-			open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-			return ret;
-		}
 		auto e = *(EntityPtr*)payload->Data;
 		if (auto ins = get_root_prefab_instance(e); ins && ins != e->prefab_instance.get() && 
 			ins->find_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child") != -1)
@@ -47,11 +42,6 @@ std::vector<EntityPtr> read_drops(EntityPtr e_dst)
 	}
 	else if (auto payload = ImGui::AcceptDragDropPayload("Entities"); payload)
 	{
-		if (get_root_prefab_instance(e_dst))
-		{
-			open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-			return ret;
-		}
 		auto& es = *(Entities*)payload->Data;
 		for (auto i = 0; i < es.n; i++)
 		{
@@ -155,11 +145,11 @@ bool entity_drag_behaviour(EntityPtr e)
 	return false;
 }
 
-void entity_drop_behaviour(EntityPtr e)
+void entity_drop_behaviour(EntityPtr t)
 {
 	if (ImGui::BeginDragDropTarget())
 	{
-		auto es = read_drops(e);
+		auto es = read_drops(t);
 		if (!es.empty())
 		{
 			for (auto _e : es)
@@ -168,7 +158,11 @@ void entity_drop_behaviour(EntityPtr e)
 					_e->remove_from_parent(false);
 			}
 			for (auto _e : es)
-				e->add_child(_e);
+			{
+				t->add_child(_e);
+				if (auto ins = get_root_prefab_instance(t); ins)
+					ins->mark_modification(_e->parent->file_id.to_string() + (!_e->prefab_instance ? '|' + _e->file_id.to_string() : "") + "|add_child");
+			}
 			app.prefab_unsaved = true;
 		}
 		ImGui::EndDragDropTarget();
@@ -279,7 +273,13 @@ void View_Hierarchy::on_draw()
 			if (frames == rename_start_frame)
 				ImGui::SetKeyboardFocusHere();
 			if (ImGui::InputText("##rename", &rename_string, ImGuiInputTextFlags_AutoSelectAll))
+			{
 				e->name = rename_string;
+				if (auto ins = get_root_prefab_instance(e); ins)
+					ins->mark_modification(e->file_id.to_string() + "|name");
+				if (!app.e_playing)
+					app.prefab_unsaved = true;
+			}
 			if (frames != rename_start_frame)
 			{
 				if (ImGui::IsItemDeactivated() || (!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))

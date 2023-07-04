@@ -95,7 +95,7 @@ void open_message_dialog(const std::string& title, const std::string& message)
 	{
 		ImGui::OpenMessageDialog("Cannot restructure Prefab Instance",
 			"You cannot remove/reposition entities in a Prefab Instance\n"
-			"And added entitie must be at the end\n"
+			"And added entities must be at the end\n"
 			"Edit it in that prefab");
 	}
 	else
@@ -1582,7 +1582,7 @@ bool App::cmd_new_entities(std::vector<EntityPtr>&& es, uint type)
 	for (auto t : es)
 	{
 		auto e = Entity::create();
-		e->name = "Entity";
+		e->name = "entity";
 		switch (type)
 		{
 		case "empty"_h:
@@ -1639,6 +1639,12 @@ bool App::cmd_new_entities(std::vector<EntityPtr>&& es, uint type)
 			break;
 		}
 		t->add_child(e);
+
+		if (e_prefab)
+		{
+			if (auto ins = get_root_prefab_instance(t); ins)
+				ins->mark_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child");
+		}
 	}
 	prefab_unsaved = true;
 	return true;
@@ -1648,18 +1654,23 @@ bool App::cmd_delete_entities(std::vector<EntityPtr>&& es)
 {
 	if (es.empty())
 		return false;
-	for (auto t : es)
+	for (auto e : es)
 	{
-		if (t == e_prefab || !t->prefab_instance && get_root_prefab_instance(t))
+		if (e == e_prefab)
+			return false;
+		if (auto ins = get_root_prefab_instance(e); ins && ins != e->prefab_instance.get() &&
+			ins->find_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child") != -1)
 		{
 			open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 			return false;
 		}
 	}
-	for (auto t : es)
+	for (auto e : es)
 	{
-		add_event([t]() {
-			t->remove_from_parent();
+		add_event([e]() {
+			if (auto ins = get_root_prefab_instance(e); ins)
+				ins->remove_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child");
+			e->remove_from_parent();
 			return false;
 		});
 	}
