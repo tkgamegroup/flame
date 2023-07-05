@@ -4,9 +4,10 @@
 
 struct View_Inspector : graphics::GuiView
 {
+	bool dirty = true;
+
 	View_Inspector();
 
-	void refresh();
 	void on_draw() override;
 };
 

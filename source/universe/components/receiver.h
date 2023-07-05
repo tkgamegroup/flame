@@ -14,6 +14,10 @@ namespace flame
 
 		// Reflect
 		VirtualUdt<Action>	click_action;
+		// Reflect
+		VirtualUdt<Action>	mouse_enter_action;
+		// Reflect
+		VirtualUdt<Action>	mouse_leave_action;
 
 		struct Create
 		{

@@ -1053,6 +1053,8 @@ void View_Project::on_draw()
 		std::vector<std::pair<std::filesystem::path, FileChangeFlags>>	changed_files;
 		for (auto& p : changed_paths)
 		{
+			if (!std::filesystem::exists(p.first))
+				continue;
 			if (std::filesystem::is_directory(p.first) && p.second == FileModified)
 				changed_directories.push_back(p.first);
 			else

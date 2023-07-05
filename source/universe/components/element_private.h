@@ -22,6 +22,7 @@ namespace flame
 
 		void set_scissor(bool v) override;
 
+		void set_pivot(const vec2& pivot) override;
 		void set_horizontal_alignment(ElementAlignment alignment) override;
 		void set_vertical_alignment(ElementAlignment alignment) override;
 		void set_margin(const vec4& margin) override;

@@ -78,6 +78,10 @@ namespace flame
 		virtual void set_scissor(bool v) = 0;
 
 		// Reflect
+		vec2 pivot = vec2(0.f);
+		// Reflect
+		virtual void set_pivot(const vec2& pivot) = 0;
+		// Reflect
 		ElementAlignment horizontal_alignment = ElementAlignNone;
 		// Reflect
 		virtual void set_horizontal_alignment(ElementAlignment alignment) = 0;

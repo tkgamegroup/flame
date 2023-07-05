@@ -1219,6 +1219,7 @@ void App::build_project()
 	if (e_playing)
 	{
 		printf("Cannot build project while playing\n");
+		open_message_dialog("Build Project", "Cannot build project while playing");
 		return;
 	}
 

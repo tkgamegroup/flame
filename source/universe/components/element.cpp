@@ -97,6 +97,15 @@ namespace flame
 		data_changed("scissor"_h);
 	}
 
+	void cElementPrivate::set_pivot(const vec2& _pivot)
+	{
+		if (pivot == _pivot)
+			return;
+		pivot = _pivot;
+		mark_transform_dirty();
+		data_changed("pivot"_h);
+	}
+
 	void cElementPrivate::set_horizontal_alignment(ElementAlignment alignment)
 	{
 		if (horizontal_alignment == alignment)
@@ -158,7 +167,7 @@ namespace flame
 			m = pelement->transform;
 		else
 			m = mat3(1.f);
-		m = translate(m, pos);
+		m = translate(m, pos + pivot * ext);
 		m = scale(m, scl);
 		transform = m;
 

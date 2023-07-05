@@ -372,7 +372,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				{
 					type->unserialize(dv, data);
 					changed = 2;
-					view_inspector.refresh();
+					view_inspector.dirty = true;
 				}
 
 			}
@@ -392,7 +392,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					{
 						type->unserialize(copied_value, data);
 						changed = 2;
-						view_inspector.refresh();
+						view_inspector.dirty = true;
 					}
 				}
 			}
@@ -614,6 +614,8 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				vec4 color = *(cvec4*)data;
 				color /= 255.f;
 				changed = ImGui::ColorEdit4(display_name.c_str(), &color[0]);
+				if (changed)
+					*(cvec4*)data = color * 255.f;
 				if (ImGui::IsItemActivated())
 				{
 					before_editing_values.resize(num);
@@ -623,8 +625,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				}
 				just_exit_editing = ImGui::IsItemDeactivatedAfterEdit();
 				context_menu(data);
-				if (changed)
-					*(cvec4*)data = color * 255.f;
 				if (changed)
 				{
 					if (!direct_io)
@@ -1622,7 +1622,7 @@ struct EditingEntities
 					if (changed)
 					{
 						ret_changed |= 2;
-						view_inspector.refresh();
+						view_inspector.dirty = true;
 					}
 				}
 				if (cc.components.size() == 1)
@@ -1679,7 +1679,7 @@ struct EditingEntities
 						if (changed)
 						{
 							ret_changed |= 2;
-							view_inspector.refresh();
+							view_inspector.dirty = true;
 						}
 					}
 				}
@@ -1959,13 +1959,6 @@ struct EditingEntities
 };
 static EditingEntities editing_entities;
 
-void View_Inspector::refresh()
-{
-	staging_vectors.clear();
-	auto es = editing_entities.entities;
-	editing_entities.refresh(es);
-}
-
 void View_Inspector::on_draw()
 {
 	static void* sel_ref_obj = nullptr;
@@ -1977,12 +1970,20 @@ void View_Inspector::on_draw()
 	if (last_selection_changed)
 	{
 		editing_entities.entities = selection.get_entities();
-		refresh();
+		dirty = true;
 
 		if (sel_ref_deletor && sel_ref_obj)
 			sel_ref_deletor(sel_ref_obj);
 		sel_ref_deletor = nullptr;
 		sel_ref_obj = nullptr;
+	}
+
+	if (dirty)
+	{
+		staging_vectors.clear();
+		auto es = editing_entities.entities;
+		editing_entities.refresh(es);
+		dirty = false;
 	}
 
 	if (selection.type != Selection::tNothing)

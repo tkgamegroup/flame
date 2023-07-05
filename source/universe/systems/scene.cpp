@@ -135,7 +135,7 @@ namespace flame
 		switch (element->horizontal_alignment)
 		{
 		case ElementAlignCenter:
-			element->set_x((parent_ext.x - (padding.x + padding.z) - element->ext.x) * 0.5f);
+			element->set_x((parent_ext.x - element->ext.x) * 0.5f);
 			break;
 		case ElementAlignEnd0:
 			element->set_x(padding.x + element->margin.x);
@@ -152,7 +152,7 @@ namespace flame
 		switch (element->vertical_alignment)
 		{
 		case ElementAlignCenter:
-			element->set_y((parent_ext.y - (padding.y + padding.w) - element->ext.y) * 0.5f);
+			element->set_y((parent_ext.y - element->ext.y) * 0.5f);
 			break;
 		case ElementAlignEnd0:
 			element->set_y(padding.y + element->margin.y);

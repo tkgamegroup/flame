@@ -381,6 +381,13 @@ namespace flame
 			});
 		}
 
+		void clear()
+		{
+			if (!list)
+				return;
+			list->clear();
+		}
+
 		int find(uint h)
 		{
 			if (!list)

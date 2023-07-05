@@ -85,12 +85,20 @@ namespace flame
 				if (last_hovering)
 				{
 					if (transfer_events)
-						last_hovering->event_listeners.call("mouse_left"_h, vec2(0.f));
+					{
+						last_hovering->event_listeners.call("mouse_leave"_h, vec2(0.f));
+						if (last_hovering->mouse_leave_action.type)
+							last_hovering->mouse_leave_action.value().exec();
+					}
 				}
 				if (hovering_receiver)
 				{
 					if (transfer_events)
-						hovering_receiver->event_listeners.call("mouse_entered"_h, vec2(0.f));
+					{
+						hovering_receiver->event_listeners.call("mouse_enter"_h, vec2(0.f));
+						if (hovering_receiver->mouse_enter_action.type)
+							hovering_receiver->mouse_enter_action.value().exec();
+					}
 				}
 			}
 			if (hovering_receiver)
@@ -122,6 +130,17 @@ namespace flame
 				}
 			}
 
+			if (mpressed(Mouse_Right))
+			{
+				if (hovering_receiver && hovering_receiver->entity != first_element)
+				{
+					if (transfer_events)
+						hovering_receiver->event_listeners.call("mouse_down"_h, vec2(1.f));
+
+					mouse_used = true;
+				}
+			}
+
 			if (last_active != active_receiver)
 			{
 				if (last_active)
@@ -138,12 +157,16 @@ namespace flame
 
 			if (mreleased(Mouse_Left))
 			{
+				if (hovering_receiver )
+				{
+					if (transfer_events)
+						hovering_receiver->event_listeners.call("mouse_up"_h, vec2(0.f));
+				}
 				if (active_receiver && hovering_receiver == active_receiver)
 				{
 					if (transfer_events)
 					{
-						active_receiver->event_listeners.call("mouse_up"_h, vec2(0.f));
-
+						active_receiver->event_listeners.call("click"_h, vec2(0.f));
 						if (active_receiver->click_action.type)
 							active_receiver->click_action.value().exec();
 					}
@@ -156,7 +179,15 @@ namespace flame
 					if (transfer_events)
 						target->event_listeners.call("lost_focus"_h, vec2(0.f));
 				}
+			}
 
+			if (mreleased(Mouse_Right))
+			{
+				if (hovering_receiver )
+				{
+					if (transfer_events)
+						hovering_receiver->event_listeners.call("mouse_up"_h, vec2(1.f));
+				}
 			}
 		}
 	}
