@@ -76,6 +76,24 @@ namespace flame
 		return true;
 	}
 
+	void cNodePrivate::update_transform_from_root()
+	{
+		std::vector<cNodePtr> nodes;
+		auto n = this;
+		while (n)
+		{
+			nodes.push_back(n);
+			n = n->entity->get_parent_component_i<cNodeT>(0);
+		}
+		std::reverse(nodes.begin(), nodes.end());
+		for (auto n : nodes)
+		{
+			n->transform_dirty = true;
+			n->update_transform();
+			n->mark_transform_dirty(); // remark dirty
+		}
+	}
+
 	vec3 cNodePrivate::global_scl()
 	{
 		auto ret = scl;

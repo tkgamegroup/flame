@@ -1349,6 +1349,7 @@ void App::close_prefab()
 		auto e = e_prefab;
 		add_event([this, e]() {
 			e->remove_from_parent();
+			sScene::instance()->navmesh_clear();
 			return false;
 		});
 		e_prefab = nullptr;

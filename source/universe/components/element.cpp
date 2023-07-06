@@ -167,7 +167,7 @@ namespace flame
 			m = pelement->transform;
 		else
 			m = mat3(1.f);
-		m = translate(m, pos + pivot * ext);
+		m = translate(m, pos - pivot * ext);
 		m = scale(m, scl);
 		transform = m;
 
@@ -175,6 +175,24 @@ namespace flame
 		transform_dirty = false;
 
 		return true;
+	}
+
+	void cElementPrivate::update_transform_from_root()
+	{
+		std::vector<cElementPtr> elements;
+		auto e = this;
+		while (e)
+		{
+			elements.push_back(e);
+			e = e->entity->get_parent_component_i<cElementT>(0);
+		}
+		std::reverse(elements.begin(), elements.end());
+		for (auto e : elements)
+		{
+			e->transform_dirty = true;
+			e->update_transform();
+			e->mark_transform_dirty(); // remark dirty
+		}
 	}
 
 	struct cElementCreate : cElement::Create

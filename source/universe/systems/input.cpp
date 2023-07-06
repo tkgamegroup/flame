@@ -14,17 +14,23 @@ namespace flame
 
 		native_widnow->mouse_listeners.add([this](MouseButton btn, bool down) {
 			mbtn_temp[btn] = down;
-		});
+		}, "input_system"_h);
 		native_widnow->mousemove_listeners.add([this](const ivec2& pos) {
 			mpos_temp = (vec2)pos - offset;
-		});
+		}, "input_system"_h);
 		native_widnow->key_listeners.add([this](KeyboardKey key, bool down) {
 			kbtn_temp[key] = down;
-		});
+		}, "input_system"_h);
 	}
 
 	sInputPrivate::~sInputPrivate()
 	{
+		auto main_window = graphics::Window::get_list().front();
+		auto native_widnow = main_window->native;
+
+		native_widnow->mouse_listeners.remove("input_system"_h);
+		native_widnow->mousemove_listeners.remove("input_system"_h);
+		native_widnow->key_listeners.remove("input_system"_h);
 	}
 
 	void sInputPrivate::update()

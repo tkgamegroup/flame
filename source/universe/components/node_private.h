@@ -25,6 +25,7 @@ namespace flame
 		void look_at(const vec3& t) override;
 
 		bool update_transform() override;
+		void update_transform_from_root() override;
 
 		void on_active() override;
 		void on_inactive() override;

@@ -873,7 +873,8 @@ namespace flame
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
-			return ei->find_item(*(int*)p)->name;
+			auto it = ei->find_item(*(int*)p);
+			return it ? it->name : "";
 		}
 		void unserialize(const std::string& str, void* p) const override
 		{
@@ -900,7 +901,8 @@ namespace flame
 				{
 					if (!ret.empty())
 						ret += '|';
-					ret += ei->find_item(1 << i)->name;
+					auto it = ei->find_item(1 << i);
+					ret += it ? it->name : "";
 				}
 				vv >>= 1;
 			}

@@ -83,6 +83,7 @@ namespace flame
 		virtual void look_at(const vec3& t) = 0;
 
 		virtual bool update_transform() = 0;
+		virtual void update_transform_from_root() = 0;
 
 		struct Create
 		{

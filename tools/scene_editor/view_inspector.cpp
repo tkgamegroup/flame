@@ -411,6 +411,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		int value = *(int*)data;
 		if (!ei->is_flags)
 		{
+			value = clamp(value, 0, (int)ei->items.size() - 1);
 			if (ImGui::BeginCombo(display_name.c_str(), same[0] ? ei->items[value].name.c_str() : "-"))
 			{
 				for (auto& ii : ei->items)
@@ -1456,17 +1457,23 @@ struct EditingEntities
 		for (auto& cc : common_components)
 		{
 			if (prefab_path.empty())
-				editing_objects.emplace(EditingObjects(1, cc.type_hash, entities.data(), entities.size(), &sync_states));
+				editing_objects.emplace(EditingObjects(1, th<Component>(), entities.data(), entities.size(), &sync_states));
 			else
-				editing_objects.emplace(EditingObjects(2, cc.type_hash, &prefab_path, 1, nullptr));
+				editing_objects.emplace(EditingObjects(2, th<Component>(), &prefab_path, 1, nullptr));
 			ImGui::PushID(cc.type_hash);
-			auto& ui = *find_udt(cc.type_hash);
 			auto open = ImGui::CollapsingHeader("", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
 			ImGui::SameLine();
 			{
 				auto hash = "enable"_h;
 				get_changed2(manipulate_attribute(*ui_component->find_attribute(hash), (voidptr*)cc.components.data(), cc.components.size(), true), hash);
 			}
+			editing_objects.pop();
+
+			if (prefab_path.empty())
+				editing_objects.emplace(EditingObjects(1, cc.type_hash, entities.data(), entities.size(), &sync_states));
+			else
+				editing_objects.emplace(EditingObjects(2, cc.type_hash, &prefab_path, 1, nullptr));
+			auto& ui = *find_udt(cc.type_hash);
 			ImGui::SameLine();
 			ImGui::TextUnformatted(ui.name.c_str());
 			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 20);
@@ -1948,6 +1955,8 @@ struct EditingEntities
 					{
 						auto es = entities;
 						refresh(es);
+						if (!app.e_playing)
+							app.prefab_unsaved = true;
 					}
 				}
 			}

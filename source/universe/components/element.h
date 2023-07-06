@@ -109,6 +109,7 @@ namespace flame
 		Listeners<void(graphics::CanvasPtr canvas)> drawers;
 
 		virtual bool update_transform() = 0;
+		virtual void update_transform_from_root() = 0;
 
 		struct Create
 		{

@@ -415,17 +415,19 @@ namespace flame
 		else if (name == "add")
 		{
 			type = ModificationComponentAdd;
-			out.d.hash = sh(sp[1].data());
+			auto name = std::string(sp[1]);
+			out.d.hash = sh(name.c_str());
 		}
 		else if (name == "remove")
 		{
 			type = ModificationComponentRemove;
-			out.d.hash = sh(sp[1].data());
+			auto name = std::string(sp[1]);
+			out.d.hash = sh(name.c_str());
 		}
 		else if (sp.size() == 3)
 		{
 			auto name = std::string(sp[1]);
-			auto hash = sh(name.data());
+			auto hash = sh(name.c_str());
 			obj = te->get_component(hash);
 			ui = find_udt(hash);
 			if (!obj)

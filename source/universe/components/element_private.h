@@ -33,5 +33,6 @@ namespace flame
 		void mark_drawing_dirty() override;
 
 		bool update_transform() override;
+		void update_transform_from_root() override;
 	};
 }
