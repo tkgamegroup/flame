@@ -1661,7 +1661,7 @@ bool App::cmd_delete_entities(std::vector<EntityPtr>&& es)
 		if (e == e_prefab)
 			return false;
 		if (auto ins = get_root_prefab_instance(e); ins && ins != e->prefab_instance.get() &&
-			ins->find_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child") != -1)
+			ins->find_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child") == -1)
 		{
 			open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 			return false;
@@ -1844,7 +1844,13 @@ int main(int argc, char** args)
 	for (auto& e : preferences_i.get_section_entries(""))
 	{
 		if (e.key == "window_pos")
-			app.main_window->native->set_pos(s2t<2, int>(e.values[0]));
+		{
+			auto pos = s2t<2, int>(e.values[0]);
+			auto screen_size = get_screen_size();
+			if (pos.x >= screen_size.x)
+				pos.x = 0;
+			app.main_window->native->set_pos(pos);
+		}
 		if (e.key == "use_flame_debugger")
 			preferences.use_flame_debugger = s2t<bool>(e.values[0]);
 	}

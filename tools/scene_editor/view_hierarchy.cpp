@@ -28,7 +28,7 @@ std::vector<EntityPtr> read_drops(EntityPtr e_dst)
 	{
 		auto e = *(EntityPtr*)payload->Data;
 		if (auto ins = get_root_prefab_instance(e); ins && ins != e->prefab_instance.get() && 
-			ins->find_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child") != -1)
+			ins->find_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child") == -1)
 		{
 			open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 			return ret;
@@ -47,7 +47,7 @@ std::vector<EntityPtr> read_drops(EntityPtr e_dst)
 		{
 			auto e = es.p[i];
 			if (auto ins = get_root_prefab_instance(e); ins && ins != e->prefab_instance.get() &&
-				ins->find_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child") != -1)
+				ins->find_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child") == -1)
 			{
 				open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 				return ret;
