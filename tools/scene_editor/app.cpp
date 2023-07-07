@@ -1642,11 +1642,8 @@ bool App::cmd_new_entities(std::vector<EntityPtr>&& es, uint type)
 		}
 		t->add_child(e);
 
-		if (e_prefab)
-		{
-			if (auto ins = get_root_prefab_instance(t); ins)
-				ins->mark_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child");
-		}
+		if (auto ins = get_root_prefab_instance(t); ins)
+			ins->mark_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child");
 	}
 	prefab_unsaved = true;
 	return true;
@@ -1687,11 +1684,8 @@ bool App::cmd_duplicate_entities(std::vector<EntityPtr>&& es)
 		return false;
 	for (auto t : es)
 	{
-		if (t == e_prefab || !t->prefab_instance && get_root_prefab_instance(t))
-		{
-			open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+		if (t == e_prefab)
 			return false;
-		}
 	}
 	std::vector<EntityPtr> new_entities;
 	for (auto t : es)
@@ -1699,6 +1693,9 @@ bool App::cmd_duplicate_entities(std::vector<EntityPtr>&& es)
 		auto new_one = t->duplicate();
 		new_entities.push_back(new_one);
 		t->parent->add_child(new_one);
+
+		if (auto ins = get_root_prefab_instance(new_one->parent); ins)
+			ins->mark_modification(new_one->parent->file_id.to_string() + (!new_one->prefab_instance ? '|' + new_one->file_id.to_string() : "") + "|add_child");
 	}
 	selection.select(new_entities, "app"_h);
 	prefab_unsaved = true;

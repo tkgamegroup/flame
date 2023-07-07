@@ -144,8 +144,8 @@ namespace flame
 			element->set_x(parent_ext.x - padding.z - element->ext.x - element->margin.z);
 			break;
 		case ElementAlignFill:
-			element->set_x(element->margin.x);
-			element->set_w(parent_ext.x - padding.x + padding.z - element->margin.x - element->margin.z);
+			element->set_x(padding.x + element->margin.x);
+			element->set_w(parent_ext.x - padding.x - padding.z - element->margin.x - element->margin.z);
 			break;
 		}
 
@@ -161,8 +161,8 @@ namespace flame
 			element->set_y(parent_ext.y - padding.w - element->ext.y - element->margin.w);
 			break;
 		case ElementAlignFill:
-			element->set_y(element->margin.y);
-			element->set_h(parent_ext.y - (padding.y + padding.w) - element->margin.y - element->margin.w);
+			element->set_y(padding.y + element->margin.y);
+			element->set_h(parent_ext.y - padding.y - padding.w - element->margin.y - element->margin.w);
 			break;
 		}
 	}

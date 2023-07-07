@@ -155,7 +155,11 @@ void entity_drop_behaviour(EntityPtr t)
 			for (auto _e : es)
 			{
 				if (_e->parent)
+				{
+					if (auto ins = get_root_prefab_instance(_e); ins)
+						ins->remove_modification(_e->parent->file_id.to_string() + (!_e->prefab_instance ? '|' + _e->file_id.to_string() : "") + "|add_child");
 					_e->remove_from_parent(false);
+				}
 			}
 			for (auto _e : es)
 			{
@@ -398,12 +402,7 @@ void View_Hierarchy::on_draw()
 
 	ImGui::SetCursorPos(content_pos);
 	ImGui::InvisibleButton("##background", ImGui::GetContentRegionAvail());
-	if (ImGui::IsItemClicked())
-	{
-		released_after_select = false;
-		selection.clear("hierarchy"_h);
-	}
-	else if (select_entity)
+	if (select_entity)
 	{
 		released_after_select = false;
 		if (ImGui::IsKeyDown(Keyboard_Ctrl))
@@ -467,6 +466,11 @@ void View_Hierarchy::on_draw()
 		}
 		else
 			selection.select(select_entity, "hierarchy"_h);
+	}
+	else if (ImGui::IsItemClicked())
+	{
+		released_after_select = false;
+		selection.clear("hierarchy"_h);
 	}
 	if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) || ImGui::IsMouseReleased(ImGuiMouseButton_Right))
 		released_after_select = true;

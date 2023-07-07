@@ -25,12 +25,13 @@ namespace flame
 
 	sInputPrivate::~sInputPrivate()
 	{
-		auto main_window = graphics::Window::get_list().front();
-		auto native_widnow = main_window->native;
+		// will crash..
+		//auto main_window = graphics::Window::get_list().front();
+		//auto native_widnow = main_window->native;
 
-		native_widnow->mouse_listeners.remove("input_system"_h);
-		native_widnow->mousemove_listeners.remove("input_system"_h);
-		native_widnow->key_listeners.remove("input_system"_h);
+		//native_widnow->mouse_listeners.remove("input_system"_h);
+		//native_widnow->mousemove_listeners.remove("input_system"_h);
+		//native_widnow->key_listeners.remove("input_system"_h);
 	}
 
 	void sInputPrivate::update()
