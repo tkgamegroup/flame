@@ -429,7 +429,15 @@ namespace flame
 			if (pair.second->tag == TagU)
 			{
 				if (auto ti = (TypeInfo_Udt*)pair.second.get(); ti->ui == nullptr)
-					ti->ui = find_udt(sh(ti->name.c_str()), *this);
+				{
+					auto ui = find_udt(sh(ti->name.c_str()), *this);
+					if (ui)
+					{
+						ti->ui = ui;
+						ti->size = ui->size;
+						ti->pod = ui->pod;
+					}
+				}
 			}
 		}
 

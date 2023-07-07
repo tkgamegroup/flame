@@ -103,12 +103,12 @@ struct StagingVector
 
 std::unordered_map<const void*, StagingVector> staging_vectors;
 
-StagingVector& get_staging_vector(const void* id, TypeInfo* type, void* vec)
+StagingVector& get_staging_vector(TypeInfo* type, void* vec)
 {
-	auto it = staging_vectors.find(id);
+	auto it = staging_vectors.find(vec);
 	if (it != staging_vectors.end())
 		return it->second;
-	auto& ret = staging_vectors.emplace(id, type).first->second;
+	auto& ret = staging_vectors.emplace(vec, type).first->second;
 	ret.assign(nullptr, vec);
 	return ret;
 }
@@ -911,7 +911,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			assert(!getter);
 			auto pv = (char*)objs[0] + offset;
 			auto ti = ((TypeInfo_VectorOfData*)type)->ti;
-			auto& sv = get_staging_vector(id, ti, pv);
+			auto& sv = get_staging_vector(ti, pv);
 			auto set_sv = [&]() {
 				if (!setter)
 					sv.assign(pv, nullptr);
@@ -959,7 +959,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			assert(!getter);
 			auto pv = (char*)objs[0] + offset;
 			auto ti = ((TypeInfo_VectorOfUdt*)type)->ti;
-			auto& sv = get_staging_vector(id, ti, pv);
+			auto& sv = get_staging_vector(ti, pv);
 			auto set_sv = [&]() {
 				if (!setter)
 					sv.assign(pv, nullptr);
@@ -1009,7 +1009,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			assert(!getter);
 			auto pv = (char*)objs[0] + offset;
 			auto ti = ((TypeInfo_VectorOfPair*)type)->ti;
-			auto& sv = get_staging_vector(id, ti, pv);
+			auto& sv = get_staging_vector(ti, pv);
 			auto set_sv = [&]() {
 				if (!setter)
 					sv.assign(pv, nullptr);
@@ -1062,7 +1062,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			assert(!getter);
 			auto pv = (char*)objs[0] + offset;
 			auto ti = ((TypeInfo_VectorOfTuple*)type)->ti;
-			auto& sv = get_staging_vector(id, ti, pv);
+			auto& sv = get_staging_vector(ti, pv);
 			auto set_sv = [&]() {
 				if (!setter)
 					sv.assign(pv, nullptr);
