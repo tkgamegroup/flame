@@ -441,7 +441,7 @@ namespace flame
 					for (auto cc : c.children())
 					{
 						len++;
-						vec.resize(len * ti->size);
+						resize_vector(&vec, ti, len);
 						auto pd = (char*)vec.data() + (len - 1) * ti->size;
 						ti->create(pd);
 						ti->unserialize(cc.attribute("v").value(), pd);
@@ -469,7 +469,7 @@ namespace flame
 					for (auto cc : c.children())
 					{
 						len++;
-						vec.resize(len * ti->size);
+						resize_vector(&vec, ti, len);
 						auto pd = (char*)vec.data() + (len - 1) * ti->size;
 						ti->create(pd);
 						unserialize_xml(*ti->ui, cc, pd, spec);
@@ -497,7 +497,7 @@ namespace flame
 					for (auto cc : c.children())
 					{
 						len++;
-						vec.resize(len * ti->size);
+						resize_vector(&vec, ti, len);
 						auto pd = (char*)vec.data() + (len - 1) * ti->size;
 						ti->create(pd);
 						data_unserialize(ti->ti1, cc.attribute("first").value(), ti->first(pd));
@@ -526,7 +526,7 @@ namespace flame
 					for (auto cc : c.children())
 					{
 						len++;
-						vec.resize(len * ti->size);
+						resize_vector(&vec, ti, len);
 						auto pd = (char*)vec.data() + (len - 1) * ti->size;
 						ti->create(pd);
 						auto i = 0;

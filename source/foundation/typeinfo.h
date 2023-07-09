@@ -2544,27 +2544,46 @@ namespace flame
 		}
 	};
 
-	inline void copy_pod_vector(void* dst, const void* src)
+	inline void resize_vector(void* dst, TypeInfo* ti, uint new_len)
 	{
 		auto& dst_vec = *(std::vector<char>*)dst;
-		auto& src_vec = *(std::vector<char>*)src;
-		dst_vec.resize(src_vec.size());
-		memcpy(dst_vec.data(), src_vec.data(), src_vec.size());
+		uint old_len = dst_vec.size() / ti->size;
+		if (ti->pod)
+			dst_vec.resize(new_len * ti->size);
+		else
+		{
+			std::vector<char> temp_vec;
+			temp_vec.resize(new_len * ti->size);
+			for (auto i = 0; i < new_len; i++)
+				ti->create((char*)temp_vec.data() + i * ti->size);
+			for (auto i = 0; i < old_len; i++)
+				ti->copy(temp_vec.data() + i * ti->size, dst_vec.data() + i * ti->size);
+			dst_vec = std::move(temp_vec);
+		}
 	}
 
-	inline void copy_npod_vector(void* dst, const void* src, TypeInfo* ti)
+	inline void copy_vector(void* dst, const void* src, TypeInfo* ti)
 	{
 		auto& dst_vec = *(std::vector<char>*)dst;
 		auto& src_vec = *(std::vector<char>*)src;
-		auto old_len = dst_vec.size() / ti->size;
-		auto new_len = src_vec.size() / ti->size;
-		for (auto i = new_len; i < old_len; i++)
-			ti->destroy((char*)dst_vec.data() + i * ti->size, false);
+		uint old_len = dst_vec.size() / ti->size;
+		uint new_len = src_vec.size() / ti->size;
+		if (!ti->pod)
+		{
+			for (auto i = 0; i < old_len; i++)
+				ti->destroy((char*)dst_vec.data() + i * ti->size, false);
+		}
 		dst_vec.resize(new_len * ti->size);
-		for (auto i = old_len; i < new_len; i++)
-			ti->create((char*)dst_vec.data() + i * ti->size);
-		for (auto i = 0; i < new_len; i++)
-			ti->copy((char*)dst_vec.data() + i * ti->size, (char*)src_vec.data() + i * ti->size);
+		if (!ti->pod)
+		{
+			for (auto i = 0; i < new_len; i++)
+			{
+				ti->create((char*)dst_vec.data() + i * ti->size);
+				ti->copy((char*)dst_vec.data() + i * ti->size, (char*)src_vec.data() + i * ti->size);
+			}
+		}
+		else
+			memcpy(dst_vec.data(), src_vec.data(), src_vec.size());
 	}
 
 	struct TypeInfo_VectorOfEnum : TypeInfo
@@ -2587,7 +2606,7 @@ namespace flame
 		}
 		void copy(void* dst, const void* src) const override
 		{
-			copy_pod_vector(dst, src);
+			copy_vector(dst, src, ti);
 		}
 		std::string serialize(const void* p) const override
 		{
@@ -2643,10 +2662,7 @@ namespace flame
 		}
 		void copy(void* dst, const void* src) const override
 		{
-			if (ti->pod)
-				copy_pod_vector(dst, src);
-			else
-				copy_npod_vector(dst, src, ti);
+			copy_vector(dst, src, ti);
 		}
 		std::string serialize(const void* p) const override
 		{
@@ -2710,10 +2726,7 @@ namespace flame
 		}
 		void copy(void* dst, const void* src) const override
 		{
-			if (ti->ui->pod)
-				copy_pod_vector(dst, src);
-			else
-				copy_npod_vector(dst, src, ti);
+			copy_vector(dst, src, ti);
 		}
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
@@ -2775,7 +2788,7 @@ namespace flame
 		}
 		void copy(void* dst, const void* src) const override
 		{
-			copy_npod_vector(dst, src, ti);
+			copy_vector(dst, src, ti);
 		}
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{
@@ -2837,7 +2850,7 @@ namespace flame
 		}
 		void copy(void* dst, const void* src) const override
 		{
-			copy_npod_vector(dst, src, ti);
+			copy_vector(dst, src, ti);
 		}
 		void call_setter(const FunctionInfo* fi, void* obj, void* src) const override
 		{

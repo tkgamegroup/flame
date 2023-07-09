@@ -68,18 +68,7 @@ struct StagingVector
 		if (!_vec)
 			_vec = &v;
 		auto& vec = *(std::vector<char>*)_vec;
-		auto old_size = vec.size() / item_size;
-		v.resize(size * item_size);
-		if (old_size < size)
-		{
-			for (auto i = old_size; i < size; i++)
-				type->create(vec.data() + i * item_size);
-		}
-		else if (old_size > size)
-		{
-			for (auto i = size; i < old_size; i++)
-				type->destroy(vec.data() + i * item_size, false);
-		}
+		resize_vector(&vec, type, size);
 	}
 
 	void assign(void* _dst, void* _src)
@@ -88,16 +77,7 @@ struct StagingVector
 			_dst = &v;
 		if (!_src)
 			_src = &v;
-		auto& dst = *(std::vector<char>*)_dst;
-		auto& src = *(std::vector<char>*)_src;
-		dst.resize(src.size());
-		auto count = src.size() / item_size;
-		for (auto i = 0; i < count; i++)
-		{
-			auto p = dst.data() + i * item_size;
-			type->create(p);
-			type->copy(p, src.data() + i * item_size);
-		}
+		copy_vector(_dst, _src, type);
 	}
 };
 
