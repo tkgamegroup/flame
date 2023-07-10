@@ -1096,6 +1096,7 @@ process:
 					if (fi.name == "ctor" && fi.parameters.empty() && fi.rva)
 					{
 						fi.name = "dctor";
+						fi.name_hash = "dctor"_h;
 						has_dctor = true;
 						u.pod = false;
 					}
