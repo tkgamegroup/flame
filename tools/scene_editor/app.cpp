@@ -1844,7 +1844,8 @@ int main(int argc, char** args)
 		{
 			auto pos = s2t<2, int>(e.values[0]);
 			auto screen_size = get_screen_size();
-			if (pos.x >= screen_size.x)
+			auto num_monitors = get_num_monitors();
+			if (pos.x >= screen_size.x * num_monitors)
 				pos.x = 0;
 			app.main_window->native->set_pos(pos);
 		}

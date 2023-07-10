@@ -146,6 +146,20 @@ namespace flame
 		return ret;
 	}
 
+	uint get_num_monitors()
+	{
+		uint ret = 0;
+		EnumDisplayMonitors(NULL, NULL, [](
+			HMONITOR unnamedParam1,
+			HDC unnamedParam2,
+			LPRECT unnamedParam3,
+			LPARAM unnamedParam4) {
+				(*(uint*)unnamedParam4)++;
+				return TRUE;
+		}, (uint64)& ret);
+		return ret;
+	}
+
 	void* load_library(const std::filesystem::path& path)
 	{
 		if (path.extension() == L".dll")

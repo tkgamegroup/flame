@@ -33,6 +33,7 @@ namespace flame
 	FLAME_FOUNDATION_API std::filesystem::path get_app_path(bool has_name = false);
 	FLAME_FOUNDATION_API void* get_hinst();
 	FLAME_FOUNDATION_API uvec2 get_screen_size();
+	FLAME_FOUNDATION_API uint get_num_monitors();
 	FLAME_FOUNDATION_API void* load_library(const std::filesystem::path& path);
 	FLAME_FOUNDATION_API void free_library(void* library);
 	FLAME_FOUNDATION_API void* get_library_function(void* library, const std::string& name);

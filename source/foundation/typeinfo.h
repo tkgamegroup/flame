@@ -2556,7 +2556,7 @@ namespace flame
 			temp_vec.resize(new_len * ti->size);
 			for (auto i = 0; i < new_len; i++)
 				ti->create((char*)temp_vec.data() + i * ti->size);
-			for (auto i = 0; i < old_len; i++)
+			for (auto i = 0; i < min(old_len, new_len); i++)
 				ti->copy(temp_vec.data() + i * ti->size, dst_vec.data() + i * ti->size);
 			dst_vec = std::move(temp_vec);
 		}
