@@ -74,11 +74,11 @@ void View_Scene::focus_to_selected()
 {
 	if (selection.type == Selection::tEntity)
 	{
-		if (auto node = selection.as_entity()->node(); node)
+		if (auto node = selection.as_entity()->get_component<cNode>(); node)
 		{
 			AABB bounds;
 			node->entity->forward_traversal([&](EntityPtr e) {
-				if (auto node = e->node(); node)
+				if (auto node = e->get_component<cNode>(); node)
 				{
 					if (!node->bounds.invalid())
 						bounds.expand(node->bounds);
@@ -104,7 +104,7 @@ void View_Scene::selected_to_focus()
 	if (selection.type == Selection::tEntity)
 	{
 		auto e = selection.as_entity();
-		if (auto node = e->node(); node)
+		if (auto node = e->get_component<cNode>(); node)
 		{
 			node->set_pos(camera_target_pos());
 			if (auto ins = get_root_prefab_instance(e); ins)
@@ -197,7 +197,7 @@ void View_Scene::on_draw()
 			element_targets.clear();
 			for (auto e : selection.entities())
 			{
-				if (auto node = e->node(); node)
+				if (auto node = e->get_component<cNode>(); node)
 				{
 					auto ok = true;
 					for (auto t : node_targets)
@@ -211,7 +211,7 @@ void View_Scene::on_draw()
 					if (ok)
 						node_targets.push_back(node);
 				}
-				if (auto element = e->element(); element)
+				if (auto element = e->get_component<cElement>(); element)
 				{
 					auto ok = true;
 					for (auto t : element_targets)
@@ -323,7 +323,7 @@ void View_Scene::on_draw()
 				{
 					if (node_targets.size() == 1)
 					{
-						if (auto pnode = node_targets[0]->entity->get_parent_component_i<cNodeT>(0); pnode)
+						if (auto pnode = node_targets[0]->entity->get_parent_component<cNodeT>(); pnode)
 							mat = inverse(pnode->transform) * mat;
 					}
 					vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
@@ -476,7 +476,7 @@ void View_Scene::on_draw()
 					m3[2] = mat[3]; m3[2][2] = 1.f;
 					if (element_targets.size() == 1)
 					{
-						if (auto pelement = element_targets[0]->entity->get_parent_component_i<cElementT>(0); pelement)
+						if (auto pelement = element_targets[0]->entity->get_parent_component<cElementT>(); pelement)
 							m3 = inverse(mat3(pelement->transform)) * m3;
 					}
 					vec2 pos; vec2 scl;
@@ -648,7 +648,7 @@ void View_Scene::on_draw()
 				auto hovering_node = sRenderer::instance()->pick_up(app.input->mpos, &hovering_pos, [](cNodePtr n, DrawData& draw_data) {
 					if (draw_data.categories & CateMesh)
 					{
-						if (auto mesh = n->entity->get_component_t<cMesh>(); mesh)
+						if (auto mesh = n->entity->get_component<cMesh>(); mesh)
 						{
 							if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
 								draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
@@ -656,12 +656,12 @@ void View_Scene::on_draw()
 					}
 					if (draw_data.categories & CateTerrain)
 					{
-						if (auto terrain = n->entity->get_component_t<cTerrain>(); terrain)
+						if (auto terrain = n->entity->get_component<cTerrain>(); terrain)
 							draw_data.terrains.emplace_back(terrain->instance_id, terrain->blocks, terrain->material_res_id);
 					}
 					if (draw_data.categories & CateMarchingCubes)
 					{
-						if (auto volume = n->entity->get_component_t<cVolume>(); volume && volume->marching_cubes)
+						if (auto volume = n->entity->get_component<cVolume>(); volume && volume->marching_cubes)
 							draw_data.volumes.emplace_back(volume->instance_id, volume->blocks, volume->material_res_id);
 					}
 					});
@@ -745,24 +745,24 @@ void View_Scene::on_draw()
 			auto outline_node = [&](EntityPtr e, const cvec4& col) {
 				if (!e->global_enable)
 					return;
-				if (auto node = e->node(); !node || !AABB_frustum_check(camera->frustum, node->bounds))
+				if (auto node = e->get_component<cNode>(); !node || !AABB_frustum_check(camera->frustum, node->bounds))
 					return;
-				if (auto mesh = e->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
+				if (auto mesh = e->get_component<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
 				{
 					CommonDraw d("mesh"_h, mesh->mesh_res_id, mesh->instance_id);
 					sRenderer::instance()->draw_outlines({ d }, col, 1, "MAX"_h);
 				}
-				if (auto terrain = e->get_component_t<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
+				if (auto terrain = e->get_component<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
 				{
 					CommonDraw d("terrain"_h, 0, terrain->instance_id);
 					sRenderer::instance()->draw_outlines({ d }, col, 1, "MAX"_h);
 				}
-				if (auto armature = e->get_component_t<cArmature>(); armature && armature->model)
+				if (auto armature = e->get_component<cArmature>(); armature && armature->model)
 				{
 					std::vector<CommonDraw> ds;
 					for (auto& c : e->children)
 					{
-						if (auto mesh = c->get_component_t<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
+						if (auto mesh = c->get_component<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
 							ds.emplace_back("mesh"_h, mesh->mesh_res_id, mesh->instance_id);
 					}
 					sRenderer::instance()->draw_outlines(ds, col, 1, "MAX"_h);
@@ -781,7 +781,7 @@ void View_Scene::on_draw()
 		if (show_AABB)
 		{
 			auto draw_aabb = [](EntityPtr e) {
-				if (auto node = e->node(); node)
+				if (auto node = e->get_component<cNode>(); node)
 				{
 					if (!node->bounds.invalid())
 					{
@@ -821,7 +821,7 @@ void View_Scene::on_draw()
 				auto e = selection.as_entity();
 				if (e->global_enable)
 				{
-					if (auto node = e->node(); node)
+					if (auto node = e->get_component<cNode>(); node)
 					{
 						vec3 line_pts[2];
 						line_pts[0] = node->global_pos(); line_pts[1] = node->global_pos() + node->x_axis();
@@ -839,7 +839,7 @@ void View_Scene::on_draw()
 			World::instance()->root->forward_traversal([](EntityPtr e) {
 				if (!e->global_enable)
 					return false;
-				if (auto arm = e->get_component_t<cArmature>(); arm)
+				if (auto arm = e->get_component<cArmature>(); arm)
 				{
 					std::function<void(cNodePtr)> draw_node;
 					draw_node = [&](cNodePtr n) {
@@ -847,7 +847,7 @@ void View_Scene::on_draw()
 						line_pts[0] = n->global_pos();
 						for (auto& c : n->entity->children)
 						{
-							auto nn = c->node();
+							auto nn = c->get_component<cNode>();
 							if (nn)
 							{
 								line_pts[1] = nn->global_pos();
@@ -899,9 +899,9 @@ void View_Scene::on_draw()
 					pts[1] = pts[0] + vec3(0.f, h, 0.f);
 					sRenderer::instance()->draw_primitives("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
 				};
-				if (auto agent = e->get_component_t<cNavAgent>(); agent)
+				if (auto agent = e->get_component<cNavAgent>(); agent)
 					draw_cylinder(agent->node->global_pos(), agent->radius, agent->height);
-				if (auto obstacle = e->get_component_t<cNavObstacle>(); obstacle)
+				if (auto obstacle = e->get_component<cNavObstacle>(); obstacle)
 					draw_cylinder(obstacle->node->global_pos(), obstacle->radius, obstacle->height);
 				return true;
 			});
@@ -915,10 +915,10 @@ void View_Scene::on_draw()
 		if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered() && selection.lock && selection.type == Selection::tEntity)
 		{
 			auto e = selection.as_entity();
-			if (auto terrain = e->get_component_t<cTerrain>(); terrain)
+			if (auto terrain = e->get_component<cTerrain>(); terrain)
 			{
 			}
-			if (auto tile_map = e->get_component_t<cTileMap>(); tile_map)
+			if (auto tile_map = e->get_component<cTileMap>(); tile_map)
 			{
 				tile_map_editing();
 			}
@@ -939,7 +939,7 @@ void View_Scene::on_draw()
 							auto e = Entity::create();
 							e->load(path);
 							new PrefabInstance(e, path);
-							if (auto node = e->node(); node)
+							if (auto node = e->get_component<cNode>(); node)
 							{
 								auto pos = hovering_pos;
 								if (!hovering_entity)
@@ -963,7 +963,7 @@ void View_Scene::on_draw()
 					{
 						if (hovering_entity)
 						{
-							if (auto mesh = hovering_entity->get_component_t<cMesh>(); mesh)
+							if (auto mesh = hovering_entity->get_component<cMesh>(); mesh)
 							{
 								mesh->set_material_name(path);
 								app.prefab_unsaved = true;

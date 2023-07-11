@@ -88,7 +88,7 @@ namespace flame
 
 		std::unique_ptr<PrefabInstance> prefab_instance;
 
-		inline Component* get_component(uint type_hash) const
+		inline Component* get_component_h(uint type_hash) const
 		{
 			for (auto& c : components)
 			{
@@ -99,53 +99,47 @@ namespace flame
 		}
 
 		template<typename T>
-		inline T* get_component_t() const
+		inline T* get_component() const
 		{
-			return (T*)get_component(th<T>());
+			return (T*)get_component_h(th<T>());
 		}
 
 		template<typename T>
-		inline T* get_component_i(uint idx) const
+		inline T* get_parent_component() const
 		{
-			if (idx >= components.size())
-				return nullptr;
-			auto ret = components[idx].get();
-			return ret->type_hash == th<T>() ? (T*)ret : nullptr;
-		}
-
-		inline cNodePtr node() const
-		{
-			return (cNodePtr)get_component_i<cNode>(0);
-		}
-
-		inline cElementPtr element() const
-		{
-			return (cElementPtr)get_component_i<cElement>(0);
+			return parent ? ((Entity*)parent)->get_component<T>() : nullptr;
 		}
 
 		template<typename T>
-		inline T* get_parent_component_t() const
+		std::vector<T*> get_components(uint lv) const
 		{
-			return parent ? ((Entity*)parent)->get_component_t<T>() : nullptr;
+			std::vector<T*> ret;
+			auto comp = get_component<T>();
+			if (comp)
+				ret.push_back(comp);
+			if (lv > 0)
+			{
+				for (auto& cc : children)
+				{
+					auto c = (Entity*)cc.get();
+					auto vec = c->get_components<T>(lv - 1);
+					ret.insert(ret.end(), vec.begin(), vec.end());
+				}
+			}
+			return ret;
 		}
 
+		virtual Component* add_component_h(uint hash) = 0;
 		template<typename T>
-		inline T* get_parent_component_i(uint idx) const
+		inline T* add_component()
 		{
-			return parent ? ((Entity*)parent)->get_component_i<T>(0) : nullptr;
+			return (T*)add_component_h(th<T>());
 		}
-
-		virtual Component* add_component(uint hash) = 0;
+		virtual bool remove_component_h(uint hash) = 0;
 		template<typename T>
-		inline T* add_component_t()
+		inline bool remove_component()
 		{
-			return (T*)add_component(th<T>());
-		}
-		virtual bool remove_component(uint hash) = 0;
-		template<typename T>
-		inline bool remove_component_t()
-		{
-			return remove_component(th<T>());
+			return remove_component_h(th<T>());
 		}
 		virtual void remove_all_components() = 0;
 

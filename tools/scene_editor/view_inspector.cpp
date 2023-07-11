@@ -1202,7 +1202,7 @@ struct EditingEntities
 
 		auto entt0 = entities[0];
 		auto process_attribute = [&](const Attribute& a, uint comp_hash) {
-			void* obj0 = comp_hash == 0 ? entt0 : (void*)entt0->get_component(comp_hash);
+			void* obj0 = comp_hash == 0 ? entt0 : (void*)entt0->get_component_h(comp_hash);
 			uint state = 1;
 
 			if (a.type->tag == TagD)
@@ -1215,7 +1215,7 @@ struct EditingEntities
 				case DataBool:
 					for (auto i = 1; i < entities.size(); i++)
 					{
-						void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component(comp_hash);
+						void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component_h(comp_hash);
 						auto var1 = a.get_value(obj1);
 						if (*(bool*)var0 != *(bool*)var1)
 						{
@@ -1228,7 +1228,7 @@ struct EditingEntities
 				case DataFloat:
 					for (auto i = 1; i < entities.size(); i++)
 					{
-						void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component(comp_hash);
+						void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component_h(comp_hash);
 						auto var1 = a.get_value(obj1);
 						for (auto y = 0; y < ti->vec_size; y++)
 						{
@@ -1242,7 +1242,7 @@ struct EditingEntities
 				default:
 					for (auto i = 1; i < entities.size(); i++)
 					{
-						void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component(comp_hash);
+						void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component_h(comp_hash);
 						if (!a.type->compare(var0, a.get_value(obj1)))
 						{
 							state = 0;
@@ -1268,7 +1268,7 @@ struct EditingEntities
 			auto all_have = true;
 			for (auto i = 1; i < entities.size(); i++)
 			{
-				if (!entities[i]->get_component(hash))
+				if (!entities[i]->get_component_h(hash))
 				{
 					all_have = false;
 					break;
@@ -1280,14 +1280,14 @@ struct EditingEntities
 				cc.type_hash = hash;
 				cc.components.resize(entities.size());
 				for (auto i = 0; i < entities.size(); i++)
-					cc.components[i] = entities[i]->get_component(hash);
+					cc.components[i] = entities[i]->get_component_h(hash);
 			}
 		}
 		if (entities.size() > 1)
 		{
 			for (auto& cc : common_components)
 			{
-				auto comp0 = entt0->get_component(cc.type_hash);
+				auto comp0 = entt0->get_component_h(cc.type_hash);
 				auto& ui = *find_udt(cc.type_hash);
 				for (auto& a : ui_component->attributes)
 					process_attribute(a, cc.type_hash);
@@ -1544,7 +1544,7 @@ struct EditingEntities
 					auto changed = false;
 					for (auto e : entities)
 					{
-						if (e->remove_component(cc.type_hash))
+						if (e->remove_component_h(cc.type_hash))
 						{
 							if (auto ins = get_root_prefab_instance(e); ins)
 							{
@@ -1918,7 +1918,7 @@ struct EditingEntities
 					auto changed = false;
 					for (auto e : entities)
 					{
-						if (e->add_component(ui->name_hash))
+						if (e->add_component_h(ui->name_hash))
 						{
 							if (auto ins = get_root_prefab_instance(e); ins)
 							{

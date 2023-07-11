@@ -26,7 +26,7 @@ namespace flame
 
 	void cElementPrivate::set_global_pos(const vec2& pos)
 	{
-		if (auto pelement = entity->get_parent_component_i<cElementT>(0); pelement)
+		if (auto pelement = entity->get_parent_component<cElementT>(); pelement)
 			set_pos(pos - pelement->global_pos0());
 		else
 			set_pos(pos);
@@ -43,7 +43,7 @@ namespace flame
 
 	void cElementPrivate::set_global_ext(const vec2& ext)
 	{
-		if (auto pelement = entity->get_parent_component_i<cElementT>(0); pelement)
+		if (auto pelement = entity->get_parent_component<cElementT>(); pelement)
 		{
 			auto gscl = pelement->global_scl();
 			set_ext(ext / (gscl == vec2(0.f) ? 1.f : 0.f));
@@ -136,11 +136,11 @@ namespace flame
 	vec2 cElementPrivate::global_scl()
 	{
 		auto ret = scl;
-		auto pelement = entity->get_parent_component_i<cElementT>(0);
+		auto pelement = entity->get_parent_component<cElementT>();
 		while (pelement)
 		{
 			ret *= pelement->scl;
-			pelement = pelement->entity->get_parent_component_i<cElementT>(0);
+			pelement = pelement->entity->get_parent_component<cElementT>();
 		}
 		return ret;
 	}
@@ -163,7 +163,7 @@ namespace flame
 			return false;
 
 		mat3 m;
-		if (auto pelement = entity->get_parent_component_i<cElementT>(0); pelement)
+		if (auto pelement = entity->get_parent_component<cElementT>(); pelement)
 			m = pelement->transform;
 		else
 			m = mat3(1.f);
@@ -184,7 +184,7 @@ namespace flame
 		while (e)
 		{
 			elements.push_back(e);
-			e = e->entity->get_parent_component_i<cElementT>(0);
+			e = e->entity->get_parent_component<cElementT>();
 		}
 		std::reverse(elements.begin(), elements.end());
 		for (auto e : elements)

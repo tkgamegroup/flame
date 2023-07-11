@@ -518,7 +518,7 @@ namespace flame
 //			auto e = Entity::create();
 //			e->load(setting.prefab_name);
 //			new PrefabInstance(e, setting.prefab_name);
-//			spawn_prefabs.emplace_back(e, e->get_component_t<cNavObstacleT>());
+//			spawn_prefabs.emplace_back(e, e->get_component<cNavObstacleT>());
 //		}
 //		auto e_dst_parent = terrain->entity->parent;
 //		auto node_name = "terrain_auto_spawn";
@@ -527,7 +527,7 @@ namespace flame
 //		{
 //			e_dst = Entity::create();
 //			e_dst->name = node_name;
-//			e_dst->add_component_t<cNode>();
+//			e_dst->add_component<cNode>();
 //			e_dst_parent->add_child(e_dst);
 //		}
 //		e_dst->remove_all_children();
@@ -568,7 +568,7 @@ namespace flame
 //					auto e = prefab.first->copy();
 //					new PrefabInstance(e, prefab.first->prefab_instance->filename);
 //					e->file_id = prefab.first->file_id;
-//					auto n = e->node();
+//					auto n = e->get_component<cNode>();
 //					n->set_pos(spawn_offset + vec3(p.x * extent.x, height_map->linear_sample(p).r * extent.y, p.y * extent.z));
 //					n->set_eul(vec3(linearRand(0.f, 360.f), 0.f, 0.f));
 //					e->prefab_instance->mark_modifier(prefab.first->file_id, "flame::cNode", "pos");

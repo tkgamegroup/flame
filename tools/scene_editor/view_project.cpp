@@ -48,18 +48,18 @@ static void update_thumbnail(const std::filesystem::path& path)
 	{
 		add_event([path]() {
 			auto e = Entity::create();
-			e->add_component_t<cNode>();
+			e->add_component<cNode>();
 			auto e_camera = Entity::create();
 			{
-				auto n = e_camera->add_component_t<cNode>();
+				auto n = e_camera->add_component<cNode>();
 				auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
 				n->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
 			}
-			e_camera->add_component_t<cCamera>();
+			e_camera->add_component<cCamera>();
 			e->add_child(e_camera);
 			auto e_prefab = Entity::create();
 			e_prefab->load(path);
-			if (auto node = e_prefab->node(); node)
+			if (auto node = e_prefab->get_component<cNode>(); node)
 				node->set_pos(vec3(-2000.f));
 			e->add_child(e_prefab);
 
@@ -70,14 +70,14 @@ static void update_thumbnail(const std::filesystem::path& path)
 			app.scene->update();
 			AABB bounds;
 			e_prefab->forward_traversal([&](EntityPtr e) {
-				if (auto node = e->node(); node)
+				if (auto node = e->get_component<cNode>(); node)
 				{
 					if (!node->bounds.invalid())
 						bounds.expand(node->bounds);
 				}
 			});
-			auto camera_node = e_camera->node();
-			auto camera = e_camera->get_component_t<cCamera>();
+			auto camera_node = e_camera->get_component<cNode>();
+			auto camera = e_camera->get_component<cCamera>();
 			if (!bounds.invalid())
 			{
 				auto pos = fit_camera_to_object(mat3(camera_node->g_qut), camera->fovy, camera->zNear, camera->aspect, bounds);

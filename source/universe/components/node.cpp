@@ -56,7 +56,7 @@ namespace flame
 		if (!transform_dirty)
 			return false;
 
-		if (auto pnode = entity->get_parent_component_i<cNodeT>(0); pnode)
+		if (auto pnode = entity->get_parent_component<cNodeT>(); pnode)
 		{
 			g_qut = qut * pnode->g_qut;
 			transform = pnode->transform;
@@ -83,7 +83,7 @@ namespace flame
 		while (n)
 		{
 			nodes.push_back(n);
-			n = n->entity->get_parent_component_i<cNodeT>(0);
+			n = n->entity->get_parent_component<cNodeT>();
 		}
 		std::reverse(nodes.begin(), nodes.end());
 		for (auto n : nodes)
@@ -97,11 +97,11 @@ namespace flame
 	vec3 cNodePrivate::global_scl()
 	{
 		auto ret = scl;
-		auto pnode = entity->get_parent_component_i<cNodeT>(0);
+		auto pnode = entity->get_parent_component<cNodeT>();
 		while (pnode)
 		{
 			ret *= pnode->scl;
-			pnode = pnode->entity->get_parent_component_i<cNodeT>(0);
+			pnode = pnode->entity->get_parent_component<cNodeT>();
 		}
 		return ret;
 	}

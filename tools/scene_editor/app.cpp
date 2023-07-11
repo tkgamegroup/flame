@@ -112,11 +112,11 @@ void App::init()
 	renderer->mode = sRenderer::CameraLight;
 
 	auto root = world->root.get();
-	root->add_component_t<cNode>();
+	root->add_component<cNode>();
 	e_editor = Entity::create();
 	e_editor->name = "[Editor]";
-	e_editor->add_component_t<cNode>();
-	e_editor->add_component_t<cCamera>();
+	e_editor->add_component<cNode>();
+	e_editor->add_component<cCamera>();
 	root->add_child(e_editor);
 
 	for (auto& v : graphics::gui_views)
@@ -755,7 +755,7 @@ void App::on_gui()
 	if (selection.lock && selection.type == Selection::tEntity)
 	{
 		auto e = selection.as_entity();
-		if (auto terrain = e->get_component_t<cTerrain>(); terrain)
+		if (auto terrain = e->get_component<cTerrain>(); terrain)
 		{
 			ImGui::SameLine();
 			if (ImGui::ToolButton((graphics::FontAtlas::icon_s("mound"_h) + "##up").c_str(), app.tool == ToolTerrainUp))
@@ -767,7 +767,7 @@ void App::on_gui()
 			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("paintbrush"_h).c_str(), app.tool == ToolTerrainPaint))
 				tool = ToolTerrainPaint;
 		}
-		if (auto tile_map = e->get_component_t<cTileMap>(); tile_map)
+		if (auto tile_map = e->get_component<cTileMap>(); tile_map)
 		{
 			ImGui::SameLine();
 			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("up-long"_h).c_str(), app.tool == ToolTileMapLevelUp))
@@ -1285,22 +1285,22 @@ void App::new_prefab(const std::filesystem::path& path, uint type)
 	switch (type)
 	{
 	case "general_3d_scene"_h:
-		e->add_component_t<cNode>();
+		e->add_component<cNode>();
 		auto e_camera = Entity::create();
 		e_camera->name = "Camera";
-		e_camera->add_component_t<cNode>();
-		e_camera->add_component_t<cCamera>();
+		e_camera->add_component<cNode>();
+		e_camera->add_component<cCamera>();
 		e->add_child(e_camera);
 		auto e_light = Entity::create();
 		e_light->name = "Directional Light";
-		e_light->add_component_t<cNode>()->set_eul(vec3(45.f, -60.f, 0.f));
-		e_light->add_component_t<cDirLight>();
+		e_light->add_component<cNode>()->set_eul(vec3(45.f, -60.f, 0.f));
+		e_light->add_component<cDirLight>();
 		e->add_child(e_light);
 		auto e_plane = Entity::create();
 		e_plane->name = "Plane";
 		e_plane->tag = e_plane->tag;
-		e_plane->add_component_t<cNode>();
-		e_plane->add_component_t<cMesh>()->set_mesh_and_material(L"standard_plane", L"default");
+		e_plane->add_component<cNode>();
+		e_plane->add_component<cMesh>()->set_mesh_and_material(L"standard_plane", L"default");
 		e->add_child(e_plane);
 		break;
 	}
@@ -1590,54 +1590,54 @@ bool App::cmd_new_entities(std::vector<EntityPtr>&& es, uint type)
 		case "empty"_h:
 			break;
 		case "node"_h:
-			e->add_component_t<cNode>();
+			e->add_component<cNode>();
 			break;
 		case "plane"_h:
-			e->add_component_t<cNode>();
-			e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_plane", L"default");
+			e->add_component<cNode>();
+			e->add_component<cMesh>()->set_mesh_and_material(L"standard_plane", L"default");
 			break;
 		case "cube"_h:
-			e->add_component_t<cNode>();
-			e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_cube", L"default");
+			e->add_component<cNode>();
+			e->add_component<cMesh>()->set_mesh_and_material(L"standard_cube", L"default");
 			break;
 		case "sphere"_h:
-			e->add_component_t<cNode>();
-			e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_sphere", L"default");
+			e->add_component<cNode>();
+			e->add_component<cMesh>()->set_mesh_and_material(L"standard_sphere", L"default");
 			break;
 		case "cylinder"_h:
-			e->add_component_t<cNode>();
-			e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_cylinder", L"default");
+			e->add_component<cNode>();
+			e->add_component<cMesh>()->set_mesh_and_material(L"standard_cylinder", L"default");
 			break;
 		case "tri_prism"_h:
-			e->add_component_t<cNode>();
-			e->add_component_t<cMesh>()->set_mesh_and_material(L"standard_tri_prism", L"default");
+			e->add_component<cNode>();
+			e->add_component<cMesh>()->set_mesh_and_material(L"standard_tri_prism", L"default");
 			break;
 		case "dir_light"_h:
-			e->add_component_t<cNode>()->set_eul(vec3(45.f, -60.f, 0.f));
-			e->add_component_t<cDirLight>();
+			e->add_component<cNode>()->set_eul(vec3(45.f, -60.f, 0.f));
+			e->add_component<cDirLight>();
 			break;
 		case "pt_light"_h:
-			e->add_component_t<cNode>();
-			e->add_component_t<cPtLight>();
+			e->add_component<cNode>();
+			e->add_component<cPtLight>();
 			break;
 		case "camera"_h:
-			e->add_component_t<cNode>();
-			e->add_component_t<cCamera>();
+			e->add_component<cNode>();
+			e->add_component<cCamera>();
 			break;
 		case "element"_h:
-			e->add_component_t<cElement>();
+			e->add_component<cElement>();
 			break;
 		case "image"_h:
-			e->add_component_t<cElement>();
-			e->add_component_t<cImage>();
+			e->add_component<cElement>();
+			e->add_component<cImage>();
 			break;
 		case "text"_h:
-			e->add_component_t<cElement>();
-			e->add_component_t<cText>();
+			e->add_component<cElement>();
+			e->add_component<cText>();
 			break;
 		case "layout"_h:
-			e->add_component_t<cElement>();
-			e->add_component_t<cLayout>();
+			e->add_component<cElement>();
+			e->add_component<cLayout>();
 			break;
 		}
 		t->add_child(e);

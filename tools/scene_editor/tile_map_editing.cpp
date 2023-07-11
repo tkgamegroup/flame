@@ -10,7 +10,7 @@ void tile_map_editing()
 {
 	auto& io = ImGui::GetIO();
 
-	auto tile_map = selection.as_entity()->get_component_t<cTileMap>();
+	auto tile_map = selection.as_entity()->get_component<cTileMap>();
 	auto extent = tile_map->extent;
 	auto blocks = tile_map->blocks;
 	auto block_sz = extent / vec3(blocks);

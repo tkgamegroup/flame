@@ -19,8 +19,8 @@ namespace flame
 		void update_enable();
 		void set_enable(bool v) override;
 
-		Component* add_component(uint hash) override;
-		bool remove_component(uint hash) override;
+		Component* add_component_h(uint hash) override;
+		bool remove_component_h(uint hash) override;
 		void remove_all_components() override;
 		bool reposition_component(Component* comp) override;
 

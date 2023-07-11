@@ -18,27 +18,27 @@ namespace flame
 		if (e_content_container)
 		{
 			e_content_container->message_listeners.remove("scroll_view"_h);
-			if (auto element = e_content_container->element(); element)
+			if (auto element = e_content_container->get_component<cElement>(); element)
 				element->data_listeners.remove("scroll_view"_h);
 		}
 		if (e_content_viewport)
 		{
 			e_content_viewport->message_listeners.remove("scroll_view"_h);
-			if (auto element = e_content_viewport->element(); element)
+			if (auto element = e_content_viewport->get_component<cElement>(); element)
 				element->data_listeners.remove("scroll_view"_h);
 		}
 		if (e_vertical_scroller)
 		{
 			e_vertical_scroller->message_listeners.remove("scroll_view"_h);
-			if (auto element = e_vertical_scroller->element(); element)
+			if (auto element = e_vertical_scroller->get_component<cElement>(); element)
 				element->data_listeners.remove("scroll_view"_h);
 		}
 		if (e_vertical_scroller_slider)
 		{
 			e_vertical_scroller_slider->message_listeners.remove("scroll_view"_h);
-			if (auto element = e_vertical_scroller_slider->element(); element)
+			if (auto element = e_vertical_scroller_slider->get_component<cElement>(); element)
 				element->data_listeners.remove("scroll_view"_h);
-			if (auto receiver = e_vertical_scroller_slider->get_component_t<cReceiver>(); receiver)
+			if (auto receiver = e_vertical_scroller_slider->get_component<cReceiver>(); receiver)
 				receiver->event_listeners.remove("scroll_view"_h);
 		}
 	}
@@ -68,8 +68,8 @@ namespace flame
 		float viewport_height = 0.f;
 		if (e_content_container && e_content_viewport)
 		{
-			auto container_element = e_content_container->element();
-			auto viewport_element = e_content_viewport->element();
+			auto container_element = e_content_container->get_component<cElement>();
+			auto viewport_element = e_content_viewport->get_component<cElement>();
 			if (container_element && viewport_element)
 			{
 				content_height = container_element->ext.y;
@@ -78,8 +78,8 @@ namespace flame
 				{
 					if (e_vertical_scroller && e_vertical_scroller_slider)
 					{
-						auto scroller_element = e_vertical_scroller->element();
-						auto slider_element = e_vertical_scroller_slider->element();
+						auto scroller_element = e_vertical_scroller->get_component<cElement>();
+						auto slider_element = e_vertical_scroller_slider->get_component<cElement>();
 						if (scroller_element && slider_element)
 						{
 							slider_element->set_h(scroller_element->ext.y * (viewport_height / content_height));
@@ -98,7 +98,7 @@ namespace flame
 		if (e_content_container)
 		{
 			e_content_container->message_listeners.remove("scroll_view"_h);
-			if (auto element = e_content_container->element(); element)
+			if (auto element = e_content_container->get_component<cElement>(); element)
 				element->data_listeners.remove("scroll_view"_h);
 		}
 		e_content_container = World::instance()->root->find_with_file_id(content_container);
@@ -108,7 +108,7 @@ namespace flame
 				if (hash == "destroyed"_h)
 					e_content_container = nullptr;
 			});
-			if (auto element = e_content_container->element(); element)
+			if (auto element = e_content_container->get_component<cElement>(); element)
 			{
 				element->data_listeners.add([this](uint hash) {
 					if (hash == "ext"_h)
@@ -123,7 +123,7 @@ namespace flame
 		if (e_content_viewport)
 		{
 			e_content_viewport->message_listeners.remove("scroll_view"_h);
-			if (auto element = e_content_viewport->element(); element)
+			if (auto element = e_content_viewport->get_component<cElement>(); element)
 				element->data_listeners.remove("scroll_view"_h);
 		}
 		e_content_viewport = World::instance()->root->find_with_file_id(content_viewport);
@@ -133,7 +133,7 @@ namespace flame
 				if (hash == "destroyed"_h)
 					e_content_viewport = nullptr;
 			});
-			if (auto element = e_content_viewport->element(); element)
+			if (auto element = e_content_viewport->get_component<cElement>(); element)
 			{
 				element->data_listeners.add([this](uint hash) {
 					if (hash == "ext"_h)
@@ -148,7 +148,7 @@ namespace flame
 		if (e_vertical_scroller)
 		{
 			e_vertical_scroller->message_listeners.remove("scroll_view"_h);
-			if (auto element = e_vertical_scroller->element(); element)
+			if (auto element = e_vertical_scroller->get_component<cElement>(); element)
 				element->data_listeners.remove("scroll_view"_h);
 		}
 		e_vertical_scroller = World::instance()->root->find_with_file_id(vertical_scroller);
@@ -158,7 +158,7 @@ namespace flame
 				if (hash == "destroyed"_h)
 					e_vertical_scroller = nullptr;
 			});
-			if (auto element = e_vertical_scroller->element(); element)
+			if (auto element = e_vertical_scroller->get_component<cElement>(); element)
 			{
 				element->data_listeners.add([this](uint hash) {
 					if (hash == "ext"_h)
@@ -173,9 +173,9 @@ namespace flame
 		if (e_vertical_scroller_slider)
 		{
 			e_vertical_scroller_slider->message_listeners.remove("scroll_view"_h);
-			if (auto element = e_vertical_scroller_slider->element(); element)
+			if (auto element = e_vertical_scroller_slider->get_component<cElement>(); element)
 				element->data_listeners.remove("scroll_view"_h);
-			if (auto receiver = e_vertical_scroller_slider->get_component_t<cReceiver>(); receiver)
+			if (auto receiver = e_vertical_scroller_slider->get_component<cReceiver>(); receiver)
 				receiver->event_listeners.remove("scroll_view"_h);
 		}
 		e_vertical_scroller_slider = World::instance()->root->find_with_file_id(vertical_scroller_slider);
@@ -185,19 +185,19 @@ namespace flame
 				if (hash == "destroyed"_h)
 					e_vertical_scroller_slider = nullptr;
 			});
-			if (auto element = e_vertical_scroller_slider->element(); element)
+			if (auto element = e_vertical_scroller_slider->get_component<cElement>(); element)
 			{
 				element->data_listeners.add([this](uint hash) {
 					if (hash == "pos"_h || hash == "ext"_h)
 						mark_update();
 				});
 			}
-			if (auto receiver = e_vertical_scroller_slider->get_component_t<cReceiver>(); receiver)
+			if (auto receiver = e_vertical_scroller_slider->get_component<cReceiver>(); receiver)
 			{
 				receiver->event_listeners.add([this](uint type, const vec2& value) {
 					if (type == "drag"_h)
 					{
-						auto slider_element = e_vertical_scroller_slider->element();
+						auto slider_element = e_vertical_scroller_slider->get_component<cElement>();
 						if (slider_element)
 						{
 							slider_element->add_pos(vec2(0.f, value.y));

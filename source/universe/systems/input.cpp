@@ -69,7 +69,7 @@ namespace flame
 				if (!e->global_enable)
 					return false;
 
-				if (auto receiver = e->get_component_t<cReceiverT>(); receiver)
+				if (auto receiver = e->get_component<cReceiverT>(); receiver)
 				{
 					if (receiver == last_hovering)
 						last_hovering_valid = true;

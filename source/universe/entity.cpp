@@ -83,7 +83,7 @@ namespace flame
 		update_enable();
 	}
 
-	Component* EntityPrivate::add_component(uint hash)
+	Component* EntityPrivate::add_component_h(uint hash)
 	{
 		auto ui = find_udt(hash);
 		if (!ui)
@@ -106,9 +106,9 @@ namespace flame
 				if (vi.type->tag == TagPU)
 				{
 					auto hash = sh(vi.type->name.c_str());
-					auto comp = get_component(hash);
+					auto comp = get_component_h(hash);
 					if (!comp)
-						comp = add_component(hash);
+						comp = add_component_h(hash);
 					if (comp)
 						require_comps.emplace_back(comp, vi.offset);
 				}
@@ -118,7 +118,7 @@ namespace flame
 				auto ok = false;
 				if (vi.type->tag == TagPU)
 				{
-					auto comp = get_component(sh(vi.type->name.c_str()));
+					auto comp = get_component_h(sh(vi.type->name.c_str()));
 					if (comp)
 					{
 						require_comps.emplace_back(comp, vi.offset);
@@ -175,7 +175,7 @@ namespace flame
 		return c;
 	}
 
-	bool EntityPrivate::remove_component(uint hash)
+	bool EntityPrivate::remove_component_h(uint hash)
 	{
 		auto c = find_component(hash);
 		if (!c)
@@ -196,7 +196,7 @@ namespace flame
 			{
 				if (vi.metas.get("requires"_h) || vi.metas.get("auto_requires"_h))
 				{
-					auto comp = get_component(sh(vi.type->name.c_str()));
+					auto comp = get_component_h(sh(vi.type->name.c_str()));
 					if (comp)
 						comp->ref--;
 					else
@@ -367,7 +367,7 @@ namespace flame
 		dst->file_id = file_id;
 		for (auto& c : components)
 		{
-			auto cc = dst->add_component(c->type_hash);
+			auto cc = dst->add_component_h(c->type_hash);
 			cc->enable = c->enable;
 			auto& ui = *find_udt(c->type_hash);
 			for (auto& a : ui.attributes)
@@ -428,7 +428,7 @@ namespace flame
 		{
 			auto name = std::string(sp[1]);
 			auto hash = sh(name.c_str());
-			obj = te->get_component(hash);
+			obj = te->get_component_h(hash);
 			ui = find_udt(hash);
 			if (!obj)
 				return ModificationWrong;
@@ -483,7 +483,7 @@ namespace flame
 			auto ui = find_udt(hash);
 			if (ui)
 			{
-				auto c = ((EntityPtr)dst_o)->add_component(hash);
+				auto c = ((EntityPtr)dst_o)->add_component_h(hash);
 				if (c)
 				{
 					if (auto a = src.attribute("enable"); a)
@@ -534,11 +534,11 @@ namespace flame
 								new_one->file_id = data.d.guid;
 						}
 						else if (type == ModificationComponentAdd)
-							((EntityPtr)obj)->add_component(data.d.hash);
+							((EntityPtr)obj)->add_component_h(data.d.hash);
 						else if (type == ModificationComponentRemove)
 						{
 							auto comp = (Component*)obj;
-							comp->entity->remove_component(comp->type_hash);
+							comp->entity->remove_component_h(comp->type_hash);
 						}
 						else if (type == ModificationAttributeModify)
 						{

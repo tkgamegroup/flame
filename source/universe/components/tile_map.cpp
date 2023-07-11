@@ -184,7 +184,7 @@ namespace flame
 					auto e = Entity::create();
 					e->name = std::format("{}, {}", i % blocks.x, i / blocks.x);
 					e->tag = e->tag | TagNotSerialized;
-					e->add_component_t<cNode>();
+					e->add_component<cNode>();
 					entity->add_child(e);
 				}
 			}
@@ -205,7 +205,7 @@ namespace flame
 
 			auto name = form_name(a, b, c, d);
 			auto dst = entity->children[i + j * blocks.x].get();
-			auto node = dst->node();
+			auto node = dst->get_component<cNode>();
 			if (auto it = meshes.find(name); it != meshes.end())
 			{
 				dst->remove_all_children();

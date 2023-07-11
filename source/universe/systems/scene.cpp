@@ -95,7 +95,7 @@ namespace flame
 			return;
 
 		auto is_static = false;
-		if (auto node = e->node(); node)
+		if (auto node = e->get_component<cNodeT>(); node)
 		{
 			is_static = node->static_state == Static;
 			if (!is_static)
@@ -173,7 +173,7 @@ namespace flame
 			return;
 
 		auto is_static = false;
-		if (auto element = e->element(); element)
+		if (auto element = e->get_component<cElementT>(); element)
 		{
 			is_static = element->static_state == Static;
 			if (!is_static)
@@ -192,7 +192,7 @@ namespace flame
 							playout->update_layout();
 					}
 
-					if (auto pelement = element->entity->get_parent_component_i<cElementT>(0); pelement)
+					if (auto pelement = element->entity->get_parent_component<cElementT>(); pelement)
 						update_alignment(element, pelement->ext, playout ? playout->padding : vec4(0.f));
 				}
 
@@ -203,7 +203,7 @@ namespace flame
 
 		if (!is_static)
 		{
-			auto layout = e->get_component_t<cLayoutT>();
+			auto layout = e->get_component<cLayoutT>();
 			for (auto& c : e->children)
 				update_element_transform(layout, c.get(), mark_dirty);
 		}
@@ -535,11 +535,11 @@ namespace flame
 				if (!e->global_enable)
 					return;
 
-				if (auto node = e->node(); node)
+				if (auto node = e->get_component<cNode>(); node)
 				{
 					auto& mat = node->transform;
 
-					if (auto cmesh = e->get_component_t<cMesh>(); cmesh)
+					if (auto cmesh = e->get_component<cMesh>(); cmesh)
 					{
 						auto mesh = cmesh->mesh;
 
@@ -552,7 +552,7 @@ namespace flame
 						for (auto i = 0; i < mesh->indices.size(); i++)
 							indices[idx_off + i] = pos_off + mesh->indices[i];
 					}
-					if (auto terrain = e->get_component_t<cTerrain>(); terrain)
+					if (auto terrain = e->get_component<cTerrain>(); terrain)
 					{
 						if (auto height_map = terrain->height_map; height_map)
 						{
@@ -608,11 +608,11 @@ namespace flame
 							}
 						}
 					}
-					if (auto volume = e->get_component_t<cVolume>(); volume && volume->marching_cubes)
+					if (auto volume = e->get_component<cVolume>(); volume && volume->marching_cubes)
 					{
 						graphics::Queue::get()->wait_idle();
 
-						auto volume_vretices = sRenderer::instance()->transform_feedback(e->node());
+						auto volume_vretices = sRenderer::instance()->transform_feedback(e->get_component<cNodeT>());
 						auto pos_off = positions.size();
 						positions.resize(positions.size() + volume_vretices.size());
 						for (auto i = 0; i < volume_vretices.size(); i++)
@@ -1333,12 +1333,12 @@ namespace flame
 		world->root->traversal_bfs([&](EntityPtr e, int depth) {
 			if (!first_node)
 			{
-				if (auto node = e->node(); node)
+				if (auto node = e->get_component<cNode>(); node)
 					first_node = e;
 			}
 			if (!first_element)
 			{
-				if (auto element = e->element(); element)
+				if (auto element = e->get_component<cElement>(); element)
 					first_element = e;
 			}
 			if ((first_node && first_element) || depth > 2)
@@ -1353,8 +1353,8 @@ namespace flame
 		if (first_element)
 		{
 			auto target_extent = sRenderer::instance()->target_extent();
-			update_alignment(first_element->element(), target_extent, vec4(0.f));
-			update_element_transform(first_element->get_component_t<cLayoutT>(), first_element, false);
+			update_alignment(first_element->get_component<cElementT>(), target_extent, vec4(0.f));
+			update_element_transform(first_element->get_component<cLayoutT>(), first_element, false);
 		}
 
 #ifdef USE_RECASTNAV

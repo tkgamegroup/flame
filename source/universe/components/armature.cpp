@@ -43,7 +43,7 @@ namespace flame
 				if (e)
 				{
 					dst.name = src.name;
-					dst.node = e->node();
+					dst.node = e->get_component<cNodeT>();
 					if (dst.node)
 					{
 						dst.offmat = src.offset_matrix;
@@ -79,7 +79,7 @@ namespace flame
 						break;
 					}
 				}
-				bone_node_map[c->node()] = pb;
+				bone_node_map[c->get_component<cNodeT>()] = pb;
 			}
 
 			if (!bones.empty())

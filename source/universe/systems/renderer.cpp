@@ -1711,7 +1711,7 @@ namespace flame
 		if (!e->global_enable)
 			return;
 
-		if (auto element = e->element(); element)
+		if (auto element = e->get_component<cElement>(); element)
 		{
 			if (element->scissor)
 				canvas->push_scissor(Rect(element->global_pos0(), element->global_pos1()));
@@ -2792,7 +2792,7 @@ namespace flame
 			if (!e->global_enable)
 				return false;
 
-			if (auto element = e->element(); element)
+			if (auto element = e->get_component<cElementT>(); element)
 			{
 				if (Rect(element->global_pos0(), element->global_pos1()).contains(screen_pos))
 					ret = element;

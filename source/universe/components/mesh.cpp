@@ -219,7 +219,7 @@ namespace flame
 
 	void cMeshPrivate::on_active()
 	{
-		parmature = entity->get_parent_component_t<cArmatureT>();
+		parmature = entity->get_parent_component<cArmatureT>();
 		if (parmature)
 			instance_id = parmature->instance_id;
 		else

@@ -80,7 +80,7 @@ namespace flame
 				{
 					if (!c->global_enable)
 						continue;
-					if (auto element = c->element(); element)
+					if (auto element = c->get_component<cElement>(); element)
 					{
 						if (element->horizontal_alignment == ElementAlignNone)
 						{
@@ -102,7 +102,7 @@ namespace flame
 				{
 					if (!c->global_enable)
 						continue;
-					if (auto element = c->element(); element)
+					if (auto element = c->get_component<cElement>(); element)
 					{
 						if (element->horizontal_alignment == ElementAlignNone)
 						{
@@ -128,7 +128,7 @@ namespace flame
 				{
 					if (!c->global_enable)
 						continue;
-					if (auto element = c->element(); element)
+					if (auto element = c->get_component<cElement>(); element)
 					{
 						if (element->horizontal_alignment == ElementAlignNone && element->vertical_alignment == ElementAlignNone)
 						{
@@ -152,7 +152,7 @@ namespace flame
 				{
 					if (!c->global_enable)
 						continue;
-					if (auto element = c->element(); element)
+					if (auto element = c->get_component<cElement>(); element)
 					{
 						if (element->horizontal_alignment == ElementAlignNone && element->vertical_alignment == ElementAlignNone)
 						{
@@ -179,7 +179,7 @@ namespace flame
 				{
 					if (!c->global_enable)
 						continue;
-					if (auto element = c->element(); element)
+					if (auto element = c->get_component<cElement>(); element)
 					{
 						if (element->horizontal_alignment == ElementAlignNone && element->vertical_alignment == ElementAlignNone)
 							max_ext = max(max_ext, element->ext);
@@ -192,7 +192,7 @@ namespace flame
 				{
 					if (!c->global_enable)
 						continue;
-					if (auto element = c->element(); element)
+					if (auto element = c->get_component<cElement>(); element)
 					{
 						if (element->horizontal_alignment == ElementAlignNone && element->vertical_alignment == ElementAlignNone)
 						{
