@@ -16,11 +16,6 @@
 
 SceneWindow scene_window;
 
-SceneWindow::SceneWindow() :
-	GuiView("Scene")
-{
-}
-
 cCameraPtr SceneWindow::curr_camera()
 {
 	return cCamera::list()[camera_idx];
@@ -986,4 +981,9 @@ bool SceneWindow::on_begin()
 	//  ImGuizmo not work properly
 	ImGui::GetWindowDrawList()->_OwnerName = ImGui::GetCurrentWindow()->Name;
 	return !open;
+}
+
+SceneWindow::SceneWindow() :
+	GuiView("Scene")
+{
 }

@@ -11,7 +11,6 @@ struct ProjectView : View
 
 	ProjectView();
 	ProjectView(const std::string& name);
-	~ProjectView();
 	void on_draw() override;
 };
 

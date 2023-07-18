@@ -1874,7 +1874,8 @@ int main(int argc, char** args)
 	}
 	for (auto& e : preferences_i.get_section_entries("opened_folder"))
 	{
-		project_window.explorer.peeding_open_path = e.values[0];
+		if (auto v = project_window.views.empty() ? nullptr : project_window.views.front().get(); v)
+			((ProjectView*)v)->explorer.peeding_open_path = e.values[0];
 		break;
 	}
 	for (auto& e : preferences_i.get_section_entries("opened_prefab"))

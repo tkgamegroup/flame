@@ -1053,7 +1053,7 @@ void ProjectWindow::init()
 	};
 }
 
-void ProjectWindow::on_draw()
+void ProjectView::on_draw()
 {
 	mtx_changed_paths.lock();
 	if (!changed_paths.empty())

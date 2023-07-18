@@ -100,11 +100,15 @@ Window::Window(const std::string& name) :
 
 struct View
 {
+	Window* window;
 	std::string name;
 
-	View(const std::string& name) :
+	View(Window* w, const std::string& name) :
+		window(w),
 		name(name)
 	{
+		w->views.emplace_back(this);
+
 		graphics::gui_callbacks.add([this]() {
 			on_draw();
 		}, (uint)this);
@@ -112,6 +116,15 @@ struct View
 
 	virtual ~View()
 	{
+		for (auto it = window->views.begin(); it != window->views.end(); it++)
+		{
+			if (it->get() == this)
+			{
+				it->release();
+				window->views.erase(it);
+			}
+		}
+
 		add_event([this]() {
 			graphics::gui_callbacks.remove((uint)this);
 			return false;

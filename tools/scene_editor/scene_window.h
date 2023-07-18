@@ -24,7 +24,6 @@ struct SceneView : View
 
 	SceneView();
 	SceneView(const std::string& name);
-	~SceneView();
 	cCameraPtr curr_camera();
 	vec3 camera_target_pos();
 	void reset_camera(uint op);

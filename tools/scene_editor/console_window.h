@@ -6,7 +6,6 @@ struct ConsoleView : View
 {
 	ConsoleView();
 	ConsoleView(const std::string& name);
-	~ConsoleView();
 	void on_draw() override;
 };
 

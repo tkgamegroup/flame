@@ -10,7 +10,6 @@ struct HierarchyView : View
 
 	HierarchyView();
 	HierarchyView(const std::string& name);
-	~HierarchyView();
 	void on_draw() override;
 };
 

@@ -5,20 +5,13 @@
 HierarchyWindow hierarchy_window;
 
 HierarchyView::HierarchyView() :
-	View("Hierarchy##" + str(linearRand(0, 10000)))
+	View(&hierarchy_window, "Hierarchy##" + str(linearRand(0, 10000)))
 {
 }
 
 HierarchyView::HierarchyView(const std::string& name) :
-	View(name)
+	View(&hierarchy_window, name)
 {
-}
-
-HierarchyView::~HierarchyView()
-{
-	std::erase_if(hierarchy_window.views, [&](const auto& i) {
-		return i.get() == this;
-	});
 }
 
 static auto selection_changed = false;

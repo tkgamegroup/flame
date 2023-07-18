@@ -1935,6 +1935,16 @@ struct EditingEntities
 };
 static EditingEntities editing_entities;
 
+InspectorView::InspectorView() :
+	View(&inspector_window, "Inspector##" + str(linearRand(0, 10000)))
+{
+}
+
+InspectorView::InspectorView(const std::string& name) :
+	View(&inspector_window, name)
+{
+}
+
 void InspectorView::on_draw()
 {
 	static void* sel_ref_obj = nullptr;

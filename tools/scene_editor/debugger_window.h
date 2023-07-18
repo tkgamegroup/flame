@@ -6,7 +6,6 @@ struct DebuggerView : View
 {
 	DebuggerView();
 	DebuggerView(const std::string& name);
-	~DebuggerView();
 	void on_draw() override;
 };
 

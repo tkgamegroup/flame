@@ -6,20 +6,13 @@
 DebuggerWindow debugger_window;
 
 DebuggerView::DebuggerView() :
-	View("Debugger##" + str(linearRand(0, 10000)))
+	View(&debugger_window, "Debugger##" + str(linearRand(0, 10000)))
 {
 }
 
 DebuggerView::DebuggerView(const std::string& name) :
-	View(name)
+	View(&debugger_window, name)
 {
-}
-
-DebuggerView::~DebuggerView()
-{
-	std::erase_if(debugger_window.views, [&](const auto& i) {
-		return i.get() == this;
-	});
 }
 
 void DebuggerView::on_draw()
