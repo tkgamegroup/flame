@@ -1,16 +1,16 @@
 #include "selection.h"
-#include "view_timeline.h"
+#include "timeline_window.h"
 
 #include <flame/universe/timeline.h>
 
-View_Timeline view_timeline;
+TimelineWindow timeline_window;
 
-View_Timeline::View_Timeline() :
+TimelineWindow::TimelineWindow() :
 	GuiView("Timeline")
 {
 }
 
-void View_Timeline::on_draw()
+void TimelineWindow::on_draw()
 {
 	auto& io = ImGui::GetIO();
 	static auto frame_width = 10.f;

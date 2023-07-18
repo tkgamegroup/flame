@@ -2,11 +2,10 @@
 
 #include "app.h"
 
-struct View_Scene : graphics::GuiView
+struct SceneView : View
 {
 	std::unique_ptr<graphics::Image> render_tar;
 	bool fixed_render_target_size = false;
-
 	bool show_outline = true;
 	bool show_AABB = false;
 	bool show_AABB_only_selected = false;
@@ -17,20 +16,28 @@ struct View_Scene : graphics::GuiView
 
 	uint camera_idx = 0;
 	float camera_zoom = 5.f;
+
 	EntityPtr hovering_entity = nullptr;
 	vec3 hovering_pos;
 	std::vector<cNodePtr> node_targets;
 	std::vector<cElementPtr> element_targets;
 
-	View_Scene();
-
+	SceneView();
+	SceneView(const std::string& name);
+	~SceneView();
 	cCameraPtr curr_camera();
 	vec3 camera_target_pos();
 	void reset_camera(uint op);
 	void focus_to_selected();
 	void selected_to_focus();
 	void on_draw() override;
-	bool on_begin() override;
 };
 
-extern View_Scene view_scene;
+struct SceneWindow : Window
+{
+	SceneWindow();
+	void open_view(bool new_instance) override;
+	void open_view(const std::string& name) override;
+};
+
+extern SceneWindow scene_window;

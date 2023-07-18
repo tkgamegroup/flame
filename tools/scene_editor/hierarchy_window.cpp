@@ -1,19 +1,27 @@
 #include "selection.h"
-#include "view_hierarchy.h"
-#include "view_scene.h"
+#include "hierarchy_window.h"
+#include "scene_window.h"
 
-View_Hierarchy view_hierarchy;
+HierarchyWindow hierarchy_window;
+
+HierarchyView::HierarchyView() :
+	View("Hierarchy##" + str(linearRand(0, 10000)))
+{
+}
+
+HierarchyView::HierarchyView(const std::string& name) :
+	View(name)
+{
+}
+
+HierarchyView::~HierarchyView()
+{
+	std::erase_if(hierarchy_window.views, [&](const auto& i) {
+		return i.get() == this;
+	});
+}
 
 static auto selection_changed = false;
-
-View_Hierarchy::View_Hierarchy() :
-	GuiView("Hierarchy")
-{
-	selection.callbacks.add([](uint caller) {
-		if (caller != "hierarchy"_h)
-			selection_changed = true;
-	}, "hierarchy"_h);
-}
 
 struct Entities
 {
@@ -182,8 +190,10 @@ void entity_context_menu_behaviour(EntityPtr e)
 	}
 }
 
-void View_Hierarchy::on_draw()
+void HierarchyView::on_draw()
 {
+	auto opened = ImGui::Begin(name.c_str());
+
 	EntityPtr select_entity = nullptr;
 	static bool released_after_select = false;
 	EntityPtr focus_entity = selection_changed ? (selection.type == Selection::tEntity ? selection.as_entity(-1) : nullptr) : nullptr;
@@ -489,4 +499,28 @@ void View_Hierarchy::on_draw()
 	}
 
 	selection_changed = false;
+
+	ImGui::End();
+	if (!opened)
+		delete this;
+}
+
+HierarchyWindow::HierarchyWindow() :
+	Window("Hierarchy")
+{
+	selection.callbacks.add([](uint caller) {
+		if (caller != "hierarchy"_h)
+			selection_changed = true;
+	}, "hierarchy"_h);
+}
+
+void HierarchyWindow::open_view(bool new_instance)
+{
+	if (new_instance || views.empty())
+		views.emplace_back(new HierarchyView);
+}
+
+void HierarchyWindow::open_view(const std::string& name)
+{
+	views.emplace_back(new HierarchyView(name));
 }

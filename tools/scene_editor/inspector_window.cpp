@@ -1,9 +1,9 @@
 #include "app.h"
 #include "selection.h"
 #include "history.h"
-#include "view_inspector.h"
-#include "view_scene.h"
-#include "view_project.h"
+#include "inspector_window.h"
+#include "scene_window.h"
+#include "project_window.h"
 
 #include <flame/foundation/typeinfo_serialize.h>
 #include <flame/foundation/bitmap.h>
@@ -21,17 +21,8 @@
 #include <flame/universe/components/volume.h>
 #include <flame/universe/components/particle_system.h>
 
-View_Inspector view_inspector;
+InspectorWindow inspector_window;
 static auto selection_changed = false;
-
-View_Inspector::View_Inspector() :
-	GuiView("Inspector")
-{
-	selection.callbacks.add([](uint caller) {
-		if (caller != "inspector"_h)
-			selection_changed = true;
-	}, "inspector"_h);
-}
 
 struct StagingVector
 {
@@ -351,8 +342,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				if (type->serialize(data) != dv)
 				{
 					type->unserialize(dv, data);
-					changed = 2;
-					view_inspector.dirty = true;
+					changed = 3;
 				}
 
 			}
@@ -371,8 +361,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					if (auto copied_value = w2s(get_clipboard()); type->serialize(data) != copied_value)
 					{
 						type->unserialize(copied_value, data);
-						changed = 2;
-						view_inspector.dirty = true;
+						changed = 3;
 					}
 				}
 			}
@@ -727,9 +716,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			}
 			ImGui::SameLine();
 			if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
-			{
-				view_project.explorer.ping(Path::get(path));
-			}
+				project_window.ping(Path::get(path));
 			ImGui::SameLine();
 			if (ImGui::Button(graphics::FontAtlas::icon_s("xmark"_h).c_str()))
 			{
@@ -1341,7 +1328,7 @@ struct EditingEntities
 			ImGui::InputText("Prefab", str.data(), ImGuiInputTextFlags_ReadOnly);
 			ImGui::SameLine();
 			if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
-				view_project.explorer.ping(Path::get(path));
+				project_window.ping(Path::get(path));
 			ImGui::SameLine();
 			ImGui::Button(("Modifications " + graphics::FontAtlas::icon_s("angle-down"_h)).c_str());
 			if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft))
@@ -1607,10 +1594,7 @@ struct EditingEntities
 						}
 					}
 					if (changed)
-					{
-						ret_changed |= 2;
-						view_inspector.dirty = true;
-					}
+						ret_changed |= 3;
 				}
 				if (cc.components.size() == 1)
 				{
@@ -1664,10 +1648,7 @@ struct EditingEntities
 							}
 						}
 						if (changed)
-						{
-							ret_changed |= 2;
-							view_inspector.dirty = true;
-						}
+							ret_changed |= 3;
 					}
 				}
 				ImGui::EndPopup();
@@ -1711,7 +1692,7 @@ struct EditingEntities
 									auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1).first;
 									editing_objects.pop();
 									graphics::Material::release(material);
-									if (changed == 2)
+									if (changed >= 2)
 									{
 										auto path = Path::get(name);
 										material->save(path);
@@ -1818,7 +1799,13 @@ struct EditingEntities
 
 					if ((ui.name_hash == "flame::cNavAgent"_h || ui.name_hash == "flame::cNavObstacle"_h) &&
 						(ret_changed_name == "radius"_h || ret_changed_name == "height"_h))
-						view_scene.show_navigation_frames = 3;
+					{
+						for (auto& v : scene_window.views)
+						{
+							auto sv = (SceneView*)v.get();
+							sv->show_navigation_frames = 3;
+						}
+					}
 				}
 
 				if (ui.name_hash == "flame::cNode"_h)
@@ -1948,7 +1935,7 @@ struct EditingEntities
 };
 static EditingEntities editing_entities;
 
-void View_Inspector::on_draw()
+void InspectorView::on_draw()
 {
 	static void* sel_ref_obj = nullptr;
 	static void(*sel_ref_deletor)(void*) = nullptr;
@@ -1997,10 +1984,12 @@ void View_Inspector::on_draw()
 		}
 		else
 			ImGui::Text("%d entities", (int)editing_entities.entities.size());
-		if (editing_entities.manipulate().first == 2)
+		if (auto changed = editing_entities.manipulate().first; changed >= 2)
 		{
 			if (!app.e_playing)
 				app.prefab_unsaved = true;
+			if (changed >= 3)
+				dirty = true;
 		}
 		break;
 	case Selection::tPath:
@@ -2011,9 +2000,7 @@ void View_Inspector::on_draw()
 			ImGui::TextUnformatted(Path::reverse(path).string().c_str());
 			ImGui::SameLine();
 			if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
-			{
-				view_project.explorer.ping(Path::get(path));
-			}
+				project_window.ping(Path::get(path));
 			auto ext = path.extension().wstring();
 			SUW::to_lower(ext);
 			if (ext == L".obj" || ext == L".fbx" || ext == L".gltf" || ext == L".glb")
@@ -2107,7 +2094,7 @@ void View_Inspector::on_draw()
 					editing_objects.emplace(EditingObjects(0, th<graphics::Material>(), &path, 1));
 					auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1).first;
 					editing_objects.pop();
-					if (changed == 2)
+					if (changed >= 2)
 					{
 						material->save(path);
 						auto asset = AssetManagemant::find(path);
@@ -2217,7 +2204,7 @@ void View_Inspector::on_draw()
 					auto entity = (EntityPtr)sel_ref_obj;
 					editing_entities.refresh({ entity });
 					editing_entities.prefab_path = path;
-					if (editing_entities.manipulate().first == 2)
+					if (editing_entities.manipulate().first >= 2)
 					{
 						entity->save(path, true);
 						app.last_status = std::format("prefab saved: {}", path.string());
@@ -2282,7 +2269,7 @@ void View_Inspector::on_draw()
 				{
 					uint changed = manipulate_variable(TypeInfo::get<decltype(default_defines)>(), "default defines", 0, 0, nullptr, nullptr, "", (voidptr*)&default_defines, 1, nullptr);
 					changed |= manipulate_udt(*ser_ui, (voidptr*)&sel_ref_obj, 1).first;
-					if (changed == 2)
+					if (changed >= 2)
 					{
 						std::ofstream file(path);
 						for (auto& d : default_defines)
@@ -2352,4 +2339,24 @@ target_include_directories({0} PUBLIC "${{GLM_INCLUDE_DIR}}")
 	}
 		break;
 	}
+}
+
+InspectorWindow::InspectorWindow() :
+	Window("Inspector")
+{
+	selection.callbacks.add([](uint caller) {
+		if (caller != "inspector"_h)
+			selection_changed = true;
+		}, "inspector"_h);
+}
+
+void InspectorWindow::open_view(bool new_instance)
+{
+	if (new_instance || views.empty())
+		views.emplace_back(new InspectorView);
+}
+
+void InspectorWindow::open_view(const std::string& name)
+{
+	views.emplace_back(new InspectorView(name));
 }

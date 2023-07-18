@@ -1,9 +1,9 @@
 #include "app.h"
 #include "selection.h"
 #include "history.h"
-#include "view_scene.h"
-#include "view_project.h"
-#include "view_inspector.h"
+#include "scene_window.h"
+#include "project_window.h"
+#include "inspector_window.h"
 
 #include <flame/xml.h>
 #include <flame/foundation/system.h>
@@ -18,19 +18,9 @@
 #include <flame/universe/components/dir_light.h>
 #include <flame/universe/systems/renderer.h>
 
-App app;
+std::vector<Window*> windows;
 
-vec3 App::get_snap_pos(const vec3& _pos)
-{
-	auto pos = _pos;
-	if (move_snap)
-	{
-		pos /= move_snap_value;
-		pos -= fract(pos);
-		pos *= move_snap_value;
-	}
-	return pos;
-}
+App app;
 
 static Entity* editor_selecting_entity = nullptr;
 
@@ -102,6 +92,18 @@ void open_message_dialog(const std::string& title, const std::string& message)
 		ImGui::OpenMessageDialog(title, message);
 }
 
+vec3 App::get_snap_pos(const vec3& _pos)
+{
+	auto pos = _pos;
+	if (move_snap)
+	{
+		pos /= move_snap_value;
+		pos -= fract(pos);
+		pos *= move_snap_value;
+	}
+	return pos;
+}
+
 void App::init()
 {
 	create("Scene Editor", uvec2(800, 600), WindowFrame | WindowResizable, true, graphics_debug, graphics_configs);
@@ -119,8 +121,8 @@ void App::init()
 	e_editor->add_component<cCamera>();
 	root->add_child(e_editor);
 
-	for (auto& v : graphics::gui_views)
-		v->init();
+	for (auto w : windows)
+		w->init();
 
 	auto native_window = main_window->native;
 	main_window->native->destroy_listeners.add([this, native_window]() {
@@ -132,20 +134,20 @@ void App::init()
 		preferences_o << "window_pos=" + str(native_window->pos) << "\n";
 		preferences_o << "use_flame_debugger=" + str(preferences.use_flame_debugger) << "\n";
 		preferences_o << "[opened_views]\n";
-		for (auto w : graphics::gui_views)
+		for (auto w : windows)
 		{
-			if (w->opened)
-				preferences_o << w->name << "\n";
+			for (auto& v : w->views)
+				preferences_o << v->name << "\n";
 		}
 		if (!project_path.empty())
 		{
 			preferences_o << "[project_path]\n";
 			preferences_o << project_path.string() << "\n";
 		}
-		if (view_project.explorer.opened_folder)
+		if (project_window.explorer.opened_folder)
 		{
 			preferences_o << "[opened_folder]\n";
-			preferences_o << view_project.explorer.opened_folder->path.string() << "\n";
+			preferences_o << project_window.explorer.opened_folder->path.string() << "\n";
 		}
 		if (e_prefab)
 		{
@@ -241,25 +243,25 @@ void App::on_gui()
 		if (ImGui::MenuItem("Invert Siblings"))
 			;
 		if (ImGui::MenuItem("Focus To Selected (F)"))
-			view_scene.focus_to_selected();
+			scene_window.focus_to_selected();
 		if (ImGui::MenuItem("Selected To Focus (G)"))
-			view_scene.selected_to_focus();
+			scene_window.selected_to_focus();
 		if (ImGui::BeginMenu("Camera"))
 		{
 			if (ImGui::MenuItem("Reset"))
-				view_scene.reset_camera(""_h);
+				scene_window.reset_camera(""_h);
 			if (ImGui::MenuItem("X+"))
-				view_scene.reset_camera("X+"_h);
+				scene_window.reset_camera("X+"_h);
 			if (ImGui::MenuItem("X-"))
-				view_scene.reset_camera("X-"_h);
+				scene_window.reset_camera("X-"_h);
 			if (ImGui::MenuItem("Y+"))
-				view_scene.reset_camera("Y+"_h);
+				scene_window.reset_camera("Y+"_h);
 			if (ImGui::MenuItem("Y-"))
-				view_scene.reset_camera("Y-"_h);
+				scene_window.reset_camera("Y-"_h);
 			if (ImGui::MenuItem("Z+"))
-				view_scene.reset_camera("Z+"_h);
+				scene_window.reset_camera("Z+"_h);
 			if (ImGui::MenuItem("Z-"))
-				view_scene.reset_camera("Z-"_h);
+				scene_window.reset_camera("Z-"_h);
 			ImGui::EndMenu();
 		}
 		ImGui::Separator();
@@ -513,9 +515,9 @@ void App::on_gui()
 							if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsKeyDown(Keyboard_Ctrl))
 							{
 								if (v == 0)
-									start = view_scene.hovering_pos;
+									start = scene_window.hovering_pos;
 								else
-									end = view_scene.hovering_pos;
+									end = scene_window.hovering_pos;
 								if (distance(start, end) > 0.f)
 									points = sScene::instance()->navmesh_query_path(start, end);
 							}
@@ -615,11 +617,11 @@ void App::on_gui()
 	}
 	if (ImGui::BeginMenu("Window"))
 	{
-		for (auto w : graphics::gui_views)
+		for (auto w : windows)
 		{
-			auto selected = (bool)w->opened;
-			if (ImGui::MenuItem(w->name.c_str(), nullptr, &selected))
-				w->open();
+			auto opened = (bool)!w->views.empty();
+			if (ImGui::MenuItem(w->name.c_str(), nullptr, opened))
+				w->open_view();
 		}
 		ImGui::EndMenu();
 	}
@@ -724,7 +726,7 @@ void App::on_gui()
 	{
 	case ToolMove:
 		p_snap = &move_snap;
-		p_snap_value = view_scene.element_targets.empty() ? &move_snap_value : &move_snap_2d_value;
+		p_snap_value = scene_window.element_targets.empty() ? &move_snap_value : &move_snap_2d_value;
 		break;
 	case ToolRotate:
 		p_snap = &rotate_snap;
@@ -793,7 +795,7 @@ void App::on_gui()
 			add_event([this]() {
 				cmd_play();
 				return false;
-				}, 0.f, 3);
+			}, 0.f, 3);
 		}
 		ImGui::SameLine();
 		if (ImGui::ToolButton(graphics::FontAtlas::icon_s("play"_h).c_str()))
@@ -905,7 +907,7 @@ void App::on_gui()
 				if (c->enable)
 					c->update();
 			}
-			});
+		});
 		render_frames++;
 	}
 
@@ -1143,7 +1145,7 @@ void App::open_project(const std::filesystem::path& path)
 	if (std::filesystem::exists(assets_path))
 	{
 		Path::set_root(L"assets", assets_path);
-		view_project.reset();
+		project_window.reset();
 	}
 	else
 		assert(0);
@@ -1267,7 +1269,7 @@ void App::close_project()
 	project_path = L"";
 
 	Path::set_root(L"assets", L"");
-	view_project.reset();
+	project_window.reset();
 	unload_project_cpp();
 }
 
@@ -1718,7 +1720,7 @@ bool App::cmd_play()
 			paused = false;
 			auto& camera_list = cCamera::list();
 			if (camera_list.size() > 1)
-				view_scene.camera_idx = 1;
+				scene_window.camera_idx = 1;
 			return false;
 		});
 		return true;
@@ -1756,12 +1758,12 @@ bool App::cmd_stop()
 		auto& camera_list = cCamera::list();
 		if (camera_list.size() > 0)
 		{
-			view_scene.camera_idx = 0;
+			scene_window.camera_idx = 0;
 			sRenderer::instance()->camera = camera_list.front();
 		}
 		else
 		{
-			view_scene.camera_idx = -1;
+			scene_window.camera_idx = -1;
 			sRenderer::instance()->camera = nullptr;
 		}
 		return false;
@@ -1829,7 +1831,7 @@ int main(int argc, char** args)
 
 	auto ap = parse_args(argc, args);
 	if (ap.has("-fixed_render_target_size"))
-		view_scene.fixed_render_target_size = true;
+		scene_window.fixed_render_target_size = true;
 	if (ap.has("-dont_use_mesh_shader"))
 		app.graphics_configs.emplace_back("mesh_shader"_h, 0);
 	if (ap.has("-replace_renderpass_attachment_dont_care_to_load"))
@@ -1854,11 +1856,13 @@ int main(int argc, char** args)
 	}
 	for (auto& e : preferences_i.get_section_entries("opened_views"))
 	{
-		for (auto w : graphics::gui_views)
+		for (auto w : windows)
 		{
-			if (w->name == e.values[0])
+			auto name = e.values[0];
+			auto sp = SUS::split(name, '#');
+			if (w->name == sp.front())
 			{
-				w->open();
+				w->open_view(name);
 				break;
 			}
 		}
@@ -1870,7 +1874,7 @@ int main(int argc, char** args)
 	}
 	for (auto& e : preferences_i.get_section_entries("opened_folder"))
 	{
-		view_project.explorer.peeding_open_path = e.values[0];
+		project_window.explorer.peeding_open_path = e.values[0];
 		break;
 	}
 	for (auto& e : preferences_i.get_section_entries("opened_prefab"))

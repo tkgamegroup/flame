@@ -2,13 +2,13 @@
 
 #include "app.h"
 
-struct View_Timeline : graphics::GuiView
+struct TimelineWindow : graphics::GuiView
 {
 	std::vector<std::pair<int, int>> selected_keyframes;
 
-	View_Timeline();
+	TimelineWindow();
 
 	void on_draw() override;
 };
 
-extern View_Timeline view_timeline;
+extern TimelineWindow timeline_window;

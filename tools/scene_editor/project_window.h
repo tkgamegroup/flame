@@ -5,21 +5,30 @@
 #include <flame/foundation/system.h>
 #include <flame/graphics/explorer_abstract.h>
 
-struct View_Project : graphics::GuiView
+struct ProjectView : View
 {
 	graphics::ExplorerAbstract explorer;
 
+	ProjectView();
+	ProjectView(const std::string& name);
+	~ProjectView();
+	void on_draw() override;
+};
+
+struct ProjectWindow : Window
+{
 	void* flame_file_watcher = nullptr;
 	void* assets_file_watcher = nullptr;
 	void* code_file_watcher = nullptr;
 	std::mutex mtx_changed_paths;
 	std::map<std::filesystem::path, FileChangeFlags> changed_paths;
 
-	View_Project();
+	ProjectWindow();
 	void init() override;
+	void open_view(bool new_instance) override;
+	void open_view(const std::string& name) override;
 	void reset();
-
-	void on_draw() override;
+	void ping(const std::filesystem::path& path);
 };
 
-extern View_Project view_project;
+extern ProjectWindow project_window;

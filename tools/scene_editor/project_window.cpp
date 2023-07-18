@@ -1,6 +1,6 @@
 #include "selection.h"
-#include "view_project.h"
-#include "view_scene.h"
+#include "project_window.h"
+#include "scene_window.h"
 
 #include <flame/foundation/bitmap.h>
 #include <flame/foundation/system.h>
@@ -14,7 +14,7 @@
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
 
-View_Project view_project;
+ProjectWindow project_window;
 static auto selection_changed = false;
 
 static graphics::ImagePtr icon_prefab;
@@ -111,7 +111,7 @@ static void update_thumbnail(const std::filesystem::path& path)
 
 			app.renderer->camera = previous_camera;
 			app.renderer->mode = previous_render_mode;
-			if (view_scene.render_tar)
+			if (scene_window.render_tar)
 			{
 				auto iv = view_scene.render_tar->get_view();
 				app.renderer->set_targets({ &iv, 1 }, graphics::ImageLayoutShaderReadOnly);
@@ -122,7 +122,7 @@ static void update_thumbnail(const std::filesystem::path& path)
 			e->remove_from_parent();
 			app.world->update_components = false;
 
-			for (auto& item : view_project.explorer.items)
+			for (auto& item : project_window.explorer.items)
 			{
 				if (item->path == path)
 				{
@@ -147,7 +147,7 @@ static void update_thumbnail(const std::filesystem::path& path)
 	}
 }
 
-View_Project::View_Project() :
+ProjectWindow::ProjectWindow() :
 	GuiView("Project")
 {
 	selection.callbacks.add([](uint caller) {
@@ -156,7 +156,7 @@ View_Project::View_Project() :
 	}, "project"_h);
 }
 
-void View_Project::reset()
+void ProjectWindow::reset()
 {
 	auto flame_path = Path::get(L"flame");
 	auto assets_path = app.project_path;
@@ -210,7 +210,16 @@ void View_Project::reset()
 	}
 }
 
-void View_Project::init()
+void ProjectWindow::ping(const std::filesystem::path& path)
+{
+	for (auto& v : views)
+	{
+		auto pv = (ProjectView*)v.get();
+		pv->explorer.ping(path);
+	}
+}
+
+void ProjectWindow::init()
 {
 	icon_prefab = graphics::Image::get(L"flame\\icon_prefab.png");
 	icon_material = graphics::Image::get(L"flame\\icon_material.png");
@@ -1044,7 +1053,7 @@ void View_Project::init()
 	};
 }
 
-void View_Project::on_draw()
+void ProjectWindow::on_draw()
 {
 	mtx_changed_paths.lock();
 	if (!changed_paths.empty())

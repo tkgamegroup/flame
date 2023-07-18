@@ -76,6 +76,51 @@ inline void empty_entity(EntityPtr e)
 	e->remove_all_children();
 }
 
+struct View;
+
+struct Window
+{
+	std::string name;
+	std::vector<std::unique_ptr<View>> views;
+
+	Window(const std::string& name);
+
+	virtual void init() {}
+	virtual void open_view(bool new_instance) {}
+	virtual void open_view(const std::string& name) {}
+};
+
+extern std::vector<Window*> windows;
+
+Window::Window(const std::string& name) :
+	name(name)
+{
+	windows.push_back(this);
+}
+
+struct View
+{
+	std::string name;
+
+	View(const std::string& name) :
+		name(name)
+	{
+		graphics::gui_callbacks.add([this]() {
+			on_draw();
+		}, (uint)this);
+	}
+
+	virtual ~View()
+	{
+		add_event([this]() {
+			graphics::gui_callbacks.remove((uint)this);
+			return false;
+		});
+	}
+
+	virtual void on_draw() = 0;
+};
+
 void show_entities_menu();
 void open_message_dialog(const std::string& title, const std::string& message);
 

@@ -800,7 +800,5 @@ namespace flame
 				}
 			}
 		}
-
-		std::list<GuiView*> gui_views;
 	}
 }

@@ -1,4 +1,4 @@
-#include "view_scene.h"
+#include "scene_window.h"
 #include "selection.h"
 #include "history.h"
 #include "tile_map_editing.h"
@@ -14,25 +14,25 @@
 #include <flame/universe/components/nav_agent.h>
 #include <flame/universe/components/nav_obstacle.h>
 
-View_Scene view_scene;
+SceneWindow scene_window;
 
-View_Scene::View_Scene() :
+SceneWindow::SceneWindow() :
 	GuiView("Scene")
 {
 }
 
-cCameraPtr View_Scene::curr_camera()
+cCameraPtr SceneWindow::curr_camera()
 {
 	return cCamera::list()[camera_idx];
 }
 
-vec3 View_Scene::camera_target_pos()
+vec3 SceneWindow::camera_target_pos()
 {
 	auto camera_node = curr_camera()->node;
 	return camera_node->global_pos() - camera_node->z_axis() * camera_zoom;
 }
 
-void View_Scene::reset_camera(uint op)
+void SceneWindow::reset_camera(uint op)
 {
 	auto camera_node = curr_camera()->node;
 
@@ -70,7 +70,7 @@ void View_Scene::reset_camera(uint op)
 	}
 }
 
-void View_Scene::focus_to_selected()
+void SceneWindow::focus_to_selected()
 {
 	if (selection.type == Selection::tEntity)
 	{
@@ -99,7 +99,7 @@ void View_Scene::focus_to_selected()
 	}
 }
 
-void View_Scene::selected_to_focus()
+void SceneWindow::selected_to_focus()
 {
 	if (selection.type == Selection::tEntity)
 	{
@@ -113,7 +113,7 @@ void View_Scene::selected_to_focus()
 	}
 }
 
-void View_Scene::on_draw()
+void SceneWindow::on_draw()
 {
 	auto& camera_list = cCamera::list();
 	{
@@ -944,10 +944,10 @@ void View_Scene::on_draw()
 								auto pos = hovering_pos;
 								if (!hovering_entity)
 								{
-									auto camera_node = view_scene.curr_camera()->node;
+									auto camera_node = scene_window.curr_camera()->node;
 									auto camera_pos = camera_node->global_pos();
 									auto v = normalize(pos - camera_pos);
-									pos = camera_pos + v * (view_scene.camera_zoom / dot(v, -camera_node->z_axis()));
+									pos = camera_pos + v * (scene_window.camera_zoom / dot(v, -camera_node->z_axis()));
 								}
 								node->set_pos(app.get_snap_pos(pos));
 							}
@@ -977,7 +977,7 @@ void View_Scene::on_draw()
 	}
 }
 
-bool View_Scene::on_begin()
+bool SceneWindow::on_begin()
 {
 	bool open = true;
 	auto name = std::format("Scene{}{}###scene", app.e_prefab ? " - " +app.prefab_path.filename().stem().string() : "", app.prefab_unsaved ? " *" : "");
