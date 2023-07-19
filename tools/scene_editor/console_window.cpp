@@ -3,7 +3,7 @@
 ConsoleWindow console_window;
 
 ConsoleView::ConsoleView() :
-	View(&console_window, "Console##" + str(linearRand(0, 10000)))
+	View(&console_window, "Console##" + str(rand()))
 {
 }
 
@@ -14,7 +14,8 @@ ConsoleView::ConsoleView(const std::string& name) :
 
 void ConsoleView::on_draw()
 {
-	auto opened = ImGui::Begin(name.c_str());
+	bool opened = true;
+	ImGui::Begin(name.c_str(), &opened);
 
 	ImGui::End();
 	if (!opened)
@@ -29,10 +30,10 @@ ConsoleWindow::ConsoleWindow() :
 void ConsoleWindow::open_view(bool new_instance)
 {
 	if (new_instance || views.empty())
-		views.emplace_back(new ConsoleView);
+		new ConsoleView;
 }
 
 void ConsoleWindow::open_view(const std::string& name)
 {
-	views.emplace_back(new ConsoleView(name));
+	new ConsoleView(name);
 }

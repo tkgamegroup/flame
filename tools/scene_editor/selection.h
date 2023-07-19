@@ -34,6 +34,8 @@ struct Selection
 	Listeners<void(uint)> callbacks;
 	bool lock = false;
 
+	Selection();
+
 	void clear_ll();
 	void clear(uint caller = 0);
 

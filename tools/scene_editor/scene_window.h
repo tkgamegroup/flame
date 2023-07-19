@@ -5,7 +5,6 @@
 struct SceneView : View
 {
 	std::unique_ptr<graphics::Image> render_tar;
-	bool fixed_render_target_size = false;
 	bool show_outline = true;
 	bool show_AABB = false;
 	bool show_AABB_only_selected = false;
@@ -34,9 +33,14 @@ struct SceneView : View
 
 struct SceneWindow : Window
 {
+	bool fixed_render_target_size = false;
+	std::string last_focused_view_name;
+
 	SceneWindow();
 	void open_view(bool new_instance) override;
 	void open_view(const std::string& name) override;
+	SceneView* first_view() const;
+	SceneView* last_focused_view() const;
 };
 
 extern SceneWindow scene_window;

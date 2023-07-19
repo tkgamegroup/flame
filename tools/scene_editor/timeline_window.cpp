@@ -5,13 +5,21 @@
 
 TimelineWindow timeline_window;
 
-TimelineWindow::TimelineWindow() :
-	GuiView("Timeline")
+TimelineView::TimelineView() :
+	View(&timeline_window, "Timeline##" + str(rand()))
 {
 }
 
-void TimelineWindow::on_draw()
+TimelineView::TimelineView(const std::string& name) :
+	View(&timeline_window, name)
 {
+}
+
+void TimelineView::on_draw()
+{
+	bool opened = true;
+	ImGui::Begin(name.c_str(), &opened);
+
 	auto& io = ImGui::GetIO();
 	static auto frame_width = 10.f;
 	const auto left_width = 200.f;
@@ -305,4 +313,24 @@ void TimelineWindow::on_draw()
 		}
 	}
 	ImGui::EndChild();
+
+	ImGui::End();
+	if (!opened)
+		delete this;
+}
+
+TimelineWindow::TimelineWindow() :
+	Window("Timeline")
+{
+}
+
+void TimelineWindow::open_view(bool new_instance)
+{
+	if (new_instance || views.empty())
+		new TimelineView;
+}
+
+void TimelineWindow::open_view(const std::string& name)
+{
+	new TimelineView(name);
 }

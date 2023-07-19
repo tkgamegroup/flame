@@ -111,9 +111,9 @@ static void update_thumbnail(const std::filesystem::path& path)
 
 			app.renderer->camera = previous_camera;
 			app.renderer->mode = previous_render_mode;
-			if (scene_window.render_tar)
+			if (auto fv = scene_window.first_view(); fv && fv->render_tar)
 			{
-				auto iv = view_scene.render_tar->get_view();
+				auto iv = fv->render_tar->get_view();
 				app.renderer->set_targets({ &iv, 1 }, graphics::ImageLayoutShaderReadOnly);
 			}
 			else
@@ -122,24 +122,28 @@ static void update_thumbnail(const std::filesystem::path& path)
 			e->remove_from_parent();
 			app.world->update_components = false;
 
-			for (auto& item : project_window.explorer.items)
+			for (auto& v : project_window.views)
 			{
-				if (item->path == path)
+				auto pv = (ProjectView*)v.get();
+				for (auto& item : pv->explorer.items)
 				{
-					if (!item->icon_releaser)
+					if (item->path == path)
 					{
-						if (item->icon)
-							graphics::release_icon(item->icon);
+						if (!item->icon_releaser)
+						{
+							if (item->icon)
+								graphics::release_icon(item->icon);
+						}
+						else
+							item->icon_releaser(item->icon);
+
+						item->icon = graphics::Image::get(thumbnail_path);
+						item->icon_releaser = [](graphics::Image* img) {
+							graphics::Image::release(img);
+						};
+
+						break;
 					}
-					else
-						item->icon_releaser(item->icon);
-
-					item->icon = graphics::Image::get(thumbnail_path);
-					item->icon_releaser = [](graphics::Image* img) {
-						graphics::Image::release(img);
-					};
-
-					break;
 				}
 			}
 			return false;
@@ -147,86 +151,14 @@ static void update_thumbnail(const std::filesystem::path& path)
 	}
 }
 
-ProjectWindow::ProjectWindow() :
-	GuiView("Project")
+ProjectView::ProjectView() :
+	ProjectView("Project##" + str(rand()))
 {
-	selection.callbacks.add([](uint caller) {
-		if (caller != "project"_h)
-			selection_changed = true;
-	}, "project"_h);
 }
 
-void ProjectWindow::reset()
+ProjectView::ProjectView(const std::string& name) :
+	View(&project_window, name)
 {
-	auto flame_path = Path::get(L"flame");
-	auto assets_path = app.project_path;
-	auto code_path = app.project_path;
-	
-	std::vector<std::filesystem::path> paths;
-	paths.push_back(std::filesystem::path(L"Favorites=Favorites (F4)"));
-	paths.push_back(std::filesystem::path(L"Recents"));
-	paths.push_back(std::filesystem::path(flame_path.native() + L"=flame"));
-
-	if (!app.project_path.empty())
-	{
-		assets_path /= L"assets";
-		paths.push_back(assets_path);
-
-		code_path /= L"code";
-		paths.push_back(code_path);
-	}
-
-	explorer.reset_n(paths);
-
-	if (flame_file_watcher)
-	{
-		set_native_event(flame_file_watcher);
-		flame_file_watcher = nullptr;
-	}
-	if (assets_file_watcher)
-	{
-		set_native_event(assets_file_watcher);
-		assets_file_watcher = nullptr;
-	}
-	if (code_file_watcher)
-	{
-		set_native_event(code_file_watcher);
-		code_file_watcher = nullptr;
-	}
-	auto file_watcher = [this](FileChangeFlags flags, const std::filesystem::path& path) {
-		mtx_changed_paths.lock();
-		auto it = changed_paths.find(path);
-		if (it == changed_paths.end())
-			changed_paths[path] = flags;
-		else
-			it->second = (FileChangeFlags)(it->second | flags);
-		mtx_changed_paths.unlock();
-	};
-	flame_file_watcher = add_file_watcher(flame_path, file_watcher, true, false);
-	if (!app.project_path.empty())
-	{
-		assets_file_watcher = add_file_watcher(assets_path, file_watcher, true, false);
-		code_file_watcher = add_file_watcher(code_path, file_watcher, true, false);
-	}
-}
-
-void ProjectWindow::ping(const std::filesystem::path& path)
-{
-	for (auto& v : views)
-	{
-		auto pv = (ProjectView*)v.get();
-		pv->explorer.ping(path);
-	}
-}
-
-void ProjectWindow::init()
-{
-	icon_prefab = graphics::Image::get(L"flame\\icon_prefab.png");
-	icon_material = graphics::Image::get(L"flame\\icon_material.png");
-	icon_model = graphics::Image::get(L"flame\\icon_model.png");
-	icon_mesh = graphics::Image::get(L"flame\\icon_mesh.png");
-	icon_armature = graphics::Image::get(L"flame\\icon_armature.png");
-
 	explorer.do_select = 1;
 	explorer.select_callback = [this](const std::filesystem::path& path) {
 		if (selection.lock)
@@ -267,7 +199,7 @@ void ProjectWindow::init()
 			app.open_file_in_vs(path);
 		else if (ext == L".timeline")
 			app.open_timeline(path);
-		
+
 		auto it = std::find(recent_paths.begin(), recent_paths.end(), path);
 		if (it == recent_paths.end())
 		{
@@ -351,7 +283,7 @@ void ProjectWindow::init()
 						std::filesystem::remove(p, ec);
 					}
 				}
-			});
+				});
 		}
 		if (ext == L".h" || ext == L".cpp")
 		{
@@ -481,7 +413,7 @@ void ProjectWindow::init()
 					else
 						ImGui::OpenMessageDialog("Failed to create folder", "Folder already existed");
 				}
-			});
+				});
 		}
 		if (in_assets)
 		{
@@ -664,7 +596,7 @@ void ProjectWindow::init()
 						else
 							ImGui::OpenMessageDialog("Failed to create Material", "Material already existed");
 					}
-				});
+					});
 			}
 			if (ImGui::BeginMenu("New Prefab"))
 			{
@@ -680,7 +612,7 @@ void ProjectWindow::init()
 							else
 								ImGui::OpenMessageDialog("Failed to create Prefab", "Prefab already existed");
 						}
-					});
+						});
 				}
 				if (ImGui::MenuItem("General 3D Scene"))
 				{
@@ -694,7 +626,7 @@ void ProjectWindow::init()
 							else
 								ImGui::OpenMessageDialog("Failed to create Prefab", "Prefab already existed");
 						}
-					});
+						});
 				}
 				ImGui::EndMenu();
 			}
@@ -715,7 +647,7 @@ void ProjectWindow::init()
 							}
 							std::sort(preset_udts.begin(), preset_udts.end(), [](const auto& a, const auto& b) {
 								return a->name < b->name;
-							});
+								});
 
 							std::vector<std::string> names(preset_udts.size());
 							for (auto i = 0; i < names.size(); i++)
@@ -728,12 +660,12 @@ void ProjectWindow::init()
 									save_preset_file(fn, obj, ui);
 									ui->destroy_object(obj);
 								}
-							});
+								});
 						}
 						else
 							ImGui::OpenMessageDialog("Failed to create Preset", "Preset already existed");
 					}
-				});
+					});
 			}
 			if (ImGui::MenuItem("New Timeline"))
 			{
@@ -751,7 +683,7 @@ void ProjectWindow::init()
 						else
 							ImGui::OpenMessageDialog("Failed to create Timeline", "Timeline already existed");
 					}
-				});
+					});
 			}
 			if (ImGui::MenuItem("Import Scenes"))
 			{
@@ -785,7 +717,7 @@ void ProjectWindow::init()
 								ImGui::OpenFileDialog("Path", [this](bool ok, const std::filesystem::path& path) {
 									if (ok)
 										source_path = path;
-								});
+									});
 							}
 
 							ImGui::Text("Destination: %s", destination.string().c_str());
@@ -845,7 +777,7 @@ void ProjectWindow::init()
 							file.close();
 						}
 					}
-				});
+					});
 			}
 			if (ImGui::MenuItem("New Class"))
 			{
@@ -867,7 +799,7 @@ void ProjectWindow::init()
 							cpp_file.close();
 						}
 					}
-				});
+					});
 			}
 			if (ImGui::MenuItem("New Component"))
 			{
@@ -919,7 +851,7 @@ void ProjectWindow::init()
 					}
 					else
 						ImGui::OpenMessageDialog("Failed to create Component", "Already have this component");
-				});
+					});
 			}
 		}
 		if (ImGui::MenuItem("Refresh"))
@@ -1055,6 +987,132 @@ void ProjectWindow::init()
 
 void ProjectView::on_draw()
 {
+	project_window.process_changed_paths();
+
+	if (selection.type == Selection::tPath)
+	{
+		if (selection_changed)
+			explorer.ping(selection.as_path());
+	}
+	else
+		explorer.selected_paths.clear();
+
+	bool opened = true;
+	ImGui::Begin(name.c_str(), &opened);
+
+	explorer.draw();
+
+	ImGui::End();
+	if (!opened)
+		delete this;
+
+	selection_changed = false;
+}
+
+ProjectWindow::ProjectWindow() :
+	Window("Project")
+{
+	selection.callbacks.add([](uint caller) {
+		if (caller != "project"_h)
+			selection_changed = true;
+	}, "project"_h);
+}
+
+void ProjectWindow::init()
+{
+	icon_prefab = graphics::Image::get(L"flame\\icon_prefab.png");
+	icon_material = graphics::Image::get(L"flame\\icon_material.png");
+	icon_model = graphics::Image::get(L"flame\\icon_model.png");
+	icon_mesh = graphics::Image::get(L"flame\\icon_mesh.png");
+	icon_armature = graphics::Image::get(L"flame\\icon_armature.png");
+
+}
+
+void ProjectWindow::open_view(bool new_instance)
+{
+	if (new_instance || views.empty())
+		new ProjectView;
+}
+
+void ProjectWindow::open_view(const std::string& name)
+{
+	new ProjectView(name);
+}
+
+ProjectView* ProjectWindow::first_view() const
+{
+	return views.empty() ? nullptr : (ProjectView*)views.front().get();
+}
+
+void ProjectWindow::reset()
+{
+	auto flame_path = Path::get(L"flame");
+	auto assets_path = app.project_path;
+	auto code_path = app.project_path;
+
+	std::vector<std::filesystem::path> paths;
+	paths.push_back(std::filesystem::path(L"Favorites=Favorites (F4)"));
+	paths.push_back(std::filesystem::path(L"Recents"));
+	paths.push_back(std::filesystem::path(flame_path.native() + L"=flame"));
+
+	if (!app.project_path.empty())
+	{
+		assets_path /= L"assets";
+		paths.push_back(assets_path);
+
+		code_path /= L"code";
+		paths.push_back(code_path);
+	}
+
+	for (auto& v : views)
+	{
+		auto pv = (ProjectView*)v.get();
+		pv->explorer.reset_n(paths);
+	}
+
+	if (flame_file_watcher)
+	{
+		set_native_event(flame_file_watcher);
+		flame_file_watcher = nullptr;
+	}
+	if (assets_file_watcher)
+	{
+		set_native_event(assets_file_watcher);
+		assets_file_watcher = nullptr;
+	}
+	if (code_file_watcher)
+	{
+		set_native_event(code_file_watcher);
+		code_file_watcher = nullptr;
+	}
+	auto file_watcher = [this](FileChangeFlags flags, const std::filesystem::path& path) {
+		mtx_changed_paths.lock();
+		auto it = changed_paths.find(path);
+		if (it == changed_paths.end())
+			changed_paths[path] = flags;
+		else
+			it->second = (FileChangeFlags)(it->second | flags);
+		mtx_changed_paths.unlock();
+	};
+	flame_file_watcher = add_file_watcher(flame_path, file_watcher, true, false);
+	if (!app.project_path.empty())
+	{
+		assets_file_watcher = add_file_watcher(assets_path, file_watcher, true, false);
+		code_file_watcher = add_file_watcher(code_path, file_watcher, true, false);
+	}
+}
+
+void ProjectWindow::ping(const std::filesystem::path& path)
+{
+	for (auto& v : views)
+	{
+		auto pv = (ProjectView*)v.get();
+		pv->explorer.ping(path);
+	}
+}
+
+void ProjectWindow::process_changed_paths()
+{
 	mtx_changed_paths.lock();
 	if (!changed_paths.empty())
 	{
@@ -1092,17 +1150,21 @@ void ProjectView::on_draw()
 			return a.first.wstring().size() < b.first.wstring().size();
 		});
 
-		auto current_path = explorer.opened_folder ? explorer.opened_folder->path : L"";
-		for (auto& p : changed_directories)
+		for (auto& v : views)
 		{
-			if (auto node = explorer.find_folder(p); node && node->read)
+			auto pv = (ProjectView*)v.get();
+			auto current_path = pv->explorer.opened_folder ? pv->explorer.opened_folder->path : L"";
+			for (auto& p : changed_directories)
 			{
-				node->read = false;
-				node->read_children();
+				if (auto node = pv->explorer.find_folder(p); node && node->read)
+				{
+					node->read = false;
+					node->read_children();
+				}
 			}
+			if (!current_path.empty())
+				pv->explorer.peeding_open_path = current_path;
 		}
-		if (!current_path.empty())
-			explorer.peeding_open_path = current_path;
 
 		std::vector<std::pair<AssetManagemant::Asset*, std::filesystem::path>>	changed_assets;
 		std::pair<std::vector<graphics::MaterialPtr>, uint>						materials;
@@ -1198,7 +1260,7 @@ void ProjectView::on_draw()
 									if (selection.selecting(e))
 										selection.clear();
 								}
-							});
+								});
 						}
 					}
 				}
@@ -1299,7 +1361,7 @@ void ProjectView::on_draw()
 							}
 						}
 					}
-				});
+					});
 				for (auto& a : affected_attributes)
 					std::get<1>(a)->set_value(std::get<0>(a), &std::get<2>(a));
 			}
@@ -1334,16 +1396,4 @@ void ProjectView::on_draw()
 		changed_paths.clear();
 	}
 	mtx_changed_paths.unlock();
-
-	if (selection.type == Selection::tPath)
-	{
-		if (selection_changed)
-			explorer.ping(selection.as_path());
-	}
-	else
-		explorer.selected_paths.clear();
-
-	explorer.draw();
-
-	selection_changed = false;
 }

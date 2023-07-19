@@ -84,6 +84,7 @@ struct Window
 	std::vector<std::unique_ptr<View>> views;
 
 	Window(const std::string& name);
+	~Window();
 
 	virtual void init() {}
 	virtual void open_view(bool new_instance) {}
@@ -92,7 +93,7 @@ struct Window
 
 extern std::vector<Window*> windows;
 
-Window::Window(const std::string& name) :
+inline Window::Window(const std::string& name) :
 	name(name)
 {
 	windows.push_back(this);
@@ -116,6 +117,9 @@ struct View
 
 	virtual ~View()
 	{
+		if (!window)
+			return;
+
 		for (auto it = window->views.begin(); it != window->views.end(); it++)
 		{
 			if (it->get() == this)
@@ -133,6 +137,12 @@ struct View
 
 	virtual void on_draw() = 0;
 };
+
+inline Window::~Window()
+{
+	for (auto& v : views)
+		v->window = nullptr;
+}
 
 void show_entities_menu();
 void open_message_dialog(const std::string& title, const std::string& message);

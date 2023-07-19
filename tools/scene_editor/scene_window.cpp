@@ -16,18 +16,28 @@
 
 SceneWindow scene_window;
 
-cCameraPtr SceneWindow::curr_camera()
+SceneView::SceneView() :
+	View(&scene_window, "Scene##" + str(rand()))
+{
+}
+
+SceneView::SceneView(const std::string& name) :
+	View(&scene_window, name)
+{
+}
+
+cCameraPtr SceneView::curr_camera()
 {
 	return cCamera::list()[camera_idx];
 }
 
-vec3 SceneWindow::camera_target_pos()
+vec3 SceneView::camera_target_pos()
 {
 	auto camera_node = curr_camera()->node;
 	return camera_node->global_pos() - camera_node->z_axis() * camera_zoom;
 }
 
-void SceneWindow::reset_camera(uint op)
+void SceneView::reset_camera(uint op)
 {
 	auto camera_node = curr_camera()->node;
 
@@ -65,7 +75,7 @@ void SceneWindow::reset_camera(uint op)
 	}
 }
 
-void SceneWindow::focus_to_selected()
+void SceneView::focus_to_selected()
 {
 	if (selection.type == Selection::tEntity)
 	{
@@ -94,7 +104,7 @@ void SceneWindow::focus_to_selected()
 	}
 }
 
-void SceneWindow::selected_to_focus()
+void SceneView::selected_to_focus()
 {
 	if (selection.type == Selection::tEntity)
 	{
@@ -108,8 +118,27 @@ void SceneWindow::selected_to_focus()
 	}
 }
 
-void SceneWindow::on_draw()
+void SceneView::on_draw()
 {
+	std::string open_name = name;
+	if (app.e_prefab)
+	{
+		open_name = "Scene - " + app.prefab_path.filename().stem().string();
+		if (app.prefab_unsaved)
+			open_name += " *";
+		open_name += "###";
+		open_name += name;
+	}
+
+	bool opened = true;
+	ImGui::Begin(open_name.c_str(), &opened);
+	// there is a bug that ImGui do not reset the pointer to window's name in draw list, so that
+	//  ImGuizmo not work properly
+	ImGui::GetWindowDrawList()->_OwnerName = ImGui::GetCurrentWindow()->Name;
+
+	if (ImGui::IsWindowFocused())
+		scene_window.last_focused_view_name = name;
+
 	auto& camera_list = cCamera::list();
 	{
 		static const char* names[8];
@@ -152,7 +181,7 @@ void SceneWindow::on_draw()
 		show_navigation = !show_navigation;
 
 	auto render_target_extent = vec2(ImGui::GetContentRegionAvail());
-	if (fixed_render_target_size)
+	if (scene_window.fixed_render_target_size)
 		render_target_extent = vec2(1280, 720);
 	if (!render_tar || vec2(render_tar->extent) != render_target_extent)
 	{
@@ -939,10 +968,10 @@ void SceneWindow::on_draw()
 								auto pos = hovering_pos;
 								if (!hovering_entity)
 								{
-									auto camera_node = scene_window.curr_camera()->node;
+									auto camera_node = curr_camera()->node;
 									auto camera_pos = camera_node->global_pos();
 									auto v = normalize(pos - camera_pos);
-									pos = camera_pos + v * (scene_window.camera_zoom / dot(v, -camera_node->z_axis()));
+									pos = camera_pos + v * (camera_zoom / dot(v, -camera_node->z_axis()));
 								}
 								node->set_pos(app.get_snap_pos(pos));
 							}
@@ -970,20 +999,39 @@ void SceneWindow::on_draw()
 			ImGui::EndDragDropTarget();
 		}
 	}
-}
 
-bool SceneWindow::on_begin()
-{
-	bool open = true;
-	auto name = std::format("Scene{}{}###scene", app.e_prefab ? " - " +app.prefab_path.filename().stem().string() : "", app.prefab_unsaved ? " *" : "");
-	ImGui::Begin(name.c_str(), &open);
-	// there is a bug that ImGui do not reset the pointer to window's name in draw list, so that
-	//  ImGuizmo not work properly
-	ImGui::GetWindowDrawList()->_OwnerName = ImGui::GetCurrentWindow()->Name;
-	return !open;
+	ImGui::End();
+	if (!opened)
+		delete this;
 }
 
 SceneWindow::SceneWindow() :
-	GuiView("Scene")
+	Window("Scene")
 {
+}
+
+void SceneWindow::open_view(bool new_instance)
+{
+	if (new_instance || views.empty())
+		new SceneView;
+}
+
+void SceneWindow::open_view(const std::string& name)
+{
+	new SceneView(name);
+}
+
+SceneView* SceneWindow::first_view() const
+{
+	return views.empty() ? nullptr : (SceneView*)views.front().get();
+}
+
+SceneView* SceneWindow::last_focused_view() const
+{
+	for (auto& v : views)
+	{
+		if (v->name == last_focused_view_name)
+			return (SceneView*)v.get();
+	}
+	return nullptr;
 }

@@ -144,10 +144,10 @@ void App::init()
 			preferences_o << "[project_path]\n";
 			preferences_o << project_path.string() << "\n";
 		}
-		if (project_window.explorer.opened_folder)
+		if (auto fv = project_window.first_view(); fv && fv->explorer.opened_folder)
 		{
 			preferences_o << "[opened_folder]\n";
-			preferences_o << project_window.explorer.opened_folder->path.string() << "\n";
+			preferences_o << fv->explorer.opened_folder->path.string() << "\n";
 		}
 		if (e_prefab)
 		{
@@ -175,6 +175,8 @@ bool App::on_update()
 
 void App::on_gui()
 {
+	auto last_focused_scene = scene_window.last_focused_view();
+
 	editor_selecting_entity = selection.type == Selection::tEntity ? selection.as_entity() : nullptr;
 
 	ImGui::BeginMainMenuBar();
@@ -243,25 +245,52 @@ void App::on_gui()
 		if (ImGui::MenuItem("Invert Siblings"))
 			;
 		if (ImGui::MenuItem("Focus To Selected (F)"))
-			scene_window.focus_to_selected();
+		{
+			if (last_focused_scene)
+				last_focused_scene->focus_to_selected();
+		}
 		if (ImGui::MenuItem("Selected To Focus (G)"))
-			scene_window.selected_to_focus();
+		{
+			if (last_focused_scene)
+				last_focused_scene->selected_to_focus();
+		}
 		if (ImGui::BeginMenu("Camera"))
 		{
 			if (ImGui::MenuItem("Reset"))
-				scene_window.reset_camera(""_h);
+			{
+				if (last_focused_scene)
+					last_focused_scene->reset_camera(""_h);
+			}
 			if (ImGui::MenuItem("X+"))
-				scene_window.reset_camera("X+"_h);
+			{
+				if (last_focused_scene)
+					last_focused_scene->reset_camera("X+"_h);
+			}
 			if (ImGui::MenuItem("X-"))
-				scene_window.reset_camera("X-"_h);
+			{
+				if (last_focused_scene)
+					last_focused_scene->reset_camera("X-"_h);
+			}
 			if (ImGui::MenuItem("Y+"))
-				scene_window.reset_camera("Y+"_h);
+			{
+				if (last_focused_scene)
+					last_focused_scene->reset_camera("Y+"_h);
+			}
 			if (ImGui::MenuItem("Y-"))
-				scene_window.reset_camera("Y-"_h);
+			{
+				if (last_focused_scene)
+					last_focused_scene->reset_camera("Y-"_h);
+			}
 			if (ImGui::MenuItem("Z+"))
-				scene_window.reset_camera("Z+"_h);
+			{
+				if (last_focused_scene)
+					last_focused_scene->reset_camera("Z+"_h);
+			}
 			if (ImGui::MenuItem("Z-"))
-				scene_window.reset_camera("Z-"_h);
+			{
+				if (last_focused_scene)
+					last_focused_scene->reset_camera("Z-"_h);
+			}
 			ImGui::EndMenu();
 		}
 		ImGui::Separator();
@@ -514,10 +543,13 @@ void App::on_gui()
 							ImGui::TextUnformatted(("    " + str(end)).c_str());
 							if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsKeyDown(Keyboard_Ctrl))
 							{
-								if (v == 0)
-									start = scene_window.hovering_pos;
-								else
-									end = scene_window.hovering_pos;
+								if (auto fv = scene_window.last_focused_view(); fv)
+								{
+									if (v == 0)
+										start = fv->hovering_pos;
+									else
+										end = fv->hovering_pos;
+								}
 								if (distance(start, end) > 0.f)
 									points = sScene::instance()->navmesh_query_path(start, end);
 							}
@@ -621,7 +653,7 @@ void App::on_gui()
 		{
 			auto opened = (bool)!w->views.empty();
 			if (ImGui::MenuItem(w->name.c_str(), nullptr, opened))
-				w->open_view();
+				w->open_view(false);
 		}
 		ImGui::EndMenu();
 	}
@@ -726,7 +758,7 @@ void App::on_gui()
 	{
 	case ToolMove:
 		p_snap = &move_snap;
-		p_snap_value = scene_window.element_targets.empty() ? &move_snap_value : &move_snap_2d_value;
+		p_snap_value = last_focused_scene && last_focused_scene->element_targets.empty() ? &move_snap_value : &move_snap_2d_value;
 		break;
 	case ToolRotate:
 		p_snap = &rotate_snap;
@@ -1718,9 +1750,14 @@ bool App::cmd_play()
 			input->transfer_events = true;
 			always_render = true;
 			paused = false;
+
+			auto fv = scene_window.last_focused_view();
 			auto& camera_list = cCamera::list();
 			if (camera_list.size() > 1)
-				scene_window.camera_idx = 1;
+			{
+				if (fv)
+					fv->camera_idx = 1;
+			}
 			return false;
 		});
 		return true;
@@ -1755,15 +1792,19 @@ bool App::cmd_stop()
 		world->root->add_child(e_prefab);
 		world->update_components = false;
 		always_render = false;
+
+		auto fv = scene_window.last_focused_view();
 		auto& camera_list = cCamera::list();
 		if (camera_list.size() > 0)
 		{
-			scene_window.camera_idx = 0;
+			if (fv)
+				fv->camera_idx = 0;
 			sRenderer::instance()->camera = camera_list.front();
 		}
 		else
 		{
-			scene_window.camera_idx = -1;
+			if (fv)
+				fv->camera_idx = -1;
 			sRenderer::instance()->camera = nullptr;
 		}
 		return false;

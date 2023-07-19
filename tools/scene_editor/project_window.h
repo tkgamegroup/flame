@@ -26,8 +26,10 @@ struct ProjectWindow : Window
 	void init() override;
 	void open_view(bool new_instance) override;
 	void open_view(const std::string& name) override;
+	ProjectView* first_view() const;
 	void reset();
 	void ping(const std::filesystem::path& path);
+	void process_changed_paths();
 };
 
 extern ProjectWindow project_window;

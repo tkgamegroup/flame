@@ -1,6 +1,11 @@
 #include "selection.h"
 #include "history.h"
 
+Selection::Selection()
+{
+	callbacks.clear();
+}
+
 void Selection::clear_ll()
 {
 	switch (type)

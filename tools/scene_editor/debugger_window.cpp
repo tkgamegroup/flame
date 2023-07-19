@@ -6,7 +6,7 @@
 DebuggerWindow debugger_window;
 
 DebuggerView::DebuggerView() :
-	View(&debugger_window, "Debugger##" + str(linearRand(0, 10000)))
+	View(&debugger_window, "Debugger##" + str(rand()))
 {
 }
 
@@ -46,10 +46,10 @@ DebuggerWindow::DebuggerWindow() :
 void DebuggerWindow::open_view(bool new_instance)
 {
 	if (new_instance || views.empty())
-		views.emplace_back(new DebuggerView);
+		new DebuggerView;
 }
 
 void DebuggerWindow::open_view(const std::string& name)
 {
-	views.emplace_back(new DebuggerView(name));
+	new DebuggerView(name);
 }

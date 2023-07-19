@@ -8,6 +8,10 @@
 
 void tile_map_editing()
 {
+	auto fv = scene_window.last_focused_view();
+	if (!fv)
+		return;
+
 	auto& io = ImGui::GetIO();
 
 	auto tile_map = selection.as_entity()->get_component<cTileMap>();
@@ -15,7 +19,7 @@ void tile_map_editing()
 	auto blocks = tile_map->blocks;
 	auto block_sz = extent / vec3(blocks);
 
-	auto pos = scene_window.hovering_pos - tile_map->node->global_pos();
+	auto pos = fv->hovering_pos - tile_map->node->global_pos();
 	pos = round(pos / extent * (vec3)blocks);
 	auto x = (int)pos.x; 
 	auto z = (int)pos.z;

@@ -1936,7 +1936,7 @@ struct EditingEntities
 static EditingEntities editing_entities;
 
 InspectorView::InspectorView() :
-	View(&inspector_window, "Inspector##" + str(linearRand(0, 10000)))
+	View(&inspector_window, "Inspector##" + str(rand()))
 {
 }
 
@@ -1971,6 +1971,9 @@ void InspectorView::on_draw()
 		editing_entities.refresh(es);
 		dirty = false;
 	}
+
+	bool opened = true;
+	ImGui::Begin(name.c_str(), &opened);
 
 	if (selection.type != Selection::tNothing)
 	{
@@ -2349,6 +2352,10 @@ target_include_directories({0} PUBLIC "${{GLM_INCLUDE_DIR}}")
 	}
 		break;
 	}
+
+	ImGui::End();
+	if (!opened)
+		delete this;
 }
 
 InspectorWindow::InspectorWindow() :
@@ -2357,16 +2364,16 @@ InspectorWindow::InspectorWindow() :
 	selection.callbacks.add([](uint caller) {
 		if (caller != "inspector"_h)
 			selection_changed = true;
-		}, "inspector"_h);
+	}, "inspector"_h);
 }
 
 void InspectorWindow::open_view(bool new_instance)
 {
 	if (new_instance || views.empty())
-		views.emplace_back(new InspectorView);
+		new InspectorView;
 }
 
 void InspectorWindow::open_view(const std::string& name)
 {
-	views.emplace_back(new InspectorView(name));
+	new InspectorView(name);
 }

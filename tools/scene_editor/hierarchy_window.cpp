@@ -5,7 +5,7 @@
 HierarchyWindow hierarchy_window;
 
 HierarchyView::HierarchyView() :
-	View(&hierarchy_window, "Hierarchy##" + str(linearRand(0, 10000)))
+	View(&hierarchy_window, "Hierarchy##" + str(rand()))
 {
 }
 
@@ -185,7 +185,8 @@ void entity_context_menu_behaviour(EntityPtr e)
 
 void HierarchyView::on_draw()
 {
-	auto opened = ImGui::Begin(name.c_str());
+	bool opened = true;
+	ImGui::Begin(name.c_str(), &opened);
 
 	EntityPtr select_entity = nullptr;
 	static bool released_after_select = false;
@@ -510,10 +511,10 @@ HierarchyWindow::HierarchyWindow() :
 void HierarchyWindow::open_view(bool new_instance)
 {
 	if (new_instance || views.empty())
-		views.emplace_back(new HierarchyView);
+		new HierarchyView;
 }
 
 void HierarchyWindow::open_view(const std::string& name)
 {
-	views.emplace_back(new HierarchyView(name));
+	new HierarchyView(name);
 }
