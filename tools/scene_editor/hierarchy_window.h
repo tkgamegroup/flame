@@ -16,6 +16,7 @@ struct HierarchyView : View
 struct HierarchyWindow : Window
 {
 	HierarchyWindow();
+	void init() override;
 	void open_view(bool new_instance) override;
 	void open_view(const std::string& name) override;
 };

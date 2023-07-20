@@ -502,6 +502,10 @@ void HierarchyView::on_draw()
 HierarchyWindow::HierarchyWindow() :
 	Window("Hierarchy")
 {
+}
+
+void HierarchyWindow::init()
+{
 	selection.callbacks.add([](uint caller) {
 		if (caller != "hierarchy"_h)
 			selection_changed = true;

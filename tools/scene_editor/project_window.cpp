@@ -1012,10 +1012,6 @@ void ProjectView::on_draw()
 ProjectWindow::ProjectWindow() :
 	Window("Project")
 {
-	selection.callbacks.add([](uint caller) {
-		if (caller != "project"_h)
-			selection_changed = true;
-	}, "project"_h);
 }
 
 void ProjectWindow::init()
@@ -1025,6 +1021,11 @@ void ProjectWindow::init()
 	icon_model = graphics::Image::get(L"flame\\icon_model.png");
 	icon_mesh = graphics::Image::get(L"flame\\icon_mesh.png");
 	icon_armature = graphics::Image::get(L"flame\\icon_armature.png");
+
+	selection.callbacks.add([](uint caller) {
+		if (caller != "project"_h)
+			selection_changed = true;
+	}, "project"_h);
 
 }
 

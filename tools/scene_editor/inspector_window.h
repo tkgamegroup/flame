@@ -14,6 +14,7 @@ struct InspectorView : View
 struct InspectorWindow : Window
 {
 	InspectorWindow();
+	void init() override;
 	void open_view(bool new_instance) override;
 	void open_view(const std::string& name) override;
 };

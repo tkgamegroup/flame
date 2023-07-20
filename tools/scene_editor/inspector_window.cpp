@@ -2361,6 +2361,10 @@ target_include_directories({0} PUBLIC "${{GLM_INCLUDE_DIR}}")
 InspectorWindow::InspectorWindow() :
 	Window("Inspector")
 {
+}
+
+void InspectorWindow::init()
+{
 	selection.callbacks.add([](uint caller) {
 		if (caller != "inspector"_h)
 			selection_changed = true;
