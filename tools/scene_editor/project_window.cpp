@@ -161,8 +161,6 @@ ProjectView::ProjectView(const std::string& name) :
 {
 	explorer.do_select = 1;
 	explorer.select_callback = [this](const std::filesystem::path& path) {
-		if (selection.lock)
-			return;
 		if (path.empty())
 		{
 			selection.clear("project"_h);
@@ -999,6 +997,8 @@ void ProjectView::on_draw()
 
 	bool opened = true;
 	ImGui::Begin(name.c_str(), &opened);
+
+	title_context_menu();
 
 	explorer.draw();
 

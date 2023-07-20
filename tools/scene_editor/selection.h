@@ -32,9 +32,6 @@ struct Selection
 	Type type = tNothing;
 	std::vector<void*> objects;
 	Listeners<void(uint)> callbacks;
-	bool lock = false;
-
-	Selection();
 
 	void clear_ll();
 	void clear(uint caller = 0);
@@ -43,8 +40,6 @@ struct Selection
 	void select(const std::vector<std::filesystem::path>& paths, uint caller = 0);
 	inline void select(const std::filesystem::path& path, uint caller = 0)
 	{
-		if (lock)
-			return;
 		std::vector<std::filesystem::path> paths;
 		paths.push_back(path);
 		select(paths, caller);
@@ -56,8 +51,6 @@ struct Selection
 	void select(const std::vector<EntityPtr>& entities, uint caller = 0);
 	inline void select(EntityPtr entity, uint caller = 0)
 	{
-		if (lock)
-			return;
 		std::vector<EntityPtr> entities;
 		entities.push_back(entity);
 		select(entities, caller);

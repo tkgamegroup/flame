@@ -20,6 +20,23 @@
 
 std::vector<Window*> windows;
 
+void View::title_context_menu()
+{
+	if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+	{
+		const auto im_wnd = ImGui::GetCurrentWindow();
+		ImRect rect = im_wnd->DockIsActive ? im_wnd->DockTabItemRect : im_wnd->TitleBarRect();
+		if (ImGui::IsMouseHoveringRect(rect.Min, rect.Max, false))
+			ImGui::OpenPopup("title_context_menu");
+	}
+	if (ImGui::BeginPopup("title_context_menu"))
+	{
+		if (ImGui::Selectable("New Tab"))
+			window->open_view(true);
+		ImGui::EndPopup();
+	}
+}
+
 App app;
 
 static Entity* editor_selecting_entity = nullptr;
@@ -786,7 +803,7 @@ void App::on_gui()
 	ImGui::SameLine();
 	ImGui::Dummy(vec2(0.f, 20.f));
 
-	if (selection.lock && selection.type == Selection::tEntity)
+	if (selection.type == Selection::tEntity)
 	{
 		auto e = selection.as_entity();
 		if (auto terrain = e->get_component<cTerrain>(); terrain)
@@ -899,8 +916,6 @@ void App::on_gui()
 	ImGui::End();
 
 	auto& io = ImGui::GetIO();
-	if (ImGui::IsKeyPressed(Keyboard_Tab))
-		toggle_selection_lock();
 	if (ImGui::IsKeyPressed(Keyboard_F5))
 	{
 		if (!e_playing)
@@ -1303,14 +1318,6 @@ void App::close_project()
 	Path::set_root(L"assets", L"");
 	project_window.reset();
 	unload_project_cpp();
-}
-
-void App::toggle_selection_lock()
-{
-	if (selection.lock)
-		selection.lock = false;
-	else
-		selection.lock = true;
 }
 
 void App::new_prefab(const std::filesystem::path& path, uint type)

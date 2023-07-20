@@ -110,9 +110,12 @@ struct View
 	{
 		w->views.emplace_back(this);
 
-		graphics::gui_callbacks.add([this]() {
-			on_draw();
-		}, (uint)this);
+		add_event([this]() {
+			graphics::gui_callbacks.add([this]() {
+				on_draw();
+			}, (uint)this);
+			return false;
+		});
 	}
 
 	virtual ~View()
@@ -126,6 +129,7 @@ struct View
 			{
 				it->release();
 				window->views.erase(it);
+				break;
 			}
 		}
 
@@ -135,6 +139,7 @@ struct View
 		});
 	}
 
+	void title_context_menu();
 	virtual void on_draw() = 0;
 };
 
@@ -194,7 +199,6 @@ struct App : UniverseApplication
 	void cmake_project();
 	void build_project();
 	void close_project();
-	void toggle_selection_lock();
 	void new_prefab(const std::filesystem::path& path, uint type = "empty"_h);
 	void open_prefab(const std::filesystem::path& path);
 	bool save_prefab();

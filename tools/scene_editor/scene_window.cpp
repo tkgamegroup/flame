@@ -936,7 +936,7 @@ void SceneView::on_draw()
 				show_navigation_frames--;
 		}
 
-		if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered() && selection.lock && selection.type == Selection::tEntity)
+		if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered() && selection.type == Selection::tEntity)
 		{
 			auto e = selection.as_entity();
 			if (auto terrain = e->get_component<cTerrain>(); terrain)

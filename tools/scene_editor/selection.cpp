@@ -1,11 +1,6 @@
 #include "selection.h"
 #include "history.h"
 
-Selection::Selection()
-{
-	callbacks.clear();
-}
-
 void Selection::clear_ll()
 {
 	switch (type)
@@ -70,8 +65,6 @@ void Selection::select_ll(const std::vector<EntityPtr>& entities)
 
 void Selection::clear(uint caller)
 {
-	if (lock)
-		return;
 	if (type == Selection::tNothing)
 		return;
 	auto h = new SelectHistory;
@@ -85,8 +78,6 @@ void Selection::clear(uint caller)
 
 void Selection::select(const std::vector<std::filesystem::path>& paths, uint caller)
 {
-	if (lock)
-		return;
 	if (selecting(paths))
 		return;
 	auto h = new SelectHistory;
@@ -126,8 +117,6 @@ bool Selection::selecting(const std::filesystem::path& path)
 
 void Selection::select(const std::vector<EntityPtr>& entities, uint caller)
 {
-	if (lock)
-		return;
 	if (selecting(entities))
 		return;
 	auto h = new SelectHistory;

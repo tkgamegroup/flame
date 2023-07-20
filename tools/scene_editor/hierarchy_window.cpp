@@ -107,7 +107,7 @@ bool entity_drag_behaviour(EntityPtr e)
 	if (ImGui::BeginDragDropSource())
 	{
 		auto in_selection = false;
-		if (selection.type == Selection::tEntity && !selection.lock)
+		if (selection.type == Selection::tEntity)
 		{
 			auto found = false;
 			auto es = selection.get_entities();

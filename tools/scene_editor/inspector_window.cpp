@@ -22,7 +22,7 @@
 #include <flame/universe/components/particle_system.h>
 
 InspectorWindow inspector_window;
-static auto selection_changed = false;
+static uint selection_changed_frame = 0;
 
 struct StagingVector
 {
@@ -1163,841 +1163,856 @@ std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num,
 static auto ui_entity = TypeInfo::get<Entity>()->retrive_ui();
 static auto ui_component = TypeInfo::get<Component>()->retrive_ui();
 
-struct CommonComponents
+void InspectedEntities::refresh(const std::vector<EntityPtr>& _entities)
 {
-	uint type_hash;
-	std::vector<ComponentPtr> components;
-};
+	for (auto e : entities)
+		e->message_listeners.remove("inspector"_h);
+	entities.clear();
+	sync_states.clear();
+	common_components.clear();
+	prefab_path.clear();
 
-struct EditingEntities
-{
-	std::vector<EntityPtr> entities;
-	std::unordered_map<const void*, uint> sync_states;
-	std::vector<CommonComponents> common_components;
-	std::filesystem::path prefab_path;
-
-	void refresh(const std::vector<EntityPtr>& _entities)
+	entities = _entities;
+	if (entities.empty())
+		return;
+	for (auto e : entities)
 	{
-		entities.clear();
-		sync_states.clear();
-		common_components.clear();
-		prefab_path.clear();
-
-		entities = _entities;
-		if (entities.empty())
-			return;
-
-		auto entt0 = entities[0];
-		auto process_attribute = [&](const Attribute& a, uint comp_hash) {
-			void* obj0 = comp_hash == 0 ? entt0 : (void*)entt0->get_component_h(comp_hash);
-			uint state = 1;
-
-			if (a.type->tag == TagD)
+		e->message_listeners.add([this, e](uint hash, void*, void*) {
+			if (hash == "destroyed"_h)
 			{
-				auto var0 = a.type->create();
-				a.type->copy(var0, a.get_value(obj0));
-				auto ti = (TypeInfo_Data*)a.type;
-				switch (ti->data_type)
+				for (auto it = entities.begin(); it != entities.end();)
 				{
-				case DataBool:
-					for (auto i = 1; i < entities.size(); i++)
-					{
-						void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component_h(comp_hash);
-						auto var1 = a.get_value(obj1);
-						if (*(bool*)var0 != *(bool*)var1)
-						{
-							state = 0;
-							break;
-						}
-					}
-					break;
-				case DataInt:
-				case DataFloat:
-					for (auto i = 1; i < entities.size(); i++)
-					{
-						void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component_h(comp_hash);
-						auto var1 = a.get_value(obj1);
-						for (auto y = 0; y < ti->vec_size; y++)
-						{
-							if (memcmp((char*)var0 + sizeof(float) * y, (char*)var1 + sizeof(float) * y, sizeof(float)) != 0)
-								((char*)&state)[y] = 0;
-							else
-								((char*)&state)[y] = 1;
-						}
-					}
-					break;
-				default:
-					for (auto i = 1; i < entities.size(); i++)
-					{
-						void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component_h(comp_hash);
-						if (!a.type->compare(var0, a.get_value(obj1)))
-						{
-							state = 0;
-							break;
-						}
-					}
+					if (*it == e)
+						it = entities.erase(it);
+					else
+						it++;
 				}
-				a.type->destroy(var0);
-			}
-
-			sync_states[&a] = state;
-		};
-
-		if (entities.size() > 1)
-		{
-			for (auto& a : ui_entity->attributes)
-				process_attribute(a, 0);
-		}
-
-		for (auto& comp : entt0->components)
-		{
-			auto hash = comp->type_hash;
-			auto all_have = true;
-			for (auto i = 1; i < entities.size(); i++)
-			{
-				if (!entities[i]->get_component_h(hash))
+				if (entities.empty() && inspector->inspected_type == Selection::tEntity)
 				{
-					all_have = false;
-					break;
+					inspector->locked = false;
+					inspector->last_select_frame = 0;
 				}
 			}
-			if (all_have)
+		}, "inspector"_h);
+	}
+
+	auto entt0 = entities[0];
+	auto process_attribute = [&](const Attribute& a, uint comp_hash) {
+		void* obj0 = comp_hash == 0 ? entt0 : (void*)entt0->get_component_h(comp_hash);
+		uint state = 1;
+
+		if (a.type->tag == TagD)
+		{
+			auto var0 = a.type->create();
+			a.type->copy(var0, a.get_value(obj0));
+			auto ti = (TypeInfo_Data*)a.type;
+			switch (ti->data_type)
 			{
-				auto& cc = common_components.emplace_back();
-				cc.type_hash = hash;
-				cc.components.resize(entities.size());
-				for (auto i = 0; i < entities.size(); i++)
-					cc.components[i] = entities[i]->get_component_h(hash);
+			case DataBool:
+				for (auto i = 1; i < entities.size(); i++)
+				{
+					void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component_h(comp_hash);
+					auto var1 = a.get_value(obj1);
+					if (*(bool*)var0 != *(bool*)var1)
+					{
+						state = 0;
+						break;
+					}
+				}
+				break;
+			case DataInt:
+			case DataFloat:
+				for (auto i = 1; i < entities.size(); i++)
+				{
+					void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component_h(comp_hash);
+					auto var1 = a.get_value(obj1);
+					for (auto y = 0; y < ti->vec_size; y++)
+					{
+						if (memcmp((char*)var0 + sizeof(float) * y, (char*)var1 + sizeof(float) * y, sizeof(float)) != 0)
+							((char*)&state)[y] = 0;
+						else
+							((char*)&state)[y] = 1;
+					}
+				}
+				break;
+			default:
+				for (auto i = 1; i < entities.size(); i++)
+				{
+					void* obj1 = comp_hash == 0 ? entities[i] : (void*)entities[i]->get_component_h(comp_hash);
+					if (!a.type->compare(var0, a.get_value(obj1)))
+					{
+						state = 0;
+						break;
+					}
+				}
+			}
+			a.type->destroy(var0);
+		}
+
+		sync_states[&a] = state;
+	};
+
+	if (entities.size() > 1)
+	{
+		for (auto& a : ui_entity->attributes)
+			process_attribute(a, 0);
+	}
+
+	for (auto& comp : entt0->components)
+	{
+		auto hash = comp->type_hash;
+		auto all_have = true;
+		for (auto i = 1; i < entities.size(); i++)
+		{
+			if (!entities[i]->get_component_h(hash))
+			{
+				all_have = false;
+				break;
 			}
 		}
-		if (entities.size() > 1)
+		if (all_have)
 		{
-			for (auto& cc : common_components)
+			auto& cc = common_components.emplace_back();
+			cc.type_hash = hash;
+			cc.components.resize(entities.size());
+			for (auto i = 0; i < entities.size(); i++)
+				cc.components[i] = entities[i]->get_component_h(hash);
+		}
+	}
+	if (entities.size() > 1)
+	{
+		for (auto& cc : common_components)
+		{
+			auto comp0 = entt0->get_component_h(cc.type_hash);
+			auto& ui = *find_udt(cc.type_hash);
+			for (auto& a : ui_component->attributes)
+				process_attribute(a, cc.type_hash);
+			for (auto& a : ui.attributes)
+				process_attribute(a, cc.type_hash);
+		}
+	}
+}
+
+std::pair<uint, uint> InspectedEntities::manipulate()
+{
+	uint ret_changed = 0;
+	uint ret_changed_name = 0;
+	auto get_changed = [&](const std::pair<uint, uint>& res) {
+		ret_changed |= res.first;
+		ret_changed_name = res.second;
+	};
+	auto get_changed2 = [&](uint changed, uint hash) {
+		ret_changed |= changed;
+		if (changed)
+			ret_changed_name = hash;
+	};
+
+	auto entity = entities[0];
+
+	if (prefab_path.empty())
+		editing_objects.emplace(EditingObjects(1, 0, entities.data(), entities.size(), &sync_states));
+	else
+		editing_objects.emplace(EditingObjects(2, 0, &prefab_path, 1, nullptr));
+	ImGui::PushID("flame::Entity"_h);
+	{
+		auto hash = "enable"_h;
+		get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
+	}
+	ImGui::SameLine();
+	{
+		auto hash = "name"_h;
+		get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
+	}
+	ImGui::SameLine();
+	{
+		ImGui::SetNextItemWidth(100.f);
+		auto hash = "tag"_h;
+		get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
+	}
+	if (entities.size() == 1 && entity->prefab_instance)
+	{
+		auto ins = entity->prefab_instance.get();
+		auto& path = ins->filename;
+		auto str = path.string();
+		ImGui::InputText("Prefab", str.data(), ImGuiInputTextFlags_ReadOnly);
+		ImGui::SameLine();
+		if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
+			project_window.ping(Path::get(path));
+		ImGui::SameLine();
+		ImGui::Button(("Modifications " + graphics::FontAtlas::icon_s("angle-down"_h)).c_str());
+		if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft))
+		{
+			for (auto& m : ins->modifications)
+				ImGui::Text(m.c_str());
+			if (ins->modifications.empty())
 			{
-				auto comp0 = entt0->get_component_h(cc.type_hash);
-				auto& ui = *find_udt(cc.type_hash);
-				for (auto& a : ui_component->attributes)
-					process_attribute(a, cc.type_hash);
-				for (auto& a : ui.attributes)
-					process_attribute(a, cc.type_hash);
+				if (ImGui::Button("Seize Modifications and Apply"))
+				{
+					std::string str;
+					auto& root_ins_mods = get_root_prefab_instance(entity)->modifications;
+					std::vector<int> seize_indices;
+					uint off = 0;
+					for (auto i = 0; i < root_ins_mods.size(); i++)
+					{
+						auto sp = SUS::split(root_ins_mods[i], '|');
+						GUID guid;
+						guid.from_string(std::string(sp.front()));
+						if (entity->find_with_file_id(guid))
+						{
+							str += root_ins_mods[i] + "\n";
+							seize_indices.push_back(i - off);
+							off++;
+						}
+					}
+					auto prompt = std::format("This action cannot be redo\n"
+						"This action will first filter modificaions that their targets are in this prefab, \n"
+						"and then seizes them from the prefab root, finally apply them to this prefab\n\n"
+						"{} modifications will be seized and apply:\n{}", (int)seize_indices.size(), str);
+
+					ImGui::OpenYesNoDialog("Are you sure to seize modificaitons and apply?", prompt, [entity, ins, &root_ins_mods, seize_indices](bool yes) {
+						if (yes && !seize_indices.empty())
+						{
+							for (auto i : seize_indices)
+								root_ins_mods.erase(root_ins_mods.begin() + i);
+							entity->save(Path::get(ins->filename), true);
+							ins->modifications.clear();
+						}
+						});
+				}
 			}
+			else
+			{
+				if (ImGui::Button("Apply"))
+				{
+					ImGui::OpenYesNoDialog("Are you sure to apply all modifications?", "This action cannot be redo", [entity, ins](bool yes) {
+						if (yes && !ins->modifications.empty())
+						{
+							entity->save(Path::get(ins->filename), true);
+							ins->modifications.clear();
+						}
+						});
+				}
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Discard"))
+			{
+				ImGui::OpenYesNoDialog("Are you sure to revert all modifications?", "This action cannot be redo", [this, entity, ins](bool yes) {
+					if (yes)
+					{
+						if (!ins->modifications.empty())
+						{
+							add_event([this, ins, entity]() {
+								empty_entity(entity);
+								entity->load(ins->filename);
+								auto es = entities;
+								refresh(es);
+								return false;
+								});
+							ins->modifications.clear();
+						}
+					}
+					});
+			}
+			ImGui::EndPopup();
+		}
+	}
+	ImGui::PopID();
+	editing_objects.pop();
+
+	if (ret_changed_name != 0)
+	{
+		auto& str = ui_entity->find_attribute(ret_changed_name)->name;
+		for (auto e : entities)
+		{
+			if (auto ins = get_root_prefab_instance(e); ins)
+				ins->mark_modification(e->file_id.to_string() + '|' + str);
 		}
 	}
 
-	std::pair<uint, uint> manipulate()
+	bool exit_editing = false;
+	for (auto& cc : common_components)
 	{
-		uint ret_changed = 0;
-		uint ret_changed_name = 0;
-		auto get_changed = [&](const std::pair<uint, uint>& res) {
-			ret_changed |= res.first;
-			ret_changed_name = res.second;
-		};
-		auto get_changed2 = [&](uint changed, uint hash) {
-			ret_changed |= changed;
-			if (changed)
-				ret_changed_name = hash;
-		};
-
-		auto entity = entities[0];
-
 		if (prefab_path.empty())
-			editing_objects.emplace(EditingObjects(1, 0, entities.data(), entities.size(), &sync_states));
+			editing_objects.emplace(EditingObjects(1, th<Component>(), entities.data(), entities.size(), &sync_states));
 		else
-			editing_objects.emplace(EditingObjects(2, 0, &prefab_path, 1, nullptr));
-		ImGui::PushID("flame::Entity"_h);
+			editing_objects.emplace(EditingObjects(2, th<Component>(), &prefab_path, 1, nullptr));
+		ImGui::PushID(cc.type_hash);
+		auto open = ImGui::CollapsingHeader("", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
+		ImGui::SameLine();
 		{
 			auto hash = "enable"_h;
-			get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
+			get_changed2(manipulate_attribute(*ui_component->find_attribute(hash), (voidptr*)cc.components.data(), cc.components.size(), true), hash);
 		}
-		ImGui::SameLine();
-		{
-			auto hash = "name"_h;
-			get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
-		}
-		ImGui::SameLine();
-		{
-			ImGui::SetNextItemWidth(100.f);
-			auto hash = "tag"_h;
-			get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
-		}
-		if (entities.size() == 1 && entity->prefab_instance)
-		{
-			auto ins = entity->prefab_instance.get();
-			auto& path = ins->filename;
-			auto str = path.string();
-			ImGui::InputText("Prefab", str.data(), ImGuiInputTextFlags_ReadOnly);
-			ImGui::SameLine();
-			if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
-				project_window.ping(Path::get(path));
-			ImGui::SameLine();
-			ImGui::Button(("Modifications " + graphics::FontAtlas::icon_s("angle-down"_h)).c_str());
-			if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft))
-			{
-				for (auto& m : ins->modifications)
-					ImGui::Text(m.c_str());
-				if (ins->modifications.empty())
-				{
-					if (ImGui::Button("Seize Modifications and Apply"))
-					{
-						std::string str;
-						auto& root_ins_mods = get_root_prefab_instance(entity)->modifications;
-						std::vector<int> seize_indices;
-						uint off = 0;
-						for (auto i = 0; i < root_ins_mods.size(); i++)
-						{
-							auto sp = SUS::split(root_ins_mods[i], '|');
-							GUID guid;
-							guid.from_string(std::string(sp.front()));
-							if (entity->find_with_file_id(guid))
-							{
-								str += root_ins_mods[i] + "\n";
-								seize_indices.push_back(i - off);
-								off++;
-							}
-						}
-						auto prompt = std::format("This action cannot be redo\n"
-							"This action will first filter modificaions that their targets are in this prefab, \n"
-							"and then seizes them from the prefab root, finally apply them to this prefab\n\n"
-							"{} modifications will be seized and apply:\n{}", (int)seize_indices.size(), str);
+		editing_objects.pop();
 
-						ImGui::OpenYesNoDialog("Are you sure to seize modificaitons and apply?", prompt, [entity, ins, &root_ins_mods, seize_indices](bool yes) {
-							if (yes && !seize_indices.empty())
+		if (prefab_path.empty())
+			editing_objects.emplace(EditingObjects(1, cc.type_hash, entities.data(), entities.size(), &sync_states));
+		else
+			editing_objects.emplace(EditingObjects(2, cc.type_hash, &prefab_path, 1, nullptr));
+		auto& ui = *find_udt(cc.type_hash);
+		ImGui::SameLine();
+		ImGui::TextUnformatted(ui.name.c_str());
+		ImGui::SameLine(ImGui::GetContentRegionAvail().x - 20);
+		if (ImGui::Button("..."))
+			ImGui::OpenPopup("component_menu");
+		if (ImGui::BeginPopup("component_menu"))
+		{
+			if (ImGui::Selectable("Move Up"))
+			{
+				auto ok = true;
+				for (auto e : entities)
+				{
+					if (get_root_prefab_instance(e))
+					{
+						ok = false;
+						break;
+					}
+				}
+				if (ok)
+				{
+					auto changed = false;
+					auto e0 = entities[0];
+					for (auto i = 0; i < e0->components.size(); i++)
+					{
+						if (e0->components[i]->type_hash == cc.type_hash)
+						{
+							if (i > 0)
 							{
-								for (auto i : seize_indices)
-									root_ins_mods.erase(root_ins_mods.begin() + i);
-								entity->save(Path::get(ins->filename), true);
-								ins->modifications.clear();
+								for (auto e : entities)
+									std::swap(e->components[i], e->components[i - 1]);
 							}
-						});
+							changed = true;
+							break;
+						}
+					}
+					if (changed)
+					{
+						ret_changed |= 2;
+						auto es = entities;
+						refresh(es);
+						exit_editing = true;
 					}
 				}
 				else
-				{
-					if (ImGui::Button("Apply"))
-					{
-						ImGui::OpenYesNoDialog("Are you sure to apply all modifications?", "This action cannot be redo", [entity, ins](bool yes) {
-							if (yes && !ins->modifications.empty())
-							{
-								entity->save(Path::get(ins->filename), true);
-								ins->modifications.clear();
-							}
-						});
-					}
-				}
-				ImGui::SameLine();
-				if (ImGui::Button("Discard"))
-				{
-					ImGui::OpenYesNoDialog("Are you sure to revert all modifications?", "This action cannot be redo", [this, entity, ins](bool yes) {
-						if (yes)
-						{
-							if (!ins->modifications.empty())
-							{
-								add_event([this, ins, entity]() {
-									empty_entity(entity);
-									entity->load(ins->filename);
-									auto es = entities;
-									refresh(es);
-									return false;
-								});
-								ins->modifications.clear();
-							}
-						}
-					});
-				}
-				ImGui::EndPopup();
+					open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 			}
-		}
-		ImGui::PopID();
-		editing_objects.pop();
-
-		if (ret_changed_name != 0)
-		{
-			auto& str = ui_entity->find_attribute(ret_changed_name)->name;
-			for (auto e : entities)
+			if (ImGui::Selectable("Move Down"))
 			{
-				if (auto ins = get_root_prefab_instance(e); ins)
-					ins->mark_modification(e->file_id.to_string() + '|' + str);
-			}
-		}
-
-		bool exit_editing = false;
-		for (auto& cc : common_components)
-		{
-			if (prefab_path.empty())
-				editing_objects.emplace(EditingObjects(1, th<Component>(), entities.data(), entities.size(), &sync_states));
-			else
-				editing_objects.emplace(EditingObjects(2, th<Component>(), &prefab_path, 1, nullptr));
-			ImGui::PushID(cc.type_hash);
-			auto open = ImGui::CollapsingHeader("", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
-			ImGui::SameLine();
-			{
-				auto hash = "enable"_h;
-				get_changed2(manipulate_attribute(*ui_component->find_attribute(hash), (voidptr*)cc.components.data(), cc.components.size(), true), hash);
-			}
-			editing_objects.pop();
-
-			if (prefab_path.empty())
-				editing_objects.emplace(EditingObjects(1, cc.type_hash, entities.data(), entities.size(), &sync_states));
-			else
-				editing_objects.emplace(EditingObjects(2, cc.type_hash, &prefab_path, 1, nullptr));
-			auto& ui = *find_udt(cc.type_hash);
-			ImGui::SameLine();
-			ImGui::TextUnformatted(ui.name.c_str());
-			ImGui::SameLine(ImGui::GetContentRegionAvail().x - 20);
-			if (ImGui::Button("..."))
-				ImGui::OpenPopup("component_menu");
-			if (ImGui::BeginPopup("component_menu"))
-			{
-				if (ImGui::Selectable("Move Up"))
+				auto ok = true;
+				for (auto e : entities)
 				{
-					auto ok = true;
-					for (auto e : entities)
+					if (get_root_prefab_instance(e))
 					{
-						if (get_root_prefab_instance(e))
-						{
-							ok = false;
-							break;
-						}
+						ok = false;
+						break;
 					}
-					if (ok)
-					{
-						auto changed = false;
-						auto e0 = entities[0];
-						for (auto i = 0; i < e0->components.size(); i++)
-						{
-							if (e0->components[i]->type_hash == cc.type_hash)
-							{
-								if (i > 0)
-								{
-									for (auto e : entities)
-										std::swap(e->components[i], e->components[i - 1]);
-								}
-								changed = true;
-								break;
-							}
-						}
-						if (changed)
-						{
-							ret_changed |= 2;
-							auto es = entities;
-							refresh(es);
-							exit_editing = true;
-						}
-					}
-					else
-						open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 				}
-				if (ImGui::Selectable("Move Down"))
-				{
-					auto ok = true;
-					for (auto e : entities)
-					{
-						if (get_root_prefab_instance(e))
-						{
-							ok = false;
-							break;
-						}
-					}
-					if (ok)
-					{
-						auto changed = false;
-						auto e0 = entities[0];
-						for (auto i = 0; i < e0->components.size(); i++)
-						{
-							if (e0->components[i]->type_hash == cc.type_hash)
-							{
-								if (i < e0->components.size() - 1)
-								{
-									for (auto e : entities)
-										std::swap(e->components[i], e->components[i + 1]);
-								}
-								changed = true;
-								break;
-							}
-						}
-						if (changed)
-						{
-							ret_changed |= 2;
-							auto es = entities;
-							refresh(es);
-							exit_editing = true;
-						}
-					}
-					else
-						open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
-				}
-				if (ImGui::Selectable("Remove"))
+				if (ok)
 				{
 					auto changed = false;
-					for (auto e : entities)
+					auto e0 = entities[0];
+					for (auto i = 0; i < e0->components.size(); i++)
 					{
-						if (e->remove_component_h(cc.type_hash))
+						if (e0->components[i]->type_hash == cc.type_hash)
 						{
-							if (auto ins = get_root_prefab_instance(e); ins)
+							if (i < e0->components.size() - 1)
 							{
-								auto idx = ins->find_modification(e->file_id.to_string() + '|' + ui.name + "|add");
-								if (idx == -1)
-									ins->mark_modification(e->file_id.to_string() + '|' + ui.name + "|remove");
-								else
-								{
-									auto target_string = e->file_id.to_string() + '|' + ui.name;
-									for (auto it = ins->modifications.begin(); it != ins->modifications.end();)
-									{
-										if (it->starts_with(target_string))
-											it = ins->modifications.erase(it);
-										else
-											it++;
-
-									}
-								}
+								for (auto e : entities)
+									std::swap(e->components[i], e->components[i + 1]);
 							}
 							changed = true;
-						}
-						if (changed)
-						{
-							ret_changed |= 2;
-							auto es = entities;
-							refresh(es);
-							exit_editing = true;
+							break;
 						}
 					}
-				}
-				static uint copied_component = 0;
-				static std::vector<std::pair<uint, std::string>> copied_values;
-				if (ImGui::Selectable("Reset Values"))
-				{
-					auto changed = false;
-					for (auto& a : ui.attributes)
+					if (changed)
 					{
-						auto different = false;
-						for (auto obj : cc.components)
+						ret_changed |= 2;
+						auto es = entities;
+						refresh(es);
+						exit_editing = true;
+					}
+				}
+				else
+					open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+			}
+			if (ImGui::Selectable("Remove"))
+			{
+				auto changed = false;
+				for (auto e : entities)
+				{
+					if (e->remove_component_h(cc.type_hash))
+					{
+						if (auto ins = get_root_prefab_instance(e); ins)
 						{
-							if (a.serialize(obj) != a.default_value)
+							auto idx = ins->find_modification(e->file_id.to_string() + '|' + ui.name + "|add");
+							if (idx == -1)
+								ins->mark_modification(e->file_id.to_string() + '|' + ui.name + "|remove");
+							else
 							{
-								different = true;
-								break;
+								auto target_string = e->file_id.to_string() + '|' + ui.name;
+								for (auto it = ins->modifications.begin(); it != ins->modifications.end();)
+								{
+									if (it->starts_with(target_string))
+										it = ins->modifications.erase(it);
+									else
+										it++;
+
+								}
 							}
 						}
-
-						if (different)
+						changed = true;
+					}
+					if (changed)
+					{
+						ret_changed |= 2;
+						auto es = entities;
+						refresh(es);
+						exit_editing = true;
+					}
+				}
+			}
+			static uint copied_component = 0;
+			static std::vector<std::pair<uint, std::string>> copied_values;
+			if (ImGui::Selectable("Reset Values"))
+			{
+				auto changed = false;
+				for (auto& a : ui.attributes)
+				{
+					auto different = false;
+					for (auto obj : cc.components)
+					{
+						if (a.serialize(obj) != a.default_value)
 						{
-							before_editing_values.resize(cc.components.size());
-							for (auto i = 0; i < cc.components.size(); i++)
-								before_editing_values[i] = a.serialize(cc.components[i]);
+							different = true;
+							break;
+						}
+					}
 
+					if (different)
+					{
+						before_editing_values.resize(cc.components.size());
+						for (auto i = 0; i < cc.components.size(); i++)
+							before_editing_values[i] = a.serialize(cc.components[i]);
+
+						for (auto obj : cc.components)
+						{
+							a.unserialize(obj, a.default_value);
+							changed = true;
+						}
+						add_modify_history(a.name_hash, a.default_value);
+					}
+				}
+				if (changed)
+					ret_changed |= 3;
+			}
+			if (cc.components.size() == 1)
+			{
+				if (ImGui::Selectable("Copy Values"))
+				{
+					copied_component = cc.type_hash;
+					copied_values.clear();
+					auto obj = cc.components[0];
+					for (auto& a : ui.attributes)
+					{
+						if (a.type->tag >= TagP_Beg && a.type->tag <= TagP_End)
+							continue;
+						auto& v = copied_values.emplace_back();
+						v.first = a.name_hash;
+						v.second = a.serialize(obj);
+					}
+				}
+			}
+			if (ImGui::Selectable("Paste Values"))
+			{
+				if (cc.type_hash == copied_component)
+				{
+					auto changed = false;
+					for (auto& v : copied_values)
+					{
+						if (auto a = ui.find_attribute(v.first); a)
+						{
+							auto different = false;
 							for (auto obj : cc.components)
 							{
-								a.unserialize(obj, a.default_value);
-								changed = true;
+								if (a->serialize(obj) != v.second)
+								{
+									different = true;
+									break;
+								}
 							}
-							add_modify_history(a.name_hash, a.default_value);
+
+							if (different)
+							{
+								before_editing_values.resize(cc.components.size());
+								for (auto i = 0; i < cc.components.size(); i++)
+									before_editing_values[i] = a->serialize(cc.components[i]);
+
+								for (auto obj : cc.components)
+								{
+									a->unserialize(obj, v.second);
+									changed = true;
+								}
+								add_modify_history(a->name_hash, v.second);
+							}
 						}
 					}
 					if (changed)
 						ret_changed |= 3;
 				}
-				if (cc.components.size() == 1)
-				{
-					if (ImGui::Selectable("Copy Values"))
-					{
-						copied_component = cc.type_hash;
-						copied_values.clear();
-						auto obj = cc.components[0];
-						for (auto& a : ui.attributes)
-						{
-							if (a.type->tag >= TagP_Beg && a.type->tag <= TagP_End)
-								continue;
-							auto& v = copied_values.emplace_back();
-							v.first = a.name_hash;
-							v.second = a.serialize(obj);
-						}
-					}
-				}
-				if (ImGui::Selectable("Paste Values"))
-				{
-					if (cc.type_hash == copied_component)
-					{
-						auto changed = false;
-						for (auto& v : copied_values)
-						{
-							if (auto a = ui.find_attribute(v.first); a)
-							{
-								auto different = false;
-								for (auto obj : cc.components)
-								{
-									if (a->serialize(obj) != v.second)
-									{
-										different = true;
-										break;
-									}
-								}
-
-								if (different)
-								{
-									before_editing_values.resize(cc.components.size());
-									for (auto i = 0; i < cc.components.size(); i++)
-										before_editing_values[i] = a->serialize(cc.components[i]);
-
-									for (auto obj : cc.components)
-									{
-										a->unserialize(obj, v.second);
-										changed = true;
-									}
-									add_modify_history(a->name_hash, v.second);
-								}
-							}
-						}
-						if (changed)
-							ret_changed |= 3;
-					}
-				}
-				ImGui::EndPopup();
-			}
-
-			if (open && !exit_editing)
-			{
-				static bool open_select_standard_model = false;
-				static bool open_select_hash = false;
-				static std::vector<std::string> hash_candidates;
-				static const Attribute* op_attr;
-				get_changed(manipulate_udt(ui, (voidptr*)cc.components.data(), cc.components.size(), {}, [&ui, &cc](uint name) {
-					ImGui::PushID(name);
-					if (name == "mesh_name"_h)
-					{
-						ImGui::SameLine();
-						if (ImGui::Button("S"))
-						{
-							open_select_standard_model = true;
-							op_attr = ui.find_attribute(name);
-						}
-					}
-					else if (name == "material_name"_h)
-					{
-						ImGui::SameLine();
-						if (ImGui::Button("D"))
-						{
-							auto path = std::filesystem::path(L"default");
-							ui.find_function("set_material_name"_h)->call<void, void*>(cc.components[0], &path);
-						}
-
-						auto& name = *(std::filesystem::path*)ui.find_attribute("material_name"_h)->get_value(cc.components[0]);
-						if (!name.empty() && name != L"default" && !name.native().starts_with(L"0x"))
-						{
-							if (ImGui::TreeNode("##embed"))
-							{
-								// the material is loaded and registered to renderer
-								if (auto material = graphics::Material::get(name); material)
-								{
-									editing_objects.emplace(EditingObjects(0, th<graphics::Material>(), &name, 1));
-									auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1).first;
-									editing_objects.pop();
-									graphics::Material::release(material);
-									if (changed >= 2)
-									{
-										auto path = Path::get(name);
-										material->save(path);
-										auto asset = AssetManagemant::find(path);
-										if (asset)
-											asset->lwt = std::filesystem::last_write_time(path);
-									}
-								}
-								ImGui::TreePop();
-							}
-						}
-					}
-					else
-					{
-						auto& a = *ui.find_attribute(name);
-						if (a.var_idx != -1)
-						{
-							std::string meta;
-							if (ui.variables[a.var_idx].metas.get("hash"_h, &meta))
-							{
-								ImGui::SameLine();
-								if (ImGui::Button("S"))
-								{
-									open_select_hash = true;
-									hash_candidates = SUS::to_string_vector(SUS::split(meta, '|'));
-									op_attr = &a;
-								}
-							}
-						}
-					}
-					ImGui::PopID();
-				}));
-
-				if (open_select_standard_model)
-				{
-					ImGui::OpenPopup("select_standard_model");
-					open_select_standard_model = false;
-				}
-				if (open_select_hash)
-				{
-					ImGui::OpenPopup("select_hash");
-					open_select_hash = false;
-				}
-				if (ImGui::BeginPopup("select_standard_model"))
-				{
-					static const char* names[] = {
-						"standard_plane",
-						"standard_cube",
-						"standard_sphere",
-						"standard_cylinder",
-						"standard_tri_prism"
-					};
-					for (auto n : names)
-					{
-						if (ImGui::Selectable(n))
-						{
-							std::filesystem::path v(n);
-							auto changed = false;
-							for (auto c : cc.components)
-							{
-								if (!op_attr->compare_to_value(c, &v))
-								{
-									op_attr->set_value(c, &v);
-									changed = true;
-								}
-							}
-							if (changed)
-								ret_changed |= 2;
-						}
-					}
-
-					ImGui::EndPopup();
-				}
-				if (ImGui::BeginPopup("select_hash"))
-				{
-					for (auto& c : hash_candidates)
-					{
-						if (ImGui::Selectable(c.c_str()))
-						{
-							uint v = sh(c.c_str());
-							auto changed = false;
-							for (auto c : cc.components)
-							{
-								if (!op_attr->compare_to_value(c, &v))
-								{
-									op_attr->set_value(c, &v);
-									changed = true;
-								}
-							}
-							if (changed)
-								ret_changed |= 2;
-						}
-					}
-					ImGui::EndPopup();
-				}
-				if (ret_changed_name != 0)
-				{
-					auto& str = ui.find_attribute(ret_changed_name)->name;
-					for (auto e : entities)
-					{
-						if (auto ins = get_root_prefab_instance(e); ins)
-							ins->mark_modification(e->file_id.to_string() + '|' + ui.name + '|' + str);
-					}
-
-					if ((ui.name_hash == "flame::cNavAgent"_h || ui.name_hash == "flame::cNavObstacle"_h) &&
-						(ret_changed_name == "radius"_h || ret_changed_name == "height"_h))
-					{
-						for (auto& v : scene_window.views)
-						{
-							auto sv = (SceneView*)v.get();
-							sv->show_navigation_frames = 3;
-						}
-					}
-				}
-
-				if (ui.name_hash == "flame::cNode"_h)
-				{
-					if (cc.components.size() == 1)
-					{
-						auto node = (cNodePtr)cc.components[0];
-						ImGui::InputFloat4("qut", (float*)&node->qut, "%.3f", ImGuiInputTextFlags_ReadOnly);
-						auto g_pos = node->global_pos();
-						auto g_qut = node->global_qut();
-						auto g_scl = node->global_scl();
-						ImGui::InputFloat3("global pos", (float*)&g_pos, "%.3f", ImGuiInputTextFlags_ReadOnly);
-						ImGui::InputFloat4("global qut", (float*)&g_qut, "%.3f", ImGuiInputTextFlags_ReadOnly);
-						ImGui::InputFloat3("global scl", (float*)&g_scl, "%.3f", ImGuiInputTextFlags_ReadOnly);
-					}
-				}
-				else if (ui.name_hash == "flame::cArmature"_h)
-				{
-					if (cc.components.size() == 1)
-					{
-						auto armature = (cArmaturePtr)cc.components[0];
-						if (ImGui::Button("Reset"))
-							armature->reset();
-						if (!armature->animation_names.empty())
-						{
-							static int idx = 0;
-							idx = clamp(idx, 0, (int)armature->animation_names.size());
-							if (ImGui::BeginCombo("animations", armature->animation_names[idx].second.c_str()))
-							{
-								for (auto i = 0; i < armature->animation_names.size(); i++)
-								{
-									auto& name = armature->animation_names[i].second;
-									if (ImGui::Selectable(name.c_str()))
-									{
-										idx = i;
-										armature->play(sh(name.c_str()));
-									}
-								}
-								ImGui::EndCombo();
-							}
-						}
-						if (armature->playing_name != 0)
-						{
-							ImGui::SameLine();
-							if (ImGui::Button("Stop"))
-								armature->stop();
-							ImGui::InputFloat("Time", &armature->playing_time, 0.f, 0.f, "%.3f", ImGuiInputTextFlags_ReadOnly);
-						}
-						ImGui::DragFloat("Speed", &armature->playing_speed, 0.01f);
-					}
-				}
-			}
-
-			ImGui::PopID();
-			editing_objects.pop();
-			if (exit_editing)
-				break;
-		}
-
-		ImGui::Dummy(vec2(0.f, 10.f));
-		const float ButtonWidth = 100.f;
-		ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ButtonWidth) * 0.5f);
-		ImGui::SetNextItemWidth(ButtonWidth);
-		static std::vector<UdtInfo*> comp_udts;
-		if (ImGui::Button("Add Component"))
-		{
-			ImGui::OpenPopup("add_component");
-			comp_udts.clear();
-
-			std::vector<UdtInfo*> temp1;
-			std::vector<UdtInfo*> temp2;
-			for (auto& ui : tidb.udts)
-			{
-				if (ui.second.base_class_name == "flame::Component")
-				{
-					if (ui.second.name.starts_with("flame::"))
-						temp1.push_back(&ui.second);
-					else
-						temp2.push_back(&ui.second);
-				}
-			}
-			std::sort(temp1.begin(), temp1.end(), [](const auto& a, const auto& b) {
-				return a->name < b->name;
-			});
-			std::sort(temp2.begin(), temp2.end(), [](const auto& a, const auto& b) {
-				return a->name < b->name;
-			});
-			comp_udts.insert(comp_udts.end(), temp1.begin(), temp1.end());
-			comp_udts.insert(comp_udts.end(), temp2.begin(), temp2.end());
-		}
-		if (ImGui::BeginPopup("add_component"))
-		{
-			for (auto ui : comp_udts)
-			{
-				if (ImGui::Selectable(ui->name.c_str()))
-				{
-					auto changed = false;
-					for (auto e : entities)
-					{
-						if (e->add_component_h(ui->name_hash))
-						{
-							if (auto ins = get_root_prefab_instance(e); ins)
-							{
-								auto idx = ins->find_modification(e->file_id.to_string() + '|' + ui->name + "|remove");
-								if (idx == -1)
-									ins->mark_modification(e->file_id.to_string() + '|' + ui->name + "|add");
-								else
-									ins->modifications.erase(ins->modifications.begin() + idx);
-							}
-							changed = true;
-						}
-					}
-					if (changed)
-					{
-						auto es = entities;
-						refresh(es);
-						if (!app.e_playing)
-							app.prefab_unsaved = true;
-					}
-				}
 			}
 			ImGui::EndPopup();
 		}
 
-		return { ret_changed, ret_changed_name };
+		if (open && !exit_editing)
+		{
+			static bool open_select_standard_model = false;
+			static bool open_select_hash = false;
+			static std::vector<std::string> hash_candidates;
+			static const Attribute* op_attr;
+			get_changed(manipulate_udt(ui, (voidptr*)cc.components.data(), cc.components.size(), {}, [&ui, &cc](uint name) {
+				ImGui::PushID(name);
+				if (name == "mesh_name"_h)
+				{
+					ImGui::SameLine();
+					if (ImGui::Button("S"))
+					{
+						open_select_standard_model = true;
+						op_attr = ui.find_attribute(name);
+					}
+				}
+				else if (name == "material_name"_h)
+				{
+					ImGui::SameLine();
+					if (ImGui::Button("D"))
+					{
+						auto path = std::filesystem::path(L"default");
+						ui.find_function("set_material_name"_h)->call<void, void*>(cc.components[0], &path);
+					}
+
+					auto& name = *(std::filesystem::path*)ui.find_attribute("material_name"_h)->get_value(cc.components[0]);
+					if (!name.empty() && name != L"default" && !name.native().starts_with(L"0x"))
+					{
+						if (ImGui::TreeNode("##embed"))
+						{
+							// the material is loaded and registered to renderer
+							if (auto material = graphics::Material::get(name); material)
+							{
+								editing_objects.emplace(EditingObjects(0, th<graphics::Material>(), &name, 1));
+								auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1).first;
+								editing_objects.pop();
+								graphics::Material::release(material);
+								if (changed >= 2)
+								{
+									auto path = Path::get(name);
+									material->save(path);
+									auto asset = AssetManagemant::find(path);
+									if (asset)
+										asset->lwt = std::filesystem::last_write_time(path);
+								}
+							}
+							ImGui::TreePop();
+						}
+					}
+				}
+				else
+				{
+					auto& a = *ui.find_attribute(name);
+					if (a.var_idx != -1)
+					{
+						std::string meta;
+						if (ui.variables[a.var_idx].metas.get("hash"_h, &meta))
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("S"))
+							{
+								open_select_hash = true;
+								hash_candidates = SUS::to_string_vector(SUS::split(meta, '|'));
+								op_attr = &a;
+							}
+						}
+					}
+				}
+				ImGui::PopID();
+				}));
+
+			if (open_select_standard_model)
+			{
+				ImGui::OpenPopup("select_standard_model");
+				open_select_standard_model = false;
+			}
+			if (open_select_hash)
+			{
+				ImGui::OpenPopup("select_hash");
+				open_select_hash = false;
+			}
+			if (ImGui::BeginPopup("select_standard_model"))
+			{
+				static const char* names[] = {
+					"standard_plane",
+					"standard_cube",
+					"standard_sphere",
+					"standard_cylinder",
+					"standard_tri_prism"
+				};
+				for (auto n : names)
+				{
+					if (ImGui::Selectable(n))
+					{
+						std::filesystem::path v(n);
+						auto changed = false;
+						for (auto c : cc.components)
+						{
+							if (!op_attr->compare_to_value(c, &v))
+							{
+								op_attr->set_value(c, &v);
+								changed = true;
+							}
+						}
+						if (changed)
+							ret_changed |= 2;
+					}
+				}
+
+				ImGui::EndPopup();
+			}
+			if (ImGui::BeginPopup("select_hash"))
+			{
+				for (auto& c : hash_candidates)
+				{
+					if (ImGui::Selectable(c.c_str()))
+					{
+						uint v = sh(c.c_str());
+						auto changed = false;
+						for (auto c : cc.components)
+						{
+							if (!op_attr->compare_to_value(c, &v))
+							{
+								op_attr->set_value(c, &v);
+								changed = true;
+							}
+						}
+						if (changed)
+							ret_changed |= 2;
+					}
+				}
+				ImGui::EndPopup();
+			}
+			if (ret_changed_name != 0)
+			{
+				auto& str = ui.find_attribute(ret_changed_name)->name;
+				for (auto e : entities)
+				{
+					if (auto ins = get_root_prefab_instance(e); ins)
+						ins->mark_modification(e->file_id.to_string() + '|' + ui.name + '|' + str);
+				}
+
+				if ((ui.name_hash == "flame::cNavAgent"_h || ui.name_hash == "flame::cNavObstacle"_h) &&
+					(ret_changed_name == "radius"_h || ret_changed_name == "height"_h))
+				{
+					for (auto& v : scene_window.views)
+					{
+						auto sv = (SceneView*)v.get();
+						sv->show_navigation_frames = 3;
+					}
+				}
+			}
+
+			if (ui.name_hash == "flame::cNode"_h)
+			{
+				if (cc.components.size() == 1)
+				{
+					auto node = (cNodePtr)cc.components[0];
+					ImGui::InputFloat4("qut", (float*)&node->qut, "%.3f", ImGuiInputTextFlags_ReadOnly);
+					auto g_pos = node->global_pos();
+					auto g_qut = node->global_qut();
+					auto g_scl = node->global_scl();
+					ImGui::InputFloat3("global pos", (float*)&g_pos, "%.3f", ImGuiInputTextFlags_ReadOnly);
+					ImGui::InputFloat4("global qut", (float*)&g_qut, "%.3f", ImGuiInputTextFlags_ReadOnly);
+					ImGui::InputFloat3("global scl", (float*)&g_scl, "%.3f", ImGuiInputTextFlags_ReadOnly);
+				}
+			}
+			else if (ui.name_hash == "flame::cArmature"_h)
+			{
+				if (cc.components.size() == 1)
+				{
+					auto armature = (cArmaturePtr)cc.components[0];
+					if (ImGui::Button("Reset"))
+						armature->reset();
+					if (!armature->animation_names.empty())
+					{
+						static int idx = 0;
+						idx = clamp(idx, 0, (int)armature->animation_names.size());
+						if (ImGui::BeginCombo("animations", armature->animation_names[idx].second.c_str()))
+						{
+							for (auto i = 0; i < armature->animation_names.size(); i++)
+							{
+								auto& name = armature->animation_names[i].second;
+								if (ImGui::Selectable(name.c_str()))
+								{
+									idx = i;
+									armature->play(sh(name.c_str()));
+								}
+							}
+							ImGui::EndCombo();
+						}
+					}
+					if (armature->playing_name != 0)
+					{
+						ImGui::SameLine();
+						if (ImGui::Button("Stop"))
+							armature->stop();
+						ImGui::InputFloat("Time", &armature->playing_time, 0.f, 0.f, "%.3f", ImGuiInputTextFlags_ReadOnly);
+					}
+					ImGui::DragFloat("Speed", &armature->playing_speed, 0.01f);
+				}
+			}
+		}
+
+		ImGui::PopID();
+		editing_objects.pop();
+		if (exit_editing)
+			break;
 	}
-};
-static EditingEntities editing_entities;
+
+	ImGui::Dummy(vec2(0.f, 10.f));
+	const float ButtonWidth = 100.f;
+	ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ButtonWidth) * 0.5f);
+	ImGui::SetNextItemWidth(ButtonWidth);
+	static std::vector<UdtInfo*> comp_udts;
+	if (ImGui::Button("Add Component"))
+	{
+		ImGui::OpenPopup("add_component");
+		comp_udts.clear();
+
+		std::vector<UdtInfo*> temp1;
+		std::vector<UdtInfo*> temp2;
+		for (auto& ui : tidb.udts)
+		{
+			if (ui.second.base_class_name == "flame::Component")
+			{
+				if (ui.second.name.starts_with("flame::"))
+					temp1.push_back(&ui.second);
+				else
+					temp2.push_back(&ui.second);
+			}
+		}
+		std::sort(temp1.begin(), temp1.end(), [](const auto& a, const auto& b) {
+			return a->name < b->name;
+			});
+		std::sort(temp2.begin(), temp2.end(), [](const auto& a, const auto& b) {
+			return a->name < b->name;
+			});
+		comp_udts.insert(comp_udts.end(), temp1.begin(), temp1.end());
+		comp_udts.insert(comp_udts.end(), temp2.begin(), temp2.end());
+	}
+	if (ImGui::BeginPopup("add_component"))
+	{
+		for (auto ui : comp_udts)
+		{
+			if (ImGui::Selectable(ui->name.c_str()))
+			{
+				auto changed = false;
+				for (auto e : entities)
+				{
+					if (e->add_component_h(ui->name_hash))
+					{
+						if (auto ins = get_root_prefab_instance(e); ins)
+						{
+							auto idx = ins->find_modification(e->file_id.to_string() + '|' + ui->name + "|remove");
+							if (idx == -1)
+								ins->mark_modification(e->file_id.to_string() + '|' + ui->name + "|add");
+							else
+								ins->modifications.erase(ins->modifications.begin() + idx);
+						}
+						changed = true;
+					}
+				}
+				if (changed)
+				{
+					auto es = entities;
+					refresh(es);
+					if (!app.e_playing)
+						app.prefab_unsaved = true;
+				}
+			}
+		}
+		ImGui::EndPopup();
+	}
+
+	return { ret_changed, ret_changed_name };
+}
 
 InspectorView::InspectorView() :
-	View(&inspector_window, "Inspector##" + str(rand()))
+	InspectorView("Inspector##" + str(rand()))
 {
 }
 
 InspectorView::InspectorView(const std::string& name) :
 	View(&inspector_window, name)
 {
+	inspected_entities.inspector = this;
 }
 
 void InspectorView::on_draw()
 {
-	static void* sel_ref_obj = nullptr;
-	static void(*sel_ref_deletor)(void*) = nullptr;
-	static auto sel_info = new char[1024];
-	auto last_selection_changed = selection_changed;
-	selection_changed = false;
-
-	if (last_selection_changed)
+	auto selection_changed = last_select_frame < selection_changed_frame && !locked;
+	if (selection_changed)
 	{
-		editing_entities.entities = selection.get_entities();
-		dirty = true;
+		last_select_frame = selection_changed_frame;
 
-		if (sel_ref_deletor && sel_ref_obj)
-			sel_ref_deletor(sel_ref_obj);
-		sel_ref_deletor = nullptr;
-		sel_ref_obj = nullptr;
+		inspected_type = selection.type;
+
+		inspected_paths = selection.get_paths();
+		if (inspected_obj_deletor && inspected_obj)
+			inspected_obj_deletor(inspected_obj, inspected_obj_info);
+		inspected_obj_deletor = nullptr;
+		inspected_obj = nullptr;
+
+		inspected_entities.entities = selection.get_entities();
+
+		dirty = true;
 	}
 
 	if (dirty)
 	{
 		staging_vectors.clear();
-		auto es = editing_entities.entities;
-		editing_entities.refresh(es);
+		auto es = inspected_entities.entities;
+		inspected_entities.refresh(es);
 		dirty = false;
 	}
 
 	bool opened = true;
-	ImGui::Begin(name.c_str(), &opened);
+	ImGui::Begin(name.c_str(), &opened); 
 
-	if (selection.type != Selection::tNothing)
+	title_context_menu();
+
+	if (inspected_type != Selection::tNothing)
 	{
-		if (ImGui::ToolButton(graphics::FontAtlas::icon_s(selection.lock ? "lock"_h : "unlock"_h).c_str()))
-			app.toggle_selection_lock();
+		if (ImGui::ToolButton(graphics::FontAtlas::icon_s(locked ? "lock"_h : "unlock"_h).c_str()))
+		{
+			locked = !locked;
+			if (!locked)
+				last_select_frame = 0;
+		}
 		ImGui::SameLine();
 	}
 
-	switch (selection.type)
+	switch (inspected_type)
 	{
 	case Selection::tEntity:
-		if (editing_entities.entities.size() == 1)
+		if (inspected_entities.entities.size() == 1)
 		{
 			static bool id_switch = true;
 			if (id_switch)
-				ImGui::Text("Instance ID: %s", editing_entities.entities.front()->instance_id.to_string().c_str());
+				ImGui::Text("Instance ID: %s", inspected_entities.entities.front()->instance_id.to_string().c_str());
 			else
-				ImGui::Text("File ID: %s", editing_entities.entities.front()->file_id.to_string().c_str());
+				ImGui::Text("File ID: %s", inspected_entities.entities.front()->file_id.to_string().c_str());
 			if (ImGui::IsItemClicked())
 				id_switch = !id_switch;
 		}
 		else
-			ImGui::Text("%d entities", (int)editing_entities.entities.size());
-		if (auto changed = editing_entities.manipulate().first; changed >= 2)
+			ImGui::Text("%d entities", (int)inspected_entities.entities.size());
+		if (auto changed = inspected_entities.manipulate().first; changed >= 2)
 		{
 			if (!app.e_playing)
 				app.prefab_unsaved = true;
@@ -2007,9 +2022,9 @@ void InspectorView::on_draw()
 		break;
 	case Selection::tPath:
 	{
-		if (selection.objects.size() == 1)
+		if (inspected_paths.size() == 1)
 		{
-			auto path = selection.as_path();
+			auto path = inspected_paths.front();
 			ImGui::TextUnformatted(Path::reverse(path).string().c_str());
 			ImGui::SameLine();
 			if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
@@ -2035,15 +2050,15 @@ void InspectorView::on_draw()
 					uint bpp;
 					bool srgb;
 				};
-				auto& info = *(ImageInfo*)sel_info;
+				auto& info = *(ImageInfo*)inspected_obj_info;
 
-				if (last_selection_changed)
+				if (selection_changed)
 				{
 					auto image = graphics::Image::get(path);
 					if (image)
 					{
-						sel_ref_obj = image;
-						sel_ref_deletor = [](void* obj) {
+						inspected_obj = image;
+						inspected_obj_deletor = [](void* obj, void* info) {
 							graphics::Image::release((graphics::ImagePtr)obj);
 						};
 
@@ -2064,9 +2079,9 @@ void InspectorView::on_draw()
 					}
 				}
 
-				if (sel_ref_obj)
+				if (inspected_obj)
 				{
-					auto image = (graphics::ImagePtr)sel_ref_obj;
+					auto image = (graphics::ImagePtr)inspected_obj;
 					ImGui::Text("Channels: %d", info.chs);
 					ImGui::Text("Bits Per Pixel: %d", info.bpp);
 					ImGui::Text("SRGB: %s", info.srgb ? "yes" : "no");
@@ -2082,28 +2097,28 @@ void InspectorView::on_draw()
 					if (view_type != 0)
 						ImGui::PushImageViewType((ImGui::ImageViewType)view_type);
 					if (image->extent.z == 1)
-						ImGui::Image(sel_ref_obj, (vec2)image->extent);
+						ImGui::Image(inspected_obj, (vec2)image->extent);
 					if (view_type != 0)
 						ImGui::PopImageViewType();
 				}
 			}
 			else if (ext == L".fmat")
 			{
-				if (last_selection_changed)
+				if (selection_changed)
 				{
 					auto material = graphics::Material::get(path);
 					if (material)
 					{
-						sel_ref_obj = material;
-						sel_ref_deletor = [](void* obj) {
+						inspected_obj = material;
+						inspected_obj_deletor = [](void* obj, void* info) {
 							graphics::Material::release((graphics::MaterialPtr)obj);
 						};
 					}
 				}
 
-				if (sel_ref_obj)
+				if (inspected_obj)
 				{
-					auto material = (graphics::MaterialPtr)sel_ref_obj;
+					auto material = (graphics::MaterialPtr)inspected_obj;
 					editing_objects.emplace(EditingObjects(0, th<graphics::Material>(), &path, 1));
 					auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1).first;
 					editing_objects.pop();
@@ -2118,21 +2133,21 @@ void InspectorView::on_draw()
 			}
 			else if (ext == L".fmod")
 			{
-				if (last_selection_changed)
+				if (selection_changed)
 				{
 					auto model = graphics::Model::get(path);
 					if (model)
 					{
-						sel_ref_obj = model;
-						sel_ref_deletor = [](void* obj) {
+						inspected_obj = model;
+						inspected_obj_deletor = [](void* obj, void* info) {
 							graphics::Model::release((graphics::ModelPtr)obj);
 						};
 					}
 				}
 
-				if (sel_ref_obj)
+				if (inspected_obj)
 				{
-					auto model = (graphics::ModelPtr)sel_ref_obj;
+					auto model = (graphics::ModelPtr)inspected_obj;
 					auto i = 0;
 					for (auto& mesh : model->meshes)
 					{
@@ -2157,21 +2172,21 @@ void InspectorView::on_draw()
 			}
 			else if (ext == L".fani")
 			{
-				if (last_selection_changed)
+				if (selection_changed)
 				{
 					auto animation = graphics::Animation::get(path);
 					if (animation)
 					{
-						sel_ref_obj = animation;
-						sel_ref_deletor = [](void* obj) {
+						inspected_obj = animation;
+						inspected_obj_deletor = [](void* obj, void* info) {
 							graphics::Animation::release((graphics::AnimationPtr)obj);
 						};
 					}
 				}
 
-				if (sel_ref_obj)
+				if (inspected_obj)
 				{
-					auto animation = (graphics::AnimationPtr)sel_ref_obj;
+					auto animation = (graphics::AnimationPtr)inspected_obj;
 					ImGui::Text("Duration: %f", animation->duration);
 					if (ImGui::TreeNode(std::format("Channels ({})", (int)animation->channels.size()).c_str()))
 					{
@@ -2202,22 +2217,22 @@ void InspectorView::on_draw()
 			}
 			else if (ext == L".prefab")
 			{
-				if (last_selection_changed)
+				if (selection_changed)
 				{
-					sel_ref_obj = Entity::create();
-					sel_ref_deletor = [](void* obj) {
+					inspected_obj = Entity::create();
+					inspected_obj_deletor = [](void* obj, void* info) {
 						delete (EntityPtr)obj;
 					};
 
-					((EntityPtr)sel_ref_obj)->load(path, true);
+					((EntityPtr)inspected_obj)->load(path, true);
 				}
 
-				if (sel_ref_obj)
+				if (inspected_obj)
 				{
-					auto entity = (EntityPtr)sel_ref_obj;
-					editing_entities.refresh({ entity });
-					editing_entities.prefab_path = path;
-					if (editing_entities.manipulate().first >= 2)
+					auto entity = (EntityPtr)inspected_obj;
+					inspected_entities.refresh({ entity });
+					inspected_entities.prefab_path = path;
+					if (inspected_entities.manipulate().first >= 2)
 					{
 						entity->save(path, true);
 						app.last_status = std::format("prefab saved: {}", path.string());
@@ -2230,26 +2245,26 @@ void InspectorView::on_draw()
 				{
 					UdtInfo* ui;
 				};
-				auto& info = *(PresetInfo*)sel_info;
+				auto& info = *(PresetInfo*)inspected_obj_info;
 
-				if (last_selection_changed)
+				if (selection_changed)
 				{
-					sel_ref_obj = load_preset_file(path, nullptr, &info.ui);
-					sel_ref_deletor = [](void* obj) {
-						auto& info = *(PresetInfo*)sel_info;
+					inspected_obj = load_preset_file(path, nullptr, &info.ui);
+					inspected_obj_deletor = [](void* obj, void* _info) {
+						auto& info = *(PresetInfo*)_info;
 						info.ui->destroy_object(obj);
 					};
 				}
 
-				if (sel_ref_obj)
+				if (inspected_obj)
 				{
 					editing_objects.emplace(EditingObjects(0, info.ui->name_hash, &path, 1));
-					auto changed = manipulate_udt(*info.ui, (voidptr*)&sel_ref_obj, 1).first;
+					auto changed = manipulate_udt(*info.ui, (voidptr*)&inspected_obj, 1).first;
 					editing_objects.pop();
 
 					if (changed)
 					{
-						save_preset_file(path, sel_ref_obj, info.ui);
+						save_preset_file(path, inspected_obj, info.ui);
 						auto asset = AssetManagemant::find(path);
 						if (asset)
 							asset->lwt = std::filesystem::last_write_time(path);
@@ -2261,10 +2276,10 @@ void InspectorView::on_draw()
 				static UdtInfo* ser_ui = TypeInfo::get<graphics::PipelineInfo>()->retrive_ui()->transform_to_serializable();
 				static std::vector<std::pair<std::string, std::string>> default_defines;
 
-				if (last_selection_changed)
+				if (selection_changed)
 				{
-					sel_ref_obj = ser_ui->create_object();
-					sel_ref_deletor = [](void* obj) {
+					inspected_obj = ser_ui->create_object();
+					inspected_obj_deletor = [](void* obj, void* info) {
 						ser_ui->destroy_object(obj);
 						default_defines.clear();
 					};
@@ -2274,14 +2289,14 @@ void InspectorView::on_draw()
 					res.read_block("");
 					UnserializeTextSpec spec;
 					spec.out_default_defines = &default_defines;
-					unserialize_text(*ser_ui, res, 0, sel_ref_obj, spec);
+					unserialize_text(*ser_ui, res, 0, inspected_obj, spec);
 					file.close();
 				}
 
-				if (sel_ref_obj)
+				if (inspected_obj)
 				{
 					uint changed = manipulate_variable(TypeInfo::get<decltype(default_defines)>(), "default defines", 0, 0, nullptr, nullptr, "", (voidptr*)&default_defines, 1, nullptr);
-					changed |= manipulate_udt(*ser_ui, (voidptr*)&sel_ref_obj, 1).first;
+					changed |= manipulate_udt(*ser_ui, (voidptr*)&inspected_obj, 1).first;
 					if (changed >= 2)
 					{
 						std::ofstream file(path);
@@ -2289,7 +2304,7 @@ void InspectorView::on_draw()
 							file << '%' << d.first << '=' << d.second << std::endl;
 						SerializeTextSpec spec;
 						spec.force_print_bar = true;
-						serialize_text(*ser_ui, sel_ref_obj, file, "", spec);
+						serialize_text(*ser_ui, inspected_obj, file, "", spec);
 						file.close();
 					}
 					if (ImGui::Button("Test Compile"))
@@ -2340,7 +2355,7 @@ target_include_directories({0} PUBLIC "${{GLM_INCLUDE_DIR}}")
 							cmake_lists << std::format(cmake_content, path.filename().stem().string());
 							cmake_lists.close();
 
-							auto shaders = ser_ui->var_addr<std::vector<std::string>>(sel_ref_obj, "shaders"_h);
+							auto shaders = ser_ui->var_addr<std::vector<std::string>>(inspected_obj, "shaders"_h);
 
 						}
 					}
@@ -2367,7 +2382,7 @@ void InspectorWindow::init()
 {
 	selection.callbacks.add([](uint caller) {
 		if (caller != "inspector"_h)
-			selection_changed = true;
+			selection_changed_frame = frames;
 	}, "inspector"_h);
 }
 
