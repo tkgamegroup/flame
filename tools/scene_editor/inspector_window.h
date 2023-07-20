@@ -36,6 +36,7 @@ struct InspectorView : View
 
 	InspectorView();
 	InspectorView(const std::string& name);
+	~InspectorView();
 	void on_draw() override;
 };
 

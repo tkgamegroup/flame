@@ -1953,6 +1953,11 @@ InspectorView::InspectorView(const std::string& name) :
 	inspected_entities.inspector = this;
 }
 
+InspectorView::~InspectorView()
+{
+	inspected_entities.refresh({});
+}
+
 void InspectorView::on_draw()
 {
 	auto selection_changed = last_select_frame < selection_changed_frame && !locked;
