@@ -1898,10 +1898,10 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 		}
 		std::sort(temp1.begin(), temp1.end(), [](const auto& a, const auto& b) {
 			return a->name < b->name;
-			});
+		});
 		std::sort(temp2.begin(), temp2.end(), [](const auto& a, const auto& b) {
 			return a->name < b->name;
-			});
+		});
 		comp_udts.insert(comp_udts.end(), temp1.begin(), temp1.end());
 		comp_udts.insert(comp_udts.end(), temp2.begin(), temp2.end());
 	}
@@ -1931,8 +1931,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 				{
 					auto es = entities;
 					refresh(es);
-					if (!app.e_playing)
-						app.prefab_unsaved = true;
+					ret_changed |= 2;
 				}
 			}
 		}
@@ -1960,8 +1959,8 @@ InspectorView::~InspectorView()
 
 void InspectorView::on_draw()
 {
-	auto selection_changed = last_select_frame < selection_changed_frame && !locked;
-	if (selection_changed)
+	auto inspected_changed = last_select_frame < selection_changed_frame && !locked;
+	if (inspected_changed)
 	{
 		last_select_frame = selection_changed_frame;
 
@@ -2057,7 +2056,7 @@ void InspectorView::on_draw()
 				};
 				auto& info = *(ImageInfo*)inspected_obj_info;
 
-				if (selection_changed)
+				if (inspected_changed)
 				{
 					auto image = graphics::Image::get(path);
 					if (image)
@@ -2109,7 +2108,7 @@ void InspectorView::on_draw()
 			}
 			else if (ext == L".fmat")
 			{
-				if (selection_changed)
+				if (inspected_changed)
 				{
 					auto material = graphics::Material::get(path);
 					if (material)
@@ -2138,7 +2137,7 @@ void InspectorView::on_draw()
 			}
 			else if (ext == L".fmod")
 			{
-				if (selection_changed)
+				if (inspected_changed)
 				{
 					auto model = graphics::Model::get(path);
 					if (model)
@@ -2177,7 +2176,7 @@ void InspectorView::on_draw()
 			}
 			else if (ext == L".fani")
 			{
-				if (selection_changed)
+				if (inspected_changed)
 				{
 					auto animation = graphics::Animation::get(path);
 					if (animation)
@@ -2222,7 +2221,7 @@ void InspectorView::on_draw()
 			}
 			else if (ext == L".prefab")
 			{
-				if (selection_changed)
+				if (inspected_changed)
 				{
 					inspected_obj = Entity::create();
 					inspected_obj_deletor = [](void* obj, void* info) {
@@ -2252,7 +2251,7 @@ void InspectorView::on_draw()
 				};
 				auto& info = *(PresetInfo*)inspected_obj_info;
 
-				if (selection_changed)
+				if (inspected_changed)
 				{
 					inspected_obj = load_preset_file(path, nullptr, &info.ui);
 					inspected_obj_deletor = [](void* obj, void* _info) {
@@ -2281,7 +2280,7 @@ void InspectorView::on_draw()
 				static UdtInfo* ser_ui = TypeInfo::get<graphics::PipelineInfo>()->retrive_ui()->transform_to_serializable();
 				static std::vector<std::pair<std::string, std::string>> default_defines;
 
-				if (selection_changed)
+				if (inspected_changed)
 				{
 					inspected_obj = ser_ui->create_object();
 					inspected_obj_deletor = [](void* obj, void* info) {

@@ -592,10 +592,7 @@ namespace flame
 				wprintf(L"prefab is wrong format: %s\n", _filename.c_str());
 				return false;
 			}
-		}
-		else
-		{
-			doc_root = doc.append_child("prefab");
+
 			std::vector<pugi::xml_attribute> old_attributes;
 			for (auto a : doc_root.attributes())
 				old_attributes.push_back(a);
@@ -604,6 +601,8 @@ namespace flame
 			if (auto c = doc_root.child("components"); c)
 				doc_root.remove_child(c);
 		}
+		else
+			doc_root = doc.append_child("prefab");
 
 		auto base_path = Path::reverse(filename).parent_path();
 		auto path_delegate = [&](void* src)->std::string {
@@ -672,6 +671,12 @@ namespace flame
 
 		doc_root.append_attribute("file_id").set_value(file_id.to_string().c_str());
 		serialize_xml(this, doc_root, spec);
+
+		if (only_root)
+		{
+			if (auto c = doc_root.child("children"); c)
+				doc_root.append_move(c);
+		}
 
 		doc.save_file(filename.c_str());
 
