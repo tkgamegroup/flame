@@ -1163,6 +1163,12 @@ std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num,
 static auto ui_entity = TypeInfo::get<Entity>()->retrive_ui();
 static auto ui_component = TypeInfo::get<Component>()->retrive_ui();
 
+InspectedEntities::~InspectedEntities()
+{
+	for (auto e : entities)
+		e->message_listeners.remove("inspector"_h);
+}
+
 void InspectedEntities::refresh(const std::vector<EntityPtr>& _entities)
 {
 	for (auto e : entities)

@@ -18,6 +18,7 @@ struct InspectedEntities
 	std::vector<CommonComponents> common_components;
 	std::filesystem::path prefab_path;
 
+	~InspectedEntities();
 	void refresh(const std::vector<EntityPtr>& _entities);
 	std::pair<uint, uint> manipulate();
 };
