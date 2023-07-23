@@ -9,8 +9,29 @@ namespace flame
 	namespace graphics
 	{
 		MaterialPtr default_material = new MaterialPrivate;
+		MaterialPtr default_red_material = new MaterialPrivate;
+		MaterialPtr default_green_material = new MaterialPrivate;
+		MaterialPtr default_blue_material = new MaterialPrivate;
+		MaterialPtr default_yellow_material = new MaterialPrivate;
+		MaterialPtr default_purple_material = new MaterialPrivate;
+		MaterialPtr default_cyan_material = new MaterialPrivate;
+
 		std::vector<MaterialPtr> materials;
 		std::vector<std::unique_ptr<MaterialT>> loaded_materials;
+
+		struct DefaultMaterialInitializer
+		{
+			DefaultMaterialInitializer()
+			{
+				default_red_material->color = vec4(1.f, 0.f, 0.f, 1.f);
+				default_green_material->color = vec4(0.f, 1.f, 0.f, 1.f);
+				default_blue_material->color = vec4(0.f, 0.f, 1.f, 1.f);
+				default_yellow_material->color = vec4(1.f, 1.f, 0.f, 1.f);
+				default_purple_material->color = vec4(1.f, 0.f, 1.f, 1.f);
+				default_cyan_material->color = vec4(0.f, 1.f, 1.f, 1.f);
+			}
+		};
+		static DefaultMaterialInitializer default_material_initializer;
 
 		MaterialPrivate::MaterialPrivate()
 		{
@@ -241,6 +262,19 @@ namespace flame
 			{
 				if (_filename == L"default")
 					return default_material;
+				if (_filename == L"default_red")
+					return default_red_material;
+				if (_filename == L"default_green")
+					return default_green_material;
+				if (_filename == L"default_blue")
+					return default_blue_material;
+				if (_filename == L"default_yellow")
+					return default_yellow_material;
+				if (_filename == L"default_purple")
+					return default_purple_material;
+				if (_filename == L"default_cyan")
+					return default_cyan_material;
+
 
 				auto filename = Path::get(_filename);
 

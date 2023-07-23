@@ -37,6 +37,7 @@ namespace flame
 		};
 
 		extern MaterialPtr default_material;
+		extern MaterialPtr default_tint_material;
 		extern std::vector<MaterialPtr> materials;
 		extern std::vector<std::unique_ptr<MaterialT>> loaded_materials;
 	}
