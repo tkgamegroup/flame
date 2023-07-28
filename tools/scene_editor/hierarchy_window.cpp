@@ -231,10 +231,10 @@ void HierarchyView::on_draw()
 				ImGui::SetNextItemOpen(true);
 		}
 		ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)icon_color);
+		auto name_offset = ImGui::CalcTextSize(icon_string.c_str()).x;
 		icon_string += "###";
 		icon_string += str((uint64)e);
 		auto indent = ImGui::GetCurrentWindow()->DC.Indent.x;
-		const auto name_offset = 22.f;
 		auto opened = ImGui::TreeNodeEx(icon_string.c_str(), flags);
 		opened = opened && !(flags & ImGuiTreeNodeFlags_Leaf);
 		if (rename_entity != e)

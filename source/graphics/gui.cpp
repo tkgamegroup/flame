@@ -339,6 +339,11 @@ namespace flame
 			return nullptr;
 		}
 
+		ImagePtr gui_font_image()
+		{
+			return imgui_img_font.get();
+		}
+
 		static bool clear_fb = false;
 		static vec4 clear_col = vec4(0.f);
 
@@ -601,15 +606,16 @@ namespace flame
 			IMGUI_CHECKVERSION();
 
 			ImGui::CreateContext();
-			ImGuiIO& io = ImGui::GetIO();
-			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-			ImGui::StyleColorsDark();
+			ImGui::StyleColorsLight();
 
 			ImGuiStyle& style = ImGui::GetStyle();
 			style.WindowRounding = 0.0f;
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+
+			ImGuiIO& io = ImGui::GetIO();
+			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
 			assert(!io.BackendPlatformUserData);
 
@@ -641,9 +647,7 @@ namespace flame
 			io.KeyMap[ImGuiKey_Z] = Keyboard_Z;
 
 			{
-				std::filesystem::path font_path = L"c:\\Windows\\Fonts\\msyh.ttc";
-				if (std::filesystem::exists(font_path))
-					io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 14.f, nullptr, io.Fonts->GetGlyphRangesDefault());
+				io.Fonts->AddFontDefault();
 #ifdef USE_FONT_AWESOME
 				const wchar_t* font_awesome_fonts[] = {
 					L"otfs/Font Awesome 6 Brands-Regular-400.otf",
@@ -653,7 +657,7 @@ namespace flame
 				auto icons_range = FontAtlas::icons_range();
 				for (auto i = 0; i < countof(font_awesome_fonts); i++)
 				{
-					font_path = std::filesystem::path(FONT_AWESOME_DIR) / font_awesome_fonts[i];
+					auto font_path = std::filesystem::path(FONT_AWESOME_DIR) / font_awesome_fonts[i];
 					if (std::filesystem::exists(font_path))
 					{
 						ImWchar ranges[] =
@@ -663,7 +667,7 @@ namespace flame
 						};
 						ImFontConfig config;
 						config.MergeMode = true;
-						io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 14.f, &config, &ranges[0]);
+						io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 13.f, &config, &ranges[0]);
 					}
 				}
 #endif

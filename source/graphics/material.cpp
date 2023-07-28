@@ -8,6 +8,9 @@ namespace flame
 {
 	namespace graphics
 	{
+		std::vector<MaterialPtr> materials;
+		std::vector<std::unique_ptr<MaterialT>> loaded_materials;
+
 		MaterialPtr default_material = new MaterialPrivate;
 		MaterialPtr default_red_material = new MaterialPrivate;
 		MaterialPtr default_green_material = new MaterialPrivate;
@@ -15,9 +18,6 @@ namespace flame
 		MaterialPtr default_yellow_material = new MaterialPrivate;
 		MaterialPtr default_purple_material = new MaterialPrivate;
 		MaterialPtr default_cyan_material = new MaterialPrivate;
-
-		std::vector<MaterialPtr> materials;
-		std::vector<std::unique_ptr<MaterialT>> loaded_materials;
 
 		struct DefaultMaterialInitializer
 		{

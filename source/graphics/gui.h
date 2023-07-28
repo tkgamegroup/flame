@@ -38,6 +38,7 @@ namespace flame
 		FLAME_GRAPHICS_API extern Listeners<void()> gui_callbacks;
 		FLAME_GRAPHICS_API void gui_initialize();
 		FLAME_GRAPHICS_API void* gui_native_handle();
+		FLAME_GRAPHICS_API ImagePtr gui_font_image();
 		FLAME_GRAPHICS_API void gui_set_clear(bool clear, const vec4& color);
 		FLAME_GRAPHICS_API extern Listeners<void(CursorType& cursor)> gui_cursor_callbacks;
 		FLAME_GRAPHICS_API void gui_frame();
