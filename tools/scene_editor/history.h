@@ -50,11 +50,11 @@ struct AssetModifyHistory : History
 
 struct EntityModifyHistory : History
 {
-	std::vector<GUID> ids;
-	uint comp_type;
-	uint attr_hash;
-	std::vector<std::string> old_values;
-	std::vector<std::string> new_values;
+	std::vector<GUID>			ids;
+	uint						comp_type;
+	uint						attr_hash;
+	std::vector<std::string>	old_values;
+	std::vector<std::string>	new_values;
 
 	EntityModifyHistory(const std::vector<GUID>& ids, uint comp_type, uint attr_hash,
 		const std::vector<std::string>& old_values, const std::vector<std::string>& new_values) :
@@ -66,51 +66,58 @@ struct EntityModifyHistory : History
 	{
 	}
 
-	void set_value(const std::vector<std::string>& values);
+	void set_values(const std::vector<std::string>& values);
 	void undo() override;
 	void redo() override;
 };
 
 struct EntityHistory : History
 {
-	bool is_remove = true;
-	std::vector<std::string> ids;
-	std::vector<std::string> contents;
+	std::vector<GUID>							ids;
+	std::vector<GUID>							old_parents;
+	std::vector<uint>							old_indices;
+	std::vector<GUID>							new_parents;
+	std::vector<uint>							new_indices;
+	std::vector<std::vector<
+		std::tuple<uint, uint, std::string>>>	contents; // each is an array of (comp_type, attr_hash, value) represents an entity
 
-	void undo() override;
-	void redo() override;
-};
-
-struct EntityParentHistory : History
-{
-	std::vector<std::string> ids;
-	std::vector<std::string> old_parents;
-	std::vector<std::string> new_parents;
-
+	void recreate_entities(const std::vector<GUID>& parents, const std::vector<uint>& indices);
+	void remove_entities();
 	void undo() override;
 	void redo() override;
 };
 
 struct EntityPositionHistory : History
 {
-	std::vector<std::string> ids;
+	std::vector<GUID>	ids;
+	std::vector<GUID>	old_parents;
+	std::vector<uint>	old_indices;
+	std::vector<GUID>	new_parents;
+	std::vector<uint>	new_indices;
 
+	void set_positions(const std::vector<GUID>& parents, const std::vector<uint>& indices);
 	void undo() override;
 	void redo() override;
 };
 
 struct ComponentHistory : History
 {
-	std::vector<std::string> ids;
-	uint comp_type;
+	std::vector<GUID>					old_ids;
+	std::vector<uint>					old_indices;
+	std::vector<GUID>					new_ids;
+	std::vector<uint>					new_indices;
+	uint								comp_type;
+	std::vector<std::vector<
+		std::pair<uint, std::string>>>	contents; // each is an array of (attr_hash, value) represents an component
 
+	void recreate_components(const std::vector<GUID>& ids, const std::vector<uint>& indices);
+	void remove_components(const std::vector<GUID>& ids);
 	void undo() override;
 	void redo() override;
 };
 
 struct ComponentPositionHistory : History
 {
-	bool is_remove = true;
 	std::vector<std::string> ids;
 	uint comp_type;
 

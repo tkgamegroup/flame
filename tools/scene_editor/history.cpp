@@ -127,13 +127,13 @@ void AssetModifyHistory::redo()
 	app.last_status = "Redo modify asset";
 }
 
-void EntityModifyHistory::set_value(const std::vector<std::string>& values)
+void EntityModifyHistory::set_values(const std::vector<std::string>& values)
 {
 	if (app.e_prefab)
 	{
 		for (auto i = 0; i < ids.size(); i++)
 		{
-			if (auto e = app.e_prefab->find_with_instance_id(ids[i]))
+			if (auto e = app.e_prefab->find_with_instance_id(ids[i]); e)
 			{
 				UdtInfo* ui = TypeInfo::get<Entity>()->retrive_ui();
 				void* obj = e;
@@ -159,14 +159,142 @@ void EntityModifyHistory::set_value(const std::vector<std::string>& values)
 
 void EntityModifyHistory::undo()
 {
-	set_value(old_values);
+	set_values(old_values);
 	app.last_status = "Undo modify entity";
 }
 
 void EntityModifyHistory::redo()
 {
-	set_value(new_values);
+	set_values(new_values);
 	app.last_status = "Redo modify entity";
+}
+
+void EntityHistory::recreate_entities(const std::vector<GUID>& parents, const std::vector<uint>& indices)
+{
+	if (app.e_prefab)
+	{
+		for (auto i = 0; i < ids.size(); i++)
+		{
+			if (auto p = app.e_prefab->find_with_instance_id(parents[i]); p)
+			{
+				auto e = Entity::create();
+				for (auto& c : contents[i])
+				{
+					UdtInfo* ui = TypeInfo::get<Entity>()->retrive_ui();
+					void* obj = e;
+					if (std::get<0>(c))
+					{
+						ui = find_udt(std::get<0>(c));
+						obj = e->find_component(std::get<0>(c));
+					}
+					if (ui && obj)
+					{
+						if (auto a = ui->find_attribute(std::get<1>(c)); a)
+						{
+							a->type->unserialize(std::get<2>(c), nullptr);
+							a->set_value(obj, nullptr);
+						}
+					}
+				}
+				p->add_child(e, indices[i]);
+			}
+		}
+	}
+}
+
+void EntityHistory::remove_entities()
+{
+	if (app.e_prefab)
+	{
+		auto is_selecting_entities = selection.type == Selection::tEntity;
+		auto selected_entities = selection.get_entities();
+		for (auto i = 0; i < ids.size(); i++)
+		{
+			if (auto e = app.e_prefab->find_with_instance_id(ids[i]); e)
+			{
+				e->remove_from_parent();
+				if (is_selecting_entities)
+				{
+					if (auto it = std::find(selected_entities.begin(), selected_entities.end(), e); it != selected_entities.end())
+						selected_entities.erase(it);
+				}
+			}
+		}
+		if (is_selecting_entities)
+			selection.select(selected_entities);
+	}
+}
+
+void EntityHistory::undo()
+{
+	if (!old_parents.empty())
+		recreate_entities(old_parents, old_indices);
+	else
+		remove_entities();
+}
+
+void EntityHistory::redo()
+{
+	if (!old_parents.empty())
+		remove_entities();
+	else
+		recreate_entities(new_parents, new_indices);
+}
+
+void EntityPositionHistory::set_positions(const std::vector<GUID>& parents, const std::vector<uint>& indices)
+{
+	if (app.e_prefab)
+	{
+		for (auto i = 0; i < ids.size(); i++)
+		{
+			if (auto e = app.e_prefab->find_with_instance_id(ids[i]); e)
+			{
+				if (auto p = app.e_prefab->find_with_instance_id(parents[i]); p)
+				{
+					e->parent->remove_child(e, false);
+					p->add_child(e, indices[i]);
+				}
+			}
+		}
+	}
+}
+
+void EntityPositionHistory::undo()
+{
+	set_positions(old_parents, old_indices);
+}
+
+void EntityPositionHistory::redo()
+{
+	set_positions(new_parents, new_indices);
+}
+
+void ComponentHistory::recreate_components(const std::vector<GUID>& ids, const std::vector<uint>& indices)
+{
+	if (app.e_prefab)
+	{
+		for (auto i = 0; i < ids.size(); i++)
+		{
+			if (auto e = app.e_prefab->find_with_instance_id(ids[i]); e)
+			{
+			}
+		}
+	}
+}
+
+void ComponentHistory::remove_components(const std::vector<GUID>& ids)
+{
+
+}
+
+void ComponentHistory::undo()
+{
+
+}
+
+void ComponentHistory::redo()
+{
+
 }
 
 void PrefabModifyHistory::set_value(const std::string& value)

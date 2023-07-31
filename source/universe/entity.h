@@ -142,8 +142,7 @@ namespace flame
 			return remove_component_h(th<T>());
 		}
 		virtual void remove_all_components() = 0;
-
-		virtual bool reposition_component(Component* comp) = 0;
+		virtual bool reposition_component(Component* comp, int new_index) = 0;
 
 		virtual void add_child(EntityPtr e, int position = -1 /* -1 is end */) = 0;
 		virtual void remove_child(EntityPtr e, bool destroy = true) = 0;
