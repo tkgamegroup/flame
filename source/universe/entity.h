@@ -142,7 +142,7 @@ namespace flame
 			return remove_component_h(th<T>());
 		}
 		virtual void remove_all_components() = 0;
-		virtual bool reposition_component(Component* comp, int new_index) = 0;
+		virtual bool reposition_component(uint comp_index, int new_index) = 0;
 
 		virtual void add_child(EntityPtr e, int position = -1 /* -1 is end */) = 0;
 		virtual void remove_child(EntityPtr e, bool destroy = true) = 0;
@@ -186,14 +186,20 @@ namespace flame
 			return nullptr;
 		}
 
+		inline int find_component_i(uint hash) const
+		{
+			for (auto i = 0; i < components.size(); i++)
+			{
+				if (components[i]->type_hash == hash)
+					return i;
+			}
+			return -1;
+		}
+
 		inline Component* find_component(uint hash) const
 		{
-			for (auto& comp : components)
-			{
-				if (comp->type_hash == hash)
-					return comp.get();
-			}
-			return nullptr;
+			auto idx = find_component_i(hash);
+			return idx == -1 ? nullptr : components[idx].get();
 		}
 
 		inline Component* find_component_recursively(uint hash) const

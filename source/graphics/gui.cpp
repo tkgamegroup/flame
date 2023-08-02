@@ -607,8 +607,6 @@ namespace flame
 
 			ImGui::CreateContext();
 
-			ImGui::StyleColorsLight();
-
 			ImGuiStyle& style = ImGui::GetStyle();
 			style.WindowRounding = 0.0f;
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;

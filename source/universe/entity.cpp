@@ -238,8 +238,85 @@ namespace flame
 		components.clear();
 	}
 
-	bool EntityPrivate::reposition_component(Component* comp)
+	bool EntityPrivate::reposition_component(uint comp_index, int new_index)
 	{
+		if (comp_index >= components.size())
+		{
+			printf("cannot reposition component: component index %d is out of bound\n", comp_index);
+			return false;
+		}
+
+		if (new_index < 0)
+			new_index = components.size() - new_index;
+		if (new_index < 0 || new_index >= components.size())
+		{
+			printf("cannot reposition component: new index %d is out of bound\n", new_index);
+			return false;
+		}
+
+		if (comp_index == new_index)
+			return true;
+
+		auto target_comp = components[comp_index].get();
+		auto target_comp_ui = find_udt(target_comp->type_hash);
+
+		if (comp_index < new_index)
+		{
+			for (auto i = comp_index + 1; i <= new_index; i++)
+			{
+				auto comp = components[i].get();
+				auto ui = find_udt(comp->type_hash);
+				std::vector<Component*> require_comps;
+				for (auto& vi : ui->variables)
+				{
+					if (vi.metas.get("auto_requires"_h) || vi.metas.get("requires"_h))
+					{
+						if (vi.type->tag == TagPU)
+						{
+							if (auto comp = get_component_h(sh(vi.type->name.c_str())); comp)
+								require_comps.push_back(comp);
+						}
+					}
+				}
+
+				if (std::find(require_comps.begin(), require_comps.end(), target_comp) != require_comps.end())
+				{
+					printf("cannot reposition component: component %s is required %s, you cannot reposition component that before its requirements\n", ui->name.c_str(), target_comp_ui->name.c_str());
+					return false;
+				}
+			}
+
+			std::rotate(components.begin() + comp_index, components.begin() + comp_index + 1, components.begin() + new_index + 1);
+		}
+		else
+		{
+			std::vector<Component*> require_comps;
+			for (auto& vi : target_comp_ui->variables)
+			{
+				if (vi.metas.get("auto_requires"_h) || vi.metas.get("requires"_h))
+				{
+					if (vi.type->tag == TagPU)
+					{
+						if (auto comp = get_component_h(sh(vi.type->name.c_str())); comp)
+							require_comps.push_back(comp);
+					}
+				}
+			}
+
+			for (auto i = new_index ; i < comp_index; i++)
+			{
+				auto comp = components[i].get();
+				auto ui = find_udt(comp->type_hash);
+				if (std::find(require_comps.begin(), require_comps.end(), comp) != require_comps.end())
+				{
+					printf("cannot reposition component: component %s is required %s, you cannot reposition component that before its requirements\n", target_comp_ui->name.c_str(), ui->name.c_str());
+					return false;
+				}
+			}
+
+			std::rotate(components.begin() + new_index, components.begin() + comp_index, components.begin() + comp_index + 1);
+		}
+
 		return true;
 	}
 

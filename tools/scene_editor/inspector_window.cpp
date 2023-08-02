@@ -1468,28 +1468,29 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 				auto ok = true;
 				for (auto e : entities)
 				{
-					if (get_root_prefab_instance(e))
+					if (auto ins = get_root_prefab_instance(e); ins)
 					{
 						ok = false;
-						break;
+						if (auto comp_idx = e->find_component_i(cc.type_hash); comp_idx > 0)
+						{
+							if (ins->find_modification(e->file_id.to_string() + '|' + find_udt(cc.type_hash)->name + "|add") != -1 &&
+								ins->find_modification(e->file_id.to_string() + '|' + find_udt(e->components[comp_idx - 1]->type_hash)->name + "|add") != -1)
+								ok = true;
+						}
+						if (!ok)
+						{
+							open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+							break;
+						}
 					}
 				}
 				if (ok)
 				{
 					auto changed = false;
-					auto e0 = entities[0];
-					for (auto i = 0; i < e0->components.size(); i++)
+					for (auto e : entities)
 					{
-						if (e0->components[i]->type_hash == cc.type_hash)
-						{
-							if (i > 0)
-							{
-								for (auto e : entities)
-									std::swap(e->components[i], e->components[i - 1]);
-							}
-							changed = true;
-							break;
-						}
+						if (auto comp_idx = e->find_component_i(cc.type_hash); comp_idx > 0)
+							changed |= e->reposition_component(comp_idx, comp_idx - 1);
 					}
 					if (changed)
 					{
@@ -1499,36 +1500,35 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 						exit_editing = true;
 					}
 				}
-				else
-					open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 			}
 			if (ImGui::Selectable("Move Down"))
 			{
 				auto ok = true;
 				for (auto e : entities)
 				{
-					if (get_root_prefab_instance(e))
+					if (auto ins = get_root_prefab_instance(e); ins)
 					{
 						ok = false;
-						break;
+						if (auto comp_idx = e->find_component_i(cc.type_hash); comp_idx < e->components.size() - 1)
+						{
+							if (ins->find_modification(e->file_id.to_string() + '|' + find_udt(cc.type_hash)->name + "|add") != -1 &&
+								ins->find_modification(e->file_id.to_string() + '|' + find_udt(e->components[comp_idx + 1]->type_hash)->name + "|add") != -1)
+								ok = true;
+						}
+						if (!ok)
+						{
+							open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
+							break;
+						}
 					}
 				}
 				if (ok)
 				{
 					auto changed = false;
-					auto e0 = entities[0];
-					for (auto i = 0; i < e0->components.size(); i++)
+					for (auto e : entities)
 					{
-						if (e0->components[i]->type_hash == cc.type_hash)
-						{
-							if (i < e0->components.size() - 1)
-							{
-								for (auto e : entities)
-									std::swap(e->components[i], e->components[i + 1]);
-							}
-							changed = true;
-							break;
-						}
+						if (auto comp_idx = e->find_component_i(cc.type_hash); comp_idx < e->components.size() - 1)
+							changed |= e->reposition_component(comp_idx, comp_idx + 1);
 					}
 					if (changed)
 					{
@@ -1538,8 +1538,6 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 						exit_editing = true;
 					}
 				}
-				else
-					open_message_dialog("[RestructurePrefabInstanceWarnning]", "");
 			}
 			if (ImGui::Selectable("Remove"))
 			{
@@ -1739,7 +1737,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 					}
 				}
 				ImGui::PopID();
-				}));
+			}));
 
 			if (open_select_standard_model)
 			{
