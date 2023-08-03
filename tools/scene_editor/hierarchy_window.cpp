@@ -1,4 +1,5 @@
 #include "selection.h"
+#include "history.h"
 #include "hierarchy_window.h"
 #include "scene_window.h"
 
@@ -153,10 +154,18 @@ void entity_drop_behaviour(EntityPtr t)
 		auto es = read_drops(t);
 		if (!es.empty())
 		{
+			std::vector<GUID> old_parents;
+			std::vector<uint> old_indices;
+
 			for (auto _e : es)
 			{
 				if (_e->parent)
 				{
+					if (!app.e_playing && app.e_prefab)
+					{
+						old_parents.push_back(_e->parent->instance_id);
+						old_indices.push_back(_e->index);
+					}
 					if (auto ins = get_root_prefab_instance(_e); ins)
 						ins->remove_modification(_e->parent->file_id.to_string() + (!_e->prefab_instance ? '|' + _e->file_id.to_string() : "") + "|add_child");
 					_e->remove_from_parent(false);
@@ -168,7 +177,27 @@ void entity_drop_behaviour(EntityPtr t)
 				if (auto ins = get_root_prefab_instance(t); ins)
 					ins->mark_modification(_e->parent->file_id.to_string() + (!_e->prefab_instance ? '|' + _e->file_id.to_string() : "") + "|add_child");
 			}
-			app.prefab_unsaved = true;
+
+			if (!app.e_playing && app.e_prefab)
+			{
+				std::vector<GUID> ids(es.size());
+				std::vector<GUID> new_parents(es.size());
+				std::vector<uint> new_indices(es.size());
+				for (auto i = 0; i < es.size(); i++)
+				{
+					ids[i] = es[i]->instance_id;
+					new_parents[i] = es[i]->parent->instance_id;
+					new_indices[i] = es[i]->index;
+				}
+				auto h = new EntityPositionHistory(ids, old_parents, old_indices, new_parents, new_indices);
+				add_history(h);
+				if (h->ids.size() == 1)
+					app.last_status = std::format("Entity Reparented: {}", es[0]->name);
+				else
+					app.last_status = std::format("{} Entities Reparented", (int)h->ids.size());
+
+				app.prefab_unsaved = true;
+			}
 		}
 		ImGui::EndDragDropTarget();
 	}
@@ -311,22 +340,55 @@ void HierarchyView::on_draw()
 					auto es = read_drops(e);
 					if (!es.empty())
 					{
+						std::vector<GUID> old_parents;
+						std::vector<uint> old_indices;
+
+						auto t = e;
 						auto idx = i;
 						for (auto _e : es)
 						{
 							if (_e->parent)
 							{
-								if (_e->parent == e && idx > _e->index)
+								if (!app.e_playing && app.e_prefab)
+								{
+									old_parents.push_back(_e->parent->instance_id);
+									old_indices.push_back(_e->index);
+								}
+								if (_e->parent == t && idx > _e->index)
 									idx--;
+								if (auto ins = get_root_prefab_instance(_e); ins)
+									ins->remove_modification(_e->parent->file_id.to_string() + (!_e->prefab_instance ? '|' + _e->file_id.to_string() : "") + "|add_child");
 								_e->remove_from_parent(false);
 							}
 						}
 						for (auto _e : es)
 						{
-							e->add_child(_e, idx);
+							t->add_child(_e, idx);
+							if (auto ins = get_root_prefab_instance(t); ins)
+								ins->mark_modification(_e->parent->file_id.to_string() + (!_e->prefab_instance ? '|' + _e->file_id.to_string() : "") + "|add_child");
 							idx++;
 						}
-						app.prefab_unsaved = true;
+
+						if (!app.e_playing && app.e_prefab)
+						{
+							std::vector<GUID> ids(es.size());
+							std::vector<GUID> new_parents(es.size());
+							std::vector<uint> new_indices(es.size());
+							for (auto i = 0; i < es.size(); i++)
+							{
+								ids[i] = es[i]->instance_id;
+								new_parents[i] = es[i]->parent->instance_id;
+								new_indices[i] = es[i]->index;
+							}
+							auto h = new EntityPositionHistory(ids, old_parents, old_indices, new_parents, new_indices);
+							add_history(h);
+							if (h->ids.size() == 1)
+								app.last_status = std::format("Entity Repositioned: {}", es[0]->name);
+							else
+								app.last_status = std::format("{} Entities Repositioned", (int)h->ids.size());
+
+							app.prefab_unsaved = true;
+						}
 					}
 					ImGui::EndDragDropTarget();
 				}
@@ -481,7 +543,7 @@ void HierarchyView::on_draw()
 
 	auto& io = ImGui::GetIO();
 
-	if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered())
+	if (ImGui::IsWindowHovered())
 	{
 		if (!io.WantCaptureKeyboard)
 		{

@@ -39,8 +39,6 @@ void View::title_context_menu()
 
 App app;
 
-static Entity* editor_selecting_entity = nullptr;
-
 struct Preferences
 {
 	bool use_flame_debugger = false; // use flame visual studio project debugger or use opened project one
@@ -193,8 +191,6 @@ bool App::on_update()
 void App::on_gui()
 {
 	auto last_focused_scene = scene_window.last_focused_view();
-
-	editor_selecting_entity = selection.type == Selection::tEntity ? selection.as_entity() : nullptr;
 
 	ImGui::BeginMainMenuBar();
 	if (ImGui::BeginMenu("File"))
@@ -1611,18 +1607,19 @@ bool App::cmd_redo()
 	return true;
 }
 
-bool App::cmd_new_entities(std::vector<EntityPtr>&& es, uint type)
+bool App::cmd_new_entities(std::vector<EntityPtr>&& ts, uint type)
 {
-	if (es.empty())
+	if (ts.empty())
 	{
 		if (e_playing)
-			es.push_back(e_playing);
+			ts.push_back(e_playing);
 		else if (e_prefab)
-			es.push_back(e_prefab);
+			ts.push_back(e_prefab);
 		else
 			return false;
 	}
-	for (auto t : es)
+	std::vector<EntityPtr> es;
+	for (auto t : ts)
 	{
 		auto e = Entity::create();
 		e->name = "entity";
@@ -1682,11 +1679,34 @@ bool App::cmd_new_entities(std::vector<EntityPtr>&& es, uint type)
 			break;
 		}
 		t->add_child(e);
+		es.push_back(e);
 
 		if (auto ins = get_root_prefab_instance(t); ins)
 			ins->mark_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child");
 	}
-	prefab_unsaved = true;
+	if (!e_playing && e_prefab)
+	{
+		std::vector<GUID> ids(es.size());
+		std::vector<GUID> parents(es.size());
+		std::vector<uint> indices(es.size());
+		std::vector<EntityContent> contents(es.size());
+		for (auto i = 0; i < es.size(); i++)
+		{
+			auto e = es[i];
+			ids[i] = e->file_id;
+			parents[i] = e->parent->instance_id;
+			indices[i] = e->index;
+			contents[i].init(e);
+		}
+		auto h = new EntityHistory(ids, {}, {}, parents, indices, contents);
+		add_history(h);
+		if (h->ids.size() == 1)
+			app.last_status = std::format("Entity Created: {} (type: {})", es[0]->name, type);
+		else
+			app.last_status = std::format("{} Entities Created: (type: {})", (int)h->ids.size(), type);
+
+		prefab_unsaved = true;
+	}
 	return true;
 }
 
@@ -1705,17 +1725,64 @@ bool App::cmd_delete_entities(std::vector<EntityPtr>&& es)
 			return false;
 		}
 	}
-	for (auto e : es)
+	
+	std::vector<std::string> names;
+	std::vector<GUID> ids;
+	std::vector<GUID> parents;
+	std::vector<uint> indices;
+	std::vector<EntityContent> contents;
+	if (!e_playing && e_prefab)
 	{
+		names.resize(es.size());
+		ids.resize(es.size());
+		parents.resize(es.size());
+		indices.resize(es.size());
+		contents.resize(es.size());
+	}
+	for (auto i = 0; i < es.size(); i++)
+	{
+		auto e = es[i];
+		names[i] = e->name;
 		add_event([e]() {
 			if (auto ins = get_root_prefab_instance(e); ins)
 				ins->remove_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child");
 			e->remove_from_parent();
 			return false;
 		});
+
+		if (e_prefab)
+		{
+			ids[i] = e->file_id;
+			parents[i] = e->parent->instance_id;
+			indices[i] = e->index;
+			contents[i].init(e);
+		}
 	}
-	selection.clear("app"_h);
-	prefab_unsaved = true;
+
+	auto is_selecting_entities = selection.type == Selection::tEntity;
+	auto selected_entities = selection.get_entities();
+	for (auto e : es)
+	{
+		if (is_selecting_entities)
+		{
+			if (auto it = std::find(selected_entities.begin(), selected_entities.end(), e); it != selected_entities.end())
+				selected_entities.erase(it);
+		}
+	}
+	if (is_selecting_entities)
+		selection.select(selected_entities, "app"_h);
+
+	if (!e_playing && e_prefab)
+	{
+		auto h = new EntityHistory(ids, {}, {}, parents, indices, contents);
+		add_history(h);
+		if (h->ids.size() == 1)
+			app.last_status = std::format("Entity Removed: {}", names[0]);
+		else
+			app.last_status = std::format("{} Entities Removed", (int)h->ids.size());
+
+		prefab_unsaved = true;
+	}
 	return true;
 }
 
@@ -1739,7 +1806,30 @@ bool App::cmd_duplicate_entities(std::vector<EntityPtr>&& es)
 			ins->mark_modification(new_one->parent->file_id.to_string() + (!new_one->prefab_instance ? '|' + new_one->file_id.to_string() : "") + "|add_child");
 	}
 	selection.select(new_entities, "app"_h);
-	prefab_unsaved = true;
+
+	if (!e_playing && e_prefab)
+	{
+		std::vector<GUID> ids(new_entities.size());
+		std::vector<GUID> parents(new_entities.size());
+		std::vector<uint> indices(new_entities.size());
+		std::vector<EntityContent> contents(new_entities.size());
+		for (auto i = 0; i < new_entities.size(); i++)
+		{
+			auto e = new_entities[i];
+			ids[i] = e->file_id;
+			parents[i] = e->parent->instance_id;
+			indices[i] = e->index;
+			contents[i].init(e);
+		}
+		auto h = new EntityHistory(ids, {}, {}, parents, indices, contents);
+		add_history(h);
+		if (h->ids.size() == 1)
+			app.last_status = std::format("Entity Dyplicated: {}", new_entities[0]->name);
+		else
+			app.last_status = std::format("{} Entities Dyplicated", (int)h->ids.size());
+
+		prefab_unsaved = true;
+	}
 	return true;
 }
 

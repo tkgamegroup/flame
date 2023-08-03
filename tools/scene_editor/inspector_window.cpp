@@ -86,22 +86,28 @@ StagingVector& get_staging_vector(TypeInfo* type, void* vec)
 
 struct EditingObjects
 {
-	int type;
-	uint type2;
-	void* objs;
-	int num;
-	std::unordered_map<const void*, uint>* sync_states;
+	enum General
+	{
+		GeneralNone = -1,
+		GeneralAsset,
+		GeneralEntity,
+		GeneralPrefab
+	};
+
+	General general = GeneralNone;
+	uint type = 0;
+	void* objs = nullptr;
+	int num = 0;
+	std::unordered_map<const void*, uint>* sync_states = nullptr;
 
 	EditingObjects()
 	{
-		type = -1;
-		num = 0;
 	}
 
-	EditingObjects(int type, uint type2, void* objs, int num, 
+	EditingObjects(General general, uint type, void* objs, int num, 
 		std::unordered_map<const void*, uint>* sync_states = nullptr) :
+		general(general),
 		type(type),
-		type2(type2),
 		objs(objs),
 		num(num),
 		sync_states(sync_states)
@@ -118,23 +124,23 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 	auto& eos = editing_objects.top();
 	if (eos.num == 0)
 		return;
-	switch (eos.type)
+	switch (eos.general)
 	{
-	case 0:
+	case EditingObjects::GeneralAsset:
 	{
-		auto h = new AssetModifyHistory(*(std::filesystem::path*)eos.objs, eos.type2, attr_hash, before_editing_values[0], new_value);
+		auto h = new AssetModifyHistory(*(std::filesystem::path*)eos.objs, eos.type, attr_hash, before_editing_values[0], new_value);
 		add_history(h);
 		auto ui = find_udt(h->asset_type);
 		auto attr = ui->find_attribute(h->attr_hash);
-		app.last_status = std::format("Modified Asset: {}, ({}), {}: {} -> {}", h->path.string(), ui->name, attr->name, h->old_value, h->new_value);
+		app.last_status = std::format("Asset Modified: {}, ({}), {}: {} -> {}", h->path.string(), ui->name, attr->name, h->old_value, h->new_value);
 	}
 		break;
-	case 1:
+	case EditingObjects::GeneralEntity:
 	{
 		std::vector<GUID> ids(eos.num);
 		for (auto i = 0; i < eos.num; i++)
 			ids[i] = ((EntityPtr*)eos.objs)[i]->instance_id;
-		auto h = new EntityModifyHistory(ids, eos.type2, attr_hash, before_editing_values, { new_value });
+		auto h = new EntityModifyHistory(ids, eos.type, attr_hash, before_editing_values, { new_value });
 		add_history(h);
 		auto ui = h->comp_type ? find_udt(h->comp_type) : TypeInfo::get<Entity>()->retrive_ui();
 		auto attr = ui->find_attribute(h->attr_hash);
@@ -142,29 +148,29 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 		{
 			auto e = ((EntityPtr*)eos.objs)[0];
 			if (h->comp_type)
-				app.last_status = std::format("Modified Component: {}, ({}), {}: {} -> {}", e->name, ui->name, attr->name, h->old_values[0], h->new_values[0]);
+				app.last_status = std::format("Component Modified: {}, ({}), {}: {} -> {}", e->name, ui->name, attr->name, h->old_values[0], h->new_values[0]);
 			else
-				app.last_status = std::format("Modified Entity: {}, {}: {} -> {}", e->name, attr->name, h->old_values[0], h->new_values[0]);
+				app.last_status = std::format("Entity Modified: {}, {}: {} -> {}", e->name, attr->name, h->old_values[0], h->new_values[0]);
 		}
 		else
 		{
 			if (h->comp_type)
-				app.last_status = std::format("Modified {} Components: ({}), {}: {} -> {}", (int)h->ids.size(), ui->name, attr->name, h->old_values[0], h->new_values[0]);
+				app.last_status = std::format("{} Components Modified: ({}), {}: {} -> {}", (int)h->ids.size(), ui->name, attr->name, h->old_values[0], h->new_values[0]);
 			else
-				app.last_status = std::format("Modified {} Entities: {}: * -> {}", (int)h->ids.size(), attr->name, h->new_values[0]);
+				app.last_status = std::format("{} Entities Modified: {}: * -> {}", (int)h->ids.size(), attr->name, h->new_values[0]);
 		}
 	}
 		break;
-	case 2:
+	case EditingObjects::GeneralPrefab:
 	{
-		auto h = new PrefabModifyHistory(*(std::filesystem::path*)eos.objs, eos.type2, attr_hash, before_editing_values[0], new_value);
+		auto h = new PrefabModifyHistory(*(std::filesystem::path*)eos.objs, eos.type, attr_hash, before_editing_values[0], new_value);
 		add_history(h);
 		auto ui = h->comp_type ? find_udt(h->comp_type) : TypeInfo::get<Entity>()->retrive_ui();
 		auto attr = ui->find_attribute(h->attr_hash);
 		if (h->comp_type)
-			app.last_status = std::format("Modified Prefab Component: {}, ({}), {}: {} -> {}", h->path.string(), ui->name, attr->name, h->old_value, h->new_value);
+			app.last_status = std::format("Prefab Component Modified: {}, ({}), {}: {} -> {}", h->path.string(), ui->name, attr->name, h->old_value, h->new_value);
 		else
-			app.last_status = std::format("Modified Prefab Entity: {}, {}: {} -> {}", h->path.string(), attr->name, h->old_value, h->new_value);
+			app.last_status = std::format("Prefab Entity Modified: {}, {}: {} -> {}", h->path.string(), attr->name, h->old_value, h->new_value);
 	}
 		break;
 	}
@@ -261,7 +267,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				{
 					for (auto j = 0; j < eos.num; j++)
 					{
-						auto address = get_keyframe_adress(app.e_timeline_host, ((EntityPtr*)eos.objs)[j], eos.type2, name, i);
+						auto address = get_keyframe_adress(app.e_timeline_host, ((EntityPtr*)eos.objs)[j], eos.type, name, i);
 						if (auto kf = app.get_keyframe(address, true); kf)
 							kf->value = str(data[i]);
 					}
@@ -302,7 +308,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				{
 					for (auto j = 0; j < eos.num; j++)
 					{
-						auto address = get_keyframe_adress(app.e_timeline_host, ((EntityPtr*)eos.objs)[j], eos.type2, name, i);
+						auto address = get_keyframe_adress(app.e_timeline_host, ((EntityPtr*)eos.objs)[j], eos.type, name, i);
 						if (auto kf = app.get_keyframe(address, true); kf)
 							kf->value = str(data[i]);
 					}
@@ -519,7 +525,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 						{
 							if (sp[j] != sp2[j])
 							{
-								auto address = get_keyframe_adress(app.e_timeline_host, ((EntityPtr*)eos.objs)[i], eos.type2, name, j);
+								auto address = get_keyframe_adress(app.e_timeline_host, ((EntityPtr*)eos.objs)[i], eos.type, name, j);
 								if (auto kf = app.get_keyframe(address, false); kf)
 									kf->value = sp[j];
 							}
@@ -566,7 +572,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 						{
 							if (sp[j] != sp2[j])
 							{
-								auto address = get_keyframe_adress(app.e_timeline_host, ((EntityPtr*)eos.objs)[i], eos.type2, name, j);
+								auto address = get_keyframe_adress(app.e_timeline_host, ((EntityPtr*)eos.objs)[i], eos.type, name, j);
 								if (auto kf = app.get_keyframe(address, false); kf)
 									kf->value = sp[j];
 							}
@@ -1316,9 +1322,9 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 	auto entity = entities[0];
 
 	if (prefab_path.empty())
-		editing_objects.emplace(EditingObjects(1, 0, entities.data(), entities.size(), &sync_states));
+		editing_objects.emplace(EditingObjects(EditingObjects::GeneralEntity, 0, entities.data(), entities.size(), &sync_states));
 	else
-		editing_objects.emplace(EditingObjects(2, 0, &prefab_path, 1, nullptr));
+		editing_objects.emplace(EditingObjects(EditingObjects::GeneralPrefab, 0, &prefab_path, 1, nullptr));
 	ImGui::PushID("flame::Entity"_h);
 	{
 		auto hash = "enable"_h;
@@ -1383,7 +1389,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 							entity->save(Path::get(ins->filename), true);
 							ins->modifications.clear();
 						}
-						});
+					});
 				}
 			}
 			else
@@ -1396,7 +1402,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 							entity->save(Path::get(ins->filename), true);
 							ins->modifications.clear();
 						}
-						});
+					});
 				}
 			}
 			ImGui::SameLine();
@@ -1417,7 +1423,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 							ins->modifications.clear();
 						}
 					}
-					});
+				});
 			}
 			ImGui::EndPopup();
 		}
@@ -1439,9 +1445,9 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 	for (auto& cc : common_components)
 	{
 		if (prefab_path.empty())
-			editing_objects.emplace(EditingObjects(1, th<Component>(), entities.data(), entities.size(), &sync_states));
+			editing_objects.emplace(EditingObjects(EditingObjects::GeneralEntity, th<Component>(), entities.data(), entities.size(), &sync_states));
 		else
-			editing_objects.emplace(EditingObjects(2, th<Component>(), &prefab_path, 1, nullptr));
+			editing_objects.emplace(EditingObjects(EditingObjects::GeneralPrefab, th<Component>(), &prefab_path, 1, nullptr));
 		ImGui::PushID(cc.type_hash);
 		auto open = ImGui::CollapsingHeader("", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
 		ImGui::SameLine();
@@ -1452,9 +1458,9 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 		editing_objects.pop();
 
 		if (prefab_path.empty())
-			editing_objects.emplace(EditingObjects(1, cc.type_hash, entities.data(), entities.size(), &sync_states));
+			editing_objects.emplace(EditingObjects(EditingObjects::GeneralEntity, cc.type_hash, entities.data(), entities.size(), &sync_states));
 		else
-			editing_objects.emplace(EditingObjects(2, cc.type_hash, &prefab_path, 1, nullptr));
+			editing_objects.emplace(EditingObjects(EditingObjects::GeneralPrefab, cc.type_hash, &prefab_path, 1, nullptr));
 		auto& ui = *find_udt(cc.type_hash);
 		ImGui::SameLine();
 		ImGui::TextUnformatted(ui.name.c_str());
@@ -1542,8 +1548,19 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 			if (ImGui::Selectable("Remove"))
 			{
 				auto changed = false;
+				std::vector<uint> indices;
+				std::vector<std::vector<std::pair<uint, std::string>>> contents;
 				for (auto e : entities)
 				{
+					auto index = e->find_component_i(cc.type_hash);
+					auto comp = e->components[index].get();
+					std::vector<std::pair<uint, std::string>> content;
+					for (auto& a : ui.attributes)
+					{
+						if (auto value = a.serialize(comp); value != a.default_value)
+							content.emplace_back(a.name_hash, value);
+					}
+
 					if (e->remove_component_h(cc.type_hash))
 					{
 						if (auto ins = get_root_prefab_instance(e); ins)
@@ -1565,13 +1582,41 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 							}
 						}
 						changed = true;
+
+						indices.push_back(index);
+						contents.push_back(content);
 					}
-					if (changed)
+				}
+				if (changed)
+				{
+					ret_changed |= 2;
+					auto es = entities;
+					refresh(es);
+					exit_editing = true;
+
+					if (auto& eos = editing_objects.top(); eos.num > 0)
 					{
-						ret_changed |= 2;
-						auto es = entities;
-						refresh(es);
-						exit_editing = true;
+						switch (eos.general)
+						{
+						case EditingObjects::GeneralEntity:
+						{
+							std::vector<GUID> ids(eos.num);
+							for (auto i = 0; i < eos.num; i++)
+								ids[i] = ((EntityPtr*)eos.objs)[i]->instance_id;
+							auto h = new ComponentHistory(ids, indices, {}, {}, cc.type_hash, contents);
+							add_history(h);
+							if (h->old_ids.size() == 1)
+								app.last_status = std::format("Component Removed: {}, {}", ((EntityPtr*)eos.objs)[0]->name, ui.name);
+							else
+								app.last_status = std::format("{} Components Removed: {}", (int)h->old_ids.size(), ui.name);
+						}
+							break;
+						case EditingObjects::GeneralPrefab:
+						{
+
+						}
+							break;
+						}
 					}
 				}
 			}
@@ -1701,7 +1746,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 							// the material is loaded and registered to renderer
 							if (auto material = graphics::Material::get(name); material)
 							{
-								editing_objects.emplace(EditingObjects(0, th<graphics::Material>(), &name, 1));
+								editing_objects.emplace(EditingObjects(EditingObjects::GeneralAsset, th<graphics::Material>(), &name, 1));
 								auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1).first;
 								editing_objects.pop();
 								graphics::Material::release(material);
@@ -1879,9 +1924,9 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 	}
 
 	ImGui::Dummy(vec2(0.f, 10.f));
-	const float ButtonWidth = 100.f;
-	ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - ButtonWidth) * 0.5f);
-	ImGui::SetNextItemWidth(ButtonWidth);
+	const float button_width = 100.f;
+	ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - button_width) * 0.5f);
+	ImGui::SetNextItemWidth(button_width);
 	static std::vector<UdtInfo*> comp_udts;
 	if (ImGui::Button("Add Component"))
 	{
@@ -1911,6 +1956,11 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 	}
 	if (ImGui::BeginPopup("add_component"))
 	{
+		if (prefab_path.empty())
+			editing_objects.emplace(EditingObjects(EditingObjects::GeneralEntity, 0, entities.data(), entities.size(), &sync_states));
+		else
+			editing_objects.emplace(EditingObjects(EditingObjects::GeneralPrefab, 0, &prefab_path, 1, nullptr));
+
 		for (auto ui : comp_udts)
 		{
 			if (ImGui::Selectable(ui->name.c_str()))
@@ -1936,9 +1986,42 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 					auto es = entities;
 					refresh(es);
 					ret_changed |= 2;
+
+					if (auto& eos = editing_objects.top(); eos.num > 0)
+					{
+						switch (eos.general)
+						{
+						case EditingObjects::GeneralEntity:
+						{
+							std::vector<GUID> ids(eos.num);
+							std::vector<uint> indices(eos.num);
+							for (auto i = 0; i < eos.num; i++) 
+							{
+								ids[i] = ((EntityPtr*)eos.objs)[i]->instance_id;
+								indices[i] = ((EntityPtr*)eos.objs)[i]->find_component_i(ui->name_hash);
+							}
+							auto h = new ComponentHistory({}, {}, ids, indices, ui->name_hash, {});
+							add_history(h);
+							auto ui = find_udt(h->comp_type);
+							if (h->new_ids.size() == 1)
+								app.last_status = std::format("Component Added: {}, {}", ((EntityPtr*)eos.objs)[0]->name, ui->name);
+							else
+								app.last_status = std::format("{} Components Added: {}", (int)h->new_ids.size(), ui->name);
+						}
+							break;
+						case EditingObjects::GeneralPrefab:
+						{
+
+						}
+							break;
+						}
+					}
 				}
 			}
 		}
+
+		editing_objects.pop();
+
 		ImGui::EndPopup();
 	}
 
@@ -2127,7 +2210,7 @@ void InspectorView::on_draw()
 				if (inspected_obj)
 				{
 					auto material = (graphics::MaterialPtr)inspected_obj;
-					editing_objects.emplace(EditingObjects(0, th<graphics::Material>(), &path, 1));
+					editing_objects.emplace(EditingObjects(EditingObjects::GeneralAsset, th<graphics::Material>(), &path, 1));
 					auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1).first;
 					editing_objects.pop();
 					if (changed >= 2)
@@ -2266,7 +2349,7 @@ void InspectorView::on_draw()
 
 				if (inspected_obj)
 				{
-					editing_objects.emplace(EditingObjects(0, info.ui->name_hash, &path, 1));
+					editing_objects.emplace(EditingObjects(EditingObjects::GeneralAsset, info.ui->name_hash, &path, 1));
 					auto changed = manipulate_udt(*info.ui, (voidptr*)&inspected_obj, 1).first;
 					editing_objects.pop();
 

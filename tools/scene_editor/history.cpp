@@ -1,6 +1,9 @@
 #include "selection.h"
 #include "history.h"
 
+static auto ui_entity = TypeInfo::get<Entity>()->retrive_ui();
+static auto ui_component = TypeInfo::get<Component>()->retrive_ui();
+
 SelectHistory::~SelectHistory()
 {
 	auto destroy = [](Selection::Type& type, std::vector<void*>& objects) {
@@ -152,8 +155,8 @@ void EntityModifyHistory::set_values(const std::vector<std::string>& values)
 				}
 			}
 		}
-		if (selection.type == Selection::tEntity)
-			selection.callbacks.call("app"_h);
+
+		selection.callbacks.call("app"_h);
 	}
 }
 
@@ -169,6 +172,31 @@ void EntityModifyHistory::redo()
 	app.last_status = "Redo modify entity";
 }
 
+void EntityContent::init(EntityPtr e)
+{
+	for (auto& c : e->components)
+		components.push_back(c->type_hash);
+
+	for (auto& a : ui_entity->attributes)
+	{
+		if (auto value = a.serialize(e); value != a.default_value)
+			values.emplace_back(0, a.name_hash, value);
+	}
+	for (auto& c : e->components)
+	{
+		for (auto& a : ui_component->attributes)
+		{
+			if (auto value = a.serialize(c.get()); value != a.default_value)
+				values.emplace_back(c->type_hash, a.name_hash, value);
+		}
+		for (auto& a : find_udt(c->type_hash)->attributes)
+		{
+			if (auto value = a.serialize(c.get()); value != a.default_value)
+				values.emplace_back(c->type_hash, a.name_hash, value);
+		}
+	}
+}
+
 void EntityHistory::recreate_entities(const std::vector<GUID>& parents, const std::vector<uint>& indices)
 {
 	if (app.e_prefab)
@@ -178,20 +206,23 @@ void EntityHistory::recreate_entities(const std::vector<GUID>& parents, const st
 			if (auto p = app.e_prefab->find_with_instance_id(parents[i]); p)
 			{
 				auto e = Entity::create();
-				for (auto& c : contents[i])
+				auto& content = contents[i];
+				for (auto h : content.components)
+					e->add_component_h(h);
+				for (auto& item : content.values)
 				{
-					UdtInfo* ui = TypeInfo::get<Entity>()->retrive_ui();
+					auto ui = TypeInfo::get<Entity>()->retrive_ui();
 					void* obj = e;
-					if (std::get<0>(c))
+					if (std::get<0>(item))
 					{
-						ui = find_udt(std::get<0>(c));
-						obj = e->find_component(std::get<0>(c));
+						ui = find_udt(std::get<0>(item));
+						obj = e->find_component(std::get<0>(item));
 					}
 					if (ui && obj)
 					{
-						if (auto a = ui->find_attribute(std::get<1>(c)); a)
+						if (auto a = ui->find_attribute(std::get<1>(item)); a)
 						{
-							a->type->unserialize(std::get<2>(c), nullptr);
+							a->type->unserialize(std::get<2>(item), nullptr);
 							a->set_value(obj, nullptr);
 						}
 					}
@@ -199,6 +230,8 @@ void EntityHistory::recreate_entities(const std::vector<GUID>& parents, const st
 				p->add_child(e, indices[i]);
 			}
 		}
+
+		selection.callbacks.call("app"_h);
 	}
 }
 
@@ -228,17 +261,29 @@ void EntityHistory::remove_entities()
 void EntityHistory::undo()
 {
 	if (!old_parents.empty())
+	{
 		recreate_entities(old_parents, old_indices);
+		app.last_status = "Undo remove entities";
+	}
 	else
+	{
 		remove_entities();
+		app.last_status = "Undo create entities";
+	}
 }
 
 void EntityHistory::redo()
 {
 	if (!old_parents.empty())
+	{
 		remove_entities();
+		app.last_status = "Redo remove entities";
+	}
 	else
+	{
 		recreate_entities(new_parents, new_indices);
+		app.last_status = "Redo create entities";
+	}
 }
 
 void EntityPositionHistory::set_positions(const std::vector<GUID>& parents, const std::vector<uint>& indices)
@@ -262,14 +307,87 @@ void EntityPositionHistory::set_positions(const std::vector<GUID>& parents, cons
 void EntityPositionHistory::undo()
 {
 	set_positions(old_parents, old_indices);
+	app.last_status = "Undo reposition entities";
 }
 
 void EntityPositionHistory::redo()
 {
 	set_positions(new_parents, new_indices);
+	app.last_status = "Redo reposition entities";
 }
 
 void ComponentHistory::recreate_components(const std::vector<GUID>& ids, const std::vector<uint>& indices)
+{
+	if (app.e_prefab)
+	{
+		auto ui = find_udt(comp_type);
+		for (auto i = 0; i < ids.size(); i++)
+		{
+			if (auto e = app.e_prefab->find_with_instance_id(ids[i]); e)
+			{
+				auto c = e->add_component_h(comp_type);
+				if (!contents.empty())
+				{
+					for (auto& item : contents[i])
+					{
+						if (auto a = ui->find_attribute(item.first); a)
+						{
+							a->type->unserialize(item.second, nullptr);
+							a->set_value(c, nullptr);
+						}
+					}
+				}
+				e->reposition_component(e->find_component_i(comp_type), indices[i]);
+			}
+		}
+
+		selection.callbacks.call("app"_h);
+	}
+}
+
+void ComponentHistory::remove_components(const std::vector<GUID>& ids)
+{
+	if (app.e_prefab)
+	{
+		for (auto i = 0; i < ids.size(); i++)
+		{
+			if (auto e = app.e_prefab->find_with_instance_id(ids[i]); e)
+				e->remove_component_h(comp_type);
+		}
+
+		selection.callbacks.call("app"_h);
+	}
+}
+
+void ComponentHistory::undo()
+{
+	if (!old_ids.empty())
+	{
+		recreate_components(old_ids, old_indices);
+		app.last_status = "Undo remove components";
+	}
+	else
+	{
+		remove_components(new_ids);
+		app.last_status = "Undo create components";
+	}
+}
+
+void ComponentHistory::redo()
+{
+	if (!old_ids.empty())
+	{
+		remove_components(old_ids);
+		app.last_status = "Redo remove components";
+	}
+	else
+	{
+		recreate_components(new_ids, new_indices);
+		app.last_status = "Redo create components";
+	}
+}
+
+void ComponentPositionHistory::set_positions(const std::vector<uint>& indices)
 {
 	if (app.e_prefab)
 	{
@@ -277,24 +395,25 @@ void ComponentHistory::recreate_components(const std::vector<GUID>& ids, const s
 		{
 			if (auto e = app.e_prefab->find_with_instance_id(ids[i]); e)
 			{
+				if (auto idx = e->find_component_i(comp_type); idx != -1)
+					e->reposition_component(idx, indices[i]);
 			}
 		}
+
+		selection.callbacks.call("app"_h);
 	}
 }
 
-void ComponentHistory::remove_components(const std::vector<GUID>& ids)
+void ComponentPositionHistory::undo()
 {
-
+	set_positions(old_indices);
+	app.last_status = "Undo reposition components";
 }
 
-void ComponentHistory::undo()
+void ComponentPositionHistory::redo()
 {
-
-}
-
-void ComponentHistory::redo()
-{
-
+	set_positions(new_indices);
+	app.last_status = "Redo reposition components";
 }
 
 void PrefabModifyHistory::set_value(const std::string& value)

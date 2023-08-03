@@ -552,7 +552,7 @@ void SceneView::on_draw()
 		auto& io = ImGui::GetIO();
 		auto& style = ImGui::GetStyle();
 
-		if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered())
+		if (ImGui::IsWindowHovered())
 		{
 			auto camera_node = camera->node;
 
