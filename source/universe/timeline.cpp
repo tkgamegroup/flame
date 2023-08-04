@@ -31,7 +31,7 @@ namespace flame
 		doc.save_file(filename.c_str());
 	}
 
-	void BoundTimelinePrivate::Track::update(float t)
+	void TimelineInstancePrivate::Track::update(float t)
 	{
 		if (attr)
 		{
@@ -65,7 +65,7 @@ namespace flame
 		}
 	}
 
-	void BoundTimelinePrivate::play()
+	void TimelineInstancePrivate::play()
 	{
 		if (playing)
 			return;
@@ -76,7 +76,7 @@ namespace flame
 		});
 	}
 
-	void BoundTimelinePrivate::stop()
+	void TimelineInstancePrivate::stop()
 	{
 		if (!playing)
 			return;
@@ -85,7 +85,7 @@ namespace flame
 		remove_event(ev);
 	}
 
-	BoundTimelinePrivate::BoundTimelinePrivate(TimelinePtr tl, EntityPtr e)
+	TimelineInstancePrivate::TimelineInstancePrivate(TimelinePtr tl, EntityPtr e)
 	{
 		for (auto& t : tl->tracks)
 		{
@@ -129,7 +129,7 @@ namespace flame
 		}
 	}
 
-	bool BoundTimelinePrivate::update()
+	bool TimelineInstancePrivate::update()
 	{
 		if (tracks.empty())
 		{
@@ -201,12 +201,12 @@ namespace flame
 	}Timeline_load;
 	Timeline::Load& Timeline::load = Timeline_load;
 
-	struct BoundTimelineCreate : BoundTimeline::Create
+	struct TimelineInstanceCreate : TimelineInstance::Create
 	{
-		BoundTimelinePtr operator()(TimelinePtr timeline, EntityPtr e) override
+		TimelineInstancePtr operator()(TimelinePtr timeline, EntityPtr e) override
 		{
-			return new BoundTimelinePrivate(timeline, e);
+			return new TimelineInstancePrivate(timeline, e);
 		}
-	}BoundTimeline_create;
-	BoundTimeline::Create& BoundTimeline::create = BoundTimeline_create;
+	}TimelineInstance_create;
+	TimelineInstance::Create& TimelineInstance::create = TimelineInstance_create;
 }

@@ -1870,6 +1870,7 @@ namespace flame
 					a.alphaBlendOp = VK_BLEND_OP_ADD;
 					a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 				}
+				assert(vk_blend_attachment_states.size() >= info.blend_options.size());
 				for (auto i = 0; i < info.blend_options.size(); i++)
 				{
 					auto& src = info.blend_options[i];

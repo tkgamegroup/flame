@@ -246,12 +246,9 @@ namespace flame
 	thread_local Frustum TypeInfo_Frustum::v;
 	thread_local GUID TypeInfo_GUID::v;
 
-	TypeInfoDataBase::TypeInfoDataBase()
+	void init_typeinfo()
 	{
-		if (!_tidb.typeinfos.empty())
-			return;
-
-		init_basic_types();
+		_tidb.init_basic_types();
 
 		for (auto& path : get_module_dependencies(get_app_path(true)))
 		{
@@ -262,13 +259,20 @@ namespace flame
 		}
 	}
 
-	inline void add_ti(TypeInfo* ti)
+	TypeInfoDataBase::TypeInfoDataBase()
 	{
-		_tidb.typeinfos.emplace(TypeInfo::get_hash(ti->tag, ti->name), ti);
 	}
 	
 	void TypeInfoDataBase::init_basic_types()
 	{
+		assert(typeinfos.empty());
+		if (!typeinfos.empty())
+			return;
+
+		auto add_ti = [&](TypeInfo* ti) {
+			typeinfos.emplace(TypeInfo::get_hash(ti->tag, ti->name), ti);
+		};
+
 		TypeInfo::void_type = new TypeInfo_void;
 		add_ti(TypeInfo::void_type);
 		add_ti(new TypeInfo_bool);

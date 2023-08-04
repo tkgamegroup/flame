@@ -14,6 +14,7 @@ struct Application
 		WindowStyleFlags styles = WindowFrame | WindowResizable)
 	{
 		printf("pid: %d\n", getpid());
+		process_events();
 		main_window = NativeWindow::create(title, size, styles);
 	}
 

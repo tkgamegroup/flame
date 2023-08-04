@@ -9,7 +9,7 @@ namespace flame
 		void save(const std::filesystem::path& filename) override;
 	};
 
-	struct BoundTimelinePrivate : BoundTimeline
+	struct TimelineInstancePrivate : TimelineInstance
 	{
 		struct Keyframe
 		{
@@ -34,7 +34,7 @@ namespace flame
 		float time = 0.f;
 		std::list<Track> tracks;
 
-		BoundTimelinePrivate(TimelinePtr tl, EntityPtr e);
+		TimelineInstancePrivate(TimelinePtr tl, EntityPtr e);
 
 		void play() override;
 		void stop() override;

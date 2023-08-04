@@ -52,18 +52,18 @@ namespace flame
 		FLAME_UNIVERSE_API static Load& load;
 	};
 
-	struct BoundTimeline
+	struct TimelineInstance
 	{
 		bool playing = false;
 
-		virtual ~BoundTimeline() {}
+		virtual ~TimelineInstance() {}
 
 		virtual void play() = 0;
 		virtual void stop() = 0;
 
 		struct Create
 		{
-			virtual BoundTimelinePtr operator()(TimelinePtr timeline, EntityPtr e) = 0;
+			virtual TimelineInstancePtr operator()(TimelinePtr timeline, EntityPtr e) = 0;
 		};
 		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;

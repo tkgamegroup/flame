@@ -254,6 +254,8 @@ show_usage:
 	return 0;
 
 process:
+	process_events();
+
 	std::filesystem::path input_path = args[1];
 	bool just_print_all_symbols = false;
 

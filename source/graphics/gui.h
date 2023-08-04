@@ -10,6 +10,9 @@
 #if USE_IM_GUIZMO
 #include <ImGuizmo.h>
 #endif
+#if USE_IMGUI_NODE_EDITOR
+#include <imgui_node_editor.h>
+#endif
 #endif
 
 namespace ImGui

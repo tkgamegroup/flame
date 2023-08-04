@@ -1,9 +1,6 @@
 #include "selection.h"
 #include "history.h"
 
-static auto ui_entity = TypeInfo::get<Entity>()->retrive_ui();
-static auto ui_component = TypeInfo::get<Component>()->retrive_ui();
-
 SelectHistory::~SelectHistory()
 {
 	auto destroy = [](Selection::Type& type, std::vector<void*>& objects) {
@@ -177,14 +174,14 @@ void EntityContent::init(EntityPtr e)
 	for (auto& c : e->components)
 		components.push_back(c->type_hash);
 
-	for (auto& a : ui_entity->attributes)
+	for (auto& a : TypeInfo::get<Entity>()->retrive_ui()->attributes)
 	{
 		if (auto value = a.serialize(e); value != a.default_value)
 			values.emplace_back(0, a.name_hash, value);
 	}
 	for (auto& c : e->components)
 	{
-		for (auto& a : ui_component->attributes)
+		for (auto& a : TypeInfo::get<Component>()->retrive_ui()->attributes)
 		{
 			if (auto value = a.serialize(c.get()); value != a.default_value)
 				values.emplace_back(c->type_hash, a.name_hash, value);

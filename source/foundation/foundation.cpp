@@ -3,6 +3,7 @@
 #include "typeinfo_serialize.h"
 #include "system_private.h"
 #include "window_private.h"
+#include "blueprint_private.h"
 #include "application.h"
 
 #include <exprtk.hpp>
@@ -11,20 +12,6 @@ namespace flame
 {
 	std::map<std::wstring, std::filesystem::path> Path::roots;
 	std::map<std::filesystem::path, AssetManagemant::Asset> AssetManagemant::assets;
-
-	struct _Initializer
-	{
-		_Initializer()
-		{
-			auto p = getenv("FLAME_PATH");
-			assert(p);
-			std::filesystem::path engine_path = p;
-			engine_path.make_preferred();
-			engine_path /= L"assets";
-			Path::set_root(L"flame", engine_path);
-		}
-	};
-	static _Initializer _initializer;
 
 	AssetManagemant::Asset& AssetManagemant::get(const std::filesystem::path& path)
 	{
@@ -404,35 +391,7 @@ namespace flame
 				return 0;
 			}
 
-			{
-				static std::vector<Event*> _events;
-				std::lock_guard<std::recursive_mutex> lock(event_mtx);
-				_events.resize(events.size());
-				for (auto i = 0; i < events.size(); i++)
-					_events[i] = events[i].get();
-				for (auto e : _events)
-				{
-					e->time_counter -= delta_time;
-					e->frames_counter -= 1;
-					if (e->time_counter <= 0 && e->frames_counter <= 0)
-					{
-						if (!e->callback())
-							e->dead = true;
-						else
-						{
-							e->time_counter = e->time_interval;
-							e->frames_counter = e->frames_interval;
-						}
-					}
-				}
-				for (auto it = events.begin(); it != events.end();)
-				{
-					if ((*it)->dead)
-						it = events.erase(it);
-					else
-						it++;
-				}
-			}
+			process_events();
 
 			if (!callback())
 			{
@@ -502,4 +461,55 @@ namespace flame
 		std::lock_guard<std::recursive_mutex> lock(event_mtx);
 		events.clear();
 	}
+
+	void process_events()
+	{
+		static std::vector<Event*> _events;
+		std::lock_guard<std::recursive_mutex> lock(event_mtx);
+		_events.resize(events.size());
+		for (auto i = 0; i < events.size(); i++)
+			_events[i] = events[i].get();
+		for (auto e : _events)
+		{
+			e->time_counter -= delta_time;
+			e->frames_counter -= 1;
+			if (e->time_counter <= 0 && e->frames_counter <= 0)
+			{
+				if (!e->callback())
+					e->dead = true;
+				else
+				{
+					e->time_counter = e->time_interval;
+					e->frames_counter = e->frames_interval;
+				}
+			}
+		}
+		for (auto it = events.begin(); it != events.end();)
+		{
+			if ((*it)->dead)
+				it = events.erase(it);
+			else
+				it++;
+		}
+	}
+
+	struct _Initializer
+	{
+		_Initializer()
+		{
+			auto p = getenv("FLAME_PATH");
+			assert(p);
+			std::filesystem::path engine_path = p;
+			engine_path.make_preferred();
+			engine_path /= L"assets";
+			Path::set_root(L"flame", engine_path);
+
+			add_event([]() {
+				init_typeinfo();
+				init_blueprint();
+				return false;
+			});
+		}
+	};
+	static _Initializer _initializer;
 }

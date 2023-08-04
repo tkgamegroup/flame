@@ -319,8 +319,7 @@ ProjectView::ProjectView(const std::string& name) :
 							return;
 						}
 
-						static auto ui_component = TypeInfo::get<Component>()->retrive_ui();
-						for (auto& fi : ui_component->functions)
+						for (auto& fi : TypeInfo::get<Component>()->retrive_ui()->functions)
 							overrides.emplace_back(fi.name, false);
 					}
 

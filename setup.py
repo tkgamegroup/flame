@@ -357,6 +357,21 @@ if op != 4:
 		else:
 			print("%s exists, skip download" % str(lib_dir))
 		print("====\n")
+		
+	# (Optional)
+	if op != 3:
+		print("== library ImGui-Node-Editor ==")
+		ok = True
+		address = "https://github.com/thedmd/imgui-node-editor"
+		lib_dir = parent_directory / "imgui-node-editor"
+		if not lib_dir.exists():
+			if op == 2:
+				print("Download ImGui-Node-Editor from %s into %s ? y/n" % (address, str(lib_dir)))
+				ok = input() == "y"
+			if ok:
+				os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
+		else:
+			print("%s exists, skip download" % str(lib_dir))
 			
 	# (Optional)
 	if op != 3:

@@ -114,8 +114,7 @@ namespace flame
 		std::vector<T*> get_components(uint lv) const
 		{
 			std::vector<T*> ret;
-			auto comp = get_component<T>();
-			if (comp)
+			if (auto comp = get_component<T>(); comp)
 				ret.push_back(comp);
 			if (lv > 0)
 			{

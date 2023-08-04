@@ -25,6 +25,11 @@ namespace flame
 {
 	FLAME_FOUNDATION_TYPE(Bitmap);
 	FLAME_FOUNDATION_TYPE(NativeWindow);
+	FLAME_FOUNDATION_TYPE(BlueprintNode);
+	FLAME_FOUNDATION_TYPE(BlueprintLink);
+	FLAME_FOUNDATION_TYPE(BlueprintGroup);
+	FLAME_FOUNDATION_TYPE(Blueprint);
+	FLAME_FOUNDATION_TYPE(BlueprintInstance);
 
 	struct TypeInfo;
 	struct VariableInfo;
@@ -468,4 +473,5 @@ namespace flame
 	FLAME_FOUNDATION_API void reset_event(void* ev);
 	FLAME_FOUNDATION_API void remove_event(void* ev);
 	FLAME_FOUNDATION_API void clear_events();
+	FLAME_FOUNDATION_API void process_events();
 }

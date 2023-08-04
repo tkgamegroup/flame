@@ -1166,9 +1166,6 @@ std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num,
 	return std::make_pair(ret_changed, ret_changed_name);
 }
 
-static auto ui_entity = TypeInfo::get<Entity>()->retrive_ui();
-static auto ui_component = TypeInfo::get<Component>()->retrive_ui();
-
 InspectedEntities::~InspectedEntities()
 {
 	for (auto e : entities)
@@ -1266,7 +1263,7 @@ void InspectedEntities::refresh(const std::vector<EntityPtr>& _entities)
 
 	if (entities.size() > 1)
 	{
-		for (auto& a : ui_entity->attributes)
+		for (auto& a : TypeInfo::get<Entity>()->retrive_ui()->attributes)
 			process_attribute(a, 0);
 	}
 
@@ -1297,7 +1294,7 @@ void InspectedEntities::refresh(const std::vector<EntityPtr>& _entities)
 		{
 			auto comp0 = entt0->get_component_h(cc.type_hash);
 			auto& ui = *find_udt(cc.type_hash);
-			for (auto& a : ui_component->attributes)
+			for (auto& a : TypeInfo::get<Component>()->retrive_ui()->attributes)
 				process_attribute(a, cc.type_hash);
 			for (auto& a : ui.attributes)
 				process_attribute(a, cc.type_hash);
@@ -1328,18 +1325,18 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 	ImGui::PushID("flame::Entity"_h);
 	{
 		auto hash = "enable"_h;
-		get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
+		get_changed2(manipulate_attribute(*TypeInfo::get<Entity>()->retrive_ui()->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
 	}
 	ImGui::SameLine();
 	{
 		auto hash = "name"_h;
-		get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
+		get_changed2(manipulate_attribute(*TypeInfo::get<Entity>()->retrive_ui()->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
 	}
 	ImGui::SameLine();
 	{
 		ImGui::SetNextItemWidth(100.f);
 		auto hash = "tag"_h;
-		get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
+		get_changed2(manipulate_attribute(*TypeInfo::get<Entity>()->retrive_ui()->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
 	}
 	if (entities.size() == 1 && entity->prefab_instance)
 	{
@@ -1433,7 +1430,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 
 	if (ret_changed_name != 0)
 	{
-		auto& str = ui_entity->find_attribute(ret_changed_name)->name;
+		auto& str = TypeInfo::get<Entity>()->retrive_ui()->find_attribute(ret_changed_name)->name;
 		for (auto e : entities)
 		{
 			if (auto ins = get_root_prefab_instance(e); ins)
@@ -1453,7 +1450,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 		ImGui::SameLine();
 		{
 			auto hash = "enable"_h;
-			get_changed2(manipulate_attribute(*ui_component->find_attribute(hash), (voidptr*)cc.components.data(), cc.components.size(), true), hash);
+			get_changed2(manipulate_attribute(*TypeInfo::get<Component>()->retrive_ui()->find_attribute(hash), (voidptr*)cc.components.data(), cc.components.size(), true), hash);
 		}
 		editing_objects.pop();
 

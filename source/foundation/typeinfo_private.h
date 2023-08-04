@@ -4,4 +4,5 @@
 
 namespace flame
 {
+	void init_typeinfo();
 }
