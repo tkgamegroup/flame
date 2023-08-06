@@ -5,13 +5,19 @@
 BlueprintWindow blueprint_window;
 
 BlueprintView::BlueprintView() :
-	View(&blueprint_window, "Blueprint##" + str(rand()))
+	BlueprintView("Blueprint##" + str(rand()))
 {
 }
 
 BlueprintView::BlueprintView(const std::string& name) :
 	View(&blueprint_window, name)
 {
+#if USE_IMGUI_NODE_EDITOR
+	ax::NodeEditor::Config im_editor_config;
+	im_editor_config.SettingsFile = "";
+	im_editor_config.NavigateButtonIndex = 2;
+	im_editor = ax::NodeEditor::CreateEditor(&im_editor_config);
+#endif
 }
 
 void BlueprintView::on_draw()
@@ -26,64 +32,252 @@ void BlueprintView::on_draw()
 			Blueprint::release(blueprint);
 			blueprint = nullptr;
 		}
+		if (blueprint_instance)
+		{
+			delete blueprint_instance;
+			blueprint_instance = nullptr;
+		}
 		blueprint = Blueprint::get(L"asserts\\test.blueprint");
+		blueprint_instance = BlueprintInstance::create(blueprint);
 	}
+
+	static auto library = BlueprintNodeLibrary::get(L"standard");
 
 	if (blueprint)
 	{
+		if (blueprint_instance->built_frame < blueprint->dirty_frame)
+			blueprint_instance->build();
+
 		ImGui::SameLine();
-		if (ImGui::Button("Test: Add Node"))
+		if (ImGui::Button("Add Node"))
+			ImGui::OpenPopup("add_node");
+		if (ImGui::BeginPopup("add_node"))
 		{
-			auto n = blueprint->add_node(nullptr, "Add");
-			n->position = ImGui::GetCursorPos();
+			for (auto& t : library->node_templates)
+			{
+				if (ImGui::Selectable(t.name.c_str()))
+				{
+					blueprint->add_node(nullptr, t.name, t.inputs, t.outputs,
+						t.function, t.input_slot_changed_callback);
+				}
+			}
+			ImGui::EndPopup();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Run"))
+		{
+			if (!blueprint_instance->executing_group)
+				blueprint_instance->prepare_executing("main"_h);
+			blueprint_instance->run();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Step"))
+		{
+			if (!blueprint_instance->executing_group)
+			{
+				blueprint_instance->prepare_executing("main"_h);
+				blueprint_window.debugger->debugging = blueprint_instance;
+			}
+			else
+			{
+				BlueprintNodePtr break_node = nullptr;
+				if (auto nn = blueprint_instance->current_node_ptr(); nn)
+				{
+					if (blueprint_window.debugger->has_break_node(nn->original))
+					{
+						break_node = nn->original;
+						blueprint_window.debugger->remove_break_node(break_node);
+					}
+				}
+				blueprint_window.debugger->debugging = nullptr;
+				blueprint_instance->step();
+				if (break_node)
+					blueprint_window.debugger->add_break_node(break_node);
+				if (blueprint_instance->executing_group)
+					blueprint_window.debugger->debugging = blueprint_instance;
+			}
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Stop"))
+		{
+			if (blueprint_window.debugger->debugging == blueprint_instance)
+			{
+				blueprint_window.debugger->debugging = nullptr;
+				blueprint_instance->stop();
+			}
 		}
 
-		ax::NodeEditor::SetCurrentEditor(blueprint_window.im_editor);
+		ax::NodeEditor::SetCurrentEditor(im_editor);
+		if (blueprint_window.debugger->debugging == blueprint_instance)
+			ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_Bg, ImColor(100, 80, 60, 200));
 		ax::NodeEditor::Begin("node_editor");
 
 		auto& io = ImGui::GetIO();
 		auto dl = ImGui::GetWindowDrawList();
 
+		BlueprintInstance::Node* break_node = nullptr;
+		if (blueprint_window.debugger->debugging == blueprint_instance)
+			break_node = blueprint_instance->current_node_ptr();
+
 		auto group = blueprint->groups[0].get();
 		for (auto& n : group->nodes)
 		{
+			const BlueprintInstance::Node* instance_node = nullptr;
+			if (blueprint_window.debugger->debugging == blueprint_instance)
+			{
+				if (group->name_hash == blueprint_instance->executing_group)
+					instance_node = blueprint_instance->current_group->find(n.get());
+			}
+
 			ax::NodeEditor::BeginNode((uint64)n.get());
-			ImGui::TextUnformatted(n->name.c_str());
-			for (auto& i : n->inputs)
+			auto display_name = n->name;
+			if (break_node && break_node->original == n.get())
+				display_name = graphics::FontAtlas::icon_s("arrow-right"_h) + " " + display_name;
+			ImGui::TextUnformatted(display_name.c_str());
+			ImGui::BeginGroup();
+			for (auto i = 0; i < n->inputs.size(); i++)
 			{
-				ax::NodeEditor::BeginPin((uint64)&i, ax::NodeEditor::PinKind::Input);
-				ImGui::Text("%s %s", graphics::FontAtlas::icon_s("play"_h).c_str(), i.name.c_str());
+				auto& input = n->inputs[i];
+				ax::NodeEditor::BeginPin((uint64)&input, ax::NodeEditor::PinKind::Input);
+				ImGui::Text("%s %s", graphics::FontAtlas::icon_s("play"_h).c_str(), input.name.c_str());
 				ax::NodeEditor::EndPin();
+				if (blueprint_window.debugger->debugging == blueprint_instance)
+				{
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::BeginTooltip();
+						if (instance_node)
+						{
+							auto& arg = instance_node->inputs[i];
+							if (auto type = input.get_type(arg.type_idx); type)
+							{
+								auto s = type->serialize(arg.data);
+								ImGui::Text("Value: %s", s.c_str());
+							}
+						}
+						ImGui::EndTooltip();
+					}
+				}
+				else
+				{
+					auto linked = false;
+					for (auto& l : group->links)
+					{
+						if (l->to_slot == &input)
+						{
+							linked = true;
+							break;
+						}
+					}
+					if (!linked)
+					{
+						ImGui::PushID(&input);
+						if (auto type = input.get_type(); type && type->tag == TagD)
+						{
+							auto ti = (TypeInfo_Data*)type;
+							switch (ti->data_type)
+							{
+							case DataFloat:
+								ImGui::PushMultiItemsWidths(ti->vec_size, 60.f * ti->vec_size);
+								for (int i = 0; i < ti->vec_size; i++)
+								{
+									ImGui::PushID(i);
+									if (i > 0)
+										ImGui::SameLine();
+									ImGui::DragScalar("", ImGuiDataType_Float, &((float*)input.data)[i], 0.01f);
+									ImGui::PopID();
+									ImGui::PopItemWidth();
+								}
+								break;
+							case DataInt:
+								ImGui::PushMultiItemsWidths(ti->vec_size, 60.f * ti->vec_size);
+								for (int i = 0; i < ti->vec_size; i++)
+								{
+									ImGui::PushID(i);
+									if (i > 0)
+										ImGui::SameLine();
+									ImGui::DragScalar("", ImGuiDataType_S32, &((int*)input.data)[i]);
+									ImGui::PopID();
+									ImGui::PopItemWidth();
+								}
+								ImGui::PopItemWidth();
+								break;
+							}
+						}
+						ImGui::PopID();
+					}
+				}
 			}
-			ImGui::SameLine();
-			for (auto& o : n->outputs)
+			ImGui::EndGroup();
+			ImGui::SameLine(0.f, 16.f);
+			ImGui::BeginGroup();
+			for (auto i = 0; i < n->outputs.size(); i++)
 			{
-				ax::NodeEditor::BeginPin((uint64)&o, ax::NodeEditor::PinKind::Output);
-				ImGui::Text("%s %s", o.name.c_str(), graphics::FontAtlas::icon_s("play"_h).c_str());
+				auto& output = n->outputs[i];
+				ax::NodeEditor::BeginPin((uint64)&output, ax::NodeEditor::PinKind::Output);
+				ImGui::Text("%s %s", output.name.c_str(), graphics::FontAtlas::icon_s("play"_h).c_str());
 				ax::NodeEditor::EndPin();
+				if (blueprint_window.debugger->debugging == blueprint_instance)
+				{
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::BeginTooltip();
+						if (instance_node)
+						{
+							auto& arg = instance_node->outputs[i];
+							if (auto type = output.get_type(arg.type_idx); type)
+							{
+								auto s = type->serialize(arg.data);
+								ImGui::Text("Value: %s", s.c_str());
+							}
+						}
+						ImGui::EndTooltip();
+					}
+				}
 			}
+			ImGui::EndGroup();
 			ax::NodeEditor::EndNode();
 		}
+
 		for (auto& l : group->links)
 			ax::NodeEditor::Link((uint64)l.get(), (uint64)l->from_slot, (uint64)l->to_slot);
 
 		if (ax::NodeEditor::BeginCreate())
 		{
-			BlueprintSlot* from_slot; BlueprintSlot* to_slot;
-			if (ax::NodeEditor::QueryNewLink((ax::NodeEditor::PinId*)&from_slot, (ax::NodeEditor::PinId*)&to_slot))
+			if (BlueprintSlotPtr from_slot, to_slot;
+				ax::NodeEditor::QueryNewLink((ax::NodeEditor::PinId*)&from_slot, (ax::NodeEditor::PinId*)&to_slot))
 			{
-				if (from_slot && to_slot)
+				if (from_slot && to_slot && from_slot != to_slot)
 				{
-					if (ax::NodeEditor::AcceptNewItem())
+					if (to_slot->find_type(from_slot->get_type()) != -1)
 					{
-
+						if (ax::NodeEditor::AcceptNewItem())
+							blueprint->add_link(from_slot->node, from_slot->name_hash, to_slot->node, to_slot->name_hash);
 					}
 				}
 			}
 		}
 		ax::NodeEditor::EndCreate();
+		if (ax::NodeEditor::BeginDelete())
+		{
+			BlueprintLinkPtr link;
+			BlueprintNodePtr node;
+			while (ax::NodeEditor::QueryDeletedLink((ax::NodeEditor::LinkId*)&link))
+			{
+				if (ax::NodeEditor::AcceptDeletedItem())
+					blueprint->remove_link(link);
+			}
+			while (ax::NodeEditor::QueryDeletedNode((ax::NodeEditor::NodeId*)&node))
+			{
+				if (ax::NodeEditor::AcceptDeletedItem())
+					blueprint->remove_node(node);
+			}
+		}
+		ax::NodeEditor::EndDelete();
 
 		ax::NodeEditor::End();
+		if (blueprint_window.debugger->debugging == blueprint_instance)
+			ax::NodeEditor::PopStyleColor();
 		ax::NodeEditor::SetCurrentEditor(nullptr);
 	}
 
@@ -95,9 +289,8 @@ void BlueprintView::on_draw()
 BlueprintWindow::BlueprintWindow() :
 	Window("Blueprint")
 {
-#if USE_IMGUI_NODE_EDITOR
-	im_editor = ax::NodeEditor::CreateEditor();
-#endif
+	debugger = BlueprintDebugger::create();
+	BlueprintDebugger::set_current(debugger);
 }
 
 void BlueprintWindow::open_view(bool new_instance)

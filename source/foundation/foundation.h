@@ -29,7 +29,9 @@ namespace flame
 	FLAME_FOUNDATION_TYPE(BlueprintLink);
 	FLAME_FOUNDATION_TYPE(BlueprintGroup);
 	FLAME_FOUNDATION_TYPE(Blueprint);
+	FLAME_FOUNDATION_TYPE(BlueprintNodeLibrary);
 	FLAME_FOUNDATION_TYPE(BlueprintInstance);
+	FLAME_FOUNDATION_TYPE(BlueprintDebugger);
 
 	struct TypeInfo;
 	struct VariableInfo;

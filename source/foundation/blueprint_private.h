@@ -4,6 +4,7 @@ namespace flame
 {
 	struct BlueprintNodePrivate : BlueprintNode
 	{
+
 	};
 
 	struct BlueprintLinkPrivate : BlueprintLink
@@ -21,7 +22,8 @@ namespace flame
 		BlueprintPrivate();
 
 		BlueprintNodePtr add_node(BlueprintGroupPtr group, const std::string& name,
-			const std::vector<BlueprintSlot>& inputs = {}, const std::vector<BlueprintSlot>& outputs = {}, BlueprintNodeFunction function = nullptr) override;
+			const std::vector<BlueprintSlot>& inputs = {}, const std::vector<BlueprintSlot>& outputs = {}, 
+			BlueprintNodeFunction function = nullptr, BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr) override;
 		void remove_node(BlueprintNodePtr node) override;
 		BlueprintLinkPtr add_link(BlueprintNodePtr from_node, uint from_slot, BlueprintNodePtr to_node, uint to_slot) override;
 		void remove_link(BlueprintLinkPtr link) override;
@@ -31,36 +33,27 @@ namespace flame
 		void save() override;
 	};
 
+	struct BlueprintNodeLibraryPrivate : BlueprintNodeLibrary
+	{
+		void add_template(const std::string& name, const std::vector<BlueprintSlot>& inputs = {}, const std::vector<BlueprintSlot>& outputs = {}, 
+			BlueprintNodeFunction function = nullptr, BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr);
+	};
+
 	struct BlueprintInstancePrivate : BlueprintInstance
 	{
-		struct Node
-		{
-			BlueprintNodePtr original;
-			std::vector<BlueprintArgument> inputs;
-			std::vector<BlueprintArgument> outputs;
-		};
+		BlueprintInstancePrivate(BlueprintPtr blueprint);
 
-		struct Group
-		{
-			std::map<const void*, BlueprintArgument> datas;
-			std::vector<std::vector<Node>> nodes;
-
-			~Group();
-		};
-
-		std::map<uint, Group> groups;
-		Group* current_group = nullptr;
-		int current_stack = -1;
-
-		uint updated_frame;
-
-		BlueprintInstancePrivate();
-
-		void update();
-
-		void set_group(uint group_name) override;
+		void build() override;
+		void prepare_executing(uint group_name) override;
 		void run() override;
 		void step() override;
+		void stop() override;
+	};
+
+	struct BlueprintDebuggerPrivate : BlueprintDebugger
+	{
+		void add_break_node(BlueprintNodePtr node) override;
+		void remove_break_node(BlueprintNodePtr node) override;
 	};
 
 	void init_blueprint();

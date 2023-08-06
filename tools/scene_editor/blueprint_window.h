@@ -8,7 +8,11 @@
 
 struct BlueprintView : View
 {
+#if USE_IMGUI_NODE_EDITOR
+	ax::NodeEditor::EditorContext* im_editor = nullptr;
+#endif
 	BlueprintPtr blueprint = nullptr;
+	BlueprintInstancePtr blueprint_instance = nullptr;
 
 	BlueprintView();
 	BlueprintView(const std::string& name);
@@ -17,9 +21,7 @@ struct BlueprintView : View
 
 struct BlueprintWindow : Window
 {
-#if USE_IMGUI_NODE_EDITOR
-	ax::NodeEditor::EditorContext* im_editor = nullptr;
-#endif
+	BlueprintDebuggerPtr debugger = nullptr;
 
 	BlueprintWindow();
 	void open_view(bool new_instance) override;

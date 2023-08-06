@@ -959,6 +959,13 @@ namespace flame
 			data_type = DataBool;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(bool*)p = false;
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1002,6 +1009,13 @@ namespace flame
 			data_type = DataChar;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(char*)p = 0;
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1041,6 +1055,13 @@ namespace flame
 			is_signed = false;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(uchar*)p = 0;
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1079,6 +1100,13 @@ namespace flame
 			data_type = DataShort;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(short*)p = 0;
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1118,6 +1146,13 @@ namespace flame
 			is_signed = false;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(ushort*)p = 0;
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1156,6 +1191,13 @@ namespace flame
 			data_type = DataInt;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(int*)p = 0;
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1195,6 +1237,13 @@ namespace flame
 			is_signed = false;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(uint*)p = 0;
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1233,6 +1282,13 @@ namespace flame
 			data_type = DataLong;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(int64*)p = 0;
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1272,6 +1328,13 @@ namespace flame
 			is_signed = false;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(uint64*)p = 0;
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1310,6 +1373,13 @@ namespace flame
 			data_type = DataFloat;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(float*)p = 0.f;
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1350,6 +1420,13 @@ namespace flame
 			vec_size = 2;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(cvec2*)p = cvec2(0);
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1390,6 +1467,13 @@ namespace flame
 			vec_size = 3;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(cvec3*)p = cvec3(0);
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1430,6 +1514,13 @@ namespace flame
 			vec_size = 4;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(cvec4*)p = cvec4(0);
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1469,6 +1560,13 @@ namespace flame
 			vec_size = 2;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(ivec2*)p = ivec2(0);
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1508,6 +1606,13 @@ namespace flame
 			vec_size = 3;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(ivec3*)p = ivec3(0);
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1547,6 +1652,13 @@ namespace flame
 			vec_size = 4;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(ivec4*)p = ivec4(0);
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1587,6 +1699,13 @@ namespace flame
 			vec_size = 2;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(uvec2*)p = uvec2(0);
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1627,6 +1746,13 @@ namespace flame
 			vec_size = 3;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(uvec3*)p = uvec3(0);
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1667,6 +1793,13 @@ namespace flame
 			vec_size = 4;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(uvec4*)p = uvec4(0);
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1706,6 +1839,13 @@ namespace flame
 			vec_size = 2;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(vec2*)p = vec2(0.f);
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1745,6 +1885,13 @@ namespace flame
 			vec_size = 3;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(vec3*)p = vec3(0.f);
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
@@ -1784,6 +1931,13 @@ namespace flame
 			vec_size = 4;
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = malloc(size);
+			*(vec4*)p = vec4(0.f);
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
