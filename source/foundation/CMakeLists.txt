@@ -1,4 +1,6 @@
 file(GLOB source_files "*.h*" "../*.h*" "*.c*")
+file(GLOB_RECURSE bp_node_source_files "blueprint_node_library/*.h*" "blueprint_node_library/*.c*")
+set(source_files "${source_files};${bp_node_source_files}")
 add_library(flame_foundation SHARED ${source_files})
 list(FILTER source_files INCLUDE REGEX ".*foundation[.]cpp$")
 set_source_files_properties(${source_files} PROPERTIES COMPILE_FLAGS "/bigobj")

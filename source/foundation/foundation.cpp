@@ -4,6 +4,7 @@
 #include "system_private.h"
 #include "window_private.h"
 #include "blueprint_private.h"
+#include "blueprint_node_library/node_library.h"
 #include "application.h"
 
 #include <exprtk.hpp>
@@ -497,6 +498,8 @@ namespace flame
 	{
 		_Initializer()
 		{
+			printf("foundation init\n");
+
 			auto p = getenv("FLAME_PATH");
 			assert(p);
 			std::filesystem::path engine_path = p;
@@ -506,7 +509,7 @@ namespace flame
 
 			add_event([]() {
 				init_typeinfo();
-				init_blueprint();
+				init_node_library();
 				return false;
 			});
 		}

@@ -357,6 +357,7 @@ process:
 	VARIANT variant;
 
 	auto library = load_library(input_path);
+	clear_events();
 
 	std::map<std::string, IDiaSymbol*> dia_enums;
 	std::map<std::string, IDiaSymbol*> dia_funcs;

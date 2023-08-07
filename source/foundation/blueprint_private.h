@@ -21,9 +21,10 @@ namespace flame
 	{
 		BlueprintPrivate();
 
-		BlueprintNodePtr add_node(BlueprintGroupPtr group, const std::string& name,
-			const std::vector<BlueprintSlot>& inputs = {}, const std::vector<BlueprintSlot>& outputs = {}, 
-			BlueprintNodeFunction function = nullptr, BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr) override;
+		BlueprintNodePtr add_node(BlueprintGroupPtr group /*null means the main group*/, const std::string& name,
+			const std::vector<BlueprintSlot>& inputs = {}, const std::vector<BlueprintSlot>& outputs = {},
+			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
+			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewer previewer = nullptr) override;
 		void remove_node(BlueprintNodePtr node) override;
 		BlueprintLinkPtr add_link(BlueprintNodePtr from_node, uint from_slot, BlueprintNodePtr to_node, uint to_slot) override;
 		void remove_link(BlueprintLinkPtr link) override;
@@ -35,8 +36,9 @@ namespace flame
 
 	struct BlueprintNodeLibraryPrivate : BlueprintNodeLibrary
 	{
-		void add_template(const std::string& name, const std::vector<BlueprintSlot>& inputs = {}, const std::vector<BlueprintSlot>& outputs = {}, 
-			BlueprintNodeFunction function = nullptr, BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr);
+		void add_template(const std::string& name, const std::vector<BlueprintSlot>& inputs = {}, const std::vector<BlueprintSlot>& outputs = {},
+			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
+			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewer previewer = nullptr) override;
 	};
 
 	struct BlueprintInstancePrivate : BlueprintInstance
@@ -55,6 +57,4 @@ namespace flame
 		void add_break_node(BlueprintNodePtr node) override;
 		void remove_break_node(BlueprintNodePtr node) override;
 	};
-
-	void init_blueprint();
 }

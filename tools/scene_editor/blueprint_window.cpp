@@ -41,7 +41,8 @@ void BlueprintView::on_draw()
 		blueprint_instance = BlueprintInstance::create(blueprint);
 	}
 
-	static auto library = BlueprintNodeLibrary::get(L"standard");
+	static auto standard_library = BlueprintNodeLibrary::get(L"standard");
+	static auto geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
 
 	if (blueprint)
 	{
@@ -53,12 +54,20 @@ void BlueprintView::on_draw()
 			ImGui::OpenPopup("add_node");
 		if (ImGui::BeginPopup("add_node"))
 		{
-			for (auto& t : library->node_templates)
+			for (auto& t : standard_library->node_templates)
 			{
 				if (ImGui::Selectable(t.name.c_str()))
 				{
 					blueprint->add_node(nullptr, t.name, t.inputs, t.outputs,
-						t.function, t.input_slot_changed_callback);
+						t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.previewer);
+				}
+			}
+			for (auto& t : geometry_library->node_templates)
+			{
+				if (ImGui::Selectable(t.name.c_str()))
+				{
+					blueprint->add_node(nullptr, t.name, t.inputs, t.outputs,
+						t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.previewer);
 				}
 			}
 			ImGui::EndPopup();
@@ -214,6 +223,8 @@ void BlueprintView::on_draw()
 			for (auto i = 0; i < n->outputs.size(); i++)
 			{
 				auto& output = n->outputs[i];
+				if (output.type_idx == -1)
+					continue;
 				ax::NodeEditor::BeginPin((uint64)&output, ax::NodeEditor::PinKind::Output);
 				ImGui::Text("%s %s", output.name.c_str(), graphics::FontAtlas::icon_s("play"_h).c_str());
 				ax::NodeEditor::EndPin();
@@ -236,6 +247,15 @@ void BlueprintView::on_draw()
 				}
 			}
 			ImGui::EndGroup();
+
+			if (n->previewer)
+			{
+				if (ImGui::CollapsingHeader("Preview"))
+				{
+					ImGui::Image(nullptr, ImVec2(200, 200));
+				}
+			}
+
 			ax::NodeEditor::EndNode();
 		}
 

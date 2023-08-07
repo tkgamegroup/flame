@@ -8,417 +8,6 @@ namespace flame
 	std::vector<std::unique_ptr<BlueprintNodeLibraryT>> loaded_blueprint_node_libraries;
 	static BlueprintNodeLibraryPtr standard_library = nullptr;
 
-	void init_blueprint()
-	{
-		standard_library = new BlueprintNodeLibraryPrivate;
-
-		standard_library->add_template("Vec2",
-			{
-				{
-					.name = "X",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Y",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<vec2>() }
-				}
-			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-				*(vec2*)outputs[0].data = vec2(*(float*)inputs[0].data, *(float*)inputs[1].data);
-			}
-		);
-		standard_library->add_template("Vec3",
-			{
-				{
-					.name = "X",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Y",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Z",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<vec3>() }
-				}
-			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-				*(vec3*)outputs[0].data = vec3(*(float*)inputs[0].data, *(float*)inputs[1].data, *(float*)inputs[2].data);
-			}
-		);
-		standard_library->add_template("Vec4",
-			{
-				{
-					.name = "X",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Y",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Z",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "W",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<vec3>() }
-				}
-			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-				*(vec4*)outputs[0].data = vec4(*(float*)inputs[0].data, *(float*)inputs[1].data, *(float*)inputs[2].data, *(float*)inputs[3].data);
-			}
-		);
-		standard_library->add_template("Add", 
-			{ 
-				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}, 
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				} 
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}
-			}, 
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-				switch (inputs[0].type_idx + inputs[1].type_idx * 12)
-				{
-				case 0:
-					*(float*)outputs[0].data = *(float*)inputs[0].data + *(float*)inputs[1].data;
-					break;
-				case 1:
-					*(vec2*)outputs[0].data = *(vec2*)inputs[0].data + vec2(*(float*)inputs[1].data, 0.f);
-					break;
-				case 2:
-					*(vec3*)outputs[0].data = *(vec3*)inputs[0].data + vec3(*(float*)inputs[1].data, 0.f, 0.f);
-					break;
-				case 4:
-					*(vec4*)outputs[0].data = *(vec4*)inputs[0].data + vec4(*(float*)inputs[1].data, 0.f, 0.f, 0.f);
-					break;
-				case 5:
-					*(float*)outputs[0].data = *(int*)inputs[0].data + *(float*)inputs[1].data;
-					break;
-				case 6:
-					*(vec2*)outputs[0].data = vec2(*(ivec2*)inputs[0].data) + vec2(*(float*)inputs[1].data, 0.f);
-					break;
-				case 7:
-					*(vec3*)outputs[0].data = vec3(*(ivec3*)inputs[0].data) + vec3(*(float*)inputs[1].data, 0.f, 0.f);
-					break;
-				case 8:
-					*(vec4*)outputs[0].data = vec4(*(ivec4*)inputs[0].data) + vec4(*(float*)inputs[1].data, 0.f, 0.f, 0.f);
-					break;
-				}
-			},
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				auto ti0 = (TypeInfo_Data*)input_types[0];
-				auto ti1 = (TypeInfo_Data*)input_types[1];
-				auto data_type = DataFloat;
-				auto vec_size = max(ti0->vec_size, ti1->vec_size);
-				auto is_signed = ti0->is_signed || ti1->is_signed;
-				if (ti0->data_type == DataInt && ti1->data_type)
-					data_type = DataInt;
-				switch (data_type)
-				{
-				case DataFloat:
-					switch (vec_size)
-					{
-					case 1:
-						*output_types = TypeInfo::get<float>();
-						break;
-					case 2:
-						*output_types = TypeInfo::get<vec2>();
-						break;
-					case 3:
-						*output_types = TypeInfo::get<vec3>();
-						break;
-					case 4:
-						*output_types = TypeInfo::get<vec4>();
-						break;
-					}
-					break;
-				case DataInt:
-					switch (vec_size)
-					{
-					case 1:
-						*output_types = is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>();
-						break;
-					case 2:
-						*output_types = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>();
-						break;
-					case 3:
-						*output_types = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>();
-						break;
-					case 4:
-						*output_types = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>();
-						break;
-					}
-					break;
-				}
-			}
-		);
-		standard_library->add_template("Minus",
-			{
-				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				},
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}
-			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-				*(float*)outputs[0].data = *(float*)inputs[0].data - *(float*)inputs[1].data;
-			},
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				auto ti0 = (TypeInfo_Data*)input_types[0];
-				auto ti1 = (TypeInfo_Data*)input_types[1];
-				auto data_type = DataFloat;
-				auto vec_size = max(ti0->vec_size, ti1->vec_size);
-				auto is_signed = ti0->is_signed || ti1->is_signed;
-				if (ti0->data_type == DataInt && ti1->data_type)
-					data_type = DataInt;
-				switch (data_type)
-				{
-				case DataFloat:
-					switch (vec_size)
-					{
-					case 1:
-						*output_types = TypeInfo::get<float>();
-						break;
-					case 2:
-						*output_types = TypeInfo::get<vec2>();
-						break;
-					case 3:
-						*output_types = TypeInfo::get<vec3>();
-						break;
-					case 4:
-						*output_types = TypeInfo::get<vec4>();
-						break;
-					}
-					break;
-				case DataInt:
-					switch (vec_size)
-					{
-					case 1:
-						*output_types = is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>();
-						break;
-					case 2:
-						*output_types = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>();
-						break;
-					case 3:
-						*output_types = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>();
-						break;
-					case 4:
-						*output_types = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>();
-						break;
-					}
-					break;
-				}
-			}
-		);
-		standard_library->add_template("Multiple",
-			{
-				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				},
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}
-			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-				*(float*)outputs[0].data = *(float*)inputs[0].data * *(float*)inputs[1].data;
-			},
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				auto ti0 = (TypeInfo_Data*)input_types[0];
-				auto ti1 = (TypeInfo_Data*)input_types[1];
-				auto data_type = DataFloat;
-				auto vec_size = max(ti0->vec_size, ti1->vec_size);
-				auto is_signed = ti0->is_signed || ti1->is_signed;
-				if (ti0->data_type == DataInt && ti1->data_type)
-					data_type = DataInt;
-				switch (data_type)
-				{
-				case DataFloat:
-					switch (vec_size)
-					{
-					case 1:
-						*output_types = TypeInfo::get<float>();
-						break;
-					case 2:
-						*output_types = TypeInfo::get<vec2>();
-						break;
-					case 3:
-						*output_types = TypeInfo::get<vec3>();
-						break;
-					case 4:
-						*output_types = TypeInfo::get<vec4>();
-						break;
-					}
-					break;
-				case DataInt:
-					switch (vec_size)
-					{
-					case 1:
-						*output_types = is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>();
-						break;
-					case 2:
-						*output_types = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>();
-						break;
-					case 3:
-						*output_types = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>();
-						break;
-					case 4:
-						*output_types = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>();
-						break;
-					}
-					break;
-				}
-			}
-		);
-		standard_library->add_template("Divide",
-			{
-				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				},
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}
-			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-				*(float*)outputs[0].data = *(float*)inputs[0].data / *(float*)inputs[1].data;
-			},
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				auto ti0 = (TypeInfo_Data*)input_types[0];
-				auto ti1 = (TypeInfo_Data*)input_types[1];
-				auto data_type = DataFloat;
-				auto vec_size = max(ti0->vec_size, ti1->vec_size);
-				auto is_signed = ti0->is_signed || ti1->is_signed;
-				if (ti0->data_type == DataInt && ti1->data_type)
-					data_type = DataInt;
-				switch (data_type)
-				{
-				case DataFloat:
-					switch (vec_size)
-					{
-					case 1:
-						*output_types = TypeInfo::get<float>();
-						break;
-					case 2:
-						*output_types = TypeInfo::get<vec2>();
-						break;
-					case 3:
-						*output_types = TypeInfo::get<vec3>();
-						break;
-					case 4:
-						*output_types = TypeInfo::get<vec4>();
-						break;
-					}
-					break;
-				case DataInt:
-					switch (vec_size)
-					{
-					case 1:
-						*output_types = is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>();
-						break;
-					case 2:
-						*output_types = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>();
-						break;
-					case 3:
-						*output_types = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>();
-						break;
-					case 4:
-						*output_types = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>();
-						break;
-					}
-					break;
-				}
-			}
-		);
-	}
-
 	BlueprintPrivate::BlueprintPrivate()
 	{
 		add_group("main");
@@ -426,9 +15,10 @@ namespace flame
 		dirty_frame = frames;
 	}
 
-	BlueprintNodePtr BlueprintPrivate::add_node(BlueprintGroupPtr group, const std::string& name,
-		const std::vector<BlueprintSlot>& inputs, const std::vector<BlueprintSlot>& outputs, 
-		BlueprintNodeFunction function, BlueprintNodeInputSlotChangedCallback input_slot_changed_callback)
+	BlueprintNodePtr BlueprintPrivate::add_node(BlueprintGroupPtr group /*null means the main group*/, const std::string& name,
+		const std::vector<BlueprintSlot>& inputs, const std::vector<BlueprintSlot>& outputs,
+		BlueprintNodeFunction function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
+		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewer previewer)
 	{
 		if (!group)
 			group = groups[0].get();
@@ -440,8 +30,11 @@ namespace flame
 		ret->name_hash = sh(name.c_str());
 		ret->inputs = inputs;
 		ret->outputs = outputs;
+		ret->constructor = constructor;
+		ret->destructor = destructor;
 		ret->function = function;
 		ret->input_slot_changed_callback = input_slot_changed_callback;
+		ret->previewer = previewer;
 		for (auto& i : ret->inputs)
 		{
 			i.node = ret;
@@ -495,10 +88,33 @@ namespace flame
 		if (slot->type_idx == type_idx)
 			return;
 		if (auto old_type = slot->get_type(); old_type)
+		{
 			old_type->destroy(slot->data);
+			slot->data = nullptr;
+		}
 		slot->type_idx = type_idx;
 		if (auto new_type = slot->get_type(); new_type)
 			slot->data = new_type->create();
+	}
+
+	static void clear_invalid_links(BlueprintGroupPtr group)
+	{
+		auto done = false;
+		while (!done)
+		{
+			done = true;
+			for (auto& l : group->links)
+			{
+				if (l->from_slot->type_idx == -1 || l->to_slot->type_idx == -1)
+				{
+					if (l->to_slot->type_idx == -1 && !l->to_slot->allowed_types.empty())
+						change_slot_type(l->to_slot, 0);
+					group->blueprint->remove_link(l.get());
+					done = false;
+					break;
+				}
+			}
+		}
 	}
 
 	static void update_node_output_types(BlueprintNodePtr n)
@@ -517,26 +133,32 @@ namespace flame
 				output_types[i] = n->outputs[i].get_type();
 
 			if (n->input_slot_changed_callback)
+			{
 				n->input_slot_changed_callback(input_types.data(), output_types.data());
 
-			for (auto i = 0; i < output_types.size(); i++)
-			{
-				auto& slot = n->outputs[i];
-				if (slot.get_type() != output_types[i])
+				for (auto i = 0; i < output_types.size(); i++)
 				{
-					change_slot_type(&slot, slot.find_type(output_types[i]));
-
-					for (auto& l : n->group->links)
+					auto& slot = n->outputs[i];
+					if (slot.get_type() != output_types[i])
 					{
-						if (l->from_slot == &slot)
+						change_slot_type(&slot, slot.find_type(output_types[i]));
+
+						for (auto& l : n->group->links)
 						{
-							if (std::find(input_changed_nodes.begin(), input_changed_nodes.end(), l->to_node) == input_changed_nodes.end())
-								input_changed_nodes.push_back(l->to_node);
+							if (l->from_slot == &slot)
+							{
+								change_slot_type(l->from_slot, l->from_slot->find_type(slot.get_type()));
+
+								if (std::find(input_changed_nodes.begin(), input_changed_nodes.end(), l->to_node) == input_changed_nodes.end())
+									input_changed_nodes.push_back(l->to_node);
+							}
 						}
 					}
 				}
 			}
 		}
+
+		clear_invalid_links(n->group);
 	}
 
 	BlueprintLinkPtr BlueprintPrivate::add_link(BlueprintNodePtr from_node, uint from_slot, BlueprintNodePtr to_node, uint to_slot)
@@ -688,7 +310,8 @@ namespace flame
 	Blueprint::Release& Blueprint::release = Blueprint_release;
 
 	void BlueprintNodeLibraryPrivate::add_template(const std::string& name, const std::vector<BlueprintSlot>& inputs, const std::vector<BlueprintSlot>& outputs,
-		BlueprintNodeFunction function, BlueprintNodeInputSlotChangedCallback input_slot_changed_callback)
+		BlueprintNodeFunction function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
+		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewer previewer)
 	{
 		auto& t = node_templates.emplace_back();
 		t.name = name;
@@ -696,17 +319,19 @@ namespace flame
 		t.inputs = inputs;
 		t.outputs = outputs;
 		t.function = function;
+		t.constructor = constructor;
+		t.destructor = destructor;
 		t.input_slot_changed_callback = input_slot_changed_callback;
+		t.previewer = previewer;
 	}
 
 	struct BlueprintNodeLibraryGet : BlueprintNodeLibrary::Get
 	{
 		BlueprintNodeLibraryPtr operator()(const std::filesystem::path& _filename) override
 		{
-			if (_filename == L"standard")
-				return standard_library;
-
 			auto filename = Path::get(_filename);
+			if (filename.empty())
+				filename = _filename;
 
 			for (auto& lib : loaded_blueprint_node_libraries)
 			{
@@ -813,6 +438,8 @@ namespace flame
 							arg.data = type->create();
 							type->copy(arg.data, i.data);
 						}
+						else
+							arg.data = nullptr;
 						g.datas.emplace(&i, std::make_pair(type, arg.data));
 
 						n.inputs.push_back(arg);
@@ -825,6 +452,8 @@ namespace flame
 					auto type = o.get_type();
 					if (type)
 						arg.data = type->create();
+					else
+						arg.data = nullptr;
 					g.datas.emplace(&o, std::make_pair(type, arg.data));
 
 					n.outputs.push_back(arg);
@@ -871,7 +500,7 @@ namespace flame
 		auto debugger = BlueprintDebugger::current();
 		if (debugger && debugger->debugging)
 			return;
-		if (!current_group || current_node < 0)
+		if (!current_group || current_node < 0 || current_group->nodes.empty())
 			return;
 
 		auto& n = current_group->nodes[current_node];

@@ -1,4 +1,6 @@
 file(GLOB source_files "*.h*" "*.c*")
+file(GLOB_RECURSE bp_node_source_files "blueprint_node_library/*.h*" "blueprint_node_library/*.c*")
+set(source_files "${source_files};${bp_node_source_files}")
 add_library(flame_graphics SHARED ${source_files})
 set_target_properties(flame_graphics PROPERTIES FOLDER "flame")
 target_compile_definitions(flame_graphics PRIVATE FLAME_GRAPHICS_MODULE)

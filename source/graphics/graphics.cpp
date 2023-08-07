@@ -5,6 +5,7 @@
 // let changes of the following files trigger build (that headers will copy to include dir)
 #include "application.h"
 #include "gui.h"
+#include "blueprint_node_library/node_library.h"
 
 PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasks = nullptr;
 
@@ -41,5 +42,19 @@ namespace flame
 			if (it != tracked_objects.end())
 				it->second.die_frames = 3;
 		}
+
+		struct _Initializer
+		{
+			_Initializer()
+			{
+				printf("graphics init\n");
+
+				add_event([]() {
+					init_node_library();
+					return false;
+				});
+			}
+		};
+		static _Initializer _initializer;
 	}
 }
