@@ -15,6 +15,7 @@
 #include <flame/graphics/debug.h>
 #include <flame/universe/timeline.h>
 #include <flame/universe/components/node.h>
+#include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
 #include <flame/universe/components/armature.h>
 #include <flame/universe/components/terrain.h>
@@ -2227,6 +2228,15 @@ void InspectorView::on_draw()
 			}
 			else if (ext == L".fmod")
 			{
+				static EntityPtr preview_model = nullptr;
+
+				if (!preview_model)
+				{
+					preview_model = Entity::create();
+					preview_model->add_component<cNode>()->set_pos(vec3(3000.f));
+					preview_model->add_component<cMesh>();
+				}
+
 				if (inspected_changed)
 				{
 					if (auto model = graphics::Model::get(path); model)
@@ -2236,12 +2246,15 @@ void InspectorView::on_draw()
 							graphics::Model::release((graphics::ModelPtr)obj);
 						};
 					}
+					else
+						preview_model->get_component<cMesh>()->set_mesh_and_material(L"", L"");
 				}
 
 				if (inspected_obj)
 				{
-					static EntityPtr preview_root_node = nullptr;
+					static EntityPtr preview_node = nullptr;
 					static cCameraPtr preview_camera = nullptr;
+					static graphics::ImagePtr preview_image = nullptr;
 
 					auto model = (graphics::ModelPtr)inspected_obj;
 					auto i = 0;
@@ -2278,6 +2291,59 @@ void InspectorView::on_draw()
 							ImGui::EndCombo();
 						}
 
+						if (!preview_node)
+						{
+							preview_node = Entity::create();
+							preview_node->name = "3d_preview_node";
+							preview_node->add_component<cNode>();
+
+							auto e_camera = Entity::create();
+							{
+								auto node = e_camera->add_component<cNode>();
+								node->set_pos(vec3(3000.f));
+								auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
+								node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
+							}
+							preview_camera = e_camera->add_component<cCamera>();
+							preview_node->add_child(e_camera);
+
+							preview_node->add_child(preview_model);
+
+							app.world->root->add_child(preview_node);
+						}
+						if (!preview_image)
+						{
+							preview_image = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(256, 256, 1), graphics::ImageUsageAttachment |
+								graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
+						}
+
+						auto& preview_mesh = model->meshes[preview_mesh_index];
+						if (inspected_changed)
+						{
+							preview_model->get_component<cMesh>()->set_mesh_and_material(
+								model->filename.wstring() + L'#' + wstr(preview_mesh_index), L"standard");
+							add_event([]() {
+								AABB bounds;
+								preview_model->forward_traversal([&](EntityPtr e) {
+									if (auto node = e->get_component<cNode>(); node)
+									{
+										if (!node->bounds.invalid())
+											bounds.expand(node->bounds);
+									}
+								});
+								auto camera_node = preview_camera->node;
+								if (!bounds.invalid())
+								{
+									auto pos = fit_camera_to_object(mat3(camera_node->g_qut), preview_camera->fovy, preview_camera->zNear, preview_camera->aspect, bounds);
+									camera_node->set_pos(pos);
+								}
+								return false;
+							}, 0.f, 2);
+						}
+
+						app.render_to_image(preview_camera, preview_image->get_view());
+
+						ImGui::Image(preview_image, vec2(256));
 					}
 				}
 			}

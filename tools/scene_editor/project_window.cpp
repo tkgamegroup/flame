@@ -51,11 +51,11 @@ static void update_thumbnail(const std::filesystem::path& path)
 			e->add_component<cNode>();
 			auto e_camera = Entity::create();
 			{
-				auto n = e_camera->add_component<cNode>();
+				auto node = e_camera->add_component<cNode>();
 				auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
-				n->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
+				node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
 			}
-			e_camera->add_component<cCamera>();
+			auto camera = e_camera->add_component<cCamera>();
 			e->add_child(e_camera);
 			auto e_prefab = Entity::create();
 			e_prefab->load(path);
@@ -63,10 +63,31 @@ static void update_thumbnail(const std::filesystem::path& path)
 				node->set_pos(vec3(-2000.f));
 			e->add_child(e_prefab);
 
+			app.world->root->add_child(e);
+
+			// first update the scene to get the bounds
+			app.scene->update();
+			AABB bounds;
+			e_prefab->forward_traversal([&](EntityPtr e) {
+				if (auto node = e->get_component<cNode>(); node)
+				{
+					if (!node->bounds.invalid())
+						bounds.expand(node->bounds);
+				}
+			});
+			auto camera_node = camera->node;
+			if (!bounds.invalid())
+			{
+				auto pos = fit_camera_to_object(mat3(camera_node->g_qut), camera->fovy, camera->zNear, camera->aspect, bounds);
+				camera_node->set_pos(pos);
+			}
+			// second update the scene to get the camera on the right place
+			app.scene->update();
+
 			auto thumbnail = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(128, 128, 1), graphics::ImageUsageAttachment | 
 				graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
 
-			app.render_to_image(e, e_camera->get_component<cCamera>(), thumbnail->get_view());
+			app.render_to_image(camera, thumbnail->get_view());
 
 			auto thumbnails_dir = path.parent_path() / L".thumbnails";
 			if (!std::filesystem::exists(thumbnails_dir))
@@ -75,7 +96,7 @@ static void update_thumbnail(const std::filesystem::path& path)
 			thumbnail->save(thumbnail_path);
 			delete thumbnail;
 
-			delete e;
+			app.world->root->remove_child(e);
 
 			for (auto& v : project_window.views)
 			{
