@@ -32,89 +32,44 @@ namespace flame
 				}
 			},
 			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-				switch (inputs[0].type_idx + (inputs[1].type_idx << 4) + (inputs[1].type_idx << 8) + (inputs[1].type_idx << 12))
+				
+				auto out_ti = (TypeInfo_Data*)outputs[0].type;
+				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+				auto in2_ti = (TypeInfo_Data*)inputs[2].type;
+				auto in3_ti = (TypeInfo_Data*)inputs[3].type;
+
+				switch (out_ti->data_type)
 				{
-				case  0x0000: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(float*)inputs[1].data,	*(float*)inputs[2].data,	*(float*)inputs[3].data);	break;
-				case  0x0001: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(float*)inputs[1].data,	*(float*)inputs[2].data,	*(float*)inputs[3].data);	break;
-				case  0x0002: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(float*)inputs[1].data,	*(float*)inputs[2].data,	*(float*)inputs[3].data);	break;
-				case  0x0010: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(int*)inputs[1].data,		*(float*)inputs[2].data,	*(float*)inputs[3].data);	break;
-				case  0x0011: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(int*)inputs[1].data,		*(float*)inputs[2].data,	*(float*)inputs[3].data);	break;
-				case  0x0012: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(int*)inputs[1].data,		*(float*)inputs[2].data,	*(float*)inputs[3].data);	break;
-				case  0x0020: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(uint*)inputs[1].data,		*(float*)inputs[2].data,	*(float*)inputs[3].data);	break;
-				case  0x0021: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(uint*)inputs[1].data,		*(float*)inputs[2].data,	*(float*)inputs[3].data);	break;
-				case  0x0022: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(uint*)inputs[1].data,		*(float*)inputs[2].data,	*(float*)inputs[3].data);	break;
-				case  0x0100: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(float*)inputs[1].data,	*(int*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0101: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(float*)inputs[1].data,	*(int*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0102: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(float*)inputs[1].data,	*(int*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0110: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(int*)inputs[1].data,		*(int*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0111: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(int*)inputs[1].data,		*(int*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0112: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(int*)inputs[1].data,		*(int*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0120: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(uint*)inputs[1].data,		*(int*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0121: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(uint*)inputs[1].data,		*(int*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0122: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(uint*)inputs[1].data,		*(int*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0200: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(float*)inputs[1].data,	*(uint*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0201: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(float*)inputs[1].data,	*(uint*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0202: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(float*)inputs[1].data,	*(uint*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0210: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(int*)inputs[1].data,		*(uint*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0211: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(int*)inputs[1].data,		*(uint*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0212: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(int*)inputs[1].data,		*(uint*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0220: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(uint*)inputs[1].data,		*(uint*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0221: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(uint*)inputs[1].data,		*(uint*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x0222: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(uint*)inputs[1].data,		*(uint*)inputs[2].data,		*(float*)inputs[3].data);	break;
-				case  0x1000: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(float*)inputs[1].data,	*(float*)inputs[2].data,	*(int*)inputs[3].data);		break;
-				case  0x1001: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(float*)inputs[1].data,	*(float*)inputs[2].data,	*(int*)inputs[3].data);		break;
-				case  0x1002: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(float*)inputs[1].data,	*(float*)inputs[2].data,	*(int*)inputs[3].data);		break;
-				case  0x1010: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(int*)inputs[1].data,		*(float*)inputs[2].data,	*(int*)inputs[3].data);		break;
-				case  0x1011: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(int*)inputs[1].data,		*(float*)inputs[2].data,	*(int*)inputs[3].data);		break;
-				case  0x1012: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(int*)inputs[1].data,		*(float*)inputs[2].data,	*(int*)inputs[3].data);		break;
-				case  0x1020: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(uint*)inputs[1].data,		*(float*)inputs[2].data,	*(int*)inputs[3].data);		break;
-				case  0x1021: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(uint*)inputs[1].data,		*(float*)inputs[2].data,	*(int*)inputs[3].data);		break;
-				case  0x1022: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(uint*)inputs[1].data,		*(float*)inputs[2].data,	*(int*)inputs[3].data);		break;
-				case  0x1100: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(float*)inputs[1].data,	*(int*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1101: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(float*)inputs[1].data,	*(int*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1102: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(float*)inputs[1].data,	*(int*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1110: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(int*)inputs[1].data,		*(int*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1111: *(ivec4*)outputs[0].data	= ivec4(*(int*)inputs[0].data,	*(int*)inputs[1].data,		*(int*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1112: *(ivec4*)outputs[0].data	= ivec4(*(uint*)inputs[0].data,	*(int*)inputs[1].data,		*(int*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1120: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(uint*)inputs[1].data,		*(int*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1121: *(ivec4*)outputs[0].data	= ivec4(*(int*)inputs[0].data,	*(uint*)inputs[1].data,		*(int*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1122: *(ivec4*)outputs[0].data	= ivec4(*(uint*)inputs[0].data,	*(uint*)inputs[1].data,		*(int*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1200: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(float*)inputs[1].data,	*(uint*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1201: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(float*)inputs[1].data,	*(uint*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1202: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(float*)inputs[1].data,	*(uint*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1210: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(int*)inputs[1].data,		*(uint*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1211: *(ivec4*)outputs[0].data	= ivec4(*(int*)inputs[0].data,	*(int*)inputs[1].data,		*(uint*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1212: *(ivec4*)outputs[0].data	= ivec4(*(uint*)inputs[0].data,	*(int*)inputs[1].data,		*(uint*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1220: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(uint*)inputs[1].data,		*(uint*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1221: *(ivec4*)outputs[0].data	= ivec4(*(int*)inputs[0].data,	*(uint*)inputs[1].data,		*(uint*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x1222: *(ivec4*)outputs[0].data	= ivec4(*(uint*)inputs[0].data,	*(uint*)inputs[1].data,		*(uint*)inputs[2].data,		*(int*)inputs[3].data);		break;
-				case  0x2000: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(float*)inputs[1].data,	*(float*)inputs[2].data,	*(uint*)inputs[3].data);	break;
-				case  0x2001: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(float*)inputs[1].data,	*(float*)inputs[2].data,	*(uint*)inputs[3].data);	break;
-				case  0x2002: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(float*)inputs[1].data,	*(float*)inputs[2].data,	*(uint*)inputs[3].data);	break;
-				case  0x2010: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(int*)inputs[1].data,		*(float*)inputs[2].data,	*(uint*)inputs[3].data);	break;
-				case  0x2011: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(int*)inputs[1].data,		*(float*)inputs[2].data,	*(uint*)inputs[3].data);	break;
-				case  0x2012: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(int*)inputs[1].data,		*(float*)inputs[2].data,	*(uint*)inputs[3].data);	break;
-				case  0x2020: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(uint*)inputs[1].data,		*(float*)inputs[2].data,	*(uint*)inputs[3].data);	break;
-				case  0x2021: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(uint*)inputs[1].data,		*(float*)inputs[2].data,	*(uint*)inputs[3].data);	break;
-				case  0x2022: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(uint*)inputs[1].data,		*(float*)inputs[2].data,	*(uint*)inputs[3].data);	break;
-				case  0x2100: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(float*)inputs[1].data,	*(int*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2101: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(float*)inputs[1].data,	*(int*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2102: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(float*)inputs[1].data,	*(int*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2110: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(int*)inputs[1].data,		*(int*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2111: *(ivec4*)outputs[0].data	= ivec4(*(int*)inputs[0].data,	*(int*)inputs[1].data,		*(int*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2112: *(ivec4*)outputs[0].data	= ivec4(*(uint*)inputs[0].data,	*(int*)inputs[1].data,		*(int*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2120: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(uint*)inputs[1].data,		*(int*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2121: *(ivec4*)outputs[0].data	= ivec4(*(int*)inputs[0].data,	*(uint*)inputs[1].data,		*(int*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2122: *(ivec4*)outputs[0].data	= ivec4(*(uint*)inputs[0].data,	*(uint*)inputs[1].data,		*(int*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2200: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(float*)inputs[1].data,	*(uint*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2201: *(vec4*)outputs[0].data	= vec4(*(int*)inputs[0].data,	*(float*)inputs[1].data,	*(uint*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2202: *(vec4*)outputs[0].data	= vec4(*(uint*)inputs[0].data,	*(float*)inputs[1].data,	*(uint*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2210: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(int*)inputs[1].data,		*(uint*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2211: *(ivec4*)outputs[0].data	= ivec4(*(int*)inputs[0].data,	*(int*)inputs[1].data,		*(uint*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2212: *(ivec4*)outputs[0].data	= ivec4(*(uint*)inputs[0].data,	*(int*)inputs[1].data,		*(uint*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2220: *(vec4*)outputs[0].data	= vec4(*(float*)inputs[0].data,	*(uint*)inputs[1].data,		*(uint*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2221: *(ivec4*)outputs[0].data	= ivec4(*(int*)inputs[0].data,	*(uint*)inputs[1].data,		*(uint*)inputs[2].data,		*(uint*)inputs[3].data);	break;
-				case  0x2222: *(uvec4*)outputs[0].data	= uvec4(*(uint*)inputs[0].data,	*(uint*)inputs[1].data,		*(uint*)inputs[2].data,		*(uint*)inputs[3].data);	break;
+				case DataFloat:
+				{
+					auto& v = *(vec4*)outputs[0].data;
+					v.x = in0_ti->as_float(inputs[0].data);
+					v.y = in1_ti->as_float(inputs[1].data);
+					v.z = in2_ti->as_float(inputs[2].data);
+					v.w = in3_ti->as_float(inputs[3].data);
+				}
+					break;
+				case DataInt:
+				{
+					if (out_ti->is_signed)
+					{
+						auto& v = *(ivec4*)outputs[0].data;
+						v.x = in0_ti->as_int(inputs[0].data);
+						v.y = in1_ti->as_int(inputs[1].data);
+						v.z = in2_ti->as_int(inputs[2].data);
+						v.w = in3_ti->as_int(inputs[3].data);
+					}
+					else
+					{
+						auto& v = *(uvec4*)outputs[0].data;
+						v.x = in0_ti->as_uint(inputs[0].data);
+						v.y = in1_ti->as_uint(inputs[1].data);
+						v.z = in2_ti->as_uint(inputs[2].data);
+						v.w = in3_ti->as_uint(inputs[3].data);
+					}
+				}
+					break;
 				}
 			},
 			nullptr,

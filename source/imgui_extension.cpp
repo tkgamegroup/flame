@@ -58,7 +58,7 @@ namespace ImGui
 	ImageViewType GetCurrentImageViewType()
 	{
 		if (image_view_types.empty())
-			return ImageViewRGBA;
+			return { ImageViewRGBA, ImageViewLinear };
 		return image_view_types.top();
 	}
 
@@ -76,6 +76,6 @@ namespace ImGui
 		image_view_types.pop();
 		auto& cmds = GetWindowDrawList()->CmdBuffer;
 		for (auto i = cmd_beg; i < cmds.Size; i++)
-			cmds[i].UserCallbackData = (void*)type;
+			memcpy(&cmds[i].UserCallbackData, &type, sizeof(type));
 	}
 }

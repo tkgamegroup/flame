@@ -9,6 +9,9 @@
 #include <flame/foundation/system.h>
 #include <flame/foundation/typeinfo_serialize.h>
 #include <flame/graphics/model.h>
+#include <flame/graphics/shader.h>
+#include <flame/graphics/extension.h>
+#include <flame/graphics/debug.h>
 #include <flame/universe/draw_data.h>
 #include <flame/universe/timeline.h>
 #include <flame/universe/entity.h>
@@ -1587,6 +1590,58 @@ void App::vs_automate(const std::vector<std::wstring>& cl)
 	}
 	wprintf(L"vs automate: %s\n", cl_str.c_str());
 	shell_exec(automation_path, cl_str, true);
+}
+
+void App::render_to_image(EntityPtr node, cCameraPtr camera, graphics::ImageViewPtr dst)
+{
+	app.world->root->add_child(node);
+	app.world->update_components = true;
+
+	// first update the scene to get the bounds
+	app.scene->update();
+	AABB bounds;
+	e_prefab->forward_traversal([&](EntityPtr e) {
+		if (auto node = e->get_component<cNode>(); node)
+		{
+			if (!node->bounds.invalid())
+				bounds.expand(node->bounds);
+		}
+	});
+	auto camera_node = camera->node;
+	if (!bounds.invalid())
+	{
+		auto pos = fit_camera_to_object(mat3(camera_node->g_qut), camera->fovy, camera->zNear, camera->aspect, bounds);
+		camera_node->set_pos(pos);
+	}
+	// second update the scene to get the camera on the right place
+	app.scene->update();
+
+	auto previous_camera = app.renderer->camera;
+	auto previous_render_mode = app.renderer->mode;
+	app.renderer->camera = camera;
+	app.renderer->mode = sRenderer::CameraLightButNoSky;
+	{
+		graphics::Debug::start_capture_frame();
+		app.renderer->set_targets({ &dst, 1 }, graphics::ImageLayoutShaderReadOnly);
+		graphics::InstanceCommandBuffer cb;
+		app.renderer->render(0, cb.get());
+		cb->image_barrier(dst->image, {}, graphics::ImageLayoutTransferSrc);
+		cb.excute();
+		graphics::Debug::end_capture_frame();
+	}
+
+	app.renderer->camera = previous_camera;
+	app.renderer->mode = previous_render_mode;
+	if (auto fv = scene_window.first_view(); fv && fv->render_tar)
+	{
+		auto iv = fv->render_tar->get_view();
+		app.renderer->set_targets({ &iv, 1 }, graphics::ImageLayoutShaderReadOnly);
+	}
+	else
+		app.renderer->set_targets({}, graphics::ImageLayoutShaderReadOnly);
+
+	app.world->root->remove_child(node, false);
+	app.world->update_components = false;
 }
 
 bool App::cmd_undo()

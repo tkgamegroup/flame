@@ -35,24 +35,40 @@ namespace flame
 				}
 			},
 			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-
+				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+				switch (in0_ti->data_type)
+				{
+				case DataFloat:
+					for (auto i = 0; i < 4; i++)
+						*(float*)outputs[i].data = ((float*)inputs[i].data)[i];
+					break;
+				case DataInt:
+					if (in0_ti->is_signed)
+					{
+						for (auto i = 0; i < 4; i++)
+							*(int*)outputs[i].data = ((int*)inputs[i].data)[i];
+					}
+					else
+					{
+						for (auto i = 0; i < 4; i++)
+							*(uint*)outputs[i].data = ((uint*)inputs[i].data)[i];
+					}
+					break;
+				}
 			},
 			nullptr,
 			nullptr,
 			[](TypeInfo** input_types, TypeInfo** output_types) {
 				auto ti = (TypeInfo_Data*)input_types[0];
-				auto data_type = ti->data_type;
-				auto vec_size = ti->vec_size;
-				auto is_signed = ti->is_signed;
-				switch (data_type)
+				switch (ti->data_type)
 				{
 				case DataFloat:
 					for (auto i = 0; i < 4; i++)
-						output_types[i] = i < vec_size ? TypeInfo::get<float>() : nullptr;
+						output_types[i] = i < ti->vec_size ? TypeInfo::get<float>() : nullptr;
 					break;
 				case DataInt:
 					for (auto i = 0; i < 4; i++)
-						output_types[i] = i < vec_size ? (is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>()) : nullptr;
+						output_types[i] = i < ti->vec_size ? (ti->is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>()) : nullptr;
 					break;
 				}
 			}

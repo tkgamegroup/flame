@@ -28,35 +28,39 @@ namespace flame
 				}
 			},
 			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-				switch (inputs[0].type_idx + (inputs[1].type_idx << 4) + (inputs[1].type_idx << 8))
+				auto out_ti = (TypeInfo_Data*)outputs[0].type;
+				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+				auto in2_ti = (TypeInfo_Data*)inputs[2].type;
+
+				switch (out_ti->data_type)
 				{
-				case  0x000: *(vec3*)outputs[0].data	= vec3(*(float*)inputs[0].data,		*(float*)inputs[1].data,	*(float*)inputs[2].data);	break;
-				case  0x001: *(vec3*)outputs[0].data	= vec3(*(int*)inputs[0].data,		*(float*)inputs[1].data,	*(float*)inputs[2].data);	break;
-				case  0x002: *(vec3*)outputs[0].data	= vec3(*(uint*)inputs[0].data,		*(float*)inputs[1].data,	*(float*)inputs[2].data);	break;
-				case  0x010: *(vec3*)outputs[0].data	= vec3(*(float*)inputs[0].data,		*(int*)inputs[1].data,		*(float*)inputs[2].data);	break;
-				case  0x011: *(vec3*)outputs[0].data	= vec3(*(int*)inputs[0].data,		*(int*)inputs[1].data,		*(float*)inputs[2].data);	break;
-				case  0x012: *(vec3*)outputs[0].data	= vec3(*(uint*)inputs[0].data,		*(int*)inputs[1].data,		*(float*)inputs[2].data);	break;
-				case  0x020: *(vec3*)outputs[0].data	= vec3(*(float*)inputs[0].data,		*(uint*)inputs[1].data,		*(float*)inputs[2].data);	break;
-				case  0x021: *(vec3*)outputs[0].data	= vec3(*(int*)inputs[0].data,		*(uint*)inputs[1].data,		*(float*)inputs[2].data);	break;
-				case  0x022: *(vec3*)outputs[0].data	= vec3(*(uint*)inputs[0].data,		*(uint*)inputs[1].data,		*(float*)inputs[2].data);	break;
-				case  0x100: *(vec3*)outputs[0].data	= vec3(*(float*)inputs[0].data,		*(float*)inputs[1].data,	*(int*)inputs[2].data);		break;
-				case  0x101: *(vec3*)outputs[0].data	= vec3(*(int*)inputs[0].data,		*(float*)inputs[1].data,	*(int*)inputs[2].data);		break;
-				case  0x102: *(vec3*)outputs[0].data	= vec3(*(uint*)inputs[0].data,		*(float*)inputs[1].data,	*(int*)inputs[2].data);		break;
-				case  0x110: *(vec3*)outputs[0].data	= vec3(*(float*)inputs[0].data,		*(int*)inputs[1].data,		*(int*)inputs[2].data);		break;
-				case  0x111: *(ivec3*)outputs[0].data	= ivec3(*(int*)inputs[0].data,		*(int*)inputs[1].data,		*(int*)inputs[2].data);		break;
-				case  0x112: *(ivec3*)outputs[0].data	= ivec3(*(uint*)inputs[0].data,		*(int*)inputs[1].data,		*(int*)inputs[2].data);		break;
-				case  0x120: *(vec3*)outputs[0].data	= vec3(*(float*)inputs[0].data,		*(uint*)inputs[1].data,		*(int*)inputs[2].data);		break;
-				case  0x121: *(ivec3*)outputs[0].data	= ivec3(*(int*)inputs[0].data,		*(uint*)inputs[1].data,		*(int*)inputs[2].data);		break;
-				case  0x122: *(ivec3*)outputs[0].data	= ivec3(*(uint*)inputs[0].data,		*(uint*)inputs[1].data,		*(int*)inputs[2].data);		break;
-				case  0x200: *(vec3*)outputs[0].data	= vec3(*(float*)inputs[0].data,		*(float*)inputs[1].data,	*(uint*)inputs[2].data);	break;
-				case  0x201: *(vec3*)outputs[0].data	= vec3(*(int*)inputs[0].data,		*(float*)inputs[1].data,	*(uint*)inputs[2].data);	break;
-				case  0x202: *(vec3*)outputs[0].data	= vec3(*(uint*)inputs[0].data,		*(float*)inputs[1].data,	*(uint*)inputs[2].data);	break;
-				case  0x210: *(vec3*)outputs[0].data	= vec3(*(float*)inputs[0].data,		*(int*)inputs[1].data,		*(uint*)inputs[2].data);	break;
-				case  0x211: *(ivec3*)outputs[0].data	= ivec3(*(int*)inputs[0].data,		*(int*)inputs[1].data,		*(uint*)inputs[2].data);	break;
-				case  0x212: *(ivec3*)outputs[0].data	= ivec3(*(uint*)inputs[0].data,		*(int*)inputs[1].data,		*(uint*)inputs[2].data);	break;
-				case  0x220: *(vec3*)outputs[0].data	= vec3(*(float*)inputs[0].data,		*(uint*)inputs[1].data,		*(uint*)inputs[2].data);	break;
-				case  0x221: *(ivec3*)outputs[0].data	= ivec3(*(int*)inputs[0].data,		*(uint*)inputs[1].data,		*(uint*)inputs[2].data);	break;
-				case  0x222: *(uvec3*)outputs[0].data	= uvec3(*(uint*)inputs[0].data,		*(uint*)inputs[1].data,		*(uint*)inputs[2].data);	break;
+				case DataFloat:
+				{
+					auto& v = *(vec3*)outputs[0].data;
+					v.x = in0_ti->as_float(inputs[0].data);
+					v.y = in1_ti->as_float(inputs[1].data);
+					v.z = in2_ti->as_float(inputs[2].data);
+				}
+					break;
+				case DataInt:
+				{
+					if (out_ti->is_signed)
+					{
+						auto& v = *(ivec3*)outputs[0].data;
+						v.x = in0_ti->as_int(inputs[0].data);
+						v.y = in1_ti->as_int(inputs[1].data);
+						v.z = in2_ti->as_int(inputs[2].data);
+					}
+					else
+					{
+						auto& v = *(uvec3*)outputs[0].data;
+						v.x = in0_ti->as_uint(inputs[0].data);
+						v.y = in1_ti->as_uint(inputs[1].data);
+						v.z = in2_ti->as_uint(inputs[2].data);
+					}
+				}
+					break;
 				}
 			},
 			nullptr,

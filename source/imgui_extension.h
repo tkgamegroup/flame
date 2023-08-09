@@ -6,7 +6,7 @@
 
 namespace ImGui
 {
-	enum ImageViewType
+	enum ImageViewSwizzle
 	{
 		ImageViewRGBA,
 		ImageViewR,
@@ -15,6 +15,23 @@ namespace ImGui
 		ImageViewA,
 		ImageViewRGB
 	};
+
+	enum ImageViewSampler
+	{
+		ImageViewLinear,
+		ImageViewNearest
+	};
+
+	struct ImageViewType
+	{
+		ImageViewSwizzle swizzle : 16;
+		ImageViewSampler sampler : 16;
+	};
+
+	inline bool operator==(const ImageViewType& a, const ImageViewType& b)
+	{
+		return a.swizzle == b.swizzle && a.sampler == b.sampler;
+	}
 
 	void BeginRotation(float angle);
 	void EndRotation();

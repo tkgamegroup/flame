@@ -506,7 +506,7 @@ namespace flame
 				int global_vtx_offset = 0;
 				int global_idx_offset = 0;
 				ImagePtr last_tex = nullptr;
-				auto last_view_type = ImGui::ImageViewRGBA;
+				ImGui::ImageViewType last_view_type = { ImGui::ImageViewRGBA, ImGui::ImageViewLinear };
 				for (int n = 0; n < draw_data->CmdListsCount; n++)
 				{
 					const ImDrawList* cmd_list = draw_data->CmdLists[n];
@@ -524,12 +524,16 @@ namespace flame
 						if (clip_max.x < clip_min.x || clip_max.y < clip_min.y)
 							continue;
 
-						auto view_type = (ImGui::ImageViewType)(uint)pcmd->UserCallbackData;
+						ImGui::ImageViewType view_type;
+						memcpy(&view_type, &pcmd->UserCallbackData, sizeof(view_type));
 						if (last_tex != pcmd->TextureId || last_view_type != view_type)
 						{
+							static auto sp_nearest = Sampler::get(FilterNearest, FilterNearest, false, AddressClampToEdge);
+
 							auto tex = (ImagePtr)pcmd->TextureId;
 							ImageSwizzle swizzle;
-							switch (view_type)
+							SamplerPtr sampler;
+							switch (view_type.swizzle)
 							{
 							case ImGui::ImageViewR: swizzle = { SwizzleR, SwizzleZero, SwizzleZero, SwizzleOne }; break;
 							case ImGui::ImageViewG: swizzle = { SwizzleZero, SwizzleG, SwizzleZero, SwizzleOne }; break;
@@ -537,7 +541,16 @@ namespace flame
 							case ImGui::ImageViewA: swizzle = { SwizzleA, SwizzleA, SwizzleA, SwizzleOne }; break;
 							case ImGui::ImageViewRGB: swizzle = { SwizzleR, SwizzleG, SwizzleB, SwizzleOne }; break;
 							}
-							cb->bind_descriptor_set(0, tex ? tex->get_shader_read_src(0, 0, nullptr, swizzle) : imgui_ds.get());
+							switch (view_type.sampler)
+							{
+							case ImGui::ImageViewLinear:
+								sampler = nullptr;
+								break;
+							case ImGui::ImageViewNearest:
+								sampler = sp_nearest;
+								break;
+							}
+							cb->bind_descriptor_set(0, tex ? tex->get_shader_read_src(0, 0, sampler, swizzle) : imgui_ds.get());
 							last_tex = tex;
 							last_view_type = view_type;
 						}

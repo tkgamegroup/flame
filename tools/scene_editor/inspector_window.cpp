@@ -2132,70 +2132,76 @@ void InspectorView::on_draw()
 			}
 			else if (is_image_file(ext))
 			{
-				struct ImageInfo
-				{
-					uint chs;
-					uint bpp;
-					bool srgb;
-				};
-				auto& info = *(ImageInfo*)inspected_obj_info;
-
 				if (inspected_changed)
 				{
-					auto image = graphics::Image::get(path);
-					if (image)
+					if (auto image = graphics::Image::get(path); image)
 					{
 						inspected_obj = image;
 						inspected_obj_deletor = [](void* obj, void* info) {
 							graphics::Image::release((graphics::ImagePtr)obj);
 						};
-
-						auto bitmap = Bitmap::create(path);
-						if (bitmap)
-						{
-							info.chs = bitmap->chs;
-							info.bpp = bitmap->bpp;
-							info.srgb = bitmap->srgb;
-							delete bitmap;
-						}
-						else
-						{
-							info.chs = 0;
-							info.bpp = 0;
-							info.srgb = false;
-						}
 					}
 				}
 
 				if (inspected_obj)
 				{
 					auto image = (graphics::ImagePtr)inspected_obj;
-					ImGui::Text("Channels: %d", info.chs);
-					ImGui::Text("Bits Per Pixel: %d", info.bpp);
-					ImGui::Text("SRGB: %s", info.srgb ? "yes" : "no");
 					ImGui::Text("Graphics Format: %s", TypeInfo::serialize_t(image->format).c_str());
 					ImGui::Text("Extent: %s", str(image->extent).c_str());
-					static int view_type = ImGui::ImageViewRGBA;
-					static const char* types[] = {
-						"RGBA",
-						"R", "G", "B", "A",
-						"RGB",
-					};
-					ImGui::Combo("View", &view_type, types, countof(types));
-					if (view_type != 0)
-						ImGui::PushImageViewType((ImGui::ImageViewType)view_type);
-					if (image->extent.z == 1)
-						ImGui::Image(inspected_obj, (vec2)image->extent);
-					if (view_type != 0)
-						ImGui::PopImageViewType();
+
+					if (ImGui::CollapsingHeader("Preview"))
+					{
+						static int view_swizzle = ImGui::ImageViewRGBA;
+						static int view_sampler = ImGui::ImageViewLinear;
+						static float scale = 1.f;
+						ImGui::PushItemWidth(100.f);
+						static const char* swizzle_names[] = {
+							"RGBA",
+							"R", "G", "B", "A",
+							"RGB"
+						};
+						static const char* sampler_names[] = {
+							"Linear",
+							"Nearest"
+						};
+						ImGui::Combo("View Swizzle", &view_swizzle, swizzle_names, countof(swizzle_names));
+						ImGui::SameLine();
+						ImGui::Combo("View Sampler", &view_sampler, sampler_names, countof(sampler_names));
+						ImGui::SameLine();
+						ImGui::DragFloat("Scale", &scale, 0.01f, 0.01f, 10.f);
+						ImGui::PopItemWidth();
+						if (image->extent.z == 1)
+						{
+							if (view_swizzle != ImGui::ImageViewRGBA || view_sampler != ImGui::ImageViewLinear)
+								ImGui::PushImageViewType(ImGui::ImageViewType{ (ImGui::ImageViewSwizzle)view_swizzle, (ImGui::ImageViewSampler)view_sampler });
+							ImGui::Image(image, vec2(image->extent) * scale);
+							if (view_swizzle != ImGui::ImageViewRGBA || view_sampler != ImGui::ImageViewLinear)
+								ImGui::PopImageViewType();
+							if (ImGui::IsItemHovered())
+							{
+								vec2 p0 = ImGui::GetItemRectMin();
+								vec2 p1 = ImGui::GetItemRectMax();
+								vec2 pos = ImGui::GetMousePos();
+								auto uv = (pos - p0) / (p1 - p0);
+								uvec2 pixel = (vec2)image->extent * uv;
+								ImGui::BeginTooltip();
+								ImGui::Text("Pixel: %s", str(pixel).c_str());
+								ImGui::Text("UV: %s", str(uv).c_str());
+								cvec4 color = image->get_pixel(pixel.x, pixel.y, 0, 0) * 255.f;
+								ImGui::Text("Color: %s", str(color).c_str());
+								ImGui::EndTooltip();
+							}
+						}
+						else
+							ImGui::TextUnformatted("Cannot not view a multi-layer image now.");
+					}
 				}
 			}
 			else if (ext == L".fmat")
 			{
 				if (inspected_changed)
 				{
-					auto material = graphics::Material::get(path);
-					if (material)
+					if (auto material = graphics::Material::get(path); material)
 					{
 						inspected_obj = material;
 						inspected_obj_deletor = [](void* obj, void* info) {
@@ -2223,8 +2229,7 @@ void InspectorView::on_draw()
 			{
 				if (inspected_changed)
 				{
-					auto model = graphics::Model::get(path);
-					if (model)
+					if (auto model = graphics::Model::get(path); model)
 					{
 						inspected_obj = model;
 						inspected_obj_deletor = [](void* obj, void* info) {
@@ -2235,6 +2240,9 @@ void InspectorView::on_draw()
 
 				if (inspected_obj)
 				{
+					static EntityPtr preview_root_node = nullptr;
+					static cCameraPtr preview_camera = nullptr;
+
 					auto model = (graphics::ModelPtr)inspected_obj;
 					auto i = 0;
 					for (auto& mesh : model->meshes)
@@ -2256,6 +2264,21 @@ void InspectorView::on_draw()
 						model->save(path, false);
 					if (ImGui::Button("To Binary"))
 						model->save(path, true);
+					if (ImGui::CollapsingHeader("Preview"))
+					{
+						static uint preview_mesh_index = 0;
+						preview_mesh_index = min(preview_mesh_index, (uint)model->meshes.size());
+						if (ImGui::BeginCombo("Mesh", str(preview_mesh_index).c_str()))
+						{
+							for (uint i = 0; i < model->meshes.size(); i++)
+							{
+								if (ImGui::Selectable(str(i).c_str(), preview_mesh_index == i))
+									preview_mesh_index = i;
+							}
+							ImGui::EndCombo();
+						}
+
+					}
 				}
 			}
 			else if (ext == L".fani")

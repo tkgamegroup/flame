@@ -63,45 +63,11 @@ static void update_thumbnail(const std::filesystem::path& path)
 				node->set_pos(vec3(-2000.f));
 			e->add_child(e_prefab);
 
-			app.world->root->add_child(e);
-			app.world->update_components = true;
-
-			// first update the scene to get the bounds
-			app.scene->update();
-			AABB bounds;
-			e_prefab->forward_traversal([&](EntityPtr e) {
-				if (auto node = e->get_component<cNode>(); node)
-				{
-					if (!node->bounds.invalid())
-						bounds.expand(node->bounds);
-				}
-			});
-			auto camera_node = e_camera->get_component<cNode>();
-			auto camera = e_camera->get_component<cCamera>();
-			if (!bounds.invalid())
-			{
-				auto pos = fit_camera_to_object(mat3(camera_node->g_qut), camera->fovy, camera->zNear, camera->aspect, bounds);
-				camera_node->set_pos(pos);
-			}
-			// second update the scene to get the camera on the right place
-			app.scene->update();
-
-			auto previous_camera = app.renderer->camera;
-			auto previous_render_mode = app.renderer->mode;
-			app.renderer->camera = camera;
-			app.renderer->mode = sRenderer::CameraLightButNoSky;
 			auto thumbnail = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(128, 128, 1), graphics::ImageUsageAttachment | 
 				graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
-			{
-				graphics::Debug::start_capture_frame();
-				auto iv = thumbnail->get_view();
-				app.renderer->set_targets({ &iv, 1 }, graphics::ImageLayoutShaderReadOnly);
-				graphics::InstanceCommandBuffer cb;
-				app.renderer->render(0, cb.get());
-				cb->image_barrier(thumbnail, {}, graphics::ImageLayoutTransferSrc);
-				cb.excute();
-				graphics::Debug::end_capture_frame();
-			}
+
+			app.render_to_image(e, e_camera->get_component<cCamera>(), thumbnail->get_view());
+
 			auto thumbnails_dir = path.parent_path() / L".thumbnails";
 			if (!std::filesystem::exists(thumbnails_dir))
 				std::filesystem::create_directories(thumbnails_dir);
@@ -109,18 +75,7 @@ static void update_thumbnail(const std::filesystem::path& path)
 			thumbnail->save(thumbnail_path);
 			delete thumbnail;
 
-			app.renderer->camera = previous_camera;
-			app.renderer->mode = previous_render_mode;
-			if (auto fv = scene_window.first_view(); fv && fv->render_tar)
-			{
-				auto iv = fv->render_tar->get_view();
-				app.renderer->set_targets({ &iv, 1 }, graphics::ImageLayoutShaderReadOnly);
-			}
-			else
-				app.renderer->set_targets({}, graphics::ImageLayoutShaderReadOnly);
-
-			e->remove_from_parent();
-			app.world->update_components = false;
+			delete e;
 
 			for (auto& v : project_window.views)
 			{

@@ -27,7 +27,7 @@ namespace flame
 				nullptr,
 				nullptr,
 				nullptr,
-				[](BlueprintArgument* inputs, BlueprintArgument* outputs, void* wtf) {
+				[](BlueprintArgument* inputs, BlueprintArgument* outputs, BlueprintNodePreview* preview) {
 
 				}
 			);

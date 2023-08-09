@@ -10,27 +10,17 @@ namespace flame
 		std::string name;
 		uint name_hash = 0;
 		std::vector<TypeInfo*> allowed_types;
-		int type_idx = -1;
+		TypeInfo* type = nullptr;
 		void* data = nullptr;
 
-		inline int find_type(TypeInfo* type) const
+		inline bool allow_type(TypeInfo* type) const
 		{
-			for (auto i = 0; i < allowed_types.size(); i++)
+			for (auto t : allowed_types)
 			{
-				if (allowed_types[i] == type)
-					return i;
+				if (t == type)
+					return true;
 			}
-			return -1;
-		}
-
-		inline TypeInfo* get_type(int idx) const
-		{
-			return idx != -1 ? allowed_types[idx] : nullptr;
-		}
-
-		inline TypeInfo* get_type() const
-		{
-			return get_type(type_idx);
+			return false;
 		}
 	};
 
@@ -38,7 +28,14 @@ namespace flame
 
 	struct BlueprintArgument
 	{
-		int type_idx;
+		TypeInfo* type;
+		void* data;
+	};
+
+	struct BlueprintNodePreview
+	{
+		uint type;
+		uvec2 extent;
 		void* data;
 	};
 
@@ -46,7 +43,7 @@ namespace flame
 	typedef void(*BlueprintNodeConstructor)(BlueprintArgument* inputs, BlueprintArgument* outputs);
 	typedef void(*BlueprintNodeDestructor)(BlueprintArgument* inputs, BlueprintArgument* outputs);
 	typedef void(*BlueprintNodeInputSlotChangedCallback)(TypeInfo** input_types, TypeInfo** output_types);
-	typedef void(*BlueprintNodePreviewer)(BlueprintArgument* inputs, BlueprintArgument* outputs, void* wtf);
+	typedef void(*BlueprintNodePreviewProvider)(BlueprintArgument* inputs, BlueprintArgument* outputs, BlueprintNodePreview* preview);
 
 	struct BlueprintNode
 	{
@@ -59,7 +56,7 @@ namespace flame
 		BlueprintNodeConstructor constructor = nullptr;
 		BlueprintNodeDestructor destructor = nullptr;
 		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr;
-		BlueprintNodePreviewer previewer = nullptr;
+		BlueprintNodePreviewProvider preview_provider = nullptr;
 
 		vec2 position;
 		bool collapsed = false;
@@ -128,7 +125,7 @@ namespace flame
 		virtual BlueprintNodePtr	add_node(BlueprintGroupPtr group /*null means the main group*/, const std::string& name, 
 			const std::vector<BlueprintSlot>& inputs = {}, const std::vector<BlueprintSlot>& outputs = {}, 
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
-			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewer previewer = nullptr) = 0;
+			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
 		virtual void				remove_node(BlueprintNodePtr node) = 0;
 		virtual BlueprintLinkPtr	add_link(BlueprintNodePtr from_node, uint from_slot, BlueprintNodePtr to_node, uint to_slot) = 0;
 		virtual void				remove_link(BlueprintLinkPtr link) = 0;
@@ -165,7 +162,7 @@ namespace flame
 			BlueprintNodeConstructor constructor = nullptr;
 			BlueprintNodeDestructor destructor = nullptr;
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr;
-			BlueprintNodePreviewer previewer = nullptr;
+			BlueprintNodePreviewProvider preview_provider = nullptr;
 		};
 
 		std::vector<NodeTemplate> node_templates;
@@ -176,7 +173,7 @@ namespace flame
 		virtual ~BlueprintNodeLibrary() {}
 		virtual void add_template(const std::string& name, const std::vector<BlueprintSlot>& inputs = {}, const std::vector<BlueprintSlot>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
-			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewer previewer = nullptr) = 0;
+			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
 
 		struct Get
 		{
@@ -197,7 +194,7 @@ namespace flame
 
 		struct Group
 		{
-			std::map<BlueprintSlotPtr, std::pair<TypeInfo*, void*>> datas;
+			std::map<BlueprintSlotPtr, BlueprintArgument> datas;
 			std::vector<Node> nodes;
 
 			~Group();

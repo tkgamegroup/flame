@@ -59,7 +59,7 @@ void BlueprintView::on_draw()
 				if (ImGui::Selectable(t.name.c_str()))
 				{
 					blueprint->add_node(nullptr, t.name, t.inputs, t.outputs,
-						t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.previewer);
+						t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider);
 				}
 			}
 			for (auto& t : geometry_library->node_templates)
@@ -67,7 +67,7 @@ void BlueprintView::on_draw()
 				if (ImGui::Selectable(t.name.c_str()))
 				{
 					blueprint->add_node(nullptr, t.name, t.inputs, t.outputs,
-						t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.previewer);
+						t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider);
 				}
 			}
 			ImGui::EndPopup();
@@ -116,13 +116,14 @@ void BlueprintView::on_draw()
 			}
 		}
 
+		auto& io = ImGui::GetIO();
+		auto dl = ImGui::GetWindowDrawList();
+		std::string tooltip; vec2 tooltip_pos;
+
 		ax::NodeEditor::SetCurrentEditor(im_editor);
 		if (blueprint_window.debugger->debugging == blueprint_instance)
 			ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_Bg, ImColor(100, 80, 60, 200));
 		ax::NodeEditor::Begin("node_editor");
-
-		auto& io = ImGui::GetIO();
-		auto dl = ImGui::GetWindowDrawList();
 
 		BlueprintInstance::Node* break_node = nullptr;
 		if (blueprint_window.debugger->debugging == blueprint_instance)
@@ -154,17 +155,17 @@ void BlueprintView::on_draw()
 				{
 					if (ImGui::IsItemHovered())
 					{
-						ImGui::BeginTooltip();
 						if (instance_node)
 						{
 							auto& arg = instance_node->inputs[i];
-							if (auto type = input.get_type(arg.type_idx); type)
+							if (arg.type)
 							{
-								auto s = type->serialize(arg.data);
-								ImGui::Text("Value: %s", s.c_str());
+								tooltip = std::format("Value: {}", arg.type->serialize(arg.data));
+								ax::NodeEditor::Suspend();
+								tooltip_pos = io.MousePos;
+								ax::NodeEditor::Resume();
 							}
 						}
-						ImGui::EndTooltip();
 					}
 				}
 				else
@@ -181,7 +182,7 @@ void BlueprintView::on_draw()
 					if (!linked)
 					{
 						ImGui::PushID(&input);
-						if (auto type = input.get_type(); type && type->tag == TagD)
+						if (auto type = input.type; type && type->tag == TagD)
 						{
 							auto ti = (TypeInfo_Data*)type;
 							switch (ti->data_type)
@@ -223,7 +224,7 @@ void BlueprintView::on_draw()
 			for (auto i = 0; i < n->outputs.size(); i++)
 			{
 				auto& output = n->outputs[i];
-				if (output.type_idx == -1)
+				if (!output.type)
 					continue;
 				ax::NodeEditor::BeginPin((uint64)&output, ax::NodeEditor::PinKind::Output);
 				ImGui::Text("%s %s", output.name.c_str(), graphics::FontAtlas::icon_s("play"_h).c_str());
@@ -232,23 +233,23 @@ void BlueprintView::on_draw()
 				{
 					if (ImGui::IsItemHovered())
 					{
-						ImGui::BeginTooltip();
 						if (instance_node)
 						{
 							auto& arg = instance_node->outputs[i];
-							if (auto type = output.get_type(arg.type_idx); type)
+							if (arg.type)
 							{
-								auto s = type->serialize(arg.data);
-								ImGui::Text("Value: %s", s.c_str());
+								tooltip = std::format("Value: {}", arg.type->serialize(arg.data));
+								ax::NodeEditor::Suspend();
+								tooltip_pos = io.MousePos;
+								ax::NodeEditor::Resume();
 							}
 						}
-						ImGui::EndTooltip();
 					}
 				}
 			}
 			ImGui::EndGroup();
 
-			if (n->previewer)
+			if (n->preview_provider)
 			{
 				if (ImGui::CollapsingHeader("Preview"))
 				{
@@ -269,7 +270,7 @@ void BlueprintView::on_draw()
 			{
 				if (from_slot && to_slot && from_slot != to_slot)
 				{
-					if (to_slot->find_type(from_slot->get_type()) != -1)
+					if (to_slot->allow_type(from_slot->type))
 					{
 						if (ax::NodeEditor::AcceptNewItem())
 							blueprint->add_link(from_slot->node, from_slot->name_hash, to_slot->node, to_slot->name_hash);
@@ -299,6 +300,14 @@ void BlueprintView::on_draw()
 		if (blueprint_window.debugger->debugging == blueprint_instance)
 			ax::NodeEditor::PopStyleColor();
 		ax::NodeEditor::SetCurrentEditor(nullptr);
+
+		if (!tooltip.empty())
+		{
+			auto mpos = io.MousePos;
+			io.MousePos = tooltip_pos;
+			ImGui::SetTooltip(tooltip.c_str());
+			io.MousePos = mpos;
+		}
 	}
 
 	ImGui::End();

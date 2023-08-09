@@ -244,7 +244,10 @@ namespace flame
 		virtual std::string serialize(const void* p) const { return ""; }
 		virtual void unserialize(const std::string& str, void* p) const {}
 
-		virtual void* get_v() const { return nullptr; };
+		virtual void* get_v() const { return nullptr; }
+		virtual float as_float(void* p) const { assert(0); return std::numeric_limits<float>::quiet_NaN(); }
+		virtual int as_int(void* p) const { assert(0); return std::numeric_limits<int>::max(); }
+		virtual uint as_uint(void* p) const { assert(0); return std::numeric_limits<uint>::max(); }
 		virtual TypeInfo* get_wrapped() const { return nullptr; }
 		virtual void call_getter(const FunctionInfo* fi, void* obj, void* dst) const {};
 		virtual void call_setter(const FunctionInfo* fi, void* obj, void* src) const {};
@@ -1030,6 +1033,18 @@ namespace flame
 		{
 			return &v;
 		}
+		float as_float(void* p) const override
+		{ 
+			return *(char*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(char*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(char*)p;
+		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
@@ -1076,6 +1091,18 @@ namespace flame
 		{
 			return &v;
 		}
+		float as_float(void* p) const override
+		{
+			return *(uchar*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(uchar*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(uchar*)p;
+		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
@@ -1120,6 +1147,18 @@ namespace flame
 		void* get_v() const override
 		{
 			return &v;
+		}
+		float as_float(void* p) const override
+		{
+			return *(short*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(short*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(short*)p;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1167,6 +1206,18 @@ namespace flame
 		{
 			return &v;
 		}
+		float as_float(void* p) const override
+		{
+			return *(ushort*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(ushort*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(ushort*)p;
+		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
@@ -1211,6 +1262,18 @@ namespace flame
 		void* get_v() const override
 		{
 			return &v;
+		}
+		float as_float(void* p) const override
+		{
+			return *(int*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(int*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(int*)p;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1258,6 +1321,18 @@ namespace flame
 		{
 			return &v;
 		}
+		float as_float(void* p) const override
+		{
+			return *(uint*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(uint*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(uint*)p;
+		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
@@ -1302,6 +1377,18 @@ namespace flame
 		void* get_v() const override
 		{
 			return &v;
+		}
+		float as_float(void* p) const override
+		{
+			return *(int64*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(int64*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(int64*)p;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1349,6 +1436,18 @@ namespace flame
 		{
 			return &v;
 		}
+		float as_float(void* p) const override
+		{
+			return *(uint64*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(uint64*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(uint64*)p;
+		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
@@ -1393,6 +1492,18 @@ namespace flame
 		void* get_v() const override
 		{
 			return &v;
+		}
+		float as_float(void* p) const override
+		{
+			return *(float*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(float*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(float*)p;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1441,6 +1552,18 @@ namespace flame
 		{
 			return &v;
 		}
+		float as_float(void* p) const override
+		{
+			return *(uchar*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(uchar*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(uchar*)p;
+		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
@@ -1487,6 +1610,18 @@ namespace flame
 		void* get_v() const override
 		{
 			return &v;
+		}
+		float as_float(void* p) const override
+		{
+			return *(uchar*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(uchar*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(uchar*)p;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1535,6 +1670,18 @@ namespace flame
 		{
 			return &v;
 		}
+		float as_float(void* p) const override
+		{
+			return *(uchar*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(uchar*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(uchar*)p;
+		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
@@ -1580,6 +1727,18 @@ namespace flame
 		void* get_v() const override
 		{
 			return &v;
+		}
+		float as_float(void* p) const override
+		{
+			return *(int*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(int*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(int*)p;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1627,6 +1786,18 @@ namespace flame
 		{
 			return &v;
 		}
+		float as_float(void* p) const override
+		{
+			return *(int*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(int*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(int*)p;
+		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
@@ -1672,6 +1843,18 @@ namespace flame
 		void* get_v() const override
 		{
 			return &v;
+		}
+		float as_float(void* p) const override
+		{
+			return *(int*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(int*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(int*)p;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1720,6 +1903,18 @@ namespace flame
 		{
 			return &v;
 		}
+		float as_float(void* p) const override
+		{
+			return *(uint*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(uint*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(uint*)p;
+		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
@@ -1766,6 +1961,18 @@ namespace flame
 		void* get_v() const override
 		{
 			return &v;
+		}
+		float as_float(void* p) const override
+		{
+			return *(uint*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(uint*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(uint*)p;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1814,6 +2021,18 @@ namespace flame
 		{
 			return &v;
 		}
+		float as_float(void* p) const override
+		{
+			return *(uint*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(uint*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(uint*)p;
+		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
@@ -1859,6 +2078,18 @@ namespace flame
 		void* get_v() const override
 		{
 			return &v;
+		}
+		float as_float(void* p) const override
+		{
+			return *(float*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(float*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(float*)p;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1906,6 +2137,18 @@ namespace flame
 		{
 			return &v;
 		}
+		float as_float(void* p) const override
+		{
+			return *(float*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(float*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(float*)p;
+		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
 			assert(fi->return_type == this);
@@ -1951,6 +2194,18 @@ namespace flame
 		void* get_v() const override
 		{
 			return &v;
+		}
+		float as_float(void* p) const override
+		{
+			return *(float*)p;
+		}
+		int as_int(void* p) const override
+		{
+			return *(float*)p;
+		}
+		uint as_uint(void* p) const override
+		{
+			return *(float*)p;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{

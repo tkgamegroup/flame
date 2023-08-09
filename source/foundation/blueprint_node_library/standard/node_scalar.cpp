@@ -20,11 +20,18 @@ namespace flame
 				}
 			},
 			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-				switch (inputs[0].type_idx)
+				auto out_ti = (TypeInfo_Data*)outputs[0].type;
+				switch (out_ti->data_type)
 				{
-				case  0x0: *(float*)outputs[0].data = *(float*)inputs[0].data;	break;
-				case  0x1: *(int*)outputs[0].data	= *(int*)inputs[0].data;	break;
-				case  0x2: *(uint*)outputs[0].data	= *(uint*)inputs[0].data;	break;
+				case DataFloat:
+					*(float*)outputs[0].data = *(float*)inputs[0].data;
+					break;
+				case DataInt:
+					if (out_ti->is_signed)
+						*(int*)outputs[0].data = *(int*)inputs[0].data;
+					else
+						*(uint*)outputs[0].data = *(uint*)inputs[0].data;
+					break;
 				}
 			},
 			nullptr,

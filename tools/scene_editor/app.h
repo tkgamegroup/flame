@@ -215,6 +215,7 @@ struct App : UniverseApplication
 	void timeline_toggle_playing();
 	void open_file_in_vs(const std::filesystem::path& path);
 	void vs_automate(const std::vector<std::wstring>& cl);
+	void render_to_image(EntityPtr node, cCameraPtr camera, graphics::ImageViewPtr dst);
 
 	bool cmd_undo();
 	bool cmd_redo();

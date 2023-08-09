@@ -24,17 +24,35 @@ namespace flame
 				}
 			},
 			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-				switch (inputs[0].type_idx + (inputs[1].type_idx << 4))
+				auto out_ti = (TypeInfo_Data*)outputs[0].type;
+				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+
+				switch (out_ti->data_type)
 				{
-				case  0x00: *(vec2*)outputs[0].data		=	vec2(*(float*)	inputs[0].data,	*(float*)inputs[1].data);	break;
-				case  0x01: *(vec2*)outputs[0].data		=	vec2(*(int*)	inputs[0].data,	*(float*)inputs[1].data);	break;
-				case  0x02: *(vec2*)outputs[0].data		=	vec2(*(uint*)	inputs[0].data,	*(float*)inputs[1].data);	break;
-				case  0x10: *(vec2*)outputs[0].data		=	vec2(*(float*)	inputs[0].data,	*(int*)inputs[1].data);		break;
-				case  0x11: *(ivec2*)outputs[0].data	=	ivec2(*(int*)	inputs[0].data,	*(int*)inputs[1].data);		break;
-				case  0x12: *(vec2*)outputs[0].data		=	vec2(*(uint*)	inputs[0].data,	*(int*)inputs[1].data);		break;
-				case  0x20: *(vec2*)outputs[0].data		=	vec2(*(float*)	inputs[0].data,	*(uint*)inputs[1].data);	break;
-				case  0x21: *(ivec2*)outputs[0].data	=	ivec2(*(int*)	inputs[0].data,	*(uint*)inputs[1].data);	break;
-				case  0x22: *(uvec2*)outputs[0].data	=	uvec2(*(uint*)	inputs[0].data,	*(uint*)inputs[1].data);	break;
+				case DataFloat:
+				{
+					auto& v = *(vec2*)outputs[0].data;
+					v.x = in0_ti->as_float(inputs[0].data);
+					v.y = in1_ti->as_float(inputs[1].data);
+				}
+					break;
+				case DataInt:
+				{
+					if (out_ti->is_signed)
+					{
+						auto& v = *(ivec2*)outputs[0].data;
+						v.x = in0_ti->as_int(inputs[0].data);
+						v.y = in1_ti->as_int(inputs[1].data);
+					}
+					else
+					{
+						auto& v = *(uvec2*)outputs[0].data;
+						v.x = in0_ti->as_uint(inputs[0].data);
+						v.y = in1_ti->as_uint(inputs[1].data);
+					}
+				}
+					break;
 				}
 			},
 			nullptr,
