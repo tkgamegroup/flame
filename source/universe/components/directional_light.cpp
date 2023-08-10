@@ -1,20 +1,20 @@
 #include "../entity_private.h"
 #include "../world_private.h"
 #include "node_private.h"
-#include "dir_light_private.h"
+#include "directional_light_private.h"
 #include "../draw_data.h"
 #include "../systems/renderer_private.h"
 
 namespace flame
 {
-	cDirLightPrivate::~cDirLightPrivate()
+	cDirectionalLightPrivate::~cDirectionalLightPrivate()
 	{
 		node->drawers.remove("light"_h);
 		node->measurers.remove("light"_h);
 		node->data_listeners.remove("light"_h);
 	}
 
-	void cDirLightPrivate::on_init()
+	void cDirectionalLightPrivate::on_init()
 	{
 		node->drawers.add([this](DrawData& draw_data) {
 			if (instance_id == -1)
@@ -45,7 +45,7 @@ namespace flame
 		node->mark_transform_dirty();
 	}
 
-	void cDirLightPrivate::set_color(const vec4& _color)
+	void cDirectionalLightPrivate::set_color(const vec4& _color)
 	{
 		if (color == _color)
 			return;
@@ -56,7 +56,7 @@ namespace flame
 		data_changed("color"_h);
 	}
 
-	void cDirLightPrivate::set_cast_shadow(bool _cast_shadow)
+	void cDirectionalLightPrivate::set_cast_shadow(bool _cast_shadow)
 	{
 		if (cast_shadow == _cast_shadow)
 			return;
@@ -67,23 +67,23 @@ namespace flame
 		data_changed("cast_shadow"_h);
 	}
 
-	void cDirLightPrivate::on_active()
+	void cDirectionalLightPrivate::on_active()
 	{
 		instance_id = sRenderer::instance()->register_light_instance(LightDirectional, -1);
 	}
 
-	void cDirLightPrivate::on_inactive()
+	void cDirectionalLightPrivate::on_inactive()
 	{
 		sRenderer::instance()->register_light_instance(LightDirectional, instance_id);
 		instance_id = -1;
 	}
 
-	struct cDirLightCreate : cDirLight::Create
+	struct cDirectionalLightCreate : cDirectionalLight::Create
 	{
-		cDirLightPtr operator()(EntityPtr e) override
+		cDirectionalLightPtr operator()(EntityPtr e) override
 		{
-			return new cDirLightPrivate();
+			return new cDirectionalLightPrivate();
 		}
-	}cDirLight_create;
-	cDirLight::Create& cDirLight::create = cDirLight_create;
+	}cDirectionalLight_create;
+	cDirectionalLight::Create& cDirectionalLight::create = cDirectionalLight_create;
 }

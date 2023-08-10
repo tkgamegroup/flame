@@ -1,17 +1,18 @@
 #pragma once
 
-#include "dir_light.h"
+#include "point_light.h"
 
 namespace flame
 {
-	struct cDirLightPrivate : cDirLight
+	struct cPointLightPrivate : cPointLight
 	{
 		bool dirty = true;
 
-		~cDirLightPrivate();
+		~cPointLightPrivate();
 		void on_init() override;
-
+		
 		void set_color(const vec4& color) override;
+		void set_range(float range) override;
 		void set_cast_shadow(bool cast_shadow) override;
 
 		void on_active() override;

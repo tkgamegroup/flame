@@ -112,10 +112,12 @@ namespace flame
 	graphics::PipelineResourceManager prm_fwd;
 	graphics::PipelineResourceManager prm_gbuf;
 	graphics::PipelineResourceManager prm_plain;
+	graphics::PipelineResourceManager prm_deferred;
+	graphics::PipelineResourceManager prm_luma;
 	graphics::PrivateResourcePipelineManager<graphics::GraphicsPipeline> pl_deferred;
+	graphics::PrivateResourcePipelineManager<graphics::ComputePipeline> pl_luma;
 	graphics::PrivateResourcePipelineManager<graphics::GraphicsPipeline> pl_bloom;
 	graphics::PrivateResourcePipelineManager<graphics::GraphicsPipeline> pl_blur;
-	graphics::PrivateResourcePipelineManager<graphics::ComputePipeline> pl_luma;
 	graphics::PrivateResourcePipelineManager<graphics::GraphicsPipeline> pl_tone;
 	graphics::PrivateResourcePipelineManager<graphics::GraphicsPipeline> pl_fxaa;
 
@@ -123,8 +125,8 @@ namespace flame
 	graphics::IndexBuffer buf_idx;
 	graphics::VertexBuffer buf_vtx_arm;
 	graphics::IndexBuffer buf_idx_arm;
-
 	graphics::StorageBuffer buf_camera;
+
 	graphics::SparseArray mesh_instances;
 	graphics::SparseArray armature_instances;
 	graphics::SparseArray terrain_instances;
@@ -145,6 +147,8 @@ namespace flame
 	std::unique_ptr<graphics::DescriptorSet> ds_instance;
 	std::unique_ptr<graphics::DescriptorSet> ds_material;
 	std::unique_ptr<graphics::DescriptorSet> ds_lighting;
+	std::unique_ptr<graphics::DescriptorSet> ds_deferred;
+	std::unique_ptr<graphics::DescriptorSet> ds_luma;
 
 	graphics::GraphicsPipelinePtr pl_blit = nullptr;
 	graphics::GraphicsPipelinePtr pl_blit_dep = nullptr;
@@ -169,6 +173,9 @@ namespace flame
 	graphics::GraphicsPipelinePtr pl_line_strip3d_dep = nullptr;
 	graphics::GraphicsPipelinePtr pl_triangle3d = nullptr;
 	graphics::GraphicsPipelinePtr pl_triangle3d_dep = nullptr;
+
+	graphics::GraphicsPipelinePtr pl_deferred2;
+	graphics::ComputePipelinePtr pl_luma2;
 
 	std::unique_ptr<graphics::Fence> fence_pickup;
 
@@ -447,6 +454,72 @@ namespace flame
 		}
 	}
 
+	RenderTaskPrivate::RenderTaskPrivate(graphics::WindowPtr window, RenderMode _mode, const std::vector<graphics::ImageViewPtr>& targets, bool use_canvas)
+	{
+		mode = _mode;
+		if (use_canvas)
+			canvas = graphics::Canvas::create(window);
+	}
+
+	void RenderTaskPrivate::set_targets(const std::vector<graphics::ImageViewPtr>& _targets)
+	{
+		targets = _targets;
+
+		canvas->set_targets(targets);
+		canvas->clear_framebuffer = false;
+
+		if (targets.empty())
+			return;
+
+		graphics::Queue::get()->wait_idle();
+
+		auto img0 = targets.front()->image;
+		auto tar_ext = img0->extent;
+
+		auto device = graphics::Device::current();
+		static auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
+		static auto sp_nearest_dep = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToBorder);
+
+		img_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
+		img_dst->filename = L"##img_dst";
+		device->set_object_debug_name(img_dst.get(), "Dst");
+		img_back0.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 0));
+		img_back0->filename = L"##img_back0";
+		device->set_object_debug_name(img_back0.get(), "Back0");
+		img_back1.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_back1->filename = L"##img_back1";
+		device->set_object_debug_name(img_back1.get(), "Back1");
+		img_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_dep->filename = L"##img_dep";
+		device->set_object_debug_name(img_dep.get(), "Dep");
+		img_dst_ms.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
+		img_dep_ms.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
+		img_last_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
+		img_last_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_gbufferA.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_gbufferB.reset(graphics::Image::create(graphics::Format_A2R10G10B10_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_gbufferC.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_gbufferD.reset(graphics::Image::create(graphics::Format_B10G11R11_UFLOAT, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
+		fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_gbufferA->get_view(), img_gbufferB->get_view(), img_gbufferC->get_view(), img_gbufferD->get_view(), img_dep->get_view() }));
+		ds_lighting->set_image("img_dep"_h, 0, img_dep->get_view(), sp_nearest_dep);
+		ds_lighting->set_image("img_last_dst"_h, 0, img_last_dst->get_view(), sp_nearest_dep);
+		ds_lighting->set_image("img_last_dep"_h, 0, img_last_dep->get_view(), sp_nearest);
+		ds_lighting->update();
+		pl_deferred.self_ds->set_image("img_gbufferA"_h, 0, img_gbufferA->get_view(), nullptr);
+		pl_deferred.self_ds->set_image("img_gbufferB"_h, 0, img_gbufferB->get_view(), nullptr);
+		pl_deferred.self_ds->set_image("img_gbufferC"_h, 0, img_gbufferC->get_view(), nullptr);
+		pl_deferred.self_ds->set_image("img_gbufferD"_h, 0, img_gbufferD->get_view(), nullptr);
+		pl_deferred.self_ds->update();
+		pl_luma.self_ds->set_image("img_col"_h, 0, img_dst->get_view(), nullptr);
+		pl_luma.self_ds->update();
+
+		img_pickup.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
+		img_dep_pickup.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
+		fb_primitive.reset(graphics::Framebuffer::create(rp_primitive, { img_dst->get_view(), img_dep->get_view() }));
+		fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
+	}
+
 	sRendererPrivate::sRendererPrivate() 
 	{
 	}
@@ -633,6 +706,9 @@ namespace flame
 			for (auto i = 0; i < DirShadowMaxLevels; i++)
 				s.batcher[i].buf_idr.create(min(1024U, mesh_instances.capacity));
 		}
+		
+		pl_deferred2 = graphics::GraphicsPipeline::get(L"flame\\shaders\\deferred.pipeline", {});
+		prm_deferred.init(pl_deferred2->layout, graphics::PipelineGraphics);
 
 		pl_deferred.init(L"flame\\shaders\\deferred.pipeline");
 		pl_deferred.create_self_ds();
@@ -783,7 +859,6 @@ namespace flame
 
 	void sRendererPrivate::bind_window_targets()
 	{
-		use_window_targets = true;
 		window->native->resize_listeners.add([this](const uvec2& sz) {
 			graphics::Queue::get()->wait_idle();
 			std::vector<graphics::ImageViewPtr> ivs;
@@ -802,6 +877,22 @@ namespace flame
 		if (iv_tars.empty())
 			return vec2(0.f);
 		return iv_tars[0]->image->extent;
+	}
+
+	RenderTaskPtr sRendererPrivate::add_render_task(RenderMode mode, cCameraPtr camera,
+		const std::vector<graphics::ImageViewPtr>& targets, graphics::ImageLayout final_layout, bool need_canvas)
+	{
+		return nullptr;
+	}
+
+	RenderTaskPtr sRendererPrivate::add_render_task_with_window_targets(RenderMode mode, cCameraPtr camera, bool need_canvas)
+	{
+		return nullptr;
+	}
+
+	void sRendererPrivate::remove_render_task(RenderTaskPtr quest)
+	{
+
 	}
 
 	void sRendererPrivate::set_sky_maps(graphics::ImageViewPtr _sky_map, graphics::ImageViewPtr _sky_irr_map, graphics::ImageViewPtr _sky_rad_map)
@@ -1824,7 +1915,7 @@ namespace flame
 			buf_material.upload(cb);
 			buf_instance.upload(cb);
 
-			if (mode == Shaded)
+			if (mode == RenderModeShaded)
 			{
 				draw_data.reset(PassLight, 0);
 				for (auto n : camera_culled_nodes)
@@ -1877,7 +1968,7 @@ namespace flame
 				buf_lighting.mark_dirty_c("dir_lights_count"_h).as<uint>() = n_dir_lights;
 				buf_lighting.mark_dirty_c("pt_lights_count"_h).as<uint>() = n_pt_lights;
 			}
-			else if (mode == CameraLight || mode == CameraLightButNoSky)
+			else if (mode == RenderModeCameraLight || mode == RenderModeCameraLightButNoSky)
 			{
 				auto ins = buf_lighting.mark_dirty_ci("dir_lights"_h, camera_light_id);
 				ins.child("dir"_h).as<vec3>() = camera->view_mat_inv[2];
@@ -1895,7 +1986,7 @@ namespace flame
 
 		// occulder pass
 		cb->begin_debug_label("Occulder Pass");
-		if (mode == Shaded)
+		if (mode == RenderModeShaded)
 		{
 			for (auto i = 0; i < DirShadowMaxCount; i++)
 			{
@@ -2183,13 +2274,13 @@ namespace flame
 			auto pl_mod = 0;
 			switch (mode)
 			{
-			case CameraLightButNoSky: pl_mod = "NO_SKY"_h; break;
-			case AlbedoData: pl_mod = "ALBEDO_DATA"_h; break;
-			case NormalData: pl_mod = "NORMAL_DATA"_h; break;
-			case MetallicData: pl_mod = "METALLIC_DATA"_h; break;
-			case RoughnessData: pl_mod = "ROUGHNESS_DATA"_h; break;
-			case IBLValue: pl_mod = "IBL_VALUE"_h; break;
-			case FogValue: pl_mod = "FOG_VALUE"_h; break;
+			case RenderModeCameraLightButNoSky: pl_mod = "NO_SKY"_h; break;
+			case RenderModeAlbedoData: pl_mod = "ALBEDO_DATA"_h; break;
+			case RenderModeNormalData: pl_mod = "NORMAL_DATA"_h; break;
+			case RenderModeMetallicData: pl_mod = "METALLIC_DATA"_h; break;
+			case RenderModeRoughnessData: pl_mod = "ROUGHNESS_DATA"_h; break;
+			case RenderModeIBLValue: pl_mod = "IBL_VALUE"_h; break;
+			case RenderModeFogValue: pl_mod = "FOG_VALUE"_h; break;
 			}
 
 			cb->image_barrier(img_gbufferA.get(), {}, graphics::ImageLayoutShaderReadOnly);
@@ -2339,7 +2430,7 @@ namespace flame
 
 		// post processing
 		cb->begin_debug_label("Post Processing");
-		if ((mode == Shaded || mode == CameraLight || mode == CameraLightButNoSky) && post_processing_enable)
+		if ((mode == RenderModeShaded || mode == RenderModeCameraLight || mode == RenderModeCameraLightButNoSky) && post_processing_enable)
 		{
 			if (ssao_enable)
 			{

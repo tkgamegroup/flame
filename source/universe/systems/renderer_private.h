@@ -9,6 +9,30 @@
 
 namespace flame
 {
+	struct RenderTaskPrivate : RenderTask
+	{
+		std::unique_ptr<graphics::Image> img_dst;
+		std::unique_ptr<graphics::Image> img_back0;
+		std::unique_ptr<graphics::Image> img_back1;
+		std::unique_ptr<graphics::Image> img_dep;
+		std::unique_ptr<graphics::Image> img_dst_ms;
+		std::unique_ptr<graphics::Image> img_dep_ms;
+		std::unique_ptr<graphics::Image> img_last_dst;
+		std::unique_ptr<graphics::Image> img_last_dep;
+		std::unique_ptr<graphics::Image> img_gbufferA;	// color
+		std::unique_ptr<graphics::Image> img_gbufferB;	// normal
+		std::unique_ptr<graphics::Image> img_gbufferC;	// metallic, roughness, ao, flags
+		std::unique_ptr<graphics::Image> img_gbufferD;	// emissive
+		std::unique_ptr<graphics::Framebuffer> fb_fwd;
+		std::unique_ptr<graphics::Framebuffer> fb_gbuf;
+		std::unique_ptr<graphics::DescriptorSet> ds_lighting;
+		std::unique_ptr<graphics::DescriptorSet> ds_deferred;
+		std::unique_ptr<graphics::DescriptorSet> ds_luma;
+
+		RenderTaskPrivate(graphics::WindowPtr window, RenderMode mode, const std::vector<graphics::ImageViewPtr>& targets, bool use_canvas);
+		void set_targets(const std::vector<graphics::ImageViewPtr>& targets);
+	};
+
 	struct sRendererPrivate : sRenderer
 	{
 		graphics::ImageLayout final_layout;
@@ -20,6 +44,13 @@ namespace flame
 		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout) override;
 		void bind_window_targets() override;
 		vec2 target_extent() override;
+
+		RenderTaskPtr add_render_task(RenderMode mode, cCameraPtr camera,
+			const std::vector<graphics::ImageViewPtr>& targets, graphics::ImageLayout final_layout =
+			graphics::ImageLayoutShaderReadOnly, bool need_canvas = true) override;
+		RenderTaskPtr add_render_task_with_window_targets(RenderMode mode, cCameraPtr camera, 
+			bool need_canvas = true) override;
+		void remove_render_task(RenderTaskPtr quest) override;
 
 		graphics::ImageViewPtr sky_map = nullptr;
 		graphics::ImageViewPtr sky_irr_map = nullptr;

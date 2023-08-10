@@ -5,7 +5,7 @@
 namespace flame
 {
 	// Reflect ctor
-	struct cPtLight : Component
+	struct cPointLight : Component
 	{
 		// Reflect requires
 		cNodePtr node = nullptr;
@@ -27,7 +27,7 @@ namespace flame
 
 		struct Create
 		{
-			virtual cPtLightPtr operator()(EntityPtr e) = 0;
+			virtual cPointLightPtr operator()(EntityPtr e) = 0;
 		};
 		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;

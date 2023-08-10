@@ -7,22 +7,34 @@ namespace flame
 	struct CommonDraw;
 	struct DrawData;
 
+	enum RenderMode
+	{
+		RenderModeSimple, // forward shading, no msaa, no post processing
+		RenderModeShaded,
+		RenderModeCameraLight,
+		RenderModeCameraLightButNoSky,
+		RenderModeAlbedoData,
+		RenderModeNormalData,
+		RenderModeMetallicData,
+		RenderModeRoughnessData,
+		RenderModeIBLValue,
+		RenderModeFogValue
+	};
+
+	struct RenderTask
+	{
+		virtual ~RenderTask() {}
+
+		RenderMode mode = RenderModeShaded;
+		cCameraPtr camera = nullptr;
+		std::vector<graphics::ImageViewPtr> targets;
+		graphics::ImageLayout final_layout = graphics::ImageLayoutShaderReadOnly;
+		graphics::CanvasPtr canvas = nullptr;
+	};
+
 	// Reflect ctor
 	struct sRenderer : System
 	{
-		enum Mode
-		{
-			Shaded,
-			CameraLight,
-			CameraLightButNoSky,
-			AlbedoData,
-			NormalData,
-			MetallicData,
-			RoughnessData,
-			IBLValue,
-			FogValue
-		};
-
 		struct MatVar
 		{
 			std::string name;
@@ -59,11 +71,11 @@ namespace flame
 			uint ref = 0;
 		};
 
-		Mode mode = Shaded;
 		graphics::WindowPtr window;
+		RenderMode mode = RenderModeShaded;
 		cCameraPtr camera = nullptr;
 		std::vector<graphics::ImageViewPtr> iv_tars;
-		bool use_window_targets = false;
+		std::vector<std::unique_ptr<RenderTaskT>> render_quests;
 		graphics::CanvasPtr canvas = nullptr;
 		bool dirty = false;
 
@@ -73,6 +85,13 @@ namespace flame
 		virtual void bind_window_targets() = 0;
 		// Reflect
 		virtual vec2 target_extent() = 0;
+
+		virtual RenderTaskPtr add_render_task(RenderMode mode, cCameraPtr camera, 
+			const std::vector<graphics::ImageViewPtr>& targets, graphics::ImageLayout final_layout = 
+			graphics::ImageLayoutShaderReadOnly, bool need_canvas = true) = 0;
+		virtual RenderTaskPtr add_render_task_with_window_targets(RenderMode mode, cCameraPtr camera, 
+			bool need_canvas = true) = 0;
+		virtual void remove_render_task(RenderTaskPtr quest) = 0;
 
 		// Reflect
 		graphics::ImageViewPtr sky_map = nullptr;

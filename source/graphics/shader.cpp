@@ -1870,19 +1870,21 @@ namespace flame
 					a.alphaBlendOp = VK_BLEND_OP_ADD;
 					a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 				}
-				assert(vk_blend_attachment_states.size() >= info.blend_options.size());
-				for (auto i = 0; i < info.blend_options.size(); i++)
+				if (vk_blend_attachment_states.size() >= info.blend_options.size())
 				{
-					auto& src = info.blend_options[i];
-					auto& dst = vk_blend_attachment_states[i];
-					dst.blendEnable = src.enable;
-					dst.srcColorBlendFactor = to_backend(src.src_color);
-					dst.dstColorBlendFactor = to_backend(src.dst_color);
-					dst.colorBlendOp = VK_BLEND_OP_ADD;
-					dst.srcAlphaBlendFactor = to_backend(src.src_alpha);
-					dst.dstAlphaBlendFactor = to_backend(src.dst_alpha);
-					dst.alphaBlendOp = VK_BLEND_OP_ADD;
-					dst.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+					for (auto i = 0; i < info.blend_options.size(); i++)
+					{
+						auto& src = info.blend_options[i];
+						auto& dst = vk_blend_attachment_states[i];
+						dst.blendEnable = src.enable;
+						dst.srcColorBlendFactor = to_backend(src.src_color);
+						dst.dstColorBlendFactor = to_backend(src.dst_color);
+						dst.colorBlendOp = VK_BLEND_OP_ADD;
+						dst.srcAlphaBlendFactor = to_backend(src.src_alpha);
+						dst.dstAlphaBlendFactor = to_backend(src.dst_alpha);
+						dst.alphaBlendOp = VK_BLEND_OP_ADD;
+						dst.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+					}
 				}
 
 				VkPipelineColorBlendStateCreateInfo blend_state;

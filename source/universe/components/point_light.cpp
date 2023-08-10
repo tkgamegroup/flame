@@ -1,20 +1,20 @@
 #include "../entity_private.h"
 #include "../world_private.h"
 #include "node_private.h"
-#include "pt_light_private.h"
+#include "point_light_private.h"
 #include "../draw_data.h"
 #include "../systems/renderer_private.h"
 
 namespace flame
 {
-	cPtLightPrivate::~cPtLightPrivate()
+	cPointLightPrivate::~cPointLightPrivate()
 	{
 		node->drawers.remove("light"_h);
 		node->measurers.remove("light"_h);
 		node->data_listeners.remove("light"_h);
 	}
 
-	void cPtLightPrivate::on_init()
+	void cPointLightPrivate::on_init()
 	{
 		node->drawers.add([this](DrawData& draw_data) {
 			if (instance_id == -1)
@@ -45,7 +45,7 @@ namespace flame
 		node->mark_transform_dirty();
 	}
 
-	void cPtLightPrivate::set_color(const vec4& _color)
+	void cPointLightPrivate::set_color(const vec4& _color)
 	{
 		if (color == _color)
 			return;
@@ -56,7 +56,7 @@ namespace flame
 		data_changed("color"_h);
 	}
 
-	void cPtLightPrivate::set_range(float _range)
+	void cPointLightPrivate::set_range(float _range)
 	{
 		if (range == _range)
 			return;
@@ -67,7 +67,7 @@ namespace flame
 		data_changed("range"_h);
 	}
 
-	void cPtLightPrivate::set_cast_shadow(bool _cast_shadow)
+	void cPointLightPrivate::set_cast_shadow(bool _cast_shadow)
 	{
 		if (cast_shadow == _cast_shadow)
 			return;
@@ -78,23 +78,23 @@ namespace flame
 		data_changed("cast_shadow"_h);
 	}
 
-	void cPtLightPrivate::on_active()
+	void cPointLightPrivate::on_active()
 	{
 		instance_id = sRenderer::instance()->register_light_instance(LightPoint, -1);
 	}
 
-	void cPtLightPrivate::on_inactive()
+	void cPointLightPrivate::on_inactive()
 	{
 		sRenderer::instance()->register_light_instance(LightPoint, instance_id);
 		instance_id = -1;
 	}
 
-	struct cPtLightCreate : cPtLight::Create
+	struct cPointLightCreate : cPointLight::Create
 	{
-		cPtLightPtr operator()(EntityPtr e) override
+		cPointLightPtr operator()(EntityPtr e) override
 		{
-			return new cPtLightPrivate();
+			return new cPointLightPrivate();
 		}
-	}cPtLight_create;
-	cPtLight::Create& cPtLight::create = cPtLight_create;
+	}cPointLight_create;
+	cPointLight::Create& cPointLight::create = cPointLight_create;
 }

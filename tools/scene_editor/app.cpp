@@ -18,7 +18,7 @@
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
-#include <flame/universe/components/dir_light.h>
+#include <flame/universe/components/directional_light.h>
 #include <flame/universe/systems/renderer.h>
 
 std::vector<Window*> windows;
@@ -129,7 +129,7 @@ void App::init()
 	world->update_components = false;
 	input->transfer_events = false;
 	always_render = false;
-	renderer->mode = sRenderer::CameraLight;
+	renderer->mode = RenderModeCameraLight;
 
 	auto root = world->root.get();
 	root->add_component<cNode>();
@@ -675,22 +675,22 @@ void App::on_gui()
 	}
 	if (ImGui::BeginMenu("Render"))
 	{
-		if (ImGui::MenuItem("Shaded", nullptr, renderer->mode == sRenderer::Shaded))
-			renderer->mode = sRenderer::Shaded;
-		if (ImGui::MenuItem("Camera Light", nullptr, renderer->mode == sRenderer::CameraLight))
-			renderer->mode = sRenderer::CameraLight;
-		if (ImGui::MenuItem("Albedo Data", nullptr, renderer->mode == sRenderer::AlbedoData))
-			renderer->mode = sRenderer::AlbedoData;
-		if (ImGui::MenuItem("Normal Data", nullptr, renderer->mode == sRenderer::NormalData))
-			renderer->mode = sRenderer::NormalData;
-		if (ImGui::MenuItem("Metallic Data", nullptr, renderer->mode == sRenderer::MetallicData))
-			renderer->mode = sRenderer::MetallicData;
-		if (ImGui::MenuItem("Roughness Data", nullptr, renderer->mode == sRenderer::RoughnessData))
-			renderer->mode = sRenderer::RoughnessData;
-		if (ImGui::MenuItem("IBL Value", nullptr, renderer->mode == sRenderer::IBLValue))
-			renderer->mode = sRenderer::IBLValue;
-		if (ImGui::MenuItem("Fog Value", nullptr, renderer->mode == sRenderer::FogValue))
-			renderer->mode = sRenderer::FogValue;
+		if (ImGui::MenuItem("Shaded", nullptr, renderer->mode == RenderModeShaded))
+			renderer->mode = RenderModeShaded;
+		if (ImGui::MenuItem("Camera Light", nullptr, renderer->mode == RenderModeCameraLight))
+			renderer->mode = RenderModeCameraLight;
+		if (ImGui::MenuItem("Albedo Data", nullptr, renderer->mode == RenderModeAlbedoData))
+			renderer->mode = RenderModeAlbedoData;
+		if (ImGui::MenuItem("Normal Data", nullptr, renderer->mode == RenderModeNormalData))
+			renderer->mode = RenderModeNormalData;
+		if (ImGui::MenuItem("Metallic Data", nullptr, renderer->mode == RenderModeMetallicData))
+			renderer->mode = RenderModeMetallicData;
+		if (ImGui::MenuItem("Roughness Data", nullptr, renderer->mode == RenderModeRoughnessData))
+			renderer->mode = RenderModeRoughnessData;
+		if (ImGui::MenuItem("IBL Value", nullptr, renderer->mode == RenderModeIBLValue))
+			renderer->mode = RenderModeIBLValue;
+		if (ImGui::MenuItem("Fog Value", nullptr, renderer->mode == RenderModeFogValue))
+			renderer->mode = RenderModeFogValue;
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("Debug"))
@@ -1334,7 +1334,7 @@ void App::new_prefab(const std::filesystem::path& path, uint type)
 		auto e_light = Entity::create();
 		e_light->name = "Directional Light";
 		e_light->add_component<cNode>()->set_eul(vec3(45.f, -60.f, 0.f));
-		e_light->add_component<cDirLight>();
+		e_light->add_component<cDirectionalLight>();
 		e->add_child(e_light);
 		auto e_plane = Entity::create();
 		e_plane->name = "Plane";
@@ -1599,7 +1599,7 @@ void App::render_to_image(cCameraPtr camera, graphics::ImageViewPtr dst)
 	auto previous_camera = app.renderer->camera;
 	auto previous_render_mode = app.renderer->mode;
 	app.renderer->camera = camera;
-	app.renderer->mode = sRenderer::CameraLightButNoSky;
+	app.renderer->mode = RenderModeCameraLightButNoSky;
 	{
 		graphics::Debug::start_capture_frame();
 		app.renderer->set_targets({ &dst, 1 }, graphics::ImageLayoutShaderReadOnly);
@@ -1686,11 +1686,11 @@ bool App::cmd_new_entities(std::vector<EntityPtr>&& ts, uint type)
 			break;
 		case "dir_light"_h:
 			e->add_component<cNode>()->set_eul(vec3(45.f, -60.f, 0.f));
-			e->add_component<cDirLight>();
+			e->add_component<cDirectionalLight>();
 			break;
 		case "pt_light"_h:
 			e->add_component<cNode>();
-			e->add_component<cPtLight>();
+			e->add_component<cPointLight>();
 			break;
 		case "camera"_h:
 			e->add_component<cNode>();
