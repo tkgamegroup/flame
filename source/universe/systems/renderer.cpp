@@ -127,17 +127,17 @@ namespace flame
 	graphics::IndexBuffer buf_idx_arm;
 	graphics::StorageBuffer buf_camera;
 
-	graphics::SparseArray mesh_instances;
-	graphics::SparseArray armature_instances;
-	graphics::SparseArray terrain_instances;
-	graphics::SparseArray sdf_instances;
-	graphics::SparseArray volume_instances;
+	graphics::SparseSlots mesh_instances;
+	graphics::SparseSlots armature_instances;
+	graphics::SparseSlots terrain_instances;
+	graphics::SparseSlots sdf_instances;
+	graphics::SparseSlots volume_instances;
 	graphics::StorageBuffer buf_instance;
 	graphics::StorageBuffer buf_marching_cubes_loopup;
 	graphics::StorageBuffer buf_transform_feedback;
 	graphics::StorageBuffer buf_material;
-	graphics::SparseArray dir_lights;
-	graphics::SparseArray pt_lights;
+	graphics::SparseSlots dir_lights;
+	graphics::SparseSlots pt_lights;
 	graphics::StorageBuffer buf_lighting;
 	graphics::VertexBuffer buf_particles;
 	graphics::VertexBuffer buf_primitives;
@@ -1284,10 +1284,10 @@ namespace flame
 		res.arm = !mesh->bone_ids.empty();
 		if (!res.arm)
 		{
-			res.vtx_off = buf_vtx.stag_top;
+			res.vtx_off = buf_vtx.add(nullptr, res.vtx_cnt);
 			for (auto i = 0; i < res.vtx_cnt; i++)
 			{
-				auto vtx = buf_vtx.add();
+				auto vtx = buf_vtx.item(res.vtx_off + i);
 				vtx.child("i_pos"_h).as<vec3>() = mesh->positions[i];
 				if (!mesh->uvs.empty())
 					vtx.child("i_uv"_h).as<vec2>() = mesh->uvs[i];
@@ -1297,15 +1297,14 @@ namespace flame
 					vtx.child("i_tan"_h).as<vec3>() = mesh->tangents[i];
 			}
 
-			res.idx_off = buf_idx.stag_top;
-			buf_idx.add(mesh->indices.data(), res.idx_cnt);
+			res.idx_off = buf_idx.add(mesh->indices.data(), res.idx_cnt);
 		}
 		else
 		{
-			res.vtx_off = buf_vtx_arm.stag_top;
+			res.vtx_off = buf_vtx_arm.add(nullptr, res.vtx_cnt);
 			for (auto i = 0; i < res.vtx_cnt; i++)
 			{
-				auto vtx = buf_vtx_arm.add();
+				auto vtx = buf_vtx_arm.item(res.vtx_off + i);
 				vtx.child("i_pos"_h).as<vec3>() = mesh->positions[i];
 				if (!mesh->uvs.empty())
 					vtx.child("i_uv"_h).as<vec2>() = mesh->uvs[i];
@@ -1319,8 +1318,7 @@ namespace flame
 					vtx.child("i_bwgts"_h).as<vec4>() = mesh->bone_weights[i];
 			}
 
-			res.idx_off = buf_idx_arm.stag_top;
-			buf_idx_arm.add(mesh->indices.data(), res.idx_cnt);
+			res.idx_off = buf_idx_arm.add(mesh->indices.data(), res.idx_cnt);
 		}
 
 		return id;
@@ -1331,6 +1329,17 @@ namespace flame
 		auto& res = mesh_reses[id];
 		if (res.ref == 1)
 		{
+			if (!res.arm)
+			{
+				buf_vtx.release(res.vtx_off, res.vtx_cnt);
+				buf_idx.release(res.idx_off, res.idx_cnt);
+			}
+			else
+			{
+				buf_vtx_arm.release(res.vtx_off, res.vtx_cnt);
+				buf_idx_arm.release(res.idx_off, res.idx_cnt);
+			}
+
 			res.mesh = nullptr;
 			res.ref = 0;
 		}
@@ -1775,11 +1784,9 @@ namespace flame
 		pd.vtx_cnt = count;
 		pd.color = color;
 		pd.depth_test = depth_test;
+		auto off = buf_primitives.add(nullptr, count);
 		for (auto i = 0; i < count; i++)
-		{
-			auto vertex = buf_primitives.add();
-			vertex.child("i_pos"_h).as<vec3>() = points[i];
-		}
+			buf_primitives.item(off + i).child("i_pos"_h).as<vec3>() = points[i];
 	}
 
 	static std::vector<std::vector<float>> gauss_blur_weights;
@@ -1847,7 +1854,7 @@ namespace flame
 		if (tar_idx < 0)
 		{
 			outline_groups.clear();
-			buf_primitives.buf_top = buf_primitives.stag_top = 0;
+			buf_primitives.reset();
 			primitives_draws.clear();
 			return;
 		}
@@ -2322,19 +2329,21 @@ namespace flame
 
 			for (auto& p : draw_data.particles)
 			{
-				for (auto& ptc : p.ptcs)
+				auto off = buf_particles.add(nullptr, p.ptcs.size());
+				for (auto i = 0; i < p.ptcs.size(); i++)
 				{
-					auto particle = buf_particles.add();
-					particle.child("i_pos"_h).as<vec3>() = ptc.pos;
-					particle.child("i_xext"_h).as<vec3>() = ptc.x_ext;
-					particle.child("i_yext"_h).as<vec3>() = ptc.y_ext;
-					particle.child("i_uv"_h).as<vec4>() = ptc.uv;
-					particle.child("i_col"_h).as<cvec4>() = ptc.col;
-					particle.child("i_time"_h).as<float>() = ptc.time;
+					auto& src = p.ptcs[i];
+					auto dst = buf_particles.item(off + i);
+					dst.child("i_pos"_h).as<vec3>() = src.pos;
+					dst.child("i_xext"_h).as<vec3>() = src.x_ext;
+					dst.child("i_yext"_h).as<vec3>() = src.y_ext;
+					dst.child("i_uv"_h).as<vec4>() = src.uv;
+					dst.child("i_col"_h).as<cvec4>() = src.col;
+					dst.child("i_time"_h).as<float>() = src.time;
 				}
 			}
 			buf_particles.upload(cb);
-			buf_particles.buf_top = buf_particles.stag_top = 0;
+			buf_particles.reset();
 
 			cb->image_barrier(img_dst.get(), {}, graphics::ImageLayoutAttachment);
 			cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutAttachment);
@@ -2657,7 +2666,7 @@ namespace flame
 		cb->begin_debug_label("Primitives");
 		{
 			buf_primitives.upload(cb);
-			buf_primitives.buf_top = buf_primitives.stag_top = 0;
+			buf_primitives.reset();
 			cb->image_barrier(img_dep.get(), {}, graphics::ImageLayoutAttachment);
 			cb->begin_renderpass(nullptr, fb_primitive.get());
 			cb->bind_vertex_buffer(buf_primitives.buf.get(), 0);

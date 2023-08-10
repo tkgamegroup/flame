@@ -477,9 +477,9 @@ namespace flame
 					}
 
 					imgui_buf_vtx.upload(cb);
-					imgui_buf_vtx.buf_top = imgui_buf_vtx.stag_top = 0;
+					imgui_buf_vtx.reset();
 					imgui_buf_idx.upload(cb);
-					imgui_buf_idx.buf_top = imgui_buf_idx.stag_top = 0;
+					imgui_buf_idx.reset();
 				}
 
 				if (clear_fb)

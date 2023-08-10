@@ -22,9 +22,9 @@ namespace flame
 				}
 
 				buf_vtx.upload(cb);
-				buf_vtx.buf_top = buf_vtx.stag_top = 0;
+				buf_vtx.reset();
 				buf_idx.upload(cb);
-				buf_idx.buf_top = buf_idx.stag_top = 0;
+				buf_idx.reset();
 
 				cb->begin_debug_label("Canvas");
 				idx = fb_tars.size() > 1 ? idx : 0;
@@ -213,7 +213,7 @@ namespace flame
 			path.push_back(vec2(b.x, a.y));
 		}
 
-		void CanvasPrivate::stroke_path(DrawCmd& cmd, float thickness, const cvec4& col, bool closed)
+		CanvasPrivate::DrawVert* CanvasPrivate::stroke_path(DrawCmd& cmd, float thickness, const cvec4& col, bool closed)
 		{
 			auto get_normal = [](const vec2& p1, const vec2& p2) {
 				auto d = normalize(p2 - p1);
@@ -225,22 +225,21 @@ namespace flame
 			thickness *= 0.5f;
 
 			int n_pts = path.size();
-			auto vtx0_off = buf_vtx.stag_top;
+			std::vector<DrawVert> vertices;
+			std::vector<uint> indices;
 			{
-				auto& v = buf_vtx.add_t<DrawVert>();
-
+				auto& v = vertices.emplace_back();
 				v.pos = path[0] + first_normal * thickness;
 				v.uv = vec2(0.f);
 				v.col = col;
 			}
 			{
-				auto& v = buf_vtx.add_t<DrawVert>();
+				auto& v = vertices.emplace_back();
 				v.pos = path[0] - first_normal * thickness;
 				v.uv = vec2(0.f);
 				v.col = col;
 			}
 
-			int vtx_off;
 			for (auto i = 1; i < n_pts - 1; i++)
 			{
 				auto n = last_normal;
@@ -248,50 +247,47 @@ namespace flame
 				n = normalize(n + last_normal);
 				auto t = thickness / dot(n, last_normal);
 
-				vtx_off = buf_vtx.stag_top;
+				int vtx_off = vertices.size();
 				{
-					auto& v = buf_vtx.add_t<DrawVert>();
+					auto& v = vertices.emplace_back();
 					v.pos = path[i] + n * t;
 					v.uv = vec2(0.f);
 					v.col = col;
 				}
 				{
-					auto& v = buf_vtx.add_t<DrawVert>();
+					auto& v = vertices.emplace_back();
 					v.pos = path[i] - n * t;
 					v.uv = vec2(0.f);
 					v.col = col;
 				}
 
-				buf_idx.add(vtx_off - 2);
-				buf_idx.add(vtx_off - 1);
-				buf_idx.add(vtx_off + 1);
-				buf_idx.add(vtx_off - 2);
-				buf_idx.add(vtx_off + 1);
-				buf_idx.add(vtx_off + 0);
-				cmd.idx_cnt += 6;
+				indices.push_back(vtx_off - 2);
+				indices.push_back(vtx_off - 1);
+				indices.push_back(vtx_off + 1);
+				indices.push_back(vtx_off - 2);
+				indices.push_back(vtx_off + 1);
+				indices.push_back(vtx_off + 0);
 			}
 
-			vtx_off = buf_vtx.stag_top;
+			int vtx_off = vertices.size();
 			{
-				auto& v = buf_vtx.add_t<DrawVert>();
-
+				auto& v = vertices.emplace_back();
 				v.pos = path[n_pts - 1] + last_normal * thickness;
 				v.uv = vec2(0.f);
 				v.col = col;
 			}
 			{
-				auto& v = buf_vtx.add_t<DrawVert>();
+				auto& v = vertices.emplace_back();
 				v.pos = path[n_pts - 1] - last_normal * thickness;
 				v.uv = vec2(0.f);
 				v.col = col;
 			}
-			buf_idx.add(vtx_off - 2);
-			buf_idx.add(vtx_off - 1);
-			buf_idx.add(vtx_off + 1);
-			buf_idx.add(vtx_off - 2);
-			buf_idx.add(vtx_off + 1);
-			buf_idx.add(vtx_off + 0);
-			cmd.idx_cnt += 6;
+			indices.push_back(vtx_off - 2);
+			indices.push_back(vtx_off - 1);
+			indices.push_back(vtx_off + 1);
+			indices.push_back(vtx_off - 2);
+			indices.push_back(vtx_off + 1);
+			indices.push_back(vtx_off + 0);
 
 			if (closed)
 			{
@@ -299,53 +295,68 @@ namespace flame
 
 				auto n1 = normalize(n + last_normal);
 				auto t1 = thickness / dot(n1, last_normal);
-				buf_vtx.item_t<DrawVert>(vtx_off + 0).pos = path[n_pts - 1] + n1 * t1;
-				buf_vtx.item_t<DrawVert>(vtx_off + 1).pos = path[n_pts - 1] - n1 * t1;
+				vertices[vtx_off + 0].pos = path[n_pts - 1] + n1 * t1;
+				vertices[vtx_off + 1].pos = path[n_pts - 1] - n1 * t1;
 
 				auto n2 = normalize(n + first_normal);
 				auto t2 = thickness / dot(n2, first_normal);
-				buf_vtx.item_t<DrawVert>(vtx0_off + 0).pos = path[0] + n2 * t2;
-				buf_vtx.item_t<DrawVert>(vtx0_off + 1).pos = path[0] - n2 * t2;
+				vertices[0].pos = path[0] + n2 * t2;
+				vertices[1].pos = path[0] - n2 * t2;
 
-				buf_idx.add(vtx_off + 0);
-				buf_idx.add(vtx_off + 1);
-				buf_idx.add(vtx0_off + 1);
-				buf_idx.add(vtx_off + 0);
-				buf_idx.add(vtx0_off + 1);
-				buf_idx.add(vtx0_off + 0);
-				cmd.idx_cnt += 6;
+				indices.push_back(vtx_off + 0);
+				indices.push_back(vtx_off + 1);
+				indices.push_back(1);
+				indices.push_back(vtx_off + 0);
+				indices.push_back(1);
+				indices.push_back(0);
 			}
+
+			auto buf_vtx_off = buf_vtx.add(vertices.data(), vertices.size());
+			for (auto i = 0; i < indices.size(); i++)
+				indices[i] += buf_vtx_off;
+			buf_idx.add(indices.data(), indices.size());
+			cmd.idx_cnt += indices.size();
+			return &buf_vtx.item_t<DrawVert>(buf_vtx_off);
 		}
 
-		void CanvasPrivate::fill_path(DrawCmd& cmd, const cvec4& col)
+		CanvasPrivate::DrawVert* CanvasPrivate::fill_path(DrawCmd& cmd, const cvec4& col)
 		{
 			int n_pts = path.size();
-			auto vtx0_off = buf_vtx.stag_top;
+			std::vector<DrawVert> vertices;
+			std::vector<uint> indices;
 			{
-				auto& v = buf_vtx.add_t<DrawVert>();
+				auto& v = vertices.emplace_back();
 				v.pos = path[0];
 				v.uv = vec2(0.f);
 				v.col = col;
 			}
 			{
-				auto& v = buf_vtx.add_t<DrawVert>();
+				auto& v = vertices.emplace_back();
 				v.pos = path[1];
 				v.uv = vec2(0.f);
 				v.col = col;
 			}
 			for (auto i = 0; i < n_pts - 2; i++)
 			{
-				auto vtx_off = buf_vtx.stag_top;
+				auto vtx_off = vertices.size();
 				{
-					auto& v = buf_vtx.add_t<DrawVert>();
+					auto& v = vertices.emplace_back();
 					v.pos = path[i + 2];
 					v.uv = vec2(0.f);
 					v.col = col;
 				}
 
-				buf_idx.add(vtx0_off); buf_idx.add(vtx_off - 1); buf_idx.add(vtx_off);
-				cmd.idx_cnt += 3;
+				indices.push_back(0); 
+				indices.push_back(vtx_off - 1);
+				indices.push_back(vtx_off);
 			}
+
+			auto buf_vtx_off = buf_vtx.add(vertices.data(), vertices.size());
+			for (auto i = 0; i < indices.size(); i++)
+				indices[i] += buf_vtx_off;
+			buf_idx.add(indices.data(), indices.size());
+			cmd.idx_cnt += indices.size();
+			return &buf_vtx.item_t<DrawVert>(buf_vtx_off);
 		}
 
 		void CanvasPrivate::stroke(float thickness, const cvec4& col, bool closed)
@@ -426,12 +437,12 @@ namespace flame
 				s.y *= -1.f;
 
 				path_rect(o, o + s);
-				fill_path(cmd, col);
+				auto verts = fill_path(cmd, col);
 				path.clear();
-				buf_vtx.item_t<DrawVert>(-4).uv = g.uv.xy;
-				buf_vtx.item_t<DrawVert>(-3).uv = g.uv.xw;
-				buf_vtx.item_t<DrawVert>(-2).uv = g.uv.zw;
-				buf_vtx.item_t<DrawVert>(-1).uv = g.uv.zy;
+				verts[0].uv = g.uv.xy;
+				verts[1].uv = g.uv.xw;
+				verts[2].uv = g.uv.zw;
+				verts[3].uv = g.uv.zy;
 
 				p.x += g.advance * scale;
 			}
@@ -442,28 +453,12 @@ namespace flame
 			auto& cmd = get_bmp_cmd(view->get_shader_read_src(nullptr));
 
 			path_rect(a, b);
-			fill_path(cmd, cvec4(255));
+			auto verts = fill_path(cmd, tint_col);
 			path.clear();
-			{
-				auto& vtx = buf_vtx.item_t<DrawVert>(-4);
-				vtx.uv = uvs.xy;
-				vtx.col = tint_col;
-			}
-			{
-				auto& vtx = buf_vtx.item_t<DrawVert>(-3);
-				vtx.uv = uvs.xw;
-				vtx.col = tint_col;
-			}
-			{
-				auto& vtx = buf_vtx.item_t<DrawVert>(-2);
-				vtx.uv = uvs.zw;
-				vtx.col = tint_col;
-			}
-			{
-				auto& vtx = buf_vtx.item_t<DrawVert>(-1);
-				vtx.uv = uvs.zy;
-				vtx.col = tint_col;
-			}
+			verts[0].uv = uvs.xy;
+			verts[1].uv = uvs.xw;
+			verts[2].uv = uvs.zw;
+			verts[3].uv = uvs.zy;
 		}
 
 		void CanvasPrivate::add_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle)
@@ -471,33 +466,29 @@ namespace flame
 			auto& cmd = get_bmp_cmd(view->get_shader_read_src(nullptr));
 
 			path_rect(a, b);
-			fill_path(cmd, cvec4(255));
+			auto verts = fill_path(cmd, tint_col);
 			path.clear();
 			auto c = (a + b) * 0.5f;
 			auto r = rotate(mat3(1.f), radians(angle));
 			{
-				auto& vtx = buf_vtx.item_t<DrawVert>(-4);
+				auto& vtx = verts[0];
 				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
 				vtx.uv = uvs.xy;
-				vtx.col = tint_col;
 			}
 			{
-				auto& vtx = buf_vtx.item_t<DrawVert>(-3);
+				auto& vtx = verts[1];
 				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
 				vtx.uv = uvs.xw;
-				vtx.col = tint_col;
 			}
 			{
-				auto& vtx = buf_vtx.item_t<DrawVert>(-2);
+				auto& vtx = verts[2];
 				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
 				vtx.uv = uvs.zw;
-				vtx.col = tint_col;
 			}
 			{
-				auto& vtx = buf_vtx.item_t<DrawVert>(-1);
+				auto& vtx = verts[3];
 				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
 				vtx.uv = uvs.zy;
-				vtx.col = tint_col;
 			}
 		}
 

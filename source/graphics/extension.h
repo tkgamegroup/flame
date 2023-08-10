@@ -43,7 +43,7 @@ namespace flame
 			}
 		};
 
-		struct SparseArray
+		struct SparseSlots
 		{
 			uint capacity;
 			std::deque<uint> free_slots;
@@ -67,6 +67,72 @@ namespace flame
 			inline void release_item(uint id)
 			{
 				free_slots.push_back(id);
+			}
+		};
+
+		struct SparseRanges
+		{
+			uint capacity;
+			std::vector<std::pair<uint, uint>> free_spaces;
+
+			void init(uint _capacity)
+			{
+				capacity = _capacity;
+				free_spaces.clear();
+				free_spaces.emplace_back(0, capacity);
+			}
+
+			inline int get_free_space(uint size)
+			{
+				for (uint i = 0; i < free_spaces.size(); ++i)
+				{
+					auto& fs = free_spaces[i];
+					if (fs.second >= size)
+					{
+						auto ret = fs.first;
+						fs.first += size;
+						fs.second -= size;
+						if (fs.second == 0)
+							free_spaces.erase(free_spaces.begin() + i);
+						return ret;
+					}
+				}
+				return -1;
+			}
+
+			inline void releases_space(uint off, uint size)
+			{
+				for (uint i = 0; i < free_spaces.size(); ++i)
+				{
+					auto& fs = free_spaces[i];
+					if (fs.first + fs.second == off)
+					{
+						fs.second += size;
+						if (i + 1 < free_spaces.size() && fs.first + fs.second == free_spaces[i + 1].first)
+						{
+							fs.second += free_spaces[i + 1].second;
+							free_spaces.erase(free_spaces.begin() + i + 1);
+						}
+						return;
+					}
+					if (off + size == fs.first)
+					{
+						fs.first -= size;
+						fs.second += size;
+						if (i > 0 && free_spaces[i - 1].first + free_spaces[i - 1].second == fs.first)
+						{
+							free_spaces[i - 1].second += fs.second;
+							free_spaces.erase(free_spaces.begin() + i);
+						}
+						return;
+					}
+					if (off < fs.first)
+					{
+						free_spaces.insert(free_spaces.begin() + i, { off, size });
+						return;
+					}
+				}
+				free_spaces.emplace_back(off, size);
 			}
 		};
 
@@ -96,7 +162,7 @@ namespace flame
 			return PipelineStageAllCommand;
 		}
 
-		struct DirtyMarkableVirtualObject : VirtualObject
+		struct VirtualObjectWithDirtyRegions : VirtualObject
 		{
 			std::vector<std::pair<uint, uint>>	dirty_regions;
 
@@ -143,7 +209,7 @@ namespace flame
 			}
 		};
 
-		struct StorageBuffer : DirtyMarkableVirtualObject
+		struct StorageBuffer : VirtualObjectWithDirtyRegions
 		{
 			BufferUsageFlags					usage;
 			std::unique_ptr<BufferT>			buf;
@@ -206,21 +272,32 @@ namespace flame
 
 		struct VertexBuffer : VirtualObject
 		{
-			std::unique_ptr<BufferT>	buf;
-			std::unique_ptr<BufferT>	stag;
-			uint						buf_top = 0;
-			uint						stag_top = 0;
-			TypeInfo*					item_type;
+			uint 								capacity;
+			std::unique_ptr<BufferT>			buf;
+			std::unique_ptr<BufferT>			stag;
+			TypeInfo*							item_type;
+			SparseRanges						sparse_ranges;
+			std::vector<std::pair<uint, uint>>	dirty_regions;
 
-			void create(UdtInfo* ui, uint capacity)
+			void reset()
 			{
+				sparse_ranges.init(capacity);
+			}
+
+			void create(UdtInfo* ui, uint _capacity)
+			{
+				capacity = _capacity;
 				buf.reset(Buffer::create(capacity * ui->size, BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
 				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stag->map();
 
+				sparse_ranges.init(capacity);
+
 				VirtualObject::type = TypeInfo::get(TagAU, std::format("{}[{}]", ui->name, capacity), *ui->db);
 				VirtualObject::create(stag->mapped);
 				item_type = VirtualObject::type->get_wrapped();
+
+				reset();
 			}
 
 			void create(const std::filesystem::path& vi_filename, const std::vector<std::string>& vi_defines, uint capacity)
@@ -228,8 +305,9 @@ namespace flame
 				create(get_vertex_input_ui(vi_filename, vi_defines), capacity);
 			}
 
-			void create(uint item_size, uint capacity)
+			void create(uint item_size, uint _capacity)
 			{
+				capacity = _capacity;
 				buf.reset(Buffer::create(capacity * item_size, BufferUsageTransferDst | BufferUsageVertex, MemoryPropertyDevice));
 				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stag->map();
@@ -237,57 +315,66 @@ namespace flame
 				VirtualObject::type = TypeInfo::get(TagAD, std::format("Dummy_{}[{}]", item_size, capacity));
 				VirtualObject::create(stag->mapped);
 				item_type = VirtualObject::type->get_wrapped();
+
+				reset();
 			}
 
 			template<class T>
-			T& item_t(int idx)
+			T& item_t(uint idx)
 			{
-				if (idx < 0)
-					idx = stag_top + idx;
 				return *(T*)(data + idx * item_type->size);
 			}
 
-			VirtualObject add()
+			int add(const void* src, uint size)
 			{
-				return item(stag_top++);
+				int off = sparse_ranges.get_free_space(size);
+				if (off != -1)
+				{
+					uint data_off = off * item_type->size;
+					uint data_size = size * item_type->size;
+					if (src)
+						memcpy(data + data_off, src, data_size);
+					dirty_regions.emplace_back(data_off, data_size);
+				}
+				return off;
 			}
 
-			template<class T>
-			T& add_t()
+			void release(uint off, uint size)
 			{
-				auto& t = *(T*)(data + stag_top * item_type->size);
-				stag_top++;
-				return t;
-			}
-
-			void add(const void* src, uint size)
-			{
-				memcpy(data + stag_top * item_type->size, src, size * item_type->size);
-				stag_top += size;
+				sparse_ranges.releases_space(off, size);
 			}
 
 			void upload(CommandBufferPtr cb)
 			{
-				if (buf_top < stag_top)
+				if (dirty_regions.empty())
+					return;
+				std::vector<BufferCopy> copies;
+				for (auto& r : dirty_regions)
 				{
 					BufferCopy cpy;
-					cpy.src_off = cpy.dst_off = buf_top * item_type->size;
-					cpy.size = (stag_top - buf_top) * item_type->size;
-					cb->copy_buffer(stag.get(), buf.get(), { &cpy, 1 });
-					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageVertex), PipelineStageTransfer, u2s(BufferUsageVertex));
-					buf_top = stag_top;
+					cpy.src_off = cpy.dst_off = r.first;
+					cpy.size = r.second;
+					copies.push_back(cpy);
 				}
+				dirty_regions.clear();
+				cb->copy_buffer(stag.get(), buf.get(), copies);
+				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageVertex), PipelineStageTransfer, u2s(BufferUsageVertex));
 			}
 		};
 
 		template<typename T = uint>
 		struct IndexBuffer
 		{
-			uint						capacity;
-			std::unique_ptr<BufferT>	buf;
-			std::unique_ptr<BufferT>	stag;
-			uint						buf_top = 0;
-			uint						stag_top = 0;
+			uint								capacity;
+			std::unique_ptr<BufferT>			buf;
+			std::unique_ptr<BufferT>			stag;
+			SparseRanges						sparse_ranges;
+			std::vector<std::pair<uint, uint>>	dirty_regions;
+
+			void reset()
+			{
+				sparse_ranges.init(capacity);
+			}
 
 			void create(uint _capacity)
 			{
@@ -295,31 +382,44 @@ namespace flame
 				buf.reset(Buffer::create(capacity * sizeof(T), BufferUsageTransferDst | BufferUsageIndex, MemoryPropertyDevice));
 				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stag->map();
+
+				reset();
 			}
 
-			void add(T v)
+			int add(const T* src, uint size)
 			{
-				memcpy((char*)stag->mapped + stag_top * sizeof(T), &v, sizeof(T));
-				stag_top++;
+				int off = sparse_ranges.get_free_space(size);
+				if (off != -1)
+				{
+					uint data_off = off * sizeof(T);
+					uint data_size = size * sizeof(T);
+					if (src)
+						memcpy((char*)stag->mapped + data_off, src, data_size);
+					dirty_regions.emplace_back(data_off, data_size);
+				}
+				return off;
 			}
 
-			void add(const T* src, uint size)
+			void release(uint off, uint size)
 			{
-				memcpy((char*)stag->mapped + stag_top * sizeof(T), src, size * sizeof(T));
-				stag_top += size;
+				sparse_ranges.releases_space(off, size);
 			}
 
 			void upload(CommandBufferPtr cb)
 			{
-				if (buf_top < stag_top)
+				if (dirty_regions.empty())
+					return;
+				std::vector<BufferCopy> copies;
+				for (auto& r : dirty_regions)
 				{
 					BufferCopy cpy;
-					cpy.src_off = cpy.dst_off = buf_top * sizeof(T);
-					cpy.size = (stag_top - buf_top) * sizeof(T);
-					cb->copy_buffer(stag.get(), buf.get(), { &cpy, 1 });
-					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageIndex), PipelineStageTransfer, u2s(BufferUsageIndex));
-					buf_top = stag_top;
+					cpy.src_off = cpy.dst_off = r.first;
+					cpy.size = r.second;
+					copies.push_back(cpy);
 				}
+				dirty_regions.clear();
+				cb->copy_buffer(stag.get(), buf.get(), copies);
+				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageIndex), PipelineStageTransfer, u2s(BufferUsageIndex));
 			}
 		};
 
@@ -381,7 +481,7 @@ namespace flame
 			std::unordered_map<uint, int>		dsl_map;
 
 			DescriptorSetPtr					dss[8];
-			DirtyMarkableVirtualObject			pc;
+			VirtualObjectWithDirtyRegions			pc;
 
 			PipelineResourceManager()
 			{

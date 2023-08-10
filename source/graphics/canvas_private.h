@@ -79,8 +79,8 @@ namespace flame
 			void pop_scissor() override;
 
 			void path_rect(const vec2& a, const vec2& b);
-			void stroke_path(DrawCmd& cmd, float thickness, const cvec4& col, bool closed);
-			void fill_path(DrawCmd& cmd, const cvec4& col);
+			DrawVert* stroke_path(DrawCmd& cmd, float thickness, const cvec4& col, bool closed);
+			DrawVert* fill_path(DrawCmd& cmd, const cvec4& col);
 			void stroke(float thickness, const cvec4& col, bool closed);
 			void fill(const cvec4& col);
 
