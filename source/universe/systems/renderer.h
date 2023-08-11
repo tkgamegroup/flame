@@ -23,13 +23,14 @@ namespace flame
 
 	struct RenderTask
 	{
-		virtual ~RenderTask() {}
-
 		RenderMode mode = RenderModeShaded;
 		cCameraPtr camera = nullptr;
 		std::vector<graphics::ImageViewPtr> targets;
 		graphics::ImageLayout final_layout = graphics::ImageLayoutShaderReadOnly;
 		graphics::CanvasPtr canvas = nullptr;
+
+		virtual ~RenderTask() {}
+		virtual vec2 target_extent() const = 0;
 	};
 
 	// Reflect ctor
@@ -75,7 +76,7 @@ namespace flame
 		RenderMode mode = RenderModeShaded;
 		cCameraPtr camera = nullptr;
 		std::vector<graphics::ImageViewPtr> iv_tars;
-		std::vector<std::unique_ptr<RenderTaskT>> render_quests;
+		std::vector<std::unique_ptr<RenderTaskT>> render_tasks;
 		graphics::CanvasPtr canvas = nullptr;
 		bool dirty = false;
 
@@ -88,9 +89,9 @@ namespace flame
 
 		virtual RenderTaskPtr add_render_task(RenderMode mode, cCameraPtr camera, 
 			const std::vector<graphics::ImageViewPtr>& targets, graphics::ImageLayout final_layout = 
-			graphics::ImageLayoutShaderReadOnly, bool need_canvas = true) = 0;
+			graphics::ImageLayoutShaderReadOnly, bool need_canvas = true, bool need_pickup = true) = 0;
 		virtual RenderTaskPtr add_render_task_with_window_targets(RenderMode mode, cCameraPtr camera, 
-			bool need_canvas = true) = 0;
+			bool need_canvas = true, bool need_pickup = true) = 0;
 		virtual void remove_render_task(RenderTaskPtr quest) = 0;
 
 		// Reflect

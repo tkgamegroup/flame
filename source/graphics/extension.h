@@ -480,8 +480,8 @@ namespace flame
 			PipelineType						plt = PipelineGraphics;
 			std::unordered_map<uint, int>		dsl_map;
 
-			DescriptorSetPtr					dss[8];
-			VirtualObjectWithDirtyRegions			pc;
+			std::vector<DescriptorSetPtr>		dss;
+			VirtualObjectWithDirtyRegions		pc;
 
 			PipelineResourceManager()
 			{
@@ -523,7 +523,7 @@ namespace flame
 					pc.create();
 				}
 
-				memset(dss, 0, sizeof(dss));
+				dss.resize(pll->dsls.size());
 			}
 
 			inline int dsl_idx(uint nh)
@@ -555,7 +555,7 @@ namespace flame
 				for (auto i = 0U; i < count; i++)
 				{
 					auto ii = off + i;
-					if (ii >= dsl_map.size() || ii >= countof(dss) || !dss[ii])
+					if (ii >= dss.size() || ii >= dss.size() || !dss[ii])
 					{
 						count = i;
 						break;
@@ -564,7 +564,7 @@ namespace flame
 				if (count > 0)
 				{
 					cb->bind_pipeline_layout(pll, plt);
-					cb->bind_descriptor_sets(off, { dss + off, count });
+					cb->bind_descriptor_sets(off, { dss.data() + off, count});
 				}
 			}
 

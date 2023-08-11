@@ -23,18 +23,25 @@ namespace flame
 		std::unique_ptr<graphics::Image> img_gbufferB;	// normal
 		std::unique_ptr<graphics::Image> img_gbufferC;	// metallic, roughness, ao, flags
 		std::unique_ptr<graphics::Image> img_gbufferD;	// emissive
+		std::unique_ptr<graphics::Image> img_pickup;
+		std::unique_ptr<graphics::Image> img_dep_pickup;
 		std::unique_ptr<graphics::Framebuffer> fb_fwd;
 		std::unique_ptr<graphics::Framebuffer> fb_gbuf;
+		std::unique_ptr<graphics::Framebuffer> fb_primitive;
+		std::unique_ptr<graphics::Framebuffer> fb_pickup;
 		std::unique_ptr<graphics::DescriptorSet> ds_lighting;
 		std::unique_ptr<graphics::DescriptorSet> ds_deferred;
 		std::unique_ptr<graphics::DescriptorSet> ds_luma;
 
-		RenderTaskPrivate(graphics::WindowPtr window, RenderMode mode, const std::vector<graphics::ImageViewPtr>& targets, bool use_canvas);
+		void init();
 		void set_targets(const std::vector<graphics::ImageViewPtr>& targets);
+		vec2 target_extent() const override;
 	};
 
 	struct sRendererPrivate : sRenderer
 	{
+		bool mark_clear_pipelines = false;
+
 		graphics::ImageLayout final_layout;
 
 		sRendererPrivate();
@@ -47,9 +54,9 @@ namespace flame
 
 		RenderTaskPtr add_render_task(RenderMode mode, cCameraPtr camera,
 			const std::vector<graphics::ImageViewPtr>& targets, graphics::ImageLayout final_layout =
-			graphics::ImageLayoutShaderReadOnly, bool need_canvas = true) override;
+			graphics::ImageLayoutShaderReadOnly, bool need_canvas = true, bool need_pickup = true) override;
 		RenderTaskPtr add_render_task_with_window_targets(RenderMode mode, cCameraPtr camera, 
-			bool need_canvas = true) override;
+			bool need_canvas = true, bool need_pickup = true) override;
 		void remove_render_task(RenderTaskPtr quest) override;
 
 		graphics::ImageViewPtr sky_map = nullptr;
