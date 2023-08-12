@@ -84,11 +84,18 @@ static void update_thumbnail(const std::filesystem::path& path)
 			// second update the scene to get the camera on the right place
 			app.scene->update();
 
-			auto thumbnail = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(128, 128, 1), graphics::ImageUsageAttachment | 
-				graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
+			auto thumbnail = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(128, 128, 1), graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
 
-
-			app.render_to_image(camera, thumbnail->get_view());
+			auto render_task = app.renderer->add_render_task(RenderModeCameraLightButNoSky, camera, { thumbnail->get_view() }, graphics::ImageLayoutShaderReadOnly, false, false);
+			{
+				graphics::Debug::start_capture_frame();
+				graphics::InstanceCommandBuffer cb;
+				app.renderer->render(0, cb.get());
+				cb->image_barrier(thumbnail, {}, graphics::ImageLayoutTransferSrc);
+				cb.excute();
+				graphics::Debug::end_capture_frame();
+			}
+			app.renderer->remove_render_task(render_task);
 
 			auto thumbnails_dir = path.parent_path() / L".thumbnails";
 			if (!std::filesystem::exists(thumbnails_dir))

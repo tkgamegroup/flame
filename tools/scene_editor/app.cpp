@@ -1593,31 +1593,6 @@ void App::vs_automate(const std::vector<std::wstring>& cl)
 	shell_exec(automation_path, cl_str, true);
 }
 
-void App::render_to_image(cCameraPtr camera, graphics::ImageViewPtr dst)
-{
-	//app.world->update_components = true;
-
-	//app.renderer->camera = camera;
-	//app.render_task->mode = RenderModeCameraLightButNoSky;
-	//{
-	//	graphics::Debug::start_capture_frame();
-	//	app.renderer->set_targets({ &dst, 1 }, graphics::ImageLayoutShaderReadOnly);
-	//	graphics::InstanceCommandBuffer cb;
-	//	app.renderer->render(0, cb.get());
-	//	cb->image_barrier(dst->image, {}, graphics::ImageLayoutTransferSrc);
-	//	cb.excute();
-	//	graphics::Debug::end_capture_frame();
-	//}
-
-	//if (auto fv = scene_window.first_view(); fv && fv->render_tar)
-	//{
-	//	auto iv = fv->render_tar->get_view();
-	//	app.renderer->set_targets({ &iv, 1 }, graphics::ImageLayoutShaderReadOnly);
-	//}
-
-	//app.world->update_components = false;
-}
-
 bool App::cmd_undo()
 {
 	if (history_idx < 0)

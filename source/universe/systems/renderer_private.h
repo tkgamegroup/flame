@@ -28,11 +28,14 @@ namespace flame
 		std::unique_ptr<graphics::Framebuffer>		fb_gbuf;
 		std::unique_ptr<graphics::Framebuffer>		fb_primitive;
 
+		graphics::PipelineResourceManager			prm_plain;
+		std::unique_ptr<graphics::DescriptorSet>	ds_target;
 		graphics::PipelineResourceManager			prm_fwd;
 		graphics::PipelineResourceManager			prm_gbuf;
 		graphics::PipelineResourceManager			prm_deferred;
 		std::unique_ptr<graphics::DescriptorSet>	ds_deferred;
-		graphics::PipelineResourceManager			prm_plain;
+		std::unique_ptr<graphics::DescriptorSet>	ds_luma;
+		graphics::PipelineResourceManager			prm_luma;
 
 		std::unique_ptr<graphics::Image>			img_pickup;
 		std::unique_ptr<graphics::Image>			img_dep_pickup;

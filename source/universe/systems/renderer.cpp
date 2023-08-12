@@ -114,8 +114,6 @@ namespace flame
 	// Post-Processing Pipelines
 	graphics::ComputePipelinePtr				pl_luma_hist;
 	graphics::ComputePipelinePtr				pl_luma_avg;
-	std::unique_ptr<graphics::DescriptorSet>	ds_luma;
-	graphics::PipelineResourceManager			prm_luma;
 	graphics::GraphicsPipelinePtr				pl_bloom_bright;
 	graphics::GraphicsPipelinePtr				pl_bloom_down_sample;
 	graphics::GraphicsPipelinePtr				pl_bloom_up_sample;
@@ -415,11 +413,15 @@ namespace flame
 	{
 		prm_plain.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain.pll"), graphics::PipelineGraphics);
 
+		auto dsl_target_images = graphics::DescriptorSetLayout::get(L"flame\\shaders\\target.dsl");
+		ds_target.reset(graphics::DescriptorSet::create(nullptr, dsl_target_images));
+
 		prm_fwd.init(pll_fwd, graphics::PipelineGraphics);
 		prm_fwd.set_ds("camera"_h, ds_camera.get());
 		prm_fwd.set_ds("instance"_h, ds_instance.get());
 		prm_fwd.set_ds("material"_h, ds_material.get());
 		prm_fwd.set_ds("lighting"_h, ds_lighting.get());
+		prm_fwd.set_ds("target"_h, ds_target.get());
 
 		prm_gbuf.init(pll_gbuf, graphics::PipelineGraphics);
 		prm_gbuf.set_ds("camera"_h, ds_camera.get());
@@ -430,9 +432,22 @@ namespace flame
 		auto dsl_deferred = pll_deferred->dsls.back();
 		ds_deferred.reset(graphics::DescriptorSet::create(nullptr, dsl_deferred));
 		prm_deferred.set_ds("camera"_h, ds_camera.get());
-		prm_deferred.set_ds("lighting"_h, ds_lighting.get());
 		prm_deferred.set_ds("material"_h, ds_material.get());
+		prm_deferred.set_ds("lighting"_h, ds_lighting.get());
+		prm_deferred.set_ds("target"_h, ds_target.get());
 		prm_deferred.set_ds(""_h, ds_deferred.get());
+
+		prm_luma.init(pl_luma_hist->layout, graphics::PipelineCompute);
+		auto dsl_luma = prm_luma.pll->dsls.back();
+		if (!buf_luma.buf)
+		{
+			buf_luma.create(graphics::BufferUsageStorage | graphics::BufferUsageTransferSrc, 
+				dsl_luma->get_buf_ui("Luma"_h), graphics::BufferUsageTransferDst);
+		}
+		ds_luma.reset(graphics::DescriptorSet::create(nullptr, dsl_luma));
+		ds_luma->set_buffer("Luma"_h, 0, buf_luma.buf.get());
+		ds_luma->update();
+		prm_luma.set_ds(""_h, ds_luma.get());
 
 		fence_pickup.reset(graphics::Fence::create(false));
 	}
@@ -441,8 +456,11 @@ namespace flame
 	{
 		targets = _targets;
 
-		canvas->set_targets(targets);
-		canvas->clear_framebuffer = false;
+		if (canvas)
+		{
+			canvas->set_targets(targets);
+			canvas->clear_framebuffer = false;
+		}
 
 		if (targets.empty())
 			return;
@@ -478,10 +496,10 @@ namespace flame
 		img_gbufferD.reset(graphics::Image::create(graphics::Format_B10G11R11_UFLOAT, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
 		fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_gbufferA->get_view(), img_gbufferB->get_view(), img_gbufferC->get_view(), img_gbufferD->get_view(), img_dep->get_view() }));
-		ds_lighting->set_image("img_dep"_h, 0, img_dep->get_view(), sp_nearest_dep);
-		ds_lighting->set_image("img_last_dst"_h, 0, img_last_dst->get_view(), sp_nearest_dep);
-		ds_lighting->set_image("img_last_dep"_h, 0, img_last_dep->get_view(), sp_nearest);
-		ds_lighting->update();
+		ds_target->set_image("img_dep"_h, 0, img_dep->get_view(), sp_nearest_dep);
+		ds_target->set_image("img_last_dst"_h, 0, img_last_dst->get_view(), sp_nearest_dep);
+		ds_target->set_image("img_last_dep"_h, 0, img_last_dep->get_view(), sp_nearest);
+		ds_target->update();
 
 		ds_deferred->set_image("img_gbufferA"_h, 0, img_gbufferA->get_view(), nullptr);
 		ds_deferred->set_image("img_gbufferB"_h, 0, img_gbufferB->get_view(), nullptr);
@@ -699,13 +717,6 @@ namespace flame
 
 		pl_luma_hist = graphics::ComputePipeline::get(L"flame\\shaders\\luma.pipeline", { "comp:HISTOGRAM_PASS" });
 		pl_luma_avg = graphics::ComputePipeline::get(L"flame\\shaders\\luma.pipeline", { "comp:AVERAGE_PASS" });
-		prm_luma.init(pl_luma_hist->layout, graphics::PipelineCompute);
-		auto dsl_luma = prm_luma.pll->dsls.back();
-		buf_luma.create(graphics::BufferUsageStorage | graphics::BufferUsageTransferSrc, dsl_luma->get_buf_ui("Luma"_h), graphics::BufferUsageTransferDst);
-		ds_luma.reset(graphics::DescriptorSet::create(nullptr, dsl_luma));
-		ds_luma->set_buffer("Luma"_h, 0, buf_luma.buf.get());
-		ds_luma->update();
-		prm_luma.set_ds(""_h, ds_luma.get());
 
 		pl_tone = graphics::GraphicsPipeline::get(L"flame\\shaders\\tone.pipeline", {});
 		prm_tone.init(pl_tone->layout, graphics::PipelineGraphics);
@@ -1808,10 +1819,11 @@ namespace flame
 			auto fb_fwd = render_task->fb_fwd.get();
 			auto fb_gbuf = render_task->fb_gbuf.get();
 			auto fb_primitive = render_task->fb_primitive.get();
+			auto& prm_plain = render_task->prm_plain;
 			auto& prm_fwd = render_task->prm_fwd;
 			auto& prm_gbuf = render_task->prm_gbuf;
 			auto& prm_deferred = render_task->prm_deferred;
-			auto& prm_plain = render_task->prm_plain;
+			auto& prm_luma = render_task->prm_luma;
 
 			auto camera = render_task->camera;
 			camera->aspect = ext.x / ext.y;
@@ -2360,7 +2372,7 @@ namespace flame
 						cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, d.ins_id);
 					}
 				}
-				break;
+					break;
 				case "terrain"_h:
 				{
 					auto blocks = buf_instance.child("terrains"_h).item(d.ins_id).child("blocks"_h).as<uvec2>();
@@ -2373,7 +2385,7 @@ namespace flame
 					cb->draw(4, blocks.x * blocks.y, 0, 0);
 					cb->end_renderpass();
 				}
-				break;
+					break;
 				}
 			};
 
@@ -2640,12 +2652,15 @@ namespace flame
 			}
 			cb->end_debug_label();
 
-			cb->begin_debug_label("Elements");
+			if (render_task->canvas)
 			{
-				if (auto first_element = sScene::instance()->first_element; first_element)
-					render_element(render_task->canvas, first_element);
+				cb->begin_debug_label("Elements");
+				{
+					if (auto first_element = sScene::instance()->first_element; first_element)
+						render_element(render_task->canvas, first_element);
+				}
+				cb->end_debug_label();
 			}
-			cb->end_debug_label();
 
 			cb->image_barrier(img, iv->sub, graphics::ImageLayoutAttachment);
 			cb->image_barrier(img_dst, {}, graphics::ImageLayoutShaderReadOnly);

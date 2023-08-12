@@ -2341,7 +2341,7 @@ void InspectorView::on_draw()
 							}, 0.f, 2);
 						}
 
-						app.render_to_image(preview_camera, preview_image->get_view());
+						//app.render_to_image(preview_camera, preview_image->get_view());
 
 						ImGui::Image(preview_image, vec2(256));
 					}

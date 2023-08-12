@@ -2,6 +2,7 @@
 #include "instance.dsl"
 #include "material.dsl"
 #include "lighting.dsl"
+#include "target.dsl"
 
 layout (push_constant) uniform PushConstant
 {
