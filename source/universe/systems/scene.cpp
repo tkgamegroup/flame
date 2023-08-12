@@ -1352,7 +1352,9 @@ namespace flame
 		static auto last_target_extent = vec2(0.f);
 		if (first_element)
 		{
-			auto target_extent = sRenderer::instance()->target_extent();
+			vec2 target_extent(0.f);
+			if (!sRenderer::instance()->render_tasks.empty())
+				target_extent = sRenderer::instance()->render_tasks.front()->target_extent();
 			update_alignment(first_element->get_component<cElementT>(), target_extent, vec4(0.f));
 			update_element_transform(first_element->get_component<cLayoutT>(), first_element, false);
 		}

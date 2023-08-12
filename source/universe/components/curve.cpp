@@ -13,7 +13,7 @@ namespace flame
 
 	void cCurvePrivate::on_init()
 	{
-		//node->drawers.add([this](DrawData& draw_data) {
+		//node->drawers.add([this](DrawData& draw_data, cCameraPtr camera) {
 		//	if (curve.vertices.empty())
 		//		return;
 

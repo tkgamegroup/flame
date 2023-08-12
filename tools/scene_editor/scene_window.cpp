@@ -149,7 +149,7 @@ void SceneView::on_draw()
 		ImGui::Combo("Camera", (int*)&camera_idx, names, n);
 	}
 	auto camera = camera_list[camera_idx];
-	app.renderer->camera = camera;
+	app.renderer->render_tasks.front()->camera = camera;
 
 	ImGui::SameLine();
 	if (ImGui::ToolButton("Outline", show_outline))
@@ -193,12 +193,12 @@ void SceneView::on_draw()
 					graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 				render_tar->change_layout(graphics::ImageLayoutShaderReadOnly);
 				auto iv = render_tar->get_view();
-				app.renderer->set_targets({ &iv, 1 }, graphics::ImageLayoutShaderReadOnly);
+				app.renderer->render_tasks.front()->set_targets({ iv });
 			}
 			else
 			{
 				render_tar.reset();
-				app.renderer->set_targets({}, graphics::ImageLayoutShaderReadOnly);
+				app.renderer->render_tasks.front()->set_targets({});
 			}
 			return false;
 		});

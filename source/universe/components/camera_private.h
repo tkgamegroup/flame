@@ -10,6 +10,6 @@ namespace flame
 
 		void on_active() override;
 		void on_inactive() override;
-		void update() override;
+		void update_matrices();
 	};
 }

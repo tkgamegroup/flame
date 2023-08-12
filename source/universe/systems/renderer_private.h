@@ -11,53 +11,53 @@ namespace flame
 {
 	struct RenderTaskPrivate : RenderTask
 	{
-		std::unique_ptr<graphics::Image> img_dst;
-		std::unique_ptr<graphics::Image> img_back0;
-		std::unique_ptr<graphics::Image> img_back1;
-		std::unique_ptr<graphics::Image> img_dep;
-		std::unique_ptr<graphics::Image> img_dst_ms;
-		std::unique_ptr<graphics::Image> img_dep_ms;
-		std::unique_ptr<graphics::Image> img_last_dst;
-		std::unique_ptr<graphics::Image> img_last_dep;
-		std::unique_ptr<graphics::Image> img_gbufferA;	// color
-		std::unique_ptr<graphics::Image> img_gbufferB;	// normal
-		std::unique_ptr<graphics::Image> img_gbufferC;	// metallic, roughness, ao, flags
-		std::unique_ptr<graphics::Image> img_gbufferD;	// emissive
-		std::unique_ptr<graphics::Image> img_pickup;
-		std::unique_ptr<graphics::Image> img_dep_pickup;
-		std::unique_ptr<graphics::Framebuffer> fb_fwd;
-		std::unique_ptr<graphics::Framebuffer> fb_gbuf;
-		std::unique_ptr<graphics::Framebuffer> fb_primitive;
-		std::unique_ptr<graphics::Framebuffer> fb_pickup;
-		std::unique_ptr<graphics::DescriptorSet> ds_lighting;
-		std::unique_ptr<graphics::DescriptorSet> ds_deferred;
-		std::unique_ptr<graphics::DescriptorSet> ds_luma;
+		std::unique_ptr<graphics::Image>			img_back0;
+		std::unique_ptr<graphics::Image>			img_back1;
+		std::unique_ptr<graphics::Image>			img_dst;
+		std::unique_ptr<graphics::Image>			img_dep;
+		std::unique_ptr<graphics::Image>			img_dst_ms;
+		std::unique_ptr<graphics::Image>			img_dep_ms;
+		std::unique_ptr<graphics::Image>			img_last_dst;
+		std::unique_ptr<graphics::Image>			img_last_dep;
+		std::unique_ptr<graphics::Image>			img_gbufferA;	// color
+		std::unique_ptr<graphics::Image>			img_gbufferB;	// normal
+		std::unique_ptr<graphics::Image>			img_gbufferC;	// metallic, roughness, ao, flags
+		std::unique_ptr<graphics::Image>			img_gbufferD;	// emissive
+
+		std::unique_ptr<graphics::Framebuffer>		fb_fwd;
+		std::unique_ptr<graphics::Framebuffer>		fb_gbuf;
+		std::unique_ptr<graphics::Framebuffer>		fb_primitive;
+
+		graphics::PipelineResourceManager			prm_fwd;
+		graphics::PipelineResourceManager			prm_gbuf;
+		graphics::PipelineResourceManager			prm_deferred;
+		std::unique_ptr<graphics::DescriptorSet>	ds_deferred;
+		graphics::PipelineResourceManager			prm_plain;
+
+		std::unique_ptr<graphics::Image>			img_pickup;
+		std::unique_ptr<graphics::Image>			img_dep_pickup;
+		std::unique_ptr<graphics::Framebuffer>		fb_pickup;
+		std::unique_ptr<graphics::Fence>			fence_pickup;
 
 		void init();
-		void set_targets(const std::vector<graphics::ImageViewPtr>& targets);
 		vec2 target_extent() const override;
+		void set_targets(const std::vector<graphics::ImageViewPtr>& targets) override;
 	};
 
 	struct sRendererPrivate : sRenderer
 	{
 		bool mark_clear_pipelines = false;
 
-		graphics::ImageLayout final_layout;
-
 		sRendererPrivate();
 		sRendererPrivate(graphics::WindowPtr w);
 		~sRendererPrivate();
-
-		void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout) override;
-		void bind_window_targets() override;
-		vec2 target_extent() override;
 
 		RenderTaskPtr add_render_task(RenderMode mode, cCameraPtr camera,
 			const std::vector<graphics::ImageViewPtr>& targets, graphics::ImageLayout final_layout =
 			graphics::ImageLayoutShaderReadOnly, bool need_canvas = true, bool need_pickup = true) override;
 		RenderTaskPtr add_render_task_with_window_targets(RenderMode mode, cCameraPtr camera, 
 			bool need_canvas = true, bool need_pickup = true) override;
-		void remove_render_task(RenderTaskPtr quest) override;
+		void remove_render_task(RenderTaskPtr task) override;
 
 		graphics::ImageViewPtr sky_map = nullptr;
 		graphics::ImageViewPtr sky_irr_map = nullptr;

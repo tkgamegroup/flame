@@ -31,6 +31,7 @@ namespace flame
 
 		virtual ~RenderTask() {}
 		virtual vec2 target_extent() const = 0;
+		virtual void set_targets(const std::vector<graphics::ImageViewPtr>& targets) = 0;
 	};
 
 	// Reflect ctor
@@ -73,26 +74,15 @@ namespace flame
 		};
 
 		graphics::WindowPtr window;
-		RenderMode mode = RenderModeShaded;
-		cCameraPtr camera = nullptr;
-		std::vector<graphics::ImageViewPtr> iv_tars;
 		std::vector<std::unique_ptr<RenderTaskT>> render_tasks;
-		graphics::CanvasPtr canvas = nullptr;
 		bool dirty = false;
-
-		// Reflect
-		virtual void set_targets(std::span<graphics::ImageViewPtr> targets, graphics::ImageLayout final_layout = graphics::ImageLayoutShaderReadOnly) = 0;
-		// Reflect
-		virtual void bind_window_targets() = 0;
-		// Reflect
-		virtual vec2 target_extent() = 0;
 
 		virtual RenderTaskPtr add_render_task(RenderMode mode, cCameraPtr camera, 
 			const std::vector<graphics::ImageViewPtr>& targets, graphics::ImageLayout final_layout = 
 			graphics::ImageLayoutShaderReadOnly, bool need_canvas = true, bool need_pickup = true) = 0;
 		virtual RenderTaskPtr add_render_task_with_window_targets(RenderMode mode, cCameraPtr camera, 
 			bool need_canvas = true, bool need_pickup = true) = 0;
-		virtual void remove_render_task(RenderTaskPtr quest) = 0;
+		virtual void remove_render_task(RenderTaskPtr task) = 0;
 
 		// Reflect
 		graphics::ImageViewPtr sky_map = nullptr;

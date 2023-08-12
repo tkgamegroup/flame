@@ -87,6 +87,7 @@ static void update_thumbnail(const std::filesystem::path& path)
 			auto thumbnail = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(128, 128, 1), graphics::ImageUsageAttachment | 
 				graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
 
+
 			app.render_to_image(camera, thumbnail->get_view());
 
 			auto thumbnails_dir = path.parent_path() / L".thumbnails";

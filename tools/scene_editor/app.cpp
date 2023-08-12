@@ -129,7 +129,7 @@ void App::init()
 	world->update_components = false;
 	input->transfer_events = false;
 	always_render = false;
-	renderer->mode = RenderModeCameraLight;
+	renderer->add_render_task(RenderModeCameraLight, nullptr, {}, graphics::ImageLayoutShaderReadOnly);
 
 	auto root = world->root.get();
 	root->add_component<cNode>();
@@ -675,22 +675,23 @@ void App::on_gui()
 	}
 	if (ImGui::BeginMenu("Render"))
 	{
-		if (ImGui::MenuItem("Shaded", nullptr, renderer->mode == RenderModeShaded))
-			renderer->mode = RenderModeShaded;
-		if (ImGui::MenuItem("Camera Light", nullptr, renderer->mode == RenderModeCameraLight))
-			renderer->mode = RenderModeCameraLight;
-		if (ImGui::MenuItem("Albedo Data", nullptr, renderer->mode == RenderModeAlbedoData))
-			renderer->mode = RenderModeAlbedoData;
-		if (ImGui::MenuItem("Normal Data", nullptr, renderer->mode == RenderModeNormalData))
-			renderer->mode = RenderModeNormalData;
-		if (ImGui::MenuItem("Metallic Data", nullptr, renderer->mode == RenderModeMetallicData))
-			renderer->mode = RenderModeMetallicData;
-		if (ImGui::MenuItem("Roughness Data", nullptr, renderer->mode == RenderModeRoughnessData))
-			renderer->mode = RenderModeRoughnessData;
-		if (ImGui::MenuItem("IBL Value", nullptr, renderer->mode == RenderModeIBLValue))
-			renderer->mode = RenderModeIBLValue;
-		if (ImGui::MenuItem("Fog Value", nullptr, renderer->mode == RenderModeFogValue))
-			renderer->mode = RenderModeFogValue;
+		auto render_task = renderer->render_tasks.front().get();
+		if (ImGui::MenuItem("Shaded", nullptr, render_task->mode == RenderModeShaded))
+			render_task->mode = RenderModeShaded;
+		if (ImGui::MenuItem("Camera Light", nullptr, render_task->mode == RenderModeCameraLight))
+			render_task->mode = RenderModeCameraLight;
+		if (ImGui::MenuItem("Albedo Data", nullptr, render_task->mode == RenderModeAlbedoData))
+			render_task->mode = RenderModeAlbedoData;
+		if (ImGui::MenuItem("Normal Data", nullptr, render_task->mode == RenderModeNormalData))
+			render_task->mode = RenderModeNormalData;
+		if (ImGui::MenuItem("Metallic Data", nullptr, render_task->mode == RenderModeMetallicData))
+			render_task->mode = RenderModeMetallicData;
+		if (ImGui::MenuItem("Roughness Data", nullptr, render_task->mode == RenderModeRoughnessData))
+			render_task->mode = RenderModeRoughnessData;
+		if (ImGui::MenuItem("IBL Value", nullptr, render_task->mode == RenderModeIBLValue))
+			render_task->mode = RenderModeIBLValue;
+		if (ImGui::MenuItem("Fog Value", nullptr, render_task->mode == RenderModeFogValue))
+			render_task->mode = RenderModeFogValue;
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("Debug"))
@@ -1095,7 +1096,7 @@ int main()
 	Path::set_root(L"assets", std::filesystem::current_path() / L"assets");
 	app.create(false, "{0}", uvec2(1280, 720), WindowFrame | WindowResizable);
 	app.world->root->load(L"assets/main.prefab");
-	app.node_renderer->bind_window_targets();
+	app.renderer->bind_window_targets();
 	app.run();
 	return 0;
 }}
@@ -1594,33 +1595,27 @@ void App::vs_automate(const std::vector<std::wstring>& cl)
 
 void App::render_to_image(cCameraPtr camera, graphics::ImageViewPtr dst)
 {
-	app.world->update_components = true;
+	//app.world->update_components = true;
 
-	auto previous_camera = app.renderer->camera;
-	auto previous_render_mode = app.renderer->mode;
-	app.renderer->camera = camera;
-	app.renderer->mode = RenderModeCameraLightButNoSky;
-	{
-		graphics::Debug::start_capture_frame();
-		app.renderer->set_targets({ &dst, 1 }, graphics::ImageLayoutShaderReadOnly);
-		graphics::InstanceCommandBuffer cb;
-		app.renderer->render(0, cb.get());
-		cb->image_barrier(dst->image, {}, graphics::ImageLayoutTransferSrc);
-		cb.excute();
-		graphics::Debug::end_capture_frame();
-	}
+	//app.renderer->camera = camera;
+	//app.render_task->mode = RenderModeCameraLightButNoSky;
+	//{
+	//	graphics::Debug::start_capture_frame();
+	//	app.renderer->set_targets({ &dst, 1 }, graphics::ImageLayoutShaderReadOnly);
+	//	graphics::InstanceCommandBuffer cb;
+	//	app.renderer->render(0, cb.get());
+	//	cb->image_barrier(dst->image, {}, graphics::ImageLayoutTransferSrc);
+	//	cb.excute();
+	//	graphics::Debug::end_capture_frame();
+	//}
 
-	app.renderer->camera = previous_camera;
-	app.renderer->mode = previous_render_mode;
-	if (auto fv = scene_window.first_view(); fv && fv->render_tar)
-	{
-		auto iv = fv->render_tar->get_view();
-		app.renderer->set_targets({ &iv, 1 }, graphics::ImageLayoutShaderReadOnly);
-	}
-	else
-		app.renderer->set_targets({}, graphics::ImageLayoutShaderReadOnly);
+	//if (auto fv = scene_window.first_view(); fv && fv->render_tar)
+	//{
+	//	auto iv = fv->render_tar->get_view();
+	//	app.renderer->set_targets({ &iv, 1 }, graphics::ImageLayoutShaderReadOnly);
+	//}
 
-	app.world->update_components = false;
+	//app.world->update_components = false;
 }
 
 bool App::cmd_undo()
@@ -1930,13 +1925,13 @@ bool App::cmd_stop()
 		{
 			if (fv)
 				fv->camera_idx = 0;
-			sRenderer::instance()->camera = camera_list.front();
+			sRenderer::instance()->render_tasks.front()->camera = camera_list.front();
 		}
 		else
 		{
 			if (fv)
 				fv->camera_idx = -1;
-			sRenderer::instance()->camera = nullptr;
+			sRenderer::instance()->render_tasks.front()->camera = nullptr;
 		}
 		return false;
 	});

@@ -14,10 +14,18 @@ namespace flame
 		p /= p.w;
 		if (p.z < -1.f || p.z > 1.f)
 			return vec2(-1.f);
-		auto screen_ext = sRenderer::instance()->target_extent();
-		if (screen_ext.x <= 0.f || screen_ext.y <= 0.f)
-			return vec2(-1.f);
-		return (p.xy() * 0.5f + 0.5f) * screen_ext;
+		for (auto& render_task : sRenderer::instance()->render_tasks)
+		{
+			if (render_task->camera == this)
+			{
+				auto ext = render_task->target_extent();
+				auto target_ext = render_task->target_extent();
+				if (target_ext.x <= 0.f || target_ext.y <= 0.f)
+					return vec2(-1.f);
+				return (p.xy() * 0.5f + 0.5f) * target_ext;
+			}
+		}
+		return vec2(-1.f);
 	}
 
 	void cCameraPrivate::on_active()
@@ -40,7 +48,7 @@ namespace flame
 		});
 	}
 
-	void cCameraPrivate::update()
+	void cCameraPrivate::update_matrices()
 	{
 		view_mat_inv = mat3(node->g_qut);
 		view_mat_inv[3] = vec4(node->global_pos(), 1.f);

@@ -16,7 +16,7 @@ namespace flame
 
 	void cPointLightPrivate::on_init()
 	{
-		node->drawers.add([this](DrawData& draw_data) {
+		node->drawers.add([this](DrawData& draw_data, cCameraPtr camera) {
 			if (instance_id == -1)
 				return;
 

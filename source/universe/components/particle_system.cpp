@@ -75,7 +75,7 @@ namespace flame
 
 	void cParticleSystemPrivate::on_init()
 	{
-		node->drawers.add([this](DrawData& draw_data) {
+		node->drawers.add([this](DrawData& draw_data, cCameraPtr camera) {
 			if (material_res_id == -1 || !enable)
 				return;
 
@@ -88,7 +88,7 @@ namespace flame
 					auto& d = draw_data.particles.emplace_back();
 					d.mat_id = material_res_id;
 					d.ptcs.resize(particles.size());
-					auto camera_rot = mat3(sRenderer::instance()->camera->view_mat_inv);
+					auto camera_rot = mat3(camera->view_mat_inv);
 					auto i = 0;
 					for (auto& src : particles)
 					{
