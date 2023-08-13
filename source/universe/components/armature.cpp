@@ -203,7 +203,8 @@ namespace flame
 	{
 		attach();
 
-		instance_id = sRenderer::instance()->register_armature_instance(-1);
+		if (instance_id != 0)
+			instance_id = sRenderer::instance()->register_armature_instance(-1);
 
 		node->mark_transform_dirty();
 
@@ -220,8 +221,11 @@ namespace flame
 
 		detach();
 
-		sRenderer::instance()->register_armature_instance(instance_id);
-		instance_id = -1;
+		if (instance_id != 0)
+		{
+			sRenderer::instance()->register_armature_instance(instance_id);
+			instance_id = -1;
+		}
 	}
 
 	void cArmaturePrivate::update()

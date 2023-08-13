@@ -4,13 +4,13 @@
 
 namespace flame
 {
-	struct LightDraw
+	struct LightData
 	{
 		LightType type;
 		uint ins_id;
 		bool cast_shadow;
 
-		LightDraw(LightType type, uint ins_id, bool cast_shadow) :
+		LightData(LightType type, uint ins_id, bool cast_shadow) :
 			type(type),
 			ins_id(ins_id),
 			cast_shadow(cast_shadow)
@@ -18,14 +18,14 @@ namespace flame
 		}
 	};
 
-	struct MeshDraw
+	struct MeshDrawData
 	{
 		uint ins_id;
 		uint mesh_id;
 		uint mat_id;
 		cvec4 color;
 
-		MeshDraw(uint ins_id, uint mesh_id, uint mat_id, const cvec4& color = cvec4()) :
+		MeshDrawData(uint ins_id, uint mesh_id, uint mat_id, const cvec4& color = cvec4()) :
 			ins_id(ins_id),
 			mesh_id(mesh_id),
 			mat_id(mat_id),
@@ -34,14 +34,14 @@ namespace flame
 		}
 	};
 
-	struct TerrainDraw
+	struct TerrainDrawData
 	{
 		uint ins_id;
 		uvec2 blocks;
 		uint mat_id;
 		cvec4 color;
 
-		TerrainDraw(uint ins_id, const uvec2& blocks, uint mat_id, const cvec4& color = cvec4()) :
+		TerrainDrawData(uint ins_id, const uvec2& blocks, uint mat_id, const cvec4& color = cvec4()) :
 			ins_id(ins_id),
 			blocks(blocks),
 			mat_id(mat_id),
@@ -50,25 +50,25 @@ namespace flame
 		}
 	};
 
-	struct SdfDraw
+	struct SdfDrawData
 	{
 		uint ins_id;
 		uint mat_id;
 
-		SdfDraw(uint ins_id, uint mat_id) :
+		SdfDrawData(uint ins_id, uint mat_id) :
 			ins_id(ins_id),
 			mat_id(mat_id)
 		{
 		}
 	};
 
-	struct VolumeDraw
+	struct VolumeDrawData
 	{
 		uint ins_id;
 		uvec3 blocks;
 		uint mat_id;
 
-		VolumeDraw(uint ins_id, const uvec3& blocks, uint mat_id) :
+		VolumeDrawData(uint ins_id, const uvec3& blocks, uint mat_id) :
 			ins_id(ins_id),
 			blocks(blocks),
 			mat_id(mat_id)
@@ -76,7 +76,7 @@ namespace flame
 		}
 	};
 
-	struct ParticleDraw
+	struct ParticleDrawData
 	{
 		struct Ptc
 		{
@@ -93,14 +93,14 @@ namespace flame
 		std::vector<Ptc> ptcs;
 	};
 
-	struct CommonDraw
+	struct ObjectDrawData
 	{
 		// type: "mesh"_h, "terrain"_h
 		uint type;
 		uint res_id;
 		uint ins_id;
 
-		CommonDraw(uint type, uint res_id, uint ins_id) :
+		ObjectDrawData(uint type, uint res_id, uint ins_id) :
 			type(type),
 			res_id(res_id),
 			ins_id(ins_id)
@@ -137,12 +137,12 @@ namespace flame
 		DrawPass pass;
 		uint categories;
 
-		std::vector<LightDraw>		lights;
-		std::vector<MeshDraw>		meshes;
-		std::vector<TerrainDraw>	terrains; // or grass fields
-		std::vector<SdfDraw>		sdfs;
-		std::vector<VolumeDraw>		volumes; // or marching cubes
-		std::vector<ParticleDraw>	particles;
+		std::vector<LightData>			lights;
+		std::vector<MeshDrawData>		meshes;
+		std::vector<TerrainDrawData>	terrains; // or grass fields
+		std::vector<SdfDrawData>		sdfs;
+		std::vector<VolumeDrawData>		volumes; // or marching cubes
+		std::vector<ParticleDrawData>	particles;
 
 		bool graphics_debug; // could use this to request a capture
 

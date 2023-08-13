@@ -2233,7 +2233,7 @@ void InspectorView::on_draw()
 				if (!preview_model)
 				{
 					preview_model = Entity::create();
-					preview_model->add_component<cNode>()->set_pos(vec3(3000.f));
+					preview_model->add_component<cNode>()->set_pos(vec3(-2000.f));
 					preview_model->add_component<cMesh>();
 				}
 
@@ -2255,6 +2255,7 @@ void InspectorView::on_draw()
 					static EntityPtr preview_node = nullptr;
 					static cCameraPtr preview_camera = nullptr;
 					static graphics::ImagePtr preview_image = nullptr;
+					static RenderTaskPtr preview_render_task = nullptr;
 
 					auto model = (graphics::ModelPtr)inspected_obj;
 					auto i = 0;
@@ -2277,16 +2278,25 @@ void InspectorView::on_draw()
 						model->save(path, false);
 					if (ImGui::Button("To Binary"))
 						model->save(path, true);
+					static uint preview_mesh_index = 0;
 					if (ImGui::CollapsingHeader("Preview"))
 					{
-						static uint preview_mesh_index = 0;
-						preview_mesh_index = min(preview_mesh_index, (uint)model->meshes.size());
+						if (preview_mesh_index == 0xffffffff)
+							preview_mesh_index = 0;
+						preview_mesh_index = min(preview_mesh_index, (uint)model->meshes.size() - 1);
+						auto preview_mesh_changed = false;
 						if (ImGui::BeginCombo("Mesh", str(preview_mesh_index).c_str()))
 						{
 							for (uint i = 0; i < model->meshes.size(); i++)
 							{
 								if (ImGui::Selectable(str(i).c_str(), preview_mesh_index == i))
-									preview_mesh_index = i;
+								{
+									if (preview_mesh_index != i)
+									{
+										preview_mesh_index = i;
+										preview_mesh_changed = true;
+									}
+								}
 							}
 							ImGui::EndCombo();
 						}
@@ -2300,11 +2310,12 @@ void InspectorView::on_draw()
 							auto e_camera = Entity::create();
 							{
 								auto node = e_camera->add_component<cNode>();
-								node->set_pos(vec3(3000.f));
+								node->set_pos(vec3(-2000.f));
 								auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
 								node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
 							}
 							preview_camera = e_camera->add_component<cCamera>();
+							preview_camera->zFar = 500.f;
 							preview_node->add_child(e_camera);
 
 							preview_node->add_child(preview_model);
@@ -2316,12 +2327,17 @@ void InspectorView::on_draw()
 							preview_image = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(256, 256, 1), graphics::ImageUsageAttachment |
 								graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
 						}
+						if (!preview_render_task)
+						{
+							preview_render_task = app.renderer->add_render_task(RenderModeSimple, preview_camera, { preview_image->get_view() },
+								graphics::ImageLayoutShaderReadOnly, false, false);
+						}
 
 						auto& preview_mesh = model->meshes[preview_mesh_index];
-						if (inspected_changed)
+						if (inspected_changed || preview_mesh_changed)
 						{
 							preview_model->get_component<cMesh>()->set_mesh_and_material(
-								model->filename.wstring() + L'#' + wstr(preview_mesh_index), L"standard");
+								model->filename.wstring() + L'#' + wstr(preview_mesh_index), L"default");
 							add_event([]() {
 								AABB bounds;
 								preview_model->forward_traversal([&](EntityPtr e) {
@@ -2330,7 +2346,7 @@ void InspectorView::on_draw()
 										if (!node->bounds.invalid())
 											bounds.expand(node->bounds);
 									}
-								});
+									});
 								auto camera_node = preview_camera->node;
 								if (!bounds.invalid())
 								{
@@ -2341,10 +2357,10 @@ void InspectorView::on_draw()
 							}, 0.f, 2);
 						}
 
-						//app.render_to_image(preview_camera, preview_image->get_view());
-
 						ImGui::Image(preview_image, vec2(256));
 					}
+					else
+						preview_mesh_index = 0xffffffff;
 				}
 			}
 			else if (ext == L".fani")

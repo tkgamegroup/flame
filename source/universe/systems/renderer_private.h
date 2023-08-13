@@ -25,6 +25,7 @@ namespace flame
 		std::unique_ptr<graphics::Image>			img_gbufferD;	// emissive
 
 		std::unique_ptr<graphics::Framebuffer>		fb_fwd;
+		std::unique_ptr<graphics::Framebuffer>		fb_fwd_clear;
 		std::unique_ptr<graphics::Framebuffer>		fb_gbuf;
 		std::unique_ptr<graphics::Framebuffer>		fb_primitive;
 
@@ -128,7 +129,7 @@ namespace flame
 		int register_volume_instance(int id) override;
 		void set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, graphics::ImageViewPtr data_map) override;
 
-		void draw_outlines(const std::vector<CommonDraw>& draws, const cvec4& color, uint width, uint mode) override;
+		void draw_outlines(const std::vector<ObjectDrawData>& draw_datas, const cvec4& color, uint width, uint mode) override;
 		void draw_primitives(uint type, const vec3* points, uint count, const cvec4& color, bool depth_test) override;
 
 		void render(int tar_idx, graphics::CommandBufferPtr cb) override;

@@ -1,11 +1,12 @@
 %col_fmt=R8G8B8A8_UNORM
 %dep_fmt=Depth16
 %sample_count=4
+%load_op=Load
 attachments
   format
     {col_fmt}
   load_op
-    Load
+    {load_op}
   sample_count
     {sample_count}
   initia_layout
@@ -14,7 +15,7 @@ attachments
   format
     {dep_fmt}
   load_op
-    Load
+    {load_op}
   sample_count
     {sample_count}
   initia_layout

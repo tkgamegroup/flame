@@ -773,17 +773,17 @@ void SceneView::on_draw()
 					return;
 				if (auto mesh = e->get_component<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
 				{
-					CommonDraw d("mesh"_h, mesh->mesh_res_id, mesh->instance_id);
+					ObjectDrawData d("mesh"_h, mesh->mesh_res_id, mesh->instance_id);
 					sRenderer::instance()->draw_outlines({ d }, col, 1, "MAX"_h);
 				}
 				if (auto terrain = e->get_component<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
 				{
-					CommonDraw d("terrain"_h, 0, terrain->instance_id);
+					ObjectDrawData d("terrain"_h, 0, terrain->instance_id);
 					sRenderer::instance()->draw_outlines({ d }, col, 1, "MAX"_h);
 				}
 				if (auto armature = e->get_component<cArmature>(); armature && armature->model)
 				{
-					std::vector<CommonDraw> ds;
+					std::vector<ObjectDrawData> ds;
 					for (auto& c : e->children)
 					{
 						if (auto mesh = c->get_component<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)

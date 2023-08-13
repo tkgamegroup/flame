@@ -132,11 +132,11 @@ void BlueprintView::on_draw()
 		auto group = blueprint->groups[0].get();
 		for (auto& n : group->nodes)
 		{
-			const BlueprintInstance::Node* instance_node = nullptr;
+			BlueprintInstance::Node* instance_node = nullptr;
 			if (blueprint_window.debugger->debugging == blueprint_instance)
 			{
 				if (group->name_hash == blueprint_instance->executing_group)
-					instance_node = blueprint_instance->current_group->find(n.get());
+					instance_node = (BlueprintInstance::Node*)blueprint_instance->current_group->find(n.get());
 			}
 
 			ax::NodeEditor::BeginNode((uint64)n.get());
@@ -253,7 +253,13 @@ void BlueprintView::on_draw()
 			{
 				if (ImGui::CollapsingHeader("Preview"))
 				{
-					ImGui::Image(nullptr, ImVec2(200, 200));
+					if (instance_node)
+					{
+						BlueprintNodePreview preview;
+						n->preview_provider(instance_node->inputs.data(), instance_node->outputs.data(), &preview);
+
+						ImGui::Image(nullptr, ImVec2(200, 200));
+					}
 				}
 			}
 

@@ -65,6 +65,7 @@ namespace flame
 	graphics::VertexBuffer	buf_primitives;
 	// Render Passes
 	graphics::RenderpassPtr rp_fwd = nullptr;
+	graphics::RenderpassPtr rp_fwd_clear = nullptr;
 	graphics::RenderpassPtr rp_gbuf = nullptr;
 	graphics::RenderpassPtr rp_dep = nullptr;
 	graphics::RenderpassPtr rp_col_dep = nullptr;
@@ -72,6 +73,7 @@ namespace flame
 	// Images
 	std::unique_ptr<graphics::Image> img_black;
 	std::unique_ptr<graphics::Image> img_white;
+	std::unique_ptr<graphics::Image> img_dummy_depth;
 	std::unique_ptr<graphics::Image> img_cube_black;
 	std::unique_ptr<graphics::Image> img_cube_white;
 	std::unique_ptr<graphics::Image> img_black3D;
@@ -161,8 +163,8 @@ namespace flame
 		Frustum frustum;
 		std::vector<cNodePtr> culled_nodes;
 		MeshBatcher batcher[DirShadowMaxLevels];
-		std::vector<TerrainDraw> draw_terrains[DirShadowMaxLevels];
-		std::vector<VolumeDraw> draw_MCs[DirShadowMaxLevels];
+		std::vector<TerrainDrawData> draw_terrains[DirShadowMaxLevels];
+		std::vector<VolumeDrawData> draw_MCs[DirShadowMaxLevels];
 	};
 
 	struct PointShadow
@@ -179,7 +181,7 @@ namespace flame
 
 	struct OutlineDrawGroup
 	{
-		std::vector<CommonDraw> draws;
+		std::vector<ObjectDrawData> draws;
 		cvec4 color;
 		uint width;
 		uint mode;
@@ -233,6 +235,11 @@ namespace flame
 				defines.push_back("rp=" + str(rp_dep));
 				defines.push_back("pll=" + str(pll_fwd));
 				defines.push_back("cull_mode=" + TypeInfo::serialize_t(graphics::CullModeFront));
+			}
+			else if (modifier2 == "FORCE_FORWARD"_h)
+			{
+				defines.push_back("rp=" + str(rp_fwd));
+				defines.push_back("pll=" + str(pll_fwd));
 			}
 			else if (res.mat->render_queue == graphics::RenderQueue::Opaque || 
 				res.mat->render_queue == graphics::RenderQueue::AlphaTest)
@@ -413,8 +420,8 @@ namespace flame
 	{
 		prm_plain.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain.pll"), graphics::PipelineGraphics);
 
-		auto dsl_target_images = graphics::DescriptorSetLayout::get(L"flame\\shaders\\target.dsl");
-		ds_target.reset(graphics::DescriptorSet::create(nullptr, dsl_target_images));
+		auto dsl_target = graphics::DescriptorSetLayout::get(L"flame\\shaders\\target.dsl");
+		ds_target.reset(graphics::DescriptorSet::create(nullptr, dsl_target));
 
 		prm_fwd.init(pll_fwd, graphics::PipelineGraphics);
 		prm_fwd.set_ds("camera"_h, ds_camera.get());
@@ -423,33 +430,40 @@ namespace flame
 		prm_fwd.set_ds("lighting"_h, ds_lighting.get());
 		prm_fwd.set_ds("target"_h, ds_target.get());
 
-		prm_gbuf.init(pll_gbuf, graphics::PipelineGraphics);
-		prm_gbuf.set_ds("camera"_h, ds_camera.get());
-		prm_gbuf.set_ds("instance"_h, ds_instance.get());
-		prm_gbuf.set_ds("material"_h, ds_material.get());
-
-		prm_deferred.init(pll_deferred, graphics::PipelineGraphics);
-		auto dsl_deferred = pll_deferred->dsls.back();
-		ds_deferred.reset(graphics::DescriptorSet::create(nullptr, dsl_deferred));
-		prm_deferred.set_ds("camera"_h, ds_camera.get());
-		prm_deferred.set_ds("material"_h, ds_material.get());
-		prm_deferred.set_ds("lighting"_h, ds_lighting.get());
-		prm_deferred.set_ds("target"_h, ds_target.get());
-		prm_deferred.set_ds(""_h, ds_deferred.get());
-
-		prm_luma.init(pl_luma_hist->layout, graphics::PipelineCompute);
-		auto dsl_luma = prm_luma.pll->dsls.back();
-		if (!buf_luma.buf)
+		if (mode != RenderModeSimple)
 		{
-			buf_luma.create(graphics::BufferUsageStorage | graphics::BufferUsageTransferSrc, 
-				dsl_luma->get_buf_ui("Luma"_h), graphics::BufferUsageTransferDst);
+			prm_gbuf.init(pll_gbuf, graphics::PipelineGraphics);
+			prm_gbuf.set_ds("camera"_h, ds_camera.get());
+			prm_gbuf.set_ds("instance"_h, ds_instance.get());
+			prm_gbuf.set_ds("material"_h, ds_material.get());
 		}
-		ds_luma.reset(graphics::DescriptorSet::create(nullptr, dsl_luma));
-		ds_luma->set_buffer("Luma"_h, 0, buf_luma.buf.get());
-		ds_luma->update();
-		prm_luma.set_ds(""_h, ds_luma.get());
 
-		fence_pickup.reset(graphics::Fence::create(false));
+		if (mode != RenderModeSimple)
+		{
+			prm_deferred.init(pll_deferred, graphics::PipelineGraphics);
+			auto dsl_deferred = pll_deferred->dsls.back();
+			ds_deferred.reset(graphics::DescriptorSet::create(nullptr, dsl_deferred));
+			prm_deferred.set_ds("camera"_h, ds_camera.get());
+			prm_deferred.set_ds("material"_h, ds_material.get());
+			prm_deferred.set_ds("lighting"_h, ds_lighting.get());
+			prm_deferred.set_ds("target"_h, ds_target.get());
+			prm_deferred.set_ds(""_h, ds_deferred.get());
+		}
+
+		if (mode != RenderModeSimple)
+		{
+			prm_luma.init(pl_luma_hist->layout, graphics::PipelineCompute);
+			auto dsl_luma = prm_luma.pll->dsls.back();
+			if (!buf_luma.buf)
+			{
+				buf_luma.create(graphics::BufferUsageStorage | graphics::BufferUsageTransferSrc,
+					dsl_luma->get_buf_ui("Luma"_h), graphics::BufferUsageTransferDst);
+			}
+			ds_luma.reset(graphics::DescriptorSet::create(nullptr, dsl_luma));
+			ds_luma->set_buffer("Luma"_h, 0, buf_luma.buf.get());
+			ds_luma->update();
+			prm_luma.set_ds(""_h, ds_luma.get());
+		}
 	}
 
 	void RenderTaskPrivate::set_targets(const std::vector<graphics::ImageViewPtr>& _targets)
@@ -477,43 +491,77 @@ namespace flame
 		img_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
 		img_dst->filename = L"##img_dst";
 		device->set_object_debug_name(img_dst.get(), "Dst");
-		img_back0.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 0));
-		img_back0->filename = L"##img_back0";
-		device->set_object_debug_name(img_back0.get(), "Back0");
-		img_back1.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_back1->filename = L"##img_back1";
-		device->set_object_debug_name(img_back1.get(), "Back1");
 		img_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 		img_dep->filename = L"##img_dep";
 		device->set_object_debug_name(img_dep.get(), "Dep");
+
+		if (mode != RenderModeSimple)
+		{
+			img_back0.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 0));
+			img_back0->filename = L"##img_back0";
+			device->set_object_debug_name(img_back0.get(), "Back0");
+			img_back1.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+			img_back1->filename = L"##img_back1";
+			device->set_object_debug_name(img_back1.get(), "Back1");
+		}
+
 		img_dst_ms.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
 		img_dep_ms.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
-		img_last_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
-		img_last_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_gbufferA.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_gbufferB.reset(graphics::Image::create(graphics::Format_A2R10G10B10_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_gbufferC.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_gbufferD.reset(graphics::Image::create(graphics::Format_B10G11R11_UFLOAT, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
-		fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_gbufferA->get_view(), img_gbufferB->get_view(), img_gbufferC->get_view(), img_gbufferD->get_view(), img_dep->get_view() }));
+		if (mode != RenderModeSimple)
+		{
+			img_last_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
+			img_last_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+			img_gbufferA.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+			img_gbufferB.reset(graphics::Image::create(graphics::Format_A2R10G10B10_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+			img_gbufferC.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+			img_gbufferD.reset(graphics::Image::create(graphics::Format_B10G11R11_UFLOAT, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		}
+
+		if (mode != RenderModeSimple)
+			fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
+		else
+			fb_fwd_clear.reset(graphics::Framebuffer::create(rp_fwd_clear, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
+
+		if (mode != RenderModeSimple)
+		{
+			fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_gbufferA->get_view(), img_gbufferB->get_view(), img_gbufferC->get_view(), img_gbufferD->get_view(), img_dep->get_view() }));
+			fb_primitive.reset(graphics::Framebuffer::create(rp_primitive, { img_dst->get_view(), img_dep->get_view() }));
+		}
+
 		ds_target->set_image("img_dep"_h, 0, img_dep->get_view(), sp_nearest_dep);
-		ds_target->set_image("img_last_dst"_h, 0, img_last_dst->get_view(), sp_nearest_dep);
-		ds_target->set_image("img_last_dep"_h, 0, img_last_dep->get_view(), sp_nearest);
+		if (mode != RenderModeSimple)
+		{
+			ds_target->set_image("img_last_dst"_h, 0, img_last_dst->get_view(), sp_nearest);
+			ds_target->set_image("img_last_dep"_h, 0, img_last_dep->get_view(), sp_nearest_dep);
+		}
+		else
+		{
+			ds_target->set_image("img_last_dst"_h, 0, img_black->get_view(), sp_nearest);
+			ds_target->set_image("img_last_dep"_h, 0, img_dummy_depth->get_view(), sp_nearest_dep);
+		}
 		ds_target->update();
 
-		ds_deferred->set_image("img_gbufferA"_h, 0, img_gbufferA->get_view(), nullptr);
-		ds_deferred->set_image("img_gbufferB"_h, 0, img_gbufferB->get_view(), nullptr);
-		ds_deferred->set_image("img_gbufferC"_h, 0, img_gbufferC->get_view(), nullptr);
-		ds_deferred->set_image("img_gbufferD"_h, 0, img_gbufferD->get_view(), nullptr);
-		ds_deferred->update();
+		if (mode != RenderModeSimple)
+		{
+			ds_deferred->set_image("img_gbufferA"_h, 0, img_gbufferA->get_view(), nullptr);
+			ds_deferred->set_image("img_gbufferB"_h, 0, img_gbufferB->get_view(), nullptr);
+			ds_deferred->set_image("img_gbufferC"_h, 0, img_gbufferC->get_view(), nullptr);
+			ds_deferred->set_image("img_gbufferD"_h, 0, img_gbufferD->get_view(), nullptr);
+			ds_deferred->update();
+		}
 
-		ds_luma->set_image("img_col"_h, 0, img_dst->get_view(), nullptr);
-		ds_luma->update();
+		if (mode != RenderModeSimple)
+		{
+			ds_luma->set_image("img_col"_h, 0, img_dst->get_view(), nullptr);
+			ds_luma->update();
+		}
 
-		img_pickup.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
-		img_dep_pickup.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
-		fb_primitive.reset(graphics::Framebuffer::create(rp_primitive, { img_dst->get_view(), img_dep->get_view() }));
-		fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
+		if (img_pickup)
+		{
+			img_pickup.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
+			img_dep_pickup.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
+			fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
+		}
 	}
 
 	vec2 RenderTaskPrivate::target_extent() const
@@ -543,12 +591,14 @@ namespace flame
 		graphics_device->set_object_debug_name(img_black.get(), "Black");
 		img_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
 		graphics_device->set_object_debug_name(img_white.get(), "White");
+		img_dummy_depth.reset(graphics::Image::create(graphics::Format_Depth16, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
 		img_cube_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1));
 		img_cube_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1));
 		img_black3D.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
 		img_white3D.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
 		img_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
 		img_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
+		img_dummy_depth->clear(vec4(1.f, 0.f, 0.f, 0.f), graphics::ImageLayoutShaderReadOnly);
 		img_cube_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
 		img_cube_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
 		img_black3D->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
@@ -558,6 +608,11 @@ namespace flame
 			{ "col_fmt=" + TypeInfo::serialize_t(col_fmt),
 			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt),
 			  "sample_count=" + TypeInfo::serialize_t(sample_count) });
+		rp_fwd_clear = graphics::Renderpass::get(L"flame\\shaders\\forward.rp",
+			{ "col_fmt=" + TypeInfo::serialize_t(col_fmt),
+			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt),
+			  "sample_count=" + TypeInfo::serialize_t(sample_count),
+			  "load_op=" + TypeInfo::serialize_t(graphics::AttachmentLoadClear) });
 		rp_gbuf = graphics::Renderpass::get(L"flame\\shaders\\gbuffer.rp",
 			{ "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
 		rp_dep = graphics::Renderpass::get(L"flame\\shaders\\depth.rp",
@@ -585,7 +640,9 @@ namespace flame
 		auto dsl_instance = graphics::DescriptorSetLayout::get(L"flame\\shaders\\instance.dsl");
 		buf_instance.create(graphics::BufferUsageStorage, dsl_instance->get_buf_ui("Instance"_h));
 		mesh_instances.init(buf_instance.child_type<TI_A>("meshes"_h)->extent);
+		register_mesh_instance(-1);
 		armature_instances.init(buf_instance.child_type<TI_A>("armatures"_h)->extent);
+		register_armature_instance(-1);
 		terrain_instances.init(buf_instance.child_type<TI_A>("terrains"_h)->extent);
 		sdf_instances.init(buf_instance.child_type<TI_A>("sdfs"_h)->extent);
 		volume_instances.init(buf_instance.child_type<TI_A>("volumes"_h)->extent);
@@ -787,6 +844,7 @@ namespace flame
 		{
 			ret->img_pickup.reset(graphics::Image::create(graphics::Format_R8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferSrc));
 			ret->img_dep_pickup.reset(graphics::Image::create(graphics::Format_R8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferSrc));
+			ret->fence_pickup.reset(graphics::Fence::create(false));
 		}
 		ret->init();
 		ret->set_targets(targets);
@@ -1696,10 +1754,10 @@ namespace flame
 		ds_instance->update();
 	}
 
-	void sRendererPrivate::draw_outlines(const std::vector<CommonDraw>& draws, const cvec4& color, uint width, uint mode)
+	void sRendererPrivate::draw_outlines(const std::vector<ObjectDrawData>& draw_datas, const cvec4& color, uint width, uint mode)
 	{
 		auto& od = outline_groups.emplace_back();
-		od.draws = draws;
+		od.draws = draw_datas;
 		od.color = color;
 		od.width = width;
 		od.mode = mode;
@@ -1800,30 +1858,10 @@ namespace flame
 			}
 
 			auto mode = render_task->mode;
-			tar_idx = min(max(0, (int)render_task->targets.size() - 1), (int)tar_idx);
+			tar_idx = clamp(tar_idx, 0, (int)render_task->targets.size() - 1);
 			auto iv = render_task->targets[tar_idx];
 			auto img = iv->image;
 			auto ext = vec2(img->extent);
-			auto img_back0 = render_task->img_back0.get();
-			auto img_back1 = render_task->img_back1.get();
-			auto img_dst = render_task->img_dst.get();
-			auto img_dep = render_task->img_dep.get();
-			auto img_dst_ms = render_task->img_dst_ms.get();
-			auto img_dep_ms = render_task->img_dep_ms.get();
-			auto img_last_dst = render_task->img_last_dst.get();
-			auto img_last_dep = render_task->img_last_dep.get();
-			auto img_gbufferA = render_task->img_gbufferA.get();
-			auto img_gbufferB = render_task->img_gbufferB.get();
-			auto img_gbufferC = render_task->img_gbufferC.get();
-			auto img_gbufferD = render_task->img_gbufferD.get();
-			auto fb_fwd = render_task->fb_fwd.get();
-			auto fb_gbuf = render_task->fb_gbuf.get();
-			auto fb_primitive = render_task->fb_primitive.get();
-			auto& prm_plain = render_task->prm_plain;
-			auto& prm_fwd = render_task->prm_fwd;
-			auto& prm_gbuf = render_task->prm_gbuf;
-			auto& prm_deferred = render_task->prm_deferred;
-			auto& prm_luma = render_task->prm_luma;
 
 			auto camera = render_task->camera;
 			camera->aspect = ext.x / ext.y;
@@ -1927,7 +1965,7 @@ namespace flame
 					buf_lighting.mark_dirty_c("dir_lights_count"_h).as<uint>() = n_dir_lights;
 					buf_lighting.mark_dirty_c("pt_lights_count"_h).as<uint>() = n_pt_lights;
 				}
-				else if (mode == RenderModeCameraLight || mode == RenderModeCameraLightButNoSky)
+				else if (mode == RenderModeCameraLight || mode == RenderModeSimple)
 				{
 					auto ins = buf_lighting.mark_dirty_ci("dir_lights"_h, camera_light_id);
 					ins.child("dir"_h).as<vec3>() = camera->view_mat_inv[2];
@@ -1942,6 +1980,19 @@ namespace flame
 				buf_lighting.upload(cb);
 			}
 			cb->end_debug_label();
+
+			auto img_back0 = render_task->img_back0.get();
+			auto img_back1 = render_task->img_back1.get();
+			auto img_dst = render_task->img_dst.get();
+			auto img_dep = render_task->img_dep.get();
+			auto img_dst_ms = render_task->img_dst_ms.get();
+			auto img_dep_ms = render_task->img_dep_ms.get();
+			auto img_last_dst = render_task->img_last_dst.get();
+			auto img_last_dep = render_task->img_last_dep.get();
+			auto fb_fwd = render_task->fb_fwd.get();
+			auto fb_fwd_clear = render_task->fb_fwd_clear.get();
+			auto fb_gbuf = render_task->fb_gbuf.get();
+			auto& prm_fwd = render_task->prm_fwd;
 
 			// occulder pass
 			cb->begin_debug_label("Occulder Pass");
@@ -2165,170 +2216,224 @@ namespace flame
 
 			cb->set_viewport_and_scissor(Rect(vec2(0), ext));
 
-			// deferred shading pass
-			cb->begin_debug_label("Deferred Shading");
+			if (mode != RenderModeSimple)
 			{
-				for (auto& b : gbuffer_batcher.batches)
-					b.second.draw_indices.clear();
-				draw_data.reset(PassGBuffer, CateMesh | CateTerrain | CateSDF | CateMarchingCubes);
-				for (auto n : camera_culled_nodes)
-					n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
-				gbuffer_batcher.collect(draw_data, cb);
-
-				cb->image_barrier(img_dst, {}, graphics::ImageLayoutAttachment);
-				cb->set_viewport_and_scissor(Rect(vec2(0), ext));
-
-				cb->begin_debug_label("GBuffer Pass");
+				// deferred shading pass
+				cb->begin_debug_label("Deferred Shading");
 				{
-					cb->begin_renderpass(nullptr, fb_gbuf,
-						{ vec4(0.f, 0.f, 0.f, 0.f),
-						vec4(0.f, 0.f, 0.f, 0.f),
-						vec4(0.f, 0.f, 0.f, 0.f),
-						vec4(0.f, 0.f, 0.f, 0.f),
-						vec4(1.f, 0.f, 0.f, 0.f) });
+					for (auto& b : gbuffer_batcher.batches)
+						b.second.draw_indices.clear();
+					draw_data.reset(PassGBuffer, CateMesh | CateTerrain | CateSDF | CateMarchingCubes);
+					for (auto n : camera_culled_nodes)
+						n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+					gbuffer_batcher.collect(draw_data, cb);
 
-					prm_gbuf.bind_dss(cb);
-					gbuffer_batcher.draw(cb);
+					cb->image_barrier(img_dst, {}, graphics::ImageLayoutAttachment);
+					cb->set_viewport_and_scissor(Rect(vec2(0), ext));
+
+					cb->begin_debug_label("GBuffer Pass");
+					{
+						auto& prm_gbuf = render_task->prm_gbuf;
+
+						cb->begin_renderpass(nullptr, fb_gbuf,
+							{ vec4(0.f, 0.f, 0.f, 0.f),
+							vec4(0.f, 0.f, 0.f, 0.f),
+							vec4(0.f, 0.f, 0.f, 0.f),
+							vec4(0.f, 0.f, 0.f, 0.f),
+							vec4(1.f, 0.f, 0.f, 0.f) });
+
+						prm_gbuf.bind_dss(cb);
+						gbuffer_batcher.draw(cb);
+
+						for (auto& t : draw_data.terrains)
+						{
+							cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, 0));
+							prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (t.mat_id << 16) + t.ins_id;
+							prm_gbuf.push_constant(cb);
+							cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
+						}
+						for (auto& s : draw_data.sdfs)
+						{
+							cb->bind_pipeline(get_material_pipeline(mat_reses[s.mat_id], "sdf"_h, 0, 0));
+							prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (s.mat_id << 16) + s.ins_id;
+							prm_gbuf.push_constant(cb);
+							cb->draw(3, 1, 0, 0);
+						}
+						for (auto& v : draw_data.volumes)
+						{
+							cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, 0));
+							prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (v.mat_id << 16) + v.ins_id;
+							for (auto z = 0; z < v.blocks.z; z++)
+							{
+								for (auto y = 0; y < v.blocks.y; y++)
+								{
+									for (auto x = 0; x < v.blocks.x; x++)
+									{
+										prm_gbuf.pc.mark_dirty_c("offset"_h).as<vec3>() = (vec3(x, y, z));
+										prm_gbuf.push_constant(cb);
+										// 128 / 4 = 32
+										cb->draw_mesh_tasks(uvec3(32 * 32 * 32, 1, 1));
+									}
+								}
+							}
+						}
+
+						cb->end_renderpass();
+					}
+					cb->end_debug_label();
+
+					cb->image_barrier(img_last_dst, {}, graphics::ImageLayoutShaderReadOnly);
+					cb->image_barrier(img_last_dep, {}, graphics::ImageLayoutShaderReadOnly);
+
+					auto pl_mod = 0;
+					switch (mode)
+					{
+					case RenderModeAlbedoData: pl_mod = "ALBEDO_DATA"_h; break;
+					case RenderModeNormalData: pl_mod = "NORMAL_DATA"_h; break;
+					case RenderModeMetallicData: pl_mod = "METALLIC_DATA"_h; break;
+					case RenderModeRoughnessData: pl_mod = "ROUGHNESS_DATA"_h; break;
+					case RenderModeIBLValue: pl_mod = "IBL_VALUE"_h; break;
+					case RenderModeFogValue: pl_mod = "FOG_VALUE"_h; break;
+					}
+
+					cb->image_barrier(render_task->img_gbufferA.get(), {}, graphics::ImageLayoutShaderReadOnly);
+					cb->image_barrier(render_task->img_gbufferB.get(), {}, graphics::ImageLayoutShaderReadOnly);
+					cb->image_barrier(render_task->img_gbufferC.get(), {}, graphics::ImageLayoutShaderReadOnly);
+					cb->image_barrier(render_task->img_gbufferD.get(), {}, graphics::ImageLayoutShaderReadOnly);
+					cb->image_barrier(img_dep, {}, graphics::ImageLayoutShaderReadOnly);
+					cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+					render_task->prm_deferred.bind_dss(cb);
+					cb->bind_pipeline(get_deferred_pipeline(pl_mod));
+					cb->draw(3, 1, 0, 0);
+					cb->end_renderpass();
+				}
+				cb->end_debug_label();
+
+			}
+
+			// forward pass
+			cb->begin_debug_label("Forward Shading");
+			{
+				if (mode != RenderModeSimple)
+				{
+					cb->image_barrier(img_dst, {}, graphics::ImageLayoutShaderReadOnly);
+					cb->begin_renderpass(nullptr, img_dst_ms->get_shader_write_dst());
+					cb->bind_pipeline(pl_blit);
+					cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
+					cb->draw(3, 1, 0, 0);
+					cb->end_renderpass();
+
+					cb->image_barrier(img_dep, {}, graphics::ImageLayoutShaderReadOnly);
+					cb->begin_renderpass(nullptr, img_dep_ms->get_shader_write_dst());
+					cb->bind_pipeline(pl_blit_dep);
+					cb->bind_descriptor_set(0, img_dep->get_shader_read_src(0, 0, sp_nearest));
+					cb->draw(3, 1, 0, 0);
+					cb->end_renderpass();
+				}
+
+				if (mode != RenderModeSimple)
+				{
+					for (auto& b : transparent_batcher.batches)
+						b.second.draw_indices.clear();
+					draw_data.reset(PassForward, CateMesh | CateGrassField | CateParticle);
+					for (auto n : camera_culled_nodes)
+						n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+					transparent_batcher.collect(draw_data, cb);
+				}
+
+				if (mode != RenderModeSimple)
+				{
+					for (auto& p : draw_data.particles)
+					{
+						auto off = buf_particles.add(nullptr, p.ptcs.size());
+						for (auto i = 0; i < p.ptcs.size(); i++)
+						{
+							auto& src = p.ptcs[i];
+							auto dst = buf_particles.item(off + i);
+							dst.child("i_pos"_h).as<vec3>() = src.pos;
+							dst.child("i_xext"_h).as<vec3>() = src.x_ext;
+							dst.child("i_yext"_h).as<vec3>() = src.y_ext;
+							dst.child("i_uv"_h).as<vec4>() = src.uv;
+							dst.child("i_col"_h).as<cvec4>() = src.col;
+							dst.child("i_time"_h).as<float>() = src.time;
+						}
+					}
+					buf_particles.upload(cb);
+					buf_particles.reset();
+				}
+
+				if (mode != RenderModeSimple)
+				{
+					cb->image_barrier(img_dst, {}, graphics::ImageLayoutAttachment);
+					cb->image_barrier(img_dep, {}, graphics::ImageLayoutAttachment);
+					cb->begin_renderpass(nullptr, fb_fwd);
+					prm_fwd.bind_dss(cb);
+
+					transparent_batcher.draw(cb);
 
 					for (auto& t : draw_data.terrains)
 					{
-						cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, 0));
-						prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (t.mat_id << 16) + t.ins_id;
+						cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "grass_field"_h, 0, 0));
+						prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (t.mat_id << 16) + t.ins_id;
 						prm_fwd.push_constant(cb);
 						cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
 					}
-					for (auto& s : draw_data.sdfs)
+
 					{
-						cb->bind_pipeline(get_material_pipeline(mat_reses[s.mat_id], "sdf"_h, 0, 0));
-						prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (s.mat_id << 16) + s.ins_id;
-						prm_fwd.push_constant(cb);
-						cb->draw(3, 1, 0, 0);
-					}
-					for (auto& v : draw_data.volumes)
-					{
-						cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, 0));
-						prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (v.mat_id << 16) + v.ins_id;
-						for (auto z = 0; z < v.blocks.z; z++)
+						cb->bind_vertex_buffer(buf_particles.buf.get(), 0);
+						auto vtx_off = 0;
+						for (auto& p : draw_data.particles)
 						{
-							for (auto y = 0; y < v.blocks.y; y++)
-							{
-								for (auto x = 0; x < v.blocks.x; x++)
-								{
-									prm_gbuf.pc.mark_dirty_c("offset"_h).as<vec3>() = (vec3(x, y, z));
-									prm_gbuf.push_constant(cb);
-									// 128 / 4 = 32
-									cb->draw_mesh_tasks(uvec3(32 * 32 * 32, 1, 1));
-								}
-							}
+							cb->bind_pipeline(get_material_pipeline(mat_reses[p.mat_id], "particle"_h, 0, 0));
+							cb->draw(p.ptcs.size(), 1, vtx_off, p.mat_id << 16);
+							vtx_off += p.ptcs.size();
 						}
 					}
 
 					cb->end_renderpass();
 				}
-				cb->end_debug_label();
-
-				cb->image_barrier(img_last_dst, {}, graphics::ImageLayoutShaderReadOnly);
-				cb->image_barrier(img_last_dep, {}, graphics::ImageLayoutShaderReadOnly);
-
-				auto pl_mod = 0;
-				switch (mode)
+				else
 				{
-				case RenderModeCameraLightButNoSky: pl_mod = "NO_SKY"_h; break;
-				case RenderModeAlbedoData: pl_mod = "ALBEDO_DATA"_h; break;
-				case RenderModeNormalData: pl_mod = "NORMAL_DATA"_h; break;
-				case RenderModeMetallicData: pl_mod = "METALLIC_DATA"_h; break;
-				case RenderModeRoughnessData: pl_mod = "ROUGHNESS_DATA"_h; break;
-				case RenderModeIBLValue: pl_mod = "IBL_VALUE"_h; break;
-				case RenderModeFogValue: pl_mod = "FOG_VALUE"_h; break;
-				}
+					draw_data.reset(PassPickUp, CateMesh);
+					for (auto n : camera_culled_nodes)
+						n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
 
-				cb->image_barrier(img_gbufferA, {}, graphics::ImageLayoutShaderReadOnly);
-				cb->image_barrier(img_gbufferB, {}, graphics::ImageLayoutShaderReadOnly);
-				cb->image_barrier(img_gbufferC, {}, graphics::ImageLayoutShaderReadOnly);
-				cb->image_barrier(img_gbufferD, {}, graphics::ImageLayoutShaderReadOnly);
-				cb->image_barrier(img_dep, {}, graphics::ImageLayoutShaderReadOnly);
-				cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-				prm_deferred.bind_dss(cb);
-				cb->bind_pipeline(get_deferred_pipeline(pl_mod));
-				cb->draw(3, 1, 0, 0);
-				cb->end_renderpass();
+					cb->image_barrier(img_dst_ms, {}, graphics::ImageLayoutAttachment);
+					cb->image_barrier(img_dep_ms, {}, graphics::ImageLayoutAttachment);
+					cb->image_barrier(img_dst, {}, graphics::ImageLayoutAttachment);
+					cb->image_barrier(img_dep, {}, graphics::ImageLayoutAttachment);
+					cb->begin_renderpass(nullptr, fb_fwd_clear, { vec4( 0.5f, 0.55f, 0.7f, 1.f ), vec4(1.f, 0.f, 0.f, 0.f)});
+					prm_fwd.bind_dss(cb);
+
+					for (auto& m : draw_data.meshes)
+					{
+						auto& mesh_res = mesh_reses[m.mesh_id];
+						auto& mat_res = mat_reses[m.mat_id];
+						if (!mesh_res.arm)
+						{
+							cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+							cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+							cb->bind_pipeline(get_material_pipeline(mat_res, "mesh"_h, 0, "FORCE_FORWARD"_h));
+							cb->draw_indexed(mesh_res.idx_cnt, mesh_res.idx_off, mesh_res.vtx_off, 1, (m.mat_id << 16) + m.ins_id);
+						}
+						else
+						{
+							cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+							cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+							cb->bind_pipeline(get_material_pipeline(mat_res, "mesh"_h, "ARMATURE"_h, "FORCE_FORWARD"_h));
+							cb->draw_indexed(mesh_res.idx_cnt, mesh_res.idx_off, mesh_res.vtx_off, 1, (m.mat_id << 16) + m.ins_id);
+						}
+					}
+
+					cb->end_renderpass();
+				}
 			}
 			cb->end_debug_label();
 
-			// forward pass
-			cb->begin_debug_label("Forward Shading");
+			if (mode == RenderModeShaded)
 			{
-				cb->image_barrier(img_dst, {}, graphics::ImageLayoutShaderReadOnly);
-				cb->begin_renderpass(nullptr, img_dst_ms->get_shader_write_dst());
-				cb->bind_pipeline(pl_blit);
-				cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
-				cb->draw(3, 1, 0, 0);
-				cb->end_renderpass();
+				cb->begin_debug_label("Store Last Frame");
 
-				cb->image_barrier(img_dep, {}, graphics::ImageLayoutShaderReadOnly);
-				cb->begin_renderpass(nullptr, img_dep_ms->get_shader_write_dst());
-				cb->bind_pipeline(pl_blit_dep);
-				cb->bind_descriptor_set(0, img_dep->get_shader_read_src(0, 0, sp_nearest));
-				cb->draw(3, 1, 0, 0);
-				cb->end_renderpass();
-
-				for (auto& b : transparent_batcher.batches)
-					b.second.draw_indices.clear();
-				draw_data.reset(PassForward, CateMesh | CateGrassField | CateParticle);
-				for (auto n : camera_culled_nodes)
-					n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
-				transparent_batcher.collect(draw_data, cb);
-
-				for (auto& p : draw_data.particles)
-				{
-					auto off = buf_particles.add(nullptr, p.ptcs.size());
-					for (auto i = 0; i < p.ptcs.size(); i++)
-					{
-						auto& src = p.ptcs[i];
-						auto dst = buf_particles.item(off + i);
-						dst.child("i_pos"_h).as<vec3>() = src.pos;
-						dst.child("i_xext"_h).as<vec3>() = src.x_ext;
-						dst.child("i_yext"_h).as<vec3>() = src.y_ext;
-						dst.child("i_uv"_h).as<vec4>() = src.uv;
-						dst.child("i_col"_h).as<cvec4>() = src.col;
-						dst.child("i_time"_h).as<float>() = src.time;
-					}
-				}
-				buf_particles.upload(cb);
-				buf_particles.reset();
-
-				cb->image_barrier(img_dst, {}, graphics::ImageLayoutAttachment);
-				cb->image_barrier(img_dep, {}, graphics::ImageLayoutAttachment);
-				cb->begin_renderpass(nullptr, fb_fwd);
-				prm_fwd.bind_dss(cb);
-
-				transparent_batcher.draw(cb);
-
-				for (auto& t : draw_data.terrains)
-				{
-					cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "grass_field"_h, 0, 0));
-					prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (t.mat_id << 16) + t.ins_id;
-					prm_fwd.push_constant(cb);
-					cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
-				}
-
-				{
-					cb->bind_vertex_buffer(buf_particles.buf.get(), 0);
-					auto vtx_off = 0;
-					for (auto& p : draw_data.particles)
-					{
-						cb->bind_pipeline(get_material_pipeline(mat_reses[p.mat_id], "particle"_h, 0, 0));
-						cb->draw(p.ptcs.size(), 1, vtx_off, p.mat_id << 16);
-						vtx_off += p.ptcs.size();
-					}
-				}
-
-				cb->end_renderpass();
-			}
-			cb->end_debug_label();
-
-			cb->begin_debug_label("Store Last Frame");
-			{
 				cb->image_barrier(img_dst, {}, graphics::ImageLayoutShaderReadOnly);
 				cb->image_barrier(img_dep, {}, graphics::ImageLayoutShaderReadOnly);
 
@@ -2343,10 +2448,11 @@ namespace flame
 				cb->bind_descriptor_set(0, img_dep->get_shader_read_src(0, 0, sp_nearest));
 				cb->draw(3, 1, 0, 0);
 				cb->end_renderpass();
-			}
-			cb->end_debug_label();
 
-			auto draw_common = [&](const CommonDraw& d, const cvec4& color) {
+				cb->end_debug_label();
+			}
+
+			auto draw_object = [&](const ObjectDrawData& d, const cvec4& color) {
 				switch (d.type)
 				{
 				case "mesh"_h:
@@ -2390,9 +2496,10 @@ namespace flame
 			};
 
 			// post processing
-			cb->begin_debug_label("Post Processing");
-			if ((mode == RenderModeShaded || mode == RenderModeCameraLight || mode == RenderModeCameraLightButNoSky) && post_processing_enable)
+			if ((mode == RenderModeShaded || mode == RenderModeCameraLight) && post_processing_enable)
 			{
+				cb->begin_debug_label("Post Processing");
+
 				if (ssao_enable)
 				{
 				}
@@ -2457,7 +2564,7 @@ namespace flame
 						{
 							cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
 							for (auto& d : od.draws)
-								draw_common(d, od.color);
+								draw_object(d, od.color);
 							cb->end_renderpass();
 
 							for (auto i = 1; i < n_levels; i++)
@@ -2487,7 +2594,7 @@ namespace flame
 
 							cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 							for (auto& d : od.draws)
-								draw_common(d, cvec4(0));
+								draw_object(d, cvec4(0));
 							cb->end_renderpass();
 
 							cb->image_barrier(img_dst, {}, graphics::ImageLayoutAttachment);
@@ -2505,6 +2612,7 @@ namespace flame
 				cb->begin_debug_label("Tone Mapping");
 				if (tone_mapping_enable)
 				{
+					auto& prm_luma = render_task->prm_luma;
 					cb->image_barrier(img_dst, {}, graphics::ImageLayoutGeneral);
 					prm_luma.bind_dss(cb);
 					const auto min_log_luma = -5.f;
@@ -2563,94 +2671,103 @@ namespace flame
 					cb->end_renderpass();
 				}
 				cb->end_debug_label();
+
+				cb->end_debug_label();
 			}
-			cb->end_debug_label();
 
-			cb->begin_debug_label("Outline (max)");
+			if (mode != RenderModeSimple)
 			{
-				for (auto& od : outline_groups)
+				cb->begin_debug_label("Outline (max)");
 				{
-					if (od.mode != "MAX"_h)
-						continue;
-					cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
-					for (auto& d : od.draws)
-						draw_common(d, od.color);
-					cb->end_renderpass();
-
-					const auto w = od.width;
-					auto len = w * 2 + 1;
-					prm_blur.pc.child("off"_h).as<int>() = -w;
-					prm_blur.pc.child("len"_h).as<int>() = len;
-					prm_blur.pc.child("pxsz"_h).as<vec2>() = 1.f / (vec2)img_back0->extent;
-					memcpy(prm_blur.pc.child("weights"_h).data, get_gauss_blur_weights(len), sizeof(float) * len);
-					prm_blur.pc.mark_dirty();
-					prm_blur.push_constant(cb);
-
-					cb->image_barrier(img_back0, {}, graphics::ImageLayoutShaderReadOnly);
-					cb->begin_renderpass(nullptr, img_back1->get_shader_write_dst());
-					cb->bind_pipeline(pl_blur_max_h);
-					cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
-					cb->draw(3, 1, 0, 0);
-					cb->end_renderpass();
-
-					cb->image_barrier(img_back1, {}, graphics::ImageLayoutShaderReadOnly);
-					cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
-					cb->bind_pipeline(pl_blur_max_v);
-					cb->bind_descriptor_set(0, img_back1->get_shader_read_src());
-					cb->draw(3, 1, 0, 0);
-					cb->end_renderpass();
-
-					cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-					for (auto& d : od.draws)
-						draw_common(d, cvec4(0));
-					cb->end_renderpass();
-
-					cb->image_barrier(img_back0, {}, graphics::ImageLayoutShaderReadOnly);
-					cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-					cb->bind_pipeline(pl_blend);
-					cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
-					cb->draw(3, 1, 0, 0);
-					cb->end_renderpass();
-				}
-			}
-			cb->end_debug_label();
-
-			cb->begin_debug_label("Primitives");
-			{
-				buf_primitives.upload(cb);
-				buf_primitives.reset();
-				cb->image_barrier(img_dep, {}, graphics::ImageLayoutAttachment);
-				cb->begin_renderpass(nullptr, fb_primitive);
-				cb->bind_vertex_buffer(buf_primitives.buf.get(), 0);
-				cb->bind_pipeline_layout(prm_plain.pll);
-				prm_plain.pc.mark_dirty_c("mvp"_h).as<mat4>() = camera->proj_view_mat;
-				prm_plain.push_constant(cb);
-				{
-					auto vtx_off = 0;
-					for (auto& d : primitives_draws)
+					for (auto& od : outline_groups)
 					{
-						prm_plain.pc.mark_dirty_c("col"_h).as<vec4>() = vec4(d.color) / 255.f;
-						prm_plain.push_constant(cb);
-						switch (d.type)
-						{
-						case "LineList"_h:
-							cb->bind_pipeline(d.depth_test ? pl_line3d_dep : pl_line3d);
-							break;
-						case "LineStrip"_h:
-							cb->bind_pipeline(d.depth_test ? pl_line_strip3d_dep : pl_line_strip3d);
-							break;
-						case "TriangleList"_h:
-							cb->bind_pipeline(d.depth_test ? pl_triangle3d_dep : pl_triangle3d);
-							break;
-						}
-						cb->draw(d.vtx_cnt, 1, vtx_off, 0);
-						vtx_off += d.vtx_cnt;
+						if (od.mode != "MAX"_h)
+							continue;
+						cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+						for (auto& d : od.draws)
+							draw_object(d, od.color);
+						cb->end_renderpass();
+
+						const auto w = od.width;
+						auto len = w * 2 + 1;
+						prm_blur.pc.child("off"_h).as<int>() = -w;
+						prm_blur.pc.child("len"_h).as<int>() = len;
+						prm_blur.pc.child("pxsz"_h).as<vec2>() = 1.f / (vec2)img_back0->extent;
+						memcpy(prm_blur.pc.child("weights"_h).data, get_gauss_blur_weights(len), sizeof(float) * len);
+						prm_blur.pc.mark_dirty();
+						prm_blur.push_constant(cb);
+
+						cb->image_barrier(img_back0, {}, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, img_back1->get_shader_write_dst());
+						cb->bind_pipeline(pl_blur_max_h);
+						cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+
+						cb->image_barrier(img_back1, {}, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst());
+						cb->bind_pipeline(pl_blur_max_v);
+						cb->bind_descriptor_set(0, img_back1->get_shader_read_src());
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+
+						cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+						for (auto& d : od.draws)
+							draw_object(d, cvec4(0));
+						cb->end_renderpass();
+
+						cb->image_barrier(img_back0, {}, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+						cb->bind_pipeline(pl_blend);
+						cb->bind_descriptor_set(0, img_back0->get_shader_read_src());
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
 					}
 				}
-				cb->end_renderpass();
-				primitives_draws.clear();
+				cb->end_debug_label();
 			}
-			cb->end_debug_label();
+
+			if (mode != RenderModeSimple)
+			{
+				cb->begin_debug_label("Primitives");
+				{
+					buf_primitives.upload(cb);
+					buf_primitives.reset();
+					cb->image_barrier(img_dep, {}, graphics::ImageLayoutAttachment);
+
+					auto& prm_plain = render_task->prm_plain;
+					cb->begin_renderpass(nullptr, render_task->fb_primitive.get());
+					cb->bind_vertex_buffer(buf_primitives.buf.get(), 0);
+					cb->bind_pipeline_layout(prm_plain.pll);
+					prm_plain.pc.mark_dirty_c("mvp"_h).as<mat4>() = camera->proj_view_mat;
+					prm_plain.push_constant(cb);
+					{
+						auto vtx_off = 0;
+						for (auto& d : primitives_draws)
+						{
+							prm_plain.pc.mark_dirty_c("col"_h).as<vec4>() = vec4(d.color) / 255.f;
+							prm_plain.push_constant(cb);
+							switch (d.type)
+							{
+							case "LineList"_h:
+								cb->bind_pipeline(d.depth_test ? pl_line3d_dep : pl_line3d);
+								break;
+							case "LineStrip"_h:
+								cb->bind_pipeline(d.depth_test ? pl_line_strip3d_dep : pl_line_strip3d);
+								break;
+							case "TriangleList"_h:
+								cb->bind_pipeline(d.depth_test ? pl_triangle3d_dep : pl_triangle3d);
+								break;
+							}
+							cb->draw(d.vtx_cnt, 1, vtx_off, 0);
+							vtx_off += d.vtx_cnt;
+						}
+					}
+					cb->end_renderpass();
+					primitives_draws.clear();
+				}
+				cb->end_debug_label();
+			}
 
 			if (render_task->canvas)
 			{
@@ -2733,15 +2850,15 @@ namespace flame
 				for (auto i = n_mesh_draws; i < draw_data.meshes.size(); i++)
 				{
 					auto& m = draw_data.meshes[i];
-					auto& mesh_r = mesh_reses[m.mesh_id];
-					if (!mesh_r.arm)
+					auto& mesh_res = mesh_reses[m.mesh_id];
+					if (!mesh_res.arm)
 					{
 						cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 						cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
 						cb->bind_pipeline(pl_mesh_pickup);
 						prm_fwd.pc.mark_dirty_c("i"_h).as<ivec4>() = ivec4((int)nodes.size() + 1, 0, 0, 0);
 						prm_fwd.push_constant(cb.get());
-						cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.ins_id);
+						cb->draw_indexed(mesh_res.idx_cnt, mesh_res.idx_off, mesh_res.vtx_off, 1, m.ins_id);
 					}
 					else
 					{
@@ -2750,7 +2867,7 @@ namespace flame
 						cb->bind_pipeline(pl_mesh_arm_pickup);
 						prm_fwd.pc.mark_dirty_c("i"_h).as<ivec4>() = ivec4((int)nodes.size() + 1, 0, 0, 0);
 						prm_fwd.push_constant(cb.get());
-						cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, m.ins_id);
+						cb->draw_indexed(mesh_res.idx_cnt, mesh_res.idx_off, mesh_res.vtx_off, 1, m.ins_id);
 					}
 
 					nodes.push_back(n);

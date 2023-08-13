@@ -182,6 +182,10 @@ namespace flame
 
 		void CommandBufferPrivate::bind_pipeline_layout(PipelineLayoutPtr pll, PipelineType plt)
 		{
+			if (curr_gpl && curr_gpl->layout != pll)
+				curr_gpl = nullptr;
+			if (curr_cpl && curr_cpl->layout != pll)
+				curr_cpl = nullptr;
 			curr_plt = plt;
 			curr_pll = pll;
 		}

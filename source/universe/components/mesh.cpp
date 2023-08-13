@@ -220,19 +220,25 @@ namespace flame
 	void cMeshPrivate::on_active()
 	{
 		parmature = entity->get_parent_component<cArmatureT>();
-		if (parmature)
-			instance_id = parmature->instance_id;
-		else
-			instance_id = sRenderer::instance()->register_mesh_instance(-1);
+		if (instance_id != 0)
+		{
+			if (parmature)
+				instance_id = parmature->instance_id;
+			else
+				instance_id = sRenderer::instance()->register_mesh_instance(-1);
+		}
 
 		node->mark_transform_dirty();
 	}
 
 	void cMeshPrivate::on_inactive()
 	{
-		if (!parmature)
-			sRenderer::instance()->register_mesh_instance(instance_id);
-		instance_id = -1;
+		if (instance_id != 0)
+		{
+			if (!parmature)
+				sRenderer::instance()->register_mesh_instance(instance_id);
+			instance_id = -1;
+		}
 	}
 
 	struct cMeshCreate : cMesh::Create

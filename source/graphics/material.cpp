@@ -275,7 +275,6 @@ namespace flame
 				if (_filename == L"default_cyan")
 					return default_cyan_material;
 
-
 				auto filename = Path::get(_filename);
 
 				for (auto& m : loaded_materials)

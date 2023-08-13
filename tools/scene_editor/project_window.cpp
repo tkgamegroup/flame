@@ -46,92 +46,110 @@ static void update_thumbnail(const std::filesystem::path& path)
 	auto ext = path.extension();
 	if (ext == L".prefab")
 	{
+		static uint steps = 0xffffffff;
+		if (steps != 0xffffffff)
+			return;
+		steps = 0;
 		add_event([path]() {
-			auto e = Entity::create();
-			e->add_component<cNode>();
-			auto e_camera = Entity::create();
+			static EntityPtr e;
+			static EntityPtr e_prefab;
+			static cCameraPtr camera;
+			static graphics::ImagePtr thumbnail;
+			static RenderTaskPtr render_task;
+			if (steps == 0)
 			{
-				auto node = e_camera->add_component<cNode>();
-				auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
-				node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
-			}
-			auto camera = e_camera->add_component<cCamera>();
-			e->add_child(e_camera);
-			auto e_prefab = Entity::create();
-			e_prefab->load(path);
-			if (auto node = e_prefab->get_component<cNode>(); node)
-				node->set_pos(vec3(-2000.f));
-			e->add_child(e_prefab);
-
-			app.world->root->add_child(e);
-
-			// first update the scene to get the bounds
-			app.scene->update();
-			AABB bounds;
-			e_prefab->forward_traversal([&](EntityPtr e) {
-				if (auto node = e->get_component<cNode>(); node)
+				e = Entity::create();
+				e->add_component<cNode>();
+				auto e_camera = Entity::create();
 				{
-					if (!node->bounds.invalid())
-						bounds.expand(node->bounds);
+					auto node = e_camera->add_component<cNode>();
+					auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
+					node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
 				}
-			});
-			auto camera_node = camera->node;
-			if (!bounds.invalid())
-			{
-				auto pos = fit_camera_to_object(mat3(camera_node->g_qut), camera->fovy, camera->zNear, camera->aspect, bounds);
-				camera_node->set_pos(pos);
+				camera = e_camera->add_component<cCamera>();
+				camera->zFar = 500.f;
+				e->add_child(e_camera);
+				e_prefab = Entity::create();
+				e_prefab->load(path);
+				if (auto node = e_prefab->get_component<cNode>(); node)
+					node->set_pos(vec3(-3000.f));
+				e->add_child(e_prefab);
+
+				app.world->root->add_child(e);
+
+				thumbnail = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(128, 128, 1), graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
+				render_task = app.renderer->add_render_task(RenderModeSimple, camera, { thumbnail->get_view() }, graphics::ImageLayoutShaderReadOnly, false, false);
+
+				steps++;
+				return true;
 			}
-			// second update the scene to get the camera on the right place
-			app.scene->update();
-
-			auto thumbnail = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(128, 128, 1), graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
-
-			auto render_task = app.renderer->add_render_task(RenderModeCameraLightButNoSky, camera, { thumbnail->get_view() }, graphics::ImageLayoutShaderReadOnly, false, false);
+			if (steps == 1)
 			{
-				graphics::Debug::start_capture_frame();
-				graphics::InstanceCommandBuffer cb;
-				app.renderer->render(0, cb.get());
-				cb->image_barrier(thumbnail, {}, graphics::ImageLayoutTransferSrc);
-				cb.excute();
-				graphics::Debug::end_capture_frame();
-			}
-			app.renderer->remove_render_task(render_task);
-
-			auto thumbnails_dir = path.parent_path() / L".thumbnails";
-			if (!std::filesystem::exists(thumbnails_dir))
-				std::filesystem::create_directories(thumbnails_dir);
-			auto thumbnail_path = thumbnails_dir / (path.filename().wstring() + L".png");
-			thumbnail->save(thumbnail_path);
-			delete thumbnail;
-
-			app.world->root->remove_child(e);
-
-			for (auto& v : project_window.views)
-			{
-				auto pv = (ProjectView*)v.get();
-				for (auto& item : pv->explorer.items)
-				{
-					if (item->path == path)
+				AABB bounds;
+				e_prefab->forward_traversal([&](EntityPtr e) {
+					if (auto node = e->get_component<cNode>(); node)
 					{
-						if (!item->icon_releaser)
+						if (!node->bounds.invalid())
+							bounds.expand(node->bounds);
+					}
+				});
+				auto camera_node = camera->node;
+				if (!bounds.invalid())
+				{
+					auto pos = fit_camera_to_object(mat3(camera_node->g_qut), camera->fovy, camera->zNear, camera->aspect, bounds);
+					camera_node->set_pos(pos);
+				}
+
+				steps++;
+				return true;
+			}
+			if (steps == 2)
+			{
+				graphics::Queue::get()->wait_idle();
+
+				app.renderer->remove_render_task(render_task);
+
+				auto thumbnails_dir = path.parent_path() / L".thumbnails";
+				if (!std::filesystem::exists(thumbnails_dir))
+					std::filesystem::create_directories(thumbnails_dir);
+				auto thumbnail_path = thumbnails_dir / (path.filename().wstring() + L".png");
+				thumbnail->save(thumbnail_path);
+				delete thumbnail;
+
+				app.world->root->remove_child(e);
+
+				for (auto& v : project_window.views)
+				{
+					auto pv = (ProjectView*)v.get();
+					for (auto& item : pv->explorer.items)
+					{
+						if (item->path == path)
 						{
-							if (item->icon)
-								graphics::release_icon(item->icon);
+							if (!item->icon_releaser)
+							{
+								if (item->icon)
+									graphics::release_icon(item->icon);
+							}
+							else
+								item->icon_releaser(item->icon);
+
+							item->icon = graphics::Image::get(thumbnail_path);
+							item->icon_releaser = [](graphics::Image* img) {
+								graphics::Image::release(img);
+							};
+
+							break;
 						}
-						else
-							item->icon_releaser(item->icon);
-
-						item->icon = graphics::Image::get(thumbnail_path);
-						item->icon_releaser = [](graphics::Image* img) {
-							graphics::Image::release(img);
-						};
-
-						break;
 					}
 				}
+
+				steps = 0xffffffff;
+				return false;
 			}
 			return false;
 		});
+
+		app.render_frames += 3;
 	}
 }
 

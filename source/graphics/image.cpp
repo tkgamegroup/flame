@@ -257,7 +257,10 @@ namespace flame
 		{
 			InstanceCommandBuffer cb;
 			cb->image_barrier(this, { 0, n_levels, 0, n_layers }, ImageLayoutTransferDst);
-			cb->clear_color_image(this, { 0, n_levels, 0, n_layers }, color);
+			if (format >= Format_Depth_Begin && format <= Format_Depth_End)
+				cb->clear_depth_image(this, { 0, n_levels, 0, n_layers }, color.x);
+			else
+				cb->clear_color_image(this, { 0, n_levels, 0, n_layers }, color);
 			cb->image_barrier(this, { 0, n_levels, 0, n_layers }, dst_layout);
 			cb.excute();
 		}

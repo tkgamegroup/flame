@@ -4,15 +4,14 @@
 
 namespace flame
 {
-	struct CommonDraw;
+	struct ObjectDrawData;
 	struct DrawData;
 
 	enum RenderMode
 	{
-		RenderModeSimple, // forward shading, no msaa, no post processing
+		RenderModeSimple, // forward shading, no post processing
 		RenderModeShaded,
 		RenderModeCameraLight,
-		RenderModeCameraLightButNoSky,
 		RenderModeAlbedoData,
 		RenderModeNormalData,
 		RenderModeMetallicData,
@@ -246,7 +245,7 @@ namespace flame
 		virtual void set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, graphics::ImageViewPtr data_map) = 0;
 
 		// Reflect
-		virtual void draw_outlines(const std::vector<CommonDraw>& draws, const cvec4& color, uint width, uint mode = "MAX"_h/*or BOX*/) = 0;
+		virtual void draw_outlines(const std::vector<ObjectDrawData>& draw_datas, const cvec4& color, uint width, uint mode = "MAX"_h/*or BOX*/) = 0;
 		// Reflect
 		// type: "LineList"_h, "LineStrip"_h, "TriangleList"_h
 		virtual void draw_primitives(uint type, const vec3* points, uint count, const cvec4& color, bool depth_test = false) = 0;
