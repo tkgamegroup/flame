@@ -64,6 +64,9 @@ namespace flame
 			void blit_image(ImagePtr src, ImagePtr dst, std::span<ImageBlit> blits, Filter filter) override;
 			void clear_color_image(ImagePtr img, const ImageSub& sub, const vec4& color) override;
 			void clear_depth_image(ImagePtr img, const ImageSub& sub, float depth) override;
+			void set_event(EventPtr ev) override;
+			void reset_event(EventPtr ev) override;
+			void wait_event(EventPtr ev) override;
 			void begin_debug_label(const std::string& str) override;
 			void end_debug_label() override;
 			void end() override;
@@ -85,6 +88,13 @@ namespace flame
 			VkSemaphore vk_semaphore;
 
 			~SemaphorePrivate();
+		};
+
+		struct EventPrivate : Event
+		{
+			VkEvent vk_event;
+
+			~EventPrivate();
 		};
 
 		struct FencePrivate : Fence

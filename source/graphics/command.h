@@ -180,6 +180,10 @@ namespace flame
 
 			virtual void clear_color_image(ImagePtr img, const ImageSub& sub, const vec4& color) = 0;
 			virtual void clear_depth_image(ImagePtr img, const ImageSub& sub, float depth) = 0;
+			
+			virtual void set_event(EventPtr ev) = 0;
+			virtual void reset_event(EventPtr ev) = 0;
+			virtual void wait_event(EventPtr ev) = 0;
 
 			virtual void begin_debug_label(const std::string& str) = 0;
 			virtual void end_debug_label() = 0;
@@ -228,6 +232,17 @@ namespace flame
 			struct Create
 			{
 				virtual SemaphorePtr operator()() = 0;
+			};
+			FLAME_GRAPHICS_API static Create& create;
+		};
+
+		struct Event
+		{
+			virtual ~Event() {}
+
+			struct Create
+			{
+				virtual EventPtr operator()() = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 		};

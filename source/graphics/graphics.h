@@ -27,6 +27,7 @@ namespace flame
 		FLAME_GRAPHICS_TYPE(CommandPool);
 		FLAME_GRAPHICS_TYPE(CommandBuffer);
 		FLAME_GRAPHICS_TYPE(Semaphore);
+		FLAME_GRAPHICS_TYPE(Event);
 		FLAME_GRAPHICS_TYPE(Fence);
 		FLAME_GRAPHICS_TYPE(Queue);
 		FLAME_GRAPHICS_TYPE(Shader);

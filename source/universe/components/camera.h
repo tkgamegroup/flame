@@ -18,6 +18,8 @@ namespace flame
 		float zFar = 1000.f;
 		// x / y
 		float aspect = 1.f;
+		// Reflect
+		uint layer = 1;
 
 		mat4 view_mat;
 		mat4 view_mat_inv;

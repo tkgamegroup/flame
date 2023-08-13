@@ -64,6 +64,8 @@ namespace flame
 		std::string name;
 		// Reflect
 		TagFlags tag = TagGeneral;
+		// Reflect
+		uint layer = 1;
 
 		// Reflect
 		bool enable = true;

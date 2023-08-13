@@ -610,6 +610,22 @@ namespace flame
 			vkCmdClearDepthStencilImage(vk_command_buffer, img->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &cv, 1, &range);
 		}
 
+		void CommandBufferPrivate::set_event(EventPtr ev)
+		{
+			vkCmdSetEvent(vk_command_buffer, ev->vk_event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+		}
+
+		void CommandBufferPrivate::reset_event(EventPtr ev)
+		{
+			vkCmdResetEvent(vk_command_buffer, ev->vk_event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+		}
+
+		void CommandBufferPrivate::wait_event(EventPtr ev)
+		{
+			vkCmdWaitEvents(vk_command_buffer, 1, &ev->vk_event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+				0, nullptr, 0, nullptr, 0, nullptr);
+		}
+
 		void CommandBufferPrivate::begin_debug_label(const std::string& str)
 		{
 			VkDebugUtilsLabelEXT info = {};
@@ -763,6 +779,30 @@ namespace flame
 			}
 		}Semaphore_create;
 		Semaphore::Create& Semaphore::create = Semaphore_create;
+
+		EventPrivate::~EventPrivate()
+		{
+			if (app_exiting) return;
+
+			vkDestroyEvent(device->vk_device, vk_event, nullptr);
+			unregister_object(vk_event);
+		}
+
+		struct EventCreate : Event::Create
+		{
+			EventPtr operator()() override
+			{
+				auto ret = new EventPrivate;
+
+				VkEventCreateInfo info = {};
+				info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+				chk_res(vkCreateEvent(device->vk_device, &info, nullptr, &ret->vk_event));
+				register_object(ret->vk_event, "Event", ret);
+
+				return ret;
+			}
+		}Event_create;
+		Event::Create& Event::create = Event_create;
 
 		FencePrivate::~FencePrivate()
 		{

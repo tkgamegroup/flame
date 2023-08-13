@@ -30,6 +30,8 @@ namespace flame
 		std::unique_ptr<graphics::Framebuffer>		fb_primitive;
 
 		graphics::PipelineResourceManager			prm_plain;
+		graphics::StorageBuffer						buf_camera;
+		std::unique_ptr<graphics::DescriptorSet>	ds_camera;
 		std::unique_ptr<graphics::DescriptorSet>	ds_target;
 		graphics::PipelineResourceManager			prm_fwd;
 		graphics::PipelineResourceManager			prm_gbuf;

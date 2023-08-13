@@ -67,6 +67,7 @@ static void update_thumbnail(const std::filesystem::path& path)
 					node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
 				}
 				camera = e_camera->add_component<cCamera>();
+				camera->layer = 4;
 				camera->zFar = 500.f;
 				e->add_child(e_camera);
 				e_prefab = Entity::create();
@@ -87,6 +88,7 @@ static void update_thumbnail(const std::filesystem::path& path)
 			{
 				AABB bounds;
 				e_prefab->forward_traversal([&](EntityPtr e) {
+					e->layer = 4;
 					if (auto node = e->get_component<cNode>(); node)
 					{
 						if (!node->bounds.invalid())

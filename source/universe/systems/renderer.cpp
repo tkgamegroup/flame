@@ -47,12 +47,10 @@ namespace flame
 	graphics::SparseSlots	dir_lights;
 	graphics::SparseSlots	pt_lights;
 	// Buffers
-	graphics::StorageBuffer						buf_camera;
 	graphics::StorageBuffer						buf_instance;
 	graphics::StorageBuffer						buf_material;
 	graphics::StorageBuffer						buf_lighting;
 	graphics::StorageBuffer						buf_luma;
-	std::unique_ptr<graphics::DescriptorSet>	ds_camera;
 	std::unique_ptr<graphics::DescriptorSet>	ds_instance;
 	std::unique_ptr<graphics::DescriptorSet>	ds_material;
 	std::unique_ptr<graphics::DescriptorSet>	ds_lighting;
@@ -420,6 +418,12 @@ namespace flame
 	{
 		prm_plain.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain.pll"), graphics::PipelineGraphics);
 
+		auto dsl_camera = graphics::DescriptorSetLayout::get(L"flame\\shaders\\camera.dsl");
+		buf_camera.create(graphics::BufferUsageUniform, dsl_camera->get_buf_ui("Camera"_h));
+		ds_camera.reset(graphics::DescriptorSet::create(nullptr, dsl_camera));
+		ds_camera->set_buffer("Camera"_h, 0, buf_camera.buf.get());
+		ds_camera->update();
+
 		auto dsl_target = graphics::DescriptorSetLayout::get(L"flame\\shaders\\target.dsl");
 		ds_target.reset(graphics::DescriptorSet::create(nullptr, dsl_target));
 
@@ -630,12 +634,6 @@ namespace flame
 
 		uint u;
 		auto use_mesh_shader = graphics_device->get_config("mesh_shader"_h, u) ? u == 1 : true;
-
-		auto dsl_camera = graphics::DescriptorSetLayout::get(L"flame\\shaders\\camera.dsl");
-		buf_camera.create(graphics::BufferUsageUniform, dsl_camera->get_buf_ui("Camera"_h));
-		ds_camera.reset(graphics::DescriptorSet::create(nullptr, dsl_camera));
-		ds_camera->set_buffer("Camera"_h, 0, buf_camera.buf.get());
-		ds_camera->update();
 
 		auto dsl_instance = graphics::DescriptorSetLayout::get(L"flame\\shaders\\instance.dsl");
 		buf_instance.create(graphics::BufferUsageStorage, dsl_instance->get_buf_ui("Instance"_h));
@@ -1845,6 +1843,7 @@ namespace flame
 			return;
 		}
 
+		auto first = true;
 		for (auto& render_task : render_tasks)
 		{
 			if (render_task->camera == INVALID_POINTER || render_task->targets.empty())
@@ -1888,6 +1887,7 @@ namespace flame
 				buf_vtx_arm.upload(cb);
 				buf_idx_arm.upload(cb);
 
+				auto& buf_camera = render_task->buf_camera;
 				buf_camera.child("zNear"_h).as<float>() = camera->zNear;
 				buf_camera.child("zFar"_h).as<float>() = camera->zFar;
 				buf_camera.child("fovy"_h).as<float>() = camera->fovy;
@@ -1965,7 +1965,7 @@ namespace flame
 					buf_lighting.mark_dirty_c("dir_lights_count"_h).as<uint>() = n_dir_lights;
 					buf_lighting.mark_dirty_c("pt_lights_count"_h).as<uint>() = n_pt_lights;
 				}
-				else if (mode == RenderModeCameraLight || mode == RenderModeSimple)
+				else if (first && (mode == RenderModeCameraLight || mode == RenderModeSimple))
 				{
 					auto ins = buf_lighting.mark_dirty_ci("dir_lights"_h, camera_light_id);
 					ins.child("dir"_h).as<vec3>() = camera->view_mat_inv[2];
@@ -2225,7 +2225,10 @@ namespace flame
 						b.second.draw_indices.clear();
 					draw_data.reset(PassGBuffer, CateMesh | CateTerrain | CateSDF | CateMarchingCubes);
 					for (auto n : camera_culled_nodes)
-						n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+					{
+						if (n->entity->layer & camera->layer)
+							n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+					}
 					gbuffer_batcher.collect(draw_data, cb);
 
 					cb->image_barrier(img_dst, {}, graphics::ImageLayoutAttachment);
@@ -2337,7 +2340,10 @@ namespace flame
 						b.second.draw_indices.clear();
 					draw_data.reset(PassForward, CateMesh | CateGrassField | CateParticle);
 					for (auto n : camera_culled_nodes)
-						n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+					{
+						if (n->entity->layer & camera->layer)
+							n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+					}
 					transparent_batcher.collect(draw_data, cb);
 				}
 
@@ -2396,7 +2402,10 @@ namespace flame
 				{
 					draw_data.reset(PassPickUp, CateMesh);
 					for (auto n : camera_culled_nodes)
-						n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+					{
+						if (n->entity->layer & camera->layer)
+							n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+					}
 
 					cb->image_barrier(img_dst_ms, {}, graphics::ImageLayoutAttachment);
 					cb->image_barrier(img_dep_ms, {}, graphics::ImageLayoutAttachment);
@@ -2788,6 +2797,7 @@ namespace flame
 			cb->end_renderpass();
 			cb->image_barrier(img, iv->sub, render_task->final_layout);
 
+			first = false;
 		}
 		// clear draws
 		outline_groups.clear();

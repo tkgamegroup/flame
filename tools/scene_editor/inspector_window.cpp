@@ -2233,8 +2233,10 @@ void InspectorView::on_draw()
 				if (!preview_model)
 				{
 					preview_model = Entity::create();
-					preview_model->add_component<cNode>()->set_pos(vec3(-2000.f));
-					preview_model->add_component<cMesh>();
+					preview_model->layer = 2;
+					preview_model->add_component<cNode>();
+					auto mesh = preview_model->add_component<cMesh>();
+					mesh->instance_id = 0;
 				}
 
 				if (inspected_changed)
@@ -2254,6 +2256,7 @@ void InspectorView::on_draw()
 				{
 					static EntityPtr preview_node = nullptr;
 					static cCameraPtr preview_camera = nullptr;
+					static float camera_zoom = 1.f;
 					static graphics::ImagePtr preview_image = nullptr;
 					static RenderTaskPtr preview_render_task = nullptr;
 
@@ -2281,10 +2284,13 @@ void InspectorView::on_draw()
 					static uint preview_mesh_index = 0;
 					if (ImGui::CollapsingHeader("Preview"))
 					{
+						auto preview_mesh_changed = inspected_changed;
 						if (preview_mesh_index == 0xffffffff)
+						{
 							preview_mesh_index = 0;
+							preview_mesh_changed = true;
+						}
 						preview_mesh_index = min(preview_mesh_index, (uint)model->meshes.size() - 1);
-						auto preview_mesh_changed = false;
 						if (ImGui::BeginCombo("Mesh", str(preview_mesh_index).c_str()))
 						{
 							for (uint i = 0; i < model->meshes.size(); i++)
@@ -2308,13 +2314,9 @@ void InspectorView::on_draw()
 							preview_node->add_component<cNode>();
 
 							auto e_camera = Entity::create();
-							{
-								auto node = e_camera->add_component<cNode>();
-								node->set_pos(vec3(-2000.f));
-								auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
-								node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
-							}
+							e_camera->add_component<cNode>();
 							preview_camera = e_camera->add_component<cCamera>();
+							preview_camera->layer = 2;
 							preview_camera->zFar = 500.f;
 							preview_node->add_child(e_camera);
 
@@ -2334,7 +2336,7 @@ void InspectorView::on_draw()
 						}
 
 						auto& preview_mesh = model->meshes[preview_mesh_index];
-						if (inspected_changed || preview_mesh_changed)
+						if (preview_mesh_changed)
 						{
 							preview_model->get_component<cMesh>()->set_mesh_and_material(
 								model->filename.wstring() + L'#' + wstr(preview_mesh_index), L"default");
@@ -2346,18 +2348,57 @@ void InspectorView::on_draw()
 										if (!node->bounds.invalid())
 											bounds.expand(node->bounds);
 									}
-									});
+								});
 								auto camera_node = preview_camera->node;
 								if (!bounds.invalid())
 								{
-									auto pos = fit_camera_to_object(mat3(camera_node->g_qut), preview_camera->fovy, preview_camera->zNear, preview_camera->aspect, bounds);
+									auto pos = fit_camera_to_object(mat3(camera_node->g_qut), preview_camera->fovy, 
+										preview_camera->zNear, preview_camera->aspect, bounds);
+									camera_node->set_qut(quat(1.f, 0.f, 0.f, 0.f));
 									camera_node->set_pos(pos);
+									camera_zoom = length(pos);
 								}
 								return false;
 							}, 0.f, 2);
 						}
 
-						ImGui::Image(preview_image, vec2(256));
+						ImGui::Image(preview_image, vec2(preview_image->extent));
+						if (ImGui::IsItemHovered)
+						{
+							auto camera_node = preview_camera->node;
+
+							auto get_tar = [&]() {
+								return camera_node->global_pos() - camera_node->z_axis() * camera_zoom;
+							};
+
+							auto& io = ImGui::GetIO();
+							if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
+							{
+								disp /= vec2(preview_image->extent);
+								if (io.KeyAlt)
+								{
+									if (io.MouseDown[ImGuiMouseButton_Left])
+									{
+
+										disp *= -180.f;
+										disp = radians(disp);
+										auto qut = angleAxis(disp.x, vec3(0.f, 1.f, 0.f)) * camera_node->qut;
+										qut = angleAxis(disp.y, qut * vec3(1.f, 0.f, 0.f)) * qut;
+										camera_node->set_qut(qut);
+										camera_node->set_pos(get_tar() + (qut * vec3(0.f, 0.f, 1.f)) * camera_zoom);
+									}
+								}
+							}
+							if (auto scroll = io.MouseWheel; scroll != 0.f)
+							{
+								auto tar = get_tar();
+								if (scroll < 0.f)
+									camera_zoom = camera_zoom * 1.1f + 0.5f;
+								else
+									camera_zoom = max(0.f, camera_zoom / 1.1f - 0.5f);
+								camera_node->set_pos(tar + camera_node->z_axis() * camera_zoom);
+							}
+						}
 					}
 					else
 						preview_mesh_index = 0xffffffff;
