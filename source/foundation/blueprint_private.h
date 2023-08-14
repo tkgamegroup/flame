@@ -19,6 +19,8 @@ namespace flame
 
 	struct BlueprintPrivate : Blueprint
 	{
+		uint next_object_id = 1;
+
 		BlueprintPrivate();
 
 		BlueprintNodePtr add_node(BlueprintGroupPtr group /*null means the main group*/, const std::string& name,
@@ -44,6 +46,7 @@ namespace flame
 	struct BlueprintInstancePrivate : BlueprintInstance
 	{
 		BlueprintInstancePrivate(BlueprintPtr blueprint);
+		~BlueprintInstancePrivate();
 
 		void build() override;
 		void prepare_executing(uint group_name) override;

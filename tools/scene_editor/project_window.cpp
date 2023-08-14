@@ -58,6 +58,8 @@ static void update_thumbnail(const std::filesystem::path& path)
 			static RenderTaskPtr render_task;
 			if (steps == 0)
 			{
+				auto layer = 1 << (int)app.renderer->render_tasks.size();
+
 				e = Entity::create();
 				e->add_component<cNode>();
 				auto e_camera = Entity::create();
@@ -67,13 +69,10 @@ static void update_thumbnail(const std::filesystem::path& path)
 					node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
 				}
 				camera = e_camera->add_component<cCamera>();
-				camera->layer = 4;
-				camera->zFar = 500.f;
+				camera->layer = layer;
 				e->add_child(e_camera);
 				e_prefab = Entity::create();
 				e_prefab->load(path);
-				if (auto node = e_prefab->get_component<cNode>(); node)
-					node->set_pos(vec3(-3000.f));
 				e->add_child(e_prefab);
 
 				app.world->root->add_child(e);
@@ -88,7 +87,7 @@ static void update_thumbnail(const std::filesystem::path& path)
 			{
 				AABB bounds;
 				e_prefab->forward_traversal([&](EntityPtr e) {
-					e->layer = 4;
+					e->layer = camera->layer;
 					if (auto node = e->get_component<cNode>(); node)
 					{
 						if (!node->bounds.invalid())

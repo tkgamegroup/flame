@@ -1,6 +1,9 @@
 #include "blueprint_window.h"
 
 #include <flame/foundation/blueprint.h>
+#include <flame/universe/components/node.h>
+#include <flame/universe/components/camera.h>
+#include <flame/universe/components/mesh.h>
 
 BlueprintWindow blueprint_window;
 
@@ -20,6 +23,44 @@ BlueprintView::BlueprintView(const std::string& name) :
 #endif
 }
 
+struct BpNodePreview
+{
+	graphics::ImagePtr image = nullptr;
+	uint layer = 1;
+	EntityPtr node = nullptr;
+	EntityPtr model = nullptr;
+	cCameraPtr camera = nullptr;
+	float zoom = 1.f;
+	RenderTaskPtr render_task = nullptr;
+	uint changed_frame = 0;
+
+	~BpNodePreview()
+	{
+		if (node)
+			node->remove_from_parent();
+		if (image)
+			delete image;
+		if (render_task)
+			app.renderer->remove_render_task(render_task);
+	}
+};
+static std::map<BlueprintNodePtr, BpNodePreview> previews;
+
+void BlueprintView::close_blueprint()
+{
+	if (blueprint)
+	{
+		previews.clear();
+		Blueprint::release(blueprint);
+		blueprint = nullptr;
+	}
+	if (blueprint_instance)
+	{
+		delete blueprint_instance;
+		blueprint_instance = nullptr;
+	}
+}
+
 void BlueprintView::on_draw()
 {
 	bool opened = true;
@@ -27,29 +68,26 @@ void BlueprintView::on_draw()
 
 	if (ImGui::Button("Test: Open Blueprint"))
 	{
-		if (blueprint)
-		{
-			Blueprint::release(blueprint);
-			blueprint = nullptr;
-		}
-		if (blueprint_instance)
-		{
-			delete blueprint_instance;
-			blueprint_instance = nullptr;
-		}
+		close_blueprint();
 		blueprint = Blueprint::get(L"asserts\\test.blueprint");
 		blueprint_instance = BlueprintInstance::create(blueprint);
 	}
+	ImGui::SameLine();
+	if (ImGui::Button("Close Blueprint"))
+	{
+		close_blueprint();
+	}
 
-	static auto standard_library = BlueprintNodeLibrary::get(L"standard");
-	static auto geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
+	static uint group_name = "main"_h;
 
 	if (blueprint)
 	{
 		if (blueprint_instance->built_frame < blueprint->dirty_frame)
 			blueprint_instance->build();
 
-		ImGui::SameLine();
+		static auto standard_library = BlueprintNodeLibrary::get(L"standard");
+		static auto geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
+
 		if (ImGui::Button("Add Node"))
 			ImGui::OpenPopup("add_node");
 		if (ImGui::BeginPopup("add_node"))
@@ -119,6 +157,11 @@ void BlueprintView::on_draw()
 		auto& io = ImGui::GetIO();
 		auto dl = ImGui::GetWindowDrawList();
 		std::string tooltip; vec2 tooltip_pos;
+		auto get_slot_value = [](BlueprintArgument& arg)->std::string {
+			if (arg.type->tag != TagD)
+				return "";
+			return std::format("Value: {}", arg.type->serialize(arg.data));
+		};
 
 		ax::NodeEditor::SetCurrentEditor(im_editor);
 		if (blueprint_window.debugger->debugging == blueprint_instance)
@@ -133,11 +176,7 @@ void BlueprintView::on_draw()
 		for (auto& n : group->nodes)
 		{
 			BlueprintInstance::Node* instance_node = nullptr;
-			if (blueprint_window.debugger->debugging == blueprint_instance)
-			{
-				if (group->name_hash == blueprint_instance->executing_group)
-					instance_node = (BlueprintInstance::Node*)blueprint_instance->current_group->find(n.get());
-			}
+			instance_node = (BlueprintInstance::Node*)blueprint_instance->groups[group_name].find(n.get());
 
 			ax::NodeEditor::BeginNode((uint64)n.get());
 			auto display_name = n->name;
@@ -160,7 +199,7 @@ void BlueprintView::on_draw()
 							auto& arg = instance_node->inputs[i];
 							if (arg.type)
 							{
-								tooltip = std::format("Value: {}", arg.type->serialize(arg.data));
+								tooltip = get_slot_value(arg);
 								ax::NodeEditor::Suspend();
 								tooltip_pos = io.MousePos;
 								ax::NodeEditor::Resume();
@@ -181,10 +220,11 @@ void BlueprintView::on_draw()
 					}
 					if (!linked)
 					{
+						auto changed = 0;
 						ImGui::PushID(&input);
-						if (auto type = input.type; type && type->tag == TagD)
+						if (input.type && input.type->tag == TagD)
 						{
-							auto ti = (TypeInfo_Data*)type;
+							auto ti = (TypeInfo_Data*)input.type;
 							switch (ti->data_type)
 							{
 							case DataFloat:
@@ -195,6 +235,7 @@ void BlueprintView::on_draw()
 									if (i > 0)
 										ImGui::SameLine();
 									ImGui::DragScalar("", ImGuiDataType_Float, &((float*)input.data)[i], 0.01f);
+									changed |= ImGui::IsItemDeactivatedAfterEdit();
 									ImGui::PopID();
 									ImGui::PopItemWidth();
 								}
@@ -207,6 +248,7 @@ void BlueprintView::on_draw()
 									if (i > 0)
 										ImGui::SameLine();
 									ImGui::DragScalar("", ImGuiDataType_S32, &((int*)input.data)[i]);
+									changed |= ImGui::IsItemDeactivatedAfterEdit();
 									ImGui::PopID();
 									ImGui::PopItemWidth();
 								}
@@ -215,6 +257,13 @@ void BlueprintView::on_draw()
 							}
 						}
 						ImGui::PopID();
+						if (changed)
+						{
+							auto frame = frames;
+							input.data_changed_frame = frame;
+							group->data_changed_frame = frame;
+							blueprint->dirty_frame = frame;
+						}
 					}
 				}
 			}
@@ -238,7 +287,7 @@ void BlueprintView::on_draw()
 							auto& arg = instance_node->outputs[i];
 							if (arg.type)
 							{
-								tooltip = std::format("Value: {}", arg.type->serialize(arg.data));
+								tooltip = get_slot_value(arg);
 								ax::NodeEditor::Suspend();
 								tooltip_pos = io.MousePos;
 								ax::NodeEditor::Resume();
@@ -251,14 +300,103 @@ void BlueprintView::on_draw()
 
 			if (n->preview_provider)
 			{
-				if (ImGui::CollapsingHeader("Preview"))
+				if (instance_node)
 				{
-					if (instance_node)
-					{
-						BlueprintNodePreview preview;
-						n->preview_provider(instance_node->inputs.data(), instance_node->outputs.data(), &preview);
+					BpNodePreview* preview = nullptr;
+					if (auto it = previews.find(n.get()); it != previews.end())
+						preview = &it->second;
+					else
+						preview = &previews.emplace(n.get(), BpNodePreview()).first->second;
 
-						ImGui::Image(nullptr, ImVec2(200, 200));
+					BlueprintNodePreview data;
+					n->preview_provider(instance_node->inputs.data(), instance_node->outputs.data(), &data);
+					switch (data.type)
+					{
+					case "mesh"_h:
+					{
+						if (preview->changed_frame < instance_node->updated_frame)
+						{
+							if (!preview->model)
+							{
+								preview->layer = 1 << (int)app.renderer->render_tasks.size();
+
+								preview->model = Entity::create();
+								preview->model->layer = preview->layer;
+								preview->model->add_component<cNode>();
+								auto mesh = preview->model->add_component<cMesh>();
+								mesh->instance_id = 0;
+								mesh->set_material_name(L"default");
+							}
+							if (!preview->node)
+							{
+								preview->node = Entity::create();
+								preview->node->add_component<cNode>();
+
+								auto e_camera = Entity::create();
+								{
+									auto node = e_camera->add_component<cNode>();
+									auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
+									node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
+								}
+								preview->camera = e_camera->add_component<cCamera>();
+								preview->camera->layer = preview->layer;
+								preview->node->add_child(e_camera);
+
+								preview->node->add_child(preview->model);
+
+								app.world->root->add_child(preview->node);
+							}
+							if (!preview->image)
+							{
+								preview->image = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(256, 256, 1), graphics::ImageUsageAttachment |
+									graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
+							}
+							if (!preview->render_task)
+							{
+								preview->render_task = app.renderer->add_render_task(RenderModeSimple, preview->camera,
+									{ preview->image->get_view() }, graphics::ImageLayoutShaderReadOnly, false, false);
+							}
+
+							auto pmesh = (graphics::MeshPtr)data.data;
+							auto mesh = preview->model->get_component<cMesh>();
+							if (mesh->mesh_res_id != -1)
+							{
+								app.renderer->release_mesh_res(mesh->mesh_res_id);
+								mesh->mesh_res_id = -1;
+							}
+							mesh->mesh = pmesh;
+							mesh->mesh_res_id = app.renderer->get_mesh_res(pmesh);
+							mesh->node->mark_transform_dirty();
+
+							add_event([preview]() {
+								AABB bounds;
+								preview->model->forward_traversal([&](EntityPtr e) {
+									if (auto node = e->get_component<cNode>(); node)
+									{
+										if (!node->bounds.invalid())
+											bounds.expand(node->bounds);
+									}
+								});
+								auto camera_node = preview->camera->node;
+								if (!bounds.invalid())
+								{
+									auto pos = fit_camera_to_object(mat3(camera_node->g_qut), preview->camera->fovy,
+										preview->camera->zNear, preview->camera->aspect, bounds);
+									auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
+									camera_node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f))* q);
+									camera_node->set_pos(pos);
+									preview->zoom = length(pos);
+								}
+								return false;
+							}, 0.f, 2);
+
+							preview->changed_frame = instance_node->updated_frame;
+						}
+
+						if (preview->image)
+							ImGui::Image(preview->image, vec2(preview->image->extent));
+					}
+						break;
 					}
 				}
 			}
@@ -297,7 +435,11 @@ void BlueprintView::on_draw()
 			while (ax::NodeEditor::QueryDeletedNode((ax::NodeEditor::NodeId*)&node))
 			{
 				if (ax::NodeEditor::AcceptDeletedItem())
+				{
+					if (auto it = previews.find(node); it != previews.end())
+						previews.erase(it);
 					blueprint->remove_node(node);
+				}
 			}
 		}
 		ax::NodeEditor::EndDelete();

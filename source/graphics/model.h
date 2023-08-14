@@ -14,18 +14,32 @@ namespace flame
 
 		struct Mesh
 		{
-			ModelPtr model;
+			ModelPtr model = nullptr;
 
-			std::vector<vec3> positions;
-			std::vector<vec2> uvs;
-			std::vector<vec3> normals;
-			std::vector<vec3> tangents;
-			std::vector<cvec4> colors;
-			std::vector<ivec4> bone_ids;
-			std::vector<vec4> bone_weights;
-			std::vector<uint> indices;
+			std::vector<vec3>	positions;
+			std::vector<vec2>	uvs;
+			std::vector<vec3>	normals;
+			std::vector<vec3>	tangents;
+			std::vector<cvec4>	colors;
+			std::vector<ivec4>	bone_ids;
+			std::vector<vec4>	bone_weights;
+			std::vector<uint>	indices;
 
 			AABB bounds;
+
+			inline void reset()
+			{
+				positions.clear();
+				uvs.clear();
+				normals.clear();
+				tangents.clear();
+				colors.clear();
+				bone_ids.clear();
+				bone_weights.clear();
+				indices.clear();
+
+				bounds.reset();
+			}
 
 			inline void add_vertices(uint n, vec3* _positions, vec3* _uvs, vec3* _normals)
 			{

@@ -16,6 +16,7 @@ struct BlueprintView : View
 
 	BlueprintView();
 	BlueprintView(const std::string& name);
+	void close_blueprint();
 	void on_draw() override;
 };
 

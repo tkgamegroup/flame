@@ -41,7 +41,7 @@ namespace flame
 			sRenderer::instance()->release_material_res(material_res_id);
 		if (auto model_and_index = parse_name(mesh_name); !model_and_index.first.empty())
 			AssetManagemant::release(Path::get(model_and_index.first));
-		if (mesh)
+		if (mesh && mesh->model)
 			graphics::Model::release(mesh->model);
 		if (!material_name.empty() && !material_name.native().starts_with(L"0x"))
 		{
@@ -144,7 +144,7 @@ namespace flame
 		}
 		if (!mesh || mesh->model != _model)
 		{
-			if (mesh)
+			if (mesh && mesh->model)
 				graphics::Model::release(mesh->model);
 		}
 		else if (_model)

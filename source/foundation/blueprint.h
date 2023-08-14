@@ -7,11 +7,13 @@ namespace flame
 	struct BlueprintSlot
 	{
 		BlueprintNodePtr node;
+		uint object_id;
 		std::string name;
 		uint name_hash = 0;
 		std::vector<TypeInfo*> allowed_types;
 		TypeInfo* type = nullptr;
 		void* data = nullptr;
+		uint data_changed_frame = 0;
 
 		inline bool allow_type(TypeInfo* type) const
 		{
@@ -48,6 +50,7 @@ namespace flame
 	struct BlueprintNode
 	{
 		BlueprintGroupPtr group;
+		uint object_id;
 		std::string name;
 		uint name_hash = 0;
 		std::vector<BlueprintSlot> inputs;
@@ -86,6 +89,7 @@ namespace flame
 
 	struct BlueprintLink
 	{
+		uint object_id;
 		BlueprintNodePtr	from_node;
 		BlueprintSlotPtr	from_slot;
 		BlueprintNodePtr	to_node;
@@ -97,6 +101,7 @@ namespace flame
 	struct BlueprintGroup
 	{
 		BlueprintPtr blueprint;
+		uint object_id;
 		std::string name;
 		uint name_hash = 0;
 		std::vector<std::unique_ptr<BlueprintNodeT>> nodes;
@@ -106,6 +111,9 @@ namespace flame
 
 		vec2 offset;
 		float scale = 1.f;
+
+		uint structure_changed_frame = 0;
+		uint data_changed_frame = 0;
 
 		virtual ~BlueprintGroup() {}
 	};
@@ -120,6 +128,16 @@ namespace flame
 
 		std::filesystem::path filename;
 		uint ref = 0;
+
+		inline BlueprintGroupPtr find_group(uint name) const
+		{
+			for (auto& g : groups)
+			{
+				if (((BlueprintGroup*)g.get())->name_hash == name)
+					return (BlueprintGroupPtr)g.get();
+			}
+			return nullptr;
+		}
 
 		virtual ~Blueprint() {}
 		virtual BlueprintNodePtr	add_node(BlueprintGroupPtr group /*null means the main group*/, const std::string& name, 
@@ -188,16 +206,25 @@ namespace flame
 		struct Node
 		{
 			BlueprintNodePtr original;
+			uint object_id;
 			std::vector<BlueprintArgument> inputs;
 			std::vector<BlueprintArgument> outputs;
+			uint updated_frame;
 		};
 
 		struct Group
 		{
-			std::map<BlueprintSlotPtr, BlueprintArgument> datas;
+			struct Data
+			{
+				BlueprintArgument arg;
+				uint changed_frame = 0;
+			};
+
+			std::map<uint, Data> datas; // key: slot id
 			std::vector<Node> nodes;
 
-			~Group();
+			uint structure_updated_frame = 0;
+			uint data_updated_frame = 0;
 
 			inline const Node* find(BlueprintNodePtr original) const
 			{
