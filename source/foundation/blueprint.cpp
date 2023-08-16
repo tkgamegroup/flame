@@ -45,6 +45,8 @@ namespace flame
 			{
 				i.type = i.allowed_types.front();
 				i.data = i.type->create();
+				if (!i.default_value.empty())
+					i.type->unserialize(i.default_value, i.data);
 			}
 		}
 		for (auto& o : ret->outputs)
@@ -103,9 +105,12 @@ namespace flame
 			slot->type->destroy(slot->data);
 			slot->data = nullptr;
 		}
-		slot->type = new_type;
-		if (new_type)
-			slot->data = new_type->create();
+		if (!(slot->type && slot->type->tag == TagPU && new_type->tag == TagU))
+		{
+			slot->type = new_type;
+			if (new_type)
+				slot->data = new_type->create();
+		}
 	}
 
 	static void clear_invalid_links(BlueprintGroupPtr group)
@@ -439,12 +444,27 @@ namespace flame
 					{
 						if (l->to_node == n.original && l->to_slot == &i)
 						{
-							if (auto it = datas.find(l->object_id); it != datas.end())
+							if (auto it = datas.find(l->from_slot->object_id); it != datas.end())
 							{
-								BlueprintArgument arg;
-								arg.type = it->second.arg.type;
-								arg.data = it->second.arg.data;
-								n.inputs.push_back(arg);
+								if (i.type->tag == TagPU && it->second.arg.type->tag == TagU)
+								{
+									Group::Data data;
+									data.changed_frame = it->second.changed_frame;
+									data.arg.type = i.type;
+									data.arg.data = i.type->create();
+									auto ptr = it->second.arg.data;
+									memcpy((voidptr*)data.arg.data, &ptr, sizeof(voidptr));
+									datas.emplace(i.object_id, data);
+
+									n.inputs.push_back(data.arg);
+								}
+								else
+								{
+									BlueprintArgument arg;
+									arg.type = it->second.arg.type;
+									arg.data = it->second.arg.data;
+									n.inputs.push_back(arg);
+								}
 							}
 							else
 								assert(0);
@@ -515,7 +535,8 @@ namespace flame
 					{
 						if (it->second.arg.type == d.second.arg.type && it->second.changed_frame >= d.second.changed_frame)
 						{
-							d.second.arg.type->copy(d.second.arg.data, it->second.arg.data);
+							if (d.second.arg.type->tag != TagPU)
+								d.second.arg.type->copy(d.second.arg.data, it->second.arg.data);
 							d.second.changed_frame = it->second.changed_frame;
 						}
 					}

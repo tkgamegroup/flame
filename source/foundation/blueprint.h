@@ -1,6 +1,7 @@
 #pragma once
 
 #include "foundation.h"
+#include "typeinfo.h"
 
 namespace flame
 {
@@ -13,6 +14,7 @@ namespace flame
 		std::vector<TypeInfo*> allowed_types;
 		TypeInfo* type = nullptr;
 		void* data = nullptr;
+		std::string default_value;
 		uint data_changed_frame = 0;
 
 		inline bool allow_type(TypeInfo* type) const
@@ -21,6 +23,12 @@ namespace flame
 			{
 				if (t == type)
 					return true;
+				if (t->tag == TagPU && type->tag == TagU)
+				{
+					auto ui = t->retrive_ui();
+					if (ui && ui == type->retrive_ui())
+						return true;
+				}
 			}
 			return false;
 		}
@@ -140,8 +148,8 @@ namespace flame
 		}
 
 		virtual ~Blueprint() {}
-		virtual BlueprintNodePtr	add_node(BlueprintGroupPtr group /*null means the main group*/, const std::string& name, 
-			const std::vector<BlueprintSlot>& inputs = {}, const std::vector<BlueprintSlot>& outputs = {}, 
+		virtual BlueprintNodePtr	add_node(BlueprintGroupPtr group /*null means the main group*/, const std::string& name,
+			const std::vector<BlueprintSlot>& inputs = {}, const std::vector<BlueprintSlot>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
 		virtual void				remove_node(BlueprintNodePtr node) = 0;
@@ -195,7 +203,7 @@ namespace flame
 
 		struct Get
 		{
-			virtual BlueprintNodeLibraryPtr operator()(const std::filesystem::path& filename /* L"standard" for standard */ ) = 0;
+			virtual BlueprintNodeLibraryPtr operator()(const std::filesystem::path& filename /* L"standard" for standard */) = 0;
 		};
 		// Reflect static
 		FLAME_FOUNDATION_API static Get& get;

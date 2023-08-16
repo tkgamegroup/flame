@@ -6,6 +6,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		void add_node_template_mesh(BlueprintNodeLibraryPtr library);
+		void add_node_template_texture(BlueprintNodeLibraryPtr library);
 	}
 }

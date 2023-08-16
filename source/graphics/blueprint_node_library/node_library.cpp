@@ -10,7 +10,7 @@ namespace flame
 		{
 			auto geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
 
-			add_node_template_cube(geometry_library);
+			add_node_template_mesh(geometry_library);
 		}
 	}
 }

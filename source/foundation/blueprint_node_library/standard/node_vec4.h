@@ -1,3 +1,5 @@
+#pragma once
+
 #include "../../blueprint.h"
 
 namespace flame

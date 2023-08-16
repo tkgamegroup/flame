@@ -186,4 +186,14 @@ namespace flame
 		cvt.p = p;
 		return cvt.f;
 	}
+
+	struct uint_pair_hasher 
+	{
+		std::size_t operator () (const std::pair<uint, uint>& p) const 
+		{
+			auto h1 = std::hash<uint>{}(p.first);
+			auto h2 = std::hash<uint>{}(p.second);
+			return h1 ^ h2;
+		}
+	};
 }
