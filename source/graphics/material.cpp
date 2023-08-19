@@ -214,7 +214,7 @@ namespace flame
 			data_changed("defines"_h);
 		}
 
-		void MaterialPrivate::set_textures(const std::vector<Texture>& _textures)
+		void MaterialPrivate::set_textures(const std::vector<FileTexture>& _textures)
 		{
 			textures = _textures;
 

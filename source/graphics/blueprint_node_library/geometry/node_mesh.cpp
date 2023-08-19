@@ -1,5 +1,8 @@
 #include "node_mesh.h"
 #include "../../../foundation/typeinfo.h"
+#include "../../image_private.h"
+#include "../../texture.h"
+#include "../../noise.h"
 #include "../../model_private.h"
 #include "../../model_ext.h"
 
@@ -150,7 +153,7 @@ namespace flame
 					},
 					{
 						.name = "Texture",
-						.allowed_types = { TypeInfo::get<ImagePtr>() }
+						.allowed_types = { TypeInfo::get<Texture*>() }
 					},
 					{
 						.name = "Strength",
@@ -169,7 +172,55 @@ namespace flame
 						.allowed_types = { TypeInfo::get<ControlMesh>() }
 					}
 				},
-				nullptr,
+				[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+					auto pcontrol_mesh = *(ControlMesh**)inputs[0].data;
+					auto ptexture = *(Texture**)inputs[1].data;
+					auto strength = *(float*)inputs[2].data;
+					auto midlevel = *(float*)inputs[3].data;
+					auto& mesh = *(ControlMesh*)outputs[0].data;
+					if (pcontrol_mesh && ptexture)
+					{
+						std::vector<std::vector<uint>> vertices_adjacent_faces(pcontrol_mesh->vertices.size());
+
+						for (auto i = 0; i < pcontrol_mesh->faces.size(); i++)
+						{
+							auto& f = pcontrol_mesh->faces[i];
+
+							uint v0 = f.corners[0].vertex_id;
+							uint v1 = f.corners[1].vertex_id;
+							uint v2 = f.corners[2].vertex_id;
+							uint v3 = f.corners[3].vertex_id;
+
+							vertices_adjacent_faces[v0].push_back(i);
+							vertices_adjacent_faces[v1].push_back(i);
+							vertices_adjacent_faces[v2].push_back(i);
+							vertices_adjacent_faces[v3].push_back(i);
+						}
+
+						mesh.reset();
+						mesh.vertices = pcontrol_mesh->vertices;
+						mesh.faces = pcontrol_mesh->faces;
+
+						for (auto i = 0; i < pcontrol_mesh->vertices.size(); i++)
+						{
+							vec3 normal(0.f);
+							for (auto fi : vertices_adjacent_faces[i])
+								normal += pcontrol_mesh->faces[fi].normal;
+							normal = normalize(normal);
+
+							auto v = pcontrol_mesh->vertices[i];
+							auto disp = triplanar_sample<float>(normal, v, voronoi_noise);
+							v += normal * disp;
+							mesh.vertices[i] = v;
+						}
+
+						for (auto& f : mesh.faces)
+						{
+							f.normal = normalize(cross(mesh.vertices[f.corners[1].vertex_id] - mesh.vertices[f.corners[0].vertex_id],
+								mesh.vertices[f.corners[3].vertex_id] - mesh.vertices[f.corners[0].vertex_id]));
+						}
+					}
+				},
 				nullptr,
 				nullptr,
 				nullptr,

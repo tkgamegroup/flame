@@ -110,6 +110,164 @@ void open_message_dialog(const std::string& title, const std::string& message)
 		ImGui::OpenMessageDialog(title, message);
 }
 
+void ModelPreviewer::init()
+{
+	if (!model)
+	{
+		layer = 1 << (int)app.renderer->render_tasks.size();
+
+		model = Entity::create();
+		model->layer = layer;
+		model->add_component<cNode>();
+		auto mesh = model->add_component<cMesh>();
+		mesh->instance_id = 0;
+		mesh->set_material_name(L"default");
+	}
+	if (!node)
+	{
+		node = Entity::create();
+		node->add_component<cNode>();
+
+		auto e_camera = Entity::create();
+		{
+			auto node = e_camera->add_component<cNode>();
+			auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
+			node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
+		}
+		camera = e_camera->add_component<cCamera>();
+		camera->layer = layer;
+		node->add_child(e_camera);
+
+		node->add_child(model);
+
+		app.world->root->add_child(node);
+	}
+	if (!image)
+	{
+		image = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(256, 256, 1), graphics::ImageUsageAttachment |
+			graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
+	}
+	if (!render_task)
+	{
+		render_task = app.renderer->add_render_task(RenderModeSimple, camera, { image->get_view() },
+			graphics::ImageLayoutShaderReadOnly, false, false);
+	}
+
+}
+
+void ModelPreviewer::destroy()
+{
+	graphics::Queue::get()->wait_idle();
+
+	if (image)
+	{
+		delete image;
+		image = nullptr;
+	}
+
+	layer = 1;
+
+	if (node)
+	{
+		app.world->root->remove_child(node);
+		node = nullptr;
+		model = nullptr;
+		camera = nullptr;
+	}
+
+	zoom = 1.f;
+
+	if (render_task)
+	{
+		app.renderer->remove_render_task(render_task);
+		render_task = nullptr;
+	}
+
+	updated_frame = 0;
+}
+
+void ModelPreviewer::update(uint changed_frame, bool show_image)
+{
+	if (changed_frame > updated_frame)
+	{
+		add_event([this]() {
+			if (!model || !camera)
+				return false;
+			AABB bounds;
+			model->forward_traversal([&](EntityPtr e) {
+				if (auto node = e->get_component<cNode>(); node)
+				{
+					if (!node->bounds.invalid())
+						bounds.expand(node->bounds);
+				}
+				if (auto mesh = e->get_component<cMesh>(); mesh)
+				{
+					if (mesh->mesh_res_id != -1)
+					{
+						auto& info = sRenderer::instance()->get_mesh_res_info(mesh->mesh_res_id);
+						vertex_count += info.vtx_cnt;
+						face_count += info.idx_cnt / 3;
+					}
+				}
+			});
+			auto camera_node = camera->node;
+			if (!bounds.invalid())
+			{
+				auto pos = fit_camera_to_object(mat3(camera_node->g_qut), camera->fovy,
+					camera->zNear, camera->aspect, bounds);
+				auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
+				camera_node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
+				camera_node->set_pos(pos);
+				zoom = length(pos);
+			}
+			return false;
+		}, 0.f, 2);
+
+		updated_frame = changed_frame;
+	}
+
+	if (!show_image)
+		return;
+
+	ImGui::Image(image, vec2(image->extent));
+	if (ImGui::IsItemHovered)
+	{
+		auto camera_node = camera->node;
+
+		auto get_tar = [&]() {
+			return camera_node->global_pos() - camera_node->z_axis() * zoom;
+		};
+
+		auto& io = ImGui::GetIO();
+		if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
+		{
+			disp /= vec2(image->extent);
+			if (io.KeyAlt)
+			{
+				if (io.MouseDown[ImGuiMouseButton_Left])
+				{
+					disp *= -180.f;
+					disp = radians(disp);
+					auto qut = angleAxis(disp.x, vec3(0.f, 1.f, 0.f)) * camera_node->qut;
+					qut = angleAxis(disp.y, qut * vec3(1.f, 0.f, 0.f)) * qut;
+					camera_node->set_qut(qut);
+					camera_node->set_pos(get_tar() + (qut * vec3(0.f, 0.f, 1.f)) * zoom);
+				}
+			}
+		}
+		if (auto scroll = io.MouseWheel; scroll != 0.f)
+		{
+			auto tar = get_tar();
+			if (scroll < 0.f)
+				zoom = zoom * 1.1f + 0.5f;
+			else
+				zoom = max(0.f, zoom / 1.1f - 0.5f);
+			camera_node->set_pos(tar + camera_node->z_axis() * zoom);
+		}
+	}
+	ImGui::Text("Vertex Count: %d, Face Count: %d", (int)vertex_count, (int)face_count);
+}
+
 vec3 App::get_snap_pos(const vec3& _pos)
 {
 	auto pos = _pos;

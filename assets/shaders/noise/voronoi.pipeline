@@ -1,0 +1,36 @@
+layout
+  @pll
+shaders
+  ../fullscreen.vert
+ ---
+  @frag
+  
+@pll
+layout(push_constant) uniform PushConstant
+{
+
+}pc;
+@
+
+@frag
+#include "../texture_sampling.glsl"
+
+layout (location = 0) in vec2 i_uv;
+
+layout (location = 0) out vec4 o_col;
+
+float hash1(float n) 
+{ 
+	return fract(sin(n)*43758.5453); 
+}
+
+vec2  hash2(vec2  p) 
+{
+	p = vec2( dot(p,vec2(127.1,311.7)), dot(p,vec2(269.5,183.3)) ); 
+	return fract(sin(p)*43758.5453); 
+}
+
+void main()
+{
+}
+@

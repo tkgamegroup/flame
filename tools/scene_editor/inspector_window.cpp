@@ -2228,20 +2228,8 @@ void InspectorView::on_draw()
 			}
 			else if (ext == L".fmod")
 			{
-				static EntityPtr preview_model = nullptr;
-				static uint preview_layer = 1;
-
-				if (!preview_model)
-				{
-					preview_layer = 1 << (int)app.renderer->render_tasks.size();
-
-					preview_model = Entity::create();
-					preview_model->layer = preview_layer;
-					preview_model->add_component<cNode>();
-					auto mesh = preview_model->add_component<cMesh>();
-					mesh->instance_id = 0;
-					mesh->set_material_name(L"default");
-				}
+				static ModelPreviewer previewer;
+				previewer.init();
 
 				if (inspected_changed)
 				{
@@ -2252,17 +2240,12 @@ void InspectorView::on_draw()
 							graphics::Model::release((graphics::ModelPtr)obj);
 						};
 					}
-					else
-						preview_model->get_component<cMesh>()->set_mesh_and_material(L"", L"");
+					else if (previewer.model)
+						previewer.model->get_component<cMesh>()->set_mesh_and_material(L"", L"");
 				}
 
 				if (inspected_obj)
 				{
-					static EntityPtr preview_node = nullptr;
-					static cCameraPtr preview_camera = nullptr;
-					static float preview_zoom = 1.f;
-					static graphics::ImagePtr preview_image = nullptr;
-					static RenderTaskPtr preview_render_task = nullptr;
 
 					auto model = (graphics::ModelPtr)inspected_obj;
 					auto i = 0;
@@ -2289,6 +2272,7 @@ void InspectorView::on_draw()
 					if (ImGui::CollapsingHeader("Preview"))
 					{
 						auto preview_mesh_changed = inspected_changed;
+						uint preview_mesh_changed_frame = 0;
 						if (preview_mesh_index == 0xffffffff)
 						{
 							preview_mesh_index = 0;
@@ -2310,101 +2294,14 @@ void InspectorView::on_draw()
 							}
 							ImGui::EndCombo();
 						}
-
-						if (!preview_node)
-						{
-							preview_node = Entity::create();
-							preview_node->name = "3d_preview_node";
-							preview_node->add_component<cNode>();
-
-							auto e_camera = Entity::create();
-							{
-								auto node = e_camera->add_component<cNode>();
-								auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
-								node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
-							}
-							preview_camera = e_camera->add_component<cCamera>();
-							preview_camera->layer = preview_layer;
-							preview_node->add_child(e_camera);
-
-							preview_node->add_child(preview_model);
-
-							app.world->root->add_child(preview_node);
-						}
-						if (!preview_image)
-						{
-							preview_image = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(256, 256, 1), graphics::ImageUsageAttachment |
-								graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
-						}
-						if (!preview_render_task)
-						{
-							preview_render_task = app.renderer->add_render_task(RenderModeSimple, preview_camera, { preview_image->get_view() },
-								graphics::ImageLayoutShaderReadOnly, false, false);
-						}
-
-						auto& preview_mesh = model->meshes[preview_mesh_index];
 						if (preview_mesh_changed)
 						{
-							preview_model->get_component<cMesh>()->set_mesh_name(model->filename.wstring() + L'#' + wstr(preview_mesh_index));
-							add_event([]() {
-								AABB bounds;
-								preview_model->forward_traversal([&](EntityPtr e) {
-									if (auto node = e->get_component<cNode>(); node)
-									{
-										if (!node->bounds.invalid())
-											bounds.expand(node->bounds);
-									}
-								});
-								auto camera_node = preview_camera->node;
-								if (!bounds.invalid())
-								{
-									auto pos = fit_camera_to_object(mat3(camera_node->g_qut), preview_camera->fovy, 
-										preview_camera->zNear, preview_camera->aspect, bounds);
-									auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
-									camera_node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
-									camera_node->set_pos(pos);
-									preview_zoom = length(pos);
-								}
-								return false;
-							}, 0.f, 2);
+							if (previewer.model)
+								previewer.model->get_component<cMesh>()->set_mesh_name(model->filename.wstring() + L'#' + wstr(preview_mesh_index));
+							preview_mesh_changed_frame = frames;
 						}
 
-						ImGui::Image(preview_image, vec2(preview_image->extent));
-						if (ImGui::IsItemHovered)
-						{
-							auto camera_node = preview_camera->node;
-
-							auto get_tar = [&]() {
-								return camera_node->global_pos() - camera_node->z_axis() * preview_zoom;
-							};
-
-							auto& io = ImGui::GetIO();
-							if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
-							{
-								disp /= vec2(preview_image->extent);
-								if (io.KeyAlt)
-								{
-									if (io.MouseDown[ImGuiMouseButton_Left])
-									{
-										disp *= -180.f;
-										disp = radians(disp);
-										auto qut = angleAxis(disp.x, vec3(0.f, 1.f, 0.f)) * camera_node->qut;
-										qut = angleAxis(disp.y, qut * vec3(1.f, 0.f, 0.f)) * qut;
-										camera_node->set_qut(qut);
-										camera_node->set_pos(get_tar() + (qut * vec3(0.f, 0.f, 1.f)) * preview_zoom);
-									}
-								}
-							}
-							if (auto scroll = io.MouseWheel; scroll != 0.f)
-							{
-								auto tar = get_tar();
-								if (scroll < 0.f)
-									preview_zoom = preview_zoom * 1.1f + 0.5f;
-								else
-									preview_zoom = max(0.f, preview_zoom / 1.1f - 0.5f);
-								camera_node->set_pos(tar + camera_node->z_axis() * preview_zoom);
-							}
-						}
+						previewer.update(preview_mesh_changed_frame);
 					}
 					else
 						preview_mesh_index = 0xffffffff;

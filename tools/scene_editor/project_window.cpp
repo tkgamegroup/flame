@@ -46,111 +46,81 @@ static void update_thumbnail(const std::filesystem::path& path)
 	auto ext = path.extension();
 	if (ext == L".prefab")
 	{
-		static uint steps = 0xffffffff;
-		if (steps != 0xffffffff)
+		static std::vector<std::filesystem::path> paths;
+		static void* ev_process = nullptr;
+		if (std::find(paths.begin(), paths.end(), path) != paths.end())
 			return;
-		steps = 0;
-		add_event([path]() {
-			static EntityPtr e;
-			static EntityPtr e_prefab;
-			static cCameraPtr camera;
-			static graphics::ImagePtr thumbnail;
-			static RenderTaskPtr render_task;
-			if (steps == 0)
-			{
-				auto layer = 1 << (int)app.renderer->render_tasks.size();
+		paths.push_back(path);
 
-				e = Entity::create();
-				e->add_component<cNode>();
-				auto e_camera = Entity::create();
+		static ModelPreviewer previewer;
+
+		if (!ev_process)
+		{
+			ev_process = add_event([]() {
+				if (paths.empty())
 				{
-					auto node = e_camera->add_component<cNode>();
-					auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
-					node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
+					ev_process = nullptr;
+					return false;
 				}
-				camera = e_camera->add_component<cCamera>();
-				camera->layer = layer;
-				e->add_child(e_camera);
-				e_prefab = Entity::create();
-				e_prefab->load(path);
-				e->add_child(e_prefab);
+				if (previewer.image) // if updating then return
+					return true;
 
-				app.world->root->add_child(e);
+				auto path = paths.back();
+				paths.pop_back();
 
-				thumbnail = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(128, 128, 1), graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
-				render_task = app.renderer->add_render_task(RenderModeSimple, camera, { thumbnail->get_view() }, graphics::ImageLayoutShaderReadOnly, false, false);
-
-				steps++;
-				return true;
-			}
-			if (steps == 1)
-			{
-				AABB bounds;
-				e_prefab->forward_traversal([&](EntityPtr e) {
-					e->layer = camera->layer;
-					if (auto node = e->get_component<cNode>(); node)
-					{
-						if (!node->bounds.invalid())
-							bounds.expand(node->bounds);
-					}
+				previewer.init();
+				auto e = Entity::create();
+				e->load(path);
+				e->forward_traversal([](EntityPtr e) {
+					e->layer = previewer.layer;
 				});
-				auto camera_node = camera->node;
-				if (!bounds.invalid())
-				{
-					auto pos = fit_camera_to_object(mat3(camera_node->g_qut), camera->fovy, camera->zNear, camera->aspect, bounds);
-					camera_node->set_pos(pos);
-				}
+				previewer.model->add_child(e);
+				previewer.update(frames, false);
 
-				steps++;
-				return true;
-			}
-			if (steps == 2)
-			{
-				graphics::Queue::get()->wait_idle();
+				add_event([path]() {
+					graphics::Queue::get()->wait_idle();
 
-				app.renderer->remove_render_task(render_task);
+					auto thumbnails_dir = path.parent_path() / L".thumbnails";
+					if (!std::filesystem::exists(thumbnails_dir))
+						std::filesystem::create_directories(thumbnails_dir);
+					auto thumbnail_path = thumbnails_dir / (path.filename().wstring() + L".png");
+					previewer.image->save(thumbnail_path);
 
-				auto thumbnails_dir = path.parent_path() / L".thumbnails";
-				if (!std::filesystem::exists(thumbnails_dir))
-					std::filesystem::create_directories(thumbnails_dir);
-				auto thumbnail_path = thumbnails_dir / (path.filename().wstring() + L".png");
-				thumbnail->save(thumbnail_path);
-				delete thumbnail;
-
-				app.world->root->remove_child(e);
-
-				for (auto& v : project_window.views)
-				{
-					auto pv = (ProjectView*)v.get();
-					for (auto& item : pv->explorer.items)
+					for (auto& v : project_window.views)
 					{
-						if (item->path == path)
+						auto pv = (ProjectView*)v.get();
+						for (auto& item : pv->explorer.items)
 						{
-							if (!item->icon_releaser)
+							if (item->path == path)
 							{
-								if (item->icon)
-									graphics::release_icon(item->icon);
+								if (!item->icon_releaser)
+								{
+									if (item->icon)
+										graphics::release_icon(item->icon);
+								}
+								else
+									item->icon_releaser(item->icon);
+
+								item->icon = graphics::Image::get(thumbnail_path);
+								item->icon_releaser = [](graphics::Image* img) {
+									graphics::Image::release(img);
+								};
+
+								break;
 							}
-							else
-								item->icon_releaser(item->icon);
-
-							item->icon = graphics::Image::get(thumbnail_path);
-							item->icon_releaser = [](graphics::Image* img) {
-								graphics::Image::release(img);
-							};
-
-							break;
 						}
 					}
-				}
 
-				steps = 0xffffffff;
-				return false;
-			}
-			return false;
-		});
+					previewer.destroy();
 
-		app.render_frames += 3;
+					return false;
+				}, 0.f, 3);
+
+				app.render_frames += 3;
+
+				return true;
+			});
+		}
 	}
 }
 

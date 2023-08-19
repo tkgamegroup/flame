@@ -13,7 +13,7 @@ namespace flame
 			MaterialFlagMirror = 1 << 0
 		};
 
-		struct Texture
+		struct FileTexture
 		{
 			std::filesystem::path filename;
 			Filter mag_filter = FilterLinear;
@@ -106,9 +106,9 @@ namespace flame
 			virtual void set_defines(const std::vector<std::string>& defines) = 0;
 
 			// Reflect
-			std::vector<Texture> textures;
+			std::vector<FileTexture> textures;
 			// Reflect
-			virtual void set_textures(const std::vector<Texture>& textures) = 0;
+			virtual void set_textures(const std::vector<FileTexture>& textures) = 0;
 
 			Listeners<void(uint)> data_listeners;
 

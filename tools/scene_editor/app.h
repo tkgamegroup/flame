@@ -152,6 +152,24 @@ inline Window::~Window()
 void show_entities_menu();
 void open_message_dialog(const std::string& title, const std::string& message);
 
+struct ModelPreviewer
+{
+	graphics::ImagePtr image = nullptr;
+	uint layer = 1;
+	EntityPtr node = nullptr;
+	EntityPtr model = nullptr;
+	cCameraPtr camera = nullptr;
+	float zoom = 1.f;
+	uint vertex_count = 0;
+	uint face_count = 0;
+	RenderTaskPtr render_task = nullptr;
+	uint updated_frame = 0;
+
+	void init();
+	void destroy();
+	void update(uint changed_frame, bool show_image = true);
+};
+
 struct App : UniverseApplication
 {
 	bool graphics_debug = true;

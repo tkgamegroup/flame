@@ -55,10 +55,7 @@ namespace flame
 			o.object_id = next_object_id++;
 			o.name_hash = sh(o.name.c_str());
 			if (!o.allowed_types.empty())
-			{
 				o.type = o.allowed_types.front();
-				o.data = o.type->create();
-			}
 		}
 		group->nodes.emplace_back(ret);
 
@@ -100,15 +97,16 @@ namespace flame
 	{
 		if (slot->type == new_type)
 			return;
-		if (slot->data)
+		auto has_data = slot->data != nullptr;
+		if (slot->data) // is input slot and has data
 		{
 			slot->type->destroy(slot->data);
 			slot->data = nullptr;
 		}
-		if (!(slot->type && slot->type->tag == TagPU && new_type->tag == TagU))
+		if (!(slot->type && slot->type->tag == TagPU && new_type->tag == TagU)) // if a udt type link to its pointer type, dont change the type
 		{
 			slot->type = new_type;
-			if (new_type)
+			if (new_type && has_data) // is input slot and has data
 				slot->data = new_type->create();
 		}
 	}
@@ -383,6 +381,11 @@ namespace flame
 
 	static void destroy_group(BlueprintInstance::Group& g)
 	{
+		for (auto& n : g.nodes)
+		{
+			if (n.original->destructor)
+				n.original->destructor(n.inputs.data(), n.outputs.data());
+		}
 		for (auto& pair : g.datas)
 		{
 			if (pair.second.arg.data)
@@ -479,7 +482,8 @@ namespace flame
 						if (data.arg.type)
 						{
 							data.arg.data = data.arg.type->create();
-							data.arg.type->copy(data.arg.data, i.data);
+							if (i.data)
+								data.arg.type->copy(data.arg.data, i.data);
 						}
 						else
 							data.arg.data = nullptr;
@@ -494,7 +498,11 @@ namespace flame
 					data.changed_frame = o.data_changed_frame;
 					data.arg.type = o.type;
 					if (data.arg.type)
+					{
 						data.arg.data = data.arg.type->create();
+						if (data.arg.type->tag == TagPU)
+							memset(data.arg.data, 0, sizeof(voidptr));
+					}
 					else
 						data.arg.data = nullptr;
 					datas.emplace(o.object_id, data);
@@ -502,8 +510,8 @@ namespace flame
 					n.outputs.push_back(data.arg);
 				}
 
-				//if (n.original->constructor)
-				//	n.original->constructor(n.inputs.data(), n.outputs.data());
+				if (n.original->constructor)
+					n.original->constructor(n.inputs.data(), n.outputs.data());
 			}
 		};
 

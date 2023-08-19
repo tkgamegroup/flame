@@ -1,6 +1,7 @@
 #include "blueprint_window.h"
 
 #include <flame/foundation/blueprint.h>
+#include <flame/graphics/model.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
@@ -25,23 +26,11 @@ BlueprintView::BlueprintView(const std::string& name) :
 
 struct BpNodePreview
 {
-	graphics::ImagePtr image = nullptr;
-	uint layer = 1;
-	EntityPtr node = nullptr;
-	EntityPtr model = nullptr;
-	cCameraPtr camera = nullptr;
-	float zoom = 1.f;
-	RenderTaskPtr render_task = nullptr;
-	uint changed_frame = 0;
+	ModelPreviewer model_previewer;
 
 	~BpNodePreview()
 	{
-		if (node)
-			node->remove_from_parent();
-		if (image)
-			delete image;
-		if (render_task)
-			app.renderer->remove_render_task(render_task);
+		model_previewer.destroy();
 	}
 };
 static std::map<BlueprintNodePtr, BpNodePreview> previews;
@@ -86,28 +75,26 @@ void BlueprintView::on_draw()
 			blueprint_instance->build();
 
 		static auto standard_library = BlueprintNodeLibrary::get(L"standard");
+		static auto texture_library = BlueprintNodeLibrary::get(L"graphics::texture");
 		static auto geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
 
 		if (ImGui::Button("Add Node"))
 			ImGui::OpenPopup("add_node");
 		if (ImGui::BeginPopup("add_node"))
 		{
-			for (auto& t : standard_library->node_templates)
-			{
-				if (ImGui::Selectable(t.name.c_str()))
+			auto show_node_templates = [&](BlueprintNodeLibraryPtr library) {
+				for (auto& t : library->node_templates)
 				{
-					blueprint->add_node(nullptr, t.name, t.inputs, t.outputs,
-						t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider);
+					if (ImGui::Selectable(t.name.c_str()))
+					{
+						blueprint->add_node(nullptr, t.name, t.inputs, t.outputs,
+							t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider);
+					}
 				}
-			}
-			for (auto& t : geometry_library->node_templates)
-			{
-				if (ImGui::Selectable(t.name.c_str()))
-				{
-					blueprint->add_node(nullptr, t.name, t.inputs, t.outputs,
-						t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider);
-				}
-			}
+			};
+			show_node_templates(standard_library);
+			show_node_templates(texture_library);
+			show_node_templates(geometry_library);
 			ImGui::EndPopup();
 		}
 		ImGui::SameLine();
@@ -252,7 +239,6 @@ void BlueprintView::on_draw()
 									ImGui::PopID();
 									ImGui::PopItemWidth();
 								}
-								ImGui::PopItemWidth();
 								break;
 							}
 						}
@@ -306,59 +292,28 @@ void BlueprintView::on_draw()
 					if (auto it = previews.find(n.get()); it != previews.end())
 						preview = &it->second;
 					else
+					{
 						preview = &previews.emplace(n.get(), BpNodePreview()).first->second;
+						preview->model_previewer.init();
+					}
 
 					BlueprintNodePreview data;
 					n->preview_provider(instance_node->inputs.data(), instance_node->outputs.data(), &data);
 					switch (data.type)
 					{
+					case "image"_h:
+					{
+						auto image = (graphics::ImagePtr)data.data;
+						if (image)
+							ImGui::Image(image, vec2(256));
+					}
+						break;
 					case "mesh"_h:
 					{
-						if (preview->changed_frame < instance_node->updated_frame)
+						auto pmesh = (graphics::MeshPtr)data.data;
+						if (preview->model_previewer.updated_frame < instance_node->updated_frame)
 						{
-							if (!preview->model)
-							{
-								preview->layer = 1 << (int)app.renderer->render_tasks.size();
-
-								preview->model = Entity::create();
-								preview->model->layer = preview->layer;
-								preview->model->add_component<cNode>();
-								auto mesh = preview->model->add_component<cMesh>();
-								mesh->instance_id = 0;
-								mesh->set_material_name(L"default");
-							}
-							if (!preview->node)
-							{
-								preview->node = Entity::create();
-								preview->node->add_component<cNode>();
-
-								auto e_camera = Entity::create();
-								{
-									auto node = e_camera->add_component<cNode>();
-									auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
-									node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f)) * q);
-								}
-								preview->camera = e_camera->add_component<cCamera>();
-								preview->camera->layer = preview->layer;
-								preview->node->add_child(e_camera);
-
-								preview->node->add_child(preview->model);
-
-								app.world->root->add_child(preview->node);
-							}
-							if (!preview->image)
-							{
-								preview->image = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(256, 256, 1), graphics::ImageUsageAttachment |
-									graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
-							}
-							if (!preview->render_task)
-							{
-								preview->render_task = app.renderer->add_render_task(RenderModeSimple, preview->camera,
-									{ preview->image->get_view() }, graphics::ImageLayoutShaderReadOnly, false, false);
-							}
-
-							auto pmesh = (graphics::MeshPtr)data.data;
-							auto mesh = preview->model->get_component<cMesh>();
+							auto mesh = preview->model_previewer.model->get_component<cMesh>();
 							if (mesh->mesh_res_id != -1)
 							{
 								app.renderer->release_mesh_res(mesh->mesh_res_id);
@@ -367,34 +322,9 @@ void BlueprintView::on_draw()
 							mesh->mesh = pmesh;
 							mesh->mesh_res_id = app.renderer->get_mesh_res(pmesh);
 							mesh->node->mark_transform_dirty();
-
-							add_event([preview]() {
-								AABB bounds;
-								preview->model->forward_traversal([&](EntityPtr e) {
-									if (auto node = e->get_component<cNode>(); node)
-									{
-										if (!node->bounds.invalid())
-											bounds.expand(node->bounds);
-									}
-								});
-								auto camera_node = preview->camera->node;
-								if (!bounds.invalid())
-								{
-									auto pos = fit_camera_to_object(mat3(camera_node->g_qut), preview->camera->fovy,
-										preview->camera->zNear, preview->camera->aspect, bounds);
-									auto q = angleAxis(radians(-45.f), vec3(0.f, 1.f, 0.f));
-									camera_node->set_qut(angleAxis(radians(-45.f), q * vec3(1.f, 0.f, 0.f))* q);
-									camera_node->set_pos(pos);
-									preview->zoom = length(pos);
-								}
-								return false;
-							}, 0.f, 2);
-
-							preview->changed_frame = instance_node->updated_frame;
 						}
 
-						if (preview->image)
-							ImGui::Image(preview->image, vec2(preview->image->extent));
+						preview->model_previewer.update(instance_node->updated_frame);
 					}
 						break;
 					}
