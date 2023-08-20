@@ -43,13 +43,14 @@ DebuggerWindow::DebuggerWindow() :
 {
 }
 
-void DebuggerWindow::open_view(bool new_instance)
+View* DebuggerWindow::open_view(bool new_instance)
 {
 	if (new_instance || views.empty())
-		new DebuggerView;
+		return new DebuggerView;
+	return nullptr;
 }
 
-void DebuggerWindow::open_view(const std::string& name)
+View* DebuggerWindow::open_view(const std::string& name)
 {
-	new DebuggerView(name);
+	return new DebuggerView(name);
 }

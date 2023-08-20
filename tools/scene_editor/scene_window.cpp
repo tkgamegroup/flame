@@ -131,7 +131,7 @@ void SceneView::on_draw()
 	}
 
 	bool opened = true;
-	ImGui::Begin(open_name.c_str(), &opened);
+	ImGui::Begin(open_name.c_str(), &opened, app.prefab_unsaved ? ImGuiWindowFlags_UnsavedDocument : 0);
 	// there is a bug that ImGui do not reset the pointer to window's name in draw list, so that
 	//  ImGuizmo not work properly
 	ImGui::GetWindowDrawList()->_OwnerName = ImGui::GetCurrentWindow()->Name;
@@ -1010,15 +1010,16 @@ SceneWindow::SceneWindow() :
 {
 }
 
-void SceneWindow::open_view(bool new_instance)
+View* SceneWindow::open_view(bool new_instance)
 {
 	if (new_instance || views.empty())
-		new SceneView;
+		return new SceneView;
+	return nullptr;
 }
 
-void SceneWindow::open_view(const std::string& name)
+View* SceneWindow::open_view(const std::string& name)
 {
-	new SceneView(name);
+	return new SceneView(name);
 }
 
 SceneView* SceneWindow::first_view() const

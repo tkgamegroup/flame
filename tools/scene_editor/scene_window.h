@@ -37,8 +37,8 @@ struct SceneWindow : Window
 	std::string last_focused_view_name;
 
 	SceneWindow();
-	void open_view(bool new_instance) override;
-	void open_view(const std::string& name) override;
+	View* open_view(bool new_instance) override;
+	View* open_view(const std::string& name) override;
 	SceneView* first_view() const;
 	SceneView* last_focused_view() const;
 };

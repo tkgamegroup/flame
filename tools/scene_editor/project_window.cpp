@@ -1,9 +1,11 @@
 #include "selection.h"
 #include "project_window.h"
 #include "scene_window.h"
+#include "blueprint_window.h"
 
 #include <flame/foundation/bitmap.h>
 #include <flame/foundation/system.h>
+#include <flame/foundation/blueprint.h>
 #include <flame/graphics/extension.h>
 #include <flame/graphics/material.h>
 #include <flame/graphics/model.h>
@@ -164,7 +166,23 @@ ProjectView::ProjectView(const std::string& name) :
 	};
 	explorer.dbclick_callback = [this](const std::filesystem::path& path) {
 		auto ext = path.extension();
-		if (ext == L".prefab")
+		if (ext == L".bp")
+		{
+			auto opend = false;
+			for (auto& v : blueprint_window.views)
+			{
+				auto bv = (BlueprintView*)v.get();
+				if (bv->blueprint && bv->blueprint->filename == path)
+				{
+					// TODO: bv->set_focus();
+					opend = true;
+					break;
+				}
+			}
+			if (!opend)
+				blueprint_window.open_view(Path::reverse(path).string() + "##Blueprint");
+		}
+		else if (ext == L".prefab")
 			app.open_prefab(path);
 		else if (ext == L".h" || ext == L".cpp")
 			app.open_file_in_vs(path);
@@ -383,10 +401,24 @@ ProjectView::ProjectView(const std::string& name) :
 					else
 						ImGui::OpenMessageDialog("Failed to create folder", "Folder already existed");
 				}
-				});
+			});
 		}
 		if (in_assets)
 		{
+			if (ImGui::MenuItem("New Blueprint"))
+			{
+				ImGui::OpenInputDialog("New Blueprint", "File Name", [path](bool ok, const std::string& str) {
+					if (ok && !str.empty())
+					{
+						auto fn = path / str;
+						fn.replace_extension(L".bp");
+						if (!std::filesystem::exists(fn))
+							Blueprint::get(fn);
+						else
+							ImGui::OpenMessageDialog("Failed to create Material", "Material already existed");
+					}
+				});
+			}
 			if (ImGui::MenuItem("New Image"))
 			{
 				struct NewImageDialog : ImGui::Dialog
@@ -566,7 +598,7 @@ ProjectView::ProjectView(const std::string& name) :
 						else
 							ImGui::OpenMessageDialog("Failed to create Material", "Material already existed");
 					}
-					});
+				});
 			}
 			if (ImGui::BeginMenu("New Prefab"))
 			{
@@ -582,7 +614,7 @@ ProjectView::ProjectView(const std::string& name) :
 							else
 								ImGui::OpenMessageDialog("Failed to create Prefab", "Prefab already existed");
 						}
-						});
+					});
 				}
 				if (ImGui::MenuItem("General 3D Scene"))
 				{
@@ -596,7 +628,7 @@ ProjectView::ProjectView(const std::string& name) :
 							else
 								ImGui::OpenMessageDialog("Failed to create Prefab", "Prefab already existed");
 						}
-						});
+					});
 				}
 				ImGui::EndMenu();
 			}
@@ -617,7 +649,7 @@ ProjectView::ProjectView(const std::string& name) :
 							}
 							std::sort(preset_udts.begin(), preset_udts.end(), [](const auto& a, const auto& b) {
 								return a->name < b->name;
-								});
+							});
 
 							std::vector<std::string> names(preset_udts.size());
 							for (auto i = 0; i < names.size(); i++)
@@ -630,12 +662,12 @@ ProjectView::ProjectView(const std::string& name) :
 									save_preset_file(fn, obj, ui);
 									ui->destroy_object(obj);
 								}
-								});
+							});
 						}
 						else
 							ImGui::OpenMessageDialog("Failed to create Preset", "Preset already existed");
 					}
-					});
+				});
 			}
 			if (ImGui::MenuItem("New Timeline"))
 			{
@@ -653,7 +685,7 @@ ProjectView::ProjectView(const std::string& name) :
 						else
 							ImGui::OpenMessageDialog("Failed to create Timeline", "Timeline already existed");
 					}
-					});
+				});
 			}
 			if (ImGui::MenuItem("Import Scenes"))
 			{
@@ -747,7 +779,7 @@ ProjectView::ProjectView(const std::string& name) :
 							file.close();
 						}
 					}
-					});
+				});
 			}
 			if (ImGui::MenuItem("New Class"))
 			{
@@ -769,7 +801,7 @@ ProjectView::ProjectView(const std::string& name) :
 							cpp_file.close();
 						}
 					}
-					});
+				});
 			}
 			if (ImGui::MenuItem("New Component"))
 			{
@@ -821,7 +853,7 @@ ProjectView::ProjectView(const std::string& name) :
 					}
 					else
 						ImGui::OpenMessageDialog("Failed to create Component", "Already have this component");
-					});
+				});
 			}
 		}
 		if (ImGui::MenuItem("Refresh"))
@@ -953,6 +985,8 @@ ProjectView::ProjectView(const std::string& name) :
 				std::filesystem::rename(path, new_path);
 		}
 	};
+
+	reset();
 }
 
 void ProjectView::on_draw()
@@ -981,6 +1015,20 @@ void ProjectView::on_draw()
 	selection_changed = false;
 }
 
+void ProjectView::reset()
+{
+	std::vector<std::filesystem::path> paths;
+	paths.push_back(std::filesystem::path(L"Favorites=Favorites (F4)"));
+	paths.push_back(std::filesystem::path(L"Recents"));
+	paths.push_back(std::filesystem::path(project_window.flame_path.native() + L"=flame"));
+	if (!project_window.assets_path.empty())
+		paths.push_back(project_window.assets_path);
+	if (!project_window.code_path.empty())
+		paths.push_back(project_window.code_path);
+
+	explorer.reset_n(paths);
+}
+
 ProjectWindow::ProjectWindow() :
 	Window("Project")
 {
@@ -1001,15 +1049,16 @@ void ProjectWindow::init()
 
 }
 
-void ProjectWindow::open_view(bool new_instance)
+View* ProjectWindow::open_view(bool new_instance)
 {
 	if (new_instance || views.empty())
-		new ProjectView;
+		return new ProjectView;
+	return nullptr;
 }
 
-void ProjectWindow::open_view(const std::string& name)
+View* ProjectWindow::open_view(const std::string& name)
 {
-	new ProjectView(name);
+	return new ProjectView(name);
 }
 
 ProjectView* ProjectWindow::first_view() const
@@ -1019,28 +1068,20 @@ ProjectView* ProjectWindow::first_view() const
 
 void ProjectWindow::reset()
 {
-	auto flame_path = Path::get(L"flame");
-	auto assets_path = app.project_path;
-	auto code_path = app.project_path;
-
-	std::vector<std::filesystem::path> paths;
-	paths.push_back(std::filesystem::path(L"Favorites=Favorites (F4)"));
-	paths.push_back(std::filesystem::path(L"Recents"));
-	paths.push_back(std::filesystem::path(flame_path.native() + L"=flame"));
+	flame_path = Path::get(L"flame");
+	assets_path = L"";
+	code_path = L"";
 
 	if (!app.project_path.empty())
 	{
-		assets_path /= L"assets";
-		paths.push_back(assets_path);
-
-		code_path /= L"code";
-		paths.push_back(code_path);
+		assets_path = app.project_path / L"assets";
+		code_path = app.project_path / L"code";
 	}
 
 	for (auto& v : views)
 	{
 		auto pv = (ProjectView*)v.get();
-		pv->explorer.reset_n(paths);
+		pv->reset();
 	}
 
 	if (flame_file_watcher)

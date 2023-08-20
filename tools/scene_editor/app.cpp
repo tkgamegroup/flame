@@ -309,16 +309,16 @@ void App::init()
 		std::ofstream preferences_o(preferences_path);
 		preferences_o << "window_pos=" + str(native_window->pos) << "\n";
 		preferences_o << "use_flame_debugger=" + str(preferences.use_flame_debugger) << "\n";
-		preferences_o << "[opened_views]\n";
-		for (auto w : windows)
-		{
-			for (auto& v : w->views)
-				preferences_o << v->name << "\n";
-		}
 		if (!project_path.empty())
 		{
 			preferences_o << "[project_path]\n";
 			preferences_o << project_path.string() << "\n";
+		}
+		preferences_o << "[opened_views]\n";
+		for (auto w : windows)
+		{
+			for (auto& v : w->views)
+				preferences_o << "\"" << v->name << "\"\n";
 		}
 		if (auto fv = project_window.first_view(); fv && fv->explorer.opened_folder)
 		{
@@ -2154,23 +2154,22 @@ int main(int argc, char** args)
 		if (e.key == "use_flame_debugger")
 			preferences.use_flame_debugger = s2t<bool>(e.values[0]);
 	}
+	for (auto& e : preferences_i.get_section_entries("project_path"))
+	{
+		app.open_project(e.values[0]);
+		break;
+	}
 	for (auto& e : preferences_i.get_section_entries("opened_views"))
 	{
 		for (auto w : windows)
 		{
 			auto name = e.values[0];
-			auto sp = SUS::split(name, '#');
-			if (w->name == sp.front())
+			if (name.find(w->name) != std::string::npos)
 			{
 				w->open_view(name);
 				break;
 			}
 		}
-	}
-	for (auto& e : preferences_i.get_section_entries("project_path"))
-	{
-		app.open_project(e.values[0]);
-		break;
 	}
 	for (auto& e : preferences_i.get_section_entries("opened_folder"))
 	{

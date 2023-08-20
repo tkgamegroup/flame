@@ -16,7 +16,9 @@ struct BlueprintView : View
 
 	BlueprintView();
 	BlueprintView(const std::string& name);
-	void close_blueprint();
+	~BlueprintView();
+
+	void load_blueprint(const std::filesystem::path& path);
 	void on_draw() override;
 };
 
@@ -25,8 +27,8 @@ struct BlueprintWindow : Window
 	BlueprintDebuggerPtr debugger = nullptr;
 
 	BlueprintWindow();
-	void open_view(bool new_instance) override;
-	void open_view(const std::string& name) override;
+	View* open_view(bool new_instance) override;
+	View* open_view(const std::string& name) override;
 };
 
 extern BlueprintWindow blueprint_window;

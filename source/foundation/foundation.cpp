@@ -317,7 +317,7 @@ namespace flame
 		doc.save_file(filename.c_str());
 	}
 
-	uint frames = 0;
+	uint frames = 1;
 	uint fps = 0;
 	float delta_time = 0.f;
 	float total_time = 0.f;

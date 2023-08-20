@@ -324,13 +324,14 @@ TimelineWindow::TimelineWindow() :
 {
 }
 
-void TimelineWindow::open_view(bool new_instance)
+View* TimelineWindow::open_view(bool new_instance)
 {
 	if (new_instance || views.empty())
-		new TimelineView;
+		return new TimelineView;
+	return nullptr;
 }
 
-void TimelineWindow::open_view(const std::string& name)
+View* TimelineWindow::open_view(const std::string& name)
 {
-	new TimelineView(name);
+	return new TimelineView(name);
 }

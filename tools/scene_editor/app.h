@@ -76,6 +76,18 @@ inline void empty_entity(EntityPtr e)
 	e->remove_all_children();
 }
 
+inline std::string get_unique_name(const std::string& prefix, const std::function<bool(const std::string& name)>& check_name_exists)
+{
+	std::string name = prefix;
+	int i = 0;
+	while (check_name_exists(name))
+	{
+		name = prefix + str(i);
+		i++;
+	}
+	return name;
+}
+
 struct View;
 
 struct Window
@@ -87,8 +99,8 @@ struct Window
 	~Window();
 
 	virtual void init() {}
-	virtual void open_view(bool new_instance) {}
-	virtual void open_view(const std::string& name) {}
+	virtual View* open_view(bool new_instance) { return nullptr; }
+	virtual View* open_view(const std::string& name) { return nullptr; }
 };
 
 extern std::vector<Window*> windows;

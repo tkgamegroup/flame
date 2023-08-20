@@ -574,13 +574,14 @@ void HierarchyWindow::init()
 	}, "hierarchy"_h);
 }
 
-void HierarchyWindow::open_view(bool new_instance)
+View* HierarchyWindow::open_view(bool new_instance)
 {
 	if (new_instance || views.empty())
-		new HierarchyView;
+		return new HierarchyView;
+	return nullptr;
 }
 
-void HierarchyWindow::open_view(const std::string& name)
+View* HierarchyWindow::open_view(const std::string& name)
 {
-	new HierarchyView(name);
+	return new HierarchyView(name);
 }

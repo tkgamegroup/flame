@@ -1417,7 +1417,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 								auto es = entities;
 								refresh(es);
 								return false;
-								});
+							});
 							ins->modifications.clear();
 						}
 					}
@@ -2523,13 +2523,14 @@ void InspectorWindow::init()
 	}, "inspector"_h);
 }
 
-void InspectorWindow::open_view(bool new_instance)
+View* InspectorWindow::open_view(bool new_instance)
 {
 	if (new_instance || views.empty())
-		new InspectorView;
+		return new InspectorView;
+	return nullptr;
 }
 
-void InspectorWindow::open_view(const std::string& name)
+View* InspectorWindow::open_view(const std::string& name)
 {
-	new InspectorView(name);
+	return new InspectorView(name);
 }

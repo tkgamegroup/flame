@@ -27,13 +27,14 @@ ConsoleWindow::ConsoleWindow() :
 {
 }
 
-void ConsoleWindow::open_view(bool new_instance)
+View* ConsoleWindow::open_view(bool new_instance)
 {
 	if (new_instance || views.empty())
-		new ConsoleView;
+		return new ConsoleView;
+	return nullptr;
 }
 
-void ConsoleWindow::open_view(const std::string& name)
+View* ConsoleWindow::open_view(const std::string& name)
 {
-	new ConsoleView(name);
+	return new ConsoleView(name);
 }

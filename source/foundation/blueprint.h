@@ -5,6 +5,13 @@
 
 namespace flame
 {
+	enum BlueprintGroupType
+	{
+		BlueprintGroupForCalling,
+		BlueprintGroupAsVariable,
+		BlueprintGroupAsConstVariable
+	};
+
 	struct BlueprintSlot
 	{
 		BlueprintNodePtr node;
@@ -106,6 +113,19 @@ namespace flame
 		virtual ~BlueprintLink() {}
 	};
 
+	struct BlueprintGroupSlot
+	{
+		BlueprintGroupPtr group;
+		uint object_id;
+		std::string name;
+		uint name_hash = 0;
+		TypeInfo* type = nullptr;
+		void* data = nullptr;
+		uint data_changed_frame = 0;
+	};
+
+	typedef BlueprintGroupSlot* BlueprintGroupSlotPtr;
+
 	struct BlueprintGroup
 	{
 		BlueprintPtr blueprint;
@@ -114,8 +134,8 @@ namespace flame
 		uint name_hash = 0;
 		std::vector<std::unique_ptr<BlueprintNodeT>> nodes;
 		std::vector<std::unique_ptr<BlueprintLinkT>> links;
-		std::vector<BlueprintSlot> inputs;
-		std::vector<BlueprintSlot> outputs;
+		std::vector<BlueprintGroupSlot> inputs;
+		std::vector<BlueprintGroupSlot> outputs;
 
 		vec2 offset;
 		float scale = 1.f;
@@ -148,18 +168,23 @@ namespace flame
 		}
 
 		virtual ~Blueprint() {}
-		virtual BlueprintNodePtr	add_node(BlueprintGroupPtr group /*null means the main group*/, const std::string& name,
+		virtual BlueprintNodePtr		add_node(BlueprintGroupPtr group /*null means the first group*/, const std::string& name,
 			const std::vector<BlueprintSlot>& inputs = {}, const std::vector<BlueprintSlot>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
-		virtual void				remove_node(BlueprintNodePtr node) = 0;
-		virtual BlueprintLinkPtr	add_link(BlueprintNodePtr from_node, uint from_slot, BlueprintNodePtr to_node, uint to_slot) = 0;
-		virtual void				remove_link(BlueprintLinkPtr link) = 0;
-		virtual BlueprintGroupPtr	add_group(const std::string& name) = 0;
-		virtual void				remove_group(BlueprintGroupPtr group) = 0;
-		virtual void				move_to_group(const std::vector<BlueprintNodePtr>& nodes) = 0;
+		virtual BlueprintNodePtr		add_input_node(BlueprintGroupPtr group, uint name) = 0;
+		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, uint variable_group_name) = 0;
+		virtual void					remove_node(BlueprintNodePtr node) = 0;
+		virtual BlueprintLinkPtr		add_link(BlueprintNodePtr from_node, uint from_slot, BlueprintNodePtr to_node, uint to_slot) = 0;
+		virtual void					remove_link(BlueprintLinkPtr link) = 0;
+		virtual BlueprintGroupPtr		add_group(const std::string& name) = 0;
+		virtual void					remove_group(BlueprintGroupPtr group) = 0;
+		virtual BlueprintGroupSlotPtr	add_group_input(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) = 0;
+		virtual void					remove_group_input(BlueprintGroupPtr group, BlueprintGroupSlotPtr slot) = 0;
+		virtual BlueprintGroupSlotPtr	add_group_output(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) = 0;
+		virtual void					remove_group_output(BlueprintGroupPtr group, BlueprintGroupSlotPtr slot) = 0;
 
-		virtual void save() = 0;
+		virtual void					save(const std::filesystem::path& path = L"") = 0;
 
 		struct Get
 		{
@@ -228,7 +253,7 @@ namespace flame
 				uint changed_frame = 0;
 			};
 
-			std::map<uint, Data> datas; // key: slot id
+			std::map<uint, Data> datas; // key: group input output/slot id
 			std::vector<Node> nodes;
 
 			uint structure_updated_frame = 0;

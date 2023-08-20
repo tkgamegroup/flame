@@ -12,8 +12,8 @@ struct ConsoleView : View
 struct ConsoleWindow : Window
 {
 	ConsoleWindow();
-	void open_view(bool new_instance) override;
-	void open_view(const std::string& name) override;
+	View* open_view(bool new_instance) override;
+	View* open_view(const std::string& name) override;
 };
 
 extern ConsoleWindow console_window;

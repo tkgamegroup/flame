@@ -45,7 +45,7 @@ namespace ImGui
 		void draw() override
 		{
 #ifdef USE_IMGUI
-			if (ImGui::BeginPopupModal(title.c_str()))
+			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
 			{
 				ImGui::TextUnformatted(message.c_str());
 				if (ImGui::Button("OK"))
@@ -64,7 +64,7 @@ namespace ImGui
 		void draw() override
 		{
 #ifdef USE_IMGUI
-			if (ImGui::BeginPopupModal(title.c_str()))
+			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
 			{
 				ImGui::TextUnformatted(prompt.c_str());
 				if (ImGui::Button("Yes"))
@@ -108,10 +108,10 @@ namespace ImGui
 		void draw() override
 		{
 #ifdef USE_IMGUI
-			if (ImGui::BeginPopupModal(title.c_str()))
+			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
 			{
 				ImGui::TextUnformatted(prompt.c_str());
-				auto ok = false;
+				auto ok = false; 
 				if (ImGui::InputText("##text", &text, ImGuiInputTextFlags_EnterReturnsTrue))
 					ok = true;
 				if (archive)
@@ -163,7 +163,7 @@ namespace ImGui
 		void draw() override
 		{
 #ifdef USE_IMGUI
-			if (ImGui::BeginPopupModal(title.c_str()))
+			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
 			{
 				if (ImGui::BeginCombo(prompt.c_str(), index == -1 ? nullptr : options[index].c_str()))
 				{
@@ -202,7 +202,7 @@ namespace ImGui
 		void draw() override
 		{
 #ifdef USE_IMGUI
-			if (ImGui::BeginPopupModal(title.c_str()))
+			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
 			{
 				ImGui::BeginChild("explorer", ImVec2(0, -ImGui::GetFontSize() * 2.f - ImGui::GetStyle().ItemSpacing.y * 5));
 				explorer.draw();
