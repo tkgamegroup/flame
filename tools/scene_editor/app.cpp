@@ -157,32 +157,42 @@ void ModelPreviewer::init()
 
 void ModelPreviewer::destroy()
 {
-	graphics::Queue::get()->wait_idle();
-
 	if (image)
 	{
-		delete image;
-		image = nullptr;
+		auto _image = image;
+		add_event([_image]() {
+			graphics::Queue::get()->wait_idle();
+			delete _image;
+			return false;
+		});
 	}
-
-	layer = 1;
 
 	if (node)
 	{
-		app.world->root->remove_child(node);
+		auto _node = node;
+		add_event([_node]() {
+			graphics::Queue::get()->wait_idle();
+			app.world->root->remove_child(_node);
+			return false;
+		});
 		node = nullptr;
 		model = nullptr;
 		camera = nullptr;
 	}
 
-	zoom = 1.f;
-
 	if (render_task)
 	{
-		app.renderer->remove_render_task(render_task);
+		auto _render_task = render_task;
+		add_event([_render_task]() {
+			graphics::Queue::get()->wait_idle();
+			app.renderer->remove_render_task(_render_task);
+			return false;
+		});
 		render_task = nullptr;
 	}
 
+	layer = 1;
+	zoom = 1.f;
 	updated_frame = 0;
 }
 

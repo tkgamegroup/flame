@@ -425,6 +425,11 @@ void BlueprintView::on_draw()
 												ImGui::PopItemWidth();
 											}
 											break;
+										case DataString:
+											ImGui::SetNextItemWidth(100.f);
+											ImGui::InputText("", (std::string*)input.data);
+											changed |= ImGui::IsItemDeactivatedAfterEdit();
+											break;
 										}
 									}
 									ImGui::PopID();
@@ -522,8 +527,26 @@ void BlueprintView::on_draw()
 					for (auto& l : group->links)
 						ax::NodeEditor::Link((uint64)l.get(), (uint64)l->from_slot, (uint64)l->to_slot);
 
+					auto mouse_pos = ImGui::GetMousePos();
+					static vec2				open_popup_pos;
+					static BlueprintNodePtr new_node_link_node = nullptr;
+					static BlueprintSlotPtr	new_node_link_slot = nullptr;
+
 					if (ax::NodeEditor::BeginCreate())
 					{
+						if (BlueprintSlotPtr from_slot;
+							ax::NodeEditor::QueryNewNode((ax::NodeEditor::PinId*)&from_slot))
+						{
+							if (ax::NodeEditor::AcceptNewItem())
+							{
+								ax::NodeEditor::Suspend();
+								open_popup_pos = mouse_pos;
+								new_node_link_node = from_slot->node;
+								new_node_link_slot = from_slot;
+								ImGui::OpenPopup("add_node_context_menu");
+								ax::NodeEditor::Resume();
+							}
+						}
 						if (BlueprintSlotPtr from_slot, to_slot;
 							ax::NodeEditor::QueryNewLink((ax::NodeEditor::PinId*)&from_slot, (ax::NodeEditor::PinId*)&to_slot))
 						{
@@ -563,8 +586,6 @@ void BlueprintView::on_draw()
 					BlueprintSlotPtr context_slot = nullptr;
 					BlueprintLinkPtr context_link = nullptr;
 
-					auto mouse_pos = ImGui::GetMousePos();
-					static vec2 open_popup_pos;
 					ax::NodeEditor::Suspend();
 					if (ax::NodeEditor::ShowNodeContextMenu((ax::NodeEditor::NodeId*)&context_node))
 					{
@@ -584,7 +605,7 @@ void BlueprintView::on_draw()
 					else if (ax::NodeEditor::ShowBackgroundContextMenu())
 					{
 						open_popup_pos = mouse_pos;
-						ImGui::OpenPopup("empty_space_context_menu");
+						ImGui::OpenPopup("add_node_context_menu");
 					}
 					ax::NodeEditor::Resume();
 
@@ -619,7 +640,7 @@ void BlueprintView::on_draw()
 							;
 						ImGui::EndPopup();
 					}
-					if (ImGui::BeginPopup("empty_space_context_menu"))
+					if (ImGui::BeginPopup("add_node_context_menu"))
 					{
 						static auto standard_library = BlueprintNodeLibrary::get(L"standard");
 						static auto texture_library = BlueprintNodeLibrary::get(L"graphics::texture");
@@ -636,12 +657,29 @@ void BlueprintView::on_draw()
 									if (t.name.find(filter) == std::string::npos)
 										continue;
 								}
+								uint link_slot = 0;
+								if (new_node_link_node && new_node_link_slot)
+								{
+									for (auto& i : t.inputs)
+									{
+										if (i.allow_type(new_node_link_slot->type))
+										{
+											link_slot = i.name_hash;
+											break;
+										}
+									}
+									if (!link_slot)
+										continue;
+								}
 								if (ImGui::Selectable(t.name.c_str()))
 								{
 									auto n = blueprint->add_node(group, t.name, t.inputs, t.outputs,
 										t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider);
 									n->position = open_popup_pos;
 									ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+									if (new_node_link_node)
+										blueprint->add_link(new_node_link_node, new_node_link_slot->name_hash, n, link_slot);
 								}
 							}
 						};
@@ -649,6 +687,11 @@ void BlueprintView::on_draw()
 						show_node_templates(texture_library);
 						show_node_templates(geometry_library);
 						ImGui::EndPopup();
+					}
+					else
+					{
+						new_node_link_node = nullptr;
+						new_node_link_slot = nullptr;
 					}
 
 					ax::NodeEditor::Resume();

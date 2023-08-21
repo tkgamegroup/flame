@@ -202,7 +202,8 @@ namespace ImGui
 		void draw() override
 		{
 #ifdef USE_IMGUI
-			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
+			ImGui::SetNextWindowSize(vec2(500.f, 300.f), ImGuiCond_Appearing);
+			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
 			{
 				ImGui::BeginChild("explorer", ImVec2(0, -ImGui::GetFontSize() * 2.f - ImGui::GetStyle().ItemSpacing.y * 5));
 				explorer.draw();

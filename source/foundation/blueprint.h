@@ -5,6 +5,11 @@
 
 namespace flame
 {
+	struct Signal
+	{
+		bool v;
+	};
+
 	struct BlueprintSlot
 	{
 		BlueprintNodePtr node;

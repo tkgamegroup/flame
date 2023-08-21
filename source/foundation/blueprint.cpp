@@ -624,7 +624,11 @@ namespace flame
 		t.name = name;
 		t.name_hash = sh(name.c_str());
 		t.inputs = inputs;
+		for (auto& i : t.inputs)
+			i.name_hash = sh(i.name.c_str());
 		t.outputs = outputs;
+		for (auto& o : t.inputs)
+			o.name_hash = sh(o.name.c_str());
 		t.function = function;
 		t.constructor = constructor;
 		t.destructor = destructor;
