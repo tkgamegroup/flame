@@ -1,12 +1,12 @@
 #include "universe_private.h"
 #include "entity_private.h"
 #include "world_private.h"
+#include "blueprint_library/library.h"
 // let changes of app.h trigger build (that app.h will copy to include dir)
 #include "application.h"
 
 namespace flame
 {
-
 	ModifierPrivate::ModifierPrivate(const Modifier& m, EntityPtr e, 
 		const std::vector<std::pair<const char*, float*>>& extra_variables,
 		const std::vector<std::pair<const char*, float>>& extra_consts)
@@ -75,8 +75,17 @@ namespace flame
 		}
 	}
 
-	void* universe_info()
+	struct _Initializer
 	{
-		return nullptr;
-	}
+		_Initializer()
+		{
+			printf("universe init\n");
+
+			add_event([]() {
+				init_library();
+				return false;
+			});
+		}
+	};
+	static _Initializer _initializer;
 }

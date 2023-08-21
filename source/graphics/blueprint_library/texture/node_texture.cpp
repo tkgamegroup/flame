@@ -12,7 +12,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		void add_node_template_texture(BlueprintNodeLibraryPtr library)
+		void add_node_templates_texture(BlueprintNodeLibraryPtr library)
 		{
 			library->add_template("New Texture",
 				{

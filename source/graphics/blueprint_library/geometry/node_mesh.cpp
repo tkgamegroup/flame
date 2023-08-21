@@ -10,7 +10,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		void add_node_template_mesh(BlueprintNodeLibraryPtr library)
+		void add_node_templates_mesh(BlueprintNodeLibraryPtr library)
 		{
 			library->add_template("Control Mesh: Cube",
 				{

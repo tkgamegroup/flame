@@ -2246,7 +2246,6 @@ void InspectorView::on_draw()
 
 				if (inspected_obj)
 				{
-
 					auto model = (graphics::ModelPtr)inspected_obj;
 					auto i = 0;
 					for (auto& mesh : model->meshes)

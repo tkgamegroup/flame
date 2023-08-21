@@ -5,13 +5,6 @@
 
 namespace flame
 {
-	enum BlueprintGroupType
-	{
-		BlueprintGroupForCalling,
-		BlueprintGroupAsVariable,
-		BlueprintGroupAsConstVariable
-	};
-
 	struct BlueprintSlot
 	{
 		BlueprintNodePtr node;
@@ -292,7 +285,7 @@ namespace flame
 		}
 
 		virtual void build() = 0;
-		virtual void prepare_executing(uint group_name) = 0;
+		virtual bool prepare_executing(uint group_name) = 0;
 		virtual void run() = 0;
 		virtual void step() = 0;
 		virtual void stop() = 0;

@@ -1,4 +1,4 @@
-#include "node_library.h"
+#include "library.h"
 #include "../blueprint_private.h"
 
 #include "standard/node_vec2.h"
@@ -9,10 +9,11 @@
 #include "standard/node_subtract.h"
 #include "standard/node_multiply.h"
 #include "standard/node_divide.h"
+#include "standard/node_string.h"
 
 namespace flame
 {
-	void init_node_library()
+	void init_library()
 	{
 		auto standard_library = BlueprintNodeLibrary::get(L"standard");
 
@@ -24,5 +25,6 @@ namespace flame
 		add_node_template_subtract(standard_library);
 		add_node_template_multiply(standard_library);
 		add_node_template_divide(standard_library);
+		add_nodes_template_string(standard_library);
 	}
 }

@@ -194,6 +194,8 @@ void ModelPreviewer::update(uint changed_frame, bool show_image)
 			if (!model || !camera)
 				return false;
 			AABB bounds;
+			vertex_count = 0;
+			face_count = 0;
 			model->forward_traversal([&](EntityPtr e) {
 				if (auto node = e->get_component<cNode>(); node)
 				{

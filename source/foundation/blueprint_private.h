@@ -54,7 +54,7 @@ namespace flame
 		~BlueprintInstancePrivate();
 
 		void build() override;
-		void prepare_executing(uint group_name) override;
+		bool prepare_executing(uint group_name) override;
 		void run() override;
 		void step() override;
 		void stop() override;

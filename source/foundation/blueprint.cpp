@@ -917,7 +917,7 @@ namespace flame
 		built_frame = frames;
 	}
 
-	void BlueprintInstancePrivate::prepare_executing(uint group_name)
+	bool BlueprintInstancePrivate::prepare_executing(uint group_name)
 	{
 		if (built_frame < blueprint->dirty_frame)
 			build();
@@ -925,7 +925,7 @@ namespace flame
 		if (auto it = groups.find(group_name); it == groups.end())
 		{
 			printf("blueprint instance prepare_executing: group %d not found\n", group_name);
-			return;
+			return false;
 		}
 		else
 		{
@@ -933,6 +933,7 @@ namespace flame
 			current_group = &it->second;
 			current_node = 0;
 		}
+		return true;
 	}
 
 	void BlueprintInstancePrivate::run()

@@ -4,7 +4,7 @@
 #include "system_private.h"
 #include "window_private.h"
 #include "blueprint_private.h"
-#include "blueprint_node_library/node_library.h"
+#include "blueprint_library/library.h"
 #include "application.h"
 
 #include <exprtk.hpp>
@@ -509,7 +509,7 @@ namespace flame
 
 			add_event([]() {
 				init_typeinfo();
-				init_node_library();
+				init_library();
 				return false;
 			});
 		}

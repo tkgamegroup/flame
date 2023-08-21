@@ -158,6 +158,4 @@ namespace flame
 	};
 
 	struct OctNode;
-
-	FLAME_UNIVERSE_API void* universe_info();
 }
