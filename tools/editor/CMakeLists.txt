@@ -1,0 +1,11 @@
+if(USE_UNIVERSE_MODULE)
+	generate_config()
+	file(GLOB_RECURSE source_files "*.h" "*.c*")
+
+	add_executable(editor "${source_files}")
+	set_target_properties(editor PROPERTIES FOLDER "tools")
+	target_compile_options(editor PRIVATE -ZI)
+	target_link_libraries(editor flame_universe)
+	set_target_properties(editor PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+	add_dependencies(editor vs_automation)
+endif()
