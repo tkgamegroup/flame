@@ -17,7 +17,7 @@
 SceneWindow scene_window;
 
 SceneView::SceneView() :
-	View(&scene_window, "Scene##" + str(rand()))
+	SceneView(scene_window.views.empty() ? "Scene" : "Scene##" + str(rand()))
 {
 }
 
@@ -131,6 +131,7 @@ void SceneView::on_draw()
 	}
 
 	bool opened = true;
+	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
 	ImGui::Begin(open_name.c_str(), &opened, app.prefab_unsaved ? ImGuiWindowFlags_UnsavedDocument : 0);
 	// there is a bug that ImGui do not reset the pointer to window's name in draw list, so that
 	//  ImGuizmo not work properly

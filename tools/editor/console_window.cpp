@@ -3,7 +3,7 @@
 ConsoleWindow console_window;
 
 ConsoleView::ConsoleView() :
-	View(&console_window, "Console##" + str(rand()))
+	ConsoleView(console_window.views.empty() ? "Console" : "Console##" + str(rand()))
 {
 }
 
@@ -15,6 +15,7 @@ ConsoleView::ConsoleView(const std::string& name) :
 void ConsoleView::on_draw()
 {
 	bool opened = true;
+	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
 	ImGui::Begin(name.c_str(), &opened);
 
 	ImGui::End();

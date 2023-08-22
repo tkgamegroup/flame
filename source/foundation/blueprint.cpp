@@ -694,6 +694,7 @@ namespace flame
 	void BlueprintInstancePrivate::build()
 	{
 		auto frame = frames;
+		auto current_group_name = current_group ? current_group->name : 0;
 
 		auto current_node_object_id = 0;
 		if (auto pnode = current_node_ptr(); pnode)
@@ -887,16 +888,17 @@ namespace flame
 				continue;
 
 			auto& g = groups.emplace(src_g->name_hash, Group()).first->second;
+			g.instance = this;
+			g.name = src_g->name_hash;
 			create_group_structure(src_g.get(), g, g.datas);
 			g.structure_updated_frame = frame;
 			g.data_updated_frame = frame;
 		}
 
-		if (executing_group)
+		if (current_group_name)
 		{
-			if (auto it = groups.find(executing_group); it == groups.end())
+			if (auto it = groups.find(current_group_name); it == groups.end())
 			{
-				executing_group = 0;
 				current_group = nullptr;
 				current_node = -1;
 			}
@@ -921,23 +923,14 @@ namespace flame
 		built_frame = frames;
 	}
 
-	bool BlueprintInstancePrivate::prepare_executing(uint group_name)
+	void BlueprintInstancePrivate::prepare_executing(Group* group)
 	{
+		assert(group->instance == this);
 		if (built_frame < blueprint->dirty_frame)
 			build();
 
-		if (auto it = groups.find(group_name); it == groups.end())
-		{
-			printf("blueprint instance prepare_executing: group %d not found\n", group_name);
-			return false;
-		}
-		else
-		{
-			executing_group = group_name;
-			current_group = &it->second;
-			current_node = 0;
-		}
-		return true;
+		current_group = group;
+		current_node = 0;
 	}
 
 	void BlueprintInstancePrivate::run()
@@ -977,7 +970,6 @@ namespace flame
 		current_node++;
 		if (current_node >= current_group->nodes.size())
 		{
-			executing_group = 0;
 			current_group = nullptr;
 			current_node = -1;
 		}
@@ -989,7 +981,6 @@ namespace flame
 		if (debugger && debugger->debugging)
 			return;
 
-		executing_group = 0;
 		current_group = nullptr;
 		current_node = -1;
 	}

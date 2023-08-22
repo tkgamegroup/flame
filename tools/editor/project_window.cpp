@@ -16,9 +16,6 @@
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
 
-ProjectWindow project_window;
-static auto selection_changed = false;
-
 static graphics::ImagePtr icon_prefab;
 static graphics::ImagePtr icon_material;
 static graphics::ImagePtr icon_model;
@@ -126,16 +123,20 @@ static void update_thumbnail(const std::filesystem::path& path)
 	}
 }
 
+ProjectWindow project_window;
+static auto selection_changed = false;
+
 ProjectView::ProjectView() :
-	ProjectView("Project##" + str(rand()))
+	ProjectView(project_window.views.empty() ? "Project" : "Project##" + str(rand()))
 {
 }
 
 ProjectView::ProjectView(const std::string& name) :
 	View(&project_window, name)
 {
-	explorer.do_select = 1;
 	explorer.select_callback = [this](const std::filesystem::path& path) {
+		if (!ImGui::IsKeyDown(Keyboard_Alt))
+			return;
 		if (path.empty())
 		{
 			selection.clear("project"_h);
@@ -1002,6 +1003,7 @@ void ProjectView::on_draw()
 		explorer.selected_paths.clear();
 
 	bool opened = true;
+	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
 	ImGui::Begin(name.c_str(), &opened);
 
 	title_context_menu();

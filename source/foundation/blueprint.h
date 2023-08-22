@@ -251,6 +251,8 @@ namespace flame
 				uint changed_frame = 0;
 			};
 
+			BlueprintInstancePtr instance;
+			uint name;
 			std::map<uint, Data> datas; // key: group input output/slot id
 			std::vector<Node> nodes;
 
@@ -270,15 +272,22 @@ namespace flame
 
 		BlueprintPtr blueprint;
 
-		std::map<uint, Group> groups;
+		std::map<uint, Group> groups; // key: group name hash
 
-		uint executing_group = 0;
 		Group* current_group = nullptr;
 		int current_node = -1;
 
 		uint built_frame;
 
 		virtual ~BlueprintInstance() {}
+
+		inline Group* get_group(uint name) const
+		{
+			auto it = groups.find(name);
+			if (it == groups.end())
+				return nullptr;
+			return (Group*)&it->second;
+		}
 
 		inline Node* current_node_ptr() const
 		{
@@ -290,7 +299,7 @@ namespace flame
 		}
 
 		virtual void build() = 0;
-		virtual bool prepare_executing(uint group_name) = 0;
+		virtual void prepare_executing(Group* group) = 0;
 		virtual void run() = 0;
 		virtual void step() = 0;
 		virtual void stop() = 0;

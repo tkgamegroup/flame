@@ -6,7 +6,7 @@
 HierarchyWindow hierarchy_window;
 
 HierarchyView::HierarchyView() :
-	View(&hierarchy_window, "Hierarchy##" + str(rand()))
+	HierarchyView(hierarchy_window.views.empty() ? "Hierarchy" : "Hierarchy##" + str(rand()))
 {
 }
 
@@ -215,7 +215,8 @@ void entity_context_menu_behaviour(EntityPtr e)
 void HierarchyView::on_draw()
 {
 	bool opened = true;
-	ImGui::Begin(name.c_str(), &opened);
+	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
+	ImGui::Begin(name.c_str(), &opened, app.prefab_unsaved ? ImGuiWindowFlags_UnsavedDocument : 0);
 
 	EntityPtr select_entity = nullptr;
 	static bool released_after_select = false;

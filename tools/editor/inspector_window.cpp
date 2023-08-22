@@ -22,9 +22,6 @@
 #include <flame/universe/components/volume.h>
 #include <flame/universe/components/particle_system.h>
 
-InspectorWindow inspector_window;
-static uint selection_changed_frame = 0;
-
 struct StagingVector
 {
 	std::vector<char> v;
@@ -2026,8 +2023,11 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 	return { ret_changed, ret_changed_name };
 }
 
+InspectorWindow inspector_window;
+static uint selection_changed_frame = 0;
+
 InspectorView::InspectorView() :
-	InspectorView("Inspector##" + str(rand()))
+	InspectorView(inspector_window.views.empty() ? "Inspector" : "Inspector##" + str(rand()))
 {
 }
 
@@ -2071,6 +2071,7 @@ void InspectorView::on_draw()
 	}
 
 	bool opened = true;
+	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
 	ImGui::Begin(name.c_str(), &opened); 
 
 	title_context_menu();
@@ -2448,52 +2449,6 @@ void InspectorView::on_draw()
 						auto pl = graphics::GraphicsPipeline::get(path, {});
 						if (pl)
 							graphics::GraphicsPipeline::release(pl);
-					}
-					if (ImGui::Button("Open Sandbox"))
-					{
-						if (!app.project_path.empty())
-						{
-							auto temp_path = app.project_path / L"temp";
-							auto sandbox_path = temp_path;
-							sandbox_path /= path.filename().stem();
-							if (!std::filesystem::exists(sandbox_path))
-								std::filesystem::create_directories(sandbox_path);
-							else
-								std::filesystem::remove_all(sandbox_path);
-
-							auto cmake_path = sandbox_path / L"CMakeLists.txt";
-							std::ofstream cmake_lists(cmake_path);
-							const auto cmake_content =
-								R"^^^(
-cmake_minimum_required(VERSION 3.16.4)
-set(flame_path "$ENV{{FLAME_PATH}}")
-set_output_dir("${{CMAKE_SOURCE_DIR}}/bin")
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-add_definitions(-W0 -std:c++latest)
-
-project({0})
-
-set(GLM_INCLUDE_DIR "")
-file(STRINGS "${{flame_path}}/build/CMakeCache.txt" flame_cmake_cache)
-foreach(s ${{flame_cmake_cache}})
-	if(GLM_INCLUDE_DIR STREQUAL "")
-		string(REGEX MATCH "GLM_INCLUDE_DIR:PATH=(.*)" res "${{s}}")
-		if(NOT res STREQUAL "")
-			set(GLM_INCLUDE_DIR ${{CMAKE_MATCH_1}})
-		endif()
-	endif()
-endforeach()
-
-file(GLOB_RECURSE source_files "cpp/*.h*" "cpp/*.c*")
-add_executable({0} ${{source_files}})
-target_include_directories({0} PUBLIC "${{GLM_INCLUDE_DIR}}")
-)^^^";
-							cmake_lists << std::format(cmake_content, path.filename().stem().string());
-							cmake_lists.close();
-
-							auto shaders = ser_ui->var_addr<std::vector<std::string>>(inspected_obj, "shaders"_h);
-
-						}
 					}
 				}
 			}

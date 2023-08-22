@@ -6,7 +6,7 @@
 DebuggerWindow debugger_window;
 
 DebuggerView::DebuggerView() :
-	View(&debugger_window, "Debugger##" + str(rand()))
+	DebuggerView(debugger_window.views.empty() ? "Debugger" : "Debugger##" + str(rand()))
 {
 }
 
@@ -17,7 +17,9 @@ DebuggerView::DebuggerView(const std::string& name) :
 
 void DebuggerView::on_draw()
 {
-	auto opened = ImGui::Begin(name.c_str());
+	bool opened = true;
+	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
+	ImGui::Begin(name.c_str(), &opened);
 
 	if (ImGui::TreeNode("Images"))
 	{

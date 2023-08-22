@@ -158,7 +158,6 @@ namespace flame
 			std::filesystem::path				pinged_path;
 			uint								ping_frame = 0;
 			std::string							filter;
-			int									do_select = -1; // -1 not showing option and true, 0 - false, 1 - true
 			bool								show_as_list = false;
 
 			std::function<void(const std::filesystem::path&)>							select_callback;
@@ -493,12 +492,6 @@ namespace flame
 						}
 						ImGui::SetNextItemWidth(filter_w);
 						ImGui::InputText(FontAtlas::icon_s("magnifying-glass"_h).c_str(), &filter);
-						if (do_select != -1 && select_callback)
-						{
-							ImGui::SameLine();
-							if (ImGui::ToolButton(FontAtlas::icon_s("arrow-pointer"_h).c_str(), do_select))
-								do_select = 1 - do_select;
-						}
 						ImGui::SameLine();
 						if (ImGui::ToolButton(FontAtlas::icon_s("grip"_h).c_str(), !show_as_list))
 							show_as_list = false;
@@ -579,9 +572,9 @@ namespace flame
 												}
 											}
 										}
-										if (io.MouseClicked[ImGuiMouseButton_Left] || io.MouseClicked[ImGuiMouseButton_Right])
+										if (io.MouseClicked[ImGuiMouseButton_Left])
 										{
-											if (select_callback && do_select)
+											if (select_callback)
 												select_callback(item->path);
 											else
 												selected_paths = { item->path };
@@ -703,9 +696,9 @@ namespace flame
 											}
 										}
 									}
-									if (io.MouseClicked[ImGuiMouseButton_Left] || io.MouseClicked[ImGuiMouseButton_Right])
+									if (io.MouseClicked[ImGuiMouseButton_Left])
 									{
-										if (select_callback && do_select)
+										if (select_callback)
 											select_callback(item->path);
 										else
 											selected_paths = { item->path };
@@ -776,7 +769,7 @@ namespace flame
 				ImGui::InvisibleButton("background", content_size);
 				if (io.MouseClicked[ImGuiMouseButton_Left] && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlapped))
 				{
-					if (select_callback && do_select)
+					if (select_callback)
 						select_callback(L"");
 					else
 						selected_paths.clear();

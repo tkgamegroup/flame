@@ -334,6 +334,17 @@ namespace flame
 					uint data_size = size * item_type->size;
 					if (src)
 						memcpy(data + data_off, src, data_size);
+					if (!dirty_regions.empty())
+					{
+						auto& last = dirty_regions.back();
+						if (data_off >= last.first)
+						{
+							if (data_off + data_size <= last.first + last.second)
+								return off;
+							last.second = data_off + data_size - last.first;
+							return off;
+						}
+					}
 					dirty_regions.emplace_back(data_off, data_size);
 				}
 				return off;
@@ -395,6 +406,17 @@ namespace flame
 					uint data_size = size * sizeof(T);
 					if (src)
 						memcpy((char*)stag->mapped + data_off, src, data_size);
+					if (!dirty_regions.empty())
+					{
+						auto& last = dirty_regions.back();
+						if (data_off >= last.first)
+						{
+							if (data_off + data_size <= last.first + last.second)
+								return off;
+							last.second = data_off + data_size - last.first;
+							return off;
+						}
+					}
 					dirty_regions.emplace_back(data_off, data_size);
 				}
 				return off;

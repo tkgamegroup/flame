@@ -9,7 +9,7 @@
 BlueprintWindow blueprint_window;
 
 BlueprintView::BlueprintView() :
-	BlueprintView("Blueprint##" + str(rand()))
+	BlueprintView(blueprint_window.views.empty() ? "Blueprint" : "Blueprint##" + str(rand()))
 {
 }
 
@@ -68,7 +68,7 @@ void BlueprintView::load_blueprint(const std::filesystem::path& path)
 void BlueprintView::on_draw()
 {
 	bool opened = true;
-	ImGui::SetNextWindowSize(vec2(200, 200), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
 	ImGui::Begin(name.c_str(), &opened);
 
 	ax::NodeEditor::SetCurrentEditor(im_editor);
@@ -103,6 +103,9 @@ void BlueprintView::on_draw()
 			group_name_hash = sh(group_name.c_str());
 			group->name = group_name;
 			group->name_hash = group_name_hash;
+			auto frame = frames;
+			group->structure_changed_frame = frame;
+			blueprint->dirty_frame = frame;
 		}
 		ImGui::SameLine();
 		if (ImGui::BeginCombo("##group_dropdown", "", ImGuiComboFlags_NoPreview | ImGuiComboFlags_PopupAlignLeft))
@@ -287,16 +290,16 @@ void BlueprintView::on_draw()
 
 					if (ImGui::Button("Run"))
 					{
-						if (!blueprint_instance->executing_group)
-							blueprint_instance->prepare_executing(group_name_hash);
+						if (!blueprint_instance->current_group)
+							blueprint_instance->prepare_executing(blueprint_instance->get_group(group_name_hash));
 						blueprint_instance->run();
 					}
 					ImGui::SameLine();
 					if (ImGui::Button("Step"))
 					{
-						if (!blueprint_instance->executing_group)
+						if (!blueprint_instance->current_group)
 						{
-							blueprint_instance->prepare_executing(group_name_hash);
+							blueprint_instance->prepare_executing(blueprint_instance->get_group(group_name_hash));
 							blueprint_window.debugger->debugging = blueprint_instance;
 						}
 						else
@@ -314,7 +317,7 @@ void BlueprintView::on_draw()
 							blueprint_instance->step();
 							if (break_node)
 								blueprint_window.debugger->add_break_node(break_node);
-							if (blueprint_instance->executing_group)
+							if (blueprint_instance->current_group)
 								blueprint_window.debugger->debugging = blueprint_instance;
 						}
 					}
@@ -645,6 +648,7 @@ void BlueprintView::on_draw()
 						static auto standard_library = BlueprintNodeLibrary::get(L"standard");
 						static auto texture_library = BlueprintNodeLibrary::get(L"graphics::texture");
 						static auto geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
+						static auto entity_library = BlueprintNodeLibrary::get(L"universe::entity");
 
 						static std::string filter = "";
 						ImGui::InputText("Filter", &filter);
@@ -686,6 +690,7 @@ void BlueprintView::on_draw()
 						show_node_templates(standard_library);
 						show_node_templates(texture_library);
 						show_node_templates(geometry_library);
+						show_node_templates(entity_library);
 						ImGui::EndPopup();
 					}
 					else

@@ -1146,8 +1146,20 @@ void App::new_project(const std::filesystem::path& path)
 	}
 	if (!std::filesystem::is_empty(path))
 	{
-		wprintf(L"cannot create project: %s is not an empty directory\n", path.c_str());
-		return;
+		auto n = 0;
+		for (auto& it : std::filesystem::directory_iterator(path))
+		{
+			if (it.path().filename() != L".git")
+				break;
+			n++;
+			if (n >= 2)
+				break;
+		}
+		if (n == 0 || n >= 2)
+		{
+			wprintf(L"cannot create project: %s is not an empty directory\n", path.c_str());
+			return;
+		}
 	}
 
 	auto project_name = path.filename().string();
@@ -1155,195 +1167,13 @@ void App::new_project(const std::filesystem::path& path)
 	auto assets_path = path / L"assets";
 	std::filesystem::create_directories(assets_path);
 
+	auto code_path = path / L"cpp";
+	std::filesystem::create_directories(code_path);
+
 	auto temp_path = path / L"temp";
 	std::filesystem::create_directories(temp_path);
 
-	pugi::xml_document main_prefab;
-	{
-		auto n_prefab = main_prefab.append_child("prefab");
-		n_prefab.append_attribute("file_id").set_value(generate_guid().to_string().c_str());
-		n_prefab.append_attribute("name").set_value("Main");
-		{
-			auto n_components = n_prefab.append_child("components");
-			n_components.append_child("item").append_attribute("type_hash").set_value("flame::cNode"_h);
-			n_components.append_child("item").append_attribute("type_hash").set_value("cMain"_h);
-		}
-		{
-			auto n_children = n_prefab.append_child("children");
-			{
-				auto n_item = n_children.append_child("item");
-				n_item.append_attribute("file_id").set_value(generate_guid().to_string().c_str());
-				n_item.append_attribute("name").set_value("Camera");
-				{
-					auto n_components = n_item.append_child("components");
-					n_components.append_child("item").append_attribute("type_hash").set_value("flame::cNode"_h);
-					n_components.append_child("item").append_attribute("type_hash").set_value("flame::cCamera"_h);
-				}
-			}
-		}
-	}
-	main_prefab.save_file((assets_path / L"main.prefab").c_str());
-
-	auto cpp_path = path / L"cpp";
-	std::filesystem::create_directories(cpp_path);
-
-	std::ofstream main_h(cpp_path / L"main.h");
-	const auto main_h_content =
-		R"^^^(
-#pragma once
-
-#include <flame/universe/component.h>
-
-using namespace flame;
-
-FLAME_TYPE(cMain)
-
-// Reflect ctor
-struct cMain : Component
-{{
-	void start() override;
-
-	struct Create
-	{{
-		virtual cMainPtr operator()(EntityPtr) = 0;
-	}};
-	// Reflect static
-	EXPORT static Create& create;
-}};
-
-)^^^";
-	main_h << std::format(main_h_content, project_name);
-	main_h.close();
-
-	std::ofstream main_cpp(cpp_path / L"main.cpp");
-	const auto main_cpp_content =
-		R"^^^(
-#include <flame/universe/entity.h>
-
-#include "main.h"
-
-void cMain::start()
-{{
-	printf("Hello World\n");
-}}
-
-struct cMainCreate : cMain::Create
-{{
-	cMainPtr operator()(EntityPtr e) override
-	{{
-		if (e == INVALID_POINTER)
-			return nullptr;
-		return new cMain;
-	}}
-}}cMain_create;
-cMain::Create& cMain::create = cMain_create;
-
-EXPORT void* cpp_info()
-{{
-	auto uinfo = universe_info();
-	cMain::create((EntityPtr)INVALID_POINTER);
-	return nullptr;
-}}
-
-)^^^";
-	main_cpp << std::format(main_cpp_content, project_name);
-	main_cpp.close();
-
-	std::ofstream app_cpp(path / L"app.cpp");
-	const auto app_cpp_content =
-		R"^^^(
-#include <flame/universe/application.h>
-
-using namespace flame;
-
-UniverseApplication app;
-
-IMPORT void* cpp_info();
-
-int main()
-{{
-	auto info = cpp_info();
-	Path::set_root(L"assets", std::filesystem::current_path() / L"assets");
-	app.create(false, "{0}", uvec2(1280, 720), WindowFrame | WindowResizable);
-	app.world->root->load(L"assets/main.prefab");
-	app.renderer->bind_window_targets();
-	app.run();
-	return 0;
-}}
-
-)^^^";
-	app_cpp << std::format(app_cpp_content, project_name);
-	app_cpp.close();
-
-	auto cmake_path = path / L"CMakeLists.txt";
-	std::ofstream cmake_lists(cmake_path);
-	const auto cmake_content =
-		R"^^^(
-cmake_minimum_required(VERSION 3.16.4)
-set(flame_path "$ENV{{FLAME_PATH}}")
-include("${{flame_path}}/utils.cmake")
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-add_definitions(-W0 -std:c++latest)
-
-project({0})
-
-set_output_dir("${{CMAKE_SOURCE_DIR}}/bin")
-
-set(GLM_INCLUDE_DIR "")
-set(IMGUI_DIR "")
-file(STRINGS "${{flame_path}}/build/CMakeCache.txt" flame_cmake_cache)
-foreach(s ${{flame_cmake_cache}})
-	if(GLM_INCLUDE_DIR STREQUAL "")
-		string(REGEX MATCH "GLM_INCLUDE_DIR:PATH=(.*)" res "${{s}}")
-		if(NOT res STREQUAL "")
-			set(GLM_INCLUDE_DIR ${{CMAKE_MATCH_1}})
-		endif()
-	endif()
-	if(IMGUI_DIR STREQUAL "")
-		string(REGEX MATCH "IMGUI_DIR:PATH=(.*)" res "${{s}}")
-		if(NOT res STREQUAL "")
-			set(IMGUI_DIR ${{CMAKE_MATCH_1}})
-		endif()
-	endif()
-endforeach()
-
-file(GLOB_RECURSE source_files "cpp/*.h*" "cpp/*.c*")
-add_library(cpp SHARED ${{source_files}})
-target_compile_definitions(cpp PUBLIC USE_IMGUI)
-target_compile_definitions(cpp PUBLIC "IMPORT=__declspec(dllimport)")
-target_compile_definitions(cpp PUBLIC "EXPORT=__declspec(dllexport)")
-target_compile_definitions(cpp PUBLIC IMGUI_USER_CONFIG="${config_file}")
-target_include_directories(cpp PUBLIC "${{GLM_INCLUDE_DIR}}")
-target_include_directories(cpp PUBLIC "${{IMGUI_DIR}}")
-target_include_directories(cpp PUBLIC "${{flame_path}}/include")
-target_link_libraries(cpp "${{flame_path}}/bin/debug/imgui.lib")
-target_link_libraries(cpp "${{flame_path}}/bin/debug/flame_foundation.lib")
-target_link_libraries(cpp "${{flame_path}}/bin/debug/flame_graphics.lib")
-target_link_libraries(cpp "${{flame_path}}/bin/debug/flame_universe.lib")
-
-file(GENERATE OUTPUT "$<TARGET_FILE_DIR:cpp>/cpp.typedesc" CONTENT "${{CMAKE_CURRENT_SOURCE_DIR}}/cpp" TARGET cpp)
-add_custom_command(TARGET cpp POST_BUILD COMMAND "${{flame_path}}/bin/debug/typeinfogen.exe" $<TARGET_FILE:cpp>)
-
-add_executable({0} "app.cpp")
-target_link_libraries({0} cpp)
-set_target_properties({0} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${{CMAKE_CURRENT_SOURCE_DIR}}")
-
-file(GLOB dll_files "${{flame_path}}/bin/debug/*.dll")
-foreach(f IN LISTS dll_files)
-	add_custom_command(TARGET {0} POST_BUILD COMMAND ${{CMAKE_COMMAND}} -E copy_if_different ${{f}} $(TargetDir))
-endforeach()
-file(GLOB typeinfo_files "${{flame_path}}/bin/debug/*.typeinfo")
-foreach(f IN LISTS typeinfo_files)
-	add_custom_command(TARGET {0} POST_BUILD COMMAND ${{CMAKE_COMMAND}} -E copy_if_different ${{f}} $(TargetDir))
-endforeach()
-
-)^^^";
-	cmake_lists << std::format(cmake_content, project_name);
-	cmake_lists.close();
-
-	auto build_path = path / L"build";
-	std::filesystem::create_directories(build_path);
-	exec(L"", std::format(L"cmake -S {} -B {}", path.c_str(), build_path.c_str()));
+	open_project(path);
 }
 
 void App::open_project(const std::filesystem::path& path)
@@ -1453,17 +1283,20 @@ void App::build_project()
 
 		cmake_project();
 
-		vs_automate({ L"detach_debugger" });
 		auto cpp_project_path = project_path / L"build\\cpp.vcxproj";
-		auto vs_path = get_special_path("Visual Studio Installation Location");
-		auto msbuild_path = vs_path / L"Msbuild\\Current\\Bin\\MSBuild.exe";
-		auto cwd = std::filesystem::current_path();
-		std::filesystem::current_path(cpp_project_path.parent_path());
-		printf("\n");
-		auto cl = std::format(L"\"{}\" {}", msbuild_path.wstring(), cpp_project_path.filename().wstring());
-		_wsystem(cl.c_str());
-		std::filesystem::current_path(cwd);
-		vs_automate({ L"attach_debugger" });
+		if (std::filesystem::exists(cpp_project_path))
+		{
+			vs_automate({ L"detach_debugger" });
+			auto vs_path = get_special_path("Visual Studio Installation Location");
+			auto msbuild_path = vs_path / L"Msbuild\\Current\\Bin\\MSBuild.exe";
+			auto cwd = std::filesystem::current_path();
+			std::filesystem::current_path(cpp_project_path.parent_path());
+			printf("\n");
+			auto cl = std::format(L"\"{}\" {}", msbuild_path.wstring(), cpp_project_path.filename().wstring());
+			_wsystem(cl.c_str());
+			std::filesystem::current_path(cwd);
+			vs_automate({ L"attach_debugger" });
+		}
 		 
 		load_project_cpp();
 

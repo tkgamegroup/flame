@@ -17,6 +17,7 @@ namespace flame
 	{
 		if (bp_name == name)
 			return;
+		bp_name = name;
 
 		if (bp_ins)
 		{
@@ -38,8 +39,9 @@ namespace flame
 	{
 		if (bp_ins)
 		{
-			if (bp_ins->prepare_executing("start"_h))
+			if (auto g = bp_ins->get_group("start"_h))
 			{
+				bp_ins->prepare_executing(g);
 				bp_self = entity;
 				bp_ins->run();
 				bp_self = nullptr;
@@ -51,8 +53,9 @@ namespace flame
 	{
 		if (bp_ins)
 		{
-			if (bp_ins->prepare_executing("update"_h))
+			if (auto g = bp_ins->get_group("update"_h); g)
 			{
+				bp_ins->prepare_executing(g);
 				bp_self = entity;
 				bp_ins->run();
 				bp_self = nullptr;

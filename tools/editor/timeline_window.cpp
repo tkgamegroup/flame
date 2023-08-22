@@ -6,7 +6,7 @@
 TimelineWindow timeline_window;
 
 TimelineView::TimelineView() :
-	View(&timeline_window, "Timeline##" + str(rand()))
+	TimelineView(timeline_window.views.empty() ? "Timeline" : "Timeline##" + str(rand()))
 {
 }
 
@@ -18,6 +18,7 @@ TimelineView::TimelineView(const std::string& name) :
 void TimelineView::on_draw()
 {
 	bool opened = true;
+	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
 	ImGui::Begin(name.c_str(), &opened);
 
 	auto& io = ImGui::GetIO();

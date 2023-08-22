@@ -10,7 +10,8 @@ namespace flame
 			{
 				{
 					.name = "Execute",
-					.allowed_types = { TypeInfo::get<Signal>() }
+					.allowed_types = { TypeInfo::get<Signal>() },
+					.default_value = "true"
 				},
 				{
 					.name = "String",
