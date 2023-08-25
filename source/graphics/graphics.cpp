@@ -5,7 +5,7 @@
 // let changes of the following files trigger build (that headers will copy to include dir)
 #include "application.h"
 #include "gui.h"
-#include "blueprint_node_library/node_library.h"
+#include "blueprint_library/library.h"
 
 PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasks = nullptr;
 
@@ -50,7 +50,7 @@ namespace flame
 				printf("graphics init\n");
 
 				add_event([]() {
-					init_node_library();
+					init_library();
 					return false;
 				});
 			}

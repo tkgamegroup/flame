@@ -31,7 +31,7 @@ namespace flame
 				{
 					out_signal.v = false;
 					return;
-				}
+				} 
 				else
 					out_signal.v = true;
 

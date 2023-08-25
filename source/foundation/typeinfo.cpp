@@ -318,13 +318,6 @@ namespace flame
 		if (!doc.load_string(content.c_str()) || (doc_root = doc.first_child()).name() != std::string("typeinfo"))
 			return false;
 
-		auto read_ti = [&](pugi::xml_attribute a) {
-			auto sp = SUS::to_string_vector(SUS::split(a.value(), '@'));
-			TypeTag tag;
-			TypeInfo::unserialize_t(sp[0], tag, *this);
-			return TypeInfo::get(tag, sp[1], *this);
-		};
-
 		for (auto n_enum : doc_root.child("enums"))
 		{
 			auto name = std::string(n_enum.attribute("name").value());
@@ -345,6 +338,16 @@ namespace flame
 			if (auto a = n_enum.attribute("source_file"); a)
 				e.source_file = a.value();
 		}
+
+		// get TypeTag ti not using the static interface, because the ti may change
+		auto ti_type_tag = TypeInfo::get(TagE, "flame::TypeTag", *this);
+		auto read_ti = [&](pugi::xml_attribute a) {
+			auto sp = SUS::to_string_vector(SUS::split(a.value(), '@'));
+			TypeTag tag;
+			ti_type_tag->unserialize(sp[0], &tag);
+			return TypeInfo::get(tag, sp[1], *this);
+		};
+
 		for (auto n_udt : doc_root.child("udts"))
 		{
 			auto name = std::string(n_udt.attribute("name").value());
@@ -519,8 +522,10 @@ namespace flame
 		pugi::xml_document doc;
 		auto doc_root = doc.append_child("typeinfo");
 
+		// get TypeTag ti not using the static interface, because the ti may change
+		auto ti_type_tag = TypeInfo::get(TagE, "flame::TypeTag", *this);
 		auto write_ti = [&](TypeInfo* ti, pugi::xml_attribute a) {
-			a.set_value((TypeInfo::serialize_t(ti->tag, *this) + '@' + ti->name).c_str());
+			a.set_value((ti_type_tag->serialize(&ti->tag) + '@' + ti->name).c_str());
 		};
 
 		if (!enums.empty())

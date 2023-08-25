@@ -6,6 +6,6 @@ namespace flame
 {
 	namespace graphics
 	{
-		void init_node_library();
+		void init_library();
 	}
 }

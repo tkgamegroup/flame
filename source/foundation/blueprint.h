@@ -10,6 +10,30 @@ namespace flame
 		bool v;
 	};
 
+	struct BlueprintSlotDesc
+	{
+		std::string name;
+		uint name_hash;
+		std::vector<TypeInfo*> allowed_types;
+		std::string default_value;
+	};
+
+	inline bool blueprint_allow_type(const std::vector<TypeInfo*>& allowed_types, TypeInfo* type)
+	{
+		for (auto t : allowed_types)
+		{
+			if (t == type)
+				return true;
+			if (t->tag == TagPU && type->tag == TagU)
+			{
+				auto ui = t->retrive_ui();
+				if (ui && ui == type->retrive_ui())
+					return true;
+			}
+		}
+		return false;
+	}
+
 	struct BlueprintSlot
 	{
 		BlueprintNodePtr node;
@@ -21,30 +45,18 @@ namespace flame
 		void* data = nullptr;
 		std::string default_value;
 		uint data_changed_frame = 0;
-
-		inline bool allow_type(TypeInfo* type) const
-		{
-			for (auto t : allowed_types)
-			{
-				if (t == type)
-					return true;
-				if (t->tag == TagPU && type->tag == TagU)
-				{
-					auto ui = t->retrive_ui();
-					if (ui && ui == type->retrive_ui())
-						return true;
-				}
-			}
-			return false;
-		}
 	};
-
-	typedef BlueprintSlot* BlueprintSlotPtr;
 
 	struct BlueprintArgument
 	{
 		TypeInfo* type;
 		void* data;
+	};
+
+	struct BlueprintExecutionFlow
+	{
+		bool is_executing;
+		bool execute_times;
 	};
 
 	struct BlueprintNodePreview
@@ -63,11 +75,12 @@ namespace flame
 	struct BlueprintNode
 	{
 		BlueprintGroupPtr group;
+		BlueprintBlockPtr block;
 		uint object_id;
 		std::string name;
 		uint name_hash = 0;
-		std::vector<BlueprintSlot> inputs;
-		std::vector<BlueprintSlot> outputs;
+		std::vector<std::unique_ptr<BlueprintSlotT>> inputs;
+		std::vector<std::unique_ptr<BlueprintSlotT>> outputs;
 		BlueprintNodeFunction function = nullptr;
 		BlueprintNodeConstructor constructor = nullptr;
 		BlueprintNodeDestructor destructor = nullptr;
@@ -83,8 +96,8 @@ namespace flame
 		{
 			for (auto& i : inputs)
 			{
-				if (i.name_hash == name)
-					return (BlueprintSlotPtr)&i;
+				if (((BlueprintSlot*)i.get())->name_hash == name)
+					return (BlueprintSlotPtr)i.get();
 			}
 			return nullptr;
 		}
@@ -93,8 +106,8 @@ namespace flame
 		{
 			for (auto& o : outputs)
 			{
-				if (o.name_hash == name)
-					return (BlueprintSlotPtr)&o;
+				if (((BlueprintSlot*)o.get())->name_hash == name)
+					return (BlueprintSlotPtr)o.get();
 			}
 			return nullptr;
 		}
@@ -111,18 +124,20 @@ namespace flame
 		virtual ~BlueprintLink() {}
 	};
 
-	struct BlueprintGroupSlot
+	struct BlueprintBlock
 	{
 		BlueprintGroupPtr group;
 		uint object_id;
-		std::string name;
-		uint name_hash = 0;
-		TypeInfo* type = nullptr;
-		void* data = nullptr;
-		uint data_changed_frame = 0;
-	};
 
-	typedef BlueprintGroupSlot* BlueprintGroupSlotPtr;
+		std::vector<BlueprintNodePtr> nodes;
+		BlueprintBlockPtr parent;
+		std::vector<BlueprintBlockPtr> children;
+
+		vec2 position;
+		bool collapsed = false;
+
+		virtual ~BlueprintBlock() {}
+	};
 
 	struct BlueprintGroup
 	{
@@ -132,8 +147,9 @@ namespace flame
 		uint name_hash = 0;
 		std::vector<std::unique_ptr<BlueprintNodeT>> nodes;
 		std::vector<std::unique_ptr<BlueprintLinkT>> links;
-		std::vector<BlueprintGroupSlot> inputs;
-		std::vector<BlueprintGroupSlot> outputs;
+		std::vector<std::unique_ptr<BlueprintBlockT>> blocks;
+		std::vector<std::unique_ptr<BlueprintSlotT>> inputs;
+		std::vector<std::unique_ptr<BlueprintSlotT>> outputs;
 
 		vec2 offset;
 		float scale = 1.f;
@@ -166,8 +182,8 @@ namespace flame
 		}
 
 		virtual ~Blueprint() {}
-		virtual BlueprintNodePtr		add_node(BlueprintGroupPtr group /*null means the first group*/, const std::string& name,
-			const std::vector<BlueprintSlot>& inputs = {}, const std::vector<BlueprintSlot>& outputs = {},
+		virtual BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintBlockPtr block, const std::string& name,
+			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
 		virtual BlueprintNodePtr		add_input_node(BlueprintGroupPtr group, uint name) = 0;
@@ -175,12 +191,14 @@ namespace flame
 		virtual void					remove_node(BlueprintNodePtr node) = 0;
 		virtual BlueprintLinkPtr		add_link(BlueprintNodePtr from_node, uint from_slot, BlueprintNodePtr to_node, uint to_slot) = 0;
 		virtual void					remove_link(BlueprintLinkPtr link) = 0;
+		virtual BlueprintBlockPtr		add_block(BlueprintGroupPtr group, BlueprintBlockPtr parent) = 0;
+		virtual void					remove_block(BlueprintBlockPtr block) = 0;
 		virtual BlueprintGroupPtr		add_group(const std::string& name) = 0;
 		virtual void					remove_group(BlueprintGroupPtr group) = 0;
-		virtual BlueprintGroupSlotPtr	add_group_input(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) = 0;
-		virtual void					remove_group_input(BlueprintGroupPtr group, BlueprintGroupSlotPtr slot) = 0;
-		virtual BlueprintGroupSlotPtr	add_group_output(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) = 0;
-		virtual void					remove_group_output(BlueprintGroupPtr group, BlueprintGroupSlotPtr slot) = 0;
+		virtual BlueprintSlotPtr		add_group_input(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) = 0;
+		virtual void					remove_group_input(BlueprintGroupPtr group, BlueprintSlotPtr slot) = 0;
+		virtual BlueprintSlotPtr		add_group_output(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) = 0;
+		virtual void					remove_group_output(BlueprintGroupPtr group, BlueprintSlotPtr slot) = 0;
 
 		virtual void					save(const std::filesystem::path& path = L"") = 0;
 
@@ -205,8 +223,8 @@ namespace flame
 		{
 			std::string name;
 			uint name_hash = 0;
-			std::vector<BlueprintSlot> inputs;
-			std::vector<BlueprintSlot> outputs;
+			std::vector<BlueprintSlotDesc> inputs;
+			std::vector<BlueprintSlotDesc> outputs;
 			BlueprintNodeFunction function = nullptr;
 			BlueprintNodeConstructor constructor = nullptr;
 			BlueprintNodeDestructor destructor = nullptr;
@@ -220,7 +238,7 @@ namespace flame
 		uint ref = 0;
 
 		virtual ~BlueprintNodeLibrary() {}
-		virtual void add_template(const std::string& name, const std::vector<BlueprintSlot>& inputs = {}, const std::vector<BlueprintSlot>& outputs = {},
+		virtual void add_template(const std::string& name, const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
 
@@ -251,22 +269,34 @@ namespace flame
 				uint changed_frame = 0;
 			};
 
+			struct Branch
+			{
+				std::vector<uint> trunk;
+				std::vector<Branch> children;
+			};
+
 			BlueprintInstancePtr instance;
 			uint name;
-			std::map<uint, Data> datas; // key: group input output/slot id
+			std::map<uint, Data> datas; // key: slot id
 			std::vector<Node> nodes;
 
 			uint structure_updated_frame = 0;
 			uint data_updated_frame = 0;
 
-			inline const Node* find(BlueprintNodePtr original) const
+			inline int find_node_i(BlueprintNodePtr original) const
 			{
-				for (auto& n : nodes)
+				for (auto i = 0; i < nodes.size(); i++)
 				{
-					if (n.original == original)
-						return &n;
+					if (nodes[i].original == original)
+						return i;
 				}
-				return nullptr;
+				return -1;
+			}
+
+			inline Node* find_node(BlueprintNodePtr original) const
+			{
+				auto idx = find_node_i(original);
+				return idx == -1 ? nullptr : (Node*)&nodes[idx];
 			}
 		};
 

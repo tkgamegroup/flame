@@ -1,4 +1,5 @@
 #include "blueprint_window.h"
+#include "project_window.h"
 
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/model.h>
@@ -123,7 +124,7 @@ void BlueprintView::on_draw()
 		}
 		ImGui::SameLine();
 
-		if (ImGui::Button("X"))
+		if (ImGui::Button(graphics::FontAtlas::icon_s("xmark"_h).c_str()))
 		{
 			blueprint->remove_group(group);
 			group = nullptr;
@@ -158,7 +159,7 @@ void BlueprintView::on_draw()
 					{
 						for (auto i = 0; i < group->inputs.size(); i++)
 						{
-							if (ImGui::Selectable(group->inputs[i].name.c_str(), selected_input == i))
+							if (ImGui::Selectable(group->inputs[i]->name.c_str(), selected_input == i))
 								selected_input = i;
 						}
 					}
@@ -173,7 +174,7 @@ void BlueprintView::on_draw()
 						auto name = get_unique_name("new_input", [&](const std::string& name) {
 							for (auto& i : group->inputs)
 							{
-								if (i.name == name)
+								if (i->name == name)
 									return true;
 							}
 							return false;
@@ -188,7 +189,7 @@ void BlueprintView::on_draw()
 					if (group)
 					{
 						if (selected_input != -1)
-							blueprint->remove_group_input(group, &group->inputs[selected_input]);
+							blueprint->remove_group_input(group, group->inputs[selected_input].get());
 					}
 				}
 				ImGui::SameLine();
@@ -219,7 +220,7 @@ void BlueprintView::on_draw()
 					{
 						for (auto i = 0; i < group->outputs.size(); i++)
 						{
-							if (ImGui::Selectable(group->outputs[i].name.c_str(), selected_output == i))
+							if (ImGui::Selectable(group->outputs[i]->name.c_str(), selected_output == i))
 								selected_output = i;
 						}
 					}
@@ -232,7 +233,7 @@ void BlueprintView::on_draw()
 					auto name = get_unique_name("new_output", [&](const std::string& name) {
 						for (auto& o : group->outputs)
 						{
-							if (o.name == name)
+							if (o->name == name)
 								return true;
 						}
 						return false;
@@ -246,7 +247,7 @@ void BlueprintView::on_draw()
 					if (group)
 					{
 						if (selected_output != -1)
-							blueprint->remove_group_output(group, &group->inputs[selected_output]);
+							blueprint->remove_group_output(group, group->inputs[selected_output].get());
 					}
 				}
 				ImGui::SameLine();
@@ -334,7 +335,7 @@ void BlueprintView::on_draw()
 					auto& io = ImGui::GetIO();
 					auto dl = ImGui::GetWindowDrawList();
 					std::string tooltip; vec2 tooltip_pos;
-					auto get_slot_value = [](BlueprintArgument& arg)->std::string {
+					auto get_slot_value = [](const BlueprintArgument& arg)->std::string {
 						if (arg.type->tag != TagD)
 							return "";
 						return std::format("Value: {}", arg.type->serialize(arg.data));
@@ -351,7 +352,7 @@ void BlueprintView::on_draw()
 					for (auto& n : group->nodes)
 					{
 						BlueprintInstance::Node* instance_node = nullptr;
-						instance_node = (BlueprintInstance::Node*)blueprint_instance->groups[group_name_hash].find(n.get());
+						instance_node = blueprint_instance->groups[group_name_hash].find_node(n.get());
 
 						ax::NodeEditor::BeginNode((uint64)n.get());
 						auto display_name = n->name;
@@ -361,9 +362,9 @@ void BlueprintView::on_draw()
 						ImGui::BeginGroup();
 						for (auto i = 0; i < n->inputs.size(); i++)
 						{
-							auto& input = n->inputs[i];
+							auto input = n->inputs[i].get();
 							ax::NodeEditor::BeginPin((uint64)&input, ax::NodeEditor::PinKind::Input);
-							ImGui::Text("%s %s", graphics::FontAtlas::icon_s("play"_h).c_str(), input.name.c_str());
+							ImGui::Text("%s %s", graphics::FontAtlas::icon_s("play"_h).c_str(), input->name.c_str());
 							ax::NodeEditor::EndPin();
 							if (blueprint_window.debugger->debugging == blueprint_instance)
 							{
@@ -387,7 +388,7 @@ void BlueprintView::on_draw()
 								auto linked = false;
 								for (auto& l : group->links)
 								{
-									if (l->to_slot == &input)
+									if (l->to_slot == input)
 									{
 										linked = true;
 										break;
@@ -397,9 +398,9 @@ void BlueprintView::on_draw()
 								{
 									auto changed = 0;
 									ImGui::PushID(&input);
-									if (input.type && input.type->tag == TagD)
+									if (input->type && input->type->tag == TagD)
 									{
-										auto ti = (TypeInfo_Data*)input.type;
+										auto ti = (TypeInfo_Data*)input->type;
 										switch (ti->data_type)
 										{
 										case DataFloat:
@@ -409,7 +410,7 @@ void BlueprintView::on_draw()
 												ImGui::PushID(i);
 												if (i > 0)
 													ImGui::SameLine();
-												ImGui::DragScalar("", ImGuiDataType_Float, &((float*)input.data)[i], 0.01f);
+												ImGui::DragScalar("", ImGuiDataType_Float, &((float*)input->data)[i], 0.01f);
 												changed |= ImGui::IsItemDeactivatedAfterEdit();
 												ImGui::PopID();
 												ImGui::PopItemWidth();
@@ -422,7 +423,7 @@ void BlueprintView::on_draw()
 												ImGui::PushID(i);
 												if (i > 0)
 													ImGui::SameLine();
-												ImGui::DragScalar("", ImGuiDataType_S32, &((int*)input.data)[i]);
+												ImGui::DragScalar("", ImGuiDataType_S32, &((int*)input->data)[i]);
 												changed |= ImGui::IsItemDeactivatedAfterEdit();
 												ImGui::PopID();
 												ImGui::PopItemWidth();
@@ -430,8 +431,34 @@ void BlueprintView::on_draw()
 											break;
 										case DataString:
 											ImGui::SetNextItemWidth(100.f);
-											ImGui::InputText("", (std::string*)input.data);
+											ImGui::InputText("", (std::string*)input->data);
 											changed |= ImGui::IsItemDeactivatedAfterEdit();
+											break;
+										case DataPath:
+										{
+											auto& path = *(std::filesystem::path*)input->data;
+											auto s = path.string();
+											ImGui::SetNextItemWidth(100.f);
+											ImGui::InputText(display_name.c_str(), s.data(), ImGuiInputTextFlags_ReadOnly);
+											if (ImGui::BeginDragDropTarget())
+											{
+												if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
+												{
+													path = Path::reverse(std::wstring((wchar_t*)payload->Data));
+													changed = true;
+												}
+												ImGui::EndDragDropTarget();
+											}
+											ImGui::SameLine();
+											if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
+												project_window.ping(Path::get(path));
+											ImGui::SameLine();
+											if (ImGui::Button(graphics::FontAtlas::icon_s("xmark"_h).c_str()))
+											{
+												path = L"";
+												changed = true;
+											}
+										}
 											break;
 										}
 									}
@@ -439,7 +466,7 @@ void BlueprintView::on_draw()
 									if (changed)
 									{
 										auto frame = frames;
-										input.data_changed_frame = frame;
+										input->data_changed_frame = frame;
 										group->data_changed_frame = frame;
 										blueprint->dirty_frame = frame;
 									}
@@ -451,11 +478,11 @@ void BlueprintView::on_draw()
 						ImGui::BeginGroup();
 						for (auto i = 0; i < n->outputs.size(); i++)
 						{
-							auto& output = n->outputs[i];
-							if (!output.type)
+							auto output = n->outputs[i].get();
+							if (!output->type)
 								continue;
 							ax::NodeEditor::BeginPin((uint64)&output, ax::NodeEditor::PinKind::Output);
-							ImGui::Text("%s %s", output.name.c_str(), graphics::FontAtlas::icon_s("play"_h).c_str());
+							ImGui::Text("%s %s", output->name.c_str(), graphics::FontAtlas::icon_s("play"_h).c_str());
 							ax::NodeEditor::EndPin();
 							if (blueprint_window.debugger->debugging == blueprint_instance)
 							{
@@ -555,7 +582,7 @@ void BlueprintView::on_draw()
 						{
 							if (from_slot && to_slot && from_slot != to_slot)
 							{
-								if (to_slot->allow_type(from_slot->type))
+								if (blueprint_allow_type(to_slot->allowed_types, from_slot->type))
 								{
 									if (ax::NodeEditor::AcceptNewItem())
 										blueprint->add_link(from_slot->node, from_slot->name_hash, to_slot->node, to_slot->name_hash);
@@ -666,7 +693,7 @@ void BlueprintView::on_draw()
 								{
 									for (auto& i : t.inputs)
 									{
-										if (i.allow_type(new_node_link_slot->type))
+										if (blueprint_allow_type(i.allowed_types, new_node_link_slot->type))
 										{
 											link_slot = i.name_hash;
 											break;

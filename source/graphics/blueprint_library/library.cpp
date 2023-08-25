@@ -7,7 +7,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		void init_node_library()
+		void init_library()
 		{
 			auto texture_library = BlueprintNodeLibrary::get(L"graphics::texture");
 			auto geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");

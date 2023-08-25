@@ -1274,9 +1274,9 @@ void ProjectWindow::process_changed_paths()
 									}
 
 									if (selection.selecting(e))
-										selection.clear();
+										selection.clear("project"_h);
 								}
-								});
+							});
 						}
 					}
 				}
