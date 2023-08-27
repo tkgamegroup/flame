@@ -282,19 +282,19 @@ process:
 	auto typeinfo_path = input_path;
 	typeinfo_path.replace_extension(L".typeinfo");
 
-	//if (!just_print_all_symbols)
-	//{
-	//	if (std::filesystem::exists(typeinfo_path))
-	//	{
-	//		auto lwt = std::filesystem::last_write_time(typeinfo_path);
-	//		if (lwt > std::filesystem::last_write_time(pdb_path))
-	//		{
-	//			printf("typeinfogen: %s up to date\n", typeinfo_path.string().c_str());
-	//			return 0;
-	//		}
-	//		std::filesystem::remove(typeinfo_path);
-	//	}
-	//}
+	if (!just_print_all_symbols)
+	{
+		if (std::filesystem::exists(typeinfo_path))
+		{
+			auto lwt = std::filesystem::last_write_time(typeinfo_path);
+			if (lwt > std::filesystem::last_write_time(pdb_path))
+			{
+				printf("typeinfogen: %s up to date\n", typeinfo_path.string().c_str());
+				return 0;
+			}
+			std::filesystem::remove(typeinfo_path);
+		}
+	}
 
 	if (input_path.filename() == L"flame_foundation.dll")
 	{

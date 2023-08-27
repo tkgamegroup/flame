@@ -13,14 +13,32 @@ namespace flame
 		dirty_frame = frames;
 	}
 
-	static void init_node(BlueprintNodePtr n)
+	BlueprintNodePtr BlueprintPrivate::add_node(BlueprintGroupPtr group, BlueprintBlockPtr block, const std::string& name,
+		const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
+		BlueprintNodeFunction function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
+		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider)
 	{
-		auto bp = n->group->blueprint;
-		for (auto& i : n->inputs)
+		assert(group && group->blueprint == this);
+		if (block)
+			assert(group == block->group);
+		else
+			block = group->blocks.front().get();
+
+		auto ret = new BlueprintNodePrivate;
+		ret->group = group;
+		ret->block = block;
+		ret->object_id = next_object_id++;
+		ret->name = name;
+		ret->name_hash = sh(name.c_str());
+		for (auto& src_i : inputs)
 		{
-			i->node = n;
-			i->object_id = bp->next_object_id++;
-			i->name_hash = sh(i->name.c_str());
+			auto i = new BlueprintSlotPrivate;
+			i->parent = ret;
+			i->object_id = next_object_id++;
+			i->name = src_i.name;
+			i->name_hash = src_i.name_hash;
+			i->allowed_types = src_i.allowed_types;
+			i->default_value = src_i.default_value;
 			if (!i->allowed_types.empty())
 			{
 				i->type = i->allowed_types.front();
@@ -28,45 +46,18 @@ namespace flame
 				if (!i->default_value.empty())
 					i->type->unserialize(i->default_value, i->data);
 			}
-		}
-		for (auto& o : n->outputs)
-		{
-			o->node = n;
-			o->object_id = bp->next_object_id++;
-			o->name_hash = sh(o->name.c_str());
-			if (!o->allowed_types.empty())
-				o->type = o->allowed_types.front();
-		}
-	}
-
-	BlueprintNodePtr BlueprintPrivate::add_node(BlueprintGroupPtr group, BlueprintBlockPtr block, const std::string& name,
-		const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
-		BlueprintNodeFunction function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
-		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider)
-	{
-		assert(group && group->blueprint == this);
-
-		auto ret = new BlueprintNodePrivate;
-		ret->group = group;
-		ret->object_id = next_object_id++;
-		ret->name = name;
-		ret->name_hash = sh(name.c_str());
-		for (auto& src_i : inputs)
-		{
-			auto i = new BlueprintSlotPrivate;
-			i->name = src_i.name;
-			i->name_hash = src_i.name_hash;
-			i->allowed_types = src_i.allowed_types;
-			i->default_value = src_i.default_value;
 			ret->inputs.emplace_back(i);
 		}
 		for (auto& src_o : outputs)
 		{
 			auto o = new BlueprintSlotPrivate;
+			o->parent = ret;
+			o->object_id = next_object_id++;
 			o->name = src_o.name;
 			o->name_hash = src_o.name_hash;
 			o->allowed_types = src_o.allowed_types;
-			o->default_value = src_o.default_value;
+			if (!o->allowed_types.empty())
+				o->type = o->allowed_types.front();
 			ret->outputs.emplace_back(o);
 		}
 		ret->constructor = constructor;
@@ -74,7 +65,7 @@ namespace flame
 		ret->function = function;
 		ret->input_slot_changed_callback = input_slot_changed_callback;
 		ret->preview_provider = preview_provider;
-		init_node(ret);
+		ret->block->nodes.push_back(ret);
 		group->nodes.emplace_back(ret);
 
 		auto frame = frames;
@@ -84,11 +75,13 @@ namespace flame
 		return ret;
 	}
 
-	BlueprintNodePtr BlueprintPrivate::add_input_node(BlueprintGroupPtr group, uint name)
+	BlueprintNodePtr BlueprintPrivate::add_input_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint name)
 	{
-		if (!group)
-			group = groups[0].get();
-		assert(group->blueprint == this);
+		assert(group && group->blueprint == this);
+		if (block)
+			assert(group == block->group);
+		else
+			block = group->blocks.front().get();
 
 		BlueprintSlotPtr input = nullptr;
 		for (auto& i : group->inputs)
@@ -108,16 +101,21 @@ namespace flame
 
 		auto ret = new BlueprintNodePrivate;
 		ret->group = group;
+		ret->block = block;
 		ret->object_id = next_object_id++;
 		ret->name = input->name;
 		ret->name_hash = sh(ret->name.c_str());
 		{
 			auto o = new BlueprintSlotPrivate;
+			o->parent = ret;
+			o->object_id = next_object_id++;
 			o->name = "Out";
+			o->name_hash = "Out"_h;
 			o->allowed_types.push_back(input->type);
+			o->type = input->type;
 			ret->outputs.emplace_back(o);
 		}
-		init_node(ret);
+		ret->block->nodes.push_back(ret);
 		group->nodes.emplace_back(ret);
 
 		auto frame = frames;
@@ -127,11 +125,13 @@ namespace flame
 		return ret;
 	}
 
-	BlueprintNodePtr BlueprintPrivate::add_variable_node(BlueprintGroupPtr group, uint variable_group_name)
+	BlueprintNodePtr BlueprintPrivate::add_variable_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint variable_group_name)
 	{
-		if (!group)
-			group = groups[0].get();
-		assert(group->blueprint == this);
+		assert(group && group->blueprint == this);
+		if (block)
+			assert(group == block->group);
+		else
+			block = group->blocks.front().get();
 
 		auto variable_group = find_group(variable_group_name);
 		assert(variable_group);
@@ -143,6 +143,7 @@ namespace flame
 
 		auto ret = new BlueprintNodePrivate;
 		ret->group = group;
+		ret->block = block;
 		ret->object_id = next_object_id++;
 		ret->name = variable_group->name;
 		ret->name_hash = sh(ret->name.c_str());
@@ -150,15 +151,19 @@ namespace flame
 		{
 			auto& src_o = variable_group->outputs.front();
 			auto o = new BlueprintSlotPrivate;
+			o->parent = ret;
+			o->object_id = next_object_id++;
 			o->name = "Out";
+			o->name_hash = "Out"_h;
 			o->allowed_types.push_back(src_o->type);
+			o->type = src_o->type;
 			ret->outputs.emplace_back(o);
 
 		}
 		ret->function = [](BlueprintArgument* inputs, BlueprintArgument* outputs) {
 
 		};
-		init_node(ret);
+		ret->block->nodes.push_back(ret);
 		group->nodes.emplace_back(ret);
 
 		auto frame = frames;
@@ -171,6 +176,7 @@ namespace flame
 	void BlueprintPrivate::remove_node(BlueprintNodePtr node)
 	{
 		auto group = node->group;
+		auto block = node->block;
 		assert(group->blueprint == this);
 		for (auto it = group->nodes.begin(); it != group->nodes.end(); it++)
 		{
@@ -180,17 +186,25 @@ namespace flame
 				break;
 			}
 		}
+		for (auto it = block->nodes.begin(); it != block->nodes.end(); it++)
+		{
+			if (*it == node)
+			{
+				block->nodes.erase(it);
+				break;
+			}
+		}
 		for (auto it = group->links.begin(); it != group->links.end();)
 		{
 			auto link = it->get();
-			if (link->from_node == node)
+			if (link->from_slot->parent.p.node == node)
 			{
 				std::erase_if(link->to_slot->linked_slots, [&](const auto& slot) {
 					return slot == link->from_slot;
 				});
 				it = group->links.erase(it);
 			}
-			else if (link->to_node == node)
+			else if (link->to_slot->parent.p.node == node)
 			{
 				std::erase_if(link->from_slot->linked_slots, [&](const auto& slot) {
 					return slot == link->to_slot;
@@ -278,8 +292,9 @@ namespace flame
 							{
 								change_slot_type(l->from_slot, blueprint_allow_type(l->from_slot->allowed_types, slot->type) ? slot->type : nullptr);
 
-								if (std::find(input_changed_nodes.begin(), input_changed_nodes.end(), l->to_node) == input_changed_nodes.end())
-									input_changed_nodes.push_back(l->to_node);
+								auto node = l->to_slot->parent.p.node;
+								if (std::find(input_changed_nodes.begin(), input_changed_nodes.end(), node) == input_changed_nodes.end())
+									input_changed_nodes.push_back(node);
 							}
 						}
 					}
@@ -290,24 +305,24 @@ namespace flame
 		clear_invalid_links(n->group);
 	}
 
-	BlueprintLinkPtr BlueprintPrivate::add_link(BlueprintNodePtr from_node, uint from_slot, BlueprintNodePtr to_node, uint to_slot)
+	BlueprintLinkPtr BlueprintPrivate::add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot)
 	{
-		auto group = from_node->group;
-		assert(group->blueprint == this && group == to_node->group);
+		auto group = from_slot->parent.get_locate_group();
+		assert(group && group->blueprint == this && group == to_slot->parent.get_locate_group());
 
-		auto from_slot_ptr = from_node->find_output(from_slot);
-		auto to_slot_ptr = to_node->find_input(to_slot);
-		if (!from_slot_ptr || !to_slot_ptr)
+		if (!from_slot || !to_slot)
 			return nullptr;
-		if (from_slot_ptr == to_slot_ptr)
+		if (from_slot == to_slot)
+			return nullptr;
+		if (from_slot->parent.get_locate_block()->depth > to_slot->parent.get_locate_block()->depth)
 			return nullptr;
 
-		if (!blueprint_allow_type(to_slot_ptr->allowed_types, from_slot_ptr->type))
+		if (!blueprint_allow_type(to_slot->allowed_types, from_slot->type))
 			return nullptr;
 
 		for (auto& l : group->links)
 		{
-			if (l->to_slot == to_slot_ptr)
+			if (l->to_slot == to_slot)
 			{
 				remove_link(l.get());
 				break;
@@ -316,16 +331,15 @@ namespace flame
 
 		auto ret = new BlueprintLinkPrivate;
 		ret->object_id = next_object_id++;
-		ret->from_node = from_node;
-		ret->from_slot = from_node->find_output(from_slot);
-		ret->to_node = to_node;
-		ret->to_slot = to_node->find_input(to_slot);
+		ret->from_slot = from_slot;
+		ret->to_slot = to_slot;
 		group->links.emplace_back(ret);
 
-		from_slot_ptr->linked_slots.push_back(to_slot_ptr);
-		to_slot_ptr->linked_slots.push_back(from_slot_ptr);
-		change_slot_type(to_slot_ptr, from_slot_ptr->type);
-		update_node_output_types(to_node);
+		from_slot->linked_slots.push_back(to_slot);
+		to_slot->linked_slots.push_back(from_slot);
+		change_slot_type(to_slot, from_slot->type);
+		if (to_slot->parent.type == BlueprintObjectNode)
+			update_node_output_types(to_slot->parent.p.node);
 
 		auto frame = frames;
 		group->structure_changed_frame = frame;
@@ -336,16 +350,15 @@ namespace flame
 
 	void BlueprintPrivate::remove_link(BlueprintLinkPtr link)
 	{
-		auto group = link->from_node->group;
-		assert(group->blueprint == this && group == link->to_node->group);
+		auto group = link->from_slot->parent.get_locate_group();
+		assert(group && group->blueprint == this);
 
 		for (auto it = group->links.begin(); it != group->links.end(); it++)
 		{
 			if (it->get() == link)
 			{
-				auto from_node = link->from_node;
 				auto from_slot = link->from_slot;
-				auto to_node = link->to_node;
+				auto to_object = link->to_slot->parent;
 				auto to_slot = link->to_slot;
 				std::erase_if(from_slot->linked_slots, [&](const auto& slot) {
 					return slot == to_slot;
@@ -355,7 +368,8 @@ namespace flame
 				});
 				group->links.erase(it);
 				change_slot_type(to_slot, !to_slot->allowed_types.empty() ? to_slot->allowed_types.front() : nullptr);
-				update_node_output_types(to_node);
+				if (to_object.type == BlueprintObjectNode)
+					update_node_output_types(to_object.p.node);
 				break;
 			}
 		}
@@ -367,12 +381,71 @@ namespace flame
 
 	BlueprintBlockPtr BlueprintPrivate::add_block(BlueprintGroupPtr group, BlueprintBlockPtr parent)
 	{
+		assert(group && group->blueprint == this);
+		if (parent)
+			assert(parent->group == group);
+		else if (!group->blocks.empty())
+			parent = group->blocks.front().get();
 
+		auto ret = new BlueprintBlockPrivate;
+		ret->group = group;
+		ret->parent = parent;
+		ret->object_id = next_object_id++;
+		if (parent)
+		{
+			parent->children.push_back(ret);
+			ret->depth = parent->depth + 1;
+		}
+		else
+			ret->depth = 0;
+		ret->input.reset(new BlueprintSlotPrivate);
+		ret->input->parent = ret;
+		ret->input->object_id = next_object_id++;
+		ret->input->name = "Execute";
+		ret->input->name_hash = "Execute"_h;
+		ret->input->allowed_types.push_back(TypeInfo::get<Signal>());
+		ret->input->type = ret->input->allowed_types.front();
+		ret->output.reset(new BlueprintSlotPrivate);
+		ret->output->parent = ret;
+		ret->output->object_id = next_object_id++;
+		ret->output->name = "Execute";
+		ret->output->name_hash = "Execute"_h;
+		ret->output->allowed_types.push_back(TypeInfo::get<Signal>());
+		ret->output->type = ret->output->allowed_types.front();
+
+		group->blocks.emplace_back(ret);
+
+		auto frame = frames;
+		group->structure_changed_frame = frame;
+		dirty_frame = frame;
+
+		return ret;
 	}
 
 	void BlueprintPrivate::remove_block(BlueprintBlockPtr block)
 	{
+		auto group = block->group;
+		assert(group && group->blueprint == this);
 
+		std::function<void(BlueprintBlockPtr)> destroy_block;
+		destroy_block = [&](BlueprintBlockPtr b) {
+			for (auto& c : b->children)
+				destroy_block(c);
+			for (auto n : b->nodes)
+				remove_node(n);
+			for (auto it = group->blocks.begin(); it != group->blocks.end(); it++)
+			{
+				if (it->get() == b)
+				{
+					group->blocks.erase(it);
+					return;
+				}
+			}
+		};
+
+		auto frame = frames;
+		group->structure_changed_frame = frame;
+		dirty_frame = frame;
 	}
 
 	BlueprintGroupPtr BlueprintPrivate::add_group(const std::string& name)
@@ -383,6 +456,8 @@ namespace flame
 		g->name = name;
 		g->name_hash = sh(name.c_str());
 		groups.emplace_back(g);
+
+		add_block(g, nullptr);
 
 		auto frame = frames;
 		g->structure_changed_frame = frame;
@@ -425,7 +500,7 @@ namespace flame
 		}
 
 		auto ret = new BlueprintSlotPrivate;
-		ret->node = nullptr;
+		ret->parent = group;
 		ret->object_id = next_object_id++;
 		ret->name = name;
 		ret->name_hash = sh(name.c_str());
@@ -472,7 +547,7 @@ namespace flame
 		}
 
 		auto ret = new BlueprintSlotPrivate;
-		ret->node = nullptr;
+		ret->parent = group;
 		ret->object_id = next_object_id++;
 		ret->name = name;
 		ret->name_hash = sh(name.c_str());
@@ -524,17 +599,26 @@ namespace flame
 			{
 				auto n_node = n_nodes.append_child("node");
 				n_node.append_attribute("object_id").set_value(n->object_id);
+				n_node.append_attribute("block_id").set_value(n->block ? n->block->object_id : 0);
 				n_node.append_attribute("name").set_value(n->name.c_str());
 				n_node.append_attribute("position").set_value(str(n->position).c_str());
+			}
+			auto n_blocks = n_group.append_child("blocks");
+			for (auto& b : g->blocks)
+			{
+				auto n_block = n_blocks.append_child("block");
+				n_block.append_attribute("object_id").set_value(b->object_id);
+				n_block.append_attribute("parent_id").set_value(b->parent ? b->parent->object_id : 0);
+				n_block.append_attribute("position").set_value(str(b->position).c_str());
 			}
 			auto n_links = n_group.append_child("links");
 			for (auto& l : g->links)
 			{
 				auto n_link = n_links.append_child("link");
 				n_link.append_attribute("object_id").set_value(l->object_id);
-				n_link.append_attribute("from_node").set_value(l->from_node->object_id);
+				n_link.append_attribute("from_object").set_value(l->from_slot->parent.get_id());
 				n_link.append_attribute("from_slot").set_value(l->from_slot->name_hash);
-				n_link.append_attribute("to_node").set_value(l->to_node->object_id);
+				n_link.append_attribute("to_object").set_value(l->to_slot->parent.get_id());
 				n_link.append_attribute("to_slot").set_value(l->to_slot->name_hash);
 			}
 			auto n_inputs = n_group.append_child("inputs");
@@ -598,8 +682,15 @@ namespace flame
 				{
 					auto g = ret->add_group(n_group.attribute("name").value());
 
-					std::map<uint, BlueprintNodePtr> node_map;
+					std::map<uint, BlueprintObject> object_map;
 
+					for (auto n_block : n_group.child("blocks"))
+					{
+						auto parent_id = n_block.attribute("parent_id").as_uint();
+						auto b = ret->add_block(g, parent_id ? object_map[parent_id].p.block : nullptr);
+						object_map[n_block.attribute("object_id").as_uint()] = b;
+						b->position = s2t<2, float>(n_block.attribute("position").value());
+					}
 					for (auto n_node : n_group.child("nodes"))
 					{
 						std::string name = n_node.attribute("name").value();
@@ -610,9 +701,11 @@ namespace flame
 							{
 								if (t.name == name)
 								{
-									auto n = ret->add_node(g, nullptr, t.name, t.inputs, t.outputs,
+									auto block_id = n_node.attribute("block_id").as_uint();
+									auto block = block_id ? object_map[block_id].p.block : nullptr;
+									auto n = ret->add_node(g, block, t.name, t.inputs, t.outputs,
 										t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider);
-									node_map[n_node.attribute("object_id").as_uint()] = n;
+									object_map[n_node.attribute("object_id").as_uint()] = n;
 									n->position = s2t<2, float>(n_node.attribute("position").value());
 									added = true;
 									break;
@@ -624,11 +717,11 @@ namespace flame
 					}
 					for (auto n_link : n_group.child("links"))
 					{
-						auto from_node = node_map[n_link.attribute("from_node").as_uint()];
+						auto from_object = object_map[n_link.attribute("from_object").as_uint()];
 						auto from_slot = n_link.attribute("from_slot").as_uint();
-						auto to_node = node_map[n_link.attribute("to_node").as_uint()];
+						auto to_object = object_map[n_link.attribute("to_object").as_uint()];
 						auto to_slot = n_link.attribute("to_slot").as_uint();
-						ret->add_link(from_node, from_slot, to_node, to_slot);
+						ret->add_link(from_object.find_output(from_slot), to_object.find_input(to_slot));
 					}
 					for (auto n_input : n_group.child("inputs"))
 					{
@@ -681,7 +774,7 @@ namespace flame
 		for (auto& i : t.inputs)
 			i.name_hash = sh(i.name.c_str());
 		t.outputs = outputs;
-		for (auto& o : t.inputs)
+		for (auto& o : t.outputs)
 			o.name_hash = sh(o.name.c_str());
 		t.function = function;
 		t.constructor = constructor;
@@ -726,11 +819,14 @@ namespace flame
 
 	static void destroy_group(BlueprintInstance::Group& g)
 	{
-		for (auto& n : g.nodes)
-		{
-			if (n.original->destructor)
-				n.original->destructor(n.inputs.data(), n.outputs.data());
-		}
+		std::function<void(BlueprintInstance::Object&)> destroy_object;
+		destroy_object = [&](BlueprintInstance::Object& o) {
+			if (o.original.type == BlueprintObjectNode && o.original.p.node->destructor)
+				o.original.p.node->destructor(o.inputs.data(), o.outputs.data());
+			for (auto& c : o.children)
+				destroy_object(c);
+		};
+		destroy_object(g.root_object);
 		for (auto& pair : g.datas)
 		{
 			if (pair.second.arg.data)
@@ -748,52 +844,98 @@ namespace flame
 	void BlueprintInstancePrivate::build()
 	{
 		auto frame = frames;
-		auto current_group_name = current_group ? current_group->name : 0;
-
-		auto current_node_object_id = 0;
-		if (auto pnode = current_node_ptr(); pnode)
-			current_node_object_id = pnode->object_id;
+		auto old_executing_stack = executing_stack;
+		auto old_executing_object_id = executing_stack.empty() ? 0 : executing_object()->object_id;
 
 		auto create_group_structure = [&](BlueprintGroupPtr src_g, Group& g, std::map<uint, Group::Data>& datas) {
-			std::vector<BlueprintNodePtr> rest_nodes(src_g->nodes.size());
-			for (auto i = 0; i < src_g->nodes.size(); i++)
-				rest_nodes[i] = src_g->nodes[i].get();
-			while (!rest_nodes.empty())
-			{
-				for (auto it = rest_nodes.begin(); it != rest_nodes.end();)
+			std::function<void(BlueprintBlockPtr, Object&)> create_object;
+			create_object = [&](BlueprintBlockPtr block, Object& o) {
+				for (auto& b : block->children)
 				{
-					auto ok = true;
-					for (auto& l : src_g->links)
+					auto& c = o.children.emplace_back();
+					c.original = b;
+					create_object(b, c);
+				}
+				std::vector<BlueprintObject> rest_objects;
+				for (auto n : block->nodes)
+					rest_objects.emplace_back(n);
+				for (auto b : block->children)
+					rest_objects.emplace_back(b);
+				auto is_sub = [](BlueprintBlockPtr b1, BlueprintBlockPtr b2) {
+					while (b2)
 					{
-						if (l->to_node == *it)
+						if (b1 == b2)
+							return true;
+						b2 = b2->parent;
+					}
+					return false;
+				};
+				while (!rest_objects.empty())
+				{
+					for (auto it = rest_objects.begin(); it != rest_objects.end();)
+					{
+						auto ok = true;
+						for (auto& l : src_g->links)
 						{
-							if (std::find(rest_nodes.begin(), rest_nodes.end(), l->from_node) != rest_nodes.end())
+							if (l->from_slot->parent.get_locate_block() == block)
 							{
-								ok = false;
-								break;
+								auto from_object = l->from_slot->parent;
+								auto to_object = l->to_slot->parent;
+								auto ok2 = false;
+								switch (to_object.type)
+								{
+								case BlueprintObjectNode:
+									ok2 = it->p.node == to_object.p.node;
+									break;
+								case BlueprintObjectBlock:
+									ok2 = is_sub(it->p.block, to_object.get_locate_block());
+									break;
+								}
+								if (ok2)
+								{
+									if (std::find_if(rest_objects.begin(), rest_objects.end(), [&](const auto& i) {
+										return i.get_id() == from_object.get_id();
+										}) != rest_objects.end())
+									{
+										ok = false;
+										break;
+									}
+								}
 							}
 						}
+						if (ok)
+						{
+							auto& new_o = o.children.emplace_back();
+							new_o.original = *it;
+							new_o.object_id = new_o.original.get_id();
+							it = rest_objects.erase(it);
+						}
+						else
+							it++;
 					}
-					if (ok)
-					{
-						auto& n = g.nodes.emplace_back();
-						n.original = *it;
-						n.object_id = n.original->object_id;
-						it = rest_nodes.erase(it);
-					}
-					else
-						it++;
 				}
-			}
+			};
+			create_object(src_g->blocks.front().get(), g.root_object);
+
+			g.object_map.clear();
+			std::function<void(Object&)> create_map;
+			create_map = [&](Object& o) {
+				if (o.object_id)
+					g.object_map[o.object_id] = &o;
+				for (auto& c : o.children)
+					create_map(c);
+			};
+			create_map(g.root_object);
+
 			// create datas
-			for (auto& n : g.nodes)
-			{
-				for (auto& i : n.original->inputs)
+			std::function<void(Object&)> create_datas;
+			create_datas = [&](Object& obj) {
+				for (auto i : obj.original.get_inputs())
 				{
 					auto linked = false;
 					for (auto& l : src_g->links)
 					{
-						if (l->to_node == n.original && l->to_slot == i.get())
+						if (l->to_slot == i)
 						{
 							if (auto it = datas.find(l->from_slot->object_id); it != datas.end())
 							{
@@ -807,14 +949,14 @@ namespace flame
 									memcpy((voidptr*)data.arg.data, &ptr, sizeof(voidptr));
 									datas.emplace(i->object_id, data);
 
-									n.inputs.push_back(data.arg);
+									obj.inputs.push_back(data.arg);
 								}
 								else
 								{
 									BlueprintArgument arg;
 									arg.type = it->second.arg.type;
 									arg.data = it->second.arg.data;
-									n.inputs.push_back(arg);
+									obj.inputs.push_back(arg);
 								}
 							}
 							else
@@ -837,10 +979,10 @@ namespace flame
 							data.arg.data = nullptr;
 						datas.emplace(i->object_id, data);
 
-						n.inputs.push_back(data.arg);
+						obj.inputs.push_back(data.arg);
 					}
 				}
-				for (auto& o : n.original->outputs)
+				for (auto& o : obj.original.get_outputs())
 				{
 					Group::Data data;
 					data.changed_frame = o->data_changed_frame;
@@ -855,12 +997,15 @@ namespace flame
 						data.arg.data = nullptr;
 					datas.emplace(o->object_id, data);
 
-					n.outputs.push_back(data.arg);
+					obj.outputs.push_back(data.arg);
 				}
 
-				if (n.original->constructor)
-					n.original->constructor(n.inputs.data(), n.outputs.data());
-			}
+				if (obj.original.type == BlueprintObjectNode)
+				{
+					if (obj.original.p.node->constructor)
+						obj.original.p.node->constructor(obj.inputs.data(), obj.outputs.data());
+				}
+			};
 		};
 
 		// remove groups that are not in the blueprint anymore
@@ -883,7 +1028,7 @@ namespace flame
 			if (src_g->structure_changed_frame > g.second.structure_updated_frame)
 			{
 				std::map<uint, Group::Data> new_datas;
-				g.second.nodes.clear();
+				g.second.root_object.children.clear();
 				create_group_structure(src_g, g.second, new_datas);
 				for (auto& d : new_datas)
 				{
@@ -950,27 +1095,48 @@ namespace flame
 			g.data_updated_frame = frame;
 		}
 
-		if (current_group_name)
+		executing_stack.clear();
+		if (!old_executing_stack.empty() && old_executing_object_id)
 		{
-			if (auto it = groups.find(current_group_name); it == groups.end())
+			auto root_object_id = old_executing_stack.front().block_object->object_id;
+			for (auto it = groups.begin(); it != groups.end(); it++)
 			{
-				current_group = nullptr;
-				current_node = -1;
-			}
-			else
-			{
-				current_group = &it->second;
-				current_node = current_group->nodes.empty() ? -1 : 0;
-				if (current_node_object_id)
+				if (it->second.root_object.object_id == root_object_id)
 				{
-					for (auto i = 0; i < current_group->nodes.size(); i++)
-					{
-						if (current_group->nodes[i].object_id == current_node_object_id)
+					std::function<void(std::vector<Object*>)> find_object;
+					find_object = [&](std::vector<Object*> stack) {
+						for (auto& c : stack.back()->children)
 						{
-							current_node = i;
-							break;
+							if (c.object_id == old_executing_object_id)
+							{
+								for (auto b : stack)
+								{
+									auto child_idx = 0;
+									auto times = 0;
+
+									for (auto& b2 : old_executing_stack)
+									{
+										if (b2.block_object->object_id == b->object_id)
+										{
+											child_idx = b2.child_index;
+											times = b2.executed_times;
+											break;
+										}
+									}
+									executing_stack.emplace_back(b, child_idx, times);
+								}
+								return;
+							}
+							if (!c.children.empty())
+							{
+								auto s = stack;
+								s.push_back(&c);
+								find_object(s);
+							}
 						}
-					}
+					};
+
+					break;
 				}
 			}
 		}
@@ -982,15 +1148,22 @@ namespace flame
 	{
 		assert(group->instance == this);
 		if (built_frame < blueprint->dirty_frame)
+		{
+			auto name = group->name;
+			executing_stack.clear();
 			build();
-
-		current_group = group;
-		current_node = 0;
+			if (auto it = groups.find(name); it != groups.end())
+				executing_stack.emplace_back(&it->second.root_object, 0, 0);
+		}
+		else
+			executing_stack.emplace_back(&group->root_object, 0, 0);
+		if (executing_stack.front().block_object->children.empty())
+			executing_stack.clear();
 	}
 
 	void BlueprintInstancePrivate::run()
 	{
-		while (current_group && current_node >= 0)
+		while (!executing_stack.empty())
 		{
 			if (auto debugger = BlueprintDebugger::current(); debugger && debugger->debugging)
 				return;
@@ -1006,27 +1179,55 @@ namespace flame
 		auto debugger = BlueprintDebugger::current();
 		if (debugger && debugger->debugging)
 			return;
-		if (!current_group || current_node < 0 || current_group->nodes.empty())
+		if (executing_stack.empty())
 			return;
 
-		auto& n = current_group->nodes[current_node];
-		if (debugger && debugger->has_break_node(n.original))
+		auto& current_block = executing_stack.back();
+		auto& current_object = current_block.block_object->children[current_block.child_index];
+		switch (current_object.original.type)
 		{
-			debugger->debugging = this;
-			return;
-		}
-		if (n.original->function)
+		case BlueprintObjectNode:
 		{
-			n.original->function(n.inputs.empty() ? nullptr : n.inputs.data(),
-				n.outputs.empty() ? nullptr : n.outputs.data());
+			auto node = current_object.original.p.node;
+			if (debugger && debugger->has_break_node(node))
+			{
+				debugger->debugging = this;
+				return;
+			}
+			if (node->function)
+				node->function(current_object.inputs.data(), current_object.outputs.data());
 		}
-		n.updated_frame = frames;
+			break;
+		case BlueprintObjectBlock:
+		{
+			if (*(uint*)current_object.inputs[0].data)
+			{
+				executing_stack.emplace_back(&current_object, 0, 0);
+				*(uint*)current_object.outputs[0].data = 1;
+			}
+			else
+				*(uint*)current_object.outputs[0].data = 0;
+		}
+			break;
+		}
+		current_object.updated_frame = frames;
 
-		current_node++;
-		if (current_node >= current_group->nodes.size())
+		while (true)
 		{
-			current_group = nullptr;
-			current_node = -1;
+			if (executing_stack.empty())
+				break;
+			auto& current_block = executing_stack.back();
+			current_block.child_index++;
+			if (current_block.child_index < current_block.block_object->children.size())
+				break;
+			current_block.executed_times++;
+			if (current_block.executed_times < *(uint*)current_block.block_object->inputs[0].data)
+			{
+				current_block.child_index = 0;
+				break;
+			}
+			executing_stack.pop_back();
+			break;
 		}
 	}
 
@@ -1036,8 +1237,7 @@ namespace flame
 		if (debugger && debugger->debugging)
 			return;
 
-		current_group = nullptr;
-		current_node = -1;
+		executing_stack.clear();
 	}
 
 	struct BlueprintInstanceCreate : BlueprintInstance::Create
