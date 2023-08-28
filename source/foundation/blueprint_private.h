@@ -40,12 +40,12 @@ namespace flame
 		BlueprintNodePtr		add_input_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint name) override;
 		BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint variable_group_name) override;
 		void					remove_node(BlueprintNodePtr node) override;
-		void					change_node_block(BlueprintNodePtr node, BlueprintBlockPtr new_block) override;
+		void					set_node_block(BlueprintNodePtr node, BlueprintBlockPtr new_block) override;
 		BlueprintLinkPtr		add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot) override;
 		void					remove_link(BlueprintLinkPtr link) override;
 		BlueprintBlockPtr		add_block(BlueprintGroupPtr group, BlueprintBlockPtr parent) override;
 		void					remove_block(BlueprintBlockPtr block) override;
-		void					change_block_parent(BlueprintBlockPtr block, BlueprintBlockPtr new_parent) override;
+		void					set_block_parent(BlueprintBlockPtr block, BlueprintBlockPtr new_parent) override;
 		BlueprintGroupPtr		add_group(const std::string& name) override;
 		void					remove_group(BlueprintGroupPtr group) override;
 		BlueprintSlotPtr		add_group_input(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;

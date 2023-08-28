@@ -104,7 +104,7 @@ void BlueprintView::process_object_moved(BlueprintObject obj)
 				}
 			}
 		}
-		blueprint->change_node_block(node, most_depth_block ? most_depth_block : g->blocks.front().get());
+		blueprint->set_node_block(node, most_depth_block ? most_depth_block : g->blocks.front().get());
 	};
 
 	switch (obj.type)
@@ -135,7 +135,7 @@ void BlueprintView::process_object_moved(BlueprintObject obj)
 					}
 				}
 			}
-			blueprint->change_block_parent(b.get(), most_depth_parent ? most_depth_parent : g->blocks.front().get());
+			blueprint->set_block_parent(b.get(), most_depth_parent ? most_depth_parent : g->blocks.front().get());
 		}
 		for (auto& n : g->nodes)
 			try_change_node_block(n.get());
@@ -424,15 +424,34 @@ void BlueprintView::on_draw()
 					ax_node_editor->GetNodeBuilder();
 					ax::NodeEditor::BeginNode((uint64)b.get());
 					ImGui::Text("D%d", b->depth);
-					ax::NodeEditor::Group(b->rect.size());
 
-					auto bounds = ax_node_editor->GetNodeBuilder().m_CurrentNode->m_GroupBounds;
+					b->position = ax::NodeEditor::GetNodePosition((ax::NodeEditor::NodeId)b.get());
+					auto ax_node = ax_node_editor->GetNodeBuilder().m_CurrentNode;
+					auto bounds = ax_node->m_GroupBounds;
 					b->rect.a = bounds.Min;
 					b->rect.b = bounds.Max;
-					b->position = ax::NodeEditor::GetNodePosition((ax::NodeEditor::NodeId)b.get());
-					ax::NodeEditor::EndGroupHint();
+
+					ax::NodeEditor::BeginPin((uint64)b->input.get(), ax::NodeEditor::PinKind::Input);
+					ImGui::TextUnformatted((graphics::FontAtlas::icon_s("play"_h) + "  ").c_str());
+					ax::NodeEditor::EndPin();
+
+					ImGui::SameLine(0.f, max(0.f, b->rect.size().x - 56.f));
+
+					ax::NodeEditor::BeginPin((uint64)b->output.get(), ax::NodeEditor::PinKind::Output);
+					ImGui::TextUnformatted(("  " + graphics::FontAtlas::icon_s("play"_h)).c_str());
+					ax::NodeEditor::EndPin();
+
+					ax::NodeEditor::Group(vec2(200));
+
+					// restore last pin
+					auto last_pin = ax_node->m_LastPin;
 
 					ax::NodeEditor::EndNode();
+
+					// recover last pin and re-active all pins, since our groups(blocks) can have pins
+					ax_node->m_LastPin = last_pin;
+					for (auto pin = ax_node->m_LastPin; pin; pin = pin->m_PreviousPin)
+						pin->m_IsLive = true;
 				}
 				for (auto& n : group->nodes)
 				{
@@ -480,7 +499,7 @@ void BlueprintView::on_draw()
 							if (!linked)
 							{
 								auto changed = 0;
-								ImGui::PushID(&input);
+								ImGui::PushID(input);
 								if (input->type && input->type->tag == TagD)
 								{
 									auto ti = (TypeInfo_Data*)input->type;
@@ -809,12 +828,15 @@ void BlueprintView::on_draw()
 							}
 						}
 					};
-					if (ImGui::Selectable("Block"))
+					if (!new_node_link_slot)
 					{
-						auto b = blueprint->add_block(group, nullptr);
-						b->position = open_popup_pos;
-						b->rect = Rect(vec2(0), vec2(200));
-						ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)b, b->position);
+						if (ImGui::Selectable("Block"))
+						{
+							auto b = blueprint->add_block(group, nullptr);
+							b->position = open_popup_pos;
+							b->rect = Rect(vec2(0), vec2(200));
+							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)b, b->position);
+						}
 					}
 					show_node_templates(standard_library);
 					show_node_templates(texture_library);
