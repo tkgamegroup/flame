@@ -40,7 +40,7 @@ namespace flame
 			},
 			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
-				*(std::string*)outputs[0].data = entity->name;
+				*(std::string*)outputs[0].data = entity ? entity->name : "";
 			},
 			nullptr,
 			nullptr,

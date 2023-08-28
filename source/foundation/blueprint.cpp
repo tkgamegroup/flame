@@ -906,8 +906,9 @@ namespace flame
 						if (ok)
 						{
 							auto& new_o = o.children.emplace_back();
-							new_o.original = *it;
-							new_o.object_id = new_o.original.get_id();
+							auto& original = *it;
+							new_o.original = original;
+							new_o.object_id = original.get_id();
 							it = rest_objects.erase(it);
 						}
 						else
@@ -1005,7 +1006,10 @@ namespace flame
 					if (obj.original.p.node->constructor)
 						obj.original.p.node->constructor(obj.inputs.data(), obj.outputs.data());
 				}
+				for (auto& c : obj.children)
+					create_datas(c);
 			};
+			create_datas(g.root_object);
 		};
 
 		// remove groups that are not in the blueprint anymore
@@ -1221,7 +1225,8 @@ namespace flame
 			if (current_block.child_index < current_block.block_object->children.size())
 				break;
 			current_block.executed_times++;
-			if (current_block.executed_times < *(uint*)current_block.block_object->inputs[0].data)
+			if (!current_block.block_object->inputs.empty() && // not the root block
+				current_block.executed_times < *(uint*)current_block.block_object->inputs[0].data)
 			{
 				current_block.child_index = 0;
 				break;
