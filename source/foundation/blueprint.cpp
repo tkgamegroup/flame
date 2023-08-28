@@ -222,6 +222,29 @@ namespace flame
 		dirty_frame = frame;
 	}
 
+	void BlueprintPrivate::change_node_block(BlueprintNodePtr node, BlueprintBlockPtr new_block)
+	{
+		auto group = node->group;
+		assert(group && group->blueprint == this && group == new_block->group);
+
+		if (node->block == new_block)
+			return;
+
+		auto old_block = node->block;
+		for (auto it = old_block->nodes.begin(); it != old_block->nodes.end(); it++)
+		{
+			if (*it == node)
+			{
+				old_block->nodes.erase(it);
+				break;
+			}
+		}
+
+		node->block = new_block;
+
+		new_block->nodes.push_back(node);
+	}
+
 	static void change_slot_type(BlueprintSlotPtr slot, TypeInfo* new_type)
 	{
 		if (slot->type == new_type)
@@ -446,6 +469,30 @@ namespace flame
 		auto frame = frames;
 		group->structure_changed_frame = frame;
 		dirty_frame = frame;
+	}
+
+	void BlueprintPrivate::change_block_parent(BlueprintBlockPtr block, BlueprintBlockPtr new_parent)
+	{
+		auto group = block->group;
+		assert(group && group->blueprint == this && group == new_parent->group);
+
+		if (block->parent == new_parent)
+			return;
+
+		auto old_block = block->parent;
+		for (auto it = old_block->children.begin(); it != old_block->children.end(); it++)
+		{
+			if (*it == block)
+			{
+				old_block->children.erase(it);
+				break;
+			}
+		}
+
+		block->parent = new_parent;
+		block->depth = new_parent->depth + 1;
+
+		new_parent->children.push_back(block);
 	}
 
 	BlueprintGroupPtr BlueprintPrivate::add_group(const std::string& name)

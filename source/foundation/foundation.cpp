@@ -363,7 +363,6 @@ namespace flame
 			return 1;
 
 		last_time = performance_counter();
-		frames = 0;
 
 		for (;;)
 		{

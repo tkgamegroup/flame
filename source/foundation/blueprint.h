@@ -87,8 +87,8 @@ namespace flame
 
 	struct BlueprintSlot
 	{
-		BlueprintObject parent;
 		uint object_id;
+		BlueprintObject parent;
 		std::string name;
 		uint name_hash = 0;
 		std::vector<TypeInfo*> allowed_types;
@@ -125,9 +125,9 @@ namespace flame
 
 	struct BlueprintNode
 	{
+		uint object_id;
 		BlueprintGroupPtr group;
 		BlueprintBlockPtr block;
-		uint object_id;
 
 		std::string name;
 		uint name_hash = 0;
@@ -167,8 +167,8 @@ namespace flame
 
 	struct BlueprintBlock
 	{
-		BlueprintGroupPtr group;
 		uint object_id;
+		BlueprintGroupPtr group;
 		uint depth;
 
 		std::vector<BlueprintNodePtr> nodes;
@@ -179,6 +179,7 @@ namespace flame
 		std::unique_ptr<BlueprintSlotT> output;
 
 		vec2 position;
+		Rect rect;
 		bool collapsed = false;
 
 		virtual ~BlueprintBlock() {}
@@ -186,8 +187,8 @@ namespace flame
 
 	struct BlueprintGroup
 	{
-		BlueprintPtr blueprint;
 		uint object_id;
+		BlueprintPtr blueprint;
 
 		std::string name;
 		uint name_hash = 0;
@@ -329,10 +330,12 @@ namespace flame
 		virtual BlueprintNodePtr		add_input_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint name) = 0;
 		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint variable_group_name) = 0;
 		virtual void					remove_node(BlueprintNodePtr node) = 0;
+		virtual void					change_node_block(BlueprintNodePtr node, BlueprintBlockPtr new_block) = 0;
 		virtual BlueprintLinkPtr		add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot) = 0;
 		virtual void					remove_link(BlueprintLinkPtr link) = 0;
 		virtual BlueprintBlockPtr		add_block(BlueprintGroupPtr group, BlueprintBlockPtr parent) = 0;
 		virtual void					remove_block(BlueprintBlockPtr block) = 0;
+		virtual void					change_block_parent(BlueprintBlockPtr block, BlueprintBlockPtr new_parent) = 0;
 		virtual BlueprintGroupPtr		add_group(const std::string& name) = 0;
 		virtual void					remove_group(BlueprintGroupPtr group) = 0;
 		virtual BlueprintSlotPtr		add_group_input(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) = 0;
@@ -394,8 +397,8 @@ namespace flame
 	{
 		struct Object
 		{
-			BlueprintObject original;
 			uint object_id;
+			BlueprintObject original;
 			std::vector<BlueprintArgument> inputs;
 			std::vector<BlueprintArgument> outputs;
 			std::vector<Object> children;

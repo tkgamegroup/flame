@@ -4,6 +4,7 @@
 
 #ifdef USE_IMGUI
 #include <imgui.h>
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui_internal.h>
 #include "../imgui_extension.h"
 #include <misc/cpp/imgui_stdlib.h>
@@ -12,6 +13,7 @@
 #endif
 #if USE_IMGUI_NODE_EDITOR
 #include <imgui_node_editor.h>
+#include <imgui_node_editor_internal.h>
 #endif
 #endif
 

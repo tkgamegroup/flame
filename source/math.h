@@ -340,6 +340,11 @@ namespace flame
 			return vec4(a.x, a.y, b.x, b.y);
 		}
 
+		vec2 size() const
+		{
+			return b - a;
+		}
+
 		void expand(float length)
 		{
 			a.x -= length;
@@ -358,6 +363,12 @@ namespace flame
 		{
 			return p.x > a.x && p.x < b.x &&
 				p.y > a.y && p.y < b.y;
+		}
+
+		bool contains(const Rect& oth) const
+		{
+			return oth.a.x > a.x && oth.a.y > a.y &&
+				oth.b.x < b.x && oth.b.y < b.y;
 		}
 
 		bool overlapping(const Rect& rhs) const
