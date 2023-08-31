@@ -33,5 +33,27 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+		library->add_template("Loop", "",
+			{
+				{
+					.name = "Times",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "1"
+				}
+			},
+			{
+				{
+					.name = "Loop",
+					.allowed_types = { TypeInfo::get<Signal>() }
+				}
+			},
+			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+				(*(Signal*)outputs[0].data).v = *(uint*)inputs[0].data;
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
 	}
 }

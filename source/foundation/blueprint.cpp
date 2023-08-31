@@ -513,6 +513,7 @@ namespace flame
 		ret->input->object_id = next_object_id++;
 		ret->input->name = "Execute";
 		ret->input->name_hash = "Execute"_h;
+		ret->input->flags = BlueprintSlotFlagInput;
 		ret->input->allowed_types.push_back(TypeInfo::get<Signal>());
 		ret->input->type = ret->input->allowed_types.front();
 		ret->output.reset(new BlueprintSlotPrivate);
@@ -520,6 +521,7 @@ namespace flame
 		ret->output->object_id = next_object_id++;
 		ret->output->name = "Execute";
 		ret->output->name_hash = "Execute"_h;
+		ret->output->flags = BlueprintSlotFlagOutput;
 		ret->output->allowed_types.push_back(TypeInfo::get<Signal>());
 		ret->output->type = ret->output->allowed_types.front();
 
@@ -599,6 +601,9 @@ namespace flame
 		g->name_hash = sh(name.c_str());
 		groups.emplace_back(g);
 
+		add_variable(g, "loop_index_i", TypeInfo::get<uint>(), "");
+		add_variable(g, "loop_index_j", TypeInfo::get<uint>(), "");
+		add_variable(g, "loop_index_k", TypeInfo::get<uint>(), "");
 		add_block(g, nullptr);
 
 		auto frame = frames;
@@ -736,6 +741,16 @@ namespace flame
 			n_group.append_attribute("object_id").set_value(g->object_id);
 			n_group.append_attribute("name").set_value(g->name.c_str());
 			auto root_block_id = g->blocks[0]->object_id;
+			auto n_variables = n_group.append_child("variables");
+			for (auto& v : g->variables)
+			{
+				if (v.name.starts_with("loop_index"))
+					continue;
+				auto n_variable = n_variables.append_child("variable");
+				n_variable.append_attribute("name").set_value(v.name.c_str());
+				write_ti(v.type, n_variable.append_attribute("type"));
+				n_variable.append_attribute("default_value").set_value(v.default_value.c_str());
+			}
 			if (g->blocks.size() > 1)
 			{
 				auto n_blocks = n_group.append_child("blocks");
@@ -800,14 +815,6 @@ namespace flame
 				n_output.append_attribute("name").set_value(o.name.c_str());
 				write_ti(o.type, n_output.append_attribute("type"));
 				n_output.append_attribute("default_value").set_value(o.default_value.c_str());
-			}
-			auto n_variables = n_group.append_child("variables");
-			for (auto& v : g->variables)
-			{
-				auto n_variable = n_variables.append_child("variable");
-				n_variable.append_attribute("name").set_value(v.name.c_str());
-				write_ti(v.type, n_variable.append_attribute("type"));
-				n_variable.append_attribute("default_value").set_value(v.default_value.c_str());
 			}
 		}
 
@@ -1093,6 +1100,19 @@ namespace flame
 		}
 
 		auto create_group_structure = [&](BlueprintGroupPtr src_g, Group& g, std::map<uint, Group::Data>& slot_datas) {
+			for (auto& pair : g.variables)
+				pair.second.type->destroy(pair.second.data);
+			g.variables.clear();
+			for (auto& v : src_g->variables)
+			{
+				BlueprintArgument arg;
+				arg.type = v.type;
+				arg.data = v.type->create();
+				if (arg.type->tag == TagPU)
+					memset(arg.data, 0, sizeof(voidptr));
+				g.variables.emplace(v.name_hash, arg);
+			}
+
 			std::function<void(BlueprintBlockPtr, Object&)> create_object;
 			create_object = [&](BlueprintBlockPtr block, Object& o) {
 				std::vector<Object> rest_objects;
@@ -1198,9 +1218,9 @@ namespace flame
 							var = it->second;
 							found = true;
 						}
-						else if (auto it2 = g.variables.find(name); it != g.variables.end())
+						else if (auto it2 = g.variables.find(name); it2 != g.variables.end())
 						{
-							var = it->second;
+							var = it2->second;
 							found = true;
 						}
 						if (found)
@@ -1331,10 +1351,10 @@ namespace flame
 
 			if (src_g->structure_changed_frame > g.second.structure_updated_frame)
 			{
-				std::map<uint, Group::Data> new_datas;
+				std::map<uint, Group::Data> new_slot_datas;
 				g.second.root_object.children.clear();
-				create_group_structure(src_g, g.second, new_datas);
-				for (auto& d : new_datas)
+				create_group_structure(src_g, g.second, new_slot_datas);
+				for (auto& d : new_slot_datas)
 				{
 					if (auto it = g.second.slot_datas.find(d.first); it != g.second.slot_datas.end())
 					{
@@ -1351,7 +1371,7 @@ namespace flame
 					if (pair.second.arg.data)
 						pair.second.arg.type->destroy(pair.second.arg.data);
 				}
-				g.second.slot_datas = std::move(new_datas);
+				g.second.slot_datas = std::move(new_slot_datas);
 				g.second.structure_updated_frame = frame;
 				g.second.data_updated_frame = frame;
 			}

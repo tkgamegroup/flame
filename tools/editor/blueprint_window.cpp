@@ -1032,9 +1032,9 @@ void BlueprintView::on_draw()
 							if (new_node_link_slot)
 							{
 								if (new_node_link_slot->flags & BlueprintSlotFlagOutput)
-									blueprint->add_link(new_node_link_slot, b->output.get());
+									blueprint->add_link(new_node_link_slot, b->input.get());
 								else
-									blueprint->add_link(b->input.get(), new_node_link_slot);
+									blueprint->add_link(b->output.get(), new_node_link_slot);
 							}
 						}
 					}
@@ -1043,7 +1043,20 @@ void BlueprintView::on_draw()
 						for (auto& v : blueprint->variables)
 						{
 							uint slot_name = 0;
-							if (show_node_template(v.name, {}, { BlueprintSlotDesc{ .name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {v.type}}}, slot_name))
+							if (show_node_template(v.name, {}, { BlueprintSlotDesc{ .name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {v.type} } }, slot_name))
+							{
+								auto n = blueprint->add_variable_node(group, nullptr, v.name_hash);
+								n->position = open_popup_pos;
+								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+								if (new_node_link_slot)
+									blueprint->add_link(n->outputs.front().get(), new_node_link_slot);
+							}
+						}
+						for (auto& v : group->variables)
+						{
+							uint slot_name = 0;
+							if (show_node_template(v.name, {}, { BlueprintSlotDesc{ .name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {v.type} } }, slot_name))
 							{
 								auto n = blueprint->add_variable_node(group, nullptr, v.name_hash);
 								n->position = open_popup_pos;
