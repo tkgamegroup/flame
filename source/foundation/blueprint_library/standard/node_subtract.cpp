@@ -6,7 +6,7 @@ namespace flame
 {
 	void add_node_template_subtract(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Subtract",
+		library->add_template("Subtract", "-",
 			{
 				{
 					.name = "A",

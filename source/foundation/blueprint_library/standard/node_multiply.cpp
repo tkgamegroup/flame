@@ -6,7 +6,7 @@ namespace flame
 {
 	void add_node_template_multiply(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Multiply",
+		library->add_template("Multiply", "*",
 			{
 				{
 					.name = "A",

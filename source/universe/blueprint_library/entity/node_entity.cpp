@@ -8,24 +8,7 @@ namespace flame
 {
 	void add_node_templates_entity(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Self",
-			{
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<EntityPtr>() }
-				}
-			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-				*(EntityPtr*)outputs[0].data = bp_self;
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
-		);
-		library->add_template("Get Name",
+		library->add_template("Get Name", "",
 			{
 				{
 					.name = "Entity",
@@ -47,7 +30,7 @@ namespace flame
 			nullptr,
 			nullptr
 		);
-		library->add_template("Get Pos",
+		library->add_template("Get Pos", "",
 			{
 				{
 					.name = "Entity",
@@ -70,7 +53,7 @@ namespace flame
 			nullptr,
 			nullptr
 		);
-		library->add_template("Spawn Prefabs",
+		library->add_template("Spawn Prefabs", "",
 			{
 				{
 					.name = "Execute",

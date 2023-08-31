@@ -6,7 +6,7 @@ namespace flame
 {
 	void add_node_templates_flow_control(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("If",
+		library->add_template("If", "",
 			{
 				{
 					.name = "Condition",

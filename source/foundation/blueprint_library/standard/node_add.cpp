@@ -6,7 +6,7 @@ namespace flame
 {
 	void add_node_template_add(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Add",
+		library->add_template("Add", "+",
 			{
 				{
 					.name = "A",

@@ -32,7 +32,10 @@ namespace flame
 
 		bp = Blueprint::get(bp_name);
 		if (bp)
+		{
 			bp_ins = BlueprintInstance::create(bp);
+			bp_ins->set_variable("self"_h, entity);
+		}
 	}
 
 	void cBpInstancePrivate::start()
@@ -42,9 +45,7 @@ namespace flame
 			if (auto g = bp_ins->get_group("start"_h))
 			{
 				bp_ins->prepare_executing(g);
-				bp_self = entity;
 				bp_ins->run();
-				bp_self = nullptr;
 			}
 		}
 	}
@@ -56,9 +57,7 @@ namespace flame
 			if (auto g = bp_ins->get_group("update"_h); g)
 			{
 				bp_ins->prepare_executing(g);
-				bp_self = entity;
 				bp_ins->run();
-				bp_self = nullptr;
 			}
 		}
 	}

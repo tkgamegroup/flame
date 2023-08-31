@@ -6,7 +6,7 @@ namespace flame
 {
 	void add_node_template_divide(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Divide",
+		library->add_template("Divide", "-",
 			{
 				{
 					.name = "A",

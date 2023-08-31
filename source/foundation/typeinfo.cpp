@@ -419,7 +419,7 @@ namespace flame
 		for (auto n_data : doc_root.child("datas"))
 		{
 			auto name = std::string(n_data.attribute("name").value());
-			auto& d = datas.emplace(sh(name.c_str()), DataInfo()).first->second;
+			auto& d = slot_datas.emplace(sh(name.c_str()), DataInfo()).first->second;
 			d.db = this;
 			d.name = name;
 			d.name_hash = sh(name.c_str());
@@ -676,7 +676,7 @@ namespace flame
 			}
 
 			auto n_datas = doc_root.append_child("datas");
-			for (auto& di : datas)
+			for (auto& di : slot_datas)
 			{
 				auto n_data = n_datas.append_child("data");
 				n_data.append_attribute("name").set_value(di.second.name.c_str());

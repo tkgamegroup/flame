@@ -6,7 +6,7 @@ namespace flame
 {
 	void add_node_template_vec2(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Vec2",
+		library->add_template("Vec2", "",
 			{
 				{
 					.name = "X",

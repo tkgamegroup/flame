@@ -33,12 +33,14 @@ namespace flame
 
 		BlueprintPrivate();
 
-		BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintBlockPtr block, const std::string& name,
+		void					add_variable(BlueprintGroupPtr group, const std::string& name, TypeInfo* type, const std::string& default_value) override;
+		void					remove_variable(BlueprintGroupPtr group, uint name) override;
+		BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintBlockPtr block, const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) override;
 		BlueprintNodePtr		add_input_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint name) override;
-		BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint variable_group_name) override;
+		BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint variable_name) override;
 		void					remove_node(BlueprintNodePtr node) override;
 		void					set_node_block(BlueprintNodePtr node, BlueprintBlockPtr new_block) override;
 		BlueprintLinkPtr		add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot) override;
@@ -48,16 +50,17 @@ namespace flame
 		void					set_block_parent(BlueprintBlockPtr block, BlueprintBlockPtr new_parent) override;
 		BlueprintGroupPtr		add_group(const std::string& name) override;
 		void					remove_group(BlueprintGroupPtr group) override;
-		BlueprintSlotPtr		add_group_input(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;
-		void					remove_group_input(BlueprintGroupPtr group, BlueprintSlotPtr slot) override;
-		BlueprintSlotPtr		add_group_output(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;
-		void					remove_group_output(BlueprintGroupPtr group, BlueprintSlotPtr slot) override;
+		void					add_group_input(BlueprintGroupPtr group, const std::string& name, TypeInfo* type, const std::string& default_value) override;
+		void					remove_group_input(BlueprintGroupPtr group, uint name) override;
+		void					add_group_output(BlueprintGroupPtr group, const std::string& name, TypeInfo* type, const std::string& default_value) override;
+		void					remove_group_output(BlueprintGroupPtr group, uint name) override;
 		void					save(const std::filesystem::path& path) override;
 	};
 
 	struct BlueprintNodeLibraryPrivate : BlueprintNodeLibrary
 	{
-		void add_template(const std::string& name, const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
+		void add_template(const std::string& name, const std::string& display_name, 
+			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) override;
 	};

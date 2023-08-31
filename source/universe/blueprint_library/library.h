@@ -5,7 +5,5 @@
 
 namespace flame
 {
-	extern thread_local EntityPtr bp_self;
-
 	void init_library();
 }

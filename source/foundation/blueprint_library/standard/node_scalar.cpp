@@ -6,7 +6,7 @@ namespace flame
 {
 	void add_node_template_scalar(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Scalar",
+		library->add_template("Scalar", "",
 			{
 				{
 					.name = "V",

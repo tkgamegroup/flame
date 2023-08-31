@@ -12,7 +12,7 @@ namespace flame
 	{
 		void add_node_templates_mesh(BlueprintNodeLibraryPtr library)
 		{
-			library->add_template("Control Mesh: Cube",
+			library->add_template("Control Mesh: Cube", "",
 				{
 					{
 						.name = "Extent",
@@ -36,7 +36,7 @@ namespace flame
 				nullptr,
 				nullptr
 			);
-			library->add_template("Convert To Mesh",
+			library->add_template("Convert To Mesh", "",
 				{
 					{
 						.name = "Control Mesh",
@@ -68,7 +68,7 @@ namespace flame
 					preview->data = &mesh;
 				}
 			);
-			library->add_template("Cube Mesh",
+			library->add_template("Cube Mesh", "",
 				{
 					{
 						.name = "Extent",
@@ -98,7 +98,7 @@ namespace flame
 					preview->data = &mesh;
 				}
 			);
-			library->add_template("Subdivide Control Mesh",
+			library->add_template("Subdivide Control Mesh", "",
 				{
 					{
 						.name = "Mesh",
@@ -145,7 +145,7 @@ namespace flame
 				nullptr,
 				nullptr
 			);
-			library->add_template("Displace Control Mesh",
+			library->add_template("Displace Control Mesh", "",
 				{
 					{
 						.name = "Mesh",

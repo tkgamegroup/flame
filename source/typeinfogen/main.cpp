@@ -1251,7 +1251,7 @@ process:
 					d.rva = dw;
 				d.type = ti;
 
-				db.datas.emplace(sh(d.name.c_str()), d);
+				db.slot_datas.emplace(sh(d.name.c_str()), d);
 			}
 		}
 

@@ -6,7 +6,7 @@ namespace flame
 {
 	void add_node_template_decompose(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Decompose",
+		library->add_template("Decompose", "",
 			{
 				{
 					.name = "V",
