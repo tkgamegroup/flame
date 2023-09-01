@@ -213,9 +213,9 @@ namespace flame
             z -= floor(z);
 
             // Compute fade curves for each of x, y, z
-            double u = fade(x);
-            double v = fade(y);
-            double w = fade(z);
+            float u = fade(x);
+            float v = fade(y);
+            float w = fade(z);
 
             // Hash coordinates of the 8 cube corners
             int A = p[X] + Y;
@@ -226,8 +226,8 @@ namespace flame
             int BB = p[B + 1] + Z;
 
             // Add blended results from 8 corners of cube
-            double res = lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z), grad(p[BA], x - 1, y, z)), lerp(u, grad(p[AB], x, y - 1, z), grad(p[BB], x - 1, y - 1, z))), lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1), grad(p[BA + 1], x - 1, y, z - 1)), lerp(u, grad(p[AB + 1], x, y - 1, z - 1), grad(p[BB + 1], x - 1, y - 1, z - 1))));
-            return (res + 1.0) / 2.0;
+            float res = lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z), grad(p[BA], x - 1, y, z)), lerp(u, grad(p[AB], x, y - 1, z), grad(p[BB], x - 1, y - 1, z))), lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1), grad(p[BA + 1], x - 1, y, z - 1)), lerp(u, grad(p[AB + 1], x, y - 1, z - 1), grad(p[BB + 1], x - 1, y - 1, z - 1))));
+            return (res + 1.f) / 2.f;
         }
     }
 }

@@ -1076,6 +1076,8 @@ namespace flame
 
 	BlueprintInstancePrivate::~BlueprintInstancePrivate()
 	{
+		if (auto debugger = BlueprintDebugger::current(); debugger && debugger->debugging == this)
+			debugger->debugging = nullptr;
 		for (auto& g : groups)
 			destroy_group(g.second);
 		Blueprint::release(blueprint);
@@ -1545,7 +1547,7 @@ namespace flame
 				if (debugger && debugger->has_break_node(node))
 				{
 					debugger->debugging = this;
-					printf("Blueprint break node triggered\n");
+					printf("Blueprint break node triggered: %s\n", node->name.c_str());
 					return;
 				}
 				if (node->function)

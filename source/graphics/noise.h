@@ -6,7 +6,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		float voronoi_noise(const vec2& coord);
-		float perlin_noise(const vec2& coord);
+		FLAME_GRAPHICS_API float voronoi_noise(const vec2& coord);
+		FLAME_GRAPHICS_API float perlin_noise(const vec2& coord);
 	}
 }

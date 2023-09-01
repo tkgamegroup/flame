@@ -179,6 +179,12 @@ void BlueprintView::on_draw()
 				unsaved = false;
 			}
 		}
+		ImGui::SameLine();
+		if (ImGui::Button("Zoom To Content"))
+		{
+			ax::NodeEditor::NavigateToContent(0.f);
+			//app.render_frames += 24;
+		}
 
 		if (ImGui::BeginTable("bp_editor", 2, ImGuiTableFlags_Resizable))
 		{
@@ -598,14 +604,35 @@ void BlueprintView::on_draw()
 					last_group = group;
 				}
 
+				auto step = [&]() {
+					blueprint_window.debugger->debugging = nullptr;
+
+					BlueprintNodePtr break_node = nullptr;
+					if (auto o = debugging_instance->executing_object(); o && o->original.type == BlueprintObjectNode)
+					{
+						if (blueprint_window.debugger->has_break_node(o->original.p.node))
+						{
+							break_node = o->original.p.node;
+							blueprint_window.debugger->remove_break_node(break_node);
+						}
+					}
+					debugging_instance->step();
+					if (break_node)
+						blueprint_window.debugger->add_break_node(break_node);
+				};
+
 				if (ImGui::Button("Run"))
 				{
 					if (!debugging_instance)
+					{
 						blueprint_instance->prepare_executing(blueprint_instance->get_group(group_name_hash));
-					if (debugging_instance)
-						debugging_instance->run();
-					else
 						blueprint_instance->run();
+					}
+					else
+					{
+						step();
+						debugging_instance->run();
+					}
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Step"))
@@ -617,19 +644,7 @@ void BlueprintView::on_draw()
 					}
 					else
 					{
-						BlueprintNodePtr break_node = nullptr;
-						if (auto o = debugging_instance->executing_object(); o && o->original.type == BlueprintObjectNode)
-						{
-							if (blueprint_window.debugger->has_break_node(o->original.p.node))
-							{
-								break_node = o->original.p.node;
-								blueprint_window.debugger->remove_break_node(break_node);
-							}
-						}
-						blueprint_window.debugger->debugging = nullptr;
-						debugging_instance->step();
-						if (break_node)
-							blueprint_window.debugger->add_break_node(break_node);
+						step();
 						if (!debugging_instance->executing_stack.empty())
 							blueprint_window.debugger->debugging = debugging_instance;
 					}
@@ -703,10 +718,20 @@ void BlueprintView::on_draw()
 				{
 					auto instance_object = instance_group.object_map[n->object_id];
 
+					auto color = ax::NodeEditor::GetStyle().Colors[ax::NodeEditor::StyleColor_NodeBg];
+					if (blueprint_window.debugger->has_break_node(n.get()))
+					{
+						if (executing_object && executing_object->original.p.node == n.get())
+							color = ImColor(204, 116, 45, 200);
+						else
+							color = ImColor(197, 81, 89, 200);
+					}
+					else if (executing_object && executing_object->original.p.node == n.get())
+						color = ImColor(211, 151, 0, 200);
+					ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_NodeBg, color);
+
 					ax::NodeEditor::BeginNode((uint64)n.get());
 					auto display_name = n->display_name.empty() ? n->name : n->display_name;
-					if (debugging_instance && executing_object && executing_object->original.p.node == n.get())
-						display_name = graphics::FontAtlas::icon_s("arrow-right"_h) + " " + display_name;
 					ImGui::TextUnformatted(display_name.c_str());
 					ImGui::Text("D%d", n->block->depth);
 					ImGui::BeginGroup();
@@ -831,6 +856,7 @@ void BlueprintView::on_draw()
 									input->data_changed_frame = frame;
 									group->data_changed_frame = frame;
 									blueprint->dirty_frame = frame;
+									unsaved = true;
 								}
 							}
 						}
@@ -922,6 +948,7 @@ void BlueprintView::on_draw()
 					n->position = ax::NodeEditor::GetNodePosition((ax::NodeEditor::NodeId)n.get());
 
 					ax::NodeEditor::EndNode();
+					ax::NodeEditor::PopStyleColor();
 				}
 
 				for (auto& l : group->links)
@@ -1110,6 +1137,8 @@ void BlueprintView::on_draw()
 								n->position = open_popup_pos;
 								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
+								process_object_moved(n);
+
 								if (new_node_link_slot)
 								{
 									if (new_node_link_slot->flags & BlueprintSlotFlagOutput)
@@ -1117,8 +1146,6 @@ void BlueprintView::on_draw()
 									else
 										blueprint->add_link(n->find_output(slot_name), new_node_link_slot);
 								}
-
-								process_object_moved(n);
 							}
 						}
 					};
