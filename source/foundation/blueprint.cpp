@@ -70,6 +70,7 @@ namespace flame
 		ret->object_id = next_object_id++;
 		ret->name = name;
 		ret->name_hash = sh(name.c_str());
+		ret->display_name = display_name;
 		for (auto& src_i : inputs)
 		{
 			auto i = new BlueprintSlotPrivate;
@@ -763,6 +764,7 @@ namespace flame
 						if (b->parent->object_id != root_block_id)
 							n_block.append_attribute("parent_id").set_value(b->parent->object_id);
 						n_block.append_attribute("position").set_value(str(b->position).c_str());
+						n_block.append_attribute("rect").set_value(str((vec4)b->rect).c_str());
 					}
 				}
 			}
@@ -871,6 +873,7 @@ namespace flame
 						auto block = ret->add_block(g, parent_id ? object_map[parent_id].p.block : nullptr);
 						object_map[n_block.attribute("object_id").as_uint()] = block;
 						block->position = s2t<2, float>(n_block.attribute("position").value());
+						block->rect = s2t<4, float>(n_block.attribute("rect").value());
 					}
 					for (auto n_node : n_group.child("nodes"))
 					{
@@ -924,7 +927,7 @@ namespace flame
 								from_object = it->second;
 							else
 							{
-								printf("cannot find object: %d\n", id);
+								printf("cannot find object: %u\n", id);
 								continue;
 							}
 						}
@@ -934,7 +937,7 @@ namespace flame
 								to_object = it->second;
 							else
 							{
-								printf("cannot find object: %d\n", id);
+								printf("cannot find object: %u\n", id);
 								continue;
 							}
 						}
@@ -943,7 +946,7 @@ namespace flame
 							from_slot = from_object.find_output(name);
 							if (!from_slot)
 							{
-								printf("cannot find output: %d\n", name);
+								printf("cannot find output: %u\n", name);
 								continue;
 							}
 						}
@@ -952,7 +955,7 @@ namespace flame
 							to_slot = to_object.find_input(name);
 							if (!to_slot)
 							{
-								printf("cannot find input: %d\n", name);
+								printf("cannot find input: %u\n", name);
 								continue;
 							}
 						}
@@ -1360,7 +1363,7 @@ namespace flame
 					{
 						if (it->second.arg.type == d.second.arg.type && it->second.changed_frame >= d.second.changed_frame)
 						{
-							if (d.second.arg.type->tag != TagPU)
+							if (d.second.arg.type && d.second.arg.type->tag != TagPU)
 								d.second.arg.type->copy(d.second.arg.data, it->second.arg.data);
 							d.second.changed_frame = it->second.changed_frame;
 						}
@@ -1542,6 +1545,7 @@ namespace flame
 				if (debugger && debugger->has_break_node(node))
 				{
 					debugger->debugging = this;
+					printf("Blueprint break node triggered\n");
 					return;
 				}
 				if (node->function)

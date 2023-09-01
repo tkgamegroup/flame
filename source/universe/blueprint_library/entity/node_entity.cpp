@@ -53,13 +53,8 @@ namespace flame
 			nullptr,
 			nullptr
 		);
-		library->add_template("Spawn Prefabs", "",
+		library->add_template("Spawn Prefab", "",
 			{
-				{
-					.name = "Execute",
-					.allowed_types = { TypeInfo::get<Signal>() },
-					.default_value = "true"
-				},
 				{
 					.name = "Path",
 					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
@@ -69,66 +64,27 @@ namespace flame
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				},
 				{
-					.name = "Number",
-					.allowed_types = { TypeInfo::get<uvec3>() },
-					.default_value = "1,1,1"
-				},
-				{
-					.name = "Spacing",
+					.name = "Postiion",
 					.allowed_types = { TypeInfo::get<vec3>() }
-				},
-				{
-					.name = "Odd Offset",
-					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
 			{
-				{
-					.name = "Execute",
-					.allowed_types = { TypeInfo::get<Signal>() }
-				}
 			},
 			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-				auto& in_signal = *(Signal*)inputs[0].data;
-				auto& out_signal = *(Signal*)outputs[0].data;
-				if (!in_signal.v)
+				auto& path = *(std::filesystem::path*)inputs[0].data;
+				if (!path.empty())
 				{
-					out_signal.v = false;
-					return;
-				}
-				else
-					out_signal.v = true;
-
-				auto& path = *(std::filesystem::path*)inputs[1].data;
-				if (!path.empty() && std::filesystem::exists(path))
-				{
-					auto parent = *(EntityPtr*)inputs[2].data;
-					if (parent)
+					path = Path::get(path);
+					if (std::filesystem::exists(path))
 					{
-						auto number = *(uvec3*)inputs[3].data;
-						if (number.x > 0 && number.y > 0 && number.z > 0)
+						auto parent = *(EntityPtr*)inputs[1].data;
+						if (parent)
 						{
-							auto prefab = Entity::create();
-							prefab->load(path);
-
-							auto spacing = *(vec3*)inputs[4].data;
-							auto odd_offset = *(float*)inputs[5].data;
-
-							for (auto x = 0; x < number.x; x++)
-							{
-								for (auto y = 0; y < number.y; y++)
-								{
-									for (auto z = 0; z < number.z; z++)
-									{
-										auto e = prefab->duplicate();
-										if (auto node = e->get_component<cNode>(); node)
-											node->set_pos(vec3(x, y, z) * spacing);
-										parent->add_child(e);
-									}
-								}
-							}
-
-							delete prefab;
+							auto e = Entity::create();
+							e->load(path);
+							if (auto node = e->get_component<cNode>(); node)
+								node->set_pos(*(vec3*)inputs[2].data);
+							parent->add_child(e);
 						}
 					}
 				}

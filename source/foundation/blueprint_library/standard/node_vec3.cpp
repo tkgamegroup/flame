@@ -76,10 +76,10 @@ namespace flame
 				switch (data_type)
 				{
 				case DataFloat:
-					*output_types = TypeInfo::get<vec2>();
+					*output_types = TypeInfo::get<vec3>();
 					break;
 				case DataInt:
-					*output_types = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>();
+					*output_types = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>();
 					break;
 				}
 			}

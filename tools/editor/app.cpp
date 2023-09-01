@@ -1008,15 +1008,15 @@ void App::on_gui()
 	if (!e_playing && !e_preview)
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
-		if (ImGui::ToolButton((graphics::FontAtlas::icon_s("play"_h) + " Build And Play").c_str()))
-		{
-			build_project();
-			add_event([this]() {
-				cmd_play();
-				return false;
-			}, 0.f, 3);
-		}
-		ImGui::SameLine();
+		//if (ImGui::ToolButton((graphics::FontAtlas::icon_s("play"_h) + " Build And Play").c_str()))
+		//{
+		//	build_project();
+		//	add_event([this]() {
+		//		cmd_play();
+		//		return false;
+		//	}, 0.f, 3);
+		//}
+		//ImGui::SameLine();
 		if (ImGui::ToolButton(graphics::FontAtlas::icon_s("play"_h).c_str()))
 			cmd_play();
 		ImGui::SameLine();

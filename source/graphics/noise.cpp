@@ -39,10 +39,10 @@ namespace flame
             0x29, 0xA6, 0xC5, 0xE3, 0xF5, 0xF7, 0x4A, 0x41, 0x26, 0x6A, 0x16, 0x5E, 0x52, 0x2D, 0x21, 0xAD,
             0xF0, 0x91, 0xFF, 0xEA, 0x54, 0xFA, 0x66, 0x1A, 0x45, 0x39, 0xCF, 0x75, 0xA4, 0x88, 0xFB, 0x5D,
         };
-#define hash noise_hash_uchar_512
+#define HASH noise_hash_uchar_512
 
         /* needed for voronoi */
-#define HASHPNT(x, y, z) hashpntf + 3 * hash[(hash[(hash[(z)&255] + (y)) & 255] + (x)) & 255]
+#define HASHPNT(x, y, z) hashpntf + 3 * HASH[(HASH[(HASH[(z)&255] + (y)) & 255] + (x)) & 255]
         static const float hashpntf[768] = {
             0.536902, 0.020915, 0.501445, 0.216316, 0.517036, 0.822466, 0.965315, 0.377313, 0.678764,
             0.744545, 0.097731, 0.396357, 0.247202, 0.520897, 0.613396, 0.542124, 0.146813, 0.255489,
@@ -174,6 +174,60 @@ namespace flame
                 }
             }
             return da[0];
+        }
+        
+        float fade(float t)
+        {
+            return t * t * t * (t * (t * 6 - 15) + 10);
+        }
+
+        float lerp(float t, float a, float b)
+        {
+            return a + t * (b - a);
+        }
+
+        float grad(int hash, float x, float y, float z)
+        {
+            int h = hash & 15;
+            // Convert lower 4 bits of hash into 12 gradient directions
+            double u = h < 8 ? x : y,
+                v = h < 4 ? y : h == 12 || h == 14 ? x : z;
+            return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
+        }
+
+        float perlin_noise(const vec2& coord)
+        {
+            auto x = coord.x;
+            auto y = coord.y;
+            auto z = 0.f;
+            auto p = noise_hash_uchar_512;
+
+            // Find the unit cube that contains the point
+            int X = (int)floor(x) & 255;
+            int Y = (int)floor(y) & 255;
+            int Z = (int)floor(z) & 255;
+
+            // Find relative x, y,z of point in cube
+            x -= floor(x);
+            y -= floor(y);
+            z -= floor(z);
+
+            // Compute fade curves for each of x, y, z
+            double u = fade(x);
+            double v = fade(y);
+            double w = fade(z);
+
+            // Hash coordinates of the 8 cube corners
+            int A = p[X] + Y;
+            int AA = p[A] + Z;
+            int AB = p[A + 1] + Z;
+            int B = p[X + 1] + Y;
+            int BA = p[B] + Z;
+            int BB = p[B + 1] + Z;
+
+            // Add blended results from 8 corners of cube
+            double res = lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z), grad(p[BA], x - 1, y, z)), lerp(u, grad(p[AB], x, y - 1, z), grad(p[BB], x - 1, y - 1, z))), lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1), grad(p[BA + 1], x - 1, y, z - 1)), lerp(u, grad(p[AB + 1], x, y - 1, z - 1), grad(p[BB + 1], x - 1, y - 1, z - 1))));
+            return (res + 1.0) / 2.0;
         }
     }
 }

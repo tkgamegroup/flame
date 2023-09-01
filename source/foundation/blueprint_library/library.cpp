@@ -9,6 +9,9 @@
 #include "standard/node_subtract.h"
 #include "standard/node_multiply.h"
 #include "standard/node_divide.h"
+#include "standard/node_integer_divide.h"
+#include "standard/node_floor.h"
+#include "standard/node_less.h"
 #include "standard/node_string.h"
 #include "standard/node_flow_control.h"
 
@@ -26,6 +29,9 @@ namespace flame
 		add_node_template_subtract(standard_library);
 		add_node_template_multiply(standard_library);
 		add_node_template_divide(standard_library);
+		add_node_template_integer_divide(standard_library);
+		add_node_template_floor(standard_library);
+		add_node_template_less(standard_library);
 		add_node_templates_string(standard_library);
 		add_node_templates_flow_control(standard_library);
 	}
