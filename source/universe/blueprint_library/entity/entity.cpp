@@ -1,12 +1,11 @@
-#include "node_entity.h"
-#include "../library.h"
+#include "../../../foundation/blueprint.h"
 #include "../../../foundation/typeinfo.h"
 #include "../../entity_private.h"
 #include "../../components/node_private.h"
 
 namespace flame
 {
-	void add_node_templates_entity(BlueprintNodeLibraryPtr library)
+	void add_entity_node_templates(BlueprintNodeLibraryPtr library)
 	{
 		library->add_template("Get Name", "",
 			{

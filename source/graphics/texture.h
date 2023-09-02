@@ -17,6 +17,7 @@ namespace flame
 		{
 			TextureType type = TextureImage;
 			ImagePtr image = nullptr;
+			float scale = 1.f;
 		};
 
 		template<typename T>

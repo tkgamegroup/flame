@@ -1,10 +1,9 @@
-#include "node_flow_control.h"
 #include "../../typeinfo_private.h"
 #include "../../blueprint_private.h"
 
 namespace flame
 {
-	void add_node_templates_flow_control(BlueprintNodeLibraryPtr library)
+	void add_flow_control_node_templates(BlueprintNodeLibraryPtr library)
 	{
 		library->add_template("If", "",
 			{

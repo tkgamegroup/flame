@@ -36,7 +36,7 @@ void tile_map_editing()
 		pts[4] = c + vec3(-0.5f, 0.f, -0.5f);
 		sRenderer::instance()->draw_primitives("LineStrip"_h, pts, 5, cvec4(255, 128, 255, 255));
 
-		switch (app.tool)
+		switch (fv->tool)
 		{
 		case ToolTileMapLevelUp:
 			if (io.MouseClicked[ImGuiMouseButton_Left])

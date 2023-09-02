@@ -1,13 +1,13 @@
 #include "library.h"
 
-#include "entity/node_entity.h"
-
 namespace flame
 {
+	void add_entity_node_templates(BlueprintNodeLibraryPtr library);
+
 	void init_library()
 	{
 		auto entity_library = BlueprintNodeLibrary::get(L"universe::entity");
 
-		add_node_templates_entity(entity_library);
+		add_entity_node_templates(entity_library);
 	}
 }

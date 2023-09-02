@@ -16,6 +16,18 @@
 
 SceneWindow scene_window;
 
+vec3 SceneView::get_snap_pos(const vec3& _pos)
+{
+	auto pos = _pos;
+	if (move_snap)
+	{
+		pos /= move_snap_value;
+		pos -= fract(pos);
+		pos *= move_snap_value;
+	}
+	return pos;
+}
+
 SceneView::SceneView() :
 	SceneView(scene_window.views.empty() ? "Scene" : "Scene##" + str(rand()))
 {
@@ -188,6 +200,169 @@ void SceneView::on_draw()
 	if (ImGui::ToolButton("Navigation", show_navigation))
 		show_navigation = !show_navigation;
 
+	auto last_focused_scene = scene_window.last_focused_view();
+
+	// toolbar begin
+	ImGui::Dummy(vec2(0.f, 20.f));
+	ImGui::SameLine();
+	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("arrow-pointer"_h).c_str(), tool == ToolSelect))
+		tool = ToolSelect;
+	ImGui::SameLine();
+	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("arrows-up-down-left-right"_h).c_str(), tool == ToolMove))
+		tool = ToolMove;
+	ImGui::SameLine();
+	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("rotate"_h).c_str(), tool == ToolRotate))
+		tool = ToolRotate;
+	ImGui::SameLine();
+	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("down-left-and-up-right-to-center"_h).c_str(), tool == ToolScale))
+		tool = ToolScale;
+	ImGui::SameLine();
+	const char* tool_pivot_names[] = {
+		"Individual",
+		"Center"
+	};
+	const char* tool_mode_names[] = {
+		"Local",
+		"World"
+	};
+	ImGui::SetNextItemWidth(100.f);
+	ImGui::Combo("##pivot", (int*)&tool_pivot, tool_pivot_names, countof(tool_pivot_names));
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(100.f);
+	ImGui::Combo("##mode", (int*)&tool_mode, tool_mode_names, countof(tool_mode_names));
+	bool* p_snap = nullptr;
+	float* p_snap_value = nullptr;
+	switch (tool)
+	{
+	case ToolMove:
+		p_snap = &move_snap;
+		p_snap_value = last_focused_scene && last_focused_scene->element_targets.empty() ? &move_snap_value : &move_snap_2d_value;
+		break;
+	case ToolRotate:
+		p_snap = &rotate_snap;
+		p_snap_value = &rotate_snap_value;
+		break;
+	case ToolScale:
+		p_snap = &scale_snap;
+		p_snap_value = &scale_snap_value;
+		break;
+	}
+	ImGui::SameLine();
+	if (p_snap)
+	{
+		ImGui::Checkbox("Snap", p_snap);
+		if (*p_snap)
+		{
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(80.f);
+			ImGui::InputFloat("##snap_value", p_snap_value);
+		}
+	}
+	ImGui::SameLine();
+	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("floppy-disk"_h).c_str()))
+		app.save_prefab();
+	ImGui::SameLine();
+	ImGui::Dummy(vec2(0.f, 20.f));
+
+	if (selection.type == Selection::tEntity)
+	{
+		auto e = selection.as_entity();
+		if (auto terrain = e->get_component<cTerrain>(); terrain)
+		{
+			ImGui::SameLine();
+			if (ImGui::ToolButton((graphics::FontAtlas::icon_s("mound"_h) + "##up").c_str(), tool == ToolTerrainUp))
+				tool = ToolTerrainUp;
+			ImGui::SameLine();
+			if (ImGui::ToolButton((graphics::FontAtlas::icon_s("mound"_h) + "##down").c_str(), tool == ToolTerrainDown, 180.f))
+				tool = ToolTerrainDown;
+			ImGui::SameLine();
+			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("paintbrush"_h).c_str(), tool == ToolTerrainPaint))
+				tool = ToolTerrainPaint;
+		}
+		if (auto tile_map = e->get_component<cTileMap>(); tile_map)
+		{
+			ImGui::SameLine();
+			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("up-long"_h).c_str(), tool == ToolTileMapLevelUp))
+				tool = ToolTileMapLevelUp;
+			ImGui::SameLine();
+			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("down-long"_h).c_str(), tool == ToolTileMapLevelDown))
+				tool = ToolTileMapLevelDown;
+			ImGui::SameLine();
+			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("stairs"_h).c_str(), tool == ToolTileMapSlope))
+				tool = ToolTileMapSlope;
+		}
+	}
+
+	ImGui::SameLine();
+	ImGui::Dummy(vec2(50.f, 20.f));
+	ImGui::SameLine();
+	if (!app.e_playing && !app.e_preview)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
+		//if (ImGui::ToolButton((graphics::FontAtlas::icon_s("play"_h) + " Build And Play").c_str()))
+		//{
+		//	build_project();
+		//	add_event([this]() {
+		//		cmd_play();
+		//		return false;
+		//	}, 0.f, 3);
+		//}
+		//ImGui::SameLine();
+		if (ImGui::ToolButton(graphics::FontAtlas::icon_s("play"_h).c_str()))
+			app.cmd_play();
+		ImGui::SameLine();
+		if (ImGui::ToolButton(graphics::FontAtlas::icon_s("circle-play"_h).c_str()))
+			app.cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : app.e_prefab);
+		ImGui::PopStyleColor();
+	}
+	else
+	{
+		if (app.e_playing)
+		{
+			if (!app.paused)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1));
+				ImGui::SameLine();
+				if (ImGui::ToolButton(graphics::FontAtlas::icon_s("pause"_h).c_str()))
+					app.cmd_pause();
+				ImGui::PopStyleColor();
+			}
+			else
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
+				ImGui::SameLine();
+				if (ImGui::ToolButton(graphics::FontAtlas::icon_s("play"_h).c_str()))
+					app.cmd_play();
+				ImGui::PopStyleColor();
+			}
+		}
+		else if (app.e_preview)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 1, 1));
+			ImGui::SameLine();
+			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("rotate"_h).c_str()))
+				app.cmd_restart_preview();
+			ImGui::PopStyleColor();
+		}
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
+		ImGui::SameLine();
+		if (ImGui::ToolButton(graphics::FontAtlas::icon_s("stop"_h).c_str()))
+		{
+			if (app.e_playing)
+				app.cmd_stop();
+			else if (app.e_preview)
+				app.cmd_stop_preview();
+		}
+		ImGui::PopStyleColor();
+		if (app.e_preview)
+		{
+			ImGui::SameLine();
+			ImGui::Text("[%s]", app.e_preview->name.c_str());
+		}
+	}
+
+	// toolbar end
+
 	auto render_target_extent = vec2(ImGui::GetContentRegionAvail());
 	if (scene_window.fixed_render_target_size)
 		render_target_extent = vec2(1280, 720);
@@ -223,7 +398,7 @@ void SceneView::on_draw()
 
 		bool gizmo_using = false;
 #if USE_IM_GUIZMO
-		if (is_in(app.tool, ToolMove, ToolScale) && app.e_editor && selection.type == Selection::tEntity)
+		if (is_in(tool, ToolMove, ToolScale) && app.e_editor && selection.type == Selection::tEntity)
 		{
 			node_targets.clear();
 			element_targets.clear();
@@ -264,34 +439,34 @@ void SceneView::on_draw()
 				auto op = ImGuizmo::TRANSLATE;
 				auto mode = ImGuizmo::LOCAL;
 				vec3 snap_value; float* p_snap_value = nullptr;
-				switch (app.tool)
+				switch (tool)
 				{
 				case ToolMove:
 					op = ImGuizmo::TRANSLATE;
-					if (app.move_snap)
+					if (move_snap)
 					{
-						snap_value = vec3(element_targets.empty() ? app.move_snap_value : app.move_snap_2d_value);
+						snap_value = vec3(element_targets.empty() ? move_snap_value : move_snap_2d_value);
 						p_snap_value = &snap_value[0];
 					}
 					break;
 				case ToolRotate:
 					op = ImGuizmo::ROTATE;
-					if (app.rotate_snap)
+					if (rotate_snap)
 					{
-						snap_value = vec3(app.rotate_snap_value);
+						snap_value = vec3(rotate_snap_value);
 						p_snap_value = &snap_value[0];
 					}
 					break;
 				case ToolScale:
 					op = ImGuizmo::SCALE;
-					if (app.scale_snap)
+					if (scale_snap)
 					{
-						snap_value = vec3(app.scale_snap_value);
+						snap_value = vec3(scale_snap_value);
 						p_snap_value = &snap_value[0];
 					}
 					break;
 				}
-				switch (app.tool_mode)
+				switch (tool_mode)
 				{
 				case ToolLocal:
 					mode = ImGuizmo::LOCAL;
@@ -330,7 +505,7 @@ void SceneView::on_draw()
 					before_editing_poses.clear();
 					before_editing_quts.clear();
 					before_editing_scls.clear();
-					switch (app.tool)
+					switch (tool)
 					{
 					case ToolMove:
 						for (auto t : node_targets)
@@ -339,7 +514,7 @@ void SceneView::on_draw()
 					case ToolRotate:
 						for (auto t : node_targets)
 							before_editing_quts.push_back(t->qut);
-						if (node_targets.size() > 1 && app.tool_pivot == ToolCenter)
+						if (node_targets.size() > 1 && tool_pivot == ToolCenter)
 						{
 							for (auto t : node_targets)
 								before_editing_poses.push_back(t->pos);
@@ -360,7 +535,7 @@ void SceneView::on_draw()
 					}
 					vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
 					decompose(mat, scl, qut, pos, skew, perspective);
-					if (app.tool == ToolMove)
+					if (tool == ToolMove)
 					{
 						if (node_targets.size() > 1)
 						{
@@ -379,7 +554,7 @@ void SceneView::on_draw()
 								ins->mark_modification(node_targets[0]->entity->file_id.to_string() + "|flame::cNode|pos");
 						}
 					}
-					if (app.tool == ToolRotate)
+					if (tool == ToolRotate)
 					{
 						if (node_targets.size() > 1)
 						{
@@ -388,7 +563,7 @@ void SceneView::on_draw()
 								t->mul_qut(qut);
 								if (auto ins = get_root_prefab_instance(t->entity); ins)
 									ins->mark_modification(t->entity->file_id.to_string() + "|flame::cNode|qut");
-								if (app.tool_pivot == ToolCenter)
+								if (tool_pivot == ToolCenter)
 								{
 									t->set_pos(center + qut * (t->global_pos() - center));
 									if (auto ins = get_root_prefab_instance(t->entity); ins)
@@ -403,7 +578,7 @@ void SceneView::on_draw()
 								ins->mark_modification(node_targets[0]->entity->file_id.to_string() + "|flame::cNode|qut");
 						}
 					}
-					if (app.tool == ToolScale)
+					if (tool == ToolScale)
 					{
 						if (node_targets.size() > 1)
 						{
@@ -422,7 +597,7 @@ void SceneView::on_draw()
 					std::vector<GUID> ids;
 					for (auto t : node_targets)
 						ids.push_back(t->entity->instance_id);
-					if (app.tool == ToolMove)
+					if (tool == ToolMove)
 					{
 						std::vector<std::string> old_values(ids.size());
 						std::vector<std::string> new_values(ids.size());
@@ -433,7 +608,7 @@ void SceneView::on_draw()
 						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, old_values, new_values));
 						app.prefab_unsaved = true;
 					}
-					if (app.tool == ToolRotate)
+					if (tool == ToolRotate)
 					{
 						std::vector<std::string> old_values(ids.size());
 						std::vector<std::string> new_values(ids.size());
@@ -442,7 +617,7 @@ void SceneView::on_draw()
 						for (auto i = 0; i < ids.size(); i++)
 							new_values[i] = str((vec4&)node_targets[i]->qut);
 						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "qut"_h, old_values, new_values));
-						if (node_targets.size() > 1 && app.tool_pivot == ToolCenter)
+						if (node_targets.size() > 1 && tool_pivot == ToolCenter)
 						{
 							std::vector<std::string> old_values(ids.size());
 							std::vector<std::string> new_values(ids.size());
@@ -454,7 +629,7 @@ void SceneView::on_draw()
 						}
 						app.prefab_unsaved = true;
 					}
-					if (app.tool == ToolScale)
+					if (tool == ToolScale)
 					{
 						std::vector<std::string> old_values(ids.size());
 						std::vector<std::string> new_values(ids.size());
@@ -515,7 +690,7 @@ void SceneView::on_draw()
 					pos = m3[2];
 					scl.x = length(vec2(m3[0]));
 					scl.y = length(vec2(m3[1]));
-					if (app.tool == ToolMove)
+					if (tool == ToolMove)
 					{
 						if (element_targets.size() > 1)
 						{
@@ -537,7 +712,7 @@ void SceneView::on_draw()
 								ins->mark_modification(element_targets[0]->entity->file_id.to_string() + "|flame::cElement|pos");
 						}
 					}
-					if (app.tool == ToolScale)
+					if (tool == ToolScale)
 					{
 						if (element_targets.size() > 1)
 						{
@@ -646,13 +821,13 @@ void SceneView::on_draw()
 					else
 					{
 						if (ImGui::IsKeyPressed(Keyboard_Q))
-							app.tool = ToolSelect;
+							tool = ToolSelect;
 						if (ImGui::IsKeyPressed(Keyboard_W))
-							app.tool = ToolMove;
+							tool = ToolMove;
 						if (ImGui::IsKeyPressed(Keyboard_E))
-							app.tool = ToolRotate;
+							tool = ToolRotate;
 						if (ImGui::IsKeyPressed(Keyboard_R))
-							app.tool = ToolScale;
+							tool = ToolScale;
 					}
 					if (ImGui::IsKeyPressed(Keyboard_Del))
 						app.cmd_delete_entities(selection.get_entities());
@@ -981,7 +1156,7 @@ void SceneView::on_draw()
 									auto v = normalize(pos - camera_pos);
 									pos = camera_pos + v * (camera_zoom / dot(v, -camera_node->z_axis()));
 								}
-								node->set_pos(app.get_snap_pos(pos));
+								node->set_pos(get_snap_pos(pos));
 							}
 							if (app.e_playing)
 								app.e_playing->add_child(e);

@@ -280,21 +280,9 @@ void ModelPreviewer::update(uint changed_frame, bool show_image)
 	ImGui::Text("Vertex Count: %d, Face Count: %d", (int)vertex_count, (int)face_count);
 }
 
-vec3 App::get_snap_pos(const vec3& _pos)
-{
-	auto pos = _pos;
-	if (move_snap)
-	{
-		pos /= move_snap_value;
-		pos -= fract(pos);
-		pos *= move_snap_value;
-	}
-	return pos;
-}
-
 void App::init()
 {
-	create("Scene Editor", uvec2(800, 600), WindowFrame | WindowResizable, true, graphics_debug, graphics_configs);
+	create("Editor", uvec2(800, 600), WindowFrame | WindowResizable, true, graphics_debug, graphics_configs);
 	graphics::gui_set_clear(true, vec4(0.f));
 	world->update_components = false;
 	input->transfer_events = false;
@@ -910,167 +898,6 @@ void App::on_gui()
 		ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
 		ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus);
 	ImGui::PopStyleVar(2);
-
-	// toolbar begin
-	ImGui::Dummy(vec2(0.f, 20.f));
-	ImGui::SameLine();
-	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("arrow-pointer"_h).c_str(), app.tool == ToolSelect))
-		tool = ToolSelect;
-	ImGui::SameLine();
-	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("arrows-up-down-left-right"_h).c_str(), app.tool == ToolMove))
-		tool = ToolMove;
-	ImGui::SameLine();
-	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("rotate"_h).c_str(), app.tool == ToolRotate))
-		tool = ToolRotate;
-	ImGui::SameLine();
-	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("down-left-and-up-right-to-center"_h).c_str(), app.tool == ToolScale))
-		tool = ToolScale;
-	ImGui::SameLine();
-	const char* tool_pivot_names[] = {
-		"Individual",
-		"Center"
-	};
-	const char* tool_mode_names[] = {
-		"Local",
-		"World"
-	};
-	ImGui::SetNextItemWidth(100.f);
-	ImGui::Combo("##pivot", (int*)&tool_pivot, tool_pivot_names, countof(tool_pivot_names));
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(100.f);
-	ImGui::Combo("##mode", (int*)&tool_mode, tool_mode_names, countof(tool_mode_names));
-	bool* p_snap = nullptr;
-	float* p_snap_value = nullptr;
-	switch (tool)
-	{
-	case ToolMove:
-		p_snap = &move_snap;
-		p_snap_value = last_focused_scene && last_focused_scene->element_targets.empty() ? &move_snap_value : &move_snap_2d_value;
-		break;
-	case ToolRotate:
-		p_snap = &rotate_snap;
-		p_snap_value = &rotate_snap_value;
-		break;
-	case ToolScale:
-		p_snap = &scale_snap;
-		p_snap_value = &scale_snap_value;
-		break;
-	}
-	ImGui::SameLine();
-	if (p_snap)
-	{
-		ImGui::Checkbox("Snap", p_snap);
-		if (*p_snap)
-		{
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(80.f);
-			ImGui::InputFloat("##snap_value", p_snap_value);
-		}
-	}
-	ImGui::SameLine();
-	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("floppy-disk"_h).c_str()))
-		save_prefab();
-	ImGui::SameLine();
-	ImGui::Dummy(vec2(0.f, 20.f));
-
-	if (selection.type == Selection::tEntity)
-	{
-		auto e = selection.as_entity();
-		if (auto terrain = e->get_component<cTerrain>(); terrain)
-		{
-			ImGui::SameLine();
-			if (ImGui::ToolButton((graphics::FontAtlas::icon_s("mound"_h) + "##up").c_str(), app.tool == ToolTerrainUp))
-				tool = ToolTerrainUp;
-			ImGui::SameLine();
-			if (ImGui::ToolButton((graphics::FontAtlas::icon_s("mound"_h) + "##down").c_str(), app.tool == ToolTerrainDown, 180.f))
-				tool = ToolTerrainDown;
-			ImGui::SameLine();
-			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("paintbrush"_h).c_str(), app.tool == ToolTerrainPaint))
-				tool = ToolTerrainPaint;
-		}
-		if (auto tile_map = e->get_component<cTileMap>(); tile_map)
-		{
-			ImGui::SameLine();
-			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("up-long"_h).c_str(), app.tool == ToolTileMapLevelUp))
-				tool = ToolTileMapLevelUp;
-			ImGui::SameLine();
-			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("down-long"_h).c_str(), app.tool == ToolTileMapLevelDown))
-				tool = ToolTileMapLevelDown;
-			ImGui::SameLine();
-			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("stairs"_h).c_str(), app.tool == ToolTileMapSlope))
-				tool = ToolTileMapSlope;
-		}
-	}
-
-	ImGui::SameLine();
-	ImGui::Dummy(vec2(50.f, 20.f));
-	ImGui::SameLine();
-	if (!e_playing && !e_preview)
-	{
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
-		//if (ImGui::ToolButton((graphics::FontAtlas::icon_s("play"_h) + " Build And Play").c_str()))
-		//{
-		//	build_project();
-		//	add_event([this]() {
-		//		cmd_play();
-		//		return false;
-		//	}, 0.f, 3);
-		//}
-		//ImGui::SameLine();
-		if (ImGui::ToolButton(graphics::FontAtlas::icon_s("play"_h).c_str()))
-			cmd_play();
-		ImGui::SameLine();
-		if (ImGui::ToolButton(graphics::FontAtlas::icon_s("circle-play"_h).c_str()))
-			cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : e_prefab);
-		ImGui::PopStyleColor();
-	}
-	else
-	{
-		if (e_playing)
-		{
-			if (!paused)
-			{
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1));
-				ImGui::SameLine();
-				if (ImGui::ToolButton(graphics::FontAtlas::icon_s("pause"_h).c_str()))
-					cmd_pause();
-				ImGui::PopStyleColor();
-			}
-			else
-			{
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
-				ImGui::SameLine();
-				if (ImGui::ToolButton(graphics::FontAtlas::icon_s("play"_h).c_str()))
-					cmd_play();
-				ImGui::PopStyleColor();
-			}
-		}
-		else if (e_preview)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 1, 1));
-			ImGui::SameLine();
-			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("rotate"_h).c_str()))
-				cmd_restart_preview();
-			ImGui::PopStyleColor();
-		}
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
-		ImGui::SameLine();
-		if (ImGui::ToolButton(graphics::FontAtlas::icon_s("stop"_h).c_str()))
-		{
-			if (e_playing)
-				cmd_stop();
-			else if (e_preview)
-				cmd_stop_preview();
-		}
-		ImGui::PopStyleColor();
-		if (e_preview)
-		{
-			ImGui::SameLine();
-			ImGui::Text("[%s]", e_preview->name.c_str());
-		}
-	}
-
-	// toolbar end
 
 	// dock space
 	ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, -20.0f), ImGuiDockNodeFlags_PassthruCentralNode);
@@ -1855,12 +1682,25 @@ bool App::cmd_play()
 			always_render = true;
 			paused = false;
 
-			auto fv = scene_window.last_focused_view();
-			auto& camera_list = cCamera::list();
-			if (camera_list.size() > 1)
+			cCameraPtr camera = nullptr;
+			e_prefab->traversal_bfs([&](EntityPtr e, int) {
+				camera = e->get_component<cCamera>();
+				if (camera)
+					return false;
+				return true;
+			});
+
+			if (camera)
 			{
-				if (fv)
-					fv->camera_idx = 1;
+				if (auto fv = scene_window.last_focused_view(); fv)
+				{
+					auto& camera_list = cCamera::list();
+					for (auto i = 0; i < camera_list.size(); i++)
+					{
+						if (camera_list[i] == camera)
+							fv->camera_idx = 1;
+					}
+				}
 			}
 			return false;
 		});

@@ -5,35 +5,6 @@
 
 using namespace flame;
 
-enum Tool
-{
-	ToolNone,
-	ToolSelect,
-	ToolMove,
-	ToolRotate,
-	ToolScale,
-	ToolTerrainUp,
-	ToolTerrainDown,
-	ToolTerrainSmooth,
-	ToolTerrainPaint,
-	ToolTileMapLevelUp,
-	ToolTileMapLevelDown,
-	ToolTileMapSlope,
-	ToolTileMapFlat,
-};
-
-enum ToolPivot
-{
-	ToolIndividual,
-	ToolCenter
-};
-
-enum ToolMode
-{
-	ToolLocal,
-	ToolWorld
-};
-
 struct DropPaths
 {
 	std::filesystem::path* paths;
@@ -207,18 +178,6 @@ struct App : UniverseApplication
 	bool timeline_playing = false;
 
 	ProjectSettings project_settings;
-
-	Tool tool = ToolSelect;
-	ToolPivot tool_pivot = ToolIndividual;
-	ToolMode tool_mode = ToolLocal;
-	bool move_snap = true;
-	float move_snap_value = 0.5f;
-	float move_snap_2d_value = 4.f;
-	vec3 get_snap_pos(const vec3& _pos);
-	bool rotate_snap = true;
-	float rotate_snap_value = 5.f;
-	bool scale_snap = true;
-	float scale_snap_value = 0.1f;
 
 	void init();
 	bool on_update() override;

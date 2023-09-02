@@ -1,4 +1,4 @@
-#include "node_texture.h"
+#include "../../../foundation/blueprint.h"
 #include "../../../foundation/typeinfo.h"
 #include "../../buffer_private.h"
 #include "../../image_private.h"
@@ -12,7 +12,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		void add_node_templates_texture(BlueprintNodeLibraryPtr library)
+		void add_texture_node_templates(BlueprintNodeLibraryPtr library)
 		{
 			library->add_template("New Texture", "",
 				{
@@ -80,6 +80,11 @@ namespace flame
 			);
 			library->add_template("Voronoi Texture", "",
 				{
+					{
+						.name = "Scale",
+						.allowed_types = { TypeInfo::get<float>() },
+						.default_value = "1"
+					}
 				},
 				{
 					{
@@ -88,8 +93,10 @@ namespace flame
 					}
 				},
 				[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+					auto scale = *(float*)inputs[0].data;
 					auto& texture = *(Texture*)outputs[0].data;
 					texture.type = TextureVoronoi;
+					texture.scale = scale;
 					if (texture.image)
 					{
 						auto old_image = texture.image;
@@ -108,7 +115,7 @@ namespace flame
 						for (auto y = 0; y < preview_size; y++)
 						{
 							texture.image->set_pixel(x, y, 0, 0, 
-								vec4(voronoi_noise(vec2(x, y) * 0.05f), 0.f, 0.f, 0.f));
+								vec4(voronoi_noise(vec2(x, y) / (float)preview_size * scale), 0.f, 0.f, 0.f));
 						}
 					}
 					texture.image->upload_pixels(0, 0, preview_size, preview_size, 0, 0);

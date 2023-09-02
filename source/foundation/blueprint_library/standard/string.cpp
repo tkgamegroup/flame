@@ -4,7 +4,7 @@
 
 namespace flame
 {
-	void add_node_templates_string(BlueprintNodeLibraryPtr library)
+	void add_string_node_templates(BlueprintNodeLibraryPtr library)
 	{
 		library->add_template("To String", "",
 			{

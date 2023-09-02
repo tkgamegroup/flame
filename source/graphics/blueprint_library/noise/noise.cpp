@@ -1,4 +1,4 @@
-#include "node_noise.h"
+#include "../../../foundation/blueprint.h"
 #include "../../../foundation/typeinfo.h"
 #include "../../noise.h"
 
@@ -6,7 +6,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		void add_node_templates_noise(BlueprintNodeLibraryPtr library)
+		void add_noise_node_templates(BlueprintNodeLibraryPtr library)
 		{
 			library->add_template("Perlin", "",
 				{

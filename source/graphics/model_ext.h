@@ -1,6 +1,8 @@
 #pragma once
 
 #include "model.h"
+#include "texture.h"
+#include "noise.h"
 
 namespace flame
 {
@@ -449,8 +451,8 @@ namespace flame
 					quad4.corners[1] = { .vertex_id = ind_e30, .uv = uv_e30 };
 					quad4.corners[2] = { .vertex_id = ind_v3, .uv = uv_v3 };
 					quad4.corners[3] = { .vertex_id = ind_e23, .uv = uv_e23 };
-					quad4.normal = normalize(cross(new_vertices[ind_f] - new_vertices[ind_e30],
-						new_vertices[ind_f] - new_vertices[ind_e23]));
+					quad4.normal = normalize(cross(new_vertices[ind_f] - new_vertices[ind_e23],
+						new_vertices[ind_f] - new_vertices[ind_e30]));
 
 					new_quads.emplace_back(quad1);
 					new_quads.emplace_back(quad2);
@@ -460,6 +462,69 @@ namespace flame
 
 				oth.vertices = std::move(new_vertices);
 				oth.faces = std::move(new_quads);
+			}
+
+			void displace(ControlMesh& oth, Texture* ptexture)
+			{
+				std::vector<std::vector<uint>> vertices_adjacent_faces(vertices.size());
+
+				for (auto i = 0; i < faces.size(); i++)
+				{
+					auto& f = faces[i];
+
+					uint v0 = f.corners[0].vertex_id;
+					uint v1 = f.corners[1].vertex_id;
+					uint v2 = f.corners[2].vertex_id;
+					uint v3 = f.corners[3].vertex_id;
+
+					vertices_adjacent_faces[v0].push_back(i);
+					vertices_adjacent_faces[v1].push_back(i);
+					vertices_adjacent_faces[v2].push_back(i);
+					vertices_adjacent_faces[v3].push_back(i);
+				}
+
+				oth.reset();
+				oth.vertices = vertices;
+				oth.faces = faces;
+
+				for (auto i = 0; i < vertices.size(); i++)
+				{
+					vec3 normal(0.f);
+					for (auto fi : vertices_adjacent_faces[i])
+						normal += faces[fi].normal;
+					normal = normalize(normal);
+
+					auto v = vertices[i];
+					float disp = 0.f;
+					if (ptexture)
+					{
+						switch (ptexture->type)
+						{
+						case TextureImage:
+							break;
+						case TexturePerlin:
+							break;
+						case TextureVoronoi:
+							disp = triplanar_sample<float>(normal, v, [ptexture](const vec2& uv) {
+								return voronoi_noise(uv * ptexture->scale);
+							});
+							break;
+						}
+					}
+					v += normal * disp;
+					oth.vertices[i] = v;
+				}
+
+				for (auto& f : oth.faces)
+				{
+					f.normal = normalize(cross(oth.vertices[f.corners[3].vertex_id] - oth.vertices[f.corners[0].vertex_id],
+						oth.vertices[f.corners[1].vertex_id] - oth.vertices[f.corners[0].vertex_id]));
+				}
+			}
+
+			void decimate(float ratio)
+			{
+
 			}
 
 			void convert_to_mesh(Mesh& mesh)
@@ -478,11 +543,11 @@ namespace flame
 						}
 
 						mesh.indices.push_back(vtx_off + 0);
+						mesh.indices.push_back(vtx_off + 2);
 						mesh.indices.push_back(vtx_off + 1);
-						mesh.indices.push_back(vtx_off + 2);
 						mesh.indices.push_back(vtx_off + 0);
-						mesh.indices.push_back(vtx_off + 2);
 						mesh.indices.push_back(vtx_off + 3);
+						mesh.indices.push_back(vtx_off + 2);
 					}
 				}
 				mesh.calc_bounds();
