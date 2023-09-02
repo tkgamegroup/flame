@@ -449,8 +449,8 @@ namespace flame
 					quad4.corners[1] = { .vertex_id = ind_e30, .uv = uv_e30 };
 					quad4.corners[2] = { .vertex_id = ind_v3, .uv = uv_v3 };
 					quad4.corners[3] = { .vertex_id = ind_e23, .uv = uv_e23 };
-					quad4.normal = normalize(cross(new_vertices[ind_f] - new_vertices[ind_e23],
-						new_vertices[ind_f] - new_vertices[ind_e30]));
+					quad4.normal = normalize(cross(new_vertices[ind_f] - new_vertices[ind_e30],
+						new_vertices[ind_f] - new_vertices[ind_e23]));
 
 					new_quads.emplace_back(quad1);
 					new_quads.emplace_back(quad2);
@@ -464,6 +464,7 @@ namespace flame
 
 			void convert_to_mesh(Mesh& mesh)
 			{
+				mesh.reset();
 				for (auto& f : faces)
 				{
 					if (f.corners.size() == 4)
@@ -484,6 +485,7 @@ namespace flame
 						mesh.indices.push_back(vtx_off + 3);
 					}
 				}
+				mesh.calc_bounds();
 			}
 		};
 

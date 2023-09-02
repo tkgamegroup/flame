@@ -75,6 +75,7 @@ namespace flame
 		void run() override;
 		void step() override;
 		void stop() override;
+		void call(uint group_name, void** inputs, void** outputs) override;
 	};
 
 	struct BlueprintDebuggerPrivate : BlueprintDebugger

@@ -222,12 +222,22 @@ namespace flame
 
 		std::string name;
 		uint name_hash = 0;
+		std::vector<BlueprintVariable>					variables;
+		std::vector<BlueprintVariable>					inputs;
+		std::vector<BlueprintVariable>					outputs;
 		std::vector<std::unique_ptr<BlueprintNodeT>>	nodes;
 		std::vector<std::unique_ptr<BlueprintLinkT>>	links;
 		std::vector<std::unique_ptr<BlueprintBlockT>>	blocks;
-		std::vector<BlueprintVariable>					inputs;
-		std::vector<BlueprintVariable>					outputs;
-		std::vector<BlueprintVariable>					variables;
+
+		inline BlueprintNodePtr find_node(uint name) const
+		{
+			for (auto& n : nodes)
+			{
+				if (((BlueprintNode*)n.get())->name_hash == name)
+					return (BlueprintNodePtr)n.get();
+			}
+			return nullptr;
+		}
 
 		vec2 offset;
 		float scale = 1.f;
@@ -452,11 +462,12 @@ namespace flame
 
 			BlueprintInstancePtr instance;
 			uint name;
-			std::map<uint, Data> slot_datas; // key: slot id
-			Object root_object;
-			std::map<uint, Object*> object_map;
-			std::vector<void*> inputs;
-			std::vector<void*> outputs;
+
+			std::map<uint, Data>						slot_datas; // key: slot id
+			Object										root_object;
+			std::map<uint, Object*>						object_map;
+			Object*										input_object = nullptr;
+			Object*										output_object = nullptr;
 			std::unordered_map<uint, BlueprintArgument> variables; // key: variable name hash
 
 			uint structure_updated_frame = 0;
@@ -532,6 +543,7 @@ namespace flame
 		virtual void run() = 0;
 		virtual void step() = 0;
 		virtual void stop() = 0;
+		virtual void call(uint group_name, void** inputs, void** outputs) = 0;
 
 		struct Create
 		{

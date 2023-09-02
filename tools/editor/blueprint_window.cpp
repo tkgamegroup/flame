@@ -273,17 +273,25 @@ void BlueprintView::on_draw()
 					ImGui::InputText("Name", &var.name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-						var.name_hash = sh(var.name.c_str());
-						// TODO: recreate variable nodes
+						blueprint->add_variable(nullptr, var.name, var.type);
+						blueprint->remove_variable(nullptr, var.name_hash);
+						selected_variable = -1;
 					}
-					ImGui::SetNextItemWidth(100.f);
-					if (ImGui::BeginCombo("Type", var.type->name.c_str()))
+					if (selected_variable != -1)
 					{
-						auto type = show_types_menu();
-						if (type)
-							var.type = type;
+						ImGui::SetNextItemWidth(100.f);
+						if (ImGui::BeginCombo("Type", var.type->name.c_str()))
+						{
+							auto type = show_types_menu();
+							if (type)
+							{
+								blueprint->add_variable(nullptr, var.name, type);
+								blueprint->remove_variable(nullptr, var.name_hash);
+								selected_variable = -1;
+							}
 
-						ImGui::EndCombo();
+							ImGui::EndCombo();
+						}
 					}
 				}
 				ImGui::EndGroup();
@@ -421,17 +429,25 @@ void BlueprintView::on_draw()
 					ImGui::InputText("Name", &var.name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-						var.name_hash = sh(var.name.c_str());
-						// TODO: recreate variable nodes
+						blueprint->add_variable(group, var.name, var.type);
+						blueprint->remove_variable(group, var.name_hash);
+						selected_variable = -1;
 					}
-					ImGui::SetNextItemWidth(100.f);
-					if (ImGui::BeginCombo("Type", var.type->name.c_str()))
+					if (selected_variable != -1)
 					{
-						auto type = show_types_menu();
-						if (type)
-							var.type = type;
+						ImGui::SetNextItemWidth(100.f);
+						if (ImGui::BeginCombo("Type", var.type->name.c_str()))
+						{
+							auto type = show_types_menu();
+							if (type)
+							{
+								blueprint->add_variable(group, var.name, type);
+								blueprint->remove_variable(group, var.name_hash);
+								selected_variable = -1;
+							}
 
-						ImGui::EndCombo();
+							ImGui::EndCombo();
+						}
 					}
 				}
 				ImGui::EndGroup();
@@ -488,6 +504,38 @@ void BlueprintView::on_draw()
 					ImGui::EndListBox();
 				}
 				selected_input = min(selected_input, (int)group->inputs.size() - 1);
+				ImGui::SameLine();
+				ImGui::BeginGroup();
+				if (selected_input >= 0)
+				{
+					auto& var = group->inputs[selected_input];
+
+					ImGui::SetNextItemWidth(100.f);
+					ImGui::InputText("Name", &var.name);
+					if (ImGui::IsItemDeactivatedAfterEdit())
+					{
+						blueprint->add_group_input(group, var.name, var.type);
+						blueprint->remove_group_input(group, var.name_hash);
+						selected_input = -1;
+					}
+					if (selected_input != -1)
+					{
+						ImGui::SetNextItemWidth(100.f);
+						if (ImGui::BeginCombo("Type", var.type->name.c_str()))
+						{
+							auto type = show_types_menu();
+							if (type)
+							{
+								blueprint->add_group_input(group, var.name, type);
+								blueprint->remove_group_input(group, var.name_hash);
+								selected_input = -1;
+							}
+
+							ImGui::EndCombo();
+						}
+					}
+				}
+				ImGui::EndGroup();
 
 				if (ImGui::SmallButton("+"))
 				{
@@ -540,6 +588,38 @@ void BlueprintView::on_draw()
 					ImGui::EndListBox();
 				}
 				selected_output = min(selected_output, (int)group->outputs.size() - 1);
+				ImGui::SameLine();
+				ImGui::BeginGroup();
+				if (selected_output >= 0)
+				{
+					auto& var = group->outputs[selected_output];
+
+					ImGui::SetNextItemWidth(100.f);
+					ImGui::InputText("Name", &var.name);
+					if (ImGui::IsItemDeactivatedAfterEdit())
+					{
+						blueprint->add_group_output(group, var.name, var.type);
+						blueprint->remove_group_output(group, var.name_hash);
+						selected_output = -1;
+					}
+					if (selected_output != -1)
+					{
+						ImGui::SetNextItemWidth(100.f);
+						if (ImGui::BeginCombo("Type", var.type->name.c_str()))
+						{
+							auto type = show_types_menu();
+							if (type)
+							{
+								blueprint->add_group_output(group, var.name, type);
+								blueprint->remove_group_output(group, var.name_hash);
+								selected_output = -1;
+							}
+
+							ImGui::EndCombo();
+						}
+					}
+				}
+				ImGui::EndGroup();
 
 				if (ImGui::SmallButton("+"))
 				{
@@ -558,7 +638,7 @@ void BlueprintView::on_draw()
 				if (ImGui::SmallButton("-"))
 				{
 					if (selected_output != -1)
-						blueprint->remove_group_output(group, group->inputs[selected_output].name_hash);
+						blueprint->remove_group_output(group, group->outputs[selected_output].name_hash);
 				}
 				ImGui::SameLine();
 				if (ImGui::SmallButton(graphics::FontAtlas::icon_s("arrow-up"_h).c_str()))

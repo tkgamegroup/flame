@@ -22,7 +22,6 @@ namespace flame
 		delete splash_map;
 	}
 
-
 	void cProcedureTerrainPrivate::set_image_size(const uvec2& size)
 	{
 		if (image_size == size)

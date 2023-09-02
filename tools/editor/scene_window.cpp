@@ -151,6 +151,13 @@ void SceneView::on_draw()
 	}
 	auto camera = camera_list[camera_idx];
 	app.renderer->render_tasks.front()->camera = camera;
+	ImGui::SameLine();
+	if (ImGui::Button("Reset"))
+	{
+		auto camera_node = camera->node;
+		camera_node->set_pos(vec3(0.f));
+		camera_node->set_qut(quat(1.f, 0.f, 0.f, 0.f));
+	}
 
 	ImGui::SameLine();
 	if (ImGui::ToolButton("Outline", show_outline))
