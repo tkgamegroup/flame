@@ -107,7 +107,7 @@ namespace flame
 	concept vector_of_data_type = vector_type<T> && basic_type<typename T::value_type>;
 
 	template<typename T>
-	concept vector_of_udt_type = vector_type<T> && !basic_type<typename T::value_type> && !pair_type<typename T::value_type> && !tuple_type<typename T::value_type>;
+	concept vector_of_udt_type = vector_type<T> && !basic_type<typename T::value_type> && !pair_type<typename T::value_type> && !tuple_type<typename T::value_type> && !pointer_type<typename T::value_type>;
 
 	template<typename T>
 	concept vector_of_pair_type = vector_type<T> && pair_type<typename T::value_type>;

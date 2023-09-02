@@ -32,6 +32,7 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
 		library->add_template("Loop", "",
 			{
 				{

@@ -273,8 +273,10 @@ void BlueprintView::on_draw()
 					ImGui::InputText("Name", &var.name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-						blueprint->add_variable(nullptr, var.name, var.type);
+						auto name = var.name;
+						auto type = var.type;
 						blueprint->remove_variable(nullptr, var.name_hash);
+						blueprint->add_variable(nullptr, name, type);
 						selected_variable = -1;
 					}
 					if (selected_variable != -1)
@@ -285,8 +287,9 @@ void BlueprintView::on_draw()
 							auto type = show_types_menu();
 							if (type)
 							{
-								blueprint->add_variable(nullptr, var.name, type);
+								auto name = var.name;
 								blueprint->remove_variable(nullptr, var.name_hash);
+								blueprint->add_variable(nullptr, name, type);
 								selected_variable = -1;
 							}
 
@@ -429,8 +432,10 @@ void BlueprintView::on_draw()
 					ImGui::InputText("Name", &var.name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-						blueprint->add_variable(group, var.name, var.type);
+						auto name = var.name;
+						auto type = var.type;
 						blueprint->remove_variable(group, var.name_hash);
+						blueprint->add_variable(group, name, type);
 						selected_variable = -1;
 					}
 					if (selected_variable != -1)
@@ -441,8 +446,9 @@ void BlueprintView::on_draw()
 							auto type = show_types_menu();
 							if (type)
 							{
-								blueprint->add_variable(group, var.name, type);
+								auto name = var.name;
 								blueprint->remove_variable(group, var.name_hash);
+								blueprint->add_variable(group, name, type);
 								selected_variable = -1;
 							}
 
@@ -514,8 +520,10 @@ void BlueprintView::on_draw()
 					ImGui::InputText("Name", &var.name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-						blueprint->add_group_input(group, var.name, var.type);
+						auto name = var.name;
+						auto type = var.type;
 						blueprint->remove_group_input(group, var.name_hash);
+						blueprint->add_group_input(group, name, type);
 						selected_input = -1;
 					}
 					if (selected_input != -1)
@@ -526,8 +534,9 @@ void BlueprintView::on_draw()
 							auto type = show_types_menu();
 							if (type)
 							{
-								blueprint->add_group_input(group, var.name, type);
+								auto name = var.name;
 								blueprint->remove_group_input(group, var.name_hash);
+								blueprint->add_group_input(group, name, type);
 								selected_input = -1;
 							}
 
@@ -598,8 +607,10 @@ void BlueprintView::on_draw()
 					ImGui::InputText("Name", &var.name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-						blueprint->add_group_output(group, var.name, var.type);
+						auto name = var.name;
+						auto type = var.type;
 						blueprint->remove_group_output(group, var.name_hash);
+						blueprint->add_group_output(group, name, type);
 						selected_output = -1;
 					}
 					if (selected_output != -1)
@@ -610,8 +621,9 @@ void BlueprintView::on_draw()
 							auto type = show_types_menu();
 							if (type)
 							{
-								blueprint->add_group_output(group, var.name, type);
+								auto name = var.name;
 								blueprint->remove_group_output(group, var.name_hash);
+								blueprint->add_group_output(group, name, type);
 								selected_output = -1;
 							}
 
@@ -678,7 +690,10 @@ void BlueprintView::on_draw()
 				if (group != last_group)
 				{
 					for (auto& b : group->blocks)
-						ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)b.get(), b->position);
+					{
+						if (b.get() != group->blocks.front().get())
+							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)b.get(), b->position);
+					}
 					for (auto& n : group->nodes)
 						ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n.get(), n->position);
 					last_group = group;

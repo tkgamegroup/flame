@@ -29,6 +29,7 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
 		library->add_template("Get Pos", "",
 			{
 				{
@@ -52,6 +53,7 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
 		library->add_template("Spawn Prefab", "",
 			{
 				{
@@ -68,8 +70,14 @@ namespace flame
 				}
 			},
 			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
 			},
 			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+				EntityPtr e = nullptr;
+
 				auto& path = *(std::filesystem::path*)inputs[0].data;
 				if (!path.empty())
 				{
@@ -79,7 +87,7 @@ namespace flame
 						auto parent = *(EntityPtr*)inputs[1].data;
 						if (parent)
 						{
-							auto e = Entity::create();
+							e = Entity::create();
 							e->load(path);
 							if (auto node = e->get_component<cNode>(); node)
 								node->set_pos(*(vec3*)inputs[2].data);
@@ -87,6 +95,35 @@ namespace flame
 						}
 					}
 				}
+
+				*(EntityPtr*)outputs[0].data = e;
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Get Nearby Entities", "",
+			{
+				{
+					.name = "Location",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Radius",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "5"
+				}
+			},
+			{
+				{
+					.name = "Entities",
+					.allowed_types = { TypeInfo::get<std::vector<EntityPtr>>() }
+				}
+			},
+			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+
 			},
 			nullptr,
 			nullptr,
