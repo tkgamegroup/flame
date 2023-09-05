@@ -25,13 +25,6 @@ namespace flame
 
 			virtual float get_scale(uint font_size) = 0;
 
-			FLAME_GRAPHICS_API static ivec2 icons_range();
-			FLAME_GRAPHICS_API static wchar_t icon(uint hash);
-			static inline std::string icon_s(uint hash)
-			{
-				return w2s(std::wstring(1, icon(hash)));
-			}
-
 			struct Get
 			{
 				virtual FontAtlasPtr operator()(const std::vector<std::filesystem::path>& font_names, FontAtlasType type = FontAtlasBitmap) = 0;

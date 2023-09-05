@@ -192,11 +192,29 @@ void BlueprintView::on_draw()
 			ImGui::TableSetColumnIndex(0);
 			ImGui::BeginChild("side_panel", ImVec2(0, -2));
 
+			auto ti_str = [&](TypeInfo* ti) {
+				return TypeInfo::serialize_t(ti->tag) + '@' + ti->name;
+			};
+
 			static std::string type_filter = "";
 			auto show_types_menu = [&]() {
 				TypeInfo* ret = nullptr;
 
 				ImGui::InputText("Filter", &type_filter);
+				if (ImGui::BeginMenu("Enum"))
+				{
+					for (auto& ei : tidb.enums)
+					{
+						if (!type_filter.empty())
+						{
+							if (ei.second.name.find(type_filter) == std::string::npos)
+								continue;
+						}
+						if (ImGui::Selectable(ei.second.name.c_str()))
+							ret = TypeInfo::get(TagE, ei.second.name, tidb);
+					}
+					ImGui::EndMenu();
+				}
 				if (ImGui::BeginMenu("Data"))
 				{
 					for (auto& pair : tidb.typeinfos)
@@ -231,6 +249,18 @@ void BlueprintView::on_draw()
 				}
 				if (ImGui::BeginMenu("Pointer"))
 				{
+					if (ImGui::BeginMenu("Of Enum"))
+					{
+						ImGui::EndMenu();
+					}
+					if (ImGui::BeginMenu("Of Data"))
+					{
+						ImGui::EndMenu();
+					}
+					if (ImGui::BeginMenu("Of Udt"))
+					{
+						ImGui::EndMenu();
+					}
 					for (auto& pair : tidb.typeinfos)
 					{
 						if (pair.second->tag < TagP_Beg || pair.second->tag > TagP_End)
@@ -244,6 +274,25 @@ void BlueprintView::on_draw()
 							ret = pair.second.get();
 					}
 					ImGui::EndMenu();
+				}
+				if (ImGui::BeginMenu("Vector"))
+				{
+					if (ImGui::BeginMenu("Of Enum"))
+					{
+						ImGui::EndMenu();
+					}
+					if (ImGui::BeginMenu("Of Data"))
+					{
+						ImGui::EndMenu();
+					}
+					if (ImGui::BeginMenu("Of Udt"))
+					{
+						ImGui::EndMenu();
+					}
+					if (ImGui::BeginMenu("Of Pointer Of Udt"))
+					{
+						ImGui::EndMenu();
+					}
 				}
 				return ret;
 			};
@@ -282,7 +331,7 @@ void BlueprintView::on_draw()
 					if (selected_variable != -1)
 					{
 						ImGui::SetNextItemWidth(100.f);
-						if (ImGui::BeginCombo("Type", var.type->name.c_str()))
+						if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
 						{
 							auto type = show_types_menu();
 							if (type)
@@ -299,7 +348,7 @@ void BlueprintView::on_draw()
 				}
 				ImGui::EndGroup();
 
-				if (ImGui::SmallButton("+"))
+				if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
 				{
 					auto name = get_unique_name("new_variable", [&](const std::string& name) {
 						for (auto& v : blueprint->variables)
@@ -311,21 +360,22 @@ void BlueprintView::on_draw()
 					});
 					blueprint->add_variable(nullptr, name, TypeInfo::get<float>());
 					selected_variable = blueprint->variables.size() - 1;
+
 				}
 				ImGui::SameLine();
-				if (ImGui::SmallButton("-"))
+				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
 				{
 					if (selected_variable != -1)
 						blueprint->remove_variable(nullptr, blueprint->variables[selected_variable].name_hash);
 				}
 				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::FontAtlas::icon_s("arrow-up"_h).c_str()))
+				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
 				{
 					if (selected_variable > 0)
 						std::swap(blueprint->variables[selected_variable], blueprint->variables[selected_variable - 1]);
 				}
 				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::FontAtlas::icon_s("arrow-down"_h).c_str()))
+				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
 				{
 					if (selected_variable != -1 && selected_variable < blueprint->variables.size() - 1)
 						std::swap(blueprint->variables[selected_variable], blueprint->variables[selected_variable + 1]);
@@ -372,7 +422,7 @@ void BlueprintView::on_draw()
 			}
 			ImGui::SameLine();
 
-			if (ImGui::Button(graphics::FontAtlas::icon_s("xmark"_h).c_str()))
+			if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
 			{
 				blueprint->remove_group(group);
 				group = blueprint->groups.back().get();
@@ -441,7 +491,7 @@ void BlueprintView::on_draw()
 					if (selected_variable != -1)
 					{
 						ImGui::SetNextItemWidth(100.f);
-						if (ImGui::BeginCombo("Type", var.type->name.c_str()))
+						if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
 						{
 							auto type = show_types_menu();
 							if (type)
@@ -458,7 +508,7 @@ void BlueprintView::on_draw()
 				}
 				ImGui::EndGroup();
 
-				if (ImGui::SmallButton("+"))
+				if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
 				{
 					auto name = get_unique_name("new_variable", [&](const std::string& name) {
 						for (auto& v : group->variables)
@@ -472,19 +522,19 @@ void BlueprintView::on_draw()
 					selected_variable = group->variables.size() - 1;
 				}
 				ImGui::SameLine();
-				if (ImGui::SmallButton("-"))
+				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
 				{
 					if (selected_variable != -1)
 						blueprint->remove_variable(group, group->variables[selected_variable].name_hash);
 				}
 				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::FontAtlas::icon_s("arrow-up"_h).c_str()))
+				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
 				{
 					if (selected_variable > 0)
 						std::swap(group->variables[selected_variable], group->variables[selected_variable - 1]);
 				}
 				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::FontAtlas::icon_s("arrow-down"_h).c_str()))
+				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
 				{
 					if (selected_variable != -1 && selected_variable < group->variables.size() - 1)
 						std::swap(group->variables[selected_variable], group->variables[selected_variable + 1]);
@@ -529,7 +579,7 @@ void BlueprintView::on_draw()
 					if (selected_input != -1)
 					{
 						ImGui::SetNextItemWidth(100.f);
-						if (ImGui::BeginCombo("Type", var.type->name.c_str()))
+						if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
 						{
 							auto type = show_types_menu();
 							if (type)
@@ -546,7 +596,7 @@ void BlueprintView::on_draw()
 				}
 				ImGui::EndGroup();
 
-				if (ImGui::SmallButton("+"))
+				if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
 				{
 					auto name = get_unique_name("new_input", [&](const std::string& name) {
 						for (auto& i : group->inputs)
@@ -560,19 +610,19 @@ void BlueprintView::on_draw()
 					selected_input = group->inputs.size() - 1;
 				}
 				ImGui::SameLine();
-				if (ImGui::SmallButton("-"))
+				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
 				{
 					if (selected_input != -1)
 						blueprint->remove_group_input(group, group->inputs[selected_input].name_hash);
 				}
 				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::FontAtlas::icon_s("arrow-up"_h).c_str()))
+				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
 				{
 					if (selected_input > 0)
 						std::swap(group->inputs[selected_input], group->inputs[selected_input - 1]);
 				}
 				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::FontAtlas::icon_s("arrow-down"_h).c_str()))
+				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
 				{
 					if (selected_input != -1 && selected_input < group->inputs.size() - 1)
 						std::swap(group->inputs[selected_input], group->inputs[selected_input + 1]);
@@ -616,7 +666,7 @@ void BlueprintView::on_draw()
 					if (selected_output != -1)
 					{
 						ImGui::SetNextItemWidth(100.f);
-						if (ImGui::BeginCombo("Type", var.type->name.c_str()))
+						if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
 						{
 							auto type = show_types_menu();
 							if (type)
@@ -633,7 +683,7 @@ void BlueprintView::on_draw()
 				}
 				ImGui::EndGroup();
 
-				if (ImGui::SmallButton("+"))
+				if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
 				{
 					auto name = get_unique_name("new_output", [&](const std::string& name) {
 						for (auto& o : group->outputs)
@@ -647,19 +697,19 @@ void BlueprintView::on_draw()
 					selected_output = group->outputs.size() - 1;
 				}
 				ImGui::SameLine();
-				if (ImGui::SmallButton("-"))
+				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
 				{
 					if (selected_output != -1)
 						blueprint->remove_group_output(group, group->outputs[selected_output].name_hash);
 				}
 				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::FontAtlas::icon_s("arrow-up"_h).c_str()))
+				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
 				{
 					if (selected_output > 0)
 						std::swap(group->outputs[selected_output], group->outputs[selected_output - 1]);
 				}
 				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::FontAtlas::icon_s("arrow-down"_h).c_str()))
+				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
 				{
 					if (selected_output != -1 && selected_output < group->outputs.size() - 1)
 						std::swap(group->outputs[selected_output], group->outputs[selected_output + 1]);
@@ -675,9 +725,8 @@ void BlueprintView::on_draw()
 				{
 					for (auto& d : instance_group.slot_datas)
 					{
-						ImGui::TextUnformatted(std::format("ID: {}, Type: {}@{}, Value: {}",
-							d.first, TypeInfo::serialize_t(d.second.arg.type->tag), d.second.arg.type->name,
-							d.second.arg.type->serialize(d.second.arg.data)).c_str());
+						ImGui::TextUnformatted(std::format("ID: {}, Type: {}, Value: {}",
+							d.first, ti_str(d.second.arg.type), d.second.arg.type->serialize(d.second.arg.data)).c_str());
 					}
 				}
 			}
@@ -788,13 +837,13 @@ void BlueprintView::on_draw()
 					}
 
 					ax::NodeEditor::BeginPin((uint64)b->input.get(), ax::NodeEditor::PinKind::Input);
-					ImGui::TextUnformatted((graphics::FontAtlas::icon_s("play"_h) + "  ").c_str());
+					ImGui::TextUnformatted((graphics::font_icon_str("play"_h) + "  ").c_str());
 					ax::NodeEditor::EndPin();
 
 					ImGui::SameLine(0.f, max(0.f, b->rect.size().x - 56.f));
 
 					ax::NodeEditor::BeginPin((uint64)b->output.get(), ax::NodeEditor::PinKind::Output);
-					ImGui::TextUnformatted(("  " + graphics::FontAtlas::icon_s("play"_h)).c_str());
+					ImGui::TextUnformatted(("  " + graphics::font_icon_str("play"_h)).c_str());
 					ax::NodeEditor::EndPin();
 
 					ax::NodeEditor::Group(b->rect.size());
@@ -836,7 +885,7 @@ void BlueprintView::on_draw()
 						if (input->flags & BlueprintSlotFlagHideInUI)
 							continue;
 						ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
-						ImGui::Text("%s %s", graphics::FontAtlas::icon_s("play"_h).c_str(), input->name.c_str());
+						ImGui::Text("%s %s", graphics::font_icon_str("play"_h).c_str(), input->name.c_str());
 						ax::NodeEditor::EndPin();
 						if (debugging_instance)
 						{
@@ -845,8 +894,7 @@ void BlueprintView::on_draw()
 								auto& arg = instance_object->inputs[i];
 								if (arg.type)
 								{
-									tooltip = std::format("{} ({}@{})\nObject ID: {}", get_slot_value(arg), 
-										TypeInfo::serialize_t(arg.type->tag), arg.type->name, input->object_id);
+									tooltip = std::format("{} ({})\nObject ID: {}", get_slot_value(arg), ti_str(arg.type), input->object_id);
 									ax::NodeEditor::Suspend();
 									tooltip_pos = io.MousePos;
 									ax::NodeEditor::Resume();
@@ -857,8 +905,7 @@ void BlueprintView::on_draw()
 						{
 							if (ImGui::IsItemHovered())
 							{
-								tooltip = std::format("({}@{})\nObject ID: {}", TypeInfo::serialize_t(input->type->tag), 
-									input->type->name, input->object_id);
+								tooltip = std::format("({})\nObject ID: {}", ti_str(input->type), input->object_id);
 								ax::NodeEditor::Suspend();
 								tooltip_pos = io.MousePos;
 								ax::NodeEditor::Resume();
@@ -933,10 +980,10 @@ void BlueprintView::on_draw()
 											ImGui::EndDragDropTarget();
 										}
 										ImGui::SameLine();
-										if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
+										if (ImGui::Button(graphics::font_icon_str("location-crosshairs"_h).c_str()))
 											project_window.ping(Path::get(path));
 										ImGui::SameLine();
-										if (ImGui::Button(graphics::FontAtlas::icon_s("xmark"_h).c_str()))
+										if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
 										{
 											path = L"";
 											changed = true;
@@ -965,7 +1012,7 @@ void BlueprintView::on_draw()
 						if (!output->type || (output->flags & BlueprintSlotFlagHideInUI))
 							continue;
 						ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
-						ImGui::Text("%s %s", output->name.c_str(), graphics::FontAtlas::icon_s("play"_h).c_str());
+						ImGui::Text("%s %s", output->name.c_str(), graphics::font_icon_str("play"_h).c_str());
 						ax::NodeEditor::EndPin();
 						if (debugging_instance)
 						{
@@ -974,8 +1021,7 @@ void BlueprintView::on_draw()
 								auto& arg = instance_object->outputs[i];
 								if (arg.type)
 								{
-									tooltip = std::format("{} ({}@{})\nObject ID: {}", 
-										get_slot_value(arg), TypeInfo::serialize_t(arg.type->tag), arg.type->name, output->object_id);
+									tooltip = std::format("{} ({})\nObject ID: {}", get_slot_value(arg), ti_str(arg.type), output->object_id);
 									ax::NodeEditor::Suspend();
 									tooltip_pos = io.MousePos;
 									ax::NodeEditor::Resume();
@@ -986,8 +1032,7 @@ void BlueprintView::on_draw()
 						{
 							if (ImGui::IsItemHovered())
 							{
-								tooltip = std::format("({}@{})\nObject ID: {}", TypeInfo::serialize_t(output->type->tag), 
-									output->type->name, output->object_id);
+								tooltip = std::format("({})\nObject ID: {}", ti_str(output->type), output->object_id);
 								ax::NodeEditor::Suspend();
 								tooltip_pos = io.MousePos;
 								ax::NodeEditor::Resume();

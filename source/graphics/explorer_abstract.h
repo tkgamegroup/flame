@@ -429,7 +429,7 @@ namespace flame
 					ImGui::EndChild();
 
 					ImGui::TableSetColumnIndex(1);
-					if (ImGui::Button(FontAtlas::icon_s("arrow-left"_h).c_str()))
+					if (ImGui::Button(font_icon_str("arrow-left"_h).c_str()))
 					{
 						if (folder_history_idx > 0)
 						{
@@ -438,7 +438,7 @@ namespace flame
 						}
 					}
 					ImGui::SameLine();
-					if (ImGui::Button(FontAtlas::icon_s("arrow-right"_h).c_str()))
+					if (ImGui::Button(font_icon_str("arrow-right"_h).c_str()))
 					{
 						if (folder_history_idx + 1 < folder_history.size())
 						{
@@ -447,7 +447,7 @@ namespace flame
 						}
 					}
 					ImGui::SameLine();
-					if (ImGui::Button(FontAtlas::icon_s("arrow-up"_h).c_str()))
+					if (ImGui::Button(font_icon_str("arrow-up"_h).c_str()))
 					{
 						if (opened_folder && opened_folder->parent)
 							peeding_open_node = { opened_folder->parent, false };
@@ -486,17 +486,17 @@ namespace flame
 						{
 							auto cursor_pos = ImGui::GetCursorPos();
 							ImGui::SetCursorPos(ImVec2(cursor_pos.x + filter_w - 19.f, cursor_pos.y));
-							if (ImGui::SmallButton(FontAtlas::icon_s("xmark"_h).c_str()))
+							if (ImGui::SmallButton(font_icon_str("xmark"_h).c_str()))
 								filter.clear();
 							ImGui::SetCursorPos(cursor_pos);
 						}
 						ImGui::SetNextItemWidth(filter_w);
-						ImGui::InputText(FontAtlas::icon_s("magnifying-glass"_h).c_str(), &filter);
+						ImGui::InputText(font_icon_str("magnifying-glass"_h).c_str(), &filter);
 						ImGui::SameLine();
-						if (ImGui::ToolButton(FontAtlas::icon_s("grip"_h).c_str(), !show_as_list))
+						if (ImGui::ToolButton(font_icon_str("grip"_h).c_str(), !show_as_list))
 							show_as_list = false;
 						ImGui::SameLine();
-						if (ImGui::ToolButton(FontAtlas::icon_s("list"_h).c_str(), show_as_list))
+						if (ImGui::ToolButton(font_icon_str("list"_h).c_str(), show_as_list))
 							show_as_list = true;
 					}
 					else

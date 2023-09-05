@@ -82,6 +82,8 @@ namespace flame
 #endif
 		}
 
+		FLAME_GRAPHICS_API wchar_t font_icon(uint name);
+		FLAME_GRAPHICS_API std::string font_icon_str(uint name);
 		FLAME_GRAPHICS_API Image* get_icon(const std::filesystem::path& path /*image file or .ext*/, uint desired_size = 64);
 		FLAME_GRAPHICS_API void release_icon(Image* image);
 	}

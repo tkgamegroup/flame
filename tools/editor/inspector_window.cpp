@@ -261,7 +261,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (enable_record)
 			{
 				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::FontAtlas::icon_s("diamond"_h).c_str()))
+				if (ImGui::SmallButton(graphics::font_icon_str("diamond"_h).c_str()))
 				{
 					for (auto j = 0; j < eos.num; j++)
 					{
@@ -302,7 +302,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (enable_record)
 			{
 				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::FontAtlas::icon_s("diamond"_h).c_str()))
+				if (ImGui::SmallButton(graphics::font_icon_str("diamond"_h).c_str()))
 				{
 					for (auto j = 0; j < eos.num; j++)
 					{
@@ -719,10 +719,10 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				ImGui::EndDragDropTarget();
 			}
 			ImGui::SameLine();
-			if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
+			if (ImGui::Button(graphics::font_icon_str("location-crosshairs"_h).c_str()))
 				project_window.ping(Path::get(path));
 			ImGui::SameLine();
-			if (ImGui::Button(graphics::FontAtlas::icon_s("xmark"_h).c_str()))
+			if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
 			{
 				before_editing_values.resize(num);
 				before_editing_values[0] = path.string();
@@ -770,7 +770,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				ImGui::EndDragDropTarget();
 			}
 			ImGui::SameLine();
-			if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
+			if (ImGui::Button(graphics::font_icon_str("location-crosshairs"_h).c_str()))
 			{
 				add_event([guid]() {
 					auto e = app.e_prefab ? app.e_prefab->find_with_file_id(guid) : nullptr;
@@ -779,7 +779,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				});
 			}
 			ImGui::SameLine();
-			if (ImGui::Button(graphics::FontAtlas::icon_s("xmark"_h).c_str()))
+			if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
 			{
 				before_editing_values.resize(num);
 				before_editing_values[0] = guid.to_string();
@@ -843,7 +843,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				}
 			}
 			ImGui::SameLine();
-			if (ImGui::Button(graphics::FontAtlas::icon_s("xmark"_h).c_str()))
+			if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
 			{
 				if (vo.data)
 					vo.destroy();
@@ -1343,10 +1343,10 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 		auto str = path.string();
 		ImGui::InputText("Prefab", str.data(), ImGuiInputTextFlags_ReadOnly);
 		ImGui::SameLine();
-		if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
+		if (ImGui::Button(graphics::font_icon_str("location-crosshairs"_h).c_str()))
 			project_window.ping(Path::get(path));
 		ImGui::SameLine();
-		ImGui::Button(("Modifications " + graphics::FontAtlas::icon_s("angle-down"_h)).c_str());
+		ImGui::Button(("Modifications " + graphics::font_icon_str("angle-down"_h)).c_str());
 		if (ImGui::BeginPopupContextItem(nullptr, ImGuiPopupFlags_MouseButtonLeft))
 		{
 			for (auto& m : ins->modifications)
@@ -2078,7 +2078,7 @@ void InspectorView::on_draw()
 
 	if (inspected_type != Selection::tNothing)
 	{
-		if (ImGui::ToolButton(graphics::FontAtlas::icon_s(locked ? "lock"_h : "unlock"_h).c_str()))
+		if (ImGui::ToolButton(graphics::font_icon_str(locked ? "lock"_h : "unlock"_h).c_str()))
 		{
 			locked = !locked;
 			if (!locked)
@@ -2117,7 +2117,7 @@ void InspectorView::on_draw()
 			auto path = inspected_paths.front();
 			ImGui::TextUnformatted(Path::reverse(path).string().c_str());
 			ImGui::SameLine();
-			if (ImGui::Button(graphics::FontAtlas::icon_s("location-crosshairs"_h).c_str()))
+			if (ImGui::Button(graphics::font_icon_str("location-crosshairs"_h).c_str()))
 				project_window.ping(Path::get(path));
 			auto ext = path.extension().wstring();
 			SUW::to_lower(ext);

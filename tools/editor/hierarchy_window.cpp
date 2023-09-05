@@ -413,12 +413,12 @@ void HierarchyView::on_draw()
 		{
 			auto cursor_pos = ImGui::GetCursorPos();
 			ImGui::SetCursorPos(ImVec2(cursor_pos.x + filter_w - 19.f, cursor_pos.y + 3));
-			if (ImGui::SmallButton(graphics::FontAtlas::icon_s("xmark"_h).c_str()))
+			if (ImGui::SmallButton(graphics::font_icon_str("xmark"_h).c_str()))
 				filter.clear();
 			ImGui::SetCursorPos(cursor_pos);
 		}
 		ImGui::SetNextItemWidth(filter_w);
-		ImGui::InputText(graphics::FontAtlas::icon_s("magnifying-glass"_h).c_str(), &filter);
+		ImGui::InputText(graphics::font_icon_str("magnifying-glass"_h).c_str(), &filter);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.f, 0.f));
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.f, 0.f));

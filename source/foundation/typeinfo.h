@@ -749,12 +749,12 @@ namespace flame
 	{
 		FLAME_FOUNDATION_API TypeInfoDataBase();
 
-		std::map<uint, std::unique_ptr<TypeInfo>> typeinfos;
-
-		std::map<uint, EnumInfo> enums;
-		std::map<uint, FunctionInfo> functions;
-		std::map<uint, UdtInfo> udts;
-		std::map<uint, DataInfo> slot_datas;
+		std::map<uint, std::unique_ptr<TypeInfo>>	typeinfos;
+		std::vector<TypeInfo*>						basic_types;
+		std::map<uint, EnumInfo>					enums;
+		std::map<uint, FunctionInfo>				functions;
+		std::map<uint, UdtInfo>						udts;
+		std::map<uint, DataInfo>					datas;
 
 		TypeInfoDataBase& operator=(TypeInfoDataBase&& oth)
 		{
@@ -809,13 +809,13 @@ namespace flame
 
 	inline DataInfo* find_data(uint hash, TypeInfoDataBase& db = tidb)
 	{
-		auto it = db.slot_datas.find(hash);
-		if (it != db.slot_datas.end())
+		auto it = db.datas.find(hash);
+		if (it != db.datas.end())
 			return &it->second;
 		if (&db != &tidb)
 		{
-			it = tidb.slot_datas.find(hash);
-			if (it != tidb.slot_datas.end())
+			it = tidb.datas.find(hash);
+			if (it != tidb.datas.end())
 				return &it->second;
 		}
 		return nullptr;

@@ -205,16 +205,16 @@ void SceneView::on_draw()
 	// toolbar begin
 	ImGui::Dummy(vec2(0.f, 20.f));
 	ImGui::SameLine();
-	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("arrow-pointer"_h).c_str(), tool == ToolSelect))
+	if (ImGui::ToolButton(graphics::font_icon_str("arrow-pointer"_h).c_str(), tool == ToolSelect))
 		tool = ToolSelect;
 	ImGui::SameLine();
-	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("arrows-up-down-left-right"_h).c_str(), tool == ToolMove))
+	if (ImGui::ToolButton(graphics::font_icon_str("arrows-up-down-left-right"_h).c_str(), tool == ToolMove))
 		tool = ToolMove;
 	ImGui::SameLine();
-	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("rotate"_h).c_str(), tool == ToolRotate))
+	if (ImGui::ToolButton(graphics::font_icon_str("rotate"_h).c_str(), tool == ToolRotate))
 		tool = ToolRotate;
 	ImGui::SameLine();
-	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("down-left-and-up-right-to-center"_h).c_str(), tool == ToolScale))
+	if (ImGui::ToolButton(graphics::font_icon_str("down-left-and-up-right-to-center"_h).c_str(), tool == ToolScale))
 		tool = ToolScale;
 	ImGui::SameLine();
 	const char* tool_pivot_names[] = {
@@ -259,7 +259,7 @@ void SceneView::on_draw()
 		}
 	}
 	ImGui::SameLine();
-	if (ImGui::ToolButton(graphics::FontAtlas::icon_s("floppy-disk"_h).c_str()))
+	if (ImGui::ToolButton(graphics::font_icon_str("floppy-disk"_h).c_str()))
 		app.save_prefab();
 	ImGui::SameLine();
 	ImGui::Dummy(vec2(0.f, 20.f));
@@ -270,25 +270,25 @@ void SceneView::on_draw()
 		if (auto terrain = e->get_component<cTerrain>(); terrain)
 		{
 			ImGui::SameLine();
-			if (ImGui::ToolButton((graphics::FontAtlas::icon_s("mound"_h) + "##up").c_str(), tool == ToolTerrainUp))
+			if (ImGui::ToolButton((graphics::font_icon_str("mound"_h) + "##up").c_str(), tool == ToolTerrainUp))
 				tool = ToolTerrainUp;
 			ImGui::SameLine();
-			if (ImGui::ToolButton((graphics::FontAtlas::icon_s("mound"_h) + "##down").c_str(), tool == ToolTerrainDown, 180.f))
+			if (ImGui::ToolButton((graphics::font_icon_str("mound"_h) + "##down").c_str(), tool == ToolTerrainDown, 180.f))
 				tool = ToolTerrainDown;
 			ImGui::SameLine();
-			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("paintbrush"_h).c_str(), tool == ToolTerrainPaint))
+			if (ImGui::ToolButton(graphics::font_icon_str("paintbrush"_h).c_str(), tool == ToolTerrainPaint))
 				tool = ToolTerrainPaint;
 		}
 		if (auto tile_map = e->get_component<cTileMap>(); tile_map)
 		{
 			ImGui::SameLine();
-			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("up-long"_h).c_str(), tool == ToolTileMapLevelUp))
+			if (ImGui::ToolButton(graphics::font_icon_str("up-long"_h).c_str(), tool == ToolTileMapLevelUp))
 				tool = ToolTileMapLevelUp;
 			ImGui::SameLine();
-			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("down-long"_h).c_str(), tool == ToolTileMapLevelDown))
+			if (ImGui::ToolButton(graphics::font_icon_str("down-long"_h).c_str(), tool == ToolTileMapLevelDown))
 				tool = ToolTileMapLevelDown;
 			ImGui::SameLine();
-			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("stairs"_h).c_str(), tool == ToolTileMapSlope))
+			if (ImGui::ToolButton(graphics::font_icon_str("stairs"_h).c_str(), tool == ToolTileMapSlope))
 				tool = ToolTileMapSlope;
 		}
 	}
@@ -299,7 +299,7 @@ void SceneView::on_draw()
 	if (!app.e_playing && !app.e_preview)
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
-		//if (ImGui::ToolButton((graphics::FontAtlas::icon_s("play"_h) + " Build And Play").c_str()))
+		//if (ImGui::ToolButton((graphics::font_icon_str("play"_h) + " Build And Play").c_str()))
 		//{
 		//	build_project();
 		//	add_event([this]() {
@@ -308,10 +308,10 @@ void SceneView::on_draw()
 		//	}, 0.f, 3);
 		//}
 		//ImGui::SameLine();
-		if (ImGui::ToolButton(graphics::FontAtlas::icon_s("play"_h).c_str()))
+		if (ImGui::ToolButton(graphics::font_icon_str("play"_h).c_str()))
 			app.cmd_play();
 		ImGui::SameLine();
-		if (ImGui::ToolButton(graphics::FontAtlas::icon_s("circle-play"_h).c_str()))
+		if (ImGui::ToolButton(graphics::font_icon_str("circle-play"_h).c_str()))
 			app.cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : app.e_prefab);
 		ImGui::PopStyleColor();
 	}
@@ -323,7 +323,7 @@ void SceneView::on_draw()
 			{
 				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1));
 				ImGui::SameLine();
-				if (ImGui::ToolButton(graphics::FontAtlas::icon_s("pause"_h).c_str()))
+				if (ImGui::ToolButton(graphics::font_icon_str("pause"_h).c_str()))
 					app.cmd_pause();
 				ImGui::PopStyleColor();
 			}
@@ -331,7 +331,7 @@ void SceneView::on_draw()
 			{
 				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
 				ImGui::SameLine();
-				if (ImGui::ToolButton(graphics::FontAtlas::icon_s("play"_h).c_str()))
+				if (ImGui::ToolButton(graphics::font_icon_str("play"_h).c_str()))
 					app.cmd_play();
 				ImGui::PopStyleColor();
 			}
@@ -340,13 +340,13 @@ void SceneView::on_draw()
 		{
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 1, 1));
 			ImGui::SameLine();
-			if (ImGui::ToolButton(graphics::FontAtlas::icon_s("rotate"_h).c_str()))
+			if (ImGui::ToolButton(graphics::font_icon_str("rotate"_h).c_str()))
 				app.cmd_restart_preview();
 			ImGui::PopStyleColor();
 		}
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
 		ImGui::SameLine();
-		if (ImGui::ToolButton(graphics::FontAtlas::icon_s("stop"_h).c_str()))
+		if (ImGui::ToolButton(graphics::font_icon_str("stop"_h).c_str()))
 		{
 			if (app.e_playing)
 				app.cmd_stop();

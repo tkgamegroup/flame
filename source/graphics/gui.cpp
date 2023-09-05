@@ -1,3 +1,4 @@
+#include "../json.h"
 #include "../foundation/window.h"
 #include "../foundation/system.h"
 #include "gui.h"
@@ -569,6 +570,8 @@ namespace flame
 #endif
 		}
 
+		static std::unordered_map<uint, std::pair<wchar_t, std::string>> font_icons;
+
 		void gui_initialize()
 		{
 #ifdef USE_IMGUI
@@ -659,27 +662,129 @@ namespace flame
 			io.KeyMap[ImGuiKey_Z] = Keyboard_Z;
 
 			{
-				io.Fonts->AddFontDefault();
+				auto expand_range = [](std::vector<ivec2>& ranges, wchar_t ch) {
+					auto range_added = false;
+					for (auto& r : ranges)
+					{
+						if (r.x - 1 == ch)
+						{
+							r.x = ch;
+							range_added = true;
+							break;
+						}
+						if (r.y + 1 == ch)
+						{
+							r.y = ch;
+							range_added = true;
+							break;
+						}
+					}
+					if (!range_added)
+						ranges.push_back({ ch, ch });
+				};
+
+				auto expand_icon_range = [](std::vector<ivec2>& ranges, wchar_t ch) {
+					if (ch == '+')
+						ranges.push_back({ ch, ch });
+					else if (ch > 255)
+					{
+						ranges.front().x = min(ranges.front().x, (int)ch);
+						ranges.front().y = max(ranges.front().y, (int)ch);
+					}
+				};
+
+				auto to_im_ranges = [](const std::vector<ivec2>& ranges) {
+					std::vector<ImWchar> ret;
+					for (auto& r : ranges)
+					{
+						ret.push_back(r[0]);
+						ret.push_back(r[1]);
+					}
+					ret.push_back(0);
+					return ret;
+				};
+
+				std::vector<ivec2> icon_ranges;
+				icon_ranges.emplace_back(65536, 256);
+
+				if (auto icons_txt_path = std::filesystem::path(FONT_AWESOME_DIR) / L"metadata/icons.txt"; std::filesystem::exists(icons_txt_path))
+				{
+					std::ifstream icons_file(icons_txt_path);
+					while (!icons_file.eof())
+					{
+						std::string hash_s, code_s;
+						std::getline(icons_file, hash_s);
+						std::getline(icons_file, code_s);
+						if (!hash_s.empty() && !code_s.empty())
+						{
+							auto ch = s2t<uint>(code_s);
+							font_icons[s2t<uint>(hash_s)] = { ch, w2s(std::wstring(1, ch)) };
+							expand_icon_range(icon_ranges, ch);
+						}
+					}
+					icons_file.close();
+				}
+				else
+				{
+					auto icons_json_path = std::filesystem::path(FONT_AWESOME_DIR) / L"metadata/icons.json";
+					nlohmann::json icons_json;
+					std::ifstream icons_json_file(icons_json_path);
+					icons_json_file >> icons_json;
+					icons_json_file.close();
+					for (auto it = icons_json.begin(); it != icons_json.end(); it++)
+					{
+						auto name = it.key();
+						auto ch = s2u_hex<uint>(it.value()["unicode"].get<std::string>());
+						font_icons[sh(name.c_str())] = { ch, w2s(std::wstring(1, ch)) };
+						expand_icon_range(icon_ranges, ch);
+					}
+
+					std::ofstream icons_file(icons_txt_path);
+					for (auto it : font_icons)
+					{
+						icons_file << it.first << std::endl;
+						icons_file << (uint)it.second.first << std::endl;
+					}
+					icons_file.close();
+				}
+
+				std::vector<ivec2> default_ranges;
+				for (auto ch = 0x0020; ch <= 0x00FF; ch++)
+				{
+					auto skip = false;
+					for (auto& r : icon_ranges)
+					{
+						if (r.x <= ch && ch <= r.y)
+						{
+							skip = true;
+							break;
+						}
+					}
+					if (skip)
+						continue;
+					expand_range(default_ranges, ch);
+				}
+
+				ImFontConfig default_font_config;
+				auto default_im_ranges = to_im_ranges(default_ranges);
+				default_font_config.GlyphRanges = default_im_ranges.data();
+				io.Fonts->AddFontDefault(&default_font_config);
 #ifdef USE_FONT_AWESOME
 				const wchar_t* font_awesome_fonts[] = {
-					L"otfs/Font Awesome 6 Brands-Regular-400.otf",
+					L"otfs/Font Awesome 6 Free-Solid-900.otf",
 					L"otfs/Font Awesome 6 Free-Regular-400.otf",
-					L"otfs/Font Awesome 6 Free-Solid-900.otf"
+					L"otfs/Font Awesome 6 Brands-Regular-400.otf"
 				};
-				auto icons_range = FontAtlas::icons_range();
+
+				auto icon_im_ranges = to_im_ranges(icon_ranges);
 				for (auto i = 0; i < countof(font_awesome_fonts); i++)
 				{
 					auto font_path = std::filesystem::path(FONT_AWESOME_DIR) / font_awesome_fonts[i];
 					if (std::filesystem::exists(font_path))
 					{
-						ImWchar ranges[] =
-						{
-							icons_range[0], icons_range[1],
-							0,
-						};
-						ImFontConfig config;
-						config.MergeMode = true;
-						io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 13.f, &config, &ranges[0]);
+						ImFontConfig font_config;
+						font_config.MergeMode = true;
+						io.Fonts->AddFontFromFileTTF(font_path.string().c_str(), 13.f, &font_config, icon_im_ranges.data());
 					}
 				}
 #endif
@@ -741,6 +846,22 @@ namespace flame
 					circle_pts3 = get_points(128);
 				return circle_pts3;
 			}
+		}
+
+		wchar_t font_icon(uint name)
+		{
+			auto it = font_icons.find(name);
+			if (it != font_icons.end())
+				return it->second.first;
+			return 0;
+		}
+
+		std::string font_icon_str(uint name)
+		{
+			auto it = font_icons.find(name);
+			if (it != font_icons.end())
+				return it->second.second;
+			return "";
 		}
 
 		Image* get_icon(const std::filesystem::path& path, uint desired_size)

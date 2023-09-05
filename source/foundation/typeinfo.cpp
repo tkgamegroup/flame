@@ -269,46 +269,47 @@ namespace flame
 		if (!typeinfos.empty())
 			return;
 
-		auto add_ti = [&](TypeInfo* ti) {
+		auto add_basic_type = [&](TypeInfo* ti) {
 			typeinfos.emplace(TypeInfo::get_hash(ti->tag, ti->name), ti);
+			basic_types.push_back(ti);
 		};
 
 		TypeInfo::void_type = new TypeInfo_void;
-		add_ti(TypeInfo::void_type);
-		add_ti(new TypeInfo_bool);
-		add_ti(new TypeInfo_char);
-		add_ti(new TypeInfo_uchar);
-		add_ti(new TypeInfo_short);
-		add_ti(new TypeInfo_ushort);
-		add_ti(new TypeInfo_int);
-		add_ti(new TypeInfo_uint);
-		add_ti(new TypeInfo_int64);
-		add_ti(new TypeInfo_uint64);
-		add_ti(new TypeInfo_float);
-		add_ti(new TypeInfo_cvec2);
-		add_ti(new TypeInfo_cvec3);
-		add_ti(new TypeInfo_cvec4);
-		add_ti(new TypeInfo_ivec2);
-		add_ti(new TypeInfo_ivec3);
-		add_ti(new TypeInfo_ivec4);
-		add_ti(new TypeInfo_uvec2);
-		add_ti(new TypeInfo_uvec3);
-		add_ti(new TypeInfo_uvec4);
-		add_ti(new TypeInfo_vec2);
-		add_ti(new TypeInfo_vec3);
-		add_ti(new TypeInfo_vec4);
-		add_ti(new TypeInfo_mat2);
-		add_ti(new TypeInfo_mat3);
-		add_ti(new TypeInfo_mat4);
-		add_ti(new TypeInfo_quat);
-		add_ti(new TypeInfo_string);
-		add_ti(new TypeInfo_wstring);
-		add_ti(new TypeInfo_path);
-		add_ti(new TypeInfo_Rect);
-		add_ti(new TypeInfo_AABB);
-		add_ti(new TypeInfo_Plane);
-		add_ti(new TypeInfo_Frustum);
-		add_ti(new TypeInfo_GUID);
+		add_basic_type(TypeInfo::void_type);
+		add_basic_type(new TypeInfo_bool);
+		add_basic_type(new TypeInfo_char);
+		add_basic_type(new TypeInfo_uchar);
+		add_basic_type(new TypeInfo_short);
+		add_basic_type(new TypeInfo_ushort);
+		add_basic_type(new TypeInfo_int);
+		add_basic_type(new TypeInfo_uint);
+		add_basic_type(new TypeInfo_int64);
+		add_basic_type(new TypeInfo_uint64);
+		add_basic_type(new TypeInfo_float);
+		add_basic_type(new TypeInfo_cvec2);
+		add_basic_type(new TypeInfo_cvec3);
+		add_basic_type(new TypeInfo_cvec4);
+		add_basic_type(new TypeInfo_ivec2);
+		add_basic_type(new TypeInfo_ivec3);
+		add_basic_type(new TypeInfo_ivec4);
+		add_basic_type(new TypeInfo_uvec2);
+		add_basic_type(new TypeInfo_uvec3);
+		add_basic_type(new TypeInfo_uvec4);
+		add_basic_type(new TypeInfo_vec2);
+		add_basic_type(new TypeInfo_vec3);
+		add_basic_type(new TypeInfo_vec4);
+		add_basic_type(new TypeInfo_mat2);
+		add_basic_type(new TypeInfo_mat3);
+		add_basic_type(new TypeInfo_mat4);
+		add_basic_type(new TypeInfo_quat);
+		add_basic_type(new TypeInfo_string);
+		add_basic_type(new TypeInfo_wstring);
+		add_basic_type(new TypeInfo_path);
+		add_basic_type(new TypeInfo_Rect);
+		add_basic_type(new TypeInfo_AABB);
+		add_basic_type(new TypeInfo_Plane);
+		add_basic_type(new TypeInfo_Frustum);
+		add_basic_type(new TypeInfo_GUID);
 	}
 
 	bool TypeInfoDataBase::load_from_string(const std::string& content, void* library)
@@ -419,7 +420,7 @@ namespace flame
 		for (auto n_data : doc_root.child("datas"))
 		{
 			auto name = std::string(n_data.attribute("name").value());
-			auto& d = slot_datas.emplace(sh(name.c_str()), DataInfo()).first->second;
+			auto& d = datas.emplace(sh(name.c_str()), DataInfo()).first->second;
 			d.db = this;
 			d.name = name;
 			d.name_hash = sh(name.c_str());
@@ -676,7 +677,7 @@ namespace flame
 			}
 
 			auto n_datas = doc_root.append_child("datas");
-			for (auto& di : slot_datas)
+			for (auto& di : datas)
 			{
 				auto n_data = n_datas.append_child("data");
 				n_data.append_attribute("name").set_value(di.second.name.c_str());
