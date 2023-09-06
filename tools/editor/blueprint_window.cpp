@@ -803,18 +803,19 @@ void BlueprintView::on_draw()
 			ImGui::BeginChild("main_area", ImVec2(0, -2));
 			{
 				static BlueprintGroupPtr last_group = nullptr;
-				static uint group_changed_frame = 0;
 				if (group != last_group)
 				{
 					for (auto& b : group->blocks)
 					{
 						if (b.get() != group->blocks.front().get())
+						{
 							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)b.get(), b->position);
+							ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)b.get(), b->rect.size());
+						}
 					}
 					for (auto& n : group->nodes)
 						ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n.get(), n->position);
 					last_group = group;
-					group_changed_frame = frame;
 				}
 
 				auto step = [&]() {
@@ -898,7 +899,6 @@ void BlueprintView::on_draw()
 
 					b->position = ax::NodeEditor::GetNodePosition((ax::NodeEditor::NodeId)b.get());
 					auto ax_node = ax_node_editor->GetNodeBuilder().m_CurrentNode;
-					if (group_changed_frame != frame)
 					{
 						auto bounds = ax_node->m_GroupBounds;
 						b->rect.a = bounds.Min;
@@ -1391,6 +1391,7 @@ void BlueprintView::on_draw()
 							b->position = open_popup_pos;
 							b->rect = Rect(vec2(0), vec2(200));
 							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)b, b->position);
+							ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)b, b->rect.size());
 
 							if (new_node_link_slot)
 							{
