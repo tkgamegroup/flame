@@ -14,11 +14,13 @@ namespace flame
 				},
 				{
 					.name = "Size",
-					.allowed_types = { TypeInfo::get<vec2>() }
+					.allowed_types = { TypeInfo::get<vec2>() },
+					.default_value = "100,100"
 				},
 				{
 					.name = "Col",
-					.allowed_types = { TypeInfo::get<cvec4>() }
+					.allowed_types = { TypeInfo::get<cvec4>() },
+					.default_value = "200,200,200,255"
 				}
 			},
 			{
@@ -50,9 +52,15 @@ namespace flame
 				}
 			},
 			{
+				{
+					.name = "Execute",
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				sRenderer::instance()->end_hud();
+
+				(*(BlueprintSignal*)outputs[0].data).v = 1;
 			},
 			nullptr,
 			nullptr,

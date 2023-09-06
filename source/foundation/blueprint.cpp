@@ -1607,7 +1607,16 @@ namespace flame
 				executing_stack.emplace_back(&it->second.root_object, 0, 0);
 		}
 		else
+		{
+			if (!executing_stack.empty())
+			{
+				if (executing_stack.front().block_object->object_id == group->root_object.object_id)
+					return;
+				executing_stack.clear();
+			}
 			executing_stack.emplace_back(&group->root_object, 0, 0);
+		}
+
 		if (executing_stack.front().block_object->children.empty())
 			executing_stack.clear();
 		else

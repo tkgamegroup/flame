@@ -282,7 +282,7 @@ void ModelPreviewer::update(uint changed_frame, bool show_image)
 
 void App::init()
 {
-	create("Editor", uvec2(800, 600), WindowFrame | WindowResizable, true, graphics_debug, graphics_configs);
+	create("Editor", uvec2(800, 600), WindowFrame | WindowResizable | WindowMaximized, true, graphics_debug, graphics_configs);
 	graphics::gui_set_clear(true, vec4(0.f));
 	world->update_components = false;
 	input->transfer_events = false;
@@ -1827,15 +1827,15 @@ int main(int argc, char** args)
 	auto preferences_i = parse_ini_file(preferences_path);
 	for (auto& e : preferences_i.get_section_entries(""))
 	{
-		if (e.key == "window_pos")
-		{
-			auto pos = s2t<2, int>(e.values[0]);
-			auto screen_size = get_screen_size();
-			auto num_monitors = get_num_monitors();
-			if (pos.x >= screen_size.x * num_monitors)
-				pos.x = 0;
-			app.main_window->native->set_pos(pos);
-		}
+		//if (e.key == "window_pos")
+		//{
+		//	auto pos = s2t<2, int>(e.values[0]);
+		//	auto screen_size = get_screen_size();
+		//	auto num_monitors = get_num_monitors();
+		//	if (pos.x >= screen_size.x * num_monitors)
+		//		pos.x = 0;
+		//	app.main_window->native->set_pos(pos);
+		//}
 		if (e.key == "use_flame_debugger")
 			preferences.use_flame_debugger = s2t<bool>(e.values[0]);
 	}

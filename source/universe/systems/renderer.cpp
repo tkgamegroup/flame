@@ -3071,8 +3071,8 @@ namespace flame
 		hud_pos = pos;
 		hud_size = size;
 		hud_col = col;
-		hud_cursor = pos;
-		hud_cursor_start_x = pos.x;
+		hud_cursor = pos + 4.f;
+		hud_cursor_start_x = pos.x + 4.f;
 
 		if (size.x > 0.f && size.y > 0.f)
 			canvas->add_rect_filled(pos, pos + size, col);
@@ -3080,7 +3080,11 @@ namespace flame
 
 	void sRendererPrivate::end_hud()
 	{
+		auto input = sInput::instance();
 
+		Rect rect(hud_pos, hud_pos + hud_size);
+		if (rect.contains(input->mpos))
+			input->mouse_used = true;
 	}
 
 	static vec2 calc_text_size(graphics::FontAtlasPtr font_atlas, uint font_size, std::wstring_view str)
@@ -3107,15 +3111,24 @@ namespace flame
 	bool sRendererPrivate::hud_button(std::wstring_view label)
 	{
 		auto canvas = render_tasks.front()->canvas;
+		auto input = sInput::instance();
 
 		auto sz = calc_text_size(canvas->default_font_atlas, 24, label);
 		sz += vec2(4.f);
 		Rect rect(hud_cursor, hud_cursor + sz);
-		canvas->add_rect_filled(rect.a, rect.b, cvec4(200, 200, 200, 255));
+		auto state = 0;
+		if (rect.contains(input->mpos))
+		{
+			state = 1;
+			if (input->mpressed(Mouse_Left))
+				state = 2;
+
+			input->mouse_used = true;
+		}
+		canvas->add_rect_filled(rect.a, rect.b, state == 0 ? cvec4(35, 69, 109, 255) : cvec4(66, 150, 250, 255));
 		canvas->add_text(canvas->default_font_atlas, 24, hud_cursor + vec2(2.f), label, cvec4(255), 0.5f, 0.2f);
 		hud_cursor = vec2(hud_cursor_start_x, hud_cursor.y + sz.y + 4.f);
-		auto input = sInput::instance();
-		return input->mpressed(Mouse_Left) && rect.contains(input->mpos);
+		return state == 2;
 	}
 
 	void sRendererPrivate::send_debug_string(const std::string& str)

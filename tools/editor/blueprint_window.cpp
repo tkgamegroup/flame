@@ -106,6 +106,17 @@ void BlueprintView::process_object_moved(BlueprintObject obj)
 			}
 		}
 		blueprint->set_node_block(node, most_depth_block ? most_depth_block : g->blocks.front().get());
+		std::vector<BlueprintLinkPtr> to_remove_links;
+		for (auto& l : g->links)
+		{
+			if (l->to_slot->parent.p.node == node)
+			{
+				if (l->from_slot->parent.get_locate_block()->depth > l->to_slot->parent.get_locate_block()->depth)
+					to_remove_links.push_back(l.get());
+			}
+		}
+		for (auto l : to_remove_links)
+			blueprint->remove_link(l);
 	};
 
 	switch (obj.type)
@@ -792,6 +803,7 @@ void BlueprintView::on_draw()
 			ImGui::BeginChild("main_area", ImVec2(0, -2));
 			{
 				static BlueprintGroupPtr last_group = nullptr;
+				static uint group_changed_frame = 0;
 				if (group != last_group)
 				{
 					for (auto& b : group->blocks)
@@ -802,6 +814,7 @@ void BlueprintView::on_draw()
 					for (auto& n : group->nodes)
 						ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n.get(), n->position);
 					last_group = group;
+					group_changed_frame = frame;
 				}
 
 				auto step = [&]() {
@@ -885,7 +898,7 @@ void BlueprintView::on_draw()
 
 					b->position = ax::NodeEditor::GetNodePosition((ax::NodeEditor::NodeId)b.get());
 					auto ax_node = ax_node_editor->GetNodeBuilder().m_CurrentNode;
-					if (load_frame != frame)
+					if (group_changed_frame != frame)
 					{
 						auto bounds = ax_node->m_GroupBounds;
 						b->rect.a = bounds.Min;
@@ -1015,10 +1028,31 @@ void BlueprintView::on_draw()
 											ImGui::PopItemWidth();
 										}
 										break;
+									case DataChar:
+										if (ti->vec_size == 4)
+										{
+											vec4 color = *(cvec4*)input->data;
+											color /= 255.f;
+											ImGui::SetNextItemWidth(160.f);
+											changed |= ImGui::ColorEdit4("", &color[0]);
+											if (changed)
+												*(cvec4*)input->data = color * 255.f;
+										}
+										break;
 									case DataString:
 										ImGui::SetNextItemWidth(100.f);
 										ImGui::InputText("", (std::string*)input->data);
 										changed |= ImGui::IsItemDeactivatedAfterEdit();
+										break;
+									case DataWString:
+									{
+										auto s = w2s(*(std::wstring*)input->data);
+										ImGui::SetNextItemWidth(100.f);
+										ImGui::InputText(display_name.c_str(), &s);
+										changed |= ImGui::IsItemDeactivatedAfterEdit();
+										if (changed)
+											*(std::wstring*)input->data = s2w(s);
+									}
 										break;
 									case DataPath:
 									{
@@ -1294,6 +1328,7 @@ void BlueprintView::on_draw()
 					static auto geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
 					static auto entity_library = BlueprintNodeLibrary::get(L"universe::entity");
 					static auto navigation_library = BlueprintNodeLibrary::get(L"universe::navigation");
+					static auto hud_library = BlueprintNodeLibrary::get(L"universe::HUD");
 
 					static std::string filter = "";
 					ImGui::InputText("Filter", &filter);
@@ -1408,6 +1443,8 @@ void BlueprintView::on_draw()
 					show_node_library_templates(geometry_library);
 					show_node_library_templates(entity_library);
 					show_node_library_templates(navigation_library);
+					show_node_library_templates(hud_library);
+
 					ImGui::EndPopup();
 
 					if (blueprint_instance->built_frame < blueprint->dirty_frame)
