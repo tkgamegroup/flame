@@ -15,17 +15,17 @@ namespace flame
 			{
 				{
 					.name = "True",
-					.allowed_types = { TypeInfo::get<Signal>() }
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
 				},
 				{
 					.name = "False",
-					.allowed_types = { TypeInfo::get<Signal>() }
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto ok = *(bool*)inputs[0].data;
-				(*(Signal*)outputs[0].data).v = ok ? 1 : 0;
-				(*(Signal*)outputs[1].data).v = ok ? 0 : 1;
+				(*(BlueprintSignal*)outputs[0].data).v = ok ? 1 : 0;
+				(*(BlueprintSignal*)outputs[1].data).v = ok ? 0 : 1;
 			},
 			nullptr,
 			nullptr,
@@ -44,11 +44,11 @@ namespace flame
 			{
 				{
 					.name = "Loop",
-					.allowed_types = { TypeInfo::get<Signal>() }
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-				(*(Signal*)outputs[0].data).v = *(uint*)inputs[0].data;
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				(*(BlueprintSignal*)outputs[0].data).v = *(uint*)inputs[0].data;
 			},
 			nullptr,
 			nullptr,

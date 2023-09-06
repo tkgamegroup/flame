@@ -240,10 +240,21 @@ namespace flame
 			ret->outputs.emplace_back(o);
 
 		}
-		ret->function = [](BlueprintArgument* inputs, BlueprintArgument* outputs) {
-			auto& arg = *(BlueprintArgument*)inputs[0].data;
-			if (arg.data)
-				arg.type->copy(outputs[0].data, arg.data);
+		{
+			auto o = new BlueprintSlotPrivate;
+			o->parent = ret;
+			o->object_id = next_object_id++;
+			o->name = "Type";
+			o->name_hash = "Type"_h;
+			o->flags = BlueprintSlotFlagOutput;
+			o->allowed_types.push_back(TypeInfo::get<voidptr>());
+			o->type = o->allowed_types.front();
+			ret->outputs.emplace_back(o);
+		}
+		ret->function = [](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			auto& attr = *(BlueprintAttribute*)inputs[0].data;
+			if (attr.data)
+				attr.type->copy(outputs[0].data, attr.data);
 		};
 		ret->block->nodes.push_back(ret);
 		group->nodes.emplace_back(ret);
@@ -341,7 +352,8 @@ namespace flame
 			slot->type->destroy(slot->data);
 			slot->data = nullptr;
 		}
-		if (!(slot->type && slot->type->tag == TagPU && new_type->tag == TagU)) // if a udt type link to its pointer type, dont change the type
+		if (!(slot->type && (slot->type == TypeInfo::get<voidptr>() ||
+			(slot->type->tag == TagPU && new_type->tag == TagU)))) // if a udt type link to its pointer type, dont change the type
 		{
 			slot->type = new_type;
 			if (new_type && has_data) // is input slot and has data
@@ -515,7 +527,7 @@ namespace flame
 		ret->input->name = "Execute";
 		ret->input->name_hash = "Execute"_h;
 		ret->input->flags = BlueprintSlotFlagInput;
-		ret->input->allowed_types.push_back(TypeInfo::get<Signal>());
+		ret->input->allowed_types.push_back(TypeInfo::get<BlueprintSignal>());
 		ret->input->type = ret->input->allowed_types.front();
 		ret->output.reset(new BlueprintSlotPrivate);
 		ret->output->parent = ret;
@@ -523,7 +535,7 @@ namespace flame
 		ret->output->name = "Execute";
 		ret->output->name_hash = "Execute"_h;
 		ret->output->flags = BlueprintSlotFlagOutput;
-		ret->output->allowed_types.push_back(TypeInfo::get<Signal>());
+		ret->output->allowed_types.push_back(TypeInfo::get<BlueprintSignal>());
 		ret->output->type = ret->output->allowed_types.front();
 
 		group->blocks.emplace_back(ret);
@@ -1162,8 +1174,9 @@ namespace flame
 		destroy_object(g.root_object);
 		for (auto& pair : g.slot_datas)
 		{
-			if (pair.second.arg.data)
-				pair.second.arg.type->destroy(pair.second.arg.data);
+			auto& attr = pair.second.attribute;
+			if (attr.data)
+				attr.type->destroy(attr.data);
 		}
 	}
 
@@ -1189,12 +1202,12 @@ namespace flame
 		variables.clear();
 		for (auto& v : blueprint->variables)
 		{
-			BlueprintArgument arg;
-			arg.type = v.type;
-			arg.data = v.type->create();
-			if (arg.type->tag == TagPU)
-				memset(arg.data, 0, sizeof(voidptr));
-			variables.emplace(v.name_hash, arg);
+			BlueprintAttribute attr;
+			attr.type = v.type;
+			attr.data = v.type->create();
+			if (is_pointer(attr.type->tag))
+				memset(attr.data, 0, sizeof(voidptr));
+			variables.emplace(v.name_hash, attr);
 		}
 
 		auto create_group_structure = [&](BlueprintGroupPtr src_g, Group& g, std::map<uint, Group::Data>& slot_datas) {
@@ -1204,12 +1217,12 @@ namespace flame
 			g.variables.clear();
 			for (auto& v : src_g->variables)
 			{
-				BlueprintArgument arg;
-				arg.type = v.type;
-				arg.data = v.type->create();
-				if (arg.type->tag == TagPU)
-					memset(arg.data, 0, sizeof(voidptr));
-				g.variables.emplace(v.name_hash, arg);
+				BlueprintAttribute attr;
+				attr.type = v.type;
+				attr.data = v.type->create();
+				if (is_pointer(attr.type->tag))
+					memset(attr.data, 0, sizeof(voidptr));
+				g.variables.emplace(v.name_hash, attr);
 			}
 
 			std::function<void(BlueprintBlockPtr, Object&)> create_object;
@@ -1315,7 +1328,7 @@ namespace flame
 					if (n->name_hash == "Variable"_h)
 					{
 						auto name = *(uint*)n->inputs[0]->data;
-						BlueprintArgument var;
+						BlueprintAttribute var;
 						auto found = false;
 						if (auto it = variables.find(name); it != variables.end())
 						{
@@ -1332,22 +1345,32 @@ namespace flame
 							{
 								Group::Data data;
 								data.changed_frame = frame;
-								data.arg.type = TypeInfo::get<BlueprintArgument>();
-								data.arg.data = data.arg.type->create();
-								memcpy(data.arg.data, &var, sizeof(var));
+								data.attribute.type = TypeInfo::get<BlueprintAttribute>();
+								data.attribute.data = data.attribute.type->create();
+								memcpy(data.attribute.data, &var, sizeof(var));
 								slot_datas.emplace(n->inputs[0]->object_id, data);
 
-								obj.inputs.push_back(data.arg);
+								obj.inputs.push_back(data.attribute);
 							}
-
 							{
 								Group::Data data;
 								data.changed_frame = frame;
-								data.arg.type = var.type;
-								data.arg.data = var.type->create();
+								data.attribute.type = var.type;
+								data.attribute.data = var.type->create();
 								slot_datas.emplace(n->outputs[0]->object_id, data);
 
-								obj.outputs.push_back(data.arg);
+								obj.outputs.push_back(data.attribute);
+							}
+							{
+								Group::Data data;
+								data.changed_frame = frame;
+								data.attribute.type = TypeInfo::get<voidptr>();
+								data.attribute.data = data.attribute.type->create();
+								slot_datas.emplace(n->outputs[1]->object_id, data);
+
+								obj.outputs.push_back(data.attribute);
+
+								*(voidptr*)data.attribute.data = var.type;
 							}
 						}
 						return;
@@ -1362,24 +1385,25 @@ namespace flame
 						{
 							if (auto it = slot_datas.find(l->from_slot->object_id); it != slot_datas.end())
 							{
-								if (i->type->tag == TagPU && it->second.arg.type->tag == TagU)
+								if ((it->second.attribute.type->tag == TagE || it->second.attribute.type->tag == TagD || it->second.attribute.type->tag == TagU)
+									&& (i->type == TypeInfo::get<voidptr>() || i->type->tag == TagPU))
 								{
 									Group::Data data;
 									data.changed_frame = it->second.changed_frame;
-									data.arg.type = i->type;
-									data.arg.data = i->type->create();
-									auto ptr = it->second.arg.data;
-									memcpy((voidptr*)data.arg.data, &ptr, sizeof(voidptr));
+									data.attribute.type = i->type;
+									data.attribute.data = i->type->create();
+									auto ptr = it->second.attribute.data;
+									memcpy((voidptr*)data.attribute.data, &ptr, sizeof(voidptr));
 									slot_datas.emplace(i->object_id, data);
 
-									obj.inputs.push_back(data.arg);
+									obj.inputs.push_back(data.attribute);
 								}
 								else
 								{
-									BlueprintArgument arg;
-									arg.type = it->second.arg.type;
-									arg.data = it->second.arg.data;
-									obj.inputs.push_back(arg);
+									BlueprintAttribute attr;
+									attr.type = it->second.attribute.type;
+									attr.data = it->second.attribute.data;
+									obj.inputs.push_back(attr);
 								}
 							}
 							else
@@ -1391,38 +1415,38 @@ namespace flame
 					{
 						Group::Data data;
 						data.changed_frame = i->data_changed_frame;
-						data.arg.type = i->type;
-						if (data.arg.type)
+						data.attribute.type = i->type;
+						if (data.attribute.type)
 						{
-							data.arg.data = data.arg.type->create();
-							if (data.arg.type->tag == TagPU)
-								memset(data.arg.data, 0, sizeof(voidptr));
+							data.attribute.data = data.attribute.type->create();
+							if (is_pointer(data.attribute.type->tag))
+								memset(data.attribute.data, 0, sizeof(voidptr));
 							else if (i->data)
-								data.arg.type->copy(data.arg.data, i->data);
+								data.attribute.type->copy(data.attribute.data, i->data);
 						}
 						else
-							data.arg.data = nullptr;
+							data.attribute.data = nullptr;
 						slot_datas.emplace(i->object_id, data);
 
-						obj.inputs.push_back(data.arg);
+						obj.inputs.push_back(data.attribute);
 					}
 				}
 				for (auto& o : obj.original.get_outputs())
 				{
 					Group::Data data;
 					data.changed_frame = o->data_changed_frame;
-					data.arg.type = o->type;
-					if (data.arg.type)
+					data.attribute.type = o->type;
+					if (data.attribute.type)
 					{
-						data.arg.data = data.arg.type->create();
-						if (data.arg.type->tag == TagPU)
-							memset(data.arg.data, 0, sizeof(voidptr));
+						data.attribute.data = data.attribute.type->create();
+						if (is_pointer(data.attribute.type->tag))
+							memset(data.attribute.data, 0, sizeof(voidptr));
 					}
 					else
-						data.arg.data = nullptr;
+						data.attribute.data = nullptr;
 					slot_datas.emplace(o->object_id, data);
 
-					obj.outputs.push_back(data.arg);
+					obj.outputs.push_back(data.attribute);
 				}
 
 				if (obj.original.type == BlueprintObjectNode)
@@ -1462,18 +1486,18 @@ namespace flame
 				{
 					if (auto it = g.second.slot_datas.find(d.first); it != g.second.slot_datas.end())
 					{
-						if (it->second.arg.type == d.second.arg.type && it->second.changed_frame >= d.second.changed_frame)
+						if (it->second.attribute.type == d.second.attribute.type && it->second.changed_frame >= d.second.changed_frame)
 						{
-							if (d.second.arg.type && d.second.arg.type->tag != TagPU)
-								d.second.arg.type->copy(d.second.arg.data, it->second.arg.data);
+							if (d.second.attribute.type && d.second.attribute.type != TypeInfo::get<voidptr>() && d.second.attribute.type->tag != TagPU)
+								d.second.attribute.type->copy(d.second.attribute.data, it->second.attribute.data);
 							d.second.changed_frame = it->second.changed_frame;
 						}
 					}
 				}
 				for (auto& pair : g.second.slot_datas)
 				{
-					if (pair.second.arg.data)
-						pair.second.arg.type->destroy(pair.second.arg.data);
+					if (pair.second.attribute.data)
+						pair.second.attribute.type->destroy(pair.second.attribute.data);
 				}
 				g.second.slot_datas = std::move(new_slot_datas);
 				g.second.structure_updated_frame = frame;
@@ -1489,8 +1513,8 @@ namespace flame
 						{
 							if (i->data_changed_frame > it->second.changed_frame)
 							{
-								assert(i->type == it->second.arg.type);
-								i->type->copy(it->second.arg.data, i->data);
+								assert(i->type == it->second.attribute.type);
+								i->type->copy(it->second.attribute.data, i->data);
 								it->second.changed_frame = i->data_changed_frame;
 							}
 						}

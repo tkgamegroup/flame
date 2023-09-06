@@ -18,7 +18,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				switch (out_ti->data_type)
 				{
@@ -57,7 +57,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec2>(), TypeInfo::get<ivec2>(), TypeInfo::get<uvec2>() }
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
@@ -131,7 +131,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec3>(), TypeInfo::get<ivec3>(), TypeInfo::get<uvec3>() }
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
@@ -214,7 +214,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec4>(), TypeInfo::get<ivec4>(), TypeInfo::get<uvec4>() }
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
@@ -306,7 +306,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				switch (in0_ti->data_type)
 				{
@@ -372,7 +372,7 @@ namespace flame
 										}
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
@@ -499,7 +499,7 @@ namespace flame
 										}
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
@@ -626,7 +626,7 @@ namespace flame
 										}
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
@@ -753,7 +753,7 @@ namespace flame
 										}
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
@@ -884,7 +884,7 @@ namespace flame
 										}
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
@@ -986,7 +986,7 @@ namespace flame
 										}
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				switch (out_ti->data_type)
 				{
@@ -1025,7 +1025,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				*(float*)outputs[0].data = linearRand(0.f, 1.f);
 			},
 			nullptr,

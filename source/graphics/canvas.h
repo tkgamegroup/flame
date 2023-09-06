@@ -8,10 +8,19 @@ namespace flame
 	{
 		struct Canvas
 		{
+			struct DrawVert
+			{
+				vec2  pos;
+				vec2  uv;
+				cvec4 col;
+			};
+
 			WindowPtr window;
 			std::vector<ImageViewPtr> iv_tars;
 			std::vector<FramebufferPtr> fb_tars;
 			bool clear_framebuffer = true;
+
+			FontAtlasPtr default_font_atlas = nullptr;
 
 			virtual ~Canvas() {}
 

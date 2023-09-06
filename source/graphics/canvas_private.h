@@ -12,13 +12,6 @@ namespace flame
 	{
 		struct CanvasPrivate : Canvas
 		{
-			struct DrawVert
-			{
-				vec2  pos;
-				vec2  uv;
-				cvec4 col;
-			};
-
 			struct DrawCmd
 			{
 				enum Type
@@ -57,7 +50,6 @@ namespace flame
 			RenderpassPtr rp_load = nullptr;
 			VertexBuffer buf_vtx;
 			IndexBuffer<> buf_idx;
-			FontAtlasPtr default_font_atlas = nullptr;
 			ImagePtr main_img = nullptr;
 			std::unique_ptr<DescriptorSetT> main_ds;
 

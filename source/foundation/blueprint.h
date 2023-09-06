@@ -5,11 +5,6 @@
 
 namespace flame
 {
-	struct Signal
-	{
-		uint v;
-	};
-
 	enum BlueprintObjectType
 	{
 		BlueprintObjectSlot,
@@ -35,6 +30,17 @@ namespace flame
 	{
 		return (BlueprintSlotFlags)((uint)a & (uint)b);
 	}
+
+	struct BlueprintSignal
+	{
+		uint v;
+	};
+
+	struct BlueprintAttribute
+	{
+		TypeInfo* type;
+		void* data;
+	};
 
 	struct BlueprintObject
 	{
@@ -94,6 +100,8 @@ namespace flame
 		{
 			if (t == type)
 				return true;
+			if (t == TypeInfo::get<voidptr>())
+				return true;
 			if (t->tag == TagPU && type->tag == TagU)
 			{
 				auto ui = t->retrive_ui();
@@ -118,18 +126,6 @@ namespace flame
 		uint data_changed_frame = 0;
 	};
 
-	struct BlueprintArgument
-	{
-		TypeInfo* type;
-		void* data;
-	};
-
-	struct BlueprintExecutionFlow
-	{
-		bool is_executing;
-		bool execute_times;
-	};
-
 	struct BlueprintNodePreview
 	{
 		uint type;
@@ -137,11 +133,11 @@ namespace flame
 		void* data;
 	};
 
-	typedef void(*BlueprintNodeFunction)(BlueprintArgument* inputs, BlueprintArgument* outputs);
-	typedef void(*BlueprintNodeConstructor)(BlueprintArgument* inputs, BlueprintArgument* outputs);
-	typedef void(*BlueprintNodeDestructor)(BlueprintArgument* inputs, BlueprintArgument* outputs);
+	typedef void(*BlueprintNodeFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
+	typedef void(*BlueprintNodeConstructor)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
+	typedef void(*BlueprintNodeDestructor)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
 	typedef void(*BlueprintNodeInputSlotChangedCallback)(TypeInfo** input_types, TypeInfo** output_types);
-	typedef void(*BlueprintNodePreviewProvider)(BlueprintArgument* inputs, BlueprintArgument* outputs, BlueprintNodePreview* preview);
+	typedef void(*BlueprintNodePreviewProvider)(BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintNodePreview* preview);
 
 	struct BlueprintNode
 	{
@@ -446,8 +442,8 @@ namespace flame
 		{
 			uint object_id;
 			BlueprintObject original;
-			std::vector<BlueprintArgument> inputs;
-			std::vector<BlueprintArgument> outputs;
+			std::vector<BlueprintAttribute> inputs;
+			std::vector<BlueprintAttribute> outputs;
 			std::vector<Object> children;
 			uint updated_frame;
 		};
@@ -456,7 +452,7 @@ namespace flame
 		{
 			struct Data
 			{
-				BlueprintArgument arg;
+				BlueprintAttribute attribute;
 				uint changed_frame = 0;
 			};
 
@@ -468,7 +464,7 @@ namespace flame
 			std::map<uint, Object*>						object_map;
 			Object*										input_object = nullptr;
 			Object*										output_object = nullptr;
-			std::unordered_map<uint, BlueprintArgument> variables; // key: variable name hash
+			std::unordered_map<uint, BlueprintAttribute> variables; // key: variable name hash
 
 			uint structure_updated_frame = 0;
 			uint data_updated_frame = 0;
@@ -498,7 +494,7 @@ namespace flame
 
 		BlueprintPtr blueprint;
 
-		std::unordered_map<uint, BlueprintArgument> variables; // key: variable name hash
+		std::unordered_map<uint, BlueprintAttribute> variables; // key: variable name hash
 		std::unordered_map<uint, Group> groups; // key: group name hash
 		Group*						executing_group = nullptr;
 		std::vector<ExecutingBlock> executing_stack;

@@ -260,6 +260,10 @@ namespace flame
 		// Reflect
 		virtual std::vector<vec3> transform_feedback(cNodePtr node) = 0;
 
+		virtual void begin_hud(const vec2& pos, const vec2& size, const cvec4& col = cvec4(0, 0, 0, 255)) = 0;
+		virtual void end_hud() = 0;
+		virtual bool hud_button(std::wstring_view label) = 0;
+
 		// Reflect
 		virtual void send_debug_string(const std::string& str) = 0;
 

@@ -22,7 +22,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto in_ti = (TypeInfo_Data*)inputs[0].type;
 				*(std::string*)outputs[0].data = in_ti->serialize(inputs[0].data);
 			},
@@ -40,7 +40,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto& string = *(std::string*)inputs[0].data;
 				if (!string.empty())
 					printf("%s\n", string.c_str());

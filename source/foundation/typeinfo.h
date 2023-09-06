@@ -55,6 +55,21 @@ namespace flame
 		TagCount
 	};
 
+	inline bool is_pointer(TypeTag tag)
+	{
+		return tag >= TagP_Beg && tag <= TagP_End;
+	}
+
+	inline bool is_array(TypeTag tag)
+	{
+		return tag >= TagA_Beg && tag <= TagA_End;
+	}
+
+	inline bool is_vector(TypeTag tag)
+	{
+		return tag >= TagV_Beg && tag <= TagV_End;
+	}
+
 	enum DataType
 	{
 		DataVoid,

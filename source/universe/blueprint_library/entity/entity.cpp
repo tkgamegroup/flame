@@ -20,7 +20,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				*(std::string*)outputs[0].data = entity ? entity->name : "";
 			},
@@ -43,7 +43,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				auto node = entity->get_component<cNode>();
 				*(vec3*)outputs[0].data = node ? node->pos : vec3(0.f);
@@ -75,7 +75,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				EntityPtr e = nullptr;
 
 				auto& path = *(std::filesystem::path*)inputs[0].data;
@@ -122,7 +122,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::vector<EntityPtr>>() }
 				}
 			},
-			[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 
 			},
 			nullptr,

@@ -21,7 +21,7 @@ namespace flame
 						.allowed_types = { TypeInfo::get<float>() }
 					}
 				},
-				[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 					*(float*)outputs[0].data = perlin_noise(*(vec2*)inputs[0].data);
 				},
 				nullptr,

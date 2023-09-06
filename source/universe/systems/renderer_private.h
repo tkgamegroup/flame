@@ -54,6 +54,12 @@ namespace flame
 	{
 		bool mark_clear_pipelines = false;
 
+		vec2 hud_size;
+		vec2 hud_pos;
+		cvec4 hud_col;
+		vec2 hud_cursor;
+		float hud_cursor_start_x;
+
 		sRendererPrivate();
 		sRendererPrivate(graphics::WindowPtr w);
 		~sRendererPrivate();
@@ -141,6 +147,10 @@ namespace flame
 		cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos, const std::function<void(cNodePtr, DrawData&)>& draw_callback) override;
 		cElementPtr pick_up_2d(const uvec2& screen_pos) override;
 		std::vector<vec3> transform_feedback(cNodePtr node) override;
+
+		void begin_hud(const vec2& pos, const vec2& size, const cvec4& col) override;
+		void end_hud() override;
+		bool hud_button(std::wstring_view label) override;
 
 		void send_debug_string(const std::string& str) override;
 	};

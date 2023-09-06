@@ -38,7 +38,7 @@ namespace flame
 						.allowed_types = { TypeInfo::get<Texture>() }
 					}
 				},
-				[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 					auto format = *(Format*)inputs[0].data;
 					auto extent = *(uvec3*)inputs[1].data;
 					auto color = *(vec4*)inputs[2].data;
@@ -60,7 +60,7 @@ namespace flame
 					}
 				},
 				nullptr,
-				[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 					auto texture = *(Texture*)outputs[0].data;
 					if (texture.image)
 					{
@@ -72,7 +72,7 @@ namespace flame
 					}
 				},
 				nullptr,
-				[](BlueprintArgument* inputs, BlueprintArgument* outputs, BlueprintNodePreview* preview) {
+				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintNodePreview* preview) {
 					auto& texture = *(Texture*)outputs[0].data;
 					preview->type = "image"_h;
 					preview->data = texture.image;
@@ -92,7 +92,7 @@ namespace flame
 						.allowed_types = { TypeInfo::get<Texture>() }
 					}
 				},
-				[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 					auto scale = *(float*)inputs[0].data;
 					auto& texture = *(Texture*)outputs[0].data;
 					texture.type = TextureVoronoi;
@@ -121,7 +121,7 @@ namespace flame
 					texture.image->upload_pixels(0, 0, preview_size, preview_size, 0, 0);
 				},
 				nullptr,
-				[](BlueprintArgument* inputs, BlueprintArgument* outputs) {
+				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 					auto& texture = *(Texture*)outputs[0].data;
 					if (texture.image)
 					{
@@ -133,7 +133,7 @@ namespace flame
 					}
 				},
 				nullptr,
-				[](BlueprintArgument* inputs, BlueprintArgument* outputs, BlueprintNodePreview* preview) {
+				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintNodePreview* preview) {
 					auto& texture = *(Texture*)outputs[0].data;
 					preview->type = "image"_h;
 					preview->data = texture.image;

@@ -1,5 +1,6 @@
 #include "renderer_private.h"
 #include "scene_private.h"
+#include "input_private.h"
 #include "../octree.h"
 #include "../draw_data.h"
 #include "../world_private.h"
@@ -16,6 +17,7 @@
 #include "../../graphics/canvas.h"
 #include "../../graphics/material.h"
 #include "../../graphics/model.h"
+#include "../../graphics/font.h"
 #include "../../graphics/extension.h"
 #include "../../graphics/debug.h"
 
@@ -3060,6 +3062,60 @@ namespace flame
 		}
 
 		return ret;
+	}
+
+	void sRendererPrivate::begin_hud(const vec2& pos, const vec2& size, const cvec4& col)
+	{
+		auto canvas = render_tasks.front()->canvas;
+
+		hud_pos = pos;
+		hud_size = size;
+		hud_col = col;
+		hud_cursor = pos;
+		hud_cursor_start_x = pos.x;
+
+		if (size.x > 0.f && size.y > 0.f)
+			canvas->add_rect_filled(pos, pos + size, col);
+	}
+
+	void sRendererPrivate::end_hud()
+	{
+
+	}
+
+	static vec2 calc_text_size(graphics::FontAtlasPtr font_atlas, uint font_size, std::wstring_view str)
+	{
+		auto scale = font_atlas->get_scale(font_size);
+		auto p = vec2(0.f);
+		auto max_x = 0.f;
+		for (auto ch : str)
+		{
+			if (ch == L'\n')
+			{
+				p.y += font_size;
+				p.x = 0.f;
+				continue;
+			}
+
+			auto& g = font_atlas->get_glyph(ch, font_size);
+			p.x += g.advance * scale;
+			max_x = max(max_x, p.x);
+		}
+		return vec2(max_x, p.y + font_size);
+	}
+
+	bool sRendererPrivate::hud_button(std::wstring_view label)
+	{
+		auto canvas = render_tasks.front()->canvas;
+
+		auto sz = calc_text_size(canvas->default_font_atlas, 24, label);
+		sz += vec2(4.f);
+		Rect rect(hud_cursor, hud_cursor + sz);
+		canvas->add_rect_filled(rect.a, rect.b, cvec4(200, 200, 200, 255));
+		canvas->add_text(canvas->default_font_atlas, 24, hud_cursor + vec2(2.f), label, cvec4(255), 0.5f, 0.2f);
+		hud_cursor = vec2(hud_cursor_start_x, hud_cursor.y + sz.y + 4.f);
+		auto input = sInput::instance();
+		return input->mpressed(Mouse_Left) && rect.contains(input->mpos);
 	}
 
 	void sRendererPrivate::send_debug_string(const std::string& str)

@@ -217,33 +217,29 @@ void BlueprintView::on_draw()
 				}
 				if (ImGui::BeginMenu("Data"))
 				{
-					for (auto& pair : tidb.typeinfos)
+					for (auto bt : tidb.basic_types)
 					{
-						if (pair.second->tag != TagD)
-							continue;
 						if (!type_filter.empty())
 						{
-							if (pair.second->name.find(type_filter) == std::string::npos)
+							if (bt->name.find(type_filter) == std::string::npos)
 								continue;
 						}
-						if (ImGui::Selectable(pair.second->name.c_str()))
-							ret = pair.second.get();
+						if (ImGui::Selectable(bt->name.c_str()))
+							ret = TypeInfo::get(TagD, bt->name, tidb);
 					}
 					ImGui::EndMenu();
 				}
 				if (ImGui::BeginMenu("UDT"))
 				{
-					for (auto& pair : tidb.typeinfos)
+					for (auto& ui : tidb.udts)
 					{
-						if (pair.second->tag != TagU)
-							continue;
 						if (!type_filter.empty())
 						{
-							if (pair.second->name.find(type_filter) == std::string::npos)
+							if (ui.second.name.find(type_filter) == std::string::npos)
 								continue;
 						}
-						if (ImGui::Selectable(pair.second->name.c_str()))
-							ret = pair.second.get();
+						if (ImGui::Selectable(ui.second.name.c_str()))
+							ret = TypeInfo::get(TagU, ui.second.name, tidb);
 					}
 					ImGui::EndMenu();
 				}
@@ -251,27 +247,45 @@ void BlueprintView::on_draw()
 				{
 					if (ImGui::BeginMenu("Of Enum"))
 					{
+						for (auto& ei : tidb.enums)
+						{
+							if (!type_filter.empty())
+							{
+								if (ei.second.name.find(type_filter) == std::string::npos)
+									continue;
+							}
+							if (ImGui::Selectable(ei.second.name.c_str()))
+								ret = TypeInfo::get(TagPE, ei.second.name, tidb);
+						}
 						ImGui::EndMenu();
 					}
 					if (ImGui::BeginMenu("Of Data"))
 					{
+						for (auto bt : tidb.basic_types)
+						{
+							if (!type_filter.empty())
+							{
+								if (bt->name.find(type_filter) == std::string::npos)
+									continue;
+							}
+							if (ImGui::Selectable(bt->name.c_str()))
+								ret = TypeInfo::get(TagPD, bt->name, tidb);
+						}
 						ImGui::EndMenu();
 					}
 					if (ImGui::BeginMenu("Of Udt"))
 					{
-						ImGui::EndMenu();
-					}
-					for (auto& pair : tidb.typeinfos)
-					{
-						if (pair.second->tag < TagP_Beg || pair.second->tag > TagP_End)
-							continue;
-						if (!type_filter.empty())
+						for (auto& ui : tidb.udts)
 						{
-							if (pair.second->name.find(type_filter) == std::string::npos)
-								continue;
+							if (!type_filter.empty())
+							{
+								if (ui.second.name.find(type_filter) == std::string::npos)
+									continue;
+							}
+							if (ImGui::Selectable(ui.second.name.c_str()))
+								ret = TypeInfo::get(TagPU, ui.second.name, tidb);
 						}
-						if (ImGui::Selectable(pair.second->name.c_str()))
-							ret = pair.second.get();
+						ImGui::EndMenu();
 					}
 					ImGui::EndMenu();
 				}
@@ -279,20 +293,61 @@ void BlueprintView::on_draw()
 				{
 					if (ImGui::BeginMenu("Of Enum"))
 					{
+						for (auto& ei : tidb.enums)
+						{
+							if (!type_filter.empty())
+							{
+								if (ei.second.name.find(type_filter) == std::string::npos)
+									continue;
+							}
+							if (ImGui::Selectable(ei.second.name.c_str()))
+								ret = TypeInfo::get(TagVE, ei.second.name, tidb);
+						}
 						ImGui::EndMenu();
 					}
 					if (ImGui::BeginMenu("Of Data"))
 					{
+						for (auto bt : tidb.basic_types)
+						{
+							if (!type_filter.empty())
+							{
+								if (bt->name.find(type_filter) == std::string::npos)
+									continue;
+							}
+							if (ImGui::Selectable(bt->name.c_str()))
+								ret = TypeInfo::get(TagVD, bt->name, tidb);
+						}
 						ImGui::EndMenu();
 					}
 					if (ImGui::BeginMenu("Of Udt"))
 					{
+						for (auto& ui : tidb.udts)
+						{
+							if (!type_filter.empty())
+							{
+								if (ui.second.name.find(type_filter) == std::string::npos)
+									continue;
+							}
+							if (ImGui::Selectable(ui.second.name.c_str()))
+								ret = TypeInfo::get(TagVU, ui.second.name, tidb);
+						}
 						ImGui::EndMenu();
 					}
 					if (ImGui::BeginMenu("Of Pointer Of Udt"))
 					{
+						for (auto& ui : tidb.udts)
+						{
+							if (!type_filter.empty())
+							{
+								if (ui.second.name.find(type_filter) == std::string::npos)
+									continue;
+							}
+							if (ImGui::Selectable(ui.second.name.c_str()))
+								ret = TypeInfo::get(TagVPU, ui.second.name, tidb);
+						}
 						ImGui::EndMenu();
 					}
+					ImGui::EndMenu();
 				}
 				return ret;
 			};
@@ -725,8 +780,9 @@ void BlueprintView::on_draw()
 				{
 					for (auto& d : instance_group.slot_datas)
 					{
+						auto& attr = d.second.attribute;
 						ImGui::TextUnformatted(std::format("ID: {}, Type: {}, Value: {}",
-							d.first, ti_str(d.second.arg.type), d.second.arg.type->serialize(d.second.arg.data)).c_str());
+							d.first, ti_str(attr.type), attr.type->serialize(attr.data)).c_str());
 					}
 				}
 			}
@@ -806,7 +862,7 @@ void BlueprintView::on_draw()
 				auto& io = ImGui::GetIO();
 				auto dl = ImGui::GetWindowDrawList();
 				std::string tooltip; vec2 tooltip_pos;
-				auto get_slot_value = [](const BlueprintArgument& arg)->std::string {
+				auto get_slot_value = [](const BlueprintAttribute& arg)->std::string {
 					if (arg.type->tag != TagD)
 						return "";
 					return std::format("Value: {}", arg.type->serialize(arg.data));
@@ -1237,6 +1293,7 @@ void BlueprintView::on_draw()
 					static auto texture_library = BlueprintNodeLibrary::get(L"graphics::texture");
 					static auto geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
 					static auto entity_library = BlueprintNodeLibrary::get(L"universe::entity");
+					static auto navigation_library = BlueprintNodeLibrary::get(L"universe::navigation");
 
 					static std::string filter = "";
 					ImGui::InputText("Filter", &filter);
@@ -1290,8 +1347,8 @@ void BlueprintView::on_draw()
 						}
 					};
 					{
-						static BlueprintSlotDesc block_input_desc{ .name = "Execute", .name_hash = "Execute"_h, .flags = BlueprintSlotFlagInput, .allowed_types = { TypeInfo::get<Signal>() } };
-						static BlueprintSlotDesc block_output_desc{ .name = "Execute", .name_hash = "Execute"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = { TypeInfo::get<Signal>() } };
+						static BlueprintSlotDesc block_input_desc{ .name = "Execute", .name_hash = "Execute"_h, .flags = BlueprintSlotFlagInput, .allowed_types = { TypeInfo::get<BlueprintSignal>() } };
+						static BlueprintSlotDesc block_output_desc{ .name = "Execute", .name_hash = "Execute"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = { TypeInfo::get<BlueprintSignal>() } };
 						uint slot_name = 0;
 						if (show_node_template("Block", { block_input_desc }, { block_output_desc }, slot_name))
 						{
@@ -1350,6 +1407,7 @@ void BlueprintView::on_draw()
 					show_node_library_templates(texture_library);
 					show_node_library_templates(geometry_library);
 					show_node_library_templates(entity_library);
+					show_node_library_templates(navigation_library);
 					ImGui::EndPopup();
 
 					if (blueprint_instance->built_frame < blueprint->dirty_frame)
