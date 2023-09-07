@@ -26,6 +26,7 @@ struct BlueprintView : View
 
 	void load_blueprint(const std::filesystem::path& path);
 	void process_object_moved(BlueprintObject obj);
+	void fit_block_sizes();
 	void on_draw() override;
 };
 

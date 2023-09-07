@@ -86,26 +86,7 @@ BlueprintView::~BlueprintView()
 void BlueprintView::process_object_moved(BlueprintObject obj)
 {
 	auto g = blueprint->find_group(group_name_hash);
-	auto try_change_node_block = [this](BlueprintNodePtr node) {
-		vec2 node_size = ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)node);
-		Rect node_rect;
-		node_rect.a = node->position;
-		node_rect.b = node_rect.a + node_size;
-		BlueprintBlockPtr most_depth_block = nullptr;
-		uint most_depth = 0;
-		auto g = node->group;
-		for (auto& b : g->blocks)
-		{
-			if (b->rect.contains(node_rect))
-			{
-				if (b->depth > most_depth)
-				{
-					most_depth_block = b.get();
-					most_depth = b->depth;
-				}
-			}
-		}
-		blueprint->set_node_block(node, most_depth_block ? most_depth_block : g->blocks.front().get());
+	auto remove_invalid_links = [&](BlueprintNodePtr node) {
 		std::vector<BlueprintLinkPtr> to_remove_links;
 		for (auto& l : g->links)
 		{
@@ -117,6 +98,39 @@ void BlueprintView::process_object_moved(BlueprintObject obj)
 		}
 		for (auto l : to_remove_links)
 			blueprint->remove_link(l);
+	};
+	std::function<void(BlueprintBlockPtr)> remove_block_invalid_links;
+	remove_block_invalid_links = [&](BlueprintBlockPtr block) {
+		for (auto c : block->children)
+			remove_block_invalid_links(c);
+		for (auto n : block->nodes)
+			remove_invalid_links(n);
+	};
+	auto try_change_node_block = [&](BlueprintNodePtr node) {
+		Rect rect;
+		rect.a = node->position;
+		rect.b = rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)node);
+		BlueprintBlockPtr most_depth_block = nullptr;
+		uint most_depth = 0;
+		auto g = node->group;
+		for (auto& b : g->blocks)
+		{
+			if (b->rect.contains(rect))
+			{
+				if (b->depth > most_depth)
+				{
+					most_depth_block = b.get();
+					most_depth = b->depth;
+				}
+			}
+		}
+
+		auto new_block = most_depth_block ? most_depth_block : g->blocks.front().get();
+		if (node->block != new_block)
+		{
+			blueprint->set_node_block(node, new_block);
+			remove_invalid_links(node);
+		}
 	};
 
 	switch (obj.type)
@@ -131,6 +145,10 @@ void BlueprintView::process_object_moved(BlueprintObject obj)
 			if (b->depth == 0) // skip the root block
 				continue;
 
+			Rect rect;
+			rect.a = b->position;
+			rect.b = rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)b.get());
+
 			BlueprintBlockPtr most_depth_parent = nullptr;
 			uint most_depth = 0;
 			for (auto& b2 : g->blocks)
@@ -138,7 +156,7 @@ void BlueprintView::process_object_moved(BlueprintObject obj)
 				if (b2->depth == 0) // skip the root block
 					continue;
 
-				if (b2->rect.contains(b->rect))
+				if (b2->rect.contains(rect))
 				{
 					if (b2->depth > most_depth)
 					{
@@ -147,13 +165,27 @@ void BlueprintView::process_object_moved(BlueprintObject obj)
 					}
 				}
 			}
-			blueprint->set_block_parent(b.get(), most_depth_parent ? most_depth_parent : g->blocks.front().get());
+
+			auto new_parent = most_depth_parent ? most_depth_parent : g->blocks.front().get();
+			if (b->parent != new_parent)
+			{
+				blueprint->set_block_parent(b.get(), new_parent);
+				remove_block_invalid_links(b.get());
+			}
 		}
 		for (auto& n : g->nodes)
 			try_change_node_block(n.get());
 	}
 		break;
 	}
+}
+
+void BlueprintView::fit_block_sizes()
+{
+	std::function<void(BlueprintBlockPtr)> fit_block_size;
+	fit_block_size = [&](BlueprintBlockPtr) {
+
+	};
 }
 
 void BlueprintView::load_blueprint(const std::filesystem::path& path)
@@ -363,6 +395,100 @@ void BlueprintView::on_draw()
 				return ret;
 			};
 
+			auto manipulate_value = [](TypeInfo* type, void* data) {
+				auto changed = false;
+				if (type->tag == TagD)
+				{
+					auto ti = (TypeInfo_Data*)type;
+					switch (ti->data_type)
+					{
+					case DataBool:
+						ImGui::SetNextItemWidth(100.f);
+						changed |= ImGui::Checkbox("", (bool*)data);
+						break;
+					case DataFloat:
+						ImGui::PushMultiItemsWidths(ti->vec_size, 60.f * ti->vec_size);
+						for (int i = 0; i < ti->vec_size; i++)
+						{
+							ImGui::PushID(i);
+							if (i > 0)
+								ImGui::SameLine();
+							ImGui::DragScalar("", ImGuiDataType_Float, &((float*)data)[i], 0.01f);
+							changed |= ImGui::IsItemDeactivatedAfterEdit();
+							ImGui::PopID();
+							ImGui::PopItemWidth();
+						}
+						break;
+					case DataInt:
+						ImGui::PushMultiItemsWidths(ti->vec_size, 60.f * ti->vec_size);
+						for (int i = 0; i < ti->vec_size; i++)
+						{
+							ImGui::PushID(i);
+							if (i > 0)
+								ImGui::SameLine();
+							ImGui::DragScalar("", ImGuiDataType_S32, &((int*)data)[i]);
+							changed |= ImGui::IsItemDeactivatedAfterEdit();
+							ImGui::PopID();
+							ImGui::PopItemWidth();
+						}
+						break;
+					case DataChar:
+						if (ti->vec_size == 4)
+						{
+							vec4 color = *(cvec4*)data;
+							color /= 255.f;
+							ImGui::SetNextItemWidth(160.f);
+							changed |= ImGui::ColorEdit4("", &color[0]);
+							if (changed)
+								*(cvec4*)data = color * 255.f;
+						}
+						break;
+					case DataString:
+						ImGui::SetNextItemWidth(100.f);
+						ImGui::InputText("", (std::string*)data);
+						changed |= ImGui::IsItemDeactivatedAfterEdit();
+						break;
+					case DataWString:
+					{
+						auto s = w2s(*(std::wstring*)data);
+						ImGui::SetNextItemWidth(100.f);
+						ImGui::InputText("", &s);
+						changed |= ImGui::IsItemDeactivatedAfterEdit();
+						if (changed)
+							*(std::wstring*)data = s2w(s);
+					}
+						break;
+					case DataPath:
+					{
+						auto& path = *(std::filesystem::path*)data;
+						auto s = path.string();
+						ImGui::SetNextItemWidth(100.f);
+						ImGui::InputText("", s.data(), ImGuiInputTextFlags_ReadOnly);
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
+							{
+								path = Path::reverse(std::wstring((wchar_t*)payload->Data));
+								changed = true;
+							}
+							ImGui::EndDragDropTarget();
+						}
+						ImGui::SameLine();
+						if (ImGui::Button(graphics::font_icon_str("location-crosshairs"_h).c_str()))
+							project_window.ping(Path::get(path));
+						ImGui::SameLine();
+						if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
+						{
+							path = L"";
+							changed = true;
+						}
+					}
+						break;
+					}
+				}
+				return changed;
+			};
+
 			if (ImGui::CollapsingHeader("Bp Variables:"))
 			{
 				ImGui::PushID("bp_variables");
@@ -380,11 +506,11 @@ void BlueprintView::on_draw()
 				selected_variable = min(selected_variable, (int)blueprint->variables.size() - 1);
 				ImGui::SameLine();
 				ImGui::BeginGroup();
-				if (selected_variable >= 0)
+				if (selected_variable != -1)
 				{
 					auto& var = blueprint->variables[selected_variable];
 
-					ImGui::SetNextItemWidth(100.f);
+					ImGui::SetNextItemWidth(200.f);
 					ImGui::InputText("Name", &var.name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
@@ -393,24 +519,27 @@ void BlueprintView::on_draw()
 						blueprint->remove_variable(nullptr, var.name_hash);
 						blueprint->add_variable(nullptr, name, type);
 						selected_variable = -1;
+						unsaved = true;
 					}
-					if (selected_variable != -1)
+					ImGui::SetNextItemWidth(200.f);
+					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
 					{
-						ImGui::SetNextItemWidth(100.f);
-						if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
+						auto type = show_types_menu();
+						if (type)
 						{
-							auto type = show_types_menu();
-							if (type)
-							{
-								auto name = var.name;
-								blueprint->remove_variable(nullptr, var.name_hash);
-								blueprint->add_variable(nullptr, name, type);
-								selected_variable = -1;
-							}
-
-							ImGui::EndCombo();
+							auto name = var.name;
+							blueprint->remove_variable(nullptr, var.name_hash);
+							blueprint->add_variable(nullptr, name, type);
+							selected_variable = -1;
+							unsaved = true;
 						}
+
+						ImGui::EndCombo();
 					}
+					ImGui::TextUnformatted("Value");
+					auto changed = manipulate_value(var.type, var.data);
+					if (changed)
+						unsaved = true;
 				}
 				ImGui::EndGroup();
 
@@ -540,11 +669,11 @@ void BlueprintView::on_draw()
 				selected_variable = min(selected_variable, (int)group->variables.size() - 1);
 				ImGui::SameLine();
 				ImGui::BeginGroup();
-				if (selected_variable >= 0)
+				if (selected_variable != -1)
 				{
 					auto& var = group->variables[selected_variable];
 
-					ImGui::SetNextItemWidth(100.f);
+					ImGui::SetNextItemWidth(200.f);
 					ImGui::InputText("Name", &var.name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
@@ -553,24 +682,27 @@ void BlueprintView::on_draw()
 						blueprint->remove_variable(group, var.name_hash);
 						blueprint->add_variable(group, name, type);
 						selected_variable = -1;
+						unsaved = true;
 					}
-					if (selected_variable != -1)
+					ImGui::SetNextItemWidth(200.f);
+					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
 					{
-						ImGui::SetNextItemWidth(100.f);
-						if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
+						auto type = show_types_menu();
+						if (type)
 						{
-							auto type = show_types_menu();
-							if (type)
-							{
-								auto name = var.name;
-								blueprint->remove_variable(group, var.name_hash);
-								blueprint->add_variable(group, name, type);
-								selected_variable = -1;
-							}
-
-							ImGui::EndCombo();
+							auto name = var.name;
+							blueprint->remove_variable(group, var.name_hash);
+							blueprint->add_variable(group, name, type);
+							selected_variable = -1;
+							unsaved = true;
 						}
+
+						ImGui::EndCombo();
 					}
+					ImGui::TextUnformatted("Value");
+					auto changed = manipulate_value(var.type, var.data);
+					if (changed)
+						unsaved = true;
 				}
 				ImGui::EndGroup();
 
@@ -628,11 +760,11 @@ void BlueprintView::on_draw()
 				selected_input = min(selected_input, (int)group->inputs.size() - 1);
 				ImGui::SameLine();
 				ImGui::BeginGroup();
-				if (selected_input >= 0)
+				if (selected_input != -1)
 				{
 					auto& var = group->inputs[selected_input];
 
-					ImGui::SetNextItemWidth(100.f);
+					ImGui::SetNextItemWidth(200.f);
 					ImGui::InputText("Name", &var.name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
@@ -642,22 +774,19 @@ void BlueprintView::on_draw()
 						blueprint->add_group_input(group, name, type);
 						selected_input = -1;
 					}
-					if (selected_input != -1)
+					ImGui::SetNextItemWidth(200.f);
+					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
 					{
-						ImGui::SetNextItemWidth(100.f);
-						if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
+						auto type = show_types_menu();
+						if (type)
 						{
-							auto type = show_types_menu();
-							if (type)
-							{
-								auto name = var.name;
-								blueprint->remove_group_input(group, var.name_hash);
-								blueprint->add_group_input(group, name, type);
-								selected_input = -1;
-							}
-
-							ImGui::EndCombo();
+							auto name = var.name;
+							blueprint->remove_group_input(group, var.name_hash);
+							blueprint->add_group_input(group, name, type);
+							selected_input = -1;
 						}
+
+						ImGui::EndCombo();
 					}
 				}
 				ImGui::EndGroup();
@@ -715,11 +844,11 @@ void BlueprintView::on_draw()
 				selected_output = min(selected_output, (int)group->outputs.size() - 1);
 				ImGui::SameLine();
 				ImGui::BeginGroup();
-				if (selected_output >= 0)
+				if (selected_output != -1)
 				{
 					auto& var = group->outputs[selected_output];
 
-					ImGui::SetNextItemWidth(100.f);
+					ImGui::SetNextItemWidth(200.f);
 					ImGui::InputText("Name", &var.name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
@@ -729,22 +858,19 @@ void BlueprintView::on_draw()
 						blueprint->add_group_output(group, name, type);
 						selected_output = -1;
 					}
-					if (selected_output != -1)
+					ImGui::SetNextItemWidth(200.f);
+					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
 					{
-						ImGui::SetNextItemWidth(100.f);
-						if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
+						auto type = show_types_menu();
+						if (type)
 						{
-							auto type = show_types_menu();
-							if (type)
-							{
-								auto name = var.name;
-								blueprint->remove_group_output(group, var.name_hash);
-								blueprint->add_group_output(group, name, type);
-								selected_output = -1;
-							}
-
-							ImGui::EndCombo();
+							auto name = var.name;
+							blueprint->remove_group_output(group, var.name_hash);
+							blueprint->add_group_output(group, name, type);
+							selected_output = -1;
 						}
+
+						ImGui::EndCombo();
 					}
 				}
 				ImGui::EndGroup();
@@ -954,7 +1080,7 @@ void BlueprintView::on_draw()
 						if (input->flags & BlueprintSlotFlagHideInUI)
 							continue;
 						ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
-						ImGui::Text("%s %s", graphics::font_icon_str("play"_h).c_str(), input->name.c_str());
+						ImGui::Text("%s %s", graphics::font_icon_str("play"_h).c_str(), input->name_hash == "Execute"_h ? "" : input->name.c_str());
 						ax::NodeEditor::EndPin();
 						if (debugging_instance)
 						{
@@ -1102,7 +1228,7 @@ void BlueprintView::on_draw()
 						if (!output->type || (output->flags & BlueprintSlotFlagHideInUI))
 							continue;
 						ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
-						ImGui::Text("%s %s", output->name.c_str(), graphics::font_icon_str("play"_h).c_str());
+						ImGui::Text("%s %s", output->name_hash == "Execute"_h ? "" : output->name.c_str(), graphics::font_icon_str("play"_h).c_str());
 						ax::NodeEditor::EndPin();
 						if (debugging_instance)
 						{
@@ -1312,6 +1438,39 @@ void BlueprintView::on_draw()
 						;
 					if (ImGui::Selectable("Reset"))
 						;
+					if (context_slot->flags & BlueprintSlotFlagInput)
+					{
+						if (auto bind = group->get_data_bind(context_slot); !bind.empty())
+						{
+							if (ImGui::Selectable("Unbind"))
+							{
+								for (auto it = group->data_binds.begin(); it != group->data_binds.end(); it++)
+								{
+									if (it->second == context_slot)
+									{
+										group->data_binds.erase(it);
+										break;
+									}
+								}
+								unsaved = true;
+							}
+						}
+						else
+						{
+							if (ImGui::Selectable("Bind.."))
+							{
+								ImGui::OpenInputDialog("Bind", "Bind to an variable from blueprint", [this, group](bool ok, const std::string& str) {
+									if (ok)
+									{
+										auto& bind = group->data_binds.emplace_back();
+										bind.first = str;
+										bind.second = context_slot;
+										unsaved = true;
+									}
+								});
+							}
+						}
+					}
 					ImGui::EndPopup();
 				}
 				if (ImGui::BeginPopup("link_context_menu"))
@@ -1328,6 +1487,7 @@ void BlueprintView::on_draw()
 					static auto geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
 					static auto entity_library = BlueprintNodeLibrary::get(L"universe::entity");
 					static auto navigation_library = BlueprintNodeLibrary::get(L"universe::navigation");
+					static auto input_library = BlueprintNodeLibrary::get(L"universe::input");
 					static auto hud_library = BlueprintNodeLibrary::get(L"universe::HUD");
 
 					static std::string filter = "";
@@ -1444,6 +1604,7 @@ void BlueprintView::on_draw()
 					show_node_library_templates(geometry_library);
 					show_node_library_templates(entity_library);
 					show_node_library_templates(navigation_library);
+					show_node_library_templates(input_library);
 					show_node_library_templates(hud_library);
 
 					ImGui::EndPopup();

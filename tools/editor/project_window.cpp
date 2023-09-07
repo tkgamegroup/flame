@@ -416,7 +416,7 @@ ProjectView::ProjectView(const std::string& name) :
 						if (!std::filesystem::exists(fn))
 							Blueprint::get(fn);
 						else
-							ImGui::OpenMessageDialog("Failed to create Material", "Material already existed");
+							ImGui::OpenMessageDialog("Failed to create Blueprint", "Blueprint already existed");
 					}
 				});
 			}

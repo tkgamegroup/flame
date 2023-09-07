@@ -218,12 +218,15 @@ namespace flame
 
 		std::string name;
 		uint name_hash = 0;
-		std::vector<BlueprintVariable>					variables;
-		std::vector<BlueprintVariable>					inputs;
-		std::vector<BlueprintVariable>					outputs;
-		std::vector<std::unique_ptr<BlueprintNodeT>>	nodes;
-		std::vector<std::unique_ptr<BlueprintLinkT>>	links;
-		std::vector<std::unique_ptr<BlueprintBlockT>>	blocks;
+		std::vector<BlueprintVariable>							variables;
+		std::vector<BlueprintVariable>							inputs;
+		std::vector<BlueprintVariable>							outputs;
+		std::vector<std::unique_ptr<BlueprintNodeT>>			nodes;
+		std::vector<std::unique_ptr<BlueprintLinkT>>			links;
+		std::vector<std::unique_ptr<BlueprintBlockT>>			blocks;
+		// first: blueprint name and variable name, second: the input slot that its data will be mapped
+		// when the slot is linked, the bind will not effect
+		std::vector<std::pair<std::string, BlueprintSlotPtr>>	data_binds;
 
 		inline BlueprintNodePtr find_node(uint name) const
 		{
@@ -233,6 +236,16 @@ namespace flame
 					return (BlueprintNodePtr)n.get();
 			}
 			return nullptr;
+		}
+
+		inline std::string get_data_bind(BlueprintSlotPtr slot) const
+		{
+			for (auto& b : data_binds)
+			{
+				if (b.second == slot)
+					return b.first;
+			}
+			return "";
 		}
 
 		vec2 offset;
@@ -362,7 +375,7 @@ namespace flame
 		}
 
 		virtual ~Blueprint() {}
-		virtual void					add_variable(BlueprintGroupPtr group /* or null for blueprint variable */, const std::string& name, TypeInfo* type, const std::string& default_value = "") = 0;
+		virtual void*					add_variable(BlueprintGroupPtr group /* or null for blueprint variable */, const std::string& name, TypeInfo* type) = 0; // return: the data of the variable
 		virtual void					remove_variable(BlueprintGroupPtr group /* or null for blueprint variable */, uint name) = 0;
 		virtual BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintBlockPtr block, const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
@@ -379,9 +392,9 @@ namespace flame
 		virtual void					set_block_parent(BlueprintBlockPtr block, BlueprintBlockPtr new_parent) = 0;
 		virtual BlueprintGroupPtr		add_group(const std::string& name) = 0;
 		virtual void					remove_group(BlueprintGroupPtr group) = 0;
-		virtual void					add_group_input(BlueprintGroupPtr group, const std::string& name, TypeInfo* type, const std::string& default_value = "") = 0;
+		virtual void					add_group_input(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) = 0;
 		virtual void					remove_group_input(BlueprintGroupPtr group, uint name) = 0;
-		virtual void					add_group_output(BlueprintGroupPtr group, const std::string& name, TypeInfo* type, const std::string& default_value = "") = 0;
+		virtual void					add_group_output(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) = 0;
 		virtual void					remove_group_output(BlueprintGroupPtr group, uint name) = 0;
 
 		virtual void					save(const std::filesystem::path& path = L"") = 0;

@@ -24,7 +24,7 @@ namespace flame
 
 	struct BlueprintGroupPrivate : BlueprintGroup
 	{
-
+		~BlueprintGroupPrivate();
 	};
 
 	struct BlueprintPrivate : Blueprint
@@ -32,8 +32,9 @@ namespace flame
 		uint next_object_id = 1;
 
 		BlueprintPrivate();
+		~BlueprintPrivate();
 
-		void					add_variable(BlueprintGroupPtr group, const std::string& name, TypeInfo* type, const std::string& default_value) override;
+		void*					add_variable(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;
 		void					remove_variable(BlueprintGroupPtr group, uint name) override;
 		BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintBlockPtr block, const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
@@ -50,9 +51,9 @@ namespace flame
 		void					set_block_parent(BlueprintBlockPtr block, BlueprintBlockPtr new_parent) override;
 		BlueprintGroupPtr		add_group(const std::string& name) override;
 		void					remove_group(BlueprintGroupPtr group) override;
-		void					add_group_input(BlueprintGroupPtr group, const std::string& name, TypeInfo* type, const std::string& default_value) override;
+		void					add_group_input(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;
 		void					remove_group_input(BlueprintGroupPtr group, uint name) override;
-		void					add_group_output(BlueprintGroupPtr group, const std::string& name, TypeInfo* type, const std::string& default_value) override;
+		void					add_group_output(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;
 		void					remove_group_output(BlueprintGroupPtr group, uint name) override;
 		void					save(const std::filesystem::path& path) override;
 	};

@@ -33,6 +33,30 @@ namespace flame
 			nullptr
 		);
 
+		library->add_template("Set Name", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+					entity->name = *(std::string*)inputs[1].data;
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
 		library->add_template("Get Tag", "",
 			{
 				{
@@ -49,6 +73,54 @@ namespace flame
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				*(uint*)outputs[0].data = entity ? entity->tag : 0;
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Set Tag", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Tag",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+					entity->tag = (TagFlags)*(uint*)inputs[1].data;
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Add Tag", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Tag",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+					entity->tag = entity->tag | (TagFlags)*(uint*)inputs[1].data;
 			},
 			nullptr,
 			nullptr,
@@ -159,6 +231,15 @@ namespace flame
 
 		library->add_template("Get Mouse Hovering", "",
 			{
+				{
+					.name = "Tag",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Search Parent Times",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "999"
+				}
 			},
 			{
 				{
@@ -180,8 +261,29 @@ namespace flame
 
 				vec3 pos;
 				auto node = sRenderer::instance()->pick_up(input->mpos, &pos, nullptr);
-				*(EntityPtr*)outputs[0].data = node ? node->entity : nullptr;
-				*(vec3*)outputs[1].data = pos;
+				if (!node)
+				{
+					*(EntityPtr*)outputs[0].data = nullptr;
+					return;
+				}
+
+				auto e = node->entity;
+				auto tag = *(uint*)inputs[0].data;
+				auto times = *(uint*)inputs[1].data;
+				while (e)
+				{
+					if (e->tag & tag)
+						break;
+					e = e->parent;
+					times--;
+					if (times == 0)
+					{
+						e = nullptr;
+						break;
+					}
+				}
+				*(EntityPtr*)outputs[0].data = e;
+				*(vec3*)outputs[1].data = e ? pos : vec3(-1000.f);
 			},
 			nullptr,
 			nullptr,
