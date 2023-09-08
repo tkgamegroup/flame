@@ -236,7 +236,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<uint>() }
 				},
 				{
-					.name = "Search Parent Times",
+					.name = "Parent Search Times",
 					.allowed_types = { TypeInfo::get<uint>() },
 					.default_value = "999"
 				}

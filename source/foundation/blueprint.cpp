@@ -440,6 +440,25 @@ namespace flame
 		clear_invalid_links(n->group);
 	}
 
+	void BlueprintPrivate::set_input_type(BlueprintSlotPtr slot, TypeInfo* type)
+	{
+		auto group = slot->parent.get_locate_group();
+		assert(group && group->blueprint == this);
+		assert(slot->flags & BlueprintSlotFlagInput);
+
+		if (!blueprint_allow_type(slot->allowed_types, type))
+		{
+			printf("blueprint set_input_type: type not allowed\n");
+			return;
+		}
+		else
+		{
+			change_slot_type(slot, type);
+			if (slot->parent.type == BlueprintObjectNode)
+				update_node_output_types(slot->parent.p.node);
+		}
+	}
+
 	BlueprintLinkPtr BlueprintPrivate::add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot)
 	{
 		auto group = from_slot->parent.get_locate_group();

@@ -942,6 +942,7 @@ void BlueprintView::on_draw()
 					for (auto& n : group->nodes)
 						ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n.get(), n->position);
 					last_group = group;
+					load_frame = frame;
 				}
 
 				auto step = [&]() {
@@ -1117,105 +1118,26 @@ void BlueprintView::on_draw()
 							}
 							if (!linked)
 							{
-								auto changed = 0;
 								ImGui::PushID(input);
-								if (input->type && input->type->tag == TagD)
+								if (auto bind = group->get_data_bind(input); !bind.empty())
 								{
-									auto ti = (TypeInfo_Data*)input->type;
-									switch (ti->data_type)
+									ImGui::TextUnformatted("=");
+									ImGui::SameLine();
+									ImGui::SetNextItemWidth(100.f);
+									ImGui::InputText("", &bind, ImGuiInputTextFlags_ReadOnly);
+								}
+								else
+								{
+									auto changed = manipulate_value(input->type, input->data);
+									if (changed)
 									{
-									case DataBool:
-										ImGui::SetNextItemWidth(100.f);
-										changed |= ImGui::Checkbox("", (bool*)input->data);
-										break;
-									case DataFloat:
-										ImGui::PushMultiItemsWidths(ti->vec_size, 60.f * ti->vec_size);
-										for (int i = 0; i < ti->vec_size; i++)
-										{
-											ImGui::PushID(i);
-											if (i > 0)
-												ImGui::SameLine();
-											ImGui::DragScalar("", ImGuiDataType_Float, &((float*)input->data)[i], 0.01f);
-											changed |= ImGui::IsItemDeactivatedAfterEdit();
-											ImGui::PopID();
-											ImGui::PopItemWidth();
-										}
-										break;
-									case DataInt:
-										ImGui::PushMultiItemsWidths(ti->vec_size, 60.f * ti->vec_size);
-										for (int i = 0; i < ti->vec_size; i++)
-										{
-											ImGui::PushID(i);
-											if (i > 0)
-												ImGui::SameLine();
-											ImGui::DragScalar("", ImGuiDataType_S32, &((int*)input->data)[i]);
-											changed |= ImGui::IsItemDeactivatedAfterEdit();
-											ImGui::PopID();
-											ImGui::PopItemWidth();
-										}
-										break;
-									case DataChar:
-										if (ti->vec_size == 4)
-										{
-											vec4 color = *(cvec4*)input->data;
-											color /= 255.f;
-											ImGui::SetNextItemWidth(160.f);
-											changed |= ImGui::ColorEdit4("", &color[0]);
-											if (changed)
-												*(cvec4*)input->data = color * 255.f;
-										}
-										break;
-									case DataString:
-										ImGui::SetNextItemWidth(100.f);
-										ImGui::InputText("", (std::string*)input->data);
-										changed |= ImGui::IsItemDeactivatedAfterEdit();
-										break;
-									case DataWString:
-									{
-										auto s = w2s(*(std::wstring*)input->data);
-										ImGui::SetNextItemWidth(100.f);
-										ImGui::InputText(display_name.c_str(), &s);
-										changed |= ImGui::IsItemDeactivatedAfterEdit();
-										if (changed)
-											*(std::wstring*)input->data = s2w(s);
-									}
-										break;
-									case DataPath:
-									{
-										auto& path = *(std::filesystem::path*)input->data;
-										auto s = path.string();
-										ImGui::SetNextItemWidth(100.f);
-										ImGui::InputText(display_name.c_str(), s.data(), ImGuiInputTextFlags_ReadOnly);
-										if (ImGui::BeginDragDropTarget())
-										{
-											if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
-											{
-												path = Path::reverse(std::wstring((wchar_t*)payload->Data));
-												changed = true;
-											}
-											ImGui::EndDragDropTarget();
-										}
-										ImGui::SameLine();
-										if (ImGui::Button(graphics::font_icon_str("location-crosshairs"_h).c_str()))
-											project_window.ping(Path::get(path));
-										ImGui::SameLine();
-										if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
-										{
-											path = L"";
-											changed = true;
-										}
-									}
-										break;
+										input->data_changed_frame = frame;
+										group->data_changed_frame = frame;
+										blueprint->dirty_frame = frame;
+										unsaved = true;
 									}
 								}
 								ImGui::PopID();
-								if (changed)
-								{
-									input->data_changed_frame = frame;
-									group->data_changed_frame = frame;
-									blueprint->dirty_frame = frame;
-									unsaved = true;
-								}
 							}
 						}
 					}
@@ -1440,6 +1362,15 @@ void BlueprintView::on_draw()
 						;
 					if (context_slot->flags & BlueprintSlotFlagInput)
 					{
+						if (ImGui::BeginMenu("Type"))
+						{
+							for (auto t : context_slot->allowed_types)
+							{
+								if (ImGui::Selectable(ti_str(t).c_str()))
+									blueprint->set_input_type(context_slot, t);
+							}
+							ImGui::EndMenu();
+						}
 						if (auto bind = group->get_data_bind(context_slot); !bind.empty())
 						{
 							if (ImGui::Selectable("Unbind"))

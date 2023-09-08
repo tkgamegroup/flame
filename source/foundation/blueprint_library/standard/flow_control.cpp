@@ -9,7 +9,7 @@ namespace flame
 			{
 				{
 					.name = "Condition",
-					.allowed_types = { TypeInfo::get<bool>() }
+					.allowed_types = { TypeInfo::get<bool>(), TypeInfo::get<voidptr>() }
 				}
 			},
 			{
@@ -23,7 +23,11 @@ namespace flame
 				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				auto ok = *(bool*)inputs[0].data;
+				bool ok;
+				if (inputs[0].type == TypeInfo::get<bool>())
+					ok = *(bool*)inputs[0].data;
+				else
+					ok = (*(voidptr*)inputs[0].data) != nullptr;
 				(*(BlueprintSignal*)outputs[0].data).v = ok ? 1 : 0;
 				(*(BlueprintSignal*)outputs[1].data).v = ok ? 0 : 1;
 			},

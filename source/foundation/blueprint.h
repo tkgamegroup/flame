@@ -385,6 +385,7 @@ namespace flame
 		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint variable_name) = 0;
 		virtual void					remove_node(BlueprintNodePtr node) = 0;
 		virtual void					set_node_block(BlueprintNodePtr node, BlueprintBlockPtr new_block) = 0;
+		virtual void					set_input_type(BlueprintSlotPtr slot, TypeInfo* type) = 0;
 		virtual BlueprintLinkPtr		add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot) = 0;
 		virtual void					remove_link(BlueprintLinkPtr link) = 0;
 		virtual BlueprintBlockPtr		add_block(BlueprintGroupPtr group, BlueprintBlockPtr parent) = 0;
