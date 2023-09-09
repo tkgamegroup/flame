@@ -2,6 +2,7 @@
 #include "../../../foundation/typeinfo.h"
 #include "../../entity_private.h"
 #include "../../components/node_private.h"
+#include "../../components/camera_private.h"
 #include "../../components/bp_instance_private.h"
 #include "../../systems/input_private.h"
 #include "../../systems/renderer_private.h"
@@ -143,8 +144,34 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
-				auto node = entity->get_component<cNode>();
-				*(vec3*)outputs[0].data = node ? node->pos : vec3(0.f);
+				if (entity)
+				{
+					auto node = entity->get_component<cNode>();
+					*(vec3*)outputs[0].data = node ? node->global_pos() : vec3(0.f);
+				}
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("World To Screen", "",
+			{
+				{
+					.name = "In",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<vec2>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto world_pos = *(vec3*)inputs[0].data;
+				*(vec2*)outputs[0].data = sRenderer::instance()->render_tasks.front()->camera->world_to_screen(world_pos);
 			},
 			nullptr,
 			nullptr,

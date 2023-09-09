@@ -43,8 +43,10 @@ BlueprintView::BlueprintView(const std::string& name) :
 		auto& view = *(BlueprintView*)user_data;
 		if (frames == view.load_frame)
 			return true;
-		auto& g = view.blueprint_instance->groups[view.group_name_hash];
-		auto obj = get_object_from_ax_node_id(node_id, g);
+		auto& instance_group = view.blueprint_instance->groups[view.group_name_hash];
+		auto obj = get_object_from_ax_node_id(node_id, instance_group);
+		if (ImGui::IsKeyDown(Keyboard_Alt))
+			view.expand_block_sizes();
 		view.process_object_moved(obj);
 		view.unsaved = true;
 		return true;
@@ -92,7 +94,7 @@ void BlueprintView::process_object_moved(BlueprintObject obj)
 		{
 			if (l->to_slot->parent.p.node == node)
 			{
-				if (l->from_slot->parent.get_locate_block()->depth > l->to_slot->parent.get_locate_block()->depth)
+				if (l->from_slot->parent.get_depth() > l->to_slot->parent.get_depth())
 					to_remove_links.push_back(l.get());
 			}
 		}
@@ -102,20 +104,31 @@ void BlueprintView::process_object_moved(BlueprintObject obj)
 	std::function<void(BlueprintBlockPtr)> remove_block_invalid_links;
 	remove_block_invalid_links = [&](BlueprintBlockPtr block) {
 		for (auto c : block->children)
+		{
 			remove_block_invalid_links(c);
+			for (auto& l : g->links)
+			{
+				if (l->to_slot == c->input.get())
+				{
+					if (l->from_slot->parent.get_depth() > l->to_slot->parent.get_depth())
+						blueprint->remove_link(l.get());
+					break;
+				}
+			}
+		}
 		for (auto n : block->nodes)
 			remove_invalid_links(n);
 	};
 	auto try_change_node_block = [&](BlueprintNodePtr node) {
-		Rect rect;
-		rect.a = node->position;
-		rect.b = rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)node);
+		Rect node_rect;
+		node_rect.a = node->position;
+		node_rect.b = node_rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)node);
 		BlueprintBlockPtr most_depth_block = nullptr;
 		uint most_depth = 0;
 		auto g = node->group;
 		for (auto& b : g->blocks)
 		{
-			if (b->rect.contains(rect))
+			if (b->rect.contains(node_rect))
 			{
 				if (b->depth > most_depth)
 				{
@@ -127,10 +140,7 @@ void BlueprintView::process_object_moved(BlueprintObject obj)
 
 		auto new_block = most_depth_block ? most_depth_block : g->blocks.front().get();
 		if (node->block != new_block)
-		{
 			blueprint->set_node_block(node, new_block);
-			remove_invalid_links(node);
-		}
 	};
 
 	switch (obj.type)
@@ -145,9 +155,9 @@ void BlueprintView::process_object_moved(BlueprintObject obj)
 			if (b->depth == 0) // skip the root block
 				continue;
 
-			Rect rect;
-			rect.a = b->position;
-			rect.b = rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)b.get());
+			Rect block_rect;
+			block_rect.a = b->position;
+			block_rect.b = block_rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)b.get());
 
 			BlueprintBlockPtr most_depth_parent = nullptr;
 			uint most_depth = 0;
@@ -156,7 +166,7 @@ void BlueprintView::process_object_moved(BlueprintObject obj)
 				if (b2->depth == 0) // skip the root block
 					continue;
 
-				if (b2->rect.contains(rect))
+				if (b2->rect.contains(block_rect))
 				{
 					if (b2->depth > most_depth)
 					{
@@ -168,24 +178,59 @@ void BlueprintView::process_object_moved(BlueprintObject obj)
 
 			auto new_parent = most_depth_parent ? most_depth_parent : g->blocks.front().get();
 			if (b->parent != new_parent)
-			{
 				blueprint->set_block_parent(b.get(), new_parent);
-				remove_block_invalid_links(b.get());
-			}
 		}
 		for (auto& n : g->nodes)
 			try_change_node_block(n.get());
 	}
 		break;
 	}
+
+	remove_block_invalid_links(g->blocks.front().get());
 }
 
-void BlueprintView::fit_block_sizes()
+void BlueprintView::expand_block_sizes()
 {
+	auto g = blueprint->find_group(group_name_hash);
 	std::function<void(BlueprintBlockPtr)> fit_block_size;
-	fit_block_size = [&](BlueprintBlockPtr) {
+	fit_block_size = [&](BlueprintBlockPtr b) {
+		Rect rect = b->rect;
 
+		for (auto& c : b->children)
+		{
+			fit_block_size(c);
+
+			Rect block_rect;
+			block_rect.a = c->position;
+			block_rect.b = block_rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)c);
+			block_rect.expand(10.f);
+			rect.expand(block_rect);
+		}
+
+		for (auto& n : b->nodes)
+		{
+			Rect node_rect;
+			node_rect.a = n->position;
+			node_rect.b = node_rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)n);
+			node_rect.expand(10.f);
+			rect.expand(node_rect);
+		}
+
+		if (b != g->blocks.front().get())
+		{
+			if (any(lessThan(rect.a, b->rect.a)) || any(greaterThan(rect.b, b->rect.b)))
+			{
+				b->position -= (b->rect.a - rect.a);
+				b->rect = rect;
+				ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)b, b->position);
+				auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)b);
+				ax_node->m_GroupBounds.Min = b->rect.a;
+				ax_node->m_GroupBounds.Max = b->rect.b;
+
+			}
+		}
 	};
+	fit_block_size(g->blocks.front().get());
 }
 
 void BlueprintView::load_blueprint(const std::filesystem::path& path)
@@ -1020,7 +1065,6 @@ void BlueprintView::on_draw()
 					if (b->depth == 0) // skip root block
 						continue;
 
-					ax_node_editor->GetNodeBuilder();
 					ax::NodeEditor::BeginNode((uint64)b.get());
 					ImGui::Text("D%d", b->depth);
 
@@ -1073,7 +1117,7 @@ void BlueprintView::on_draw()
 					ax::NodeEditor::BeginNode((uint64)n.get());
 					auto display_name = n->display_name.empty() ? n->name : n->display_name;
 					ImGui::TextUnformatted(display_name.c_str());
-					ImGui::Text("D%d", n->block->depth);
+					ImGui::Text("D%d", n->block->depth + 1);
 					ImGui::BeginGroup();
 					for (auto i = 0; i < n->inputs.size(); i++)
 					{
@@ -1260,7 +1304,10 @@ void BlueprintView::on_draw()
 							if (blueprint_allow_type(to_slot->allowed_types, from_slot->type))
 							{
 								if (ax::NodeEditor::AcceptNewItem())
+								{
 									blueprint->add_link(from_slot, to_slot);
+									unsaved = true;
+								}
 							}
 						}
 					}
@@ -1276,7 +1323,10 @@ void BlueprintView::on_draw()
 					while (ax::NodeEditor::QueryDeletedLink((ax::NodeEditor::LinkId*)&link))
 					{
 						if (ax::NodeEditor::AcceptDeletedItem())
+						{
 							blueprint->remove_link(link);
+							unsaved = true;
+						}
 					}
 					while (ax::NodeEditor::QueryDeletedNode(&node_id))
 					{
@@ -1288,10 +1338,12 @@ void BlueprintView::on_draw()
 								if (auto it = previews.find(obj.p.node); it != previews.end())
 									previews.erase(it);
 								blueprint->remove_node(obj.p.node);
+								unsaved = true;
 							}
 							else if (obj.type == BlueprintObjectBlock)
 							{
 								blueprint->remove_block(obj.p.block);
+								unsaved = true;
 							}
 						}
 					}
@@ -1469,6 +1521,8 @@ void BlueprintView::on_draw()
 									else
 										blueprint->add_link(n->find_output(slot_name), new_node_link_slot);
 								}
+
+								unsaved = true;
 							}
 						}
 					};
@@ -1493,40 +1547,46 @@ void BlueprintView::on_draw()
 							}
 
 							process_object_moved(b);
+
+							unsaved = true;
 						}
 					}
 					if (ImGui::BeginMenu("Variables"))
 					{
-						for (auto& v : blueprint->variables)
-						{
-							uint slot_name = 0;
-							if (show_node_template(v.name, {}, { BlueprintSlotDesc{ .name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {v.type} } }, slot_name))
+						auto show_variables = [&](const std::vector<BlueprintVariable>& variables) {
+							for (auto& v : variables)
 							{
-								auto n = blueprint->add_variable_node(group, nullptr, v.name_hash);
-								n->position = open_popup_pos;
-								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+								uint slot_name = 0;
+								if (show_node_template(v.name, {}, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {v.type} } }, slot_name))
+								{
+									auto n = blueprint->add_variable_node(group, nullptr, v.name_hash);
+									n->position = open_popup_pos;
+									ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
-								if (new_node_link_slot)
-									blueprint->add_link(n->outputs.front().get(), new_node_link_slot);
+									if (new_node_link_slot)
+										blueprint->add_link(n->outputs.front().get(), new_node_link_slot);
 
-								process_object_moved(n);
+									process_object_moved(n);
+
+									unsaved = true;
+								}
+								if (show_node_template("Set " + v.name, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {v.type}}}, {}, slot_name))
+								{
+									auto n = blueprint->add_variable_node(group, nullptr, v.name_hash, true);
+									n->position = open_popup_pos;
+									ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+									if (new_node_link_slot)
+										blueprint->add_link(new_node_link_slot, n->inputs.front().get());
+
+									process_object_moved(n);
+
+									unsaved = true;
+								}
 							}
-						}
-						for (auto& v : group->variables)
-						{
-							uint slot_name = 0;
-							if (show_node_template(v.name, {}, { BlueprintSlotDesc{ .name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {v.type} } }, slot_name))
-							{
-								auto n = blueprint->add_variable_node(group, nullptr, v.name_hash);
-								n->position = open_popup_pos;
-								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
-
-								if (new_node_link_slot)
-									blueprint->add_link(n->outputs.front().get(), new_node_link_slot);
-
-								process_object_moved(n);
-							}
-						}
+						};
+						show_variables(blueprint->variables);
+						show_variables(group->variables);
 						ImGui::EndMenu();
 					}
 					show_node_library_templates(standard_library);

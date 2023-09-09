@@ -31,6 +31,29 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
+		library->add_template("To WString", "",
+			{
+				{
+					.name = "In",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(std::wstring*)outputs[0].data = s2w(*(std::string*)inputs[0].data);
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
 		library->add_template("Print", "",
 			{
 				{

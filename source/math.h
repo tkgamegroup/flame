@@ -348,8 +348,8 @@ namespace flame
 		void expand(float length)
 		{
 			a.x -= length;
-			a.y += length;
-			b.x -= length;
+			a.y -= length;
+			b.x += length;
 			b.y += length;
 		}
 
@@ -357,6 +357,12 @@ namespace flame
 		{
 			a = min(a, p);
 			b = max(b, p);
+		}
+
+		void expand(const Rect& oth)
+		{
+			a = min(a, oth.a);
+			b = max(b, oth.b);
 		}
 
 		bool contains(const vec2& p) const

@@ -43,6 +43,7 @@ namespace flame
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx.buf.get(), IndiceTypeUint);
 				cb->bind_pipeline(pl);
+				prm.pc.mark_dirty_c("translate"_h).as<vec2>() = vec2(0.f);
 				prm.pc.mark_dirty_c("scale"_h).as<vec2>() = 2.f / vp.b;
 				prm.push_constant(cb);
 				auto last_pl = pl;
@@ -51,14 +52,18 @@ namespace flame
 				{
 					switch (cmd.type)
 					{
+					case DrawCmd::SetTranslate:
+						prm.pc.mark_dirty_c("translate"_h).as<vec2>() = cmd.data.translate;
+						prm.push_constant(cb);
+						break;
 					case DrawCmd::SetScissor:
-						if (!(cmd.data.scissor.rect == vp))
+						if (!(cmd.data.rect == vp))
 						{
-							vp = cmd.data.scissor.rect;
+							vp = cmd.data.rect;
 							cb->set_scissor(vp);
 						}
 						break;
-					case DrawCmd::DrawBmp:
+					case DrawCmd::Blit:
 						if (cmd.idx_cnt > 0)
 						{
 							if (last_pl != pl)
@@ -177,13 +182,13 @@ namespace flame
 			draw_cmds.emplace_back().ds = main_ds.get();
 		}
 
-		CanvasPrivate::DrawCmd& CanvasPrivate::get_bmp_cmd(DescriptorSetPtr ds)
+		CanvasPrivate::DrawCmd& CanvasPrivate::get_blit_cmd(DescriptorSetPtr ds)
 		{
 			auto& cmd = draw_cmds.back();
-			if (cmd.ds == ds && cmd.type == DrawCmd::DrawBmp)
+			if (cmd.ds == ds && cmd.type == DrawCmd::Blit)
 				return cmd;
 			auto& new_cmd = draw_cmds.emplace_back();
-			new_cmd.type = DrawCmd::DrawBmp;
+			new_cmd.type = DrawCmd::Blit;
 			new_cmd.ds = ds;
 			return new_cmd;
 		}
@@ -359,18 +364,28 @@ namespace flame
 			return &buf_vtx.item_t<DrawVert>(buf_vtx_off);
 		}
 
-		void CanvasPrivate::stroke(float thickness, const cvec4& col, bool closed)
+		Canvas::DrawVert* CanvasPrivate::stroke(float thickness, const cvec4& col, bool closed)
 		{
-			auto& cmd = get_bmp_cmd(main_ds.get());
-			stroke_path(cmd, thickness, col, closed);
+			auto& cmd = get_blit_cmd(main_ds.get());
+			auto verts = stroke_path(cmd, thickness, col, closed);
 			path.clear();
+			return verts;
 		}
 
-		void CanvasPrivate::fill(const cvec4& col)
+		Canvas::DrawVert* CanvasPrivate::fill(const cvec4& col)
 		{
-			auto& cmd = get_bmp_cmd(main_ds.get());
-			fill_path(cmd, col);
+			auto& cmd = get_blit_cmd(main_ds.get());
+			auto verts = fill_path(cmd, col);
 			path.clear();
+			return verts;
+		}
+
+		uint CanvasPrivate::set_translate(const vec2& translate)
+		{
+			auto& new_cmd = draw_cmds.emplace_back();
+			new_cmd.type = DrawCmd::SetTranslate;
+			new_cmd.data.translate = translate;
+			return draw_cmds.size() - 1;
 		}
 
 		void CanvasPrivate::push_scissor(const Rect& _rect)
@@ -388,7 +403,7 @@ namespace flame
 
 			auto& new_cmd = draw_cmds.emplace_back();
 			new_cmd.type = DrawCmd::SetScissor;
-			new_cmd.data.scissor.rect = rect;
+			new_cmd.data.rect = rect;
 		}
 
 		void CanvasPrivate::pop_scissor()
@@ -397,19 +412,19 @@ namespace flame
 
 			auto& new_cmd = draw_cmds.emplace_back();
 			new_cmd.type = DrawCmd::SetScissor;
-			new_cmd.data.scissor.rect = scissor_stack.top();
+			new_cmd.data.rect = scissor_stack.top();
 		}
 		
-		void CanvasPrivate::add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col)
+		Canvas::DrawVert* CanvasPrivate::add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col)
 		{
 			path_rect(a, b);
-			stroke(thickness, col, true);
+			return stroke(thickness, col, true);
 		}
 
-		void CanvasPrivate::add_rect_filled(const vec2& a, const vec2& b, const cvec4& col)
+		Canvas::DrawVert* CanvasPrivate::add_rect_filled(const vec2& a, const vec2& b, const cvec4& col)
 		{
 			path_rect(a, b);
-			fill(col);
+			return fill(col);
 		}
 
 		void CanvasPrivate::add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness, float border)
@@ -419,7 +434,7 @@ namespace flame
 			border = clamp(border, 0.f, 0.25f);
 			auto scale = font_atlas->get_scale(font_size);
 			auto ds = font_atlas == default_font_atlas ? main_ds.get() : font_atlas->view->get_shader_read_src(nullptr);
-			auto& cmd = font_atlas->type == FontAtlasBitmap ? get_bmp_cmd(ds) : get_sdf_cmd(ds, scale, thickness, border);
+			auto& cmd = font_atlas->type == FontAtlasBitmap ? get_blit_cmd(ds) : get_sdf_cmd(ds, scale, thickness, border);
 
 			auto p = pos;
 			for (auto ch : str)
@@ -448,9 +463,9 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col)
+		Canvas::DrawVert* CanvasPrivate::add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col)
 		{
-			auto& cmd = get_bmp_cmd(view->get_shader_read_src(nullptr));
+			auto& cmd = get_blit_cmd(view->get_shader_read_src(nullptr));
 
 			path_rect(a, b);
 			auto verts = fill_path(cmd, tint_col);
@@ -459,11 +474,12 @@ namespace flame
 			verts[1].uv = uvs.xw;
 			verts[2].uv = uvs.zw;
 			verts[3].uv = uvs.zy;
+			return verts;
 		}
 
-		void CanvasPrivate::add_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle)
+		Canvas::DrawVert* CanvasPrivate::add_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle)
 		{
-			auto& cmd = get_bmp_cmd(view->get_shader_read_src(nullptr));
+			auto& cmd = get_blit_cmd(view->get_shader_read_src(nullptr));
 
 			path_rect(a, b);
 			auto verts = fill_path(cmd, tint_col);
@@ -490,6 +506,7 @@ namespace flame
 				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
 				vtx.uv = uvs.zy;
 			}
+			return verts;
 		}
 
 		struct CanvasCreate : Canvas::Create

@@ -79,6 +79,7 @@ namespace flame
 		inline uint get_id() const;
 		inline BlueprintGroupPtr get_locate_group() const;
 		inline BlueprintBlockPtr get_locate_block() const;
+		inline uint get_depth() const;
 		inline std::vector<BlueprintSlotPtr> get_inputs() const;
 		inline std::vector<BlueprintSlotPtr> get_outputs() const;
 		inline BlueprintSlotPtr find_input(uint name) const;
@@ -289,6 +290,16 @@ namespace flame
 		return nullptr;
 	}
 
+	inline uint BlueprintObject::get_depth() const
+	{
+		switch (type)
+		{
+		case BlueprintObjectNode: return ((BlueprintBlock*)((BlueprintNode*)p.node)->block)->depth + 1;
+		case BlueprintObjectBlock: return ((BlueprintBlock*)p.block)->depth;
+		}
+		return 0;
+	}
+
 	inline BlueprintGroupPtr BlueprintObject::get_locate_group() const
 	{
 		switch (type)
@@ -381,8 +392,7 @@ namespace flame
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
-		virtual BlueprintNodePtr		add_input_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint name) = 0;
-		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint variable_name) = 0;
+		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint variable_name, bool is_setter = false) = 0;
 		virtual void					remove_node(BlueprintNodePtr node) = 0;
 		virtual void					set_node_block(BlueprintNodePtr node, BlueprintBlockPtr new_block) = 0;
 		virtual void					set_input_type(BlueprintSlotPtr slot, TypeInfo* type) = 0;

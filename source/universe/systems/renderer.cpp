@@ -14,7 +14,6 @@
 #include "../../graphics/renderpass.h"
 #include "../../graphics/shader.h"
 #include "../../graphics/window.h"
-#include "../../graphics/canvas.h"
 #include "../../graphics/material.h"
 #include "../../graphics/model.h"
 #include "../../graphics/font.h"
@@ -3064,24 +3063,41 @@ namespace flame
 		return ret;
 	}
 
-	void sRendererPrivate::begin_hud(const vec2& pos, const vec2& size, const cvec4& col)
+	void sRendererPrivate::begin_hud(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot)
 	{
 		auto canvas = render_tasks.front()->canvas;
 
 		hud_pos = pos;
 		hud_size = size;
 		hud_col = col;
-		hud_cursor = pos + 4.f;
-		hud_cursor_start_x = pos.x + 4.f;
+		hud_pivot = pivot;
+		hud_cursor = pos + vec2(4.f, 2.f);
+		hud_cursor_x0 = hud_cursor.x;
+		hud_max_w = 0.f;
 
-		if (size.x > 0.f && size.y > 0.f)
-			canvas->add_rect_filled(pos, pos + size, col);
+		hud_verts = canvas->add_rect_filled(pos, pos, col);
+		if (pivot.x != 0.f || pivot.y != 0.f)
+			hud_translate_cmd_idx = canvas->set_translate(vec2(0.f));
 	}
 
 	void sRendererPrivate::end_hud()
 	{
+		auto canvas = render_tasks.front()->canvas;
 		auto input = sInput::instance();
 
+		if (hud_size.x == 0.f && hud_size.y == 0.f)
+			hud_size = vec2(hud_max_w + 8.f, hud_cursor.y - hud_pos.y);
+		if (hud_pivot.x != 0.f || hud_pivot.y != 0.f)
+		{
+			auto translate = -hud_size * hud_pivot;
+			hud_pos += translate;
+			canvas->draw_cmds[hud_translate_cmd_idx].data.translate = translate;
+			canvas->set_translate(vec2(0.f));
+		}
+		hud_verts[0].pos = hud_pos;
+		hud_verts[1].pos = hud_pos + vec2(0.f, hud_size.y);
+		hud_verts[2].pos = hud_pos + hud_size;
+		hud_verts[3].pos = hud_pos + vec2(hud_size.x, 0.f);
 		Rect rect(hud_pos, hud_pos + hud_size);
 		if (rect.contains(input->mpos))
 			input->mouse_used = true;
@@ -3108,6 +3124,20 @@ namespace flame
 		return vec2(max_x, p.y + font_size);
 	}
 
+	void sRendererPrivate::hud_text(std::wstring_view label, const cvec4& col)
+	{
+		auto canvas = render_tasks.front()->canvas;
+		auto input = sInput::instance();
+
+		auto sz = calc_text_size(canvas->default_font_atlas, 24, label);
+		Rect rect(hud_cursor, hud_cursor + sz);
+		if (rect.contains(input->mpos))
+			input->mouse_used = true;
+		canvas->add_text(canvas->default_font_atlas, 24, hud_cursor, label, col, 0.5f, 0.2f);
+		hud_cursor = vec2(hud_cursor_x0, hud_cursor.y + sz.y + 2.f);
+		hud_max_w = max(hud_max_w, sz.x);
+	}
+
 	bool sRendererPrivate::hud_button(std::wstring_view label)
 	{
 		auto canvas = render_tasks.front()->canvas;
@@ -3127,7 +3157,8 @@ namespace flame
 		}
 		canvas->add_rect_filled(rect.a, rect.b, state == 0 ? cvec4(35, 69, 109, 255) : cvec4(66, 150, 250, 255));
 		canvas->add_text(canvas->default_font_atlas, 24, hud_cursor + vec2(2.f), label, cvec4(255), 0.5f, 0.2f);
-		hud_cursor = vec2(hud_cursor_start_x, hud_cursor.y + sz.y + 4.f);
+		hud_cursor = vec2(hud_cursor_x0, hud_cursor.y + sz.y + 2.f);
+		hud_max_w = max(hud_max_w, sz.x);
 		return state == 2;
 	}
 

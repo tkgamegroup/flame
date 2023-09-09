@@ -23,5 +23,23 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
+		library->add_template("Mouse Pressed", "",
+			{
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(bool*)outputs[0].data = sInput::instance()->mpressed(Mouse_Left);
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
 	}
 }

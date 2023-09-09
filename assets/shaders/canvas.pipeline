@@ -41,6 +41,7 @@ layout (set = SET, binding = 0) uniform sampler2D image;
 
 layout(push_constant) uniform PushConstant
 {
+    vec2 translate;
 	vec2 scale;
 
     vec4 data;
@@ -59,7 +60,7 @@ void main()
 {
 	o_col = i_col;
 	o_uv = i_uv;
-	gl_Position = vec4(i_pos * pc.scale - 1.0, 0, 1);
+	gl_Position = vec4((i_pos + pc.translate) * pc.scale - 1.0, 0, 1);
 }
 @
 

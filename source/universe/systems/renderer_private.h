@@ -6,6 +6,7 @@
 #include "../../graphics/renderpass.h"
 #include "../../graphics/shader.h"
 #include "../../graphics/extension.h"
+#include "../../graphics/canvas.h"
 
 namespace flame
 {
@@ -57,8 +58,12 @@ namespace flame
 		vec2 hud_size;
 		vec2 hud_pos;
 		cvec4 hud_col;
+		vec2 hud_pivot;
 		vec2 hud_cursor;
-		float hud_cursor_start_x;
+		float hud_cursor_x0;
+		float hud_max_w;
+		graphics::Canvas::DrawVert* hud_verts;
+		uint hud_translate_cmd_idx;
 
 		sRendererPrivate();
 		sRendererPrivate(graphics::WindowPtr w);
@@ -148,8 +153,9 @@ namespace flame
 		cElementPtr pick_up_2d(const uvec2& screen_pos) override;
 		std::vector<vec3> transform_feedback(cNodePtr node) override;
 
-		void begin_hud(const vec2& pos, const vec2& size, const cvec4& col) override;
+		void begin_hud(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot) override;
 		void end_hud() override;
+		void hud_text(std::wstring_view label, const cvec4& col) override;
 		bool hud_button(std::wstring_view label) override;
 
 		void send_debug_string(const std::string& str) override;
