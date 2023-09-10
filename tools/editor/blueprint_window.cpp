@@ -555,22 +555,18 @@ void BlueprintView::on_draw()
 				{
 					auto& var = blueprint->variables[selected_variable];
 
+					auto name = var.name;
 					ImGui::SetNextItemWidth(200.f);
-					ImGui::InputText("Name", &var.name);
+					ImGui::InputText("Name", &name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-						auto name = var.name;
-						auto type = var.type;
-						blueprint->remove_variable(nullptr, var.name_hash);
-						blueprint->add_variable(nullptr, name, type);
-						selected_variable = -1;
+						blueprint->alter_variable(nullptr, var.name_hash, name, var.type);
 						unsaved = true;
 					}
 					ImGui::SetNextItemWidth(200.f);
 					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
 					{
-						auto type = show_types_menu();
-						if (type)
+						if (auto type = show_types_menu(); type)
 						{
 							auto name = var.name;
 							blueprint->remove_variable(nullptr, var.name_hash);
@@ -818,6 +814,7 @@ void BlueprintView::on_draw()
 						blueprint->remove_group_input(group, var.name_hash);
 						blueprint->add_group_input(group, name, type);
 						selected_input = -1;
+						unsaved = true;
 					}
 					ImGui::SetNextItemWidth(200.f);
 					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
@@ -829,6 +826,7 @@ void BlueprintView::on_draw()
 							blueprint->remove_group_input(group, var.name_hash);
 							blueprint->add_group_input(group, name, type);
 							selected_input = -1;
+							unsaved = true;
 						}
 
 						ImGui::EndCombo();
@@ -853,19 +851,28 @@ void BlueprintView::on_draw()
 				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
 				{
 					if (selected_input != -1)
+					{
 						blueprint->remove_group_input(group, group->inputs[selected_input].name_hash);
+						unsaved = true;
+					}
 				}
 				ImGui::SameLine();
 				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
 				{
 					if (selected_input > 0)
+					{
 						std::swap(group->inputs[selected_input], group->inputs[selected_input - 1]);
+						unsaved = true;
+					}
 				}
 				ImGui::SameLine();
 				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
 				{
 					if (selected_input != -1 && selected_input < group->inputs.size() - 1)
+					{
 						std::swap(group->inputs[selected_input], group->inputs[selected_input + 1]);
+						unsaved = true;
+					}
 				}
 				ImGui::PopID();
 
@@ -902,6 +909,7 @@ void BlueprintView::on_draw()
 						blueprint->remove_group_output(group, var.name_hash);
 						blueprint->add_group_output(group, name, type);
 						selected_output = -1;
+						unsaved = true;
 					}
 					ImGui::SetNextItemWidth(200.f);
 					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
@@ -913,6 +921,7 @@ void BlueprintView::on_draw()
 							blueprint->remove_group_output(group, var.name_hash);
 							blueprint->add_group_output(group, name, type);
 							selected_output = -1;
+							unsaved = true;
 						}
 
 						ImGui::EndCombo();
@@ -937,19 +946,28 @@ void BlueprintView::on_draw()
 				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
 				{
 					if (selected_output != -1)
+					{
 						blueprint->remove_group_output(group, group->outputs[selected_output].name_hash);
+						unsaved = true;
+					}
 				}
 				ImGui::SameLine();
 				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
 				{
 					if (selected_output > 0)
+					{
 						std::swap(group->outputs[selected_output], group->outputs[selected_output - 1]);
+						unsaved = true;
+					}
 				}
 				ImGui::SameLine();
 				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
 				{
 					if (selected_output != -1 && selected_output < group->outputs.size() - 1)
+					{
 						std::swap(group->outputs[selected_output], group->outputs[selected_output + 1]);
+						unsaved = true;
+					}
 				}
 				ImGui::PopID();
 
@@ -1575,7 +1593,7 @@ void BlueprintView::on_draw()
 
 									if (is_vector(v.type->tag))
 									{
-										if (show_node_template("Size", {}, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {TypeInfo::get<uint>()}}}, slot_name))
+										if (show_node_template("Size", {}, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {TypeInfo::get<uint>()}} }, slot_name))
 										{
 											auto n = blueprint->add_variable_node(group, nullptr, v.name_hash, "array_size"_h);
 											n->position = open_popup_pos;
@@ -1588,7 +1606,43 @@ void BlueprintView::on_draw()
 
 											unsaved = true;
 										}
-										if (show_node_template("Add", { BlueprintSlotDesc{.name = "Item", .name_hash = "Item"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {TypeInfo::get<uint>()}} }, {}, slot_name))
+										if (show_node_template("Get Item", 
+											{ BlueprintSlotDesc{.name = "Index", .name_hash = "Index"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {TypeInfo::get<uint>()}} }, 
+											{ BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {v.type->get_wrapped()}} }, slot_name))
+										{
+											auto n = blueprint->add_variable_node(group, nullptr, v.name_hash, "array_get_item"_h);
+											n->position = open_popup_pos;
+											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+											if (new_node_link_slot)
+											{
+												if (new_node_link_slot->flags & BlueprintSlotFlagOutput)
+													blueprint->add_link(new_node_link_slot, n->inputs[1].get());
+												else
+													blueprint->add_link(n->outputs[0].get(), new_node_link_slot);
+											}
+
+											process_object_moved(n);
+
+											unsaved = true;
+										}
+										if (show_node_template("Set Item",
+											{ BlueprintSlotDesc{.name = "Index", .name_hash = "Index"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {TypeInfo::get<uint>()}},
+											  BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {v.type->get_wrapped()}} },
+											{}, slot_name))
+										{
+											auto n = blueprint->add_variable_node(group, nullptr, v.name_hash, "array_set_item"_h);
+											n->position = open_popup_pos;
+											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+											if (new_node_link_slot)
+												blueprint->add_link(new_node_link_slot, n->find_input(slot_name));
+
+											process_object_moved(n);
+
+											unsaved = true;
+										}
+										if (show_node_template("Add Item", { BlueprintSlotDesc{.name = "Item", .name_hash = "Item"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {v.type->get_wrapped()}}}, {}, slot_name))
 										{
 											auto n = blueprint->add_variable_node(group, nullptr, v.name_hash, "array_add_item"_h);
 											n->position = open_popup_pos;
@@ -1628,6 +1682,28 @@ void BlueprintView::on_draw()
 						};
 						show_variables(blueprint->variables);
 						show_variables(group->variables);
+						ImGui::EndMenu();
+					}
+					if (ImGui::BeginMenu("Call"))
+					{
+						for (auto& g : blueprint->groups)
+						{
+							uint slot_name = 0;
+							if (g.get() == group || 
+								g->name_hash == "start"_h || 
+								g->name_hash == "update"_h)
+								continue;
+							if (show_node_template(g->name, {}, {}, slot_name))
+							{
+								auto n = blueprint->add_call_node(group, nullptr, g->name_hash);
+								n->position = open_popup_pos;
+								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+								process_object_moved(n);
+
+								unsaved = true;
+							}
+						}
 						ImGui::EndMenu();
 					}
 					show_node_library_templates(standard_library);

@@ -3334,6 +3334,10 @@ namespace flame
 			new(p) std::vector<char>();
 			return p;
 		}
+		void copy(void* dst, const void* src) const override
+		{
+			copy_vector(dst, src, ti);
+		}
 
 		TypeInfo* get_wrapped() const override
 		{

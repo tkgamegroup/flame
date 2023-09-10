@@ -32,6 +32,28 @@ namespace flame
 			nullptr
 		);
 
+		library->add_template("String To Int", "",
+			{
+				{
+					.name = "String",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<int>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(int*)outputs[0].data = s2t<int>(*(std::string*)inputs[0].data);
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
 		library->add_template("To WString", "",
 			{
 				{

@@ -38,11 +38,13 @@ namespace flame
 
 		void*					add_variable(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;
 		void					remove_variable(BlueprintGroupPtr group, uint name) override;
+		void					alter_variable(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* type) override;
 		BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintBlockPtr block, const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) override;
 		BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint variable_name, uint type) override;
+		BlueprintNodePtr		add_call_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint group_name) override;
 		void					remove_node(BlueprintNodePtr node) override;
 		void					set_node_block(BlueprintNodePtr node, BlueprintBlockPtr new_block) override;
 		void					set_input_type(BlueprintSlotPtr slot, TypeInfo* type) override;

@@ -386,13 +386,16 @@ namespace flame
 		}
 
 		virtual ~Blueprint() {}
+
 		virtual void*					add_variable(BlueprintGroupPtr group /* or null for blueprint variable */, const std::string& name, TypeInfo* type) = 0; // return: the data of the variable
 		virtual void					remove_variable(BlueprintGroupPtr group /* or null for blueprint variable */, uint name) = 0;
+		virtual void					alter_variable(BlueprintGroupPtr group /* or null for blueprint variable */, uint old_name, const std::string& new_name = "", TypeInfo* type = nullptr) = 0;
 		virtual BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintBlockPtr block, const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
 		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint variable_name, uint type = "get"_h) = 0;
+		virtual BlueprintNodePtr		add_call_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint group_name) = 0; // add a node that will call another group in this blueprint
 		virtual void					remove_node(BlueprintNodePtr node) = 0;
 		virtual void					set_node_block(BlueprintNodePtr node, BlueprintBlockPtr new_block) = 0;
 		virtual void					set_input_type(BlueprintSlotPtr slot, TypeInfo* type) = 0;
@@ -543,6 +546,7 @@ namespace flame
 
 		virtual ~BlueprintInstance() {}
 
+
 		inline Group* get_group(uint name) const
 		{
 			auto it = groups.find(name);
@@ -569,6 +573,7 @@ namespace flame
 		struct Create
 		{
 			virtual BlueprintInstancePtr operator()(BlueprintPtr blueprint) = 0;
+			virtual BlueprintInstancePtr operator()(BlueprintInstancePtr oth) = 0; // copies datas
 		};
 		// Reflect static
 		FLAME_FOUNDATION_API static Create& create;
