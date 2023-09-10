@@ -295,7 +295,7 @@ void BlueprintView::on_draw()
 					{
 						if (!type_filter.empty())
 						{
-							if (ei.second.name.find(type_filter) == std::string::npos)
+							if (!SUS::find_case_insensitive(ei.second.name, type_filter))
 								continue;
 						}
 						if (ImGui::Selectable(ei.second.name.c_str()))
@@ -309,7 +309,7 @@ void BlueprintView::on_draw()
 					{
 						if (!type_filter.empty())
 						{
-							if (bt->name.find(type_filter) == std::string::npos)
+							if (!SUS::find_case_insensitive(bt->name, type_filter))
 								continue;
 						}
 						if (ImGui::Selectable(bt->name.c_str()))
@@ -323,7 +323,7 @@ void BlueprintView::on_draw()
 					{
 						if (!type_filter.empty())
 						{
-							if (ui.second.name.find(type_filter) == std::string::npos)
+							if (!SUS::find_case_insensitive(ui.second.name, type_filter))
 								continue;
 						}
 						if (ImGui::Selectable(ui.second.name.c_str()))
@@ -339,7 +339,7 @@ void BlueprintView::on_draw()
 						{
 							if (!type_filter.empty())
 							{
-								if (ei.second.name.find(type_filter) == std::string::npos)
+								if (!SUS::find_case_insensitive(ei.second.name, type_filter))
 									continue;
 							}
 							if (ImGui::Selectable(ei.second.name.c_str()))
@@ -353,7 +353,7 @@ void BlueprintView::on_draw()
 						{
 							if (!type_filter.empty())
 							{
-								if (bt->name.find(type_filter) == std::string::npos)
+								if (!SUS::find_case_insensitive(bt->name, type_filter))
 									continue;
 							}
 							if (ImGui::Selectable(bt->name.c_str()))
@@ -367,7 +367,7 @@ void BlueprintView::on_draw()
 						{
 							if (!type_filter.empty())
 							{
-								if (ui.second.name.find(type_filter) == std::string::npos)
+								if (!SUS::find_case_insensitive(ui.second.name, type_filter))
 									continue;
 							}
 							if (ImGui::Selectable(ui.second.name.c_str()))
@@ -385,7 +385,7 @@ void BlueprintView::on_draw()
 						{
 							if (!type_filter.empty())
 							{
-								if (ei.second.name.find(type_filter) == std::string::npos)
+								if (!SUS::find_case_insensitive(ei.second.name, type_filter))
 									continue;
 							}
 							if (ImGui::Selectable(ei.second.name.c_str()))
@@ -399,7 +399,7 @@ void BlueprintView::on_draw()
 						{
 							if (!type_filter.empty())
 							{
-								if (bt->name.find(type_filter) == std::string::npos)
+								if (!SUS::find_case_insensitive(bt->name, type_filter))
 									continue;
 							}
 							if (ImGui::Selectable(bt->name.c_str()))
@@ -413,7 +413,7 @@ void BlueprintView::on_draw()
 						{
 							if (!type_filter.empty())
 							{
-								if (ui.second.name.find(type_filter) == std::string::npos)
+								if (!SUS::find_case_insensitive(ui.second.name, type_filter))
 									continue;
 							}
 							if (ImGui::Selectable(ui.second.name.c_str()))
@@ -427,7 +427,7 @@ void BlueprintView::on_draw()
 						{
 							if (!type_filter.empty())
 							{
-								if (ui.second.name.find(type_filter) == std::string::npos)
+								if (!SUS::find_case_insensitive(ui.second.name, type_filter))
 									continue;
 							}
 							if (ImGui::Selectable(ui.second.name.c_str()))
@@ -1480,7 +1480,7 @@ void BlueprintView::on_draw()
 					{
 						if (!filter.empty())
 						{
-							if (name.find(filter) == std::string::npos)
+							if (!SUS::find_case_insensitive(name, filter))
 								return false;
 						}
 						slot_name = 0;
@@ -1557,31 +1557,72 @@ void BlueprintView::on_draw()
 							for (auto& v : variables)
 							{
 								uint slot_name = 0;
-								if (show_node_template(v.name, {}, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {v.type} } }, slot_name))
+								if (ImGui::BeginMenu(v.name.c_str()))
 								{
-									auto n = blueprint->add_variable_node(group, nullptr, v.name_hash);
-									n->position = open_popup_pos;
-									ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+									if (show_node_template("Get", {}, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {v.type}} }, slot_name))
+									{
+										auto n = blueprint->add_variable_node(group, nullptr, v.name_hash);
+										n->position = open_popup_pos;
+										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
-									if (new_node_link_slot)
-										blueprint->add_link(n->outputs.front().get(), new_node_link_slot);
+										if (new_node_link_slot)
+											blueprint->add_link(n->outputs.front().get(), new_node_link_slot);
 
-									process_object_moved(n);
+										process_object_moved(n);
 
-									unsaved = true;
-								}
-								if (show_node_template("Set " + v.name, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {v.type}}}, {}, slot_name))
-								{
-									auto n = blueprint->add_variable_node(group, nullptr, v.name_hash, true);
-									n->position = open_popup_pos;
-									ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+										unsaved = true;
+									}
 
-									if (new_node_link_slot)
-										blueprint->add_link(new_node_link_slot, n->inputs.front().get());
+									if (is_vector(v.type->tag))
+									{
+										if (show_node_template("Size", {}, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {TypeInfo::get<uint>()}}}, slot_name))
+										{
+											auto n = blueprint->add_variable_node(group, nullptr, v.name_hash, "array_size"_h);
+											n->position = open_popup_pos;
+											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
-									process_object_moved(n);
+											if (new_node_link_slot)
+												blueprint->add_link(n->outputs.front().get(), new_node_link_slot);
 
-									unsaved = true;
+											process_object_moved(n);
+
+											unsaved = true;
+										}
+										if (show_node_template("Add", { BlueprintSlotDesc{.name = "Item", .name_hash = "Item"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {TypeInfo::get<uint>()}} }, {}, slot_name))
+										{
+											auto n = blueprint->add_variable_node(group, nullptr, v.name_hash, "array_add_item"_h);
+											n->position = open_popup_pos;
+											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+											if (new_node_link_slot)
+												blueprint->add_link(new_node_link_slot, n->inputs[1].get());
+
+											process_object_moved(n);
+
+											unsaved = true;
+										}
+									}
+									else
+									{
+										if (!v.name.starts_with("loop_index"))
+										{
+											if (show_node_template("Set", { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {v.type}} }, {}, slot_name))
+											{
+												auto n = blueprint->add_variable_node(group, nullptr, v.name_hash, "set"_h);
+												n->position = open_popup_pos;
+												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+												if (new_node_link_slot)
+													blueprint->add_link(new_node_link_slot, n->inputs.front().get());
+
+												process_object_moved(n);
+
+												unsaved = true;
+											}
+										}
+									}
+
+									ImGui::EndMenu();
 								}
 							}
 						};
