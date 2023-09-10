@@ -190,7 +190,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				},
 				{
-					.name = "Postiion",
+					.name = "Position",
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},

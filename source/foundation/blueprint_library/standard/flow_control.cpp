@@ -59,5 +59,63 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
+		library->add_template("Range Branch 2", "",
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "Stop 1",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "Stop 2",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "Branch 1",
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+				},
+				{
+					.name = "Branch 2",
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+				},
+				{
+					.name = "Else",
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto v = *(float*)inputs[0].data;
+				auto stop1 = *(float*)inputs[1].data;
+				auto stop2 = *(float*)inputs[2].data;
+				if (v < stop1)
+				{
+					(*(BlueprintSignal*)outputs[0].data).v = 1;
+					(*(BlueprintSignal*)outputs[1].data).v = 0;
+					(*(BlueprintSignal*)outputs[2].data).v = 0;
+				}
+				else if (v < stop2)
+				{
+					(*(BlueprintSignal*)outputs[0].data).v = 0;
+					(*(BlueprintSignal*)outputs[1].data).v = 1;
+					(*(BlueprintSignal*)outputs[2].data).v = 0;
+				}
+				else
+				{
+					(*(BlueprintSignal*)outputs[0].data).v = 0;
+					(*(BlueprintSignal*)outputs[1].data).v = 0;
+					(*(BlueprintSignal*)outputs[2].data).v = 1;
+				}
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
 	}
 }

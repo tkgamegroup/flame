@@ -36,7 +36,7 @@ namespace flame
 			{
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				auto& nodes = *(std::vector<EntityPtr>*)inputs[0].data;
+				auto nodes = *(std::vector<EntityPtr>*)inputs[0].data;
 				auto agent_radius = *(float*)inputs[1].data;
 				auto agent_height = *(float*)inputs[2].data;
 				auto walkable_climb = *(float*)inputs[3].data;

@@ -226,11 +226,6 @@ namespace flame
 				o->type = o->allowed_types.front();
 				ret->outputs.emplace_back(o);
 			}
-			ret->function = [](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				auto& attr = *(BlueprintAttribute*)inputs[0].data;
-				if (attr.data)
-					attr.type->copy(outputs[0].data, attr.data);
-			};
 		}
 		else
 		{
@@ -1122,7 +1117,7 @@ namespace flame
 												i->type->unserialize(n_input.attribute("value").value(), i->data);
 											}
 											else
-												printf("cannot find input: %s\n", name);
+												printf("add node: cannot find input: %s\n", name);
 										}
 										object_map[n_node.attribute("object_id").as_uint()] = n;
 										n->position = s2t<2, float>(n_node.attribute("position").value());
@@ -1147,7 +1142,7 @@ namespace flame
 								from_object = it->second;
 							else
 							{
-								printf("cannot find object: %u\n", id);
+								printf("link: cannot find object: %u\n", id);
 								continue;
 							}
 						}
@@ -1157,7 +1152,7 @@ namespace flame
 								to_object = it->second;
 							else
 							{
-								printf("cannot find object: %u\n", id);
+								printf("link: cannot find object: %u\n", id);
 								continue;
 							}
 						}
@@ -1166,7 +1161,7 @@ namespace flame
 							from_slot = from_object.find_output(name);
 							if (!from_slot)
 							{
-								printf("cannot find output: %u\n", name);
+								printf("link: cannot find output: %u\n", name);
 								continue;
 							}
 						}
@@ -1175,7 +1170,7 @@ namespace flame
 							to_slot = to_object.find_input(name);
 							if (!to_slot)
 							{
-								printf("cannot find input: %u\n", name);
+								printf("link: cannot find input: %u\n", name);
 								continue;
 							}
 						}
@@ -1454,18 +1449,8 @@ namespace flame
 							{
 								Group::Data data;
 								data.changed_frame = frame;
-								data.attribute.type = TypeInfo::get<BlueprintAttribute>();
-								data.attribute.data = data.attribute.type->create();
-								memcpy(data.attribute.data, var, sizeof(BlueprintAttribute));
-								slots_data.emplace(n->inputs[0]->object_id, data);
-
-								obj.inputs.push_back(data.attribute);
-							}
-							{
-								Group::Data data;
-								data.changed_frame = frame;
 								data.attribute.type = var->type;
-								data.attribute.data = var->type->create();
+								data.attribute.data = var->data;
 								slots_data.emplace(n->outputs[0]->object_id, data);
 
 								obj.outputs.push_back(data.attribute);
