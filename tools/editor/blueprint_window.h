@@ -18,6 +18,7 @@ struct BlueprintView : View
 	std::string group_name = "main";
 	uint group_name_hash = "main"_h;
 	uint load_frame = 0;
+	BlueprintGroupPtr last_group = nullptr;
 	bool unsaved = false;
 
 	BlueprintView();

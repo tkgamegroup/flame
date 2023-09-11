@@ -991,7 +991,6 @@ void BlueprintView::on_draw()
 			ImGui::TableSetColumnIndex(1);
 			ImGui::BeginChild("main_area", ImVec2(0, -2));
 			{
-				static BlueprintGroupPtr last_group = nullptr;
 				if (group != last_group)
 				{
 					for (auto& b : group->blocks)

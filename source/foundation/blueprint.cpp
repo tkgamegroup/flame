@@ -1285,8 +1285,8 @@ namespace flame
 		std::vector<std::pair<BlueprintGroupPtr, int>> sorted_groups(groups.size());
 		for (auto i = 0; i < groups.size(); i++)
 			sorted_groups[i] = std::make_pair(groups[i].get(), -1);
-		std::function<void(uint)> rank_group;
-		rank_group = [&](uint idx) {
+		std::function<void(uint)> get_group_rank;
+		get_group_rank = [&](uint idx) {
 			if (sorted_groups[idx].second == -1)
 			{
 				int rank = 0;
@@ -1299,7 +1299,7 @@ namespace flame
 						{
 							if (sorted_groups[i].first->name_hash == name)
 							{
-								rank_group(i);
+								get_group_rank(i);
 								rank = max(rank, sorted_groups[i].second + 1);
 								break;
 							}
@@ -1310,8 +1310,8 @@ namespace flame
 			}
 		};
 		for (auto i = 0; i < sorted_groups.size(); i++)
-			rank_group(i);
-		std::sort(sorted_groups.begin(), sorted_groups.end(), [](const auto a, const auto b) {
+			get_group_rank(i);
+		std::sort(sorted_groups.begin(), sorted_groups.end(), [](const auto& a, const auto& b) {
 			return a.second < b.second;
 		});
 		for (auto& g : sorted_groups)
@@ -1348,25 +1348,42 @@ namespace flame
 			if (g.first->blocks.size() > 1)
 			{
 				auto n_blocks = n_group.append_child("blocks");
-				std::vector<BlueprintBlockPtr> sorted_blocks(g.first->blocks.size());
+				std::vector<std::pair<BlueprintBlockPtr, int>> sorted_blocks(g.first->blocks.size() - 1);
 				for (auto i = 0; i < sorted_blocks.size(); i++)
-					sorted_blocks[i] = g.first->blocks[i].get();
-				std::sort(sorted_blocks.begin(), sorted_blocks.end(), [](const auto a, const auto b) {
-					if (a->parent == b)
-						return false;
-					return a->object_id < b->object_id;
-				});
-				for (auto b : sorted_blocks)
-				{
-					if (b->object_id != root_block_id)
+					sorted_blocks[i] = std::make_pair(g.first->blocks[i + 1].get(), -1);
+				std::function<void(uint)> get_block_rank;
+				get_block_rank = [&](uint idx) {
+					if (sorted_blocks[idx].second == -1)
 					{
-						auto n_block = n_blocks.append_child("block");
-						n_block.append_attribute("object_id").set_value(b->object_id);
-						if (b->parent->object_id != root_block_id)
-							n_block.append_attribute("parent_id").set_value(b->parent->object_id);
-						n_block.append_attribute("position").set_value(str(b->position).c_str());
-						n_block.append_attribute("rect").set_value(str((vec4)b->rect).c_str());
+						int rank = 0;
+						if (sorted_blocks[idx].first->parent)
+						{
+							for (auto i = 0; i < sorted_blocks.size(); i++)
+							{
+								if (sorted_blocks[i].first == sorted_blocks[idx].first->parent)
+								{
+									get_block_rank(i);
+									rank = max(rank, sorted_blocks[i].second + 1);
+									break;
+								}
+							}
+						}
+						sorted_blocks[idx].second = rank;
 					}
+				};
+				for (auto i = 0; i < sorted_blocks.size(); i++)
+					get_block_rank(i);
+				std::sort(sorted_blocks.begin(), sorted_blocks.end(), [](const auto& a, const auto& b) {
+					return a.second < b.second;
+				});
+				for (auto& b : sorted_blocks)
+				{
+					auto n_block = n_blocks.append_child("block");
+					n_block.append_attribute("object_id").set_value(b.first->object_id);
+					if (b.first->parent->object_id != root_block_id)
+						n_block.append_attribute("parent_id").set_value(b.first->parent->object_id);
+					n_block.append_attribute("position").set_value(str(b.first->position).c_str());
+					n_block.append_attribute("rect").set_value(str((vec4)b.first->rect).c_str());
 				}
 			}
 			auto n_nodes = n_group.append_child("nodes");
