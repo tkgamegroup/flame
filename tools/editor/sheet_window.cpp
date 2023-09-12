@@ -41,8 +41,12 @@ void SheetView::on_draw()
 			});
 			for (auto i = 0; i < sheet->header.size(); i++)
 			{
-				if (i != column_idx_and_offsets[i].first)
-					sheet->reposition_columns(i, column_idx_and_offsets[i].first);
+				auto target_idx = column_idx_and_offsets[i].first;
+				if (i != target_idx)
+				{
+					sheet->reposition_columns(i, target_idx);
+					std::swap(column_idx_and_offsets[i], column_idx_and_offsets[target_idx]);
+				}
 			}
 			sheet->save();
 		}
