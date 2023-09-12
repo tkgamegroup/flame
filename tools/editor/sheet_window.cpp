@@ -21,7 +21,7 @@ void SheetView::on_draw()
 {
 	bool opened = true;
 	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
-	ImGui::Begin(name.c_str(), &opened);
+	ImGui::Begin(name.c_str(), &opened, unsaved ? ImGuiWindowFlags_UnsavedDocument : 0);
 
 	if (!sheet)
 	{
@@ -51,15 +51,16 @@ void SheetView::on_draw()
 			sheet->save();
 		}
 		column_offsets.resize(sheet->header.size());
-		if (sheet->header.size() > 0 && sheet->header.size() <= 64)
+		if (sheet->header.size() > 0 && sheet->header.size() < 64)
 		{
-			if (ImGui::BeginTable("##main", sheet->header.size(), ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Borders, ImVec2(-100.f, 0.f)))
+			if (ImGui::BeginTable("##main", sheet->header.size() + 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Borders, ImVec2(-100.f, 0.f)))
 			{
 				for (auto i = 0; i < sheet->header.size(); i++)
 				{
 					auto& column = sheet->header[i];
 					ImGui::TableSetupColumn(column.name.c_str(), ImGuiTableColumnFlags_WidthStretch, 200.f);
 				}
+				ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_NoReorder, 50.f);
 
 				ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
 				for (auto i = 0; i < sheet->header.size(); i++)
@@ -76,6 +77,7 @@ void SheetView::on_draw()
 					{
 						sheet->remove_column(i);
 						unsaved = true;
+						ImGui::PopID();
 						break;
 					}
 					ImGui::InputText("##Name", &column.name);
@@ -153,12 +155,29 @@ void SheetView::on_draw()
 
 						ImGui::PopID();
 					}
+
+					{
+						ImGui::TableSetColumnIndex(sheet->header.size());
+						ImGui::PushID(sheet->header.size());
+						if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
+						{
+							sheet->remove_row(i);
+							unsaved = true;
+							ImGui::PopID(); // column
+
+							ImGui::PopID(); // row
+							break;
+						}
+						ImGui::PopID();
+					}
+
 					ImGui::PopID();
 				}
-
 				ImGui::EndTable();
 			}
 		}
+		else
+			ImGui::TextUnformatted("Empty Sheet");
 		ImGui::SameLine();
 		ImGui::BeginGroup();
 		if (ImGui::Button("New Column"))
