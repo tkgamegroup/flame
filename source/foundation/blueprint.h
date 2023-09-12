@@ -475,6 +475,14 @@ namespace flame
 			uint updated_frame;
 		};
 
+		struct ExecutingBlock
+		{
+			Object* block_object;
+			uint block_id;
+			uint child_index;
+			uint executed_times;
+		};
+
 		struct Group
 		{
 			struct Data
@@ -494,6 +502,8 @@ namespace flame
 			Object*										output_object = nullptr;
 			std::unordered_map<uint, BlueprintAttribute> variables; // key: variable name hash
 
+			std::vector<ExecutingBlock> executing_stack;
+
 			uint structure_updated_frame = 0;
 			uint data_updated_frame = 0;
 
@@ -511,21 +521,20 @@ namespace flame
 				if (auto it = variables.find(name); it != variables.end())
 					*(T*)it->second.data = v;
 			}
-		};
 
-		struct ExecutingBlock
-		{
-			Object* block_object;
-			uint child_index;
-			uint executed_times;
+			inline Object* executing_object() const
+			{
+				if (executing_stack.empty())
+					return nullptr;
+				auto& current_block = executing_stack.back();
+				return &current_block.block_object->children[current_block.child_index];
+			}
 		};
 
 		BlueprintPtr blueprint;
 
 		std::unordered_map<uint, BlueprintAttribute> variables; // key: variable name hash
 		std::unordered_map<uint, Group> groups; // key: group name hash
-		Group*						executing_group = nullptr;
-		std::vector<ExecutingBlock> executing_stack;
 
 		uint built_frame;
 
@@ -555,25 +564,16 @@ namespace flame
 			return (Group*)&it->second;
 		}
 
-		inline Object* executing_object() const
-		{
-			if (executing_stack.empty())
-				return nullptr;
-			auto& current_block = executing_stack.back();
-			return &current_block.block_object->children[current_block.child_index];
-		}
-
 		virtual void build() = 0;
 		virtual void prepare_executing(Group* group) = 0;
-		virtual void run() = 0;
-		virtual void step() = 0;
-		virtual void stop() = 0;
+		virtual void run(Group* group) = 0;
+		virtual void step(Group* group) = 0;
+		virtual void stop(Group* group) = 0;
 		virtual void call(uint group_name, void** inputs, void** outputs) = 0;
 
 		struct Create
 		{
 			virtual BlueprintInstancePtr operator()(BlueprintPtr blueprint) = 0;
-			virtual BlueprintInstancePtr operator()(BlueprintInstancePtr oth) = 0; // copies datas
 		};
 		// Reflect static
 		FLAME_FOUNDATION_API static Create& create;
@@ -583,7 +583,7 @@ namespace flame
 	{
 		std::vector<std::pair<BlueprintNodePtr, bool>> break_nodes;
 
-		BlueprintInstancePtr debugging = nullptr;
+		BlueprintInstance::Group* debugging = nullptr;
 
 		virtual ~BlueprintDebugger() {}
 

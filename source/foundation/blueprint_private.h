@@ -77,9 +77,9 @@ namespace flame
 
 		void build() override;
 		void prepare_executing(Group* group) override;
-		void run() override;
-		void step() override;
-		void stop() override;
+		void run(Group* group) override;
+		void step(Group* group) override;
+		void stop(Group* group) override;
 		void call(uint group_name, void** inputs, void** outputs) override;
 	};
 

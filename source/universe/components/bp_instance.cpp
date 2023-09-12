@@ -45,7 +45,7 @@ namespace flame
 			if (auto g = bp_ins->get_group("start"_h))
 			{
 				bp_ins->prepare_executing(g);
-				bp_ins->run();
+				bp_ins->run(g);
 			}
 		}
 	}
@@ -57,7 +57,7 @@ namespace flame
 			if (auto g = bp_ins->get_group("update"_h); g)
 			{
 				bp_ins->prepare_executing(g);
-				bp_ins->run();
+				bp_ins->run(g);
 			}
 		}
 	}

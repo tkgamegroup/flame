@@ -688,10 +688,11 @@ void BlueprintView::on_draw()
 					blueprint_instance->build();
 			}
 
-			auto debugging_instance = blueprint_window.debugger->debugging &&
-				blueprint_window.debugger->debugging->blueprint == blueprint ?
+			auto debugging_group = blueprint_window.debugger->debugging &&
+				blueprint_window.debugger->debugging->instance->blueprint == blueprint &&
+				blueprint_window.debugger->debugging->name == group_name_hash ?
 				blueprint_window.debugger->debugging : nullptr;
-			auto& instance_group = debugging_instance ? debugging_instance->groups[group_name_hash] : blueprint_instance->groups[group_name_hash];
+			auto& instance_group = debugging_group ? *debugging_group : blueprint_instance->groups[group_name_hash];
 
 			if (ImGui::CollapsingHeader("Group Variables:"))
 			{
@@ -974,7 +975,7 @@ void BlueprintView::on_draw()
 				if (blueprint_instance->built_frame < blueprint->dirty_frame)
 					blueprint_instance->build();
 			}
-			if (blueprint_window.debugger->debugging == blueprint_instance)
+			if (debugging_group)
 			{
 				if (ImGui::CollapsingHeader("Group Slot Datas:"))
 				{
@@ -1011,7 +1012,7 @@ void BlueprintView::on_draw()
 					blueprint_window.debugger->debugging = nullptr;
 
 					BlueprintNodePtr break_node = nullptr;
-					if (auto o = debugging_instance->executing_object(); o && o->original.type == BlueprintObjectNode)
+					if (auto o = debugging_group->executing_object(); o && o->original.type == BlueprintObjectNode)
 					{
 						if (blueprint_window.debugger->has_break_node(o->original.p.node))
 						{
@@ -1019,46 +1020,48 @@ void BlueprintView::on_draw()
 							blueprint_window.debugger->remove_break_node(break_node);
 						}
 					}
-					debugging_instance->step();
+					debugging_group->instance->step(debugging_group);
 					if (break_node)
 						blueprint_window.debugger->add_break_node(break_node);
 				};
 
 				if (ImGui::Button("Run"))
 				{
-					if (!debugging_instance)
+					if (!debugging_group)
 					{
-						blueprint_instance->prepare_executing(blueprint_instance->get_group(group_name_hash));
-						blueprint_instance->run();
+						auto g = blueprint_instance->get_group(group_name_hash);
+						blueprint_instance->prepare_executing(g);
+						blueprint_instance->run(g);
 					}
 					else
 					{
 						step();
-						debugging_instance->run();
+						debugging_group->instance->step(debugging_group);
 					}
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Step"))
 				{
-					if (!debugging_instance)
+					if (!debugging_group)
 					{
-						blueprint_instance->prepare_executing(blueprint_instance->get_group(group_name_hash));
-						blueprint_window.debugger->debugging = blueprint_instance;
+						auto g = blueprint_instance->get_group(group_name_hash);
+						blueprint_instance->prepare_executing(g);
+						blueprint_window.debugger->debugging = g;
 					}
 					else
 					{
 						step();
-						if (!debugging_instance->executing_stack.empty())
-							blueprint_window.debugger->debugging = debugging_instance;
+						if (!debugging_group->executing_stack.empty())
+							blueprint_window.debugger->debugging = debugging_group;
 					}
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Stop"))
 				{
-					if (blueprint_window.debugger->debugging == blueprint_instance)
+					if (debugging_group)
 					{
 						blueprint_window.debugger->debugging = nullptr;
-						blueprint_instance->stop();
+						debugging_group->instance->stop(debugging_group);
 					}
 				}
 
@@ -1071,11 +1074,11 @@ void BlueprintView::on_draw()
 					return std::format("Value: {}", arg.type->serialize(arg.data));
 				};
 
-				if (debugging_instance)
+				if (debugging_group)
 					ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_Bg, ImColor(100, 80, 60, 200));
 				ax::NodeEditor::Begin("node_editor");
 
-				auto executing_object = debugging_instance ? debugging_instance->executing_object() : blueprint_instance->executing_object();
+				auto executing_object = debugging_group ? debugging_group->executing_object() : nullptr;
 					
 				for (auto& b : group->blocks)
 				{
@@ -1144,7 +1147,7 @@ void BlueprintView::on_draw()
 						ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
 						ImGui::Text("%s %s", graphics::font_icon_str("play"_h).c_str(), input->name_hash == "Execute"_h ? "" : input->name.c_str());
 						ax::NodeEditor::EndPin();
-						if (debugging_instance)
+						if (debugging_group)
 						{
 							if (ImGui::IsItemHovered())
 							{
@@ -1213,7 +1216,7 @@ void BlueprintView::on_draw()
 						ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
 						ImGui::Text("%s %s", output->name_hash == "Execute"_h ? "" : output->name.c_str(), graphics::font_icon_str("play"_h).c_str());
 						ax::NodeEditor::EndPin();
-						if (debugging_instance)
+						if (debugging_group)
 						{
 							if (ImGui::IsItemHovered())
 							{
@@ -1725,7 +1728,7 @@ void BlueprintView::on_draw()
 				ax::NodeEditor::Resume();
 
 				ax::NodeEditor::End();
-				if (debugging_instance)
+				if (debugging_group)
 					ax::NodeEditor::PopStyleColor();
 
 				if (!tooltip.empty())

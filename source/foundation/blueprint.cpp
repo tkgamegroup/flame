@@ -658,26 +658,26 @@ namespace flame
 			auto& pau = *(PointerAndUint*)inputs[0].data;
 			if (pau.p && pau.u)
 			{
-				auto ins = BlueprintInstance::create((BlueprintInstancePtr)pau.p);
-				auto g = ins->get_group(pau.u);
-				if (g)
+				if (auto ins = (BlueprintInstancePtr)pau.p; ins)
 				{
-					std::vector<voidptr> input_args;
-					std::vector<voidptr> output_args;
-					if (g->input_object)
+					if (auto g = ins->get_group(pau.u); g)
 					{
-						auto n = g->input_object->outputs.size();
-						for (auto i = 0; i < n; i++)
-							input_args.push_back(inputs[i + 1].data);
+						std::vector<voidptr> input_args;
+						std::vector<voidptr> output_args;
+						if (g->input_object)
+						{
+							auto n = g->input_object->outputs.size();
+							for (auto i = 0; i < n; i++)
+								input_args.push_back(inputs[i + 1].data);
+						}
+						if (g->output_object)
+						{
+							auto n = g->output_object->inputs.size();
+							for (auto i = 0; i < n; i++)
+								output_args.push_back(outputs[i].data);
+						}
+						ins->call(pau.u, input_args.data(), output_args.data());
 					}
-					if (g->output_object)
-					{
-						auto n = g->output_object->inputs.size();
-						for (auto i = 0; i < n; i++)
-							output_args.push_back(outputs[i].data);
-					}
-					ins->call(pau.u, input_args.data(), output_args.data());
-					delete ins;
 				}
 			}
 		};
@@ -1845,7 +1845,7 @@ namespace flame
 
 	BlueprintInstancePrivate::~BlueprintInstancePrivate()
 	{
-		if (auto debugger = BlueprintDebugger::current(); debugger && debugger->debugging == this)
+		if (auto debugger = BlueprintDebugger::current(); debugger && debugger->debugging && debugger->debugging->instance == this)
 			debugger->debugging = nullptr;
 		for (auto& g : groups)
 			destroy_instance_group(g.second);
@@ -1855,14 +1855,18 @@ namespace flame
 	void BlueprintInstancePrivate::build()
 	{
 		auto frame = frames;
-		auto old_executing_group_root_id = executing_group ? executing_group->root_object.object_id : 0;
-		auto old_executing_stack = executing_stack;
-		auto old_executing_object_id = executing_stack.empty() ? 0 : executing_object()->object_id;
+		std::map<uint, std::vector<ExecutingBlock>> old_ececuting_stacks;
+		std::map<uint, uint>						old_ececuting_object_id;
+		for (auto& g : groups)
+		{
+			old_ececuting_stacks[g.first] = g.second.executing_stack;
+			g.second.executing_stack.clear();
+			auto executing_obj = g.second.executing_object();
+			old_ececuting_object_id[g.first] = executing_obj ? executing_obj->object_id : 0;
+		}
 
 		// create data for variables
-		for (auto& pair : variables)
-			pair.second.type->destroy(pair.second.data);
-		variables.clear();
+		std::unordered_map<uint, BlueprintAttribute> new_variables;
 		for (auto& v : blueprint->variables)
 		{
 			BlueprintAttribute attr;
@@ -1870,14 +1874,18 @@ namespace flame
 			attr.data = v.type->create();
 			if (is_pointer(attr.type->tag))
 				memset(attr.data, 0, sizeof(voidptr));
-			variables.emplace(v.name_hash, attr);
+			if (auto it = variables.find(v.name_hash); it != variables.end())
+				attr.type->copy(attr.data, it->second.data);
+			new_variables.emplace(v.name_hash, attr);
 		}
+		for (auto& pair : variables)
+			pair.second.type->destroy(pair.second.data);
+		variables.clear();
+		variables = std::move(new_variables);
 
 		auto create_group_structure = [&](BlueprintGroupPtr src_g, Group& g, std::map<uint, Group::Data>& slots_data) {
 			// create data for variables
-			for (auto& pair : g.variables)
-				pair.second.type->destroy(pair.second.data);
-			g.variables.clear();
+			std::unordered_map<uint, BlueprintAttribute> new_variables;
 			for (auto& v : src_g->variables)
 			{
 				BlueprintAttribute attr;
@@ -1885,8 +1893,14 @@ namespace flame
 				attr.data = v.type->create();
 				if (is_pointer(attr.type->tag))
 					memset(attr.data, 0, sizeof(voidptr));
-				g.variables.emplace(v.name_hash, attr);
+				if (auto it = g.variables.find(v.name_hash); it != g.variables.end())
+					attr.type->copy(attr.data, it->second.data);
+				new_variables.emplace(v.name_hash, attr);
 			}
+			for (auto& pair : g.variables)
+				pair.second.type->destroy(pair.second.data);
+			g.variables.clear();
+			g.variables = std::move(new_variables);
 
 			std::function<void(BlueprintBlockPtr, Object&)> create_object;
 			create_object = [&](BlueprintBlockPtr block, Object& o) {
@@ -2404,34 +2418,34 @@ namespace flame
 			g.data_updated_frame = frame;
 		}
 
-		executing_stack.clear();
-		if (old_executing_group_root_id && !old_executing_stack.empty() && old_executing_object_id)
+		for (auto& g : groups)
 		{
-			for (auto it = groups.begin(); it != groups.end(); it++)
+			if (auto it = old_ececuting_stacks.find(g.first); it != old_ececuting_stacks.end())
 			{
-				if (it->second.root_object.object_id == old_executing_group_root_id)
+				if (!it->second.empty())
 				{
+					auto id = old_ececuting_object_id[g.first];
 					std::function<void(std::vector<Object*>)> find_object;
 					find_object = [&](std::vector<Object*> stack) {
 						for (auto& c : stack.back()->children)
 						{
-							if (c.object_id == old_executing_object_id)
+							if (c.object_id == id)
 							{
 								for (auto b : stack)
 								{
 									auto child_idx = 0;
 									auto times = 0;
 
-									for (auto& b2 : old_executing_stack)
+									for (auto& b2 : it->second)
 									{
-										if (b2.block_object->object_id == b->object_id)
+										if (b2.block_id == b->object_id)
 										{
 											child_idx = b2.child_index;
 											times = b2.executed_times;
 											break;
 										}
 									}
-									executing_stack.emplace_back(b, child_idx, times);
+									g.second.executing_stack.emplace_back(b, b->object_id, child_idx, times);
 								}
 								return;
 							}
@@ -2443,8 +2457,7 @@ namespace flame
 							}
 						}
 					};
-
-					break;
+					find_object({ &g.second.root_object });
 				}
 			}
 		}
@@ -2456,45 +2469,36 @@ namespace flame
 	{
 		assert(group->instance == this);
 		if (built_frame < blueprint->dirty_frame)
-		{
-			auto name = group->name;
-			executing_stack.clear();
 			build();
-			if (auto it = groups.find(name); it != groups.end())
-				executing_stack.emplace_back(&it->second.root_object, 0, 0);
-		}
-		else
-		{
-			if (!executing_stack.empty())
-			{
-				if (executing_stack.front().block_object->object_id == group->root_object.object_id)
-					return;
-				executing_stack.clear();
-			}
-			executing_stack.emplace_back(&group->root_object, 0, 0);
-		}
 
-		if (executing_stack.front().block_object->children.empty())
-			executing_stack.clear();
+		if (!group->executing_stack.empty())
+		{
+			if (group->executing_stack.front().block_id == group->root_object.object_id)
+				return;
+			group->executing_stack.clear();
+		}
+		group->executing_stack.emplace_back(&group->root_object, group->root_object.object_id, 0, 0);
+
+		if (group->executing_stack.front().block_object->children.empty())
+			group->executing_stack.clear();
 		else
 		{
-			executing_group = group;
 			for (auto h : loop_index_hashes)
-			executing_group->set_variable(h, 0U);
+				group->set_variable(h, 0U);
 		}
 	}
 
-	void BlueprintInstancePrivate::run()
+	void BlueprintInstancePrivate::run(Group* group)
 	{
-		while (!executing_stack.empty())
+		while (!group->executing_stack.empty())
 		{
 			if (auto debugger = BlueprintDebugger::current(); debugger && debugger->debugging)
 				return;
-			step();
+			step(group);
 		}
 	}
 
-	void BlueprintInstancePrivate::step()
+	void BlueprintInstancePrivate::step(Group* group)
 	{
 		if (built_frame < blueprint->dirty_frame)
 			build();
@@ -2502,17 +2506,14 @@ namespace flame
 		auto debugger = BlueprintDebugger::current();
 		if (debugger && debugger->debugging)
 			return;
-		if (executing_stack.empty())
-		{
-			executing_group = nullptr;
+		if (group->executing_stack.empty())
 			return;
-		}
 
-		auto set_loop_index = [this]() {
-			auto& current_block = executing_stack.back();
+		auto set_loop_index = [group]() {
+			auto& current_block = group->executing_stack.back();
 			auto depth = current_block.block_object->original.p.block->depth;
 			if (depth - 1 < countof(loop_index_names))
-				executing_group->set_variable(loop_index_hashes[depth - 1], current_block.executed_times);
+				group->set_variable(loop_index_hashes[depth - 1], current_block.executed_times);
 		};
 
 		auto frame = frames;
@@ -2520,7 +2521,7 @@ namespace flame
 		do
 		{
 			repeat = false;
-			auto& current_block = executing_stack.back();
+			auto& current_block = group->executing_stack.back();
 			auto& current_object = current_block.block_object->children[current_block.child_index];
 			switch (current_object.original.type)
 			{
@@ -2529,7 +2530,7 @@ namespace flame
 				auto node = current_object.original.p.node;
 				if (debugger && debugger->has_break_node(node))
 				{
-					debugger->debugging = this;
+					debugger->debugging = group;
 					printf("Blueprint break node triggered: %s\n", node->name.c_str());
 					return;
 				}
@@ -2543,7 +2544,7 @@ namespace flame
 				{
 					if (!current_object.children.empty())
 					{
-						executing_stack.emplace_back(&current_object, 0, 0);
+						group->executing_stack.emplace_back(&current_object, current_object.object_id, 0, 0);
 						set_loop_index();
 						repeat = true;
 					}
@@ -2559,35 +2560,31 @@ namespace flame
 
 		while (true)
 		{
-			if (executing_stack.empty())
-			{
-				executing_group = nullptr;
+			if (group->executing_stack.empty())
 				break;
-			}
-			auto& current_block = executing_stack.back();
+			auto& current_block = group->executing_stack.back();
 			current_block.child_index++;
 			if (current_block.child_index < current_block.block_object->children.size())
 				break;
 			current_block.executed_times++;
-			if (executing_stack.size() > 1 && // not the root block
+			if (group->executing_stack.size() > 1 && // not the root block
 				current_block.executed_times < *(uint*)current_block.block_object->inputs[0].data)
 			{
 				current_block.child_index = 0;
 				set_loop_index();
 				break;
 			}
-			executing_stack.pop_back();
+			group->executing_stack.pop_back();
 		}
 	}
 
-	void BlueprintInstancePrivate::stop()
+	void BlueprintInstancePrivate::stop(Group* group)
 	{
 		auto debugger = BlueprintDebugger::current();
 		if (debugger && debugger->debugging)
 			return;
-
-		executing_group = nullptr;
-		executing_stack.clear();
+		
+		group->executing_stack.clear();
 	}
 
 	void BlueprintInstancePrivate::call(uint group_name, void** inputs, void** outputs)
@@ -2609,8 +2606,7 @@ namespace flame
 		}
 
 		prepare_executing(g);
-
-		run();
+		run(g);
 
 		if (auto obj = g->output_object; obj)
 		{
@@ -2627,26 +2623,6 @@ namespace flame
 		BlueprintInstancePtr operator()(BlueprintPtr blueprint) override
 		{
 			return new BlueprintInstancePrivate(blueprint);
-		}
-
-		BlueprintInstancePtr operator()(BlueprintInstancePtr oth) override
-		{
-			auto ret = new BlueprintInstancePrivate(oth->blueprint);
-			for (auto& it : ret->variables)
-			{
-				auto& src_v = oth->variables[it.first];
-				src_v.type->copy(it.second.data, src_v.data);
-			}
-			for (auto& it : ret->groups)
-			{
-				auto& src_g = oth->groups[it.first];
-				for (auto& it2 : it.second.variables)
-				{
-					auto& src_v = src_g.variables[it2.first];
-					src_v.type->copy(it2.second.data, src_v.data);
-				}
-			}
-			return ret;
 		}
 	}BlueprintInstance_create;
 	BlueprintInstance::Create& BlueprintInstance::create = BlueprintInstance_create;
