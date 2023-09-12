@@ -233,13 +233,6 @@ void BlueprintView::expand_block_sizes()
 	fit_block_size(g->blocks.front().get());
 }
 
-void BlueprintView::load_blueprint(const std::filesystem::path& path)
-{
-	assert(!blueprint && !blueprint_instance);
-	blueprint = Blueprint::get(path);
-	blueprint_instance = BlueprintInstance::create(blueprint);
-}
-
 void BlueprintView::on_draw()
 {
 	bool opened = true;
@@ -251,7 +244,8 @@ void BlueprintView::on_draw()
 	auto frame = frames;
 	if (!blueprint)
 	{
-		load_blueprint(blueprint_path);
+		blueprint = Blueprint::get(blueprint_path);
+		blueprint_instance = BlueprintInstance::create(blueprint);
 		load_frame = frame;
 	}
 	if (blueprint)
@@ -279,166 +273,6 @@ void BlueprintView::on_draw()
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			ImGui::BeginChild("side_panel", ImVec2(0, -2));
-
-			auto ti_str = [&](TypeInfo* ti) {
-				return TypeInfo::serialize_t(ti->tag) + '@' + ti->name;
-			};
-
-			static std::string type_filter = "";
-			auto show_types_menu = [&]() {
-				TypeInfo* ret = nullptr;
-
-				ImGui::InputText("Filter", &type_filter);
-				if (ImGui::BeginMenu("Enum"))
-				{
-					for (auto& ei : tidb.enums)
-					{
-						if (!type_filter.empty())
-						{
-							if (!SUS::find_case_insensitive(ei.second.name, type_filter))
-								continue;
-						}
-						if (ImGui::Selectable(ei.second.name.c_str()))
-							ret = TypeInfo::get(TagE, ei.second.name, tidb);
-					}
-					ImGui::EndMenu();
-				}
-				if (ImGui::BeginMenu("Data"))
-				{
-					for (auto bt : tidb.basic_types)
-					{
-						if (!type_filter.empty())
-						{
-							if (!SUS::find_case_insensitive(bt->name, type_filter))
-								continue;
-						}
-						if (ImGui::Selectable(bt->name.c_str()))
-							ret = TypeInfo::get(TagD, bt->name, tidb);
-					}
-					ImGui::EndMenu();
-				}
-				if (ImGui::BeginMenu("UDT"))
-				{
-					for (auto& ui : tidb.udts)
-					{
-						if (!type_filter.empty())
-						{
-							if (!SUS::find_case_insensitive(ui.second.name, type_filter))
-								continue;
-						}
-						if (ImGui::Selectable(ui.second.name.c_str()))
-							ret = TypeInfo::get(TagU, ui.second.name, tidb);
-					}
-					ImGui::EndMenu();
-				}
-				if (ImGui::BeginMenu("Pointer"))
-				{
-					if (ImGui::BeginMenu("Of Enum"))
-					{
-						for (auto& ei : tidb.enums)
-						{
-							if (!type_filter.empty())
-							{
-								if (!SUS::find_case_insensitive(ei.second.name, type_filter))
-									continue;
-							}
-							if (ImGui::Selectable(ei.second.name.c_str()))
-								ret = TypeInfo::get(TagPE, ei.second.name, tidb);
-						}
-						ImGui::EndMenu();
-					}
-					if (ImGui::BeginMenu("Of Data"))
-					{
-						for (auto bt : tidb.basic_types)
-						{
-							if (!type_filter.empty())
-							{
-								if (!SUS::find_case_insensitive(bt->name, type_filter))
-									continue;
-							}
-							if (ImGui::Selectable(bt->name.c_str()))
-								ret = TypeInfo::get(TagPD, bt->name, tidb);
-						}
-						ImGui::EndMenu();
-					}
-					if (ImGui::BeginMenu("Of Udt"))
-					{
-						for (auto& ui : tidb.udts)
-						{
-							if (!type_filter.empty())
-							{
-								if (!SUS::find_case_insensitive(ui.second.name, type_filter))
-									continue;
-							}
-							if (ImGui::Selectable(ui.second.name.c_str()))
-								ret = TypeInfo::get(TagPU, ui.second.name, tidb);
-						}
-						ImGui::EndMenu();
-					}
-					ImGui::EndMenu();
-				}
-				if (ImGui::BeginMenu("Vector"))
-				{
-					if (ImGui::BeginMenu("Of Enum"))
-					{
-						for (auto& ei : tidb.enums)
-						{
-							if (!type_filter.empty())
-							{
-								if (!SUS::find_case_insensitive(ei.second.name, type_filter))
-									continue;
-							}
-							if (ImGui::Selectable(ei.second.name.c_str()))
-								ret = TypeInfo::get(TagVE, ei.second.name, tidb);
-						}
-						ImGui::EndMenu();
-					}
-					if (ImGui::BeginMenu("Of Data"))
-					{
-						for (auto bt : tidb.basic_types)
-						{
-							if (!type_filter.empty())
-							{
-								if (!SUS::find_case_insensitive(bt->name, type_filter))
-									continue;
-							}
-							if (ImGui::Selectable(bt->name.c_str()))
-								ret = TypeInfo::get(TagVD, bt->name, tidb);
-						}
-						ImGui::EndMenu();
-					}
-					if (ImGui::BeginMenu("Of Udt"))
-					{
-						for (auto& ui : tidb.udts)
-						{
-							if (!type_filter.empty())
-							{
-								if (!SUS::find_case_insensitive(ui.second.name, type_filter))
-									continue;
-							}
-							if (ImGui::Selectable(ui.second.name.c_str()))
-								ret = TypeInfo::get(TagVU, ui.second.name, tidb);
-						}
-						ImGui::EndMenu();
-					}
-					if (ImGui::BeginMenu("Of Pointer Of Udt"))
-					{
-						for (auto& ui : tidb.udts)
-						{
-							if (!type_filter.empty())
-							{
-								if (!SUS::find_case_insensitive(ui.second.name, type_filter))
-									continue;
-							}
-							if (ImGui::Selectable(ui.second.name.c_str()))
-								ret = TypeInfo::get(TagVPU, ui.second.name, tidb);
-						}
-						ImGui::EndMenu();
-					}
-					ImGui::EndMenu();
-				}
-				return ret;
-			};
 
 			auto manipulate_value = [](TypeInfo* type, void* data) {
 				auto changed = false;

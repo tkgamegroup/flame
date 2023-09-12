@@ -5,7 +5,7 @@
 namespace flame
 {
 	std::vector<std::unique_ptr<BlueprintT>>			loaded_blueprints;
-	std::vector<std::unique_ptr<BlueprintNodeLibraryT>> loaded_blueprint_node_libraries;
+	std::vector<std::unique_ptr<BlueprintNodeLibraryT>> loaded_sheets;
 
 	static const char* loop_index_names[] = {
 		"loop_index_i",
@@ -1636,7 +1636,7 @@ namespace flame
 						else
 						{
 							auto added = false;
-							for (auto& library : loaded_blueprint_node_libraries)
+							for (auto& library : loaded_sheets)
 							{
 								for (auto& t : library->node_templates)
 								{
@@ -1797,7 +1797,7 @@ namespace flame
 			if (filename.empty())
 				filename = _filename;
 
-			for (auto& lib : loaded_blueprint_node_libraries)
+			for (auto& lib : loaded_sheets)
 			{
 				if (lib->filename == filename)
 				{
@@ -1809,7 +1809,7 @@ namespace flame
 			auto ret = new BlueprintNodeLibraryPrivate;
 			ret->filename = filename;
 			ret->ref = 1;
-			loaded_blueprint_node_libraries.emplace_back(ret);
+			loaded_sheets.emplace_back(ret);
 			return ret;
 		}
 	}BlueprintNodeLibrary_get;

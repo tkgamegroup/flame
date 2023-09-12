@@ -25,7 +25,6 @@ struct BlueprintView : View
 	BlueprintView(const std::string& name);
 	~BlueprintView();
 
-	void load_blueprint(const std::filesystem::path& path);
 	void process_object_moved(BlueprintObject obj);
 	void expand_block_sizes();
 	void on_draw() override;

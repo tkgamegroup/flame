@@ -5,6 +5,11 @@
 
 using namespace flame;
 
+inline std::string ti_str(TypeInfo* ti) 
+{
+	return TypeInfo::serialize_t(ti->tag) + '@' + ti->name;
+}
+
 struct DropPaths
 {
 	std::filesystem::path* paths;
@@ -133,6 +138,7 @@ inline Window::~Window()
 }
 
 void show_entities_menu();
+TypeInfo* show_types_menu();
 void open_message_dialog(const std::string& title, const std::string& message);
 
 struct ModelPreviewer

@@ -2,10 +2,12 @@
 #include "project_window.h"
 #include "scene_window.h"
 #include "blueprint_window.h"
+#include "sheet_window.h"
 
 #include <flame/foundation/bitmap.h>
 #include <flame/foundation/system.h>
 #include <flame/foundation/blueprint.h>
+#include <flame/foundation/sheet.h>
 #include <flame/graphics/extension.h>
 #include <flame/graphics/material.h>
 #include <flame/graphics/model.h>
@@ -173,7 +175,7 @@ ProjectView::ProjectView(const std::string& name) :
 			for (auto& v : blueprint_window.views)
 			{
 				auto bv = (BlueprintView*)v.get();
-				if (bv->blueprint && bv->blueprint->filename == path)
+				if (bv->blueprint_path == path)
 				{
 					// TODO: bv->set_focus();
 					opend = true;
@@ -182,6 +184,22 @@ ProjectView::ProjectView(const std::string& name) :
 			}
 			if (!opend)
 				blueprint_window.open_view(Path::reverse(path).string() + "##Blueprint");
+		}
+		else if (ext == L".sht")
+		{
+			auto opend = false;
+			for (auto& v : sheet_window.views)
+			{
+				auto sv = (SheetView*)v.get();
+				if (sv->sheet_path == path)
+				{
+					// TODO: sv->set_focus();
+					opend = true;
+					break;
+				}
+			}
+			if (!opend)
+				sheet_window.open_view(Path::reverse(path).string() + "##Sheet");
 		}
 		else if (ext == L".prefab")
 			app.open_prefab(path);
@@ -417,6 +435,20 @@ ProjectView::ProjectView(const std::string& name) :
 							Blueprint::get(fn);
 						else
 							ImGui::OpenMessageDialog("Failed to create Blueprint", "Blueprint already existed");
+					}
+				});
+			}
+			if (ImGui::MenuItem("New Sheet"))
+			{
+				ImGui::OpenInputDialog("New Sheet", "File Name", [path](bool ok, const std::string& str) {
+					if (ok && !str.empty())
+					{
+						auto fn = path / str;
+						fn.replace_extension(L".sht");
+						if (!std::filesystem::exists(fn))
+							Sheet::get(fn);
+						else
+							ImGui::OpenMessageDialog("Failed to create Sheet", "Sheet already existed");
 					}
 				});
 			}

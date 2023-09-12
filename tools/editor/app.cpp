@@ -97,6 +97,163 @@ void show_entities_menu()
 		app.cmd_delete_entities(selection.get_entities());
 }
 
+TypeInfo* show_types_menu()
+{
+	TypeInfo* ret = nullptr;
+
+	static std::string type_filter = "";
+	ImGui::InputText("Filter", &type_filter);
+	if (ImGui::BeginMenu("Enum"))
+	{
+		for (auto& ei : tidb.enums)
+		{
+			if (!type_filter.empty())
+			{
+				if (!SUS::find_case_insensitive(ei.second.name, type_filter))
+					continue;
+			}
+			if (ImGui::Selectable(ei.second.name.c_str()))
+				ret = TypeInfo::get(TagE, ei.second.name, tidb);
+		}
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("Data"))
+	{
+		for (auto bt : tidb.basic_types)
+		{
+			if (!type_filter.empty())
+			{
+				if (!SUS::find_case_insensitive(bt->name, type_filter))
+					continue;
+			}
+			if (ImGui::Selectable(bt->name.c_str()))
+				ret = TypeInfo::get(TagD, bt->name, tidb);
+		}
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("UDT"))
+	{
+		for (auto& ui : tidb.udts)
+		{
+			if (!type_filter.empty())
+			{
+				if (!SUS::find_case_insensitive(ui.second.name, type_filter))
+					continue;
+			}
+			if (ImGui::Selectable(ui.second.name.c_str()))
+				ret = TypeInfo::get(TagU, ui.second.name, tidb);
+		}
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("Pointer"))
+	{
+		if (ImGui::BeginMenu("Of Enum"))
+		{
+			for (auto& ei : tidb.enums)
+			{
+				if (!type_filter.empty())
+				{
+					if (!SUS::find_case_insensitive(ei.second.name, type_filter))
+						continue;
+				}
+				if (ImGui::Selectable(ei.second.name.c_str()))
+					ret = TypeInfo::get(TagPE, ei.second.name, tidb);
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Of Data"))
+		{
+			for (auto bt : tidb.basic_types)
+			{
+				if (!type_filter.empty())
+				{
+					if (!SUS::find_case_insensitive(bt->name, type_filter))
+						continue;
+				}
+				if (ImGui::Selectable(bt->name.c_str()))
+					ret = TypeInfo::get(TagPD, bt->name, tidb);
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Of Udt"))
+		{
+			for (auto& ui : tidb.udts)
+			{
+				if (!type_filter.empty())
+				{
+					if (!SUS::find_case_insensitive(ui.second.name, type_filter))
+						continue;
+				}
+				if (ImGui::Selectable(ui.second.name.c_str()))
+					ret = TypeInfo::get(TagPU, ui.second.name, tidb);
+			}
+			ImGui::EndMenu();
+		}
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("Vector"))
+	{
+		if (ImGui::BeginMenu("Of Enum"))
+		{
+			for (auto& ei : tidb.enums)
+			{
+				if (!type_filter.empty())
+				{
+					if (!SUS::find_case_insensitive(ei.second.name, type_filter))
+						continue;
+				}
+				if (ImGui::Selectable(ei.second.name.c_str()))
+					ret = TypeInfo::get(TagVE, ei.second.name, tidb);
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Of Data"))
+		{
+			for (auto bt : tidb.basic_types)
+			{
+				if (!type_filter.empty())
+				{
+					if (!SUS::find_case_insensitive(bt->name, type_filter))
+						continue;
+				}
+				if (ImGui::Selectable(bt->name.c_str()))
+					ret = TypeInfo::get(TagVD, bt->name, tidb);
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Of Udt"))
+		{
+			for (auto& ui : tidb.udts)
+			{
+				if (!type_filter.empty())
+				{
+					if (!SUS::find_case_insensitive(ui.second.name, type_filter))
+						continue;
+				}
+				if (ImGui::Selectable(ui.second.name.c_str()))
+					ret = TypeInfo::get(TagVU, ui.second.name, tidb);
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Of Pointer Of Udt"))
+		{
+			for (auto& ui : tidb.udts)
+			{
+				if (!type_filter.empty())
+				{
+					if (!SUS::find_case_insensitive(ui.second.name, type_filter))
+						continue;
+				}
+				if (ImGui::Selectable(ui.second.name.c_str()))
+					ret = TypeInfo::get(TagVPU, ui.second.name, tidb);
+			}
+			ImGui::EndMenu();
+		}
+		ImGui::EndMenu();
+	}
+	return ret;
+}
+
 void open_message_dialog(const std::string& title, const std::string& message)
 {
 	if (title == "[RestructurePrefabInstanceWarnning]")

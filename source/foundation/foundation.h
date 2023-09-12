@@ -34,6 +34,7 @@ namespace flame
 	FLAME_FOUNDATION_TYPE(BlueprintNodeLibrary);
 	FLAME_FOUNDATION_TYPE(BlueprintInstance);
 	FLAME_FOUNDATION_TYPE(BlueprintDebugger);
+	FLAME_FOUNDATION_TYPE(Sheet);
 
 	struct TypeInfo;
 	struct VariableInfo;
