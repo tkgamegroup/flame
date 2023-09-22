@@ -1,6 +1,7 @@
 #include "blueprint_window.h"
 #include "project_window.h"
 
+#include <flame/foundation/sheet.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/model.h>
 #include <flame/universe/components/node.h>
@@ -489,6 +490,7 @@ void BlueprintView::on_draw()
 				group->name_hash = group_name_hash;
 				group->structure_changed_frame = frame;
 				blueprint->dirty_frame = frame;
+				unsaved = true;
 			}
 			ImGui::SameLine();
 
@@ -498,6 +500,7 @@ void BlueprintView::on_draw()
 				group = blueprint->groups.back().get();
 				group_name = group->name;
 				group_name_hash = group->name_hash;
+				unsaved = true;
 
 				if (blueprint_instance->built_frame < blueprint->dirty_frame)
 					blueprint_instance->build();
@@ -517,6 +520,7 @@ void BlueprintView::on_draw()
 				group = blueprint->add_group(name);
 				group_name = group->name;
 				group_name_hash = group->name_hash;
+				unsaved = true;
 
 				if (blueprint_instance->built_frame < blueprint->dirty_frame)
 					blueprint_instance->build();
@@ -1017,12 +1021,13 @@ void BlueprintView::on_draw()
 							if (!linked)
 							{
 								ImGui::PushID(input);
-								if (auto bind = group->get_data_bind(input); !bind.empty())
+								if (auto bind = group->find_data_bind(input); bind)
 								{
 									ImGui::TextUnformatted("=");
 									ImGui::SameLine();
 									ImGui::SetNextItemWidth(100.f);
-									ImGui::InputText("", &bind, ImGuiInputTextFlags_ReadOnly);
+									std::string s = std::format("{}.{}", bind->sheet_name, bind->column_name);
+									ImGui::InputText("", &s, ImGuiInputTextFlags_ReadOnly);
 								}
 								else
 								{
@@ -1277,32 +1282,50 @@ void BlueprintView::on_draw()
 							}
 							ImGui::EndMenu();
 						}
-						if (auto bind = group->get_data_bind(context_slot); !bind.empty())
+						if (auto bind = group->find_data_bind(context_slot); bind)
 						{
 							if (ImGui::Selectable("Unbind"))
 							{
 								for (auto it = group->data_binds.begin(); it != group->data_binds.end(); it++)
 								{
-									if (it->second == context_slot)
+									if (it->slot == context_slot)
 									{
+										it->slot->data_changed_frame = frame;
+										group->data_changed_frame = frame;
+										blueprint->dirty_frame = frame;
 										group->data_binds.erase(it);
+										unsaved = true;
 										break;
 									}
 								}
-								unsaved = true;
 							}
 						}
 						else
 						{
 							if (ImGui::Selectable("Bind.."))
 							{
-								ImGui::OpenInputDialog("Bind", "Bind to an variable from blueprint", [this, group](bool ok, const std::string& str) {
-									if (ok)
+								std::vector<std::string> names(app.project_sheets.size());
+								for (auto i = 0; i < app.project_sheets.size(); i++)
+									names[i] = app.project_sheets[i]->name;
+								ImGui::OpenSelectDialog("Bind", "Select a sheet", names, [this, group](int idx) {
+									if (idx != -1)
 									{
-										auto& bind = group->data_binds.emplace_back();
-										bind.first = str;
-										bind.second = context_slot;
-										unsaved = true;
+										auto sht = app.project_sheets[idx];
+										std::vector<std::string> names(sht->columns.size());
+										for (auto i = 0; i < sht->columns.size(); i++)
+											names[i] = sht->columns[i].name;
+										ImGui::OpenSelectDialog("Bind", "Select a data", names, [this, group, sht](int idx) {
+											if (idx != -1)
+											{
+												auto& bind = group->data_binds.emplace_back();
+												bind.sheet_name = sht->name;
+												bind.sheet_name_hash = sht->name_hash;
+												bind.column_name = sht->columns[idx].name;
+												bind.column_name_hash = sht->columns[idx].name_hash;
+												bind.slot = context_slot;
+												unsaved = true;
+											}
+										});
 									}
 								});
 							}

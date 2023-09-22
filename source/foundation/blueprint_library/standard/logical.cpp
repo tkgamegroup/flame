@@ -197,11 +197,11 @@ namespace flame
 			{
 				{
 					.name = "A",
-					.allowed_types = { TypeInfo::get<bool>() }
+					.allowed_types = { TypeInfo::get<bool>(), TypeInfo::get<voidptr>() }
 				},
 				{
 					.name = "B",
-					.allowed_types = { TypeInfo::get<bool>() }
+					.allowed_types = { TypeInfo::get<bool>(), TypeInfo::get<voidptr>() }
 				}
 			},
 			{
@@ -211,7 +211,18 @@ namespace flame
 				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				*(bool*)outputs[0].data = *(bool*)inputs[0].data && *(bool*)inputs[1].data;
+				bool b1;
+				if (inputs[0].type == TypeInfo::get<bool>())
+					b1 = *(bool*)inputs[0].data;
+				else
+					b1 = (*(voidptr*)inputs[0].data) != nullptr;
+				bool b2;
+				if (inputs[1].type == TypeInfo::get<bool>())
+					b2 = *(bool*)inputs[1].data;
+				else
+					b2 = (*(voidptr*)inputs[1].data) != nullptr;
+
+				*(bool*)outputs[0].data = b1 && b2;
 			},
 			nullptr,
 			nullptr,
@@ -221,11 +232,11 @@ namespace flame
 			{
 				{
 					.name = "A",
-					.allowed_types = { TypeInfo::get<bool>() }
+					.allowed_types = { TypeInfo::get<bool>(), TypeInfo::get<voidptr>() }
 				},
 				{
 					.name = "B",
-					.allowed_types = { TypeInfo::get<bool>() }
+					.allowed_types = { TypeInfo::get<bool>(), TypeInfo::get<voidptr>() }
 				}
 			},
 			{
@@ -235,7 +246,18 @@ namespace flame
 				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				*(bool*)outputs[0].data = *(bool*)inputs[0].data || *(bool*)inputs[1].data;
+				bool b1;
+				if (inputs[0].type == TypeInfo::get<bool>())
+					b1 = *(bool*)inputs[0].data;
+				else
+					b1 = (*(voidptr*)inputs[0].data) != nullptr;
+				bool b2;
+				if (inputs[1].type == TypeInfo::get<bool>())
+					b2 = *(bool*)inputs[1].data;
+				else
+					b2 = (*(voidptr*)inputs[1].data) != nullptr;
+
+				*(bool*)outputs[0].data = b1 || b2;
 			},
 			nullptr,
 			nullptr,

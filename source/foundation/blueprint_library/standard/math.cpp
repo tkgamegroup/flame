@@ -1034,5 +1034,42 @@ namespace flame
 				*output_types = input_types[0];
 			}
 		);
+
+		library->add_template("Circle Random", "",
+			{
+				{
+					.name = "Seed",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Min Radius",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "0"
+				},
+				{
+					.name = "Max Radius",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "1"
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto min_radius = *(float*)inputs[1].data;
+				auto max_radius = *(float*)inputs[2].data;
+				auto rn = circularRand(max_radius - min_radius);
+				rn += normalize(rn) * min_radius;
+				*(vec3*)outputs[0].data = vec3(rn.x, 0.f, rn.y);
+			},
+			nullptr,
+			nullptr,
+			[](TypeInfo** input_types, TypeInfo** output_types) {
+				*output_types = input_types[0];
+			}
+		);
 	}
 }

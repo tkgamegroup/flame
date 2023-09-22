@@ -5,13 +5,14 @@
 namespace flame
 {
 	std::vector<std::unique_ptr<SheetT>> loaded_sheets;
+	std::map<uint, SheetPtr> loaded_sheets_map;
 
 	void SheetPrivate::clear_rows() 
 	{
 		for (auto& r : rows)
 		{
-			for (auto i = 0; i < header.size(); i++)
-				header[i].type->destroy(r.datas[i]);
+			for (auto i = 0; i < columns.size(); i++)
+				columns[i].type->destroy(r.datas[i]);
 		}
 		rows.clear();
 	}
@@ -20,12 +21,13 @@ namespace flame
 	{ 
 		Column column;
 		if (idx < 0)
-			idx = header.size() + (idx + 1);
+			idx = columns.size() + (idx + 1);
 		column.name = name;
 		column.name_hash = sh(name.c_str());
 		column.type = type;
 		column.default_value = default_value;
-		header.insert(header.begin() + idx, column);
+		columns.insert(columns.begin() + idx, column);
+		columns_map[column.name_hash] = idx;
 
 		for (auto& r : rows)
 		{
@@ -38,13 +40,15 @@ namespace flame
 
 	void SheetPrivate::alter_column(uint idx, const std::string& new_name, TypeInfo* new_type, const std::string& default_value)
 	{
-		assert(idx < header.size());
+		assert(idx < columns.size());
 
-		auto& column = header[idx];
+		auto& column = columns[idx];
 		if (column.name != new_name)
 		{
+			columns_map.erase(column.name_hash);
 			column.name = new_name;
 			column.name_hash = sh(new_name.c_str());
+			columns_map[column.name_hash] = idx;
 		}
 		if (column.type != new_type)
 		{
@@ -62,12 +66,13 @@ namespace flame
 
 	void SheetPrivate::reposition_columns(uint idx1, uint idx2)
 	{
-		assert(idx1 < header.size());
-		assert(idx2 < header.size());
+		assert(idx1 < columns.size());
+		assert(idx2 < columns.size());
 
 		if (idx1 != idx2)
 		{
-			std::swap(header[idx1], header[idx2]);
+			std::swap(columns[idx1], columns[idx2]);
+			std::swap(columns_map[columns[idx1].name_hash], columns_map[columns[idx2].name_hash]);
 			for (auto& r : rows)
 				std::swap(r.datas[idx1], r.datas[idx2]);
 		}
@@ -75,10 +80,11 @@ namespace flame
 
 	void SheetPrivate::remove_column(uint idx)
 	{
-		assert(idx < header.size());
+		assert(idx < columns.size());
 
-		auto type = header[idx].type;
-		header.erase(header.begin() + idx);
+		auto type = columns[idx].type;
+		columns_map.erase(columns[idx].name_hash);
+		columns.erase(columns.begin() + idx);
 		for (auto& r : rows)
 		{
 			type->destroy(r.datas[idx]);
@@ -91,10 +97,10 @@ namespace flame
 		if (idx < 0)
 			idx = rows.size() + (idx + 1);
 		Row row;
-		row.datas.resize(header.size());
-		for (auto i = 0; i < header.size(); i++)
+		row.datas.resize(columns.size());
+		for (auto i = 0; i < columns.size(); i++)
 		{
-			auto& column = header[i];
+			auto& column = columns[i];
 			row.datas[i] = column.type->create();
 			if (!column.default_value.empty())
 				column.type->unserialize(column.default_value, row.datas[i]);
@@ -104,11 +110,11 @@ namespace flame
 
 	void SheetPrivate::remove_row(uint idx)
 	{
-		assert(idx < header.size());
+		assert(idx < columns.size());
 
 		auto& row = rows[idx];
-		for (auto i = 0; i < header.size(); i++)
-			header[i].type->destroy(row.datas[i]);
+		for (auto i = 0; i < columns.size(); i++)
+			columns[i].type->destroy(row.datas[i]);
 
 		rows.erase(rows.begin() + idx);
 	}
@@ -122,10 +128,10 @@ namespace flame
 		};
 
 		auto doc_root = doc.append_child("sheet");
-		auto n_header = doc_root.append_child("header");
-		for (auto& c : header)
+		auto n_columns = doc_root.append_child("columns");
+		for (auto& c : columns)
 		{
-			auto n_column = n_header.append_child("column");
+			auto n_column = n_columns.append_child("column");
 			write_ti(c.type, n_column.append_attribute("type"));
 			n_column.append_attribute("name").set_value(c.name.c_str());
 			n_column.append_attribute("default_value").set_value(c.default_value.c_str());
@@ -134,8 +140,8 @@ namespace flame
 		for (auto& r : rows)
 		{
 			auto n_row = n_rows.append_child("row");
-			for (auto i = 0; i < header.size(); i++)
-				n_row.append_attribute(header[i].name.c_str()).set_value(header[i].type->serialize(r.datas[i]).c_str());
+			for (auto i = 0; i < columns.size(); i++)
+				n_row.append_attribute(columns[i].name.c_str()).set_value(columns[i].type->serialize(r.datas[i]).c_str());
 		}
 
 		if (!path.empty())
@@ -179,7 +185,13 @@ namespace flame
 					return TypeInfo::get(tag, sp[1]);
 				};
 
-				for (auto n_column : doc_root.child("header"))
+				if (auto a = doc_root.attribute("name"); a)
+				{
+					ret->name = a.value();
+					ret->name_hash = sh(ret->name.c_str());
+				}
+
+				for (auto n_column : doc_root.child("columns"))
 				{
 					ret->insert_column(n_column.attribute("name").value(), 
 						read_ti(n_column.attribute("type")), -1, n_column.attribute("default_value").value());
@@ -188,9 +200,9 @@ namespace flame
 				{
 					ret->insert_row();
 					auto& row = ret->rows.back();
-					for (auto i = 0; i < ret->header.size(); i++)
+					for (auto i = 0; i < ret->columns.size(); i++)
 					{
-						auto& column = ret->header[i];
+						auto& column = ret->columns[i];
 						column.type->unserialize(n_row.attribute(column.name.c_str()).value(), row.datas[i]);
 					}
 				}
@@ -200,7 +212,19 @@ namespace flame
 			ret->filename = filename;
 			ret->ref = 1;
 			loaded_sheets.emplace_back(ret);
+			loaded_sheets_map[ret->name_hash] = ret;
 			return ret;
+		}
+
+		SheetPtr operator()(uint name) override
+		{
+			auto it = loaded_sheets_map.find(name);
+			if (it != loaded_sheets_map.end())
+			{
+				it->second->ref++;
+				return it->second;
+			}
+			return nullptr;
 		}
 	}Sheet_get;
 	Sheet::Get& Sheet::get = Sheet_get;

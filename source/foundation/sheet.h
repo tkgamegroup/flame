@@ -20,11 +20,22 @@ namespace flame
 			std::vector<void*> datas;
 		};
 
-		std::vector<Column> header;
+		std::vector<Column> columns;
 		std::vector<Row> rows;
+		std::unordered_map<uint, uint> columns_map;
 
 		std::filesystem::path filename;
+		std::string name;
+		uint name_hash;
 		uint ref = 0;
+
+		int find_column(uint name) const
+		{
+			auto it = columns_map.find(name);
+			if (it == columns_map.end())
+				return -1;
+			return it->second;
+		}
 
 		virtual void clear_rows() = 0;
 		virtual void insert_column(const std::string& name, TypeInfo* type, int idx = -1, const std::string& default_value = "") = 0;
@@ -39,6 +50,7 @@ namespace flame
 		struct Get
 		{
 			virtual SheetPtr operator()(const std::filesystem::path& filename) = 0;
+			virtual SheetPtr operator()(uint name) = 0;
 		};
 		// Reflect static
 		FLAME_FOUNDATION_API static Get& get;

@@ -1,5 +1,6 @@
 #include "../xml.h"
 #include "typeinfo_serialize.h"
+#include "sheet_private.h"
 #include "blueprint_private.h"
 
 namespace flame
@@ -339,6 +340,7 @@ namespace flame
 				i->flags = BlueprintSlotFlagInput;
 				i->allowed_types.push_back(variable.type);
 				i->type = variable.type;
+				i->data = i->type->create();
 				ret->inputs.emplace_back(i);
 			}
 			ret->function = [](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
@@ -1461,13 +1463,17 @@ namespace flame
 				n_link.append_attribute("to_object").set_value(l->to_slot->parent.get_id());
 				n_link.append_attribute("to_slot").set_value(l->to_slot->name_hash);
 			}
-			auto n_data_binds = n_group.append_child("data_binds");
-			for (auto& b : g.first->data_binds)
+			if (!g.first->data_binds.empty())
 			{
-				auto n_bind = n_data_binds.append_child("bind");
-				n_bind.append_attribute("address").set_value(b.first.c_str());
-				n_bind.append_attribute("slot_node").set_value(b.second->parent.get_id());
-				n_bind.append_attribute("slot_name").set_value(b.second->name_hash);
+				auto n_data_binds = n_group.append_child("data_binds");
+				for (auto& b : g.first->data_binds)
+				{
+					auto n_bind = n_data_binds.append_child("bind");
+					n_bind.append_attribute("sheet_name").set_value(b.sheet_name.c_str());
+					n_bind.append_attribute("column_name").set_value(b.column_name.c_str());
+					n_bind.append_attribute("slot_node").set_value(b.slot->parent.get_id());
+					n_bind.append_attribute("slot_name").set_value(b.slot->name_hash);
+				}
 			}
 		}
 
@@ -1577,8 +1583,15 @@ namespace flame
 						}
 						else if (name == "Set Variable")
 						{
-							auto name = s2t<uint>(n_node.child("inputs").first_child().attribute("value").value());
+							auto n_inputs = n_node.child("inputs");
+							auto first_input = n_inputs.first_child();
+							auto name = s2t<uint>(first_input.attribute("value").value());
 							auto n = ret->add_variable_node(g, block, name, "set"_h);
+							if (auto n_input = first_input.next_sibling(); n_input)
+							{
+								auto i = n->inputs[1].get();
+								i->type->unserialize(n_input.attribute("value").value(), i->data);
+							}
 							object_map[n_node.attribute("object_id").as_uint()] = n;
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
@@ -1719,15 +1732,17 @@ namespace flame
 					}
 					for (auto n_bind : n_group.child("data_binds"))
 					{
-						std::string address = n_bind.attribute("address").value();
 						auto node_id = n_bind.attribute("slot_node").as_uint();
 						auto slot_name = n_bind.attribute("slot_name").as_uint();
 						if (auto it = object_map.find(node_id); it != object_map.end())
 						{
 							auto& bind = g->data_binds.emplace_back();
-							bind.first = address;
+							bind.sheet_name = n_bind.attribute("sheet_name").value();
+							bind.sheet_name_hash = sh(bind.sheet_name.c_str());
+							bind.column_name = n_bind.attribute("column_name").value();
+							bind.column_name_hash = sh(bind.column_name.c_str());
 							auto slot_node = it->second.p.node;
-							bind.second = slot_node->find_input(slot_name);
+							bind.slot = slot_node->find_input(slot_name);
 						}
 						else
 						{
@@ -2045,24 +2060,33 @@ namespace flame
 						data.attribute.data = data.attribute.type->create();
 						if (is_pointer(data.attribute.type->tag))
 							memset(data.attribute.data, 0, sizeof(voidptr));
-						else if (auto bind = src_g->get_data_bind(input); !bind.empty())
+						else if (auto bind = src_g->find_data_bind(input); bind)
 						{
-							auto sp = SUS::split(bind, '.');
-							if (sp.size() == 2)
+							auto sht = Sheet::get(bind->sheet_name_hash);
+							if (sht)
 							{
-								std::filesystem::path fn = sp[0];
-								fn = L"assets\\" + fn.native() + L".bp";
-								auto bp_lib = Blueprint::get(fn);
-								for (auto& v : bp_lib->variables)
+								auto idx = sht->find_column(bind->column_name_hash);
+								if (idx != -1)
 								{
-									if (v.name == sp[1])
+									auto& column = sht->columns[idx];
+									if (column.type == data.attribute.type)
 									{
-										if (data.attribute.type == v.type)
-											data.attribute.type->copy(data.attribute.data, v.data);
-										break;
+										if (!sht->rows.empty())
+										{
+											auto& row = sht->rows[0];
+											data.attribute.type->copy(data.attribute.data, row.datas[idx]);
+										}
+										else
+											printf("data bind: there is no rows in sheet: %s\n", bind->sheet_name.c_str());
 									}
+									else
+										printf("data bind: type mismatch: %s\n", bind->column_name.c_str());
 								}
+								else
+									printf("data bind: cannot find column: %s\n", bind->column_name.c_str());
 							}
+							else
+								printf("data bind: cannot get sheet: %s\n", bind->sheet_name.c_str());
 						}
 						else if (input->data)
 							data.attribute.type->copy(data.attribute.data, input->data);
@@ -2141,17 +2165,7 @@ namespace flame
 								obj.inputs.push_back(data.attribute);
 							}
 							if (!process_linked_input_slot(n->inputs[1].get()))
-							{
-								Group::Data data;
-								data.changed_frame = frame;
-								data.attribute.type = var->type;
-								data.attribute.data = var->type->create();
-								if (is_pointer(data.attribute.type->tag))
-									memset(data.attribute.data, 0, sizeof(voidptr));
-								slots_data.emplace(n->inputs[1]->object_id, data);
-
-								obj.inputs.push_back(data.attribute);
-							}
+								create_input_slot_data(n->inputs[1].get());
 						}
 						return;
 					}

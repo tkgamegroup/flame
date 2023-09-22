@@ -212,6 +212,15 @@ namespace flame
 		std::string default_value;
 	};
 
+	struct BlueprintDataBind
+	{
+		std::string sheet_name;
+		std::string column_name;
+		uint sheet_name_hash;
+		uint column_name_hash;
+		BlueprintSlotPtr slot;
+	};
+
 	struct BlueprintGroup
 	{
 		uint object_id;
@@ -227,7 +236,7 @@ namespace flame
 		std::vector<std::unique_ptr<BlueprintBlockT>>			blocks;
 		// first: blueprint name and variable name, second: the input slot that its data will be mapped
 		// when the slot is linked, the bind will not effect
-		std::vector<std::pair<std::string, BlueprintSlotPtr>>	data_binds;
+		std::vector<BlueprintDataBind>							data_binds;
 
 		inline BlueprintNodePtr find_node(uint name) const
 		{
@@ -239,14 +248,14 @@ namespace flame
 			return nullptr;
 		}
 
-		inline std::string get_data_bind(BlueprintSlotPtr slot) const
+		inline BlueprintDataBind* find_data_bind(BlueprintSlotPtr slot) const
 		{
 			for (auto& b : data_binds)
 			{
-				if (b.second == slot)
-					return b.first;
+				if (b.slot == slot)
+					return (BlueprintDataBind*)&b;
 			}
-			return "";
+			return nullptr;
 		}
 
 		vec2 offset;
@@ -315,11 +324,11 @@ namespace flame
 		std::vector<BlueprintSlotPtr> ret;
 		switch (type)
 		{
-		case BlueprintObjectNode: 
+		case BlueprintObjectNode:
 			for (auto& i : ((BlueprintNode*)p.node)->inputs)
 				ret.push_back(i.get());
 			break;
-		case BlueprintObjectBlock: 
+		case BlueprintObjectBlock:
 			ret.push_back(((BlueprintBlock*)p.block)->input.get());
 			break;
 		}
@@ -387,7 +396,7 @@ namespace flame
 
 		virtual ~Blueprint() {}
 
-		virtual void*					add_variable(BlueprintGroupPtr group /* or null for blueprint variable */, const std::string& name, TypeInfo* type) = 0; // return: the data of the variable
+		virtual void* add_variable(BlueprintGroupPtr group /* or null for blueprint variable */, const std::string& name, TypeInfo* type) = 0; // return: the data of the variable
 		virtual void					remove_variable(BlueprintGroupPtr group /* or null for blueprint variable */, uint name) = 0;
 		virtual void					alter_variable(BlueprintGroupPtr group /* or null for blueprint variable */, uint old_name, const std::string& new_name = "", TypeInfo* type = nullptr) = 0;
 		virtual BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintBlockPtr block, const std::string& name, const std::string& display_name,
@@ -450,7 +459,7 @@ namespace flame
 		uint ref = 0;
 
 		virtual ~BlueprintNodeLibrary() {}
-		virtual void add_template(const std::string& name, const std::string& display_name, 
+		virtual void add_template(const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
@@ -498,8 +507,8 @@ namespace flame
 			std::map<uint, Data>						slot_datas; // key: slot id
 			Object										root_object;
 			std::map<uint, Object*>						object_map;
-			Object*										input_object = nullptr;
-			Object*										output_object = nullptr;
+			Object* input_object = nullptr;
+			Object* output_object = nullptr;
 			std::unordered_map<uint, BlueprintAttribute> variables; // key: variable name hash
 
 			std::vector<ExecutingBlock> executing_stack;

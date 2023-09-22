@@ -8,6 +8,7 @@
 #include <flame/xml.h>
 #include <flame/foundation/system.h>
 #include <flame/foundation/typeinfo_serialize.h>
+#include <flame/foundation/sheet.h>
 #include <flame/graphics/model.h>
 #include <flame/graphics/shader.h>
 #include <flame/graphics/extension.h>
@@ -1184,6 +1185,15 @@ void App::open_project(const std::filesystem::path& path)
 	project_settings.load(project_path / L"project_settings.xml");
 	for (auto& p : project_settings.favorites)
 		p = Path::get(p);
+
+	for (auto it : std::filesystem::recursive_directory_iterator(project_path))
+	{
+		if (it.is_regular_file() && it.path().extension() == L".sht")
+		{
+			auto sht = Sheet::get(it.path());
+			project_sheets.push_back(sht);
+		}
+	}
 
 	switch (project_settings.build_after_open)
 	{

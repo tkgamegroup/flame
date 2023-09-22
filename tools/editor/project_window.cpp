@@ -1066,6 +1066,7 @@ void ProjectView::reset()
 ProjectWindow::ProjectWindow() :
 	Window("Project")
 {
+	flame_path = Path::get(L"flame");
 }
 
 void ProjectWindow::init()
@@ -1102,7 +1103,6 @@ ProjectView* ProjectWindow::first_view() const
 
 void ProjectWindow::reset()
 {
-	flame_path = Path::get(L"flame");
 	assets_path = L"";
 	code_path = L"";
 
@@ -1260,7 +1260,32 @@ void ProjectWindow::process_changed_paths()
 						changed_assets.emplace_back(asset, p.first);
 				}
 				auto ext = p.first.extension();
-				if (ext == L".prefab")
+				if (ext == L".sheet")
+				{
+					if (p.second & FileAdded)
+					{
+						auto sht = Sheet::get(p.first);
+						app.project_sheets.push_back(sht);
+
+					}
+					else if (p.second & FileRemoved)
+					{
+						for (auto it = app.project_sheets.begin(); it != app.project_sheets.end(); it++)
+						{
+							if ((*it)->filename == p.first)
+							{
+								Sheet::release(*it);
+								app.project_sheets.erase(it);
+								break;
+							}
+						}
+					}
+					else if (p.second & FileRenamed)
+					{
+						// TODO: is rename avaliable?
+					}
+				}
+				else if (ext == L".prefab")
 				{
 					if (p.second & FileModified)
 					{

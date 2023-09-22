@@ -41,39 +41,44 @@ void SheetView::on_draw()
 		static std::vector<float> column_offsets;
 		if (ImGui::Button("Save"))
 		{
-			std::vector<std::pair<uint, float>> column_idx_and_offsets(column_offsets.size());
-			for (auto i = 0; i < sheet->header.size(); i++)
-				column_idx_and_offsets[i] = std::make_pair(i, column_offsets[i]);
-			std::sort(column_idx_and_offsets.begin(), column_idx_and_offsets.end(), [](const auto& a, const auto& b) {
-				return a.second < b.second;
-			});
-			for (auto i = 0; i < sheet->header.size(); i++)
+			if (unsaved)
 			{
-				auto target_idx = column_idx_and_offsets[i].first;
-				if (i != target_idx)
+				std::vector<std::pair<uint, float>> column_idx_and_offsets(column_offsets.size());
+				for (auto i = 0; i < sheet->columns.size(); i++)
+					column_idx_and_offsets[i] = std::make_pair(i, column_offsets[i]);
+				std::sort(column_idx_and_offsets.begin(), column_idx_and_offsets.end(), [](const auto& a, const auto& b) {
+					return a.second < b.second;
+				});
+				for (auto i = 0; i < sheet->columns.size(); i++)
 				{
-					sheet->reposition_columns(i, target_idx);
-					std::swap(column_idx_and_offsets[i], column_idx_and_offsets[target_idx]);
+					auto target_idx = column_idx_and_offsets[i].first;
+					if (i != target_idx)
+					{
+						sheet->reposition_columns(i, target_idx);
+						std::swap(column_idx_and_offsets[i], column_idx_and_offsets[target_idx]);
+					}
 				}
+				sheet->save();
+
+				unsaved = false;
 			}
-			sheet->save();
 		}
-		column_offsets.resize(sheet->header.size());
-		if (sheet->header.size() > 0 && sheet->header.size() < 64)
+		column_offsets.resize(sheet->columns.size());
+		if (sheet->columns.size() > 0 && sheet->columns.size() < 64)
 		{
-			if (ImGui::BeginTable("##main", sheet->header.size() + 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Borders, ImVec2(-100.f, 0.f)))
+			if (ImGui::BeginTable("##main", sheet->columns.size() + 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Borders | ImGuiTableFlags_NoSavedSettings, ImVec2(-100.f, 0.f)))
 			{
-				for (auto i = 0; i < sheet->header.size(); i++)
+				for (auto i = 0; i < sheet->columns.size(); i++)
 				{
-					auto& column = sheet->header[i];
+					auto& column = sheet->columns[i];
 					ImGui::TableSetupColumn(column.name.c_str(), ImGuiTableColumnFlags_WidthStretch, 200.f);
 				}
 				ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_NoReorder, 50.f);
 
 				ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
-				for (auto i = 0; i < sheet->header.size(); i++)
+				for (auto i = 0; i < sheet->columns.size(); i++)
 				{
-					auto& column = sheet->header[i];
+					auto& column = sheet->columns[i];
 					ImGui::TableSetColumnIndex(i);
 					column_offsets[i] = ImGui::GetCursorPosX();
 
@@ -113,13 +118,13 @@ void SheetView::on_draw()
 					ImGui::TableNextRow();
 
 					ImGui::PushID(i);
-					for (auto j = 0; j < sheet->header.size(); j++)
+					for (auto j = 0; j < sheet->columns.size(); j++)
 					{
 						ImGui::TableSetColumnIndex(j);
 						ImGui::PushID(j);
 
 						auto changed = false;
-						auto type = sheet->header[j].type;
+						auto type = sheet->columns[j].type;
 						auto data = row.datas[j];
 						if (type->tag == TagD)
 						{
@@ -165,8 +170,8 @@ void SheetView::on_draw()
 					}
 
 					{
-						ImGui::TableSetColumnIndex(sheet->header.size());
-						ImGui::PushID(sheet->header.size());
+						ImGui::TableSetColumnIndex(sheet->columns.size());
+						ImGui::PushID(sheet->columns.size());
 						if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
 						{
 							sheet->remove_row(i);
