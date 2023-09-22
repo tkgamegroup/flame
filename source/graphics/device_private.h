@@ -19,7 +19,9 @@ namespace flame
 			VkPhysicalDevice vk_physical_device;
 			VkPhysicalDeviceProperties2 vk_props;
 			VkPhysicalDeviceDepthStencilResolveProperties vk_resolve_props;
+#if defined(VK_VERSION_1_3) && VK_HEADER_VERSION >= 231
 			VkPhysicalDeviceMeshShaderPropertiesEXT vk_meshshader_props;
+#endif
 			VkPhysicalDeviceFeatures vk_features; 
 			VkPhysicalDeviceMemoryProperties vk_mem_props;
 			VkDevice vk_device;

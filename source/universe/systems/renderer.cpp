@@ -29,7 +29,8 @@ namespace flame
 	const auto ShadowMapSize = uvec2(2048);
 	const auto DirShadowMaxCount = 4U;
 	const auto DirShadowMaxLevels = 4U;
-	const auto PtShadowMaxCount = 4U;
+	const auto PtShadowMaxCount = 4U; 
+	bool use_mesh_shader = false;
 
 	/* SHARED RESOURCES */
 	// Reses
@@ -634,7 +635,7 @@ namespace flame
 			  "dep_initia_layout=" + TypeInfo::serialize_t(graphics::ImageLayoutAttachment) });
 
 		uint u;
-		auto use_mesh_shader = graphics_device->get_config("mesh_shader"_h, u) ? u == 1 : true;
+		use_mesh_shader = graphics_device->get_config("mesh_shader"_h, u) ? u == 1 : true;
 
 		auto dsl_instance = graphics::DescriptorSetLayout::get(L"flame\\shaders\\instance.dsl");
 		buf_instance.create(graphics::BufferUsageStorage, dsl_instance->get_buf_ui("Instance"_h));

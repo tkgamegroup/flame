@@ -17,6 +17,14 @@ SheetView::SheetView(const std::string& name) :
 		sheet_path = sp[0];
 }
 
+SheetView::~SheetView()
+{
+	if (app_exiting)
+		return;
+	if (sheet)
+		Sheet::release(sheet);
+}
+
 void SheetView::on_draw()
 {
 	bool opened = true;

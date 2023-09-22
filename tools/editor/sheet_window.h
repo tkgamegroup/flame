@@ -10,6 +10,7 @@ struct SheetView : View
 
 	SheetView();
 	SheetView(const std::string& name);
+	~SheetView();
 	void on_draw() override;
 };
 

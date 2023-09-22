@@ -125,7 +125,12 @@ namespace flame
 					ret->configs[c.first] = c.second;
 
 				uint u;
-				auto use_mesh_shader = ret->get_config("mesh_shader"_h, u) ? u == 1 : true;
+				bool use_mesh_shader = false;
+#if defined(VK_VERSION_1_3) && VK_HEADER_VERSION >= 231
+				use_mesh_shader = ret->get_config("mesh_shader"_h, u) ? u == 1 : true;
+#else
+				ret->configs["mesh_shader"_h] = 0;
+#endif
 
 				uint32_t count;
 				vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);
@@ -204,6 +209,7 @@ namespace flame
 				*next_prop = &ret->vk_resolve_props;
 				next_prop = &ret->vk_resolve_props.pNext;
 
+#if defined(VK_VERSION_1_3) && VK_HEADER_VERSION >= 231
 				if (use_mesh_shader)
 				{
 					ret->vk_meshshader_props = {};
@@ -211,6 +217,7 @@ namespace flame
 					*next_prop = &ret->vk_meshshader_props;
 					next_prop = &ret->vk_meshshader_props.pNext;
 				}
+#endif
 
 				vkGetPhysicalDeviceFeatures(physical_device, &ret->vk_features);
 				vkGetPhysicalDeviceMemoryProperties(physical_device, &ret->vk_mem_props);
@@ -267,6 +274,7 @@ namespace flame
 				enabled_features.features = ret->vk_features;
 				auto next_feature = &enabled_features.pNext;
 
+#if defined(VK_VERSION_1_3) && VK_HEADER_VERSION >= 231
 				if (use_mesh_shader)
 				{
 					VkPhysicalDeviceMeshShaderFeaturesEXT feature_mesh_shader = {};
@@ -276,6 +284,7 @@ namespace flame
 					*next_feature = &feature_mesh_shader;
 					next_feature = &feature_mesh_shader.pNext;
 				}
+#endif
 
 				VkPhysicalDevice8BitStorageFeaturesKHR feature_8bit_storage = {};
 				feature_8bit_storage.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES_KHR;
@@ -296,11 +305,13 @@ namespace flame
 				required_device_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 				required_device_extensions.push_back(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
 				required_device_extensions.push_back(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+#if defined(VK_VERSION_1_3) && VK_HEADER_VERSION >= 231
 				if (use_mesh_shader)
 				{
 					required_device_extensions.push_back(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
 					required_device_extensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
 				}
+#endif
 
 				VkDeviceCreateInfo device_info = {};
 				device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

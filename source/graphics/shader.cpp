@@ -681,7 +681,7 @@ namespace flame
 				descriptor_pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 				descriptor_pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 				descriptor_pool_info.pNext = nullptr;
-				descriptor_pool_info.poolSizeCount = _countof(descriptor_pool_sizes);
+				descriptor_pool_info.poolSizeCount = countof(descriptor_pool_sizes);
 				descriptor_pool_info.pPoolSizes = descriptor_pool_sizes;
 				descriptor_pool_info.maxSets = 128;
 				chk_res(vkCreateDescriptorPool(device->vk_device, &descriptor_pool_info, nullptr, &ret->vk_descriptor_pool));
