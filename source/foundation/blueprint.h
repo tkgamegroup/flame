@@ -10,6 +10,7 @@ namespace flame
 		BlueprintObjectSlot,
 		BlueprintObjectNode,
 		BlueprintObjectBlock,
+		BlueprintObjectLink,
 		BlueprintObjectGroup
 	};
 
@@ -49,6 +50,7 @@ namespace flame
 			BlueprintSlotPtr slot;
 			BlueprintNodePtr node;
 			BlueprintBlockPtr block;
+			BlueprintLinkPtr link;
 			BlueprintGroupPtr group;
 		}p;
 
@@ -70,6 +72,11 @@ namespace flame
 			p.block = block;
 			type = BlueprintObjectBlock;
 		}
+		BlueprintObject(BlueprintLinkPtr link)
+		{
+			p.link = link;
+			type = BlueprintObjectLink;
+		}
 		BlueprintObject(BlueprintGroupPtr group)
 		{
 			p.group = group;
@@ -84,6 +91,7 @@ namespace flame
 		inline std::vector<BlueprintSlotPtr> get_outputs() const;
 		inline BlueprintSlotPtr find_input(uint name) const;
 		inline BlueprintSlotPtr find_output(uint name) const;
+		inline vec2 get_position() const;
 	};
 
 	struct BlueprintSlotDesc
@@ -369,6 +377,16 @@ namespace flame
 		case BlueprintObjectBlock: return ((BlueprintBlock*)p.block)->output.get();
 		}
 		return nullptr;
+	}
+
+	inline vec2 BlueprintObject::get_position() const
+	{
+		switch (type)
+		{
+		case BlueprintObjectNode: return ((BlueprintNode*)p.node)->position;
+		case BlueprintObjectBlock: return ((BlueprintBlock*)p.block)->position;
+		}
+		return vec2(0.f);
 	}
 
 	// Reflect ctor

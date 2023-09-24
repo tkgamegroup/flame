@@ -1014,9 +1014,15 @@ namespace flame
 
 		std::function<void(BlueprintBlockPtr)> remove_block;
 		remove_block = [&](BlueprintBlockPtr block) {
-			for (auto& c : block->children)
+			std::vector<BlueprintBlockPtr> to_remove_blocks;
+			for (auto c : block->children)
+				to_remove_blocks.push_back(c);
+			for (auto c : to_remove_blocks)
 				remove_block(c);
+			std::vector<BlueprintNodePtr> to_remove_nodes;
 			for (auto n : block->nodes)
+				to_remove_nodes.push_back(n);
+			for (auto n : to_remove_nodes)
 				remove_node(n);
 			std::erase_if(block->parent->children, [&](const auto& b) {
 				return b == block;
