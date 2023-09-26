@@ -19,16 +19,14 @@ struct BlueprintView : View
 	uint group_name_hash = "main"_h;
 	uint load_frame = 0;
 	BlueprintGroupPtr last_group = nullptr;
-	std::vector<uint> last_added_objects;
 	bool unsaved = false;
 
 	BlueprintView();
 	BlueprintView(const std::string& name);
 	~BlueprintView();
 
-	void process_object_moved(BlueprintObject obj);
+	void process_relationships(const BlueprintObject& obj);
 	void expand_block_sizes();
-	bool is_last_added(uint object_id, bool process_condition); // check if the object just added and remove it from the list if the condition is true
 	void on_draw() override;
 };
 

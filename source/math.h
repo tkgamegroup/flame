@@ -331,7 +331,7 @@ namespace flame
 
 		void reset()
 		{
-			a = vec2(10000.f);
+			a = vec2(+10000.f);
 			b = vec2(-10000.f);
 		}
 

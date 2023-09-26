@@ -694,6 +694,62 @@ namespace flame
 		return ret;
 	}
 
+	static void remove_object_links(const BlueprintObject& obj)
+	{
+		auto group = obj.get_locate_group();
+		std::vector<BlueprintLinkPtr> to_remove_links;
+		for (auto& l : group->links)
+		{
+			if (l->from_slot->parent.get_id() == obj.get_id() || l->to_slot->parent.get_id() == obj.get_id())
+				to_remove_links.push_back(l.get());
+		}
+		for (auto l : to_remove_links)
+			group->blueprint->remove_link(l);
+	}
+
+	static void change_slot_type(BlueprintSlotPtr slot, TypeInfo* new_type)
+	{
+		if (slot->type == new_type)
+			return;
+		auto has_data = slot->data != nullptr;
+		if (slot->data) // is input slot and has data
+		{
+			slot->type->destroy(slot->data);
+			slot->data = nullptr;
+		}
+		if (!(slot->type && (slot->type == TypeInfo::get<voidptr>() ||
+			(slot->type->tag == TagPU && new_type->tag == TagU)))) // if a udt type link to its pointer type, dont change the type
+		{
+			slot->type = new_type;
+			if (new_type && has_data) // is input slot and has data
+				slot->data = new_type->create();
+		}
+	}
+
+	static void clear_invalid_links(BlueprintGroupPtr group)
+	{
+		std::vector<BlueprintLinkPtr> to_remove_links;
+		auto done = false;
+		while (!done)
+		{
+			done = true;
+			for (auto& l : group->links)
+			{
+				if (!l->from_slot->type || !l->to_slot->type)
+				{
+					if (!l->to_slot->type && !l->to_slot->allowed_types.empty())
+						change_slot_type(l->to_slot, nullptr);
+					to_remove_links.push_back(l.get());
+					done = false;
+				}
+				if (l->from_slot->parent.get_depth() > l->to_slot->parent.get_depth())
+					to_remove_links.push_back(l.get());
+			}
+		}
+		for (auto l : to_remove_links)
+			group->blueprint->remove_link(l);
+	}
+
 	void BlueprintPrivate::remove_node(BlueprintNodePtr node)
 	{
 		auto group = node->group;
@@ -707,26 +763,7 @@ namespace flame
 				break;
 			}
 		}
-		for (auto it = group->links.begin(); it != group->links.end();)
-		{
-			auto link = it->get();
-			if (link->from_slot->parent.p.node == node)
-			{
-				std::erase_if(link->to_slot->linked_slots, [&](const auto& slot) {
-					return slot == link->from_slot;
-				});
-				it = group->links.erase(it);
-			}
-			else if (link->to_slot->parent.p.node == node)
-			{
-				std::erase_if(link->from_slot->linked_slots, [&](const auto& slot) {
-					return slot == link->to_slot;
-				});
-				it = group->links.erase(it);
-			}
-			else
-				it++;
-		}
+		remove_object_links(node);
 		if (auto debugger = BlueprintDebugger::current(); debugger)
 			debugger->remove_break_node(node);
 		for (auto it = group->nodes.begin(); it != group->nodes.end(); it++)
@@ -762,51 +799,13 @@ namespace flame
 		}
 
 		node->block = new_block;
-
 		new_block->nodes.push_back(node);
+
+		clear_invalid_links(group);
 
 		auto frame = frames;
 		group->structure_changed_frame = frame;
 		dirty_frame = frame;
-	}
-
-	static void change_slot_type(BlueprintSlotPtr slot, TypeInfo* new_type)
-	{
-		if (slot->type == new_type)
-			return;
-		auto has_data = slot->data != nullptr;
-		if (slot->data) // is input slot and has data
-		{
-			slot->type->destroy(slot->data);
-			slot->data = nullptr;
-		}
-		if (!(slot->type && (slot->type == TypeInfo::get<voidptr>() ||
-			(slot->type->tag == TagPU && new_type->tag == TagU)))) // if a udt type link to its pointer type, dont change the type
-		{
-			slot->type = new_type;
-			if (new_type && has_data) // is input slot and has data
-				slot->data = new_type->create();
-		}
-	}
-
-	static void clear_invalid_links(BlueprintGroupPtr group)
-	{
-		auto done = false;
-		while (!done)
-		{
-			done = true;
-			for (auto& l : group->links)
-			{
-				if (!l->from_slot->type || !l->to_slot->type)
-				{
-					if (!l->to_slot->type && !l->to_slot->allowed_types.empty())
-						change_slot_type(l->to_slot, nullptr);
-					group->blueprint->remove_link(l.get());
-					done = false;
-					break;
-				}
-			}
-		}
 	}
 
 	static void update_node_output_types(BlueprintNodePtr n)
@@ -1027,6 +1026,7 @@ namespace flame
 			std::erase_if(block->parent->children, [&](const auto& b) {
 				return b == block;
 			});
+			remove_object_links(block);
 			for (auto it = group->blocks.begin(); it != group->blocks.end(); it++)
 			{
 				if (it->get() == block)
@@ -1063,8 +1063,9 @@ namespace flame
 
 		block->parent = new_parent;
 		block->depth = new_parent->depth + 1;
-
 		new_parent->children.push_back(block);
+
+		clear_invalid_links(group);
 
 		auto frame = frames;
 		group->structure_changed_frame = frame;
