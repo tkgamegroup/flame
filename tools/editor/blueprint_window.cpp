@@ -21,6 +21,23 @@ BlueprintObject get_object_from_ax_node_id(ax::NodeEditor::NodeId id, BlueprintI
 	return g.object_map[obj->object_id]->original;
 }
 
+static std::vector<BlueprintObject> copied_objects;
+
+bool is_any_ancestor_in(BlueprintObject obj, const std::vector<BlueprintObject>& list) 
+{
+	auto b = obj.get_locate_block();
+	while (b)
+	{
+		for (auto& o : list)
+		{
+			if (o.type == BlueprintObjectBlock && o.p.block == b)
+				return true;
+		}
+		b = b->parent;
+	}
+	return false;
+};
+
 BlueprintWindow blueprint_window;
 
 BlueprintView::BlueprintView() :
@@ -239,6 +256,175 @@ void BlueprintView::process_relationships(const BlueprintObject& obj)
 	remove_block_invalid_links(g->blocks.front().get());
 }
 
+void BlueprintView::copy_objects(BlueprintInstance::Group& instance_group)
+{
+	if (auto n = ax::NodeEditor::GetSelectedObjectCount(); n > 0)
+	{
+		std::vector<ax::NodeEditor::NodeId> node_ids(n);
+		n = ax::NodeEditor::GetSelectedNodes(node_ids.data(), n);
+		if (n > 0)
+		{
+			copied_objects.clear();
+			for (auto i = 0; i < n; i++)
+			{
+				auto obj = get_object_from_ax_node_id(node_ids[i], instance_group);
+				if (!is_any_ancestor_in(obj, copied_objects))
+					copied_objects.push_back(obj);
+			}
+			for (auto& l : instance_group.original->links)
+			{
+				// if the link's from_slot is in copied_objects
+				if (std::find_if(copied_objects.begin(), copied_objects.end(), [&](const BlueprintObject& obj) {
+					return l->from_slot->parent.get_id() == obj.get_id();
+					}) != copied_objects.end() || is_any_ancestor_in(l->from_slot->parent, copied_objects))
+				{
+					// if the link's to_slot is in copied_objects
+					if (std::find_if(copied_objects.begin(), copied_objects.end(), [&](const BlueprintObject& obj) {
+						return l->to_slot->parent.get_id() == obj.get_id();
+						}) != copied_objects.end() || is_any_ancestor_in(l->to_slot->parent, copied_objects))
+					{
+						copied_objects.push_back(l.get());
+					}
+				}
+			}
+		}
+	}
+}
+
+void BlueprintView::paste_objects(BlueprintInstance::Group& instance_group, const vec2& pos)
+{
+	auto group = instance_group.original;
+	std::map<uint, BlueprintObject> object_map; // the original id to the new object, use for linking
+	auto pervious_base_pos = vec2(+10000.f);
+	for (auto& obj : copied_objects)
+	{
+		if (obj.type == BlueprintObjectNode || obj.type == BlueprintObjectBlock)
+			pervious_base_pos = min(pervious_base_pos, obj.get_position());
+	}
+	for (auto& obj : copied_objects)
+	{
+		auto copy_node = [&](BlueprintNodePtr src_n, BlueprintBlockPtr parent) {
+			BlueprintNodePtr n = nullptr;
+			if (src_n->name_hash == "Variable"_h)
+			{
+				auto first_input = src_n->inputs.front().get();
+				n = blueprint->add_variable_node(group, parent, *(uint*)first_input->data, "get"_h);
+			}
+			else if (src_n->name_hash == "Set Variable"_h)
+			{
+				auto first_input = src_n->inputs.front().get();
+				n = blueprint->add_variable_node(group, parent, *(uint*)first_input->data, "set"_h);
+			}
+			else if (src_n->name_hash == "Array Size"_h)
+			{
+				auto first_input = src_n->inputs.front().get();
+				n = blueprint->add_variable_node(group, parent, *(uint*)first_input->data, "array_size"_h);
+			}
+			else if (src_n->name_hash == "Array Get Item"_h)
+			{
+				auto first_input = src_n->inputs.front().get();
+				n = blueprint->add_variable_node(group, parent, *(uint*)first_input->data, "array_get_item"_h);
+			}
+			else if (src_n->name_hash == "Array Set Item"_h)
+			{
+				auto first_input = src_n->inputs.front().get();
+				n = blueprint->add_variable_node(group, parent, *(uint*)first_input->data, "array_set_item"_h);
+			}
+			else if (src_n->name_hash == "Array Add Item"_h)
+			{
+				auto first_input = src_n->inputs.front().get();
+				n = blueprint->add_variable_node(group, parent, *(uint*)first_input->data, "array_add_item"_h);
+			}
+			else
+			{
+				std::vector<BlueprintSlotDesc> inputs(src_n->inputs.size()), outputs(src_n->outputs.size());
+				for (auto i = 0; i < inputs.size(); i++)
+				{
+					auto& src_s = src_n->inputs[i];
+					auto& dst_s = inputs[i];
+					dst_s.name = src_s->name;
+					dst_s.name_hash = src_s->name_hash;
+					dst_s.flags = src_s->flags;
+					dst_s.allowed_types = src_s->allowed_types;
+				}
+				for (auto i = 0; i < outputs.size(); i++)
+				{
+					auto& src_s = src_n->outputs[i];
+					auto& dst_s = outputs[i];
+					dst_s.name = src_s->name;
+					dst_s.name_hash = src_s->name_hash;
+					dst_s.flags = src_s->flags;
+					dst_s.allowed_types = src_s->allowed_types;
+				}
+				n = blueprint->add_node(group, parent, src_n->name, src_n->display_name, inputs, outputs,
+					src_n->function, src_n->constructor, src_n->destructor, src_n->input_slot_changed_callback, src_n->preview_provider);
+			}
+			if (n)
+			{
+				for (auto i = 0; i < src_n->inputs.size(); i++)
+				{
+					auto& src_s = src_n->inputs[i];
+					auto& dst_s = n->inputs[i];
+					if (dst_s->type != src_s->type)
+						blueprint->set_input_type(dst_s.get(), src_s->type);
+					src_s->type->copy(dst_s->data, src_s->data);
+				}
+
+				n->position = pos + src_n->position - pervious_base_pos;
+				ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+				object_map[src_n->object_id] = n;
+			}
+			return n;
+			};
+		if (obj.type == BlueprintObjectNode)
+		{
+			auto src_n = obj.p.node;
+			copy_node(src_n, nullptr);
+		}
+		else if (obj.type == BlueprintObjectBlock)
+		{
+			auto src_b = obj.p.block;
+			std::function<void(BlueprintBlockPtr, BlueprintBlockPtr)> copy_block;
+			copy_block = [&](BlueprintBlockPtr src_b, BlueprintBlockPtr parent) {
+				auto b = blueprint->add_block(group, parent);
+				for (auto& c : src_b->children)
+					copy_block(c, b);
+				for (auto& n : src_b->nodes)
+					copy_node(n, b);
+				b->position = pos + src_b->position - pervious_base_pos;
+				b->rect = Rect(vec2(0), vec2(0));
+				ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)b, b->position);
+				ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)b, src_b->rect.size());
+				object_map[src_b->object_id] = b;
+				};
+			copy_block(src_b, nullptr);
+		}
+	}
+	for (auto& obj : copied_objects)
+	{
+		if (obj.type == BlueprintObjectLink)
+		{
+			auto src_l = obj.p.link;
+			auto& from_object = object_map[src_l->from_slot->parent.get_id()];
+			auto& to_object = object_map[src_l->to_slot->parent.get_id()];
+			blueprint->add_link(from_object.find_output(src_l->from_slot->name_hash),
+				to_object.find_input(src_l->to_slot->name_hash));
+		}
+
+	}
+
+	unsaved = true;
+}
+
+void BlueprintView::save_blueprint()
+{
+	if (unsaved)
+	{
+		blueprint->save();
+		unsaved = false;
+	}
+}
+
 void BlueprintView::expand_block_sizes()
 {
 	auto g = blueprint->find_group(group_name_hash);
@@ -307,13 +493,7 @@ void BlueprintView::on_draw()
 			blueprint_instance->build();
 
 		if (ImGui::Button("Save"))
-		{
-			if (unsaved)
-			{
-				blueprint->save();
-				unsaved = false;
-			}
-		}
+			save_blueprint();
 		ImGui::SameLine();
 		if (ImGui::Button("Zoom To Content"))
 		{
@@ -1196,11 +1376,9 @@ void BlueprintView::on_draw()
 					{
 						if (ax::NodeEditor::AcceptNewItem())
 						{
-							ax::NodeEditor::Suspend();
 							open_popup_pos = floor((vec2)mouse_pos);
 							new_node_link_slot = from_slot;
 							ImGui::OpenPopup("add_node_context_menu");
-							ax::NodeEditor::Resume();
 						}
 					}
 					if (BlueprintSlotPtr from_slot, to_slot;
@@ -1291,58 +1469,11 @@ void BlueprintView::on_draw()
 				}
 				ax::NodeEditor::Resume();
 
-				static std::vector<BlueprintObject> copied_objects;
-				auto are_ancestors_in_list = [](BlueprintObject obj, const std::vector<BlueprintObject>& list) {
-					auto b = obj.get_locate_block();
-					while (b)
-					{
-						for (auto& o : list)
-						{
-							if (o.type == BlueprintObjectBlock && o.p.block == b)
-								return true;
-						}
-						b = b->parent;
-					}
-					return false;
-				};
-
 				ax::NodeEditor::Suspend();
 				if (ImGui::BeginPopup("node_context_menu"))
 				{
 					if (ImGui::Selectable("Copy"))
-					{
-						if (auto n = ax::NodeEditor::GetSelectedObjectCount(); n > 0)
-						{
-							std::vector<ax::NodeEditor::NodeId> node_ids(n);
-							n = ax::NodeEditor::GetSelectedNodes(node_ids.data(), n);
-							if (n > 0)
-							{
-								copied_objects.clear();
-								for (auto i = 0; i < n; i++)
-								{
-									auto obj = get_object_from_ax_node_id(node_ids[i], instance_group);
-									if (!are_ancestors_in_list(obj, copied_objects))
-										copied_objects.push_back(obj);
-								}
-								for (auto& l : group->links)
-								{
-									// if the link's from_slot is in copied_objects
-									if (std::find_if(copied_objects.begin(), copied_objects.end(), [&](const BlueprintObject& obj) {
-										return l->from_slot->parent.get_id() == obj.get_id();
-									}) != copied_objects.end() || are_ancestors_in_list(l->from_slot->parent, copied_objects))
-									{
-										// if the link's to_slot is in copied_objects
-										if (std::find_if(copied_objects.begin(), copied_objects.end(), [&](const BlueprintObject& obj) {
-											return l->to_slot->parent.get_id() == obj.get_id();
-											}) != copied_objects.end() || are_ancestors_in_list(l->to_slot->parent, copied_objects))
-										{
-											copied_objects.push_back(l.get());
-										}
-									}
-								}
-							}
-						}
-					}
+						copy_objects(instance_group);
 					if (ImGui::Selectable("Cut"))
 					{
 
@@ -1363,7 +1494,7 @@ void BlueprintView::on_draw()
 								for (auto i = 0; i < n; i++)
 								{
 									auto obj = get_object_from_ax_node_id(node_ids[i], instance_group);
-									if (!are_ancestors_in_list(obj, selected_objects))
+									if (!is_any_ancestor_in(obj, selected_objects))
 										selected_objects.push_back(obj);
 								}
 
@@ -1553,128 +1684,7 @@ void BlueprintView::on_draw()
 					if (!copied_objects.empty())
 					{
 						if (ImGui::MenuItem("Paste"))
-						{
-							std::map<uint, BlueprintObject> object_map; // the original id to the new object, use for linking
-							auto pervious_base_pos = vec2(+10000.f);
-							for (auto& obj : copied_objects)
-							{
-								if (obj.type == BlueprintObjectNode || obj.type == BlueprintObjectBlock)
-									pervious_base_pos = min(pervious_base_pos, obj.get_position());
-							}
-							for (auto& obj : copied_objects)
-							{
-								auto copy_node = [&](BlueprintNodePtr src_n, BlueprintBlockPtr parent) {
-									BlueprintNodePtr n = nullptr;
-									if (src_n->name_hash == "Variable"_h)
-									{
-										auto first_input = src_n->inputs.front().get();
-										n = blueprint->add_variable_node(group, parent, *(uint*)first_input->data, "get"_h);
-									}
-									else if (src_n->name_hash == "Set Variable"_h)
-									{
-										auto first_input = src_n->inputs.front().get();
-										n = blueprint->add_variable_node(group, parent, *(uint*)first_input->data, "set"_h);
-									}
-									else if (src_n->name_hash == "Array Size"_h)
-									{
-										auto first_input = src_n->inputs.front().get();
-										n = blueprint->add_variable_node(group, parent, *(uint*)first_input->data, "array_size"_h);
-									}
-									else if (src_n->name_hash == "Array Get Item"_h)
-									{
-										auto first_input = src_n->inputs.front().get();
-										n = blueprint->add_variable_node(group, parent, *(uint*)first_input->data, "array_get_item"_h);
-									}
-									else if (src_n->name_hash == "Array Set Item"_h)
-									{
-										auto first_input = src_n->inputs.front().get();
-										n = blueprint->add_variable_node(group, parent, *(uint*)first_input->data, "array_set_item"_h);
-									}
-									else if (src_n->name_hash == "Array Add Item"_h)
-									{
-										auto first_input = src_n->inputs.front().get();
-										n = blueprint->add_variable_node(group, parent, *(uint*)first_input->data, "array_add_item"_h);
-									}
-									else
-									{
-										std::vector<BlueprintSlotDesc> inputs(src_n->inputs.size()), outputs(src_n->outputs.size());
-										for (auto i = 0; i < inputs.size(); i++)
-										{
-											auto& src_s = src_n->inputs[i];
-											auto& dst_s = inputs[i];
-											dst_s.name = src_s->name;
-											dst_s.name_hash = src_s->name_hash;
-											dst_s.flags = src_s->flags;
-											dst_s.allowed_types = src_s->allowed_types;
-										}
-										for (auto i = 0; i < outputs.size(); i++)
-										{
-											auto& src_s = src_n->outputs[i];
-											auto& dst_s = outputs[i];
-											dst_s.name = src_s->name;
-											dst_s.name_hash = src_s->name_hash;
-											dst_s.flags = src_s->flags;
-											dst_s.allowed_types = src_s->allowed_types;
-										}
-										n = blueprint->add_node(group, parent, src_n->name, src_n->display_name, inputs, outputs,
-											src_n->function, src_n->constructor, src_n->destructor, src_n->input_slot_changed_callback, src_n->preview_provider);
-									}
-									if (n)
-									{
-										for (auto i = 0; i < src_n->inputs.size(); i++)
-										{
-											auto& src_s = src_n->inputs[i];
-											auto& dst_s = n->inputs[i];
-											if (dst_s->type != src_s->type)
-												blueprint->set_input_type(dst_s.get(), src_s->type);
-											src_s->type->copy(dst_s->data, src_s->data);
-										}
-
-										n->position = open_popup_pos + src_n->position - pervious_base_pos;
-										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
-										object_map[src_n->object_id] = n;
-									}
-									return n;
-								};
-								if (obj.type == BlueprintObjectNode)
-								{
-									auto src_n = obj.p.node;
-									copy_node(src_n, nullptr);
-								}
-								else if (obj.type == BlueprintObjectBlock)
-								{
-									auto src_b = obj.p.block;
-									std::function<void(BlueprintBlockPtr, BlueprintBlockPtr)> copy_block;
-									copy_block = [&](BlueprintBlockPtr src_b, BlueprintBlockPtr parent) {
-										auto b = blueprint->add_block(group, parent);
-										for (auto& c : src_b->children)
-											copy_block(c, b);
-										for (auto& n : src_b->nodes)
-											copy_node(n, b);
-										b->position = open_popup_pos + src_b->position - pervious_base_pos;
-										b->rect = Rect(vec2(0), vec2(0));
-										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)b, b->position);
-										ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)b, src_b->rect.size());
-										object_map[src_b->object_id] = b;
-									};
-									copy_block(src_b, nullptr);
-								}
-							}
-							for (auto& obj : copied_objects)
-							{
-								if (obj.type == BlueprintObjectLink)
-								{
-									auto src_l = obj.p.link;
-									auto& from_object = object_map[src_l->from_slot->parent.get_id()];
-									auto& to_object = object_map[src_l->to_slot->parent.get_id()];
-									blueprint->add_link(from_object.find_output(src_l->from_slot->name_hash), 
-										to_object.find_input(src_l->to_slot->name_hash));
-								}
-
-							}
-
-							unsaved = true;
-						}
+							paste_objects(instance_group, open_popup_pos);
 						if (ImGui::MenuItem("Clear Copies"))
 							copied_objects.clear();
 					}
@@ -1895,6 +1905,21 @@ void BlueprintView::on_draw()
 			ImGui::EndChild();
 
 			ImGui::EndTable();
+
+			auto& io = ImGui::GetIO();
+
+			if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
+			{
+				if (!io.WantCaptureKeyboard)
+				{
+					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_C))
+						copy_objects(instance_group);
+					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_V))
+						paste_objects(instance_group, floor((vec2)ImGui::GetMousePos()));
+					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
+						save_blueprint();
+				}
+			}
 		}
 	}
 

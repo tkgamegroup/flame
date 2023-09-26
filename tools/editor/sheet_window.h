@@ -11,6 +11,8 @@ struct SheetView : View
 	SheetView();
 	SheetView(const std::string& name);
 	~SheetView();
+
+	void save_sheet();
 	void on_draw() override;
 };
 

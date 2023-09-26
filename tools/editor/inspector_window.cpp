@@ -2087,6 +2087,8 @@ void InspectorView::on_draw()
 		ImGui::SameLine();
 	}
 
+	auto& io = ImGui::GetIO();
+
 	switch (inspected_type)
 	{
 	case Selection::tEntity:
@@ -2108,6 +2110,15 @@ void InspectorView::on_draw()
 				app.prefab_unsaved = true;
 			if (changed >= 3)
 				dirty = true;
+		}
+
+		if (ImGui::IsWindowHovered())
+		{
+			if (!io.WantCaptureKeyboard)
+			{
+				if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
+					app.save_prefab();
+			}
 		}
 		break;
 	case Selection::tPath:

@@ -841,6 +841,8 @@ void SceneView::on_draw()
 					if (io.KeysDown[Keyboard_G])
 						selected_to_focus();
 				}
+				if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
+					app.save_prefab();
 			}
 
 			if (auto hovering_element = sRenderer::instance()->pick_up_2d(app.input->mpos);

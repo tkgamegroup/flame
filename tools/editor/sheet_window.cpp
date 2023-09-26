@@ -25,6 +25,33 @@ SheetView::~SheetView()
 		Sheet::release(sheet);
 }
 
+static std::vector<float> column_offsets;
+
+void SheetView::save_sheet()
+{
+	if (unsaved)
+	{
+		std::vector<std::pair<uint, float>> column_idx_and_offsets(column_offsets.size());
+		for (auto i = 0; i < sheet->columns.size(); i++)
+			column_idx_and_offsets[i] = std::make_pair(i, column_offsets[i]);
+		std::sort(column_idx_and_offsets.begin(), column_idx_and_offsets.end(), [](const auto& a, const auto& b) {
+			return a.second < b.second;
+			});
+		for (auto i = 0; i < sheet->columns.size(); i++)
+		{
+			auto target_idx = column_idx_and_offsets[i].first;
+			if (i != target_idx)
+			{
+				sheet->reposition_columns(i, target_idx);
+				std::swap(column_idx_and_offsets[i], column_idx_and_offsets[target_idx]);
+			}
+		}
+		sheet->save();
+
+		unsaved = false;
+	}
+}
+
 void SheetView::on_draw()
 {
 	bool opened = true;
@@ -38,31 +65,8 @@ void SheetView::on_draw()
 	}
 	if (sheet)
 	{
-		static std::vector<float> column_offsets;
 		if (ImGui::Button("Save"))
-		{
-			if (unsaved)
-			{
-				std::vector<std::pair<uint, float>> column_idx_and_offsets(column_offsets.size());
-				for (auto i = 0; i < sheet->columns.size(); i++)
-					column_idx_and_offsets[i] = std::make_pair(i, column_offsets[i]);
-				std::sort(column_idx_and_offsets.begin(), column_idx_and_offsets.end(), [](const auto& a, const auto& b) {
-					return a.second < b.second;
-				});
-				for (auto i = 0; i < sheet->columns.size(); i++)
-				{
-					auto target_idx = column_idx_and_offsets[i].first;
-					if (i != target_idx)
-					{
-						sheet->reposition_columns(i, target_idx);
-						std::swap(column_idx_and_offsets[i], column_idx_and_offsets[target_idx]);
-					}
-				}
-				sheet->save();
-
-				unsaved = false;
-			}
-		}
+			save_sheet();
 		column_offsets.resize(sheet->columns.size());
 		if (sheet->columns.size() > 0 && sheet->columns.size() < 64)
 		{
@@ -202,6 +206,17 @@ void SheetView::on_draw()
 			sheet->insert_row();
 		}
 		ImGui::EndGroup();
+	}
+
+	auto& io = ImGui::GetIO();
+
+	if (ImGui::IsWindowHovered())
+	{
+		if (!io.WantCaptureKeyboard)
+		{
+			if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
+				save_sheet();
+		}
 	}
 
 	ImGui::End();

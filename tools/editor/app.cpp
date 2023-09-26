@@ -548,7 +548,7 @@ void App::on_gui()
 					open_prefab(path);
 			});
 		}
-		if (ImGui::MenuItem("Save Prefab (Ctrl+S)"))
+		if (ImGui::MenuItem("Save Prefab"))
 			save_prefab();
 		if (ImGui::MenuItem("Close Prefab"))
 			close_prefab();
@@ -1090,8 +1090,6 @@ void App::on_gui()
 		else
 			cmd_restart_preview();
 	}
-	if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
-		save_prefab();
 	if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_B))
 		build_project();
 	if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Z))

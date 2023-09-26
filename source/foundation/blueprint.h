@@ -520,6 +520,7 @@ namespace flame
 			};
 
 			BlueprintInstancePtr instance;
+			BlueprintGroupPtr original;
 			uint name;
 
 			std::map<uint, Data>						slot_datas; // key: slot id

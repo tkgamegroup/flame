@@ -552,6 +552,8 @@ void HierarchyView::on_draw()
 				app.cmd_delete_entities(selection.get_entities());
 			if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_D))
 				app.cmd_duplicate_entities(selection.get_entities());
+			if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
+				app.save_prefab();
 		}
 	}
 

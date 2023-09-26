@@ -27,6 +27,9 @@ struct BlueprintView : View
 
 	void process_relationships(const BlueprintObject& obj);
 	void expand_block_sizes();
+	void copy_objects(BlueprintInstance::Group& instance_group);
+	void paste_objects(BlueprintInstance::Group& instance_group, const vec2& pos);
+	void save_blueprint();
 	void on_draw() override;
 };
 

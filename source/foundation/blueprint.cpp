@@ -2433,6 +2433,7 @@ namespace flame
 
 			auto& g = groups.emplace(src_g->name_hash, Group()).first->second;
 			g.instance = this;
+			g.original = src_g.get();
 			g.name = src_g->name_hash;
 			create_group_structure(src_g.get(), g, g.slot_datas);
 			g.structure_updated_frame = frame;
