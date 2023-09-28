@@ -167,9 +167,11 @@ struct App : UniverseApplication
 	std::string last_status;
 
 	std::filesystem::path project_path;
+	std::filesystem::path project_static_path;
 	std::filesystem::path prefab_path;
 	bool prefab_unsaved = false;
-	std::vector<SheetPtr> project_sheets;
+	std::vector<SheetPtr> project_static_sheets;
+	std::vector<BlueprintPtr> project_static_blueprints;
 	void* project_cpp_library = nullptr;
 	EntityPtr e_editor = nullptr;
 	EntityPtr e_prefab = nullptr;

@@ -29,7 +29,7 @@ namespace flame
 		uint name_hash;
 		uint ref = 0;
 
-		int find_column(uint name) const
+		inline int find_column(uint name) const
 		{
 			auto it = columns_map.find(name);
 			if (it == columns_map.end())

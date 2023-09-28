@@ -43,8 +43,8 @@ namespace flame
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) override;
-		BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint variable_name, uint type) override;
-		BlueprintNodePtr		add_call_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint group_name) override;
+		BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint variable_name, uint type, uint location_name) override;
+		BlueprintNodePtr		add_call_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint group_name, uint location_name) override;
 		void					remove_node(BlueprintNodePtr node) override;
 		void					set_node_block(BlueprintNodePtr node, BlueprintBlockPtr new_block) override;
 		void					set_input_type(BlueprintSlotPtr slot, TypeInfo* type) override;
@@ -59,6 +59,7 @@ namespace flame
 		void					remove_group_input(BlueprintGroupPtr group, uint name) override;
 		void					add_group_output(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;
 		void					remove_group_output(BlueprintGroupPtr group, uint name) override;
+
 		void					save(const std::filesystem::path& path) override;
 	};
 

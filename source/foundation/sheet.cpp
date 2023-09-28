@@ -5,7 +5,7 @@
 namespace flame
 {
 	std::vector<std::unique_ptr<SheetT>> loaded_sheets;
-	std::map<uint, SheetPtr> loaded_sheets_map;
+	std::map<uint, SheetPtr> named_sheets;
 
 	void SheetPrivate::clear_rows() 
 	{
@@ -212,14 +212,14 @@ namespace flame
 			ret->filename = filename;
 			ret->ref = 1;
 			loaded_sheets.emplace_back(ret);
-			loaded_sheets_map[ret->name_hash] = ret;
+			named_sheets[ret->name_hash] = ret;
 			return ret;
 		}
 
 		SheetPtr operator()(uint name) override
 		{
-			auto it = loaded_sheets_map.find(name);
-			if (it != loaded_sheets_map.end())
+			auto it = named_sheets.find(name);
+			if (it != named_sheets.end())
 			{
 				it->second->ref++;
 				return it->second;

@@ -1262,27 +1262,30 @@ void ProjectWindow::process_changed_paths()
 				auto ext = p.first.extension();
 				if (ext == L".sheet")
 				{
-					if (p.second & FileAdded)
+					if (p.first.native().starts_with(app.project_static_path.native()))
 					{
-						auto sht = Sheet::get(p.first);
-						app.project_sheets.push_back(sht);
-
-					}
-					else if (p.second & FileRemoved)
-					{
-						for (auto it = app.project_sheets.begin(); it != app.project_sheets.end(); it++)
+						if (p.second & FileAdded)
 						{
-							if ((*it)->filename == p.first)
+							auto sht = Sheet::get(p.first);
+							app.project_static_sheets.push_back(sht);
+
+						}
+						else if (p.second & FileRemoved)
+						{
+							for (auto it = app.project_static_sheets.begin(); it != app.project_static_sheets.end(); it++)
 							{
-								Sheet::release(*it);
-								app.project_sheets.erase(it);
-								break;
+								if ((*it)->filename == p.first)
+								{
+									Sheet::release(*it);
+									app.project_static_sheets.erase(it);
+									break;
+								}
 							}
 						}
-					}
-					else if (p.second & FileRenamed)
-					{
-						// TODO: is rename avaliable?
+						else if (p.second & FileRenamed)
+						{
+							// TODO: is rename avaliable?
+						}
 					}
 				}
 				else if (ext == L".prefab")

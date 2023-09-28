@@ -9,6 +9,7 @@
 #include <flame/foundation/system.h>
 #include <flame/foundation/typeinfo_serialize.h>
 #include <flame/foundation/sheet.h>
+#include <flame/foundation/blueprint.h>
 #include <flame/graphics/model.h>
 #include <flame/graphics/shader.h>
 #include <flame/graphics/extension.h>
@@ -1184,12 +1185,26 @@ void App::open_project(const std::filesystem::path& path)
 	for (auto& p : project_settings.favorites)
 		p = Path::get(p);
 
-	for (auto it : std::filesystem::recursive_directory_iterator(project_path))
+	project_static_path = assets_path / L"static";
+	project_static_path.make_preferred();
+	if (std::filesystem::exists(project_static_path))
 	{
-		if (it.is_regular_file() && it.path().extension() == L".sht")
+		for (auto it : std::filesystem::recursive_directory_iterator(project_static_path))
 		{
-			auto sht = Sheet::get(it.path());
-			project_sheets.push_back(sht);
+			if (it.is_regular_file())
+			{
+				auto ext = it.path().extension();
+				if (ext == L".sht")
+				{
+					auto sht = Sheet::get(it.path());
+					project_static_sheets.push_back(sht);
+				}
+				else if (ext == L".bp")
+				{
+					auto bp = Blueprint::get(it.path(), true);
+					project_static_blueprints.push_back(bp);
+				}
+			}
 		}
 	}
 
