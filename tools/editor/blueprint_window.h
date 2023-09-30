@@ -25,10 +25,10 @@ struct BlueprintView : View
 	BlueprintView(const std::string& name);
 	~BlueprintView();
 
-	void process_relationships(const BlueprintObject& obj);
+	void process_relationships(BlueprintNodePtr n);
 	void expand_block_sizes();
-	void copy_objects(BlueprintInstance::Group& instance_group);
-	void paste_objects(BlueprintInstance::Group& instance_group, const vec2& pos);
+	void copy_nodes(BlueprintGroupPtr g);
+	void paste_nodes(BlueprintGroupPtr g, const vec2& pos);
 	void save_blueprint();
 	void on_draw() override;
 };

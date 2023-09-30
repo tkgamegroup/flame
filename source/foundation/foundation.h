@@ -27,7 +27,6 @@ namespace flame
 	FLAME_FOUNDATION_TYPE(NativeWindow);
 	FLAME_FOUNDATION_TYPE(BlueprintSlot);
 	FLAME_FOUNDATION_TYPE(BlueprintNode);
-	FLAME_FOUNDATION_TYPE(BlueprintBlock);
 	FLAME_FOUNDATION_TYPE(BlueprintGroup);
 	FLAME_FOUNDATION_TYPE(BlueprintLink);
 	FLAME_FOUNDATION_TYPE(Blueprint);

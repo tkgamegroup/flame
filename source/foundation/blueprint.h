@@ -5,15 +5,6 @@
 
 namespace flame
 {
-	enum BlueprintObjectType
-	{
-		BlueprintObjectSlot,
-		BlueprintObjectNode,
-		BlueprintObjectBlock,
-		BlueprintObjectLink,
-		BlueprintObjectGroup
-	};
-
 	enum BlueprintSlotFlags
 	{
 		BlueprintSlotFlagNone = 0,
@@ -41,57 +32,6 @@ namespace flame
 	{
 		TypeInfo* type;
 		void* data;
-	};
-
-	struct BlueprintObject
-	{
-		union
-		{
-			BlueprintSlotPtr slot;
-			BlueprintNodePtr node;
-			BlueprintBlockPtr block;
-			BlueprintLinkPtr link;
-			BlueprintGroupPtr group;
-		}p;
-
-		BlueprintObjectType type : 8;
-
-		BlueprintObject() {}
-		BlueprintObject(BlueprintSlotPtr slot)
-		{
-			p.slot = slot;
-			type = BlueprintObjectSlot;
-		}
-		BlueprintObject(BlueprintNodePtr node)
-		{
-			p.node = node;
-			type = BlueprintObjectNode;
-		}
-		BlueprintObject(BlueprintBlockPtr block)
-		{
-			p.block = block;
-			type = BlueprintObjectBlock;
-		}
-		BlueprintObject(BlueprintLinkPtr link)
-		{
-			p.link = link;
-			type = BlueprintObjectLink;
-		}
-		BlueprintObject(BlueprintGroupPtr group)
-		{
-			p.group = group;
-			type = BlueprintObjectGroup;
-		}
-
-		inline uint get_id() const;
-		inline BlueprintGroupPtr get_locate_group() const;
-		inline BlueprintBlockPtr get_locate_block() const;
-		inline uint get_depth() const;
-		inline std::vector<BlueprintSlotPtr> get_inputs() const;
-		inline std::vector<BlueprintSlotPtr> get_outputs() const;
-		inline BlueprintSlotPtr find_input(uint name) const;
-		inline BlueprintSlotPtr find_output(uint name) const;
-		inline vec2 get_position() const;
 	};
 
 	struct BlueprintSlotDesc
@@ -123,16 +63,16 @@ namespace flame
 
 	struct BlueprintSlot
 	{
-		uint object_id;
-		BlueprintObject parent;
-		std::string name;
-		uint name_hash = 0;
-		BlueprintSlotFlags flags = BlueprintSlotFlagNone;
-		std::vector<TypeInfo*> allowed_types;
-		TypeInfo* type = nullptr;
-		void* data = nullptr;
-		std::string default_value;
-		uint data_changed_frame = 0;
+		uint					object_id;
+		BlueprintNodePtr		node;
+		std::string				name;
+		uint					name_hash = 0;
+		BlueprintSlotFlags		flags = BlueprintSlotFlagNone;
+		std::vector<TypeInfo*>	allowed_types;
+		TypeInfo*				type = nullptr;
+		void*					data = nullptr;
+		std::string				default_value;
+		uint					data_changed_frame = 0;
 	};
 
 	struct BlueprintNodePreview
@@ -152,7 +92,6 @@ namespace flame
 	{
 		uint											object_id;
 		BlueprintGroupPtr								group;
-		BlueprintBlockPtr								block;
 
 		std::string										name;
 		uint											name_hash = 0;
@@ -165,9 +104,10 @@ namespace flame
 		BlueprintNodeInputSlotChangedCallback			input_slot_changed_callback = nullptr;
 		BlueprintNodePreviewProvider					preview_provider = nullptr;
 
+		bool											is_block = false;
 		BlueprintNodePtr								parent;
+		uint											depth = 0;
 		std::vector<BlueprintNodePtr>					children;
-		uint											depth;
 
 		vec2 position;
 		Rect rect;
@@ -194,26 +134,19 @@ namespace flame
 			}
 			return nullptr;
 		}
-	};
 
-	struct BlueprintBlock
-	{
-		uint object_id;
-		BlueprintGroupPtr group;
-		uint depth;
-
-		std::vector<BlueprintNodePtr> nodes;
-		BlueprintBlockPtr parent;
-		std::vector<BlueprintBlockPtr> children;
-
-		std::unique_ptr<BlueprintSlotT> input;
-		std::unique_ptr<BlueprintSlotT> output;
-
-		vec2 position;
-		Rect rect;
-		bool collapsed = false;
-
-		virtual ~BlueprintBlock() {}
+		inline bool contains(BlueprintNodePtr oth) const
+		{
+			if (!is_block)
+				return false;
+			while (oth)
+			{
+				if (this == (BlueprintNode*)oth)
+					return true;
+				oth = (BlueprintNodePtr)((BlueprintNode*)oth)->parent;
+			}
+			return false;
+		}
 	};
 
 	struct BlueprintVariable
@@ -237,7 +170,6 @@ namespace flame
 		std::vector<BlueprintVariable>							outputs;
 		std::vector<std::unique_ptr<BlueprintNodeT>>			nodes;
 		std::vector<std::unique_ptr<BlueprintLinkT>>			links;
-		std::vector<std::unique_ptr<BlueprintBlockT>>			blocks;
 
 		inline BlueprintNodePtr find_node(uint name) const
 		{
@@ -267,110 +199,6 @@ namespace flame
 
 		virtual ~BlueprintLink() {}
 	};
-
-	inline uint BlueprintObject::get_id() const
-	{
-		switch (type)
-		{
-		case BlueprintObjectSlot: return ((BlueprintSlot*)p.slot)->object_id;
-		case BlueprintObjectNode: return ((BlueprintNode*)p.node)->object_id;
-		case BlueprintObjectBlock: return ((BlueprintBlock*)p.block)->object_id;
-		case BlueprintObjectGroup: return ((BlueprintGroup*)p.group)->object_id;
-		}
-		return 0;
-	}
-
-	inline BlueprintBlockPtr BlueprintObject::get_locate_block() const
-	{
-		switch (type)
-		{
-		case BlueprintObjectNode: return ((BlueprintNode*)p.node)->block;
-		case BlueprintObjectBlock: return ((BlueprintBlock*)p.block)->parent;
-		}
-		return nullptr;
-	}
-
-	inline uint BlueprintObject::get_depth() const
-	{
-		switch (type)
-		{
-		case BlueprintObjectNode: return ((BlueprintBlock*)((BlueprintNode*)p.node)->block)->depth + 1;
-		case BlueprintObjectBlock: return ((BlueprintBlock*)p.block)->depth;
-		}
-		return 0;
-	}
-
-	inline BlueprintGroupPtr BlueprintObject::get_locate_group() const
-	{
-		switch (type)
-		{
-		case BlueprintObjectNode: return ((BlueprintNode*)p.node)->group;
-		case BlueprintObjectBlock: return ((BlueprintBlock*)p.block)->group;
-		}
-		return nullptr;
-	}
-
-	inline std::vector<BlueprintSlotPtr> BlueprintObject::get_inputs() const
-	{
-		std::vector<BlueprintSlotPtr> ret;
-		switch (type)
-		{
-		case BlueprintObjectNode:
-			for (auto& i : ((BlueprintNode*)p.node)->inputs)
-				ret.push_back(i.get());
-			break;
-		case BlueprintObjectBlock:
-			ret.push_back(((BlueprintBlock*)p.block)->input.get());
-			break;
-		}
-		return ret;
-	}
-
-	inline std::vector<BlueprintSlotPtr> BlueprintObject::get_outputs() const
-	{
-		std::vector<BlueprintSlotPtr> ret;
-		switch (type)
-		{
-		case BlueprintObjectNode:
-			for (auto& i : ((BlueprintNode*)p.node)->outputs)
-				ret.push_back(i.get());
-			break;
-		case BlueprintObjectBlock:
-			ret.push_back(((BlueprintBlock*)p.block)->output.get());
-			break;
-		}
-		return ret;
-	}
-
-	inline BlueprintSlotPtr BlueprintObject::find_input(uint name) const
-	{
-		switch (type)
-		{
-		case BlueprintObjectNode: return ((BlueprintNode*)p.node)->find_input(name);
-		case BlueprintObjectBlock: return ((BlueprintBlock*)p.block)->input.get();
-		}
-		return nullptr;
-	}
-
-	inline BlueprintSlotPtr BlueprintObject::find_output(uint name) const
-	{
-		switch (type)
-		{
-		case BlueprintObjectNode: return ((BlueprintNode*)p.node)->find_output(name);
-		case BlueprintObjectBlock: return ((BlueprintBlock*)p.block)->output.get();
-		}
-		return nullptr;
-	}
-
-	inline vec2 BlueprintObject::get_position() const
-	{
-		switch (type)
-		{
-		case BlueprintObjectNode: return ((BlueprintNode*)p.node)->position;
-		case BlueprintObjectBlock: return ((BlueprintBlock*)p.block)->position;
-		}
-		return vec2(0.f);
-	}
 
 	// Reflect ctor
 	struct Blueprint
@@ -402,20 +230,18 @@ namespace flame
 		virtual void*					add_variable(BlueprintGroupPtr group /* or null for blueprint variable */, const std::string& name, TypeInfo* type) = 0; // return: the data of the variable
 		virtual void					remove_variable(BlueprintGroupPtr group /* or null for blueprint variable */, uint name) = 0;
 		virtual void					alter_variable(BlueprintGroupPtr group /* or null for blueprint variable */, uint old_name, const std::string& new_name = "", TypeInfo* type = nullptr) = 0;
-		virtual BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintBlockPtr block, const std::string& name, const std::string& display_name,
+		virtual BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
-			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
-		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint variable_name, uint type = "get"_h, uint location_name = 0 /* from a sheet or a bp instance */ ) = 0;
-		virtual BlueprintNodePtr		add_call_node(BlueprintGroupPtr group, BlueprintBlockPtr block, uint group_name, uint location_name = 0 /* from other bp instance */ ) = 0; // add a node that will call another group
+			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr, bool is_block = false) = 0;
+		virtual BlueprintNodePtr		add_block(BlueprintGroupPtr group, BlueprintNodePtr parent) = 0;
+		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type = "get"_h, uint location_name = 0 /* from a sheet or a bp instance */ ) = 0;
+		virtual BlueprintNodePtr		add_call_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint group_name, uint location_name = 0 /* from other bp instance */ ) = 0; // add a node that will call another group
 		virtual void					remove_node(BlueprintNodePtr node) = 0;
-		virtual void					set_node_block(BlueprintNodePtr node, BlueprintBlockPtr new_block) = 0;
+		virtual void					set_node_parent(BlueprintNodePtr node, BlueprintNodePtr new_parent) = 0;
 		virtual void					set_input_type(BlueprintSlotPtr slot, TypeInfo* type) = 0;
 		virtual BlueprintLinkPtr		add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot) = 0;
 		virtual void					remove_link(BlueprintLinkPtr link) = 0;
-		virtual BlueprintBlockPtr		add_block(BlueprintGroupPtr group, BlueprintBlockPtr parent) = 0;
-		virtual void					remove_block(BlueprintBlockPtr block) = 0;
-		virtual void					set_block_parent(BlueprintBlockPtr block, BlueprintBlockPtr new_parent) = 0;
 		virtual BlueprintGroupPtr		add_group(const std::string& name) = 0;
 		virtual void					remove_group(BlueprintGroupPtr group) = 0;
 		virtual void					add_group_input(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) = 0;
@@ -455,6 +281,7 @@ namespace flame
 			BlueprintNodeDestructor					destructor = nullptr;
 			BlueprintNodeInputSlotChangedCallback	input_slot_changed_callback = nullptr;
 			BlueprintNodePreviewProvider			preview_provider = nullptr;
+			bool									is_block = false;
 		};
 
 		std::vector<NodeTemplate>	node_templates;
@@ -478,19 +305,19 @@ namespace flame
 
 	struct BlueprintInstance
 	{
-		struct Object
+		struct Node
 		{
 			uint							object_id;
-			BlueprintObject					original;
+			BlueprintNodePtr				original;
 			std::vector<BlueprintAttribute> inputs;
 			std::vector<BlueprintAttribute> outputs;
-			std::vector<Object>				children;
+			std::vector<Node>				children;
 			uint							updated_frame;
 		};
 
 		struct ExecutingBlock
 		{
-			Object* block_object;
+			Node*	block_node;
 			uint	block_id;
 			int		child_index;
 			uint	executed_times;
@@ -510,10 +337,10 @@ namespace flame
 			uint					name;
 
 			std::map<uint, Data>							slot_datas; // key: slot id
-			Object											root_object;
-			std::map<uint, Object*>							object_map;
-			Object*											input_object = nullptr;
-			Object*											output_object = nullptr;
+			Node											root_node;
+			std::map<uint, Node*>							node_map;
+			Node*											input_node = nullptr;
+			Node*											output_node = nullptr;
 			std::unordered_map<uint, BlueprintAttribute>	variables; // key: variable name hash
 
 			std::vector<ExecutingBlock>						executing_stack;
@@ -536,12 +363,12 @@ namespace flame
 					*(T*)it->second.data = v;
 			}
 
-			inline Object* executing_object() const
+			inline Node* executing_node() const
 			{
 				if (executing_stack.empty())
 					return nullptr;
 				auto& current_block = executing_stack.back();
-				return &current_block.block_object->children[current_block.child_index];
+				return &current_block.block_node->children[current_block.child_index];
 			}
 		};
 
