@@ -83,6 +83,8 @@ namespace flame
 	};
 
 	typedef void(*BlueprintNodeFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
+	typedef void(*BlueprintNodeBeginBlockFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times);
+	typedef void(*BlueprintNodeEndBlockFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
 	typedef void(*BlueprintNodeConstructor)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
 	typedef void(*BlueprintNodeDestructor)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
 	typedef void(*BlueprintNodeInputSlotChangedCallback)(TypeInfo** input_types, TypeInfo** output_types);
@@ -103,8 +105,10 @@ namespace flame
 		BlueprintNodeDestructor							destructor = nullptr;
 		BlueprintNodeInputSlotChangedCallback			input_slot_changed_callback = nullptr;
 		BlueprintNodePreviewProvider					preview_provider = nullptr;
-
 		bool											is_block = false;
+		BlueprintNodeBeginBlockFunction					begin_block_function = nullptr;
+		BlueprintNodeEndBlockFunction					end_block_function = nullptr;
+
 		BlueprintNodePtr								parent;
 		uint											depth = 0;
 		std::vector<BlueprintNodePtr>					children;
@@ -233,11 +237,12 @@ namespace flame
 		virtual BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
-			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr, bool is_block = false) = 0;
+			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr, 
+			bool is_block = false, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr) = 0;
 		virtual BlueprintNodePtr		add_block(BlueprintGroupPtr group, BlueprintNodePtr parent) = 0;
 		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type = "get"_h, uint location_name = 0 /* from a sheet or a bp instance */ ) = 0;
 		virtual BlueprintNodePtr		add_call_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint group_name, uint location_name = 0 /* from other bp instance */ ) = 0; // add a node that will call another group
-		virtual void					remove_node(BlueprintNodePtr node) = 0;
+		virtual void					remove_node(BlueprintNodePtr node, bool recursively = true) = 0;
 		virtual void					set_node_parent(BlueprintNodePtr node, BlueprintNodePtr new_parent) = 0;
 		virtual void					set_input_type(BlueprintSlotPtr slot, TypeInfo* type) = 0;
 		virtual BlueprintLinkPtr		add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot) = 0;
@@ -282,6 +287,8 @@ namespace flame
 			BlueprintNodeInputSlotChangedCallback	input_slot_changed_callback = nullptr;
 			BlueprintNodePreviewProvider			preview_provider = nullptr;
 			bool									is_block = false;
+			BlueprintNodeBeginBlockFunction			begin_block_function = nullptr;
+			BlueprintNodeEndBlockFunction			end_block_function = nullptr;
 		};
 
 		std::vector<NodeTemplate>	node_templates;
@@ -293,7 +300,8 @@ namespace flame
 		virtual void add_template(const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
-			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
+			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr, 
+			bool is_block = false, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr) = 0;
 
 		struct Get
 		{
@@ -317,10 +325,10 @@ namespace flame
 
 		struct ExecutingBlock
 		{
-			Node*	block_node;
-			uint	block_id;
+			Node*	node;
 			int		child_index;
 			uint	executed_times;
+			uint	max_execute_times;
 		};
 
 		struct Group
@@ -368,7 +376,7 @@ namespace flame
 				if (executing_stack.empty())
 					return nullptr;
 				auto& current_block = executing_stack.back();
-				return &current_block.block_node->children[current_block.child_index];
+				return &current_block.node->children[current_block.child_index];
 			}
 		};
 

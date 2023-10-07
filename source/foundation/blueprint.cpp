@@ -106,7 +106,7 @@ namespace flame
 			}
 		}
 		for (auto n : to_remove_nodes)
-			remove_node(n);
+			remove_node(n, false);
 
 		dirty_frame = frames;
 	}
@@ -180,7 +180,8 @@ namespace flame
 	BlueprintNodePtr BlueprintPrivate::add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, const std::string& name, const std::string& display_name,
 		const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
 		BlueprintNodeFunction function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
-		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider, bool is_block)
+		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider, 
+		bool is_block, BlueprintNodeBeginBlockFunction begin_block_function, BlueprintNodeEndBlockFunction end_block_function)
 	{
 		assert(group && group->blueprint == this);
 		if (parent)
@@ -256,11 +257,18 @@ namespace flame
 		ret->input_slot_changed_callback = input_slot_changed_callback;
 		ret->preview_provider = preview_provider;
 		ret->is_block = is_block;
+		ret->begin_block_function = begin_block_function;
+		ret->end_block_function = end_block_function;
 		ret->parent = parent;
 		if (parent)
 		{
 			parent->children.push_back(ret);
 			ret->depth = parent->depth + 1;
+		}
+		if (is_block)
+		{
+			ret->rect.a = vec2(0.f);
+			ret->rect.b = vec2(200.f);
 		}
 		group->nodes.emplace_back(ret);
 
@@ -889,6 +897,38 @@ namespace flame
 		return ret;
 	}
 
+	static void update_depth(BlueprintNodePtr n) 
+	{
+		for (auto& c : n->children)
+		{
+			c->depth = n->depth + 1;
+			update_depth(c);
+		}
+	}
+
+	static bool remove_link(BlueprintLinkPtr link)
+	{
+		auto group = link->from_slot->node->group;
+		for (auto it = group->links.begin(); it != group->links.end(); it++)
+		{
+			if (it->get() == link)
+			{
+				auto from_slot = link->from_slot;
+				auto to_node = link->to_slot->node;
+				auto to_slot = link->to_slot;
+				std::erase_if(from_slot->linked_slots, [&](const auto& slot) {
+					return slot == to_slot;
+				});
+				std::erase_if(to_slot->linked_slots, [&](const auto& slot) {
+					return slot == from_slot;
+				});
+				group->links.erase(it);
+				return true;
+			}
+		}
+		return false;
+	}
+
 	static void remove_node_links(BlueprintNodePtr n)
 	{
 		auto group = n->group;
@@ -899,7 +939,7 @@ namespace flame
 				to_remove_links.push_back(l.get());
 		}
 		for (auto l : to_remove_links)
-			group->blueprint->remove_link(l);
+			remove_link(l);
 	}
 
 	static void change_slot_type(BlueprintSlotPtr slot, TypeInfo* new_type)
@@ -937,15 +977,15 @@ namespace flame
 					to_remove_links.push_back(l.get());
 					done = false;
 				}
-				if (l->from_slot->node->depth > l->to_slot->node->depth)
+				if (!l->from_slot->node->parent->contains(l->to_slot->node))
 					to_remove_links.push_back(l.get());
 			}
 		}
 		for (auto l : to_remove_links)
-			group->blueprint->remove_link(l);
+			remove_link(l);
 	}
 
-	void BlueprintPrivate::remove_node(BlueprintNodePtr node)
+	void BlueprintPrivate::remove_node(BlueprintNodePtr node, bool recursively)
 	{
 		auto group = node->group;
 		auto parent = node->parent;
@@ -953,8 +993,23 @@ namespace flame
 
 		if (node->is_block)
 		{
-			for (auto c : node->children)
-				remove_node(c);
+			if (recursively)
+			{
+				std::vector<BlueprintNodePtr> to_remove_nodes;
+				for (auto c : node->children)
+					to_remove_nodes.push_back(c);
+				for (auto n : to_remove_nodes)
+					remove_node(n, true);
+			}
+			else
+			{
+				for (auto c : node->children)
+				{
+					c->parent = parent;
+					update_depth(c);
+					parent->children.push_back(c);
+				}
+			}
 		}
 
 		if (parent)
@@ -1007,7 +1062,7 @@ namespace flame
 		}
 
 		node->parent = new_parent;
-		node->depth = new_parent->depth + 1;
+		update_depth(node);
 		new_parent->children.push_back(node);
 
 		clear_invalid_links(group);
@@ -1058,8 +1113,6 @@ namespace flame
 				}
 			}
 		}
-
-		clear_invalid_links(n->group);
 	}
 
 	void BlueprintPrivate::set_input_type(BlueprintSlotPtr slot, TypeInfo* type)
@@ -1077,6 +1130,7 @@ namespace flame
 		{
 			change_slot_type(slot, type);
 			update_node_output_types(slot->node);
+			clear_invalid_links(group);
 
 			auto frame = frames;
 			group->structure_changed_frame = frame;
@@ -1096,9 +1150,9 @@ namespace flame
 			printf("blueprint add_link: cannot link because from_slot and to_slot are from the same node\n");
 			return nullptr;
 		}
-		if (from_slot->node->depth > to_slot->node->depth)
+		if (!from_slot->node->parent->contains(to_slot->node))
 		{
-			printf("blueprint add_link: cannot link because from_slot's depth is greater than to_slot's depth\n");
+			printf("blueprint add_link: cannot link because to_slot's node should comes from from_slot's node's parent\n");
 			return nullptr;
 		}
 
@@ -1127,6 +1181,7 @@ namespace flame
 		to_slot->linked_slots.push_back(from_slot);
 		change_slot_type(to_slot, from_slot->type);
 		update_node_output_types(to_slot->node);
+		clear_invalid_links(group);
 
 		auto frame = frames;
 		group->structure_changed_frame = frame;
@@ -1156,6 +1211,7 @@ namespace flame
 				group->links.erase(it);
 				change_slot_type(to_slot, !to_slot->allowed_types.empty() ? to_slot->allowed_types.front() : nullptr);
 				update_node_output_types(to_node);
+				clear_invalid_links(group);
 				break;
 			}
 		}
@@ -1218,7 +1274,7 @@ namespace flame
 				if (!o->linked_slots.empty())
 					old_links.emplace_back(o->name_hash, o->linked_slots);
 			}
-			g->blueprint->remove_node(n);
+			g->blueprint->remove_node(n, false);
 		}
 		if (g->inputs.empty())
 			return;
@@ -1300,7 +1356,7 @@ namespace flame
 				if (!i->linked_slots.empty())
 					old_links.emplace_back(i->linked_slots[0], i->name_hash);
 			}
-			g->blueprint->remove_node(n);
+			g->blueprint->remove_node(n, false);
 		}
 		if (g->outputs.empty())
 			return;
@@ -1624,8 +1680,7 @@ namespace flame
 					for (auto n_node : n_group.child("nodes"))
 					{
 						std::string name = n_node.attribute("name").value();
-						auto block_id = n_node.attribute("block_id").as_uint();
-						auto parent_id = block_id ? block_id : n_node.attribute("parent_id").as_uint();
+						auto parent_id = n_node.attribute("parent_id").as_uint();
 						BlueprintNodePtr parent = nullptr;
 						if (parent_id != 0)
 						{
@@ -1646,6 +1701,7 @@ namespace flame
 								{
 									change_slot_type(i, read_ti(a_type));
 									update_node_output_types(n);
+									clear_invalid_links(g);
 								}
 								i->type->unserialize(n_input.attribute("value").value(), i->data);
 							}
@@ -1830,11 +1886,18 @@ namespace flame
 									if (t.name == name)
 									{
 										auto n = ret->add_node(g, parent, t.name, t.display_name, t.inputs, t.outputs,
-											t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider);
+											t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider, 
+											t.is_block, t.begin_block_function, t.end_block_function);
 										for (auto n_input : n_node.child("inputs"))
 											read_input(n, n_input);
 										node_map[n_node.attribute("object_id").as_uint()] = n;
 										n->position = s2t<2, float>(n_node.attribute("position").value());
+										if (n->is_block)
+										{
+											n->rect = s2t<4, float>(n_node.attribute("rect").value());
+											if (n->rect.invalid())
+												n->rect.a = n->rect.b = n->position;
+										}
 
 										added = true;
 										break;
@@ -1876,7 +1939,7 @@ namespace flame
 							from_slot = from_node->find_output(name);
 							if (!from_slot)
 							{
-								printf("link: cannot find output: %u\n", name);
+								printf("link: cannot find output: %u in node: %s\n", name, from_node->name.c_str());
 								continue;
 							}
 						}
@@ -1885,7 +1948,7 @@ namespace flame
 							to_slot = to_node->find_input(name);
 							if (!to_slot)
 							{
-								printf("link: cannot find input: %u\n", name);
+								printf("link: cannot find input: %u in node: %s\n", name, to_node->name.c_str());
 								continue;
 							}
 						}
@@ -1941,7 +2004,8 @@ namespace flame
 	void BlueprintNodeLibraryPrivate::add_template(const std::string& name, const std::string& display_name, 
 		const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
 		BlueprintNodeFunction function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
-		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider)
+		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider, 
+		bool is_block, BlueprintNodeBeginBlockFunction begin_block_function, BlueprintNodeEndBlockFunction end_block_function)
 	{
 		auto& t = node_templates.emplace_back();
 		t.name = name;
@@ -1958,6 +2022,9 @@ namespace flame
 		t.destructor = destructor;
 		t.input_slot_changed_callback = input_slot_changed_callback;
 		t.preview_provider = preview_provider;
+		t.is_block = is_block;
+		t.begin_block_function = begin_block_function;
+		t.end_block_function = end_block_function;
 	}
 
 	struct BlueprintNodeLibraryGet : BlueprintNodeLibrary::Get
@@ -2595,18 +2662,20 @@ namespace flame
 								for (auto b : stack)
 								{
 									auto child_idx = 0;
-									auto times = 0;
+									auto executed_times = 0;
+									auto max_execute_times = 0;
 
 									for (auto& b2 : it->second)
 									{
-										if (b2.block_id == b->object_id)
+										if (b2.node->object_id == b->object_id)
 										{
 											child_idx = b2.child_index;
-											times = b2.executed_times;
+											executed_times = b2.executed_times;
+											max_execute_times = b2.max_execute_times;
 											break;
 										}
 									}
-									g.second.executing_stack.emplace_back(b, b->object_id, child_idx, times);
+									g.second.executing_stack.emplace_back(b, child_idx, executed_times, max_execute_times);
 								}
 								return;
 							}
@@ -2634,13 +2703,13 @@ namespace flame
 
 		if (!group->executing_stack.empty())
 		{
-			if (group->executing_stack.front().block_id == group->root_node.object_id)
+			if (group->executing_stack.front().node->object_id == group->root_node.object_id)
 				return;
 			group->executing_stack.clear();
 		}
-		group->executing_stack.emplace_back(&group->root_node, group->root_node.object_id, 0, 0);
+		group->executing_stack.emplace_back(&group->root_node, 0, 0, 1);
 
-		if (group->executing_stack.front().block_node->children.empty())
+		if (group->executing_stack.front().node->children.empty())
 			group->executing_stack.clear();
 		else
 		{
@@ -2672,7 +2741,7 @@ namespace flame
 
 		auto set_loop_index = [group]() {
 			auto& current_block = group->executing_stack.back();
-			auto depth = current_block.block_node->original->depth;
+			auto depth = current_block.node->original->depth;
 			if (depth - 1 < countof(loop_index_names))
 				group->set_variable(loop_index_hashes[depth - 1], current_block.executed_times);
 		};
@@ -2680,7 +2749,7 @@ namespace flame
 		auto frame = frames;
 		{
 			auto& current_block = group->executing_stack.back();
-			auto& current_node = current_block.block_node->children[current_block.child_index];
+			auto& current_node = current_block.node->children[current_block.child_index];
 
 			auto node = current_node.original;
 			if (debugger && debugger->has_break_node(node))
@@ -2695,9 +2764,12 @@ namespace flame
 			{
 				if (*(uint*)current_node.inputs[0].data)
 				{
-					if (!current_node.children.empty())
+					uint max_execute_times = *(uint*)current_node.inputs[0].data;
+					if (node->begin_block_function)
+						node->begin_block_function(current_node.inputs.data(), current_node.outputs.data(), &max_execute_times);
+					if (max_execute_times > 0)
 					{
-						group->executing_stack.emplace_back(&current_node, current_node.object_id, -1, 0);
+						group->executing_stack.emplace_back(&current_node, -1, 0, max_execute_times);
 						set_loop_index();
 					}
 					*(uint*)current_node.outputs[0].data = 1;
@@ -2715,11 +2787,11 @@ namespace flame
 				break;
 			auto& current_block = group->executing_stack.back();
 			current_block.child_index++;
-			if (current_block.child_index < current_block.block_node->children.size())
+			if (current_block.child_index < current_block.node->children.size())
 				break;
 			current_block.executed_times++;
 			if (group->executing_stack.size() > 1 && // not the root block
-				current_block.executed_times < *(uint*)current_block.block_node->inputs[0].data)
+				current_block.executed_times < current_block.max_execute_times)
 			{
 				current_block.child_index = 0;
 				set_loop_index();

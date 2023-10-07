@@ -29,6 +29,7 @@ struct BlueprintView : View
 	void expand_block_sizes();
 	void copy_nodes(BlueprintGroupPtr g);
 	void paste_nodes(BlueprintGroupPtr g, const vec2& pos);
+	void set_parent_to_last_node();
 	void save_blueprint();
 	void on_draw() override;
 };

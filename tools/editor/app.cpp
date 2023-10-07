@@ -956,9 +956,12 @@ void App::on_gui()
 		{
 			auto vs_path = get_special_path("Visual Studio Installation Location");
 			auto devenv_path = vs_path / L"Common7\\IDE\\devenv.exe";
-			auto sln_path = project_path / L"build";
-			sln_path = glob_files(sln_path, L".sln")[0];
-			exec(devenv_path, std::format(L"\"{}\"", sln_path.wstring()));
+			auto build_path = project_path / L"build";
+			if (std::filesystem::exists(build_path))
+			{
+				auto sln_path = glob_files(build_path, L".sln")[0];
+				exec(devenv_path, std::format(L"\"{}\"", sln_path.wstring()));
+			}
 		}
 		if (ImGui::MenuItem("Attach Debugger"))
 			vs_automate({ L"attach_debugger" });

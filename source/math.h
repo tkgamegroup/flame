@@ -335,6 +335,11 @@ namespace flame
 			b = vec2(-10000.f);
 		}
 
+		bool invalid() const
+		{
+			return any(greaterThan(a, b));
+		}
+
 		operator vec4() const
 		{
 			return vec4(a.x, a.y, b.x, b.y);
