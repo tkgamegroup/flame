@@ -35,8 +35,10 @@ std::vector<BlueprintNodePtr> get_selected_nodes()
 		}
 	}
 	return nodes;
-
 }
+
+static BlueprintNodePtr				f9_bound_breakpoint = nullptr;
+static BlueprintBreakpointOption	f9_bound_breakpoint_option;
 
 BlueprintWindow blueprint_window;
 
@@ -68,6 +70,10 @@ BlueprintView::BlueprintView(const std::string& name) :
 	ax_node_editor_config.SaveNodeSettings = [](ax::NodeEditor::NodeId node_id, const char* data, size_t size, ax::NodeEditor::SaveReasonFlags reason, void* user_data) {
 		auto& view = *(BlueprintView*)user_data;
 		if (frames == view.load_frame)
+			return true;
+		if (blueprint_window.debugger->debugging &&
+			blueprint_window.debugger->debugging->instance->blueprint == view.blueprint &&
+			blueprint_window.debugger->debugging->name == view.group_name_hash)
 			return true;
 		auto node = (BlueprintNodePtr)(uint64)node_id;
 		auto do_expand = false;
@@ -386,18 +392,19 @@ static BlueprintInstance::Node* step(BlueprintInstance::Group* debugging_group)
 {
 	blueprint_window.debugger->debugging = nullptr;
 
-	BlueprintNodePtr break_node = nullptr;
+	BlueprintNodePtr breakpoint = nullptr;
+	BlueprintBreakpointOption breakpoint_option;
 	if (auto n = debugging_group->executing_node(); n)
 	{
-		if (blueprint_window.debugger->has_break_node(n->original))
+		if (blueprint_window.debugger->has_break_node(n->original, &breakpoint_option))
 		{
-			break_node = n->original;
-			blueprint_window.debugger->remove_break_node(break_node);
+			breakpoint = n->original;
+			blueprint_window.debugger->remove_break_node(breakpoint);
 		}
 	}
 	auto next_node = debugging_group->instance->step(debugging_group);
-	if (break_node)
-		blueprint_window.debugger->add_break_node(break_node);
+	if (breakpoint)
+		blueprint_window.debugger->add_break_node(breakpoint, breakpoint_option);
 	return next_node;
 };
 
@@ -1158,7 +1165,7 @@ void BlueprintView::on_draw()
 					ax::NodeEditor::BeginNode((uint64)n.get());
 					ImGui::Text("%s (%dD%d)", display_name.c_str(), instance_node->order, n->depth);
 					ImGui::BeginGroup();
-					for (auto i = 0; i < n->inputs.size(); i++)
+					for (auto i = 0; i < instance_node->inputs.size(); i++)
 					{
 						auto input = n->inputs[i].get();
 						if (input->flags & BlueprintSlotFlagHideInUI)
@@ -1466,12 +1473,33 @@ void BlueprintView::on_draw()
 								blueprint_window.debugger->add_break_node(context_node);
 							if (ImGui::Selectable("Set Once"))
 								blueprint_window.debugger->add_break_node(context_node, BlueprintBreakpointTriggerOnce);
+							if (ImGui::Selectable("Set Break In Code"))
+								blueprint_window.debugger->add_break_node(context_node, BlueprintBreakpointBreakInCode);
+							if (ImGui::BeginMenu("Bind To F9"))
+							{
+								if (ImGui::Selectable("Set Normal"))
+								{
+									f9_bound_breakpoint = context_node;
+									f9_bound_breakpoint_option = BlueprintBreakpointNormal;
+								}
+								if (ImGui::Selectable("Set Once"))
+								{
+									f9_bound_breakpoint = context_node;
+									f9_bound_breakpoint_option = BlueprintBreakpointTriggerOnce;
+								}
+								if (ImGui::Selectable("Set Break In Code"))
+								{
+									f9_bound_breakpoint = context_node;
+									f9_bound_breakpoint_option = BlueprintBreakpointBreakInCode;
+								}
+								ImGui::EndMenu();
+							}
 							ImGui::EndMenu();
 						}
 					}
 					else
 					{
-						if (ImGui::Selectable("Unset Breakpoint"))
+						if (ImGui::Selectable("Unset"))
 							blueprint_window.debugger->remove_break_node(context_node);
 					}
 					ImGui::EndPopup();
@@ -1900,6 +1928,18 @@ void BlueprintView::on_draw()
 	ImGui::End();
 	if (!opened)
 		delete this;
+}
+
+void BlueprintView::on_global_shortcuts()
+{
+	if (ImGui::IsKeyPressed(Keyboard_F9))
+	{
+		if (f9_bound_breakpoint)
+		{
+			blueprint_window.debugger->add_break_node(f9_bound_breakpoint, f9_bound_breakpoint_option);
+			f9_bound_breakpoint = nullptr;
+		}
+	}
 }
 
 BlueprintWindow::BlueprintWindow() :

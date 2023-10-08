@@ -35,6 +35,7 @@ struct BlueprintView : View
 	void stop_blueprint(BlueprintInstance::Group* debugging_group);
 	void save_blueprint();
 	void on_draw() override;
+	void on_global_shortcuts() override;
 	std::string get_save_name() override;
 };
 

@@ -54,7 +54,7 @@ namespace flame
 			true,
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
 				bool ok;
-				if (inputs[0].type == TypeInfo::get<bool>())
+				if (inputs[1].type == TypeInfo::get<bool>())
 					ok = *(bool*)inputs[1].data;
 				else
 					ok = (*(voidptr*)inputs[1].data) != nullptr;
@@ -79,7 +79,7 @@ namespace flame
 			true,
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
 				bool ok;
-				if (inputs[0].type == TypeInfo::get<bool>())
+				if (inputs[1].type == TypeInfo::get<bool>())
 					ok = *(bool*)inputs[1].data;
 				else
 					ok = (*(voidptr*)inputs[1].data) != nullptr;

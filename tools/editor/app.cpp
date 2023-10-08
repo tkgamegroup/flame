@@ -1050,31 +1050,39 @@ void App::on_gui()
 	ImGui::End();
 
 	auto& io = ImGui::GetIO();
-	if (ImGui::IsKeyPressed(Keyboard_F5))
+	if (!io.WantCaptureKeyboard)
 	{
-		if (!e_playing)
-			cmd_play();
-		else
+		if (ImGui::IsKeyPressed(Keyboard_F5))
 		{
-			if (e_playing)
-				cmd_stop();
-			else if (e_preview)
-				cmd_stop_preview();
+			if (!e_playing)
+				cmd_play();
+			else
+			{
+				if (e_playing)
+					cmd_stop();
+				else if (e_preview)
+					cmd_stop_preview();
+			}
+		}
+		if (ImGui::IsKeyPressed(Keyboard_F6))
+		{
+			if (!e_preview)
+				cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : e_prefab);
+			else
+				cmd_restart_preview();
+		}
+		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_B))
+			build_project();
+		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Z))
+			cmd_undo();
+		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Y))
+			cmd_redo();
+		for (auto w : windows)
+		{
+			for (auto& v : w->views)
+				v->on_global_shortcuts();
 		}
 	}
-	if (ImGui::IsKeyPressed(Keyboard_F6))
-	{
-		if (!e_preview)
-			cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : e_prefab);
-		else
-			cmd_restart_preview();
-	}
-	if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_B))
-		build_project();
-	if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Z))
-		cmd_undo();
-	if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Y))
-		cmd_redo();
 
 	if (e_preview)
 	{

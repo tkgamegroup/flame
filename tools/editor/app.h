@@ -129,6 +129,7 @@ struct View
 
 	void title_context_menu();
 	virtual void on_draw() = 0;
+	virtual void on_global_shortcuts() {}
 	virtual std::string get_save_name() { return name; }
 };
 

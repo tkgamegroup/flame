@@ -1,6 +1,7 @@
 #include "../xml.h"
 #include "typeinfo_serialize.h"
 #include "sheet_private.h"
+#include "system_private.h"
 #include "blueprint_private.h"
 
 namespace flame
@@ -2762,12 +2763,20 @@ namespace flame
 			BlueprintBreakpointOption breakpoint_option;
 			if (debugger && debugger->has_break_node(node, &breakpoint_option))
 			{
-				debugger->debugging = group;
-				if (breakpoint_option == BlueprintBreakpointTriggerOnce)
+				if (breakpoint_option == BlueprintBreakpointBreakInCode)
+				{
 					debugger->remove_break_node(node);
-				debugger->callbacks.call("breakpoint_triggered"_h, node, nullptr);
-				printf("Blueprint breakpoint triggered: %s\n", node->name.c_str());
-				return nullptr;
+					debug_break();
+				}
+				else
+				{
+					debugger->debugging = group;
+					if (breakpoint_option == BlueprintBreakpointTriggerOnce)
+						debugger->remove_break_node(node);
+					debugger->callbacks.call("breakpoint_triggered"_h, node, nullptr);
+					printf("Blueprint breakpoint triggered: %s\n", node->name.c_str());
+					return nullptr;
+				}
 			}
 			if (node->function)
 				node->function(current_node.inputs.data(), current_node.outputs.data());
