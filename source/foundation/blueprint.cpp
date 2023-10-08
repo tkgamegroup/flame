@@ -33,6 +33,11 @@ namespace flame
 			type->destroy(data);
 	}
 
+	bool BlueprintSlotPrivate::is_linked() const
+	{
+		return !linked_slots.empty();
+	}
+
 	BlueprintGroupPrivate::~BlueprintGroupPrivate()
 	{
 		for (auto& v : variables)
@@ -2197,10 +2202,12 @@ namespace flame
 			create_node(src_g->nodes.front().get(), g.root_node);
 
 			g.node_map.clear();
+			uint order = 0;
 			std::function<void(Node&)> create_map;
 			create_map = [&](Node& n) {
 				if (n.object_id)
 					g.node_map[n.object_id] = &n;
+				n.order = order++;
 				for (auto& c : n.children)
 					create_map(c);
 			};
@@ -2728,16 +2735,16 @@ namespace flame
 		}
 	}
 
-	void BlueprintInstancePrivate::step(Group* group)
+	BlueprintInstance::Node* BlueprintInstancePrivate::step(Group* group)
 	{
 		if (built_frame < blueprint->dirty_frame)
 			build();
 
 		auto debugger = BlueprintDebugger::current();
 		if (debugger && debugger->debugging)
-			return;
+			return nullptr;
 		if (group->executing_stack.empty())
-			return;
+			return nullptr;
 
 		auto set_loop_index = [group]() {
 			auto& current_block = group->executing_stack.back();
@@ -2752,11 +2759,15 @@ namespace flame
 			auto& current_node = current_block.node->children[current_block.child_index];
 
 			auto node = current_node.original;
-			if (debugger && debugger->has_break_node(node))
+			BlueprintBreakpointOption breakpoint_option;
+			if (debugger && debugger->has_break_node(node, &breakpoint_option))
 			{
 				debugger->debugging = group;
-				printf("Blueprint break node triggered: %s\n", node->name.c_str());
-				return;
+				if (breakpoint_option == BlueprintBreakpointTriggerOnce)
+					debugger->remove_break_node(node);
+				debugger->callbacks.call("breakpoint_triggered"_h, node, nullptr);
+				printf("Blueprint breakpoint triggered: %s\n", node->name.c_str());
+				return nullptr;
 			}
 			if (node->function)
 				node->function(current_node.inputs.data(), current_node.outputs.data());
@@ -2799,6 +2810,8 @@ namespace flame
 			}
 			group->executing_stack.pop_back();
 		}
+
+		return group->executing_node();
 	}
 
 	void BlueprintInstancePrivate::stop(Group* group)
@@ -2862,10 +2875,10 @@ namespace flame
 	}BlueprintInstance_get;
 	BlueprintInstance::Get& BlueprintInstance::get = BlueprintInstance_get;
 
-	void BlueprintDebuggerPrivate::add_break_node(BlueprintNodePtr node)
+	void BlueprintDebuggerPrivate::add_break_node(BlueprintNodePtr node, BlueprintBreakpointOption option)
 	{
 		if (!has_break_node(node))
-			break_nodes.emplace_back(node, true);
+			break_nodes.emplace_back(node, option);
 	}
 
 	void BlueprintDebuggerPrivate::remove_break_node(BlueprintNodePtr node)

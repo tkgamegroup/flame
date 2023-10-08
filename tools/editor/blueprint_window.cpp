@@ -50,7 +50,15 @@ BlueprintView::BlueprintView(const std::string& name) :
 {
 	auto sp = SUS::split(name, '#');
 	if (sp.size() > 1)
+	{
 		blueprint_path = sp[0];
+		if (sp.size() > 2)
+		{
+			group_name = sp[1];
+			group_name_hash = sh(group_name.c_str());
+			View::name = std::string(sp[0]) + "##" + std::string(sp[2]);
+		}
+	}
 
 #if USE_IMGUI_NODE_EDITOR
 	ax::NodeEditor::Config ax_node_editor_config;
@@ -374,6 +382,71 @@ void BlueprintView::set_parent_to_last_node()
 	}
 }
 
+static BlueprintInstance::Node* step(BlueprintInstance::Group* debugging_group)
+{
+	blueprint_window.debugger->debugging = nullptr;
+
+	BlueprintNodePtr break_node = nullptr;
+	if (auto n = debugging_group->executing_node(); n)
+	{
+		if (blueprint_window.debugger->has_break_node(n->original))
+		{
+			break_node = n->original;
+			blueprint_window.debugger->remove_break_node(break_node);
+		}
+	}
+	auto next_node = debugging_group->instance->step(debugging_group);
+	if (break_node)
+		blueprint_window.debugger->add_break_node(break_node);
+	return next_node;
+};
+
+void BlueprintView::run_blueprint(BlueprintInstance::Group* debugging_group)
+{
+	if (!debugging_group)
+	{
+		auto g = blueprint_instance->get_group(group_name_hash);
+		blueprint_instance->prepare_executing(g);
+		blueprint_instance->run(g);
+	}
+	else
+	{
+		step(debugging_group);
+		debugging_group->instance->run(debugging_group);
+	}
+}
+
+void BlueprintView::step_blueprint(BlueprintInstance::Group* debugging_group)
+{
+	if (!debugging_group)
+	{
+		auto g = blueprint_instance->get_group(group_name_hash);
+		blueprint_instance->prepare_executing(g);
+		blueprint_window.debugger->debugging = g;
+	}
+	else
+	{
+		auto next_node = step(debugging_group);
+		if (!debugging_group->executing_stack.empty())
+			blueprint_window.debugger->debugging = debugging_group;
+
+		if (next_node)
+		{
+			auto ax_node = ax_node_editor->GetNode((ax::NodeEditor::NodeId)next_node->original);
+			ax_node_editor->NavigateTo(ax_node->GetBounds(), false, 0.f);
+		}
+	}
+}
+
+void BlueprintView::stop_blueprint(BlueprintInstance::Group* debugging_group)
+{
+	if (debugging_group)
+	{
+		blueprint_window.debugger->debugging = nullptr;
+		debugging_group->instance->stop(debugging_group);
+	}
+}
+
 void BlueprintView::save_blueprint()
 {
 	if (unsaved)
@@ -420,6 +493,14 @@ void BlueprintView::expand_block_sizes()
 		}
 	};
 	fit_block_size(g->nodes.front().get());
+}
+
+std::string BlueprintView::get_save_name()
+{
+	auto sp = SUS::split(name, '#');
+	if (sp.size() == 2)
+		return std::string(sp[0]) + '#' + group_name + "##" + std::string(sp[1]);
+	return name;
 }
 
 void BlueprintView::on_draw()
@@ -1024,70 +1105,22 @@ void BlueprintView::on_draw()
 					load_frame = frame;
 				}
 
-				auto step = [&]() {
-					blueprint_window.debugger->debugging = nullptr;
-
-					BlueprintNodePtr break_node = nullptr;
-					if (auto n = debugging_group->executing_node(); n)
-					{
-						if (blueprint_window.debugger->has_break_node(n->original))
-						{
-							break_node = n->original;
-							blueprint_window.debugger->remove_break_node(break_node);
-						}
-					}
-					debugging_group->instance->step(debugging_group);
-					if (break_node)
-						blueprint_window.debugger->add_break_node(break_node);
-				};
-
 				if (ImGui::Button("Run"))
-				{
-					if (!debugging_group)
-					{
-						auto g = blueprint_instance->get_group(group_name_hash);
-						blueprint_instance->prepare_executing(g);
-						blueprint_instance->run(g);
-					}
-					else
-					{
-						step();
-						debugging_group->instance->step(debugging_group);
-					}
-				}
+					run_blueprint(debugging_group);
 				ImGui::SameLine();
 				if (ImGui::Button("Step"))
-				{
-					if (!debugging_group)
-					{
-						auto g = blueprint_instance->get_group(group_name_hash);
-						blueprint_instance->prepare_executing(g);
-						blueprint_window.debugger->debugging = g;
-					}
-					else
-					{
-						step();
-						if (!debugging_group->executing_stack.empty())
-							blueprint_window.debugger->debugging = debugging_group;
-					}
-				}
+					step_blueprint(debugging_group);
 				ImGui::SameLine();
 				if (ImGui::Button("Stop"))
-				{
-					if (debugging_group)
-					{
-						blueprint_window.debugger->debugging = nullptr;
-						debugging_group->instance->stop(debugging_group);
-					}
-				}
+					stop_blueprint(debugging_group);
 
 				auto& io = ImGui::GetIO();
 				auto dl = ImGui::GetWindowDrawList();
 				std::string tooltip; vec2 tooltip_pos;
 				auto get_slot_value = [](const BlueprintAttribute& arg)->std::string {
-					if (arg.type->tag != TagD)
-						return "";
-					return std::format("Value: {}", arg.type->serialize(arg.data));
+					if (arg.type->tag == TagD || is_pointer(arg.type->tag))
+						return std::format("Value: {}", arg.type->serialize(arg.data));
+					return "";
 				};
 
 				if (debugging_group)
@@ -1103,21 +1136,27 @@ void BlueprintView::on_draw()
 
 					auto instance_node = instance_group.node_map[n->object_id];
 
+					auto display_name = n->display_name.empty() ? n->name : n->display_name;
 					auto color = ax::NodeEditor::GetStyle().Colors[ax::NodeEditor::StyleColor_NodeBg];
 					if (blueprint_window.debugger->has_break_node(n.get()))
 					{
 						if (executing_node && executing_node->original == n.get())
+						{
+							display_name = "=> " + display_name;
 							color = ImColor(204, 116, 45, 200);
+						}
 						else
 							color = ImColor(197, 81, 89, 200);
 					}
 					else if (executing_node && executing_node->original == n.get())
+					{
+						display_name = "=> " + display_name;
 						color = ImColor(211, 151, 0, 200);
+					}
 					ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_NodeBg, color);
 
 					ax::NodeEditor::BeginNode((uint64)n.get());
-					auto display_name = n->display_name.empty() ? n->name : n->display_name;
-					ImGui::Text("%s (D%d)", display_name.c_str(), n->depth);
+					ImGui::Text("%s (%dD%d)", display_name.c_str(), instance_node->order, n->depth);
 					ImGui::BeginGroup();
 					for (auto i = 0; i < n->inputs.size(); i++)
 					{
@@ -1127,52 +1166,37 @@ void BlueprintView::on_draw()
 						ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
 						ImGui::Text("%s %s", graphics::font_icon_str("play"_h).c_str(), input->name_hash == "Execute"_h ? "" : input->name.c_str());
 						ax::NodeEditor::EndPin();
-						if (debugging_group)
+						if (ImGui::IsItemHovered())
 						{
-							if (ImGui::IsItemHovered())
+							if (debugging_group)
 							{
 								auto& arg = instance_node->inputs[i];
 								if (arg.type)
-								{
 									tooltip = std::format("{} ({})\nObject ID: {}", get_slot_value(arg), ti_str(arg.type), input->object_id);
-									ax::NodeEditor::Suspend();
-									tooltip_pos = io.MousePos;
-									ax::NodeEditor::Resume();
-								}
 							}
-						}
-						else
-						{
-							if (ImGui::IsItemHovered())
-							{
+							else
 								tooltip = std::format("({})\nObject ID: {}", ti_str(input->type), input->object_id);
-								ax::NodeEditor::Suspend();
-								tooltip_pos = io.MousePos;
-								ax::NodeEditor::Resume();
-							}
-
-							auto linked = false;
-							for (auto& l : group->links)
-							{
-								if (l->to_slot == input)
-								{
-									linked = true;
-									break;
-								}
-							}
-							if (!linked)
-							{
-								ImGui::PushID(input);
-								if (manipulate_value(input->type, input->data))
-								{
-									input->data_changed_frame = frame;
-									group->data_changed_frame = frame;
-									blueprint->dirty_frame = frame;
-									unsaved = true;
-								}
-								ImGui::PopID();
-							}
+							ax::NodeEditor::Suspend();
+							tooltip_pos = io.MousePos;
+							ax::NodeEditor::Resume();
 						}
+						if (!input->is_linked())
+						{
+							if (debugging_group)
+								ImGui::BeginDisabled();
+							ImGui::PushID(input);
+							if (manipulate_value(input->type, input->data))
+							{
+								input->data_changed_frame = frame;
+								group->data_changed_frame = frame;
+								blueprint->dirty_frame = frame;
+								unsaved = true;
+							}
+							ImGui::PopID();
+							if (debugging_group)
+								ImGui::EndDisabled();
+						}
+
 					}
 					ImGui::EndGroup();
 					ImGui::SameLine(0.f, n->is_block ? max(0.f, n->rect.size().x - 56.f) : 16.f);
@@ -1185,29 +1209,19 @@ void BlueprintView::on_draw()
 						ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
 						ImGui::Text("%s %s", output->name_hash == "Execute"_h ? "" : output->name.c_str(), graphics::font_icon_str("play"_h).c_str());
 						ax::NodeEditor::EndPin();
-						if (debugging_group)
+						if (ImGui::IsItemHovered())
 						{
-							if (ImGui::IsItemHovered())
+							if (debugging_group)
 							{
 								auto& arg = instance_node->outputs[i];
 								if (arg.type)
-								{
 									tooltip = std::format("{} ({})\nObject ID: {}", get_slot_value(arg), ti_str(arg.type), output->object_id);
-									ax::NodeEditor::Suspend();
-									tooltip_pos = io.MousePos;
-									ax::NodeEditor::Resume();
-								}
 							}
-						}
-						else
-						{
-							if (ImGui::IsItemHovered())
-							{
+							else
 								tooltip = std::format("({})\nObject ID: {}", ti_str(output->type), output->object_id);
-								ax::NodeEditor::Suspend();
-								tooltip_pos = io.MousePos;
-								ax::NodeEditor::Resume();
-							}
+							ax::NodeEditor::Suspend();
+							tooltip_pos = io.MousePos;
+							ax::NodeEditor::Resume();
 						}
 					}
 					ImGui::EndGroup();
@@ -1261,7 +1275,7 @@ void BlueprintView::on_draw()
 					if (n->is_block)
 					{
 						auto bounds = ax_node->m_GroupBounds;
-						n->rect = Rect(bounds.Min, bounds.Max);
+						n->rect = Rect(bounds.Min, bounds.Max); // get rect from last frame
 
 						ax::NodeEditor::Group(n->rect.size());
 					}
@@ -1443,14 +1457,21 @@ void BlueprintView::on_draw()
 								set_parent_to_last_node();
 						}
 					}
-					if (!blueprint_window.debugger->has_break_node(context_node))
+					BlueprintBreakpointOption breakpoint_option;
+					if (!blueprint_window.debugger->has_break_node(context_node, &breakpoint_option))
 					{
-						if (ImGui::Selectable("Set Break Node"))
-							blueprint_window.debugger->add_break_node(context_node);
+						if (ImGui::BeginMenu("Breakpoint"))
+						{
+							if (ImGui::Selectable("Set Normal"))
+								blueprint_window.debugger->add_break_node(context_node);
+							if (ImGui::Selectable("Set Once"))
+								blueprint_window.debugger->add_break_node(context_node, BlueprintBreakpointTriggerOnce);
+							ImGui::EndMenu();
+						}
 					}
 					else
 					{
-						if (ImGui::Selectable("Unset Break Node"))
+						if (ImGui::Selectable("Unset Breakpoint"))
 							blueprint_window.debugger->remove_break_node(context_node);
 					}
 					ImGui::EndPopup();
@@ -1865,6 +1886,8 @@ void BlueprintView::on_draw()
 						paste_nodes(group, floor((vec2)ImGui::GetMousePos()));
 					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_P))
 						set_parent_to_last_node();
+					if (ImGui::IsKeyPressed(Keyboard_F10))
+						step_blueprint(debugging_group);
 					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
 						save_blueprint();
 				}
@@ -1883,6 +1906,23 @@ BlueprintWindow::BlueprintWindow() :
 	Window("Blueprint")
 {
 	debugger = BlueprintDebugger::create();
+	debugger->callbacks.add([this](uint msg, void* parm1, void* parm2) {
+		if (msg == "breakpoint_triggered"_h)
+		{
+			auto node = (BlueprintNodePtr)parm1;
+			auto blueprint = node->group->blueprint;
+			for (auto& v : views)
+			{
+				auto view = (BlueprintView*)v.get();
+				if (blueprint == view->blueprint)
+				{
+					auto ax_node = view->ax_node_editor->GetNode((ax::NodeEditor::NodeId)node);
+					view->ax_node_editor->NavigateTo(ax_node->GetBounds(), false, 0.f);
+					break;
+				}
+			}
+		}
+	});
 	BlueprintDebugger::set_current(debugger);
 }
 

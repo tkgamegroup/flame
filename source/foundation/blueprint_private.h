@@ -7,6 +7,7 @@ namespace flame
 		std::vector<BlueprintSlotPtr> linked_slots;
 		
 		~BlueprintSlotPrivate();
+		bool is_linked() const override;
 	};
 
 	struct BlueprintNodePrivate : BlueprintNode
@@ -74,14 +75,14 @@ namespace flame
 		void build() override;
 		void prepare_executing(Group* group) override;
 		void run(Group* group) override;
-		void step(Group* group) override;
+		Node* step(Group* group) override;
 		void stop(Group* group) override;
 		void call(uint group_name, void** inputs, void** outputs) override;
 	};
 
 	struct BlueprintDebuggerPrivate : BlueprintDebugger
 	{
-		void add_break_node(BlueprintNodePtr node) override;
+		void add_break_node(BlueprintNodePtr node, BlueprintBreakpointOption option) override;
 		void remove_break_node(BlueprintNodePtr node) override;
 	};
 }

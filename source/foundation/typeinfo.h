@@ -1049,7 +1049,7 @@ namespace flame
 			return &v;
 		}
 		float as_float(void* p) const override
-		{ 
+		{
 			return *(char*)p;
 		}
 		int as_int(void* p) const override
@@ -2930,6 +2930,10 @@ namespace flame
 			ti = (TypeInfo_Enum*)get(TagE, name, db);
 		}
 
+		std::string serialize(const void* p) const override
+		{
+			return str_hex<uint64>((uint64)*(voidptr*)p);
+		}
 		TypeInfo* get_wrapped() const override
 		{
 			return ti;
@@ -2946,6 +2950,10 @@ namespace flame
 			ti = (TypeInfo_Data*)get(TagD, name, db);
 		}
 
+		std::string serialize(const void* p) const override
+		{
+			return str_hex<uint64>((uint64)*(voidptr*)p);
+		}
 		TypeInfo* get_wrapped() const override
 		{
 			return ti;
@@ -2962,6 +2970,10 @@ namespace flame
 			ti = (TypeInfo_Udt*)get(TagU, name, db);
 		}
 
+		std::string serialize(const void* p) const override
+		{
+			return str_hex<uint64>((uint64)*(voidptr*)p);
+		}
 		TypeInfo* get_wrapped() const override
 		{
 			return ti;

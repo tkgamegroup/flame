@@ -129,6 +129,7 @@ struct View
 
 	void title_context_menu();
 	virtual void on_draw() = 0;
+	virtual std::string get_save_name() { return name; }
 };
 
 inline Window::~Window()
@@ -192,6 +193,8 @@ struct App : UniverseApplication
 	bool on_update() override;
 	void on_gui() override;
 
+	void load_preferences();
+	void save_preferences();
 	void new_project(const std::filesystem::path& path);
 	void open_project(const std::filesystem::path& path);
 	void cmake_project();

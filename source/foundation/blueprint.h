@@ -23,6 +23,13 @@ namespace flame
 		return (BlueprintSlotFlags)((uint)a & (uint)b);
 	}
 
+	enum BlueprintBreakpointOption
+	{
+		BlueprintBreakpointNormal,
+		BlueprintBreakpointTriggerOnce,
+		BlueprintBreakpointBreakInCode
+	};
+
 	struct BlueprintSignal
 	{
 		uint v;
@@ -73,6 +80,8 @@ namespace flame
 		void*					data = nullptr;
 		std::string				default_value;
 		uint					data_changed_frame = 0;
+
+		virtual bool is_linked() const = 0;
 	};
 
 	struct BlueprintNodePreview
@@ -320,6 +329,7 @@ namespace flame
 			std::vector<BlueprintAttribute> inputs;
 			std::vector<BlueprintAttribute> outputs;
 			std::vector<Node>				children;
+			uint							order;
 			uint							updated_frame;
 		};
 
@@ -416,7 +426,7 @@ namespace flame
 		virtual void build() = 0;
 		virtual void prepare_executing(Group* group) = 0;
 		virtual void run(Group* group) = 0;
-		virtual void step(Group* group) = 0;
+		virtual Node* step(Group* group) = 0; // return: next node
 		virtual void stop(Group* group) = 0;
 		virtual void call(uint group_name, void** inputs, void** outputs) = 0;
 
@@ -437,23 +447,28 @@ namespace flame
 
 	struct BlueprintDebugger
 	{
-		std::vector<std::pair<BlueprintNodePtr, bool>> break_nodes;
+		std::vector<std::pair<BlueprintNodePtr, BlueprintBreakpointOption>> break_nodes;
+		Listeners<void(uint, void*, void*)> callbacks;
 
 		BlueprintInstance::Group* debugging = nullptr;
 
 		virtual ~BlueprintDebugger() {}
 
-		inline bool has_break_node(BlueprintNodePtr node) const
+		inline bool has_break_node(BlueprintNodePtr node, BlueprintBreakpointOption* out_option = nullptr) const
 		{
 			for (auto& i : break_nodes)
 			{
 				if (i.first == node)
+				{
+					if (out_option)
+						*out_option = i.second;
 					return true;
+				}
 			}
 			return false;
 		}
 
-		virtual void add_break_node(BlueprintNodePtr node) = 0;
+		virtual void add_break_node(BlueprintNodePtr node, BlueprintBreakpointOption option = BlueprintBreakpointNormal) = 0;
 		virtual void remove_break_node(BlueprintNodePtr node) = 0;
 
 		struct Create

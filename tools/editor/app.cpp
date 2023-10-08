@@ -459,37 +459,12 @@ void App::init()
 	for (auto w : windows)
 		w->init();
 
-	auto native_window = main_window->native;
-	main_window->native->destroy_listeners.add([this, native_window]() {
-		for (auto& p : project_settings.favorites)
-			p = Path::reverse(p);
-		project_settings.save();
-
-		std::ofstream preferences_o(preferences_path);
-		preferences_o << "window_pos=" + str(native_window->pos) << "\n";
-		preferences_o << "use_flame_debugger=" + str(preferences.use_flame_debugger) << "\n";
-		if (!project_path.empty())
-		{
-			preferences_o << "[project_path]\n";
-			preferences_o << project_path.string() << "\n";
-		}
-		preferences_o << "[opened_views]\n";
-		for (auto w : windows)
-		{
-			for (auto& v : w->views)
-				preferences_o << "\"" << v->name << "\"\n";
-		}
-		if (auto fv = project_window.first_view(); fv && fv->explorer.opened_folder)
-		{
-			preferences_o << "[opened_folder]\n";
-			preferences_o << fv->explorer.opened_folder->path.string() << "\n";
-		}
-		if (e_prefab)
-		{
-			preferences_o << "[opened_prefab]\n";
-			preferences_o << prefab_path.string() << "\n";
-		}
-		preferences_o.close();
+	add_event([this]() {
+		save_preferences();
+		return true; 
+	}, 60.f);
+	main_window->native->destroy_listeners.add([this]() {
+		save_preferences();
 	}, "app"_h);
 }
 
@@ -1122,6 +1097,86 @@ void App::on_gui()
 		else
 			it++;
 	}
+}
+
+void App::load_preferences()
+{
+	auto preferences_i = parse_ini_file(preferences_path);
+	for (auto& e : preferences_i.get_section_entries(""))
+	{
+		//if (e.key == "window_pos")
+		//{
+		//	auto pos = s2t<2, int>(e.values[0]);
+		//	auto screen_size = get_screen_size();
+		//	auto num_monitors = get_num_monitors();
+		//	if (pos.x >= screen_size.x * num_monitors)
+		//		pos.x = 0;
+		//	main_window->native->set_pos(pos);
+		//}
+		if (e.key == "use_flame_debugger")
+			preferences.use_flame_debugger = s2t<bool>(e.values[0]);
+	}
+	for (auto& e : preferences_i.get_section_entries("project_path"))
+	{
+		open_project(e.values[0]);
+		break;
+	}
+	for (auto& e : preferences_i.get_section_entries("opened_views"))
+	{
+		for (auto w : windows)
+		{
+			auto name = e.values[0];
+			if (name.ends_with(w->name))
+			{
+				w->open_view(name);
+				break;
+			}
+		}
+	}
+	for (auto& e : preferences_i.get_section_entries("opened_folder"))
+	{
+		if (auto v = project_window.views.empty() ? nullptr : project_window.views.front().get(); v)
+			((ProjectView*)v)->explorer.peeding_open_path = e.values[0];
+		break;
+	}
+	for (auto& e : preferences_i.get_section_entries("opened_prefab"))
+	{
+		open_prefab(e.values[0]);
+		break;
+	}
+}
+
+void App::save_preferences()
+{
+	for (auto& p : project_settings.favorites)
+		p = Path::reverse(p);
+	project_settings.save();
+
+	std::ofstream preferences_o(preferences_path);
+	preferences_o << "window_pos=" + str(Application::main_window->pos) << "\n";
+	preferences_o << "use_flame_debugger=" + str(preferences.use_flame_debugger) << "\n";
+	if (!project_path.empty())
+	{
+		preferences_o << "[project_path]\n";
+		preferences_o << project_path.string() << "\n";
+	}
+	preferences_o << "[opened_views]\n";
+	for (auto w : windows)
+	{
+		for (auto& v : w->views)
+			preferences_o << "\"" << v->get_save_name() << "\"\n";
+	}
+	if (auto fv = project_window.first_view(); fv && fv->explorer.opened_folder)
+	{
+		preferences_o << "[opened_folder]\n";
+		preferences_o << fv->explorer.opened_folder->path.string() << "\n";
+	}
+	if (e_prefab)
+	{
+		preferences_o << "[opened_prefab]\n";
+		preferences_o << prefab_path.string() << "\n";
+	}
+	preferences_o.close();
 }
 
 void App::new_project(const std::filesystem::path& path)
@@ -2006,51 +2061,7 @@ int main(int argc, char** args)
 		app.graphics_configs.emplace_back("replace_renderpass_attachment_dont_care_to_load"_h, 1);
 
 	app.init();
-
-	auto preferences_i = parse_ini_file(preferences_path);
-	for (auto& e : preferences_i.get_section_entries(""))
-	{
-		//if (e.key == "window_pos")
-		//{
-		//	auto pos = s2t<2, int>(e.values[0]);
-		//	auto screen_size = get_screen_size();
-		//	auto num_monitors = get_num_monitors();
-		//	if (pos.x >= screen_size.x * num_monitors)
-		//		pos.x = 0;
-		//	app.main_window->native->set_pos(pos);
-		//}
-		if (e.key == "use_flame_debugger")
-			preferences.use_flame_debugger = s2t<bool>(e.values[0]);
-	}
-	for (auto& e : preferences_i.get_section_entries("project_path"))
-	{
-		app.open_project(e.values[0]);
-		break;
-	}
-	for (auto& e : preferences_i.get_section_entries("opened_views"))
-	{
-		for (auto w : windows)
-		{
-			auto name = e.values[0];
-			if (name.find(w->name) != std::string::npos)
-			{
-				w->open_view(name);
-				break;
-			}
-		}
-	}
-	for (auto& e : preferences_i.get_section_entries("opened_folder"))
-	{
-		if (auto v = project_window.views.empty() ? nullptr : project_window.views.front().get(); v)
-			((ProjectView*)v)->explorer.peeding_open_path = e.values[0];
-		break;
-	}
-	for (auto& e : preferences_i.get_section_entries("opened_prefab"))
-	{
-		app.open_prefab(e.values[0]);
-		break;
-	}
-
+	app.load_preferences();
 	app.run();
 
 	return 0;

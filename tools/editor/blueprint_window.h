@@ -30,8 +30,12 @@ struct BlueprintView : View
 	void copy_nodes(BlueprintGroupPtr g);
 	void paste_nodes(BlueprintGroupPtr g, const vec2& pos);
 	void set_parent_to_last_node();
+	void run_blueprint(BlueprintInstance::Group* debugging_group);
+	void step_blueprint(BlueprintInstance::Group* debugging_group);
+	void stop_blueprint(BlueprintInstance::Group* debugging_group);
 	void save_blueprint();
 	void on_draw() override;
+	std::string get_save_name() override;
 };
 
 struct BlueprintWindow : Window
