@@ -146,13 +146,9 @@ BlueprintView::~BlueprintView()
 		Blueprint::release(blueprint);
 	}
 	if (blueprint_instance)
-	{
 		delete blueprint_instance;
-	}
 	if (ax_node_editor)
-	{
 		ax::NodeEditor::DestroyEditor((ax::NodeEditor::EditorContext*)ax_node_editor);
-	}
 }
 
 void BlueprintView::process_relationships(BlueprintNodePtr n)

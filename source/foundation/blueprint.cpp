@@ -905,11 +905,9 @@ namespace flame
 
 	static void update_depth(BlueprintNodePtr n) 
 	{
+		n->depth = n->parent->depth + 1;
 		for (auto& c : n->children)
-		{
-			c->depth = n->depth + 1;
 			update_depth(c);
-		}
 	}
 
 	static bool remove_link(BlueprintLinkPtr link)
