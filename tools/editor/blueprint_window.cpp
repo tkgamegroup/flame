@@ -1161,7 +1161,7 @@ void BlueprintView::on_draw()
 					ax::NodeEditor::BeginNode((uint64)n.get());
 					ImGui::Text("%s (%dD%d)", display_name.c_str(), instance_node->order, n->depth);
 					ImGui::BeginGroup();
-					for (auto i = 0; i < instance_node->inputs.size(); i++)
+					for (auto i = 0; i < n->inputs.size(); i++)
 					{
 						auto input = n->inputs[i].get();
 						if (input->flags & BlueprintSlotFlagHideInUI)
@@ -1173,9 +1173,12 @@ void BlueprintView::on_draw()
 						{
 							if (debugging_group)
 							{
-								auto& arg = instance_node->inputs[i];
-								if (arg.type)
-									tooltip = std::format("{} ({})\nObject ID: {}", get_slot_value(arg), ti_str(arg.type), input->object_id);
+								if (i < instance_node->inputs.size())
+								{
+									auto& arg = instance_node->inputs[i];
+									if (arg.type == input->type)
+										tooltip = std::format("{} ({})\nObject ID: {}", get_slot_value(arg), ti_str(arg.type), input->object_id);
+								}
 							}
 							else
 								tooltip = std::format("({})\nObject ID: {}", ti_str(input->type), input->object_id);
@@ -1216,9 +1219,12 @@ void BlueprintView::on_draw()
 						{
 							if (debugging_group)
 							{
-								auto& arg = instance_node->outputs[i];
-								if (arg.type)
-									tooltip = std::format("{} ({})\nObject ID: {}", get_slot_value(arg), ti_str(arg.type), output->object_id);
+								if (i < instance_node->outputs.size())
+								{
+									auto& arg = instance_node->outputs[i];
+									if (arg.type == output->type)
+										tooltip = std::format("{} ({})\nObject ID: {}", get_slot_value(arg), ti_str(arg.type), output->object_id);
+								}
 							}
 							else
 								tooltip = std::format("({})\nObject ID: {}", ti_str(output->type), output->object_id);

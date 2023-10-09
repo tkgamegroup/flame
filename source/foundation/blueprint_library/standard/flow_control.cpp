@@ -311,7 +311,7 @@ namespace flame
 				time += delta_time;
 				if (time >= interval)
 				{
-					*(float*)inputs[0].data = 0.f;
+					*(float*)inputs[1].data = 0.f;
 					*max_execute_times = 1;
 				}
 				else
