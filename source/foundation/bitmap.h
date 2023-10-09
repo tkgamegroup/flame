@@ -33,30 +33,30 @@ namespace flame
 	struct BinPackNode
 	{
 		bool used = false;
-		uvec2 pos = uvec2(0);
-		uvec2 extent;
+		ivec2 pos = ivec2(0);
+		ivec2 extent;
 		std::unique_ptr<BinPackNode> right;
 		std::unique_ptr<BinPackNode> bottom;
 
-		BinPackNode(const uvec2& extent) :
+		BinPackNode(const ivec2& extent) :
 			extent(extent)
 		{
 		}
 
-		BinPackNode* find(const uvec2& sz)
+		BinPackNode* find(const ivec2& sz)
 		{
-			if (!used && extent.x >= sz.x && extent.y >= extent.y)
+			if (!used && extent.x >= sz.x && extent.y >= sz.y)
 			{
 				used = true;
 				if (extent.x > sz.x)
 				{
-					right.reset(new BinPackNode(uvec2(extent.x - sz.x, sz.y)));
-					right->pos = pos + uvec2(sz.x, 0);
+					right.reset(new BinPackNode(ivec2(extent.x - sz.x, sz.y)));
+					right->pos = ivec2(pos.x + sz.x, pos.y);
 				}
 				if (extent.y > sz.y)
 				{
-					bottom.reset(new BinPackNode(uvec2(extent.x, extent.y - sz.y)));
-					bottom->pos = pos + uvec2(0, sz.y);
+					bottom.reset(new BinPackNode(ivec2(extent.x, extent.y - sz.y)));
+					bottom->pos = ivec2(pos.x, pos.y + sz.y);
 				}
 				return this;
 			}

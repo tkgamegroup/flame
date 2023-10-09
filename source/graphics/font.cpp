@@ -83,23 +83,21 @@ namespace flame
 					case FontAtlasBitmap:
 						if (auto bitmap_data = stbtt_GetGlyphBitmap(stbtt_info, scale, scale, index, &w, &h, &x, &y); bitmap_data)
 						{
-							if (auto n = bin_pack_root->find(uvec2(w, h)); n)
+							if (auto n = bin_pack_root->find(ivec2(w + 1, h + 1)); n)
 							{
-								auto& atlas_pos = n->pos;
-
 								StagingBuffer stag(image_pitch(w) * h, bitmap_data);
 
 								InstanceCommandBuffer cb;
 								auto old_layout = image->get_layout();
 								cb->image_barrier(image.get(), {}, ImageLayoutTransferDst);
 								BufferImageCopy cpy;
-								cpy.img_off = uvec3(atlas_pos, 0);
+								cpy.img_off = uvec3(n->pos, 0);
 								cpy.img_ext = uvec3(w, h, 1);
 								cb->copy_buffer_to_image(stag.get(), image.get(), { &cpy, 1 });
 								cb->image_barrier(image.get(), {}, old_layout);
 								cb.excute();
 
-								auto uv0 = vec2(atlas_pos.x, atlas_pos.y + h);
+								auto uv0 = vec2(n->pos.x, n->pos.y + h);
 								auto uv1 = uv0 + vec2(w, -h);
 								g.uv = vec4(uv0 / (vec2)font_atlas_size, uv1 / (vec2)font_atlas_size.y);
 							}
@@ -178,10 +176,8 @@ namespace flame
 							msdfgen::edgeColoringSimple(msdf_shape, 3.0);
 							msdfgen::generateMSDF(bitmap, msdf_shape, pxrange, 1.0, msdfgen::Vector2(xoff, yoff));
 
-							if (auto n = bin_pack_root->find(uvec2(w, h) + 2U); n)
+							if (auto n = bin_pack_root->find(ivec2(w + 1, h + 1)); n)
 							{
-								auto& atlas_pos = n->pos;
-
 								StagingBuffer stag(image_pitch(w * 4) * h);
 								for (auto y = 0; y < h; y++)
 								{
@@ -201,13 +197,13 @@ namespace flame
 								auto old_layout = image->get_layout();
 								cb->image_barrier(image.get(), {}, ImageLayoutTransferDst);
 								BufferImageCopy cpy;
-								cpy.img_off = uvec3(atlas_pos + 1U, 0);
+								cpy.img_off = uvec3(n->pos, 0);
 								cpy.img_ext = uvec3(w, h, 1);
 								cb->copy_buffer_to_image(stag.get(), image.get(), { &cpy, 1 });
 								cb->image_barrier(image.get(), {}, old_layout);
 								cb.excute();
 
-								auto uv0 = vec2(atlas_pos.x + 1, atlas_pos.y + 1 + h);
+								auto uv0 = vec2(n->pos.x, n->pos.y + h);
 								auto uv1 = uv0 + vec2(w, -h);
 								g.uv = vec4(uv0 / (vec2)font_atlas_size, uv1 / (vec2)font_atlas_size);
 							}

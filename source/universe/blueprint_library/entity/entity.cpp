@@ -3,8 +3,10 @@
 #include "../../entity_private.h"
 #include "../../components/node_private.h"
 #include "../../components/camera_private.h"
+#include "../../components/nav_agent_private.h"
 #include "../../components/bp_instance_private.h"
 #include "../../systems/input_private.h"
+#include "../../systems/scene_private.h"
 #include "../../systems/renderer_private.h"
 
 namespace flame
@@ -209,14 +211,128 @@ namespace flame
 					path = Path::get(path);
 					if (std::filesystem::exists(path))
 					{
-						auto parent = *(EntityPtr*)inputs[1].data;
-						if (parent)
+						if (auto parent = *(EntityPtr*)inputs[1].data; parent)
 						{
 							e = Entity::create();
 							e->load(path);
 							if (auto node = e->get_component<cNode>(); node)
 								node->set_pos(*(vec3*)inputs[2].data);
 							parent->add_child(e);
+						}
+					}
+				}
+
+				*(EntityPtr*)outputs[0].data = e;
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Spawn Character", "",
+			{
+				{
+					.name = "Path",
+					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
+				},
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Position",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Snap NavMesh",
+					.allowed_types = { TypeInfo::get<bool>() }
+				},
+				{
+					.name = "Tag To Add",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Bp To Add",
+					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
+				}
+			},
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				EntityPtr e = nullptr;
+
+				auto& path = *(std::filesystem::path*)inputs[0].data;
+				if (!path.empty())
+				{
+					path = Path::get(path);
+					if (std::filesystem::exists(path))
+					{
+						if (auto parent = *(EntityPtr*)inputs[1].data; parent)
+						{
+							e = Entity::create();
+							e->load(path);
+							if (auto node = e->get_component<cNode>(); node)
+							{
+								auto pos = *(vec3*)inputs[2].data;
+								auto snap_navmesh = *(bool*)inputs[3].data;
+								if (snap_navmesh)
+								{
+									auto parent_pos = parent->get_component<cNode>()->global_pos();
+									pos += parent_pos;
+									auto scene = sScene::instance();
+									float radius = 0.f;
+									if (auto nav_agent = e->get_component<cNavAgent>(); nav_agent)
+										radius = nav_agent->radius;
+									auto times = 20;
+									while (times > 0)
+									{
+										bool ok = true;
+										ok = scene->navmesh_nearest_point(pos, vec3(2.f, 4.f, 2.f), pos);
+										if (ok)
+											ok = scene->navmesh_check_free_space(pos, radius);
+										if (ok)
+											break;
+										pos.xz = pos.xz() + circularRand(4.f);
+										times--;
+									}
+									if (times == 0)
+									{
+										delete e;
+										e = nullptr;
+									}
+									else
+										pos -= parent_pos;
+								}
+								if (e)
+									node->set_pos(pos);
+							}
+							if (e)
+							{
+								auto tag = *(uint*)inputs[4].data;
+								if (tag)
+									e->tag = e->tag | (TagFlags)tag;
+								auto bp_path = *(std::filesystem::path*)inputs[5].data;
+								if (!bp_path.empty())
+								{
+									bp_path = Path::get(bp_path);
+									if (std::filesystem::exists(bp_path))
+									{
+										if (auto ins = e->get_component<cBpInstance>(); ins)
+											ins->set_bp_name(bp_path);
+										else
+										{
+											ins = e->add_component<cBpInstance>();
+											ins->set_bp_name(bp_path);
+										}
+									}
+								}
+								parent->add_child(e);
+							}
 						}
 					}
 				}

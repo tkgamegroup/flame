@@ -1205,7 +1205,7 @@ void BlueprintView::on_draw()
 
 					}
 					ImGui::EndGroup();
-					ImGui::SameLine(0.f, n->is_block ? max(0.f, n->rect.size().x - 56.f) : 16.f);
+					ImGui::SameLine(0.f, 16.f);
 					ImGui::BeginGroup();
 					for (auto i = 0; i < n->outputs.size(); i++)
 					{
