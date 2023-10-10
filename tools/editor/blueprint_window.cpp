@@ -530,10 +530,10 @@ void BlueprintView::on_draw()
 			save_blueprint();
 		ImGui::SameLine();
 		if (ImGui::Button("Zoom To Content"))
-		{
 			ax::NodeEditor::NavigateToContent(0.f);
-			//app.render_frames += 24;
-		}
+		ImGui::SameLine();
+		if (ImGui::Button("Zoom To Selection"))
+			ax::NodeEditor::NavigateToSelection(true, 0.f);
 
 		if (ImGui::BeginTable("bp_editor", 2, ImGuiTableFlags_Resizable))
 		{
@@ -1580,6 +1580,8 @@ void BlueprintView::on_draw()
 								t.is_block, t.begin_block_function, t.end_block_function);
 							n->position = open_popup_pos;
 							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+							if (n->is_block)
+								ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, n->rect.size());
 
 							if (new_node_link_slot)
 							{
@@ -1914,6 +1916,82 @@ void BlueprintView::on_draw()
 						copy_nodes(group);
 					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_V))
 						paste_nodes(group, floor((vec2)ImGui::GetMousePos()));
+					if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Left))
+					{
+						auto nodes = get_selected_nodes();
+						for (auto n : nodes)
+						{
+							if (n->is_block)
+							{
+								auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
+								ax_node->m_GroupBounds.Max.x -= 10.f;
+								ax_node->m_Bounds.Max.x -= 10.f;
+							}
+						}
+					}
+					if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Right))
+					{
+						auto nodes = get_selected_nodes();
+						for (auto n : nodes)
+						{
+							if (n->is_block)
+							{
+								auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
+								ax_node->m_GroupBounds.Max.x += 10.f;
+								ax_node->m_Bounds.Max.x += 10.f;
+							}
+						}
+					}
+					if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Up))
+					{
+						auto nodes = get_selected_nodes();
+						for (auto n : nodes)
+						{
+							if (n->is_block)
+							{
+								auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
+								ax_node->m_GroupBounds.Max.y -= 10.f;
+								ax_node->m_Bounds.Max.y -= 10.f;
+							}
+						}
+					}
+					if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Down))
+					{
+						auto nodes = get_selected_nodes();
+						for (auto n : nodes)
+						{
+							if (n->is_block)
+							{
+								auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
+								ax_node->m_GroupBounds.Max.y += 10.f;
+								ax_node->m_Bounds.Max.y += 10.f;
+							}
+						}
+					}
+					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Left))
+					{
+						auto nodes = get_selected_nodes();
+						for (auto n : nodes)
+							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(-10.f, 0.f));
+					}
+					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Right))
+					{
+						auto nodes = get_selected_nodes();
+						for (auto n : nodes)
+							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(+10.f, 0.f));
+					}
+					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Up))
+					{
+						auto nodes = get_selected_nodes();
+						for (auto n : nodes)
+							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(0.f, -10.f));
+					}
+					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Down))
+					{
+						auto nodes = get_selected_nodes();
+						for (auto n : nodes)
+							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(0.f, +10.f));
+					}
 					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_P))
 						set_parent_to_last_node();
 					if (ImGui::IsKeyPressed(Keyboard_F10))

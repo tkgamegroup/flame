@@ -2815,6 +2815,9 @@ namespace flame
 				set_loop_index();
 				break;
 			}
+			auto node = current_block.node->original;
+			if (node->end_block_function)
+				node->end_block_function(current_block.node->inputs.data(), current_block.node->outputs.data());
 			group->executing_stack.pop_back();
 		}
 
