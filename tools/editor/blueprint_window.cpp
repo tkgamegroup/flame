@@ -8,9 +8,26 @@
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
 
+static ImColor color_from_depth(uint depth)
+{
+	depth -= 1;
+	auto shift = depth / 7;
+	auto h = (depth % 7) / 7.f * 360.f + shift * 10.f;
+	auto color = rgbColor(vec3(h, 0.5f, 1.f));
+	return ImColor(color.r, color.g, color.b);
+}
+
+void set_offset_recurisely(BlueprintNodePtr n, const vec2& offset) 
+{
+	n->position += offset;
+	ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+	for (auto c : n->children)
+		set_offset_recurisely(c, offset);
+};
+
 static std::vector<BlueprintNodePtr> copied_nodes;
 
-bool if_contains_any_of(BlueprintNodePtr node, const std::vector<BlueprintNodePtr>& list) 
+static bool if_contains_any_of(BlueprintNodePtr node, const std::vector<BlueprintNodePtr>& list) 
 {
 	for (auto n : list)
 	{
@@ -20,7 +37,7 @@ bool if_contains_any_of(BlueprintNodePtr node, const std::vector<BlueprintNodePt
 	return false;
 };
 
-std::vector<BlueprintNodePtr> get_selected_nodes()
+static std::vector<BlueprintNodePtr> get_selected_nodes()
 {
 	std::vector<BlueprintNodePtr> nodes;
 	if (auto n = ax::NodeEditor::GetSelectedObjectCount(); n > 0)
@@ -76,48 +93,51 @@ BlueprintView::BlueprintView(const std::string& name) :
 			blueprint_window.debugger->debugging->name == view.group_name_hash)
 			return true;
 		auto node = (BlueprintNodePtr)(uint64)node_id;
-		auto do_expand = false;
-		if ((reason & ax::NodeEditor::SaveReasonFlags::AddNode) != ax::NodeEditor::SaveReasonFlags::None)
+		if (!view.grapes_mode)
 		{
-			auto sz = ax::NodeEditor::GetNodeSize(node_id);
-			auto ready = node->is_block ? node->position != node->rect.a : ax::NodeEditor::GetNodeSize(node_id).x != 0.f;
-			if (!ready)
+			auto do_expand = false;
+			if ((reason & ax::NodeEditor::SaveReasonFlags::AddNode) != ax::NodeEditor::SaveReasonFlags::None)
 			{
-				auto ax_node = view.ax_node_editor->FindNode(node_id);
-				add_event([&, ax_node]() {
-					view.ax_node_editor->MakeDirty(ax::NodeEditor::SaveReasonFlags::AddNode | ax::NodeEditor::SaveReasonFlags::Size, ax_node);
-					return false;
-				});
-				return true;
-			}
-
-			auto pos = node->position;
-			BlueprintNodePtr most_depth_block = nullptr;
-			uint most_depth = 0;
-			auto g = node->group;
-			for (auto& b : g->nodes)
-			{
-				if (b->is_block && b->rect.contains(pos))
+				auto sz = ax::NodeEditor::GetNodeSize(node_id);
+				auto ready = node->is_block ? node->position != node->rect.a : ax::NodeEditor::GetNodeSize(node_id).x != 0.f;
+				if (!ready)
 				{
-					if (b->depth > most_depth)
+					auto ax_node = view.ax_node_editor->FindNode(node_id);
+					add_event([&, ax_node]() {
+						view.ax_node_editor->MakeDirty(ax::NodeEditor::SaveReasonFlags::AddNode | ax::NodeEditor::SaveReasonFlags::Size, ax_node);
+						return false;
+					});
+					return true;
+				}
+
+				auto pos = node->position;
+				BlueprintNodePtr most_depth_block = nullptr;
+				uint most_depth = 0;
+				auto g = node->group;
+				for (auto& b : g->nodes)
+				{
+					if (b->is_block && b->rect.contains(pos))
 					{
-						most_depth_block = b.get();
-						most_depth = b->depth;
+						if (b->depth > most_depth)
+						{
+							most_depth_block = b.get();
+							most_depth = b->depth;
+						}
 					}
 				}
+
+				auto new_block = most_depth_block ? most_depth_block : g->nodes.front().get();
+				if (node->parent != new_block)
+					view.blueprint->set_node_parent(node, new_block);
+
+				do_expand = true;
 			}
-
-			auto new_block = most_depth_block ? most_depth_block : g->nodes.front().get();
-			if (node->parent != new_block)
-				view.blueprint->set_node_parent(node, new_block);
-
-			do_expand = true;
+			if (ImGui::IsKeyDown(Keyboard_Alt))
+				do_expand = true;
+			if (do_expand)
+				view.expand_block_sizes();
+			view.process_relationships(node);
 		}
-		if (ImGui::IsKeyDown(Keyboard_Alt))
-			do_expand = true;
-		if (do_expand)
-			view.expand_block_sizes();
-		view.process_relationships(node);
 		view.unsaved = true;
 		return true;
 	};
@@ -153,6 +173,9 @@ BlueprintView::~BlueprintView()
 
 void BlueprintView::process_relationships(BlueprintNodePtr n)
 {
+	if (grapes_mode)
+		return;
+
 	auto g = blueprint->find_group(group_name_hash);
 
 	auto try_change_node_block = [&](BlueprintNodePtr node) {
@@ -227,33 +250,39 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 			BlueprintNodePtr n = nullptr;
 			if (src_n->name_hash == "Variable"_h)
 			{
-				auto first_input = src_n->inputs.front().get();
-				n = blueprint->add_variable_node(g, parent, *(uint*)first_input->data, "get"_h);
+				auto first_input = src_n->inputs[0].get();
+				auto second_input = src_n->inputs[1].get();
+				n = blueprint->add_variable_node(g, parent, *(uint*)first_input->data, "get"_h, *(uint*)second_input->data);
 			}
 			else if (src_n->name_hash == "Set Variable"_h)
 			{
-				auto first_input = src_n->inputs.front().get();
-				n = blueprint->add_variable_node(g, parent, *(uint*)first_input->data, "set"_h);
+				auto first_input = src_n->inputs[0].get();
+				auto second_input = src_n->inputs[1].get();
+				n = blueprint->add_variable_node(g, parent, *(uint*)first_input->data, "set"_h, *(uint*)second_input->data);
 			}
 			else if (src_n->name_hash == "Array Size"_h)
 			{
-				auto first_input = src_n->inputs.front().get();
-				n = blueprint->add_variable_node(g, parent, *(uint*)first_input->data, "array_size"_h);
+				auto first_input = src_n->inputs[0].get();
+				auto second_input = src_n->inputs[1].get();
+				n = blueprint->add_variable_node(g, parent, *(uint*)first_input->data, "array_size"_h, *(uint*)second_input->data);
 			}
 			else if (src_n->name_hash == "Array Get Item"_h)
 			{
-				auto first_input = src_n->inputs.front().get();
-				n = blueprint->add_variable_node(g, parent, *(uint*)first_input->data, "array_get_item"_h);
+				auto first_input = src_n->inputs[0].get();
+				auto second_input = src_n->inputs[1].get();
+				n = blueprint->add_variable_node(g, parent, *(uint*)first_input->data, "array_get_item"_h, *(uint*)second_input->data);
 			}
 			else if (src_n->name_hash == "Array Set Item"_h)
 			{
-				auto first_input = src_n->inputs.front().get();
-				n = blueprint->add_variable_node(g, parent, *(uint*)first_input->data, "array_set_item"_h);
+				auto first_input = src_n->inputs[0].get();
+				auto second_input = src_n->inputs[1].get();
+				n = blueprint->add_variable_node(g, parent, *(uint*)first_input->data, "array_set_item"_h, *(uint*)second_input->data);
 			}
 			else if (src_n->name_hash == "Array Add Item"_h)
 			{
-				auto first_input = src_n->inputs.front().get();
-				n = blueprint->add_variable_node(g, parent, *(uint*)first_input->data, "array_add_item"_h);
+				auto first_input = src_n->inputs[0].get();
+				auto second_input = src_n->inputs[1].get();
+				n = blueprint->add_variable_node(g, parent, *(uint*)first_input->data, "array_add_item"_h, *(uint*)second_input->data);
 			}
 			else
 			{
@@ -321,7 +350,8 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 			{
 				auto from_node = node_map[l->from_slot->node->object_id];
 				auto to_node = node_map[l->to_slot->node->object_id];
-				blueprint->add_link(from_node->find_output(l->from_slot->name_hash), to_node->find_input(l->to_slot->name_hash));
+				if (from_node && to_node)
+					blueprint->add_link(from_node->find_output(l->from_slot->name_hash), to_node->find_input(l->to_slot->name_hash));
 			}
 		}
 	}
@@ -354,30 +384,26 @@ void BlueprintView::set_parent_to_last_node()
 				}
 			}
 
-			if (all(lessThan(last_node->rect.size(), wrap_rect.size())))
+			if (!grapes_mode)
 			{
-				auto expand = wrap_rect.size() - last_node->rect.size();
-				last_node->rect.b += expand;
-				auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)last_node);
-				ax_node->m_GroupBounds.Max += expand;
-				ax_node->m_Bounds.Max += expand;
-				//ax_node_editor->MakeDirty(ax::NodeEditor::SaveReasonFlags::AddNode, ax_node);
+				if (all(lessThan(last_node->rect.size(), wrap_rect.size())))
+				{
+					auto expand = wrap_rect.size() - last_node->rect.size();
+					last_node->rect.b += expand;
+					auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)last_node);
+					ax_node->m_GroupBounds.Max += expand;
+					ax_node->m_Bounds.Max += expand;
+					//ax_node_editor->MakeDirty(ax::NodeEditor::SaveReasonFlags::AddNode, ax_node);
+				}
 			}
 
 			auto offset = last_node->rect.a - wrap_rect.a;
-			std::function<void(BlueprintNodePtr n)> set_offset_recurisely;
-			set_offset_recurisely = [&](BlueprintNodePtr n) {
-				n->position += offset;
-				ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
-				for (auto c : n->children)
-					set_offset_recurisely(c);
-			};
 			for (auto n : nodes)
 			{
 				if (n != last_node)
 				{
 					blueprint->set_node_parent(n, last_node);
-					set_offset_recurisely(n);
+					set_offset_recurisely(n, offset);
 				}
 			}
 		}
@@ -461,6 +487,8 @@ void BlueprintView::save_blueprint()
 
 void BlueprintView::expand_block_sizes()
 {
+	if (grapes_mode)
+		return;
 	auto g = blueprint->find_group(group_name_hash);
 	std::function<void(BlueprintNodePtr)> fit_block_size;
 	fit_block_size = [&](BlueprintNodePtr b) {
@@ -526,6 +554,10 @@ void BlueprintView::on_draw()
 		if (blueprint_instance->built_frame < blueprint->dirty_frame)
 			blueprint_instance->build();
 
+		ImGui::Checkbox("Grapes Mode", &grapes_mode);
+		ImGui::SameLine();
+		ImGui::Checkbox("Show Misc", &show_misc);
+		ImGui::SameLine();
 		if (ImGui::Button("Save"))
 			save_blueprint();
 		ImGui::SameLine();
@@ -1118,6 +1150,7 @@ void BlueprintView::on_draw()
 					stop_blueprint(debugging_group);
 
 				auto& io = ImGui::GetIO();
+				auto& style = ImGui::GetStyle();
 				auto dl = ImGui::GetWindowDrawList();
 				std::string tooltip; vec2 tooltip_pos;
 				auto get_slot_value = [](const BlueprintAttribute& arg)->std::string {
@@ -1140,26 +1173,36 @@ void BlueprintView::on_draw()
 					auto instance_node = instance_group.node_map[n->object_id];
 
 					auto display_name = n->display_name.empty() ? n->name : n->display_name;
-					auto color = ax::NodeEditor::GetStyle().Colors[ax::NodeEditor::StyleColor_NodeBg];
+					auto bg_color = ax::NodeEditor::GetStyle().Colors[ax::NodeEditor::StyleColor_NodeBg];
+					auto border_color = color_from_depth(n->depth);
 					if (blueprint_window.debugger->has_break_node(n.get()))
 					{
 						if (executing_node && executing_node->original == n.get())
 						{
 							display_name = "=> " + display_name;
-							color = ImColor(204, 116, 45, 200);
+							bg_color = ImColor(204, 116, 45, 200);
 						}
 						else
-							color = ImColor(197, 81, 89, 200);
+							bg_color = ImColor(197, 81, 89, 200);
 					}
 					else if (executing_node && executing_node->original == n.get())
 					{
 						display_name = "=> " + display_name;
-						color = ImColor(211, 151, 0, 200);
+						bg_color = ImColor(211, 151, 0, 200);
 					}
-					ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_NodeBg, color);
+					ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_NodeBg, bg_color);
+					ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_NodeBorder, border_color);
 
 					ax::NodeEditor::BeginNode((uint64)n.get());
-					ImGui::Text("%s (%dD%d)", display_name.c_str(), instance_node->order, n->depth);
+					if (show_misc)
+					{
+						vec2 pos = ImGui::GetCursorPos();
+						pos.y -= ImGui::GetTextLineHeight();
+						pos.y -= style.FramePadding.y * 2;
+						auto text = std::format("O{}D{}", instance_node->order, n->depth);
+						dl->AddText(pos, ImColor(1.f, 1.f, 1.f), text.c_str());
+					}
+					ImGui::TextUnformatted(display_name.c_str());
 					ImGui::BeginGroup();
 					for (auto i = 0; i < n->inputs.size(); i++)
 					{
@@ -1280,29 +1323,63 @@ void BlueprintView::on_draw()
 					}
 
 					auto ax_node = ax_node_editor->GetNodeBuilder().m_CurrentNode;
-					n->position = ax::NodeEditor::GetNodePosition((ax::NodeEditor::NodeId)n.get());
-					if (n->is_block)
+					vec2 new_pos = ax_node->m_Bounds.Min;
+					if (!grapes_mode)
+						n->position = new_pos;
+					else if (n->position != new_pos)
 					{
-						auto bounds = ax_node->m_GroupBounds;
-						n->rect = Rect(bounds.Min, bounds.Max); // get rect from last frame
-
-						ax::NodeEditor::Group(n->rect.size());
+						if (!ImGui::IsKeyDown(Keyboard_Alt))
+						{
+							if (n->is_block)
+							{
+								auto offset = new_pos - n->position;
+								set_offset_recurisely(n.get(), offset);
+							}
+						}
+						n->position = new_pos;
 					}
 
-					if (n->is_block)
+					if (!grapes_mode)
 					{
-						// restore last pin
-						auto last_pin = ax_node->m_LastPin;
-						ax::NodeEditor::EndNode();
-						// recover last pin and re-active all pins, since our groups(blocks) can have pins
-						ax_node->m_LastPin = last_pin;
-						for (auto pin = ax_node->m_LastPin; pin; pin = pin->m_PreviousPin)
-							pin->m_IsLive = true;
+						if (n->is_block)
+						{
+							auto bounds = ax_node->m_GroupBounds;
+							n->rect = Rect(bounds.Min, bounds.Max); // get rect from last frame
+
+							ax::NodeEditor::Group(n->rect.size());
+						}
+
+						if (n->is_block)
+						{
+							// restore last pin
+							auto last_pin = ax_node->m_LastPin;
+							ax::NodeEditor::EndNode();
+							// recover last pin and re-active all pins, since our groups(blocks) can have pins
+							ax_node->m_LastPin = last_pin;
+							for (auto pin = ax_node->m_LastPin; pin; pin = pin->m_PreviousPin)
+								pin->m_IsLive = true;
+						}
+						else
+							ax::NodeEditor::EndNode();
 					}
 					else
-						ax::NodeEditor::EndNode();
+					{
+						if (n->is_block)
+						{
+							auto col = color_from_depth(n->depth + 1);
+							ImGui::InvisibleButton("block", ImVec2(80, 4));
+							auto p0 = ImGui::GetItemRectMin();
+							auto p1 = ImGui::GetItemRectMax();
+							dl->AddRectFilled(p0, p1, col);
+							col.Value.w = 0.3f;
 
-					ax::NodeEditor::PopStyleColor();
+							for (auto c : n->children)
+								dl->AddLine(c->position, vec2((p0 + p1) * 0.5f), col);
+						}
+						ax::NodeEditor::EndNode();
+					}
+
+					ax::NodeEditor::PopStyleColor(2);
 				}
 
 				for (auto& l : group->links)
@@ -1575,7 +1652,7 @@ void BlueprintView::on_draw()
 						uint slot_name = 0;
 						if (show_node_template(t.name, t.inputs, t.outputs, slot_name))
 						{
-							auto n = blueprint->add_node(group, nullptr, t.name, t.display_name, t.inputs, t.outputs,
+							auto n = blueprint->add_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, t.name, t.display_name, t.inputs, t.outputs,
 								t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
 								t.is_block, t.begin_block_function, t.end_block_function);
 							n->position = open_popup_pos;
@@ -1636,7 +1713,7 @@ void BlueprintView::on_draw()
 							{
 								if (show_node_template("Get", {}, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {type}} }, slot_name))
 								{
-									auto n = blueprint->add_variable_node(group, nullptr, name_hash, "get"_h, location_name);
+									auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "get"_h, location_name);
 									n->position = open_popup_pos;
 									ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -1650,7 +1727,7 @@ void BlueprintView::on_draw()
 								{
 									if (show_node_template("Size", {}, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {TypeInfo::get<uint>()}} }, slot_name))
 									{
-										auto n = blueprint->add_variable_node(group, nullptr, name_hash, "array_size"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "array_size"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -1663,7 +1740,7 @@ void BlueprintView::on_draw()
 										{ BlueprintSlotDesc{.name = "Index", .name_hash = "Index"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {TypeInfo::get<uint>()}} },
 										{ BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {type->get_wrapped()}} }, slot_name))
 									{
-										auto n = blueprint->add_variable_node(group, nullptr, name_hash, "array_get_item"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "array_get_item"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -1682,7 +1759,7 @@ void BlueprintView::on_draw()
 										  BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type->get_wrapped()}} },
 										{}, slot_name))
 									{
-										auto n = blueprint->add_variable_node(group, nullptr, name_hash, "array_set_item"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "array_set_item"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -1693,7 +1770,7 @@ void BlueprintView::on_draw()
 									}
 									if (show_node_template("Add Item", { BlueprintSlotDesc{.name = "Item", .name_hash = "Item"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type->get_wrapped()}} }, {}, slot_name))
 									{
-										auto n = blueprint->add_variable_node(group, nullptr, name_hash, "array_add_item"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "array_add_item"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -1709,7 +1786,7 @@ void BlueprintView::on_draw()
 									{
 										if (show_node_template("Set", { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type}} }, {}, slot_name))
 										{
-											auto n = blueprint->add_variable_node(group, nullptr, name_hash, "set"_h, location_name);
+											auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "set"_h, location_name);
 											n->position = open_popup_pos;
 											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -1768,7 +1845,7 @@ void BlueprintView::on_draw()
 								continue;
 							if (show_node_template(g->name, {}, {}, slot_name))
 							{
-								auto n = blueprint->add_call_node(group, nullptr, g->name_hash);
+								auto n = blueprint->add_call_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, g->name_hash);
 								n->position = open_popup_pos;
 								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -1890,6 +1967,99 @@ void BlueprintView::on_draw()
 
 				ax::NodeEditor::Resume();
 
+				if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
+				{
+					if (!io.WantCaptureKeyboard)
+					{
+						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_C))
+							copy_nodes(group);
+						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_V))
+							paste_nodes(group, mouse_pos);
+						if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Left))
+						{
+							auto nodes = get_selected_nodes();
+							for (auto n : nodes)
+							{
+								if (n->is_block)
+								{
+									auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
+									ax_node->m_GroupBounds.Max.x -= 10.f;
+									ax_node->m_Bounds.Max.x -= 10.f;
+								}
+							}
+						}
+						if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Right))
+						{
+							auto nodes = get_selected_nodes();
+							for (auto n : nodes)
+							{
+								if (n->is_block)
+								{
+									auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
+									ax_node->m_GroupBounds.Max.x += 10.f;
+									ax_node->m_Bounds.Max.x += 10.f;
+								}
+							}
+						}
+						if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Up))
+						{
+							auto nodes = get_selected_nodes();
+							for (auto n : nodes)
+							{
+								if (n->is_block)
+								{
+									auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
+									ax_node->m_GroupBounds.Max.y -= 10.f;
+									ax_node->m_Bounds.Max.y -= 10.f;
+								}
+							}
+						}
+						if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Down))
+						{
+							auto nodes = get_selected_nodes();
+							for (auto n : nodes)
+							{
+								if (n->is_block)
+								{
+									auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
+									ax_node->m_GroupBounds.Max.y += 10.f;
+									ax_node->m_Bounds.Max.y += 10.f;
+								}
+							}
+						}
+						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Left))
+						{
+							auto nodes = get_selected_nodes();
+							for (auto n : nodes)
+								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(-10.f, 0.f));
+						}
+						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Right))
+						{
+							auto nodes = get_selected_nodes();
+							for (auto n : nodes)
+								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(+10.f, 0.f));
+						}
+						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Up))
+						{
+							auto nodes = get_selected_nodes();
+							for (auto n : nodes)
+								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(0.f, -10.f));
+						}
+						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Down))
+						{
+							auto nodes = get_selected_nodes();
+							for (auto n : nodes)
+								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(0.f, +10.f));
+						}
+						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_P))
+							set_parent_to_last_node();
+						if (ImGui::IsKeyPressed(Keyboard_F10))
+							step_blueprint(debugging_group);
+						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
+							save_blueprint();
+					}
+				}
+
 				ax::NodeEditor::End();
 				if (debugging_group)
 					ax::NodeEditor::PopStyleColor();
@@ -1905,101 +2075,6 @@ void BlueprintView::on_draw()
 			ImGui::EndChild();
 
 			ImGui::EndTable();
-
-			auto& io = ImGui::GetIO();
-
-			if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
-			{
-				if (!io.WantCaptureKeyboard)
-				{
-					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_C))
-						copy_nodes(group);
-					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_V))
-						paste_nodes(group, floor((vec2)ImGui::GetMousePos()));
-					if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Left))
-					{
-						auto nodes = get_selected_nodes();
-						for (auto n : nodes)
-						{
-							if (n->is_block)
-							{
-								auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
-								ax_node->m_GroupBounds.Max.x -= 10.f;
-								ax_node->m_Bounds.Max.x -= 10.f;
-							}
-						}
-					}
-					if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Right))
-					{
-						auto nodes = get_selected_nodes();
-						for (auto n : nodes)
-						{
-							if (n->is_block)
-							{
-								auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
-								ax_node->m_GroupBounds.Max.x += 10.f;
-								ax_node->m_Bounds.Max.x += 10.f;
-							}
-						}
-					}
-					if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Up))
-					{
-						auto nodes = get_selected_nodes();
-						for (auto n : nodes)
-						{
-							if (n->is_block)
-							{
-								auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
-								ax_node->m_GroupBounds.Max.y -= 10.f;
-								ax_node->m_Bounds.Max.y -= 10.f;
-							}
-						}
-					}
-					if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Down))
-					{
-						auto nodes = get_selected_nodes();
-						for (auto n : nodes)
-						{
-							if (n->is_block)
-							{
-								auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
-								ax_node->m_GroupBounds.Max.y += 10.f;
-								ax_node->m_Bounds.Max.y += 10.f;
-							}
-						}
-					}
-					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Left))
-					{
-						auto nodes = get_selected_nodes();
-						for (auto n : nodes)
-							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(-10.f, 0.f));
-					}
-					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Right))
-					{
-						auto nodes = get_selected_nodes();
-						for (auto n : nodes)
-							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(+10.f, 0.f));
-					}
-					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Up))
-					{
-						auto nodes = get_selected_nodes();
-						for (auto n : nodes)
-							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(0.f, -10.f));
-					}
-					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Down))
-					{
-						auto nodes = get_selected_nodes();
-						for (auto n : nodes)
-							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(0.f, +10.f));
-					}
-					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_P))
-						set_parent_to_last_node();
-					if (ImGui::IsKeyPressed(Keyboard_F10))
-						step_blueprint(debugging_group);
-					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
-						save_blueprint();
-				}
-			}
 		}
 	}
 

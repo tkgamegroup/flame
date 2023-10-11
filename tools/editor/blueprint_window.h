@@ -19,6 +19,8 @@ struct BlueprintView : View
 	uint group_name_hash = "main"_h;
 	uint load_frame = 0;
 	BlueprintGroupPtr last_group = nullptr;
+	bool grapes_mode = true; // relationships nolonger relate to the rect, but using lines to connect them
+	bool show_misc = false;
 	bool unsaved = false;
 
 	BlueprintView();
