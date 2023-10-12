@@ -134,7 +134,8 @@ namespace flame
 			auto n_column = n_columns.append_child("column");
 			write_ti(c.type, n_column.append_attribute("type"));
 			n_column.append_attribute("name").set_value(c.name.c_str());
-			n_column.append_attribute("default_value").set_value(c.default_value.c_str());
+			if (!c.default_value.empty())
+				n_column.append_attribute("default_value").set_value(c.default_value.c_str());
 		}
 		auto n_rows = doc_root.append_child("rows");
 		for (auto& r : rows)

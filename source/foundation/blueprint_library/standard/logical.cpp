@@ -33,6 +33,7 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
 		library->add_template("Greater", ">",
 			{
 				{
@@ -61,6 +62,7 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
 		library->add_template("Equal", "==",
 			{
 				{
@@ -89,6 +91,7 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
 		library->add_template("Not Equal", "!=",
 			{
 				{
@@ -117,6 +120,7 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
 		library->add_template("Less Or Equal", "<=",
 			{
 				{
@@ -145,6 +149,7 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
 		library->add_template("Greater Or Equal", "<=",
 			{
 				{
@@ -173,6 +178,7 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
 		library->add_template("Not", "!",
 			{
 				{
@@ -193,6 +199,7 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
 		library->add_template("And", "&&",
 			{
 				{
@@ -228,6 +235,7 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
 		library->add_template("Or", "||",
 			{
 				{
@@ -258,6 +266,109 @@ namespace flame
 					b2 = (*(voidptr*)inputs[1].data) != nullptr;
 
 				*(bool*)outputs[0].data = b1 || b2;
+			},
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Bit And", "&",
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				uint b1 = *(uint*)inputs[0].data;
+				uint b2 = *(uint*)inputs[1].data;
+				*(uint*)outputs[0].data = b1 & b2;
+			},
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Bit Or", "|",
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				uint b1 = *(uint*)inputs[0].data;
+				uint b2 = *(uint*)inputs[1].data;
+				*(uint*)outputs[0].data = b1 | b2;
+			},
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Bit Xor", "^",
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				uint b1 = *(uint*)inputs[0].data;
+				uint b2 = *(uint*)inputs[1].data;
+				*(uint*)outputs[0].data = b1 ^ b2;
+			},
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Bit Not", "~",
+			{
+				{
+					.name = "In",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				uint b1 = *(uint*)inputs[0].data;
+				*(uint*)outputs[0].data = ~b1;
 			},
 			nullptr,
 			nullptr,

@@ -473,5 +473,46 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
+		library->add_template("Get Blueprint Instance", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "Instance",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto e = *(EntityPtr*)inputs[0].data;
+				if (e)
+				{
+					auto name = *(uint*)inputs[1].data;
+					if (auto ins = e->get_component<cBpInstance>(); ins)
+					{
+						if (ins->bp->name_hash == name)
+							*(BlueprintInstancePtr*)outputs[0].data = ins->bp_ins;
+						else
+							*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+					}
+					else
+						*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+				}
+				else
+					*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
 	}
 }

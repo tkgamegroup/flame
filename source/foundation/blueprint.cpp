@@ -1443,7 +1443,8 @@ namespace flame
 				auto n_variable = n_variables.append_child("variable");
 				n_variable.append_attribute("name").set_value(v.name.c_str());
 				write_ti(v.type, n_variable.append_attribute("type"));
-				n_variable.append_attribute("value").set_value(v.type->serialize(v.data).c_str());
+				if (!is_pointer(v.type->tag) && !is_vector(v.type->tag))
+					n_variable.append_attribute("value").set_value(v.type->serialize(v.data).c_str());
 			}
 		}
 		auto n_groups = doc_root.append_child("groups");
@@ -1751,8 +1752,11 @@ namespace flame
 									other_inputs.push_back(n_input);
 							}
 							auto n = ret->add_variable_node(g, parent, name, "get"_h, location_name);
-							node_map[n_node.attribute("object_id").as_uint()] = n;
-							n->position = s2t<2, float>(n_node.attribute("position").value());
+							if (n)
+							{
+								node_map[n_node.attribute("object_id").as_uint()] = n;
+								n->position = s2t<2, float>(n_node.attribute("position").value());
+							}
 						}
 						else if (name == "Set Variable")
 						{
@@ -1770,10 +1774,13 @@ namespace flame
 									other_inputs.push_back(n_input);
 							}
 							auto n = ret->add_variable_node(g, parent, name, "set"_h, location_name);
-							for (auto n_input : other_inputs)
-								read_input(n, n_input);
-							node_map[n_node.attribute("object_id").as_uint()] = n;
-							n->position = s2t<2, float>(n_node.attribute("position").value());
+							if (n)
+							{
+								for (auto n_input : other_inputs)
+									read_input(n, n_input);
+								node_map[n_node.attribute("object_id").as_uint()] = n;
+								n->position = s2t<2, float>(n_node.attribute("position").value());
+							}
 						}
 						else if (name == "Array Size")
 						{
@@ -1791,10 +1798,13 @@ namespace flame
 									other_inputs.push_back(n_input);
 							}
 							auto n = ret->add_variable_node(g, parent, name, "array_size"_h, location_name);
-							for (auto n_input : other_inputs)
-								read_input(n, n_input);
-							node_map[n_node.attribute("object_id").as_uint()] = n;
-							n->position = s2t<2, float>(n_node.attribute("position").value());
+							if (n)
+							{
+								for (auto n_input : other_inputs)
+									read_input(n, n_input);
+								node_map[n_node.attribute("object_id").as_uint()] = n;
+								n->position = s2t<2, float>(n_node.attribute("position").value());
+							}
 						}
 						else if (name == "Array Get Item")
 						{
@@ -1812,10 +1822,13 @@ namespace flame
 									other_inputs.push_back(n_input);
 							}
 							auto n = ret->add_variable_node(g, parent, name, "array_get_item"_h, location_name);
-							for (auto n_input : other_inputs)
-								read_input(n, n_input);
-							node_map[n_node.attribute("object_id").as_uint()] = n;
-							n->position = s2t<2, float>(n_node.attribute("position").value());
+							if (n)
+							{
+								for (auto n_input : other_inputs)
+									read_input(n, n_input);
+								node_map[n_node.attribute("object_id").as_uint()] = n;
+								n->position = s2t<2, float>(n_node.attribute("position").value());
+							}
 						}
 						else if (name == "Array Set Item")
 						{
@@ -1833,10 +1846,13 @@ namespace flame
 									other_inputs.push_back(n_input);
 							}
 							auto n = ret->add_variable_node(g, parent, name, "array_set_item"_h, location_name);
-							for (auto n_input : other_inputs)
-								read_input(n, n_input);
-							node_map[n_node.attribute("object_id").as_uint()] = n;
-							n->position = s2t<2, float>(n_node.attribute("position").value());
+							if (n)
+							{
+								for (auto n_input : other_inputs)
+									read_input(n, n_input);
+								node_map[n_node.attribute("object_id").as_uint()] = n;
+								n->position = s2t<2, float>(n_node.attribute("position").value());
+							}
 						}
 						else if (name == "Array Add Item")
 						{
@@ -1854,10 +1870,13 @@ namespace flame
 									other_inputs.push_back(n_input);
 							}
 							auto n = ret->add_variable_node(g, parent, name, "array_add_item"_h, location_name);
-							for (auto n_input : other_inputs)
-								read_input(n, n_input);
-							node_map[n_node.attribute("object_id").as_uint()] = n;
-							n->position = s2t<2, float>(n_node.attribute("position").value());
+							if (n)
+							{
+								for (auto n_input : other_inputs)
+									read_input(n, n_input);
+								node_map[n_node.attribute("object_id").as_uint()] = n;
+								n->position = s2t<2, float>(n_node.attribute("position").value());
+							}
 						}
 						else if (name == "Call")
 						{
@@ -1875,10 +1894,13 @@ namespace flame
 									other_inputs.push_back(n_input);
 							}
 							auto n = ret->add_call_node(g, parent, name, location_name);
-							for (auto n_input : other_inputs)
-								read_input(n, n_input);
-							node_map[n_node.attribute("object_id").as_uint()] = n;
-							n->position = s2t<2, float>(n_node.attribute("position").value());
+							if (n)
+							{
+								for (auto n_input : other_inputs)
+									read_input(n, n_input);
+								node_map[n_node.attribute("object_id").as_uint()] = n;
+								n->position = s2t<2, float>(n_node.attribute("position").value());
+							}
 						}
 						else
 						{
@@ -2154,15 +2176,6 @@ namespace flame
 					c.object_id = n->object_id;
 					create_node(n, c);
 				}
-				auto is_inside = [](BlueprintNodePtr b1, BlueprintNodePtr b2) {
-					while (b2)
-					{
-						if (b1 == b2)
-							return true;
-						b2 = b2->parent;
-					}
-					return false;
-				};
 				while (!rest_nodes.empty())
 				{
 					for (auto it = rest_nodes.begin(); it != rest_nodes.end();)
@@ -2260,14 +2273,23 @@ namespace flame
 				auto create_input_slot_data = [&](BlueprintSlotPtr input) {
 					Group::Data data;
 					data.changed_frame = input->data_changed_frame;
-					data.attribute.type = input->type;
+					auto is_string_hash = input->type == TypeInfo::get<std::string>() && input->name.ends_with("_hash");
+					if (is_string_hash)
+						data.attribute.type = TypeInfo::get<uint>();
+					else
+						data.attribute.type = input->type;
 					if (data.attribute.type)
 					{
 						data.attribute.data = data.attribute.type->create();
 						if (is_pointer(data.attribute.type->tag))
 							memset(data.attribute.data, 0, sizeof(voidptr));
 						else if (input->data)
-							data.attribute.type->copy(data.attribute.data, input->data);
+						{
+							if (is_string_hash)
+								*(uint*)data.attribute.data = sh((*(std::string*)input->data).c_str());
+							else
+								data.attribute.type->copy(data.attribute.data, input->data);
+						}
 					}
 					else
 						data.attribute.data = nullptr;
@@ -2816,7 +2838,7 @@ namespace flame
 				break;
 			}
 			auto node = current_block.node->original;
-			if (node->end_block_function)
+			if (node && node->end_block_function)
 				node->end_block_function(current_block.node->inputs.data(), current_block.node->outputs.data());
 			group->executing_stack.pop_back();
 		}
