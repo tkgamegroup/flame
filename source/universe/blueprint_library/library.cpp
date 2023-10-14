@@ -16,7 +16,7 @@ namespace flame
 
 		add_entity_node_templates(entity_library);
 		add_navigation_node_templates(navigation_library);
-		add_input_node_templates(navigation_library);
-		add_hud_node_templates(navigation_library);
+		add_input_node_templates(input_library);
+		add_hud_node_templates(hud_library);
 	}
 }

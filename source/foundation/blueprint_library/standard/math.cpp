@@ -1012,6 +1012,31 @@ namespace flame
 			}
 		);
 
+		library->add_template("Distance", "",
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(float*)outputs[0].data = distance(*(vec3*)inputs[0].data, *(vec3*)inputs[1].data);
+			},
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
 		library->add_template("Random", "",
 			{
 				{
@@ -1027,6 +1052,37 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				*(float*)outputs[0].data = linearRand(0.f, 1.f);
+			},
+			nullptr,
+			nullptr,
+			[](TypeInfo** input_types, TypeInfo** output_types) {
+				*output_types = input_types[0];
+			}
+		);
+
+		library->add_template("RandomInt", "",
+			{
+				{
+					.name = "Seed",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Min",
+					.allowed_types = { TypeInfo::get<int>() }
+				},
+				{
+					.name = "Max",
+					.allowed_types = { TypeInfo::get<int>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<int>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(int*)outputs[0].data = linearRand(*(int*)inputs[0].data, *(int*)inputs[1].data);
 			},
 			nullptr,
 			nullptr,

@@ -39,6 +39,13 @@ namespace flame
 		return !linked_slots.empty();
 	}
 
+	BlueprintSlotPtr BlueprintSlotPrivate::get_linked(uint idx) const
+	{
+		if (idx < linked_slots.size())
+			return linked_slots[idx];
+		return nullptr;
+	}
+
 	BlueprintGroupPrivate::~BlueprintGroupPrivate()
 	{
 		for (auto& v : variables)
@@ -2176,40 +2183,41 @@ namespace flame
 					c.object_id = n->object_id;
 					create_node(n, c);
 				}
-				while (!rest_nodes.empty())
-				{
-					for (auto it = rest_nodes.begin(); it != rest_nodes.end();)
+				std::function<void(Node&)> process_node;
+				process_node = [&](Node& n) {
+					Node* unsatisfied_upstream = nullptr;
+					for (auto& l : src_g->links)
 					{
-						auto ok = true;
-						for (auto& l : src_g->links)
+						auto from_node = l->from_slot->node;
+						auto to_node = l->to_slot->node;
+						if (from_node->parent == block)
 						{
-							if (l->from_slot->node->parent == block)
+							// if the link's to_node is the node or to_node is inside the node, then the link counts
+							if (to_node == n.original || n.original->contains(to_node->parent))
 							{
-								auto from_node = l->from_slot->node;
-								auto to_node = l->to_slot->node;
-								// if the link's to node is the node or to node is inside the node, then the link counts
-								if (to_node == it->original || it->original->contains(to_node->parent))
+								// if the link's from node still not add, then not ok
+								if (auto it = std::find_if(rest_nodes.begin(), rest_nodes.end(), [&](const auto& i) {
+									return i.object_id == from_node->object_id;
+									}); it != rest_nodes.end())
 								{
-									// if the link's from node still not add, then not ok
-									if (std::find_if(rest_nodes.begin(), rest_nodes.end(), [&](const auto& i) {
-										return i.object_id == from_node->object_id;
-									}) != rest_nodes.end())
-									{
-										ok = false;
-										break; // one link is not satisfied, break
-									}
+									unsatisfied_upstream = &(*it);
+									break; // one link is not satisfied, break
 								}
 							}
 						}
-						if (ok)
-						{
-							o.children.push_back(*it);
-							it = rest_nodes.erase(it);
-						}
-						else
-							it++;
 					}
-				}
+					if (!unsatisfied_upstream)
+					{
+						o.children.push_back(n);
+						std::erase_if(rest_nodes, [n](const auto& i) {
+							return i.original == n.original;
+						});
+					}
+					else
+						process_node(*unsatisfied_upstream);
+				};
+				while (!rest_nodes.empty())
+					process_node(rest_nodes.front());
 			};
 			create_node(src_g->nodes.front().get(), g.root_node);
 
@@ -2492,13 +2500,13 @@ namespace flame
 
 								node.inputs.push_back(data.attribute);
 							}
-							if (!process_linked_input_slot(n->inputs[2].get()))
+							if (!process_linked_input_slot(n->inputs[3].get()))
 							{
 								Group::Data data;
 								data.changed_frame = frame;
 								data.attribute.type = vtype->get_wrapped();
 								data.attribute.data = data.attribute.type->create();
-								slots_data.emplace(n->inputs[2]->object_id, data);
+								slots_data.emplace(n->inputs[3]->object_id, data);
 
 								node.inputs.push_back(data.attribute);
 							}
@@ -2831,7 +2839,8 @@ namespace flame
 				break;
 			current_block.executed_times++;
 			if (group->executing_stack.size() > 1 && // not the root block
-				current_block.executed_times < current_block.max_execute_times)
+				current_block.executed_times < current_block.max_execute_times &&
+				!current_block.node->children.empty())
 			{
 				current_block.child_index = 0;
 				set_loop_index();

@@ -93,6 +93,16 @@ BlueprintView::BlueprintView(const std::string& name) :
 			blueprint_window.debugger->debugging->name == view.group_name_hash)
 			return true;
 		auto node = (BlueprintNodePtr)(uint64)node_id;
+		if ((reason & ax::NodeEditor::SaveReasonFlags::Position) != ax::NodeEditor::SaveReasonFlags::None)
+		{
+			auto& siblings = node->parent->children;
+			std::sort(siblings.begin(), siblings.end(), [](const auto& a, const auto& b) {
+				return a->position.y < b->position.y;
+			});
+			auto frame = frames;
+			node->group->structure_changed_frame = frame;
+			view.blueprint->dirty_frame = frame;
+		}
 		if (!view.grapes_mode)
 		{
 			auto do_expand = false;
@@ -286,27 +296,32 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 			}
 			else
 			{
-				std::vector<BlueprintSlotDesc> inputs(src_n->inputs.size()), outputs(src_n->outputs.size());
-				for (auto i = 0; i < inputs.size(); i++)
+				std::vector<BlueprintSlotDesc> inputs, outputs;
+				for (auto i = 0; i < src_n->inputs.size(); i++)
 				{
+					if (i == 0 && src_n->is_block)
+						continue;
 					auto& src_s = src_n->inputs[i];
-					auto& dst_s = inputs[i];
+					auto& dst_s = inputs.emplace_back();
 					dst_s.name = src_s->name;
 					dst_s.name_hash = src_s->name_hash;
 					dst_s.flags = src_s->flags;
 					dst_s.allowed_types = src_s->allowed_types;
 				}
-				for (auto i = 0; i < outputs.size(); i++)
+				for (auto i = 0; i < src_n->outputs.size(); i++)
 				{
+					if (i == 0 && src_n->is_block)
+						continue;
 					auto& src_s = src_n->outputs[i];
-					auto& dst_s = outputs[i];
+					auto& dst_s = outputs.emplace_back();
 					dst_s.name = src_s->name;
 					dst_s.name_hash = src_s->name_hash;
 					dst_s.flags = src_s->flags;
 					dst_s.allowed_types = src_s->allowed_types;
 				}
 				n = blueprint->add_node(g, parent, src_n->name, src_n->display_name, inputs, outputs,
-					src_n->function, src_n->constructor, src_n->destructor, src_n->input_slot_changed_callback, src_n->preview_provider);
+					src_n->function, src_n->constructor, src_n->destructor, src_n->input_slot_changed_callback, src_n->preview_provider,
+					src_n->is_block, src_n->begin_block_function, src_n->end_block_function);
 			}
 			if (n)
 			{
@@ -315,6 +330,8 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 
 				for (auto i = 0; i < src_n->inputs.size(); i++)
 				{
+					if (i == 0 && src_n->is_block)
+						continue;
 					auto& src_s = src_n->inputs[i];
 					auto& dst_s = n->inputs[i];
 					if (dst_s->type != src_s->type)
@@ -372,20 +389,20 @@ void BlueprintView::set_parent_to_last_node()
 		if (auto last_node = nodes.back(); last_node->is_block)
 		{
 			Rect wrap_rect;
-			for (auto n : nodes)
-			{
-				if (n != last_node)
-				{
-					Rect rect;
-					rect.a = n->position;
-					rect.b = rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)n);
-					rect.expand(10.f);
-					wrap_rect.expand(rect);
-				}
-			}
-
 			if (!grapes_mode)
 			{
+				for (auto n : nodes)
+				{
+					if (n != last_node)
+					{
+						Rect rect;
+						rect.a = n->position;
+						rect.b = rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)n);
+						rect.expand(10.f);
+						wrap_rect.expand(rect);
+					}
+				}
+
 				if (all(lessThan(last_node->rect.size(), wrap_rect.size())))
 				{
 					auto expand = wrap_rect.size() - last_node->rect.size();
@@ -403,7 +420,8 @@ void BlueprintView::set_parent_to_last_node()
 				if (n != last_node)
 				{
 					blueprint->set_node_parent(n, last_node);
-					set_offset_recurisely(n, offset);
+					if (!grapes_mode)
+						set_offset_recurisely(n, offset);
 				}
 			}
 		}
@@ -1140,13 +1158,13 @@ void BlueprintView::on_draw()
 					load_frame = frame;
 				}
 
-				if (ImGui::Button("Run"))
+				if (ImGui::Button(graphics::font_icon_str("play"_h).c_str()))
 					run_blueprint(debugging_group);
 				ImGui::SameLine();
-				if (ImGui::Button("Step"))
+				if (ImGui::Button(graphics::font_icon_str("circle-play"_h).c_str()))
 					step_blueprint(debugging_group);
 				ImGui::SameLine();
-				if (ImGui::Button("Stop"))
+				if (ImGui::Button(graphics::font_icon_str("stop"_h).c_str()))
 					stop_blueprint(debugging_group);
 
 				auto& io = ImGui::GetIO();
@@ -1216,11 +1234,12 @@ void BlueprintView::on_draw()
 						{
 							if (debugging_group)
 							{
-								if (i < instance_node->inputs.size())
+								auto id = input->is_linked() ? input->get_linked(0)->object_id : input->object_id;
+								auto it = instance_group.slot_datas.find(id);
+								if (it != instance_group.slot_datas.end())
 								{
-									auto& arg = instance_node->inputs[i];
-									if (arg.type == input->type)
-										tooltip = std::format("{} ({})\nObject ID: {}", get_slot_value(arg), ti_str(arg.type), input->object_id);
+									auto& arg = it->second.attribute;
+									tooltip = std::format("{} ({})\nObject ID: {}", get_slot_value(arg), ti_str(arg.type), input->object_id);
 								}
 							}
 							else
@@ -1248,7 +1267,7 @@ void BlueprintView::on_draw()
 
 					}
 					ImGui::EndGroup();
-					ImGui::SameLine(0.f, 16.f);
+					ImGui::SameLine(0.f, n->is_block ? 40.f : 16.f);
 					ImGui::BeginGroup();
 					for (auto i = 0; i < n->outputs.size(); i++)
 					{
@@ -1262,11 +1281,11 @@ void BlueprintView::on_draw()
 						{
 							if (debugging_group)
 							{
-								if (i < instance_node->outputs.size())
+								auto it = instance_group.slot_datas.find(output->object_id);
+								if (it != instance_group.slot_datas.end())
 								{
-									auto& arg = instance_node->outputs[i];
-									if (arg.type == output->type)
-										tooltip = std::format("{} ({})\nObject ID: {}", get_slot_value(arg), ti_str(arg.type), output->object_id);
+									auto& arg = it->second.attribute;
+									tooltip = std::format("{} ({})\nObject ID: {}", get_slot_value(arg), ti_str(arg.type), output->object_id);
 								}
 							}
 							else
@@ -1408,7 +1427,7 @@ void BlueprintView::on_draw()
 						{
 							if (from_slot->flags & BlueprintSlotFlagInput)
 								std::swap(from_slot, to_slot);
-							if (!(to_slot->flags & BlueprintSlotFlagOutput))
+							if (!(from_slot->flags & BlueprintSlotFlagInput) && !(to_slot->flags & BlueprintSlotFlagOutput))
 							{
 								if (blueprint_allow_type(to_slot->allowed_types, from_slot->type))
 								{
@@ -1690,7 +1709,7 @@ void BlueprintView::on_draw()
 						{
 							if (ImGui::Selectable("Block"))
 							{
-								auto b = blueprint->add_block(group, nullptr);
+								auto b = blueprint->add_block(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr);
 								b->position = open_popup_pos;
 								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)b, b->position);
 								ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)b, b->rect.size());

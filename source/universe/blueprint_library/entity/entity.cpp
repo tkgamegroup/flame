@@ -131,6 +131,68 @@ namespace flame
 			nullptr
 		);
 
+		library->add_template("Get Parent", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+					*(EntityPtr*)outputs[0].data = entity->parent;
+				else
+					*(EntityPtr*)outputs[0].data = nullptr;
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Get Child", "",
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Index",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Child",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto parent = *(EntityPtr*)inputs[0].data;
+				if (parent)
+				{
+					auto index = *(uint*)inputs[1].data;
+					if (index < parent->children.size())
+						*(EntityPtr*)outputs[0].data = parent->children[index].get();
+					else
+						*(EntityPtr*)outputs[0].data = nullptr;
+				}
+				else
+					*(EntityPtr*)outputs[0].data = nullptr;
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
 		library->add_template("Get Pos", "",
 			{
 				{
