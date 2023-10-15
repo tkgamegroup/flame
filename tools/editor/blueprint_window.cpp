@@ -1129,18 +1129,6 @@ void BlueprintView::on_draw()
 				if (blueprint_instance->built_frame < blueprint->dirty_frame)
 					blueprint_instance->build();
 			}
-			if (debugging_group)
-			{
-				if (ImGui::CollapsingHeader("Group Slot Datas:"))
-				{
-					for (auto& d : instance_group.slot_datas)
-					{
-						auto& attr = d.second.attribute;
-						ImGui::TextUnformatted(std::format("ID: {}, Type: {}, Value: {}",
-							d.first, ti_str(attr.type), attr.type->serialize(attr.data)).c_str());
-					}
-				}
-			}
 			ImGui::EndChild();
 
 			ImGui::TableSetColumnIndex(1);

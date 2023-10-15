@@ -207,6 +207,7 @@ struct App : UniverseApplication
 	void close_prefab();
 	void load_project_cpp();
 	void unload_project_cpp();
+	void rebuild_typeinfo();
 	void open_timeline(const std::filesystem::path& path);
 	void close_timeline();
 	void set_timeline_host(EntityPtr e);

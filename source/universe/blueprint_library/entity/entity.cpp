@@ -132,6 +132,36 @@ namespace flame
 			nullptr
 		);
 
+		library->add_template("Check Tag", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Tag",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Result",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+					*(bool*)outputs[0].data = (entity->tag & (*(uint*)inputs[1].data)) != 0;
+				else
+					*(bool*)outputs[0].data = false;
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
 		library->add_template("Get Parent", "",
 			{
 				{

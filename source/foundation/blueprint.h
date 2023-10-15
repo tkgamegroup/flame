@@ -169,7 +169,6 @@ namespace flame
 		uint		name_hash = 0;
 		TypeInfo*	type = nullptr;
 		void*		data = nullptr;
-		std::string default_value;
 	};
 
 	struct BlueprintGroup

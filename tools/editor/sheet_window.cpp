@@ -36,7 +36,7 @@ void SheetView::save_sheet()
 			column_idx_and_offsets[i] = std::make_pair(i, column_offsets[i]);
 		std::sort(column_idx_and_offsets.begin(), column_idx_and_offsets.end(), [](const auto& a, const auto& b) {
 			return a.second < b.second;
-			});
+		});
 		for (auto i = 0; i < sheet->columns.size(); i++)
 		{
 			auto target_idx = column_idx_and_offsets[i].first;
@@ -46,6 +46,8 @@ void SheetView::save_sheet()
 				std::swap(column_idx_and_offsets[i], column_idx_and_offsets[target_idx]);
 			}
 		}
+		if (sheet->filename.native().starts_with(app.project_static_path.native()))
+			app.rebuild_typeinfo();
 		sheet->save();
 
 		unsaved = false;

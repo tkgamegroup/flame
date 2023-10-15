@@ -1513,7 +1513,6 @@ namespace flame
 					auto n_input = n_inputs.append_child("input");
 					n_input.append_attribute("name").set_value(v.name.c_str());
 					write_ti(v.type, n_input.append_attribute("type"));
-					n_input.append_attribute("default_value").set_value(v.default_value.c_str());
 				}
 			}
 			if (!g.first->outputs.empty())
@@ -2147,8 +2146,8 @@ namespace flame
 			attr.data = v.type->create();
 			if (is_pointer(attr.type->tag))
 				memset(attr.data, 0, sizeof(voidptr));
-			if (auto it = variables.find(v.name_hash); it != variables.end())
-				attr.type->copy(attr.data, it->second.data);
+			else
+				attr.type->copy(attr.data, v.data);
 			new_variables.emplace(v.name_hash, attr);
 		}
 		for (auto& pair : variables)
@@ -2166,8 +2165,8 @@ namespace flame
 				attr.data = v.type->create();
 				if (is_pointer(attr.type->tag))
 					memset(attr.data, 0, sizeof(voidptr));
-				if (auto it = g.variables.find(v.name_hash); it != g.variables.end())
-					attr.type->copy(attr.data, it->second.data);
+				else
+					attr.type->copy(attr.data, v.data);
 				new_variables.emplace(v.name_hash, attr);
 			}
 			for (auto& pair : g.variables)

@@ -1272,6 +1272,7 @@ void App::open_project(const std::filesystem::path& path)
 				}
 			}
 		}
+		rebuild_typeinfo();
 	}
 
 	switch (project_settings.build_after_open)
@@ -1486,6 +1487,39 @@ void App::unload_project_cpp()
 	{
 		tidb.unload(project_cpp_library);
 		project_cpp_library = nullptr;
+	}
+}
+
+void App::rebuild_typeinfo()
+{
+	auto ei_tag = find_enum("flame::TagFlags"_h);
+	auto& tag_items = ei_tag->items;
+	for (int i = tag_items.size() - 1; i >= 0; i++)
+	{
+		if (tag_items[i].name == "User")
+			break;
+		tag_items.erase(tag_items.begin() + i);
+	}
+	for (auto sht : project_static_sheets)
+	{
+		if (!sht->rows.empty())
+		{
+			auto& row = sht->rows[0];
+			for (auto i = 0; i < sht->columns.size(); i++)
+			{
+				auto& col = sht->columns[i];
+				auto name = col.name;
+				if ((col.type == TypeInfo::get<int>() || col.type == TypeInfo::get<uint>()) && 
+					SUS::strip_head_if(name, "Tag"))
+				{
+					auto& item = tag_items.emplace_back();
+					item.ei = ei_tag;
+					item.name = name;
+					item.name_hash = sh(name.c_str());
+					item.value = *(int*)row.datas[i];
+				}
+			}
+		}
 	}
 }
 
