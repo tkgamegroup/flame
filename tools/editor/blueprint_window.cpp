@@ -719,10 +719,7 @@ void BlueprintView::on_draw()
 					{
 						if (auto type = show_types_menu(); type)
 						{
-							auto name = var.name;
-							blueprint->remove_variable(nullptr, var.name_hash);
-							blueprint->add_variable(nullptr, name, type);
-							selected_variable = -1;
+							blueprint->alter_variable(nullptr, var.name_hash, "", var.type);
 							unsaved = true;
 						}
 

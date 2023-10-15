@@ -197,8 +197,9 @@ namespace flame
 		vec2	offset;
 		float	scale = 1.f;
 
-		uint	structure_changed_frame = 0;
-		uint	data_changed_frame = 0;
+		uint	variable_changed_frame = 1;
+		uint	structure_changed_frame = 1;
+		uint	data_changed_frame = 1;
 
 		virtual ~BlueprintGroup() {}
 	};
@@ -221,7 +222,8 @@ namespace flame
 		// Reflect
 		std::vector<std::unique_ptr<BlueprintGroupT>>	groups;
 
-		uint											dirty_frame;
+		uint											variable_changed_frame = 1;
+		uint											dirty_frame = 1;
 
 		std::filesystem::path							filename;
 		std::string										name;
@@ -363,6 +365,7 @@ namespace flame
 
 			std::vector<ExecutingBlock>						executing_stack;
 
+			uint											variable_updated_frame = 0;
 			uint											structure_updated_frame = 0;
 			uint											data_updated_frame = 0;
 
@@ -396,7 +399,8 @@ namespace flame
 		std::unordered_map<uint, BlueprintAttribute>	variables; // key: variable name hash
 		std::unordered_map<uint, Group>					groups; // key: group name hash
 
-		uint built_frame;
+		uint variable_updated_frame = 0;
+		uint built_frame = 0;
 
 		template<class T>
 		inline T get_variable(uint name)

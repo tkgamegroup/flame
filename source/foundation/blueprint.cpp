@@ -83,7 +83,16 @@ namespace flame
 		v.type = type;
 		v.data = v.type->create();
 
-		dirty_frame = frames;
+		auto frame = frames;
+		variable_changed_frame = frame;
+		if (group)
+			group->structure_changed_frame = frame;
+		else
+		{
+			for (auto& g : groups)
+				g->structure_changed_frame = frame;
+		}
+		dirty_frame = frame;
 
 		return v.data;
 	}
@@ -122,7 +131,16 @@ namespace flame
 		for (auto n : to_remove_nodes)
 			remove_node(n, false);
 
-		dirty_frame = frames;
+		auto frame = frames;
+		variable_changed_frame = frame;
+		if (group)
+			group->structure_changed_frame = frame;
+		else
+		{
+			for (auto& g : groups)
+				g->structure_changed_frame = frame;
+		}
+		dirty_frame = frame;
 	}
 
 	void BlueprintPrivate::alter_variable(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* type)
@@ -186,6 +204,17 @@ namespace flame
 						// TOOD: break links that nolonger match the type
 					}
 				}
+
+				auto frame = frames;
+				variable_changed_frame = frame;
+				if (group)
+					group->structure_changed_frame = frame;
+				else
+				{
+					for (auto& g : groups)
+						g->structure_changed_frame = frame;
+				}
+				dirty_frame = frame;
 				return;
 			}
 		}
@@ -2217,27 +2246,10 @@ namespace flame
 		}
 
 		// create data for variables
-		std::unordered_map<uint, BlueprintAttribute> new_variables;
-		for (auto& v : blueprint->variables)
+		if (blueprint->variable_changed_frame > variable_updated_frame)
 		{
-			BlueprintAttribute attr;
-			attr.type = v.type;
-			attr.data = v.type->create();
-			if (is_pointer(attr.type->tag))
-				memset(attr.data, 0, sizeof(voidptr));
-			else
-				attr.type->copy(attr.data, v.data);
-			new_variables.emplace(v.name_hash, attr);
-		}
-		for (auto& pair : variables)
-			pair.second.type->destroy(pair.second.data);
-		variables.clear();
-		variables = std::move(new_variables);
-
-		auto create_group_structure = [&](BlueprintGroupPtr src_g, Group& g, std::map<uint, Group::Data>& slots_data) {
-			// create data for variables
 			std::unordered_map<uint, BlueprintAttribute> new_variables;
-			for (auto& v : src_g->variables)
+			for (auto& v : blueprint->variables)
 			{
 				BlueprintAttribute attr;
 				attr.type = v.type;
@@ -2248,10 +2260,37 @@ namespace flame
 					attr.type->copy(attr.data, v.data);
 				new_variables.emplace(v.name_hash, attr);
 			}
-			for (auto& pair : g.variables)
+			for (auto& pair : variables)
 				pair.second.type->destroy(pair.second.data);
-			g.variables.clear();
-			g.variables = std::move(new_variables);
+			variables.clear();
+			variables = std::move(new_variables);
+
+			variable_updated_frame = frame;
+		}
+
+		auto create_group_structure = [&](BlueprintGroupPtr src_g, Group& g, std::map<uint, Group::Data>& slots_data) {
+			// create data for group variables
+			if (src_g->variable_changed_frame > g.variable_updated_frame)
+			{
+				std::unordered_map<uint, BlueprintAttribute> new_variables;
+				for (auto& v : src_g->variables)
+				{
+					BlueprintAttribute attr;
+					attr.type = v.type;
+					attr.data = v.type->create();
+					if (is_pointer(attr.type->tag))
+						memset(attr.data, 0, sizeof(voidptr));
+					else
+						attr.type->copy(attr.data, v.data);
+					new_variables.emplace(v.name_hash, attr);
+				}
+				for (auto& pair : g.variables)
+					pair.second.type->destroy(pair.second.data);
+				g.variables.clear();
+				g.variables = std::move(new_variables);
+
+				g.variable_updated_frame = frame;
+			}
 
 			std::function<void(BlueprintNodePtr, Node&)> create_node;
 			create_node = [&](BlueprintNodePtr block, Node& o) {
@@ -2714,9 +2753,9 @@ namespace flame
 				{
 					if (auto it = g.second.slot_datas.find(d.first); it != g.second.slot_datas.end())
 					{
-						if (it->second.attribute.type == d.second.attribute.type && it->second.changed_frame >= d.second.changed_frame)
+						if (it->second.attribute.type == d.second.attribute.type && it->second.changed_frame > d.second.changed_frame)
 						{
-							if (d.second.attribute.type && d.second.attribute.type != TypeInfo::get<voidptr>() && d.second.attribute.type->tag != TagPU)
+							if (d.second.attribute.type && d.second.attribute.type != TypeInfo::get<voidptr>() && !is_pointer(d.second.attribute.type->tag))
 								d.second.attribute.type->copy(d.second.attribute.data, it->second.attribute.data);
 							d.second.changed_frame = it->second.changed_frame;
 						}
@@ -2746,7 +2785,10 @@ namespace flame
 							{
 								auto& arg = it->second.attribute;
 								if (i->type == arg.type)
-									i->type->copy(arg.data, i->data);
+								{
+									if (!is_pointer(arg.type->tag))
+										i->type->copy(arg.data, i->data);
+								}
 								else if (i->type == TypeInfo::get<std::string>() && arg.type == TypeInfo::get<uint>())
 									*(uint*)arg.data = sh((*(std::string*)i->data).c_str());
 								else
