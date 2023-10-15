@@ -3,6 +3,7 @@
 #include "../../entity_private.h"
 #include "../../components/node_private.h"
 #include "../../components/camera_private.h"
+#include "../../components/mesh_private.h"
 #include "../../components/nav_agent_private.h"
 #include "../../components/bp_instance_private.h"
 #include "../../systems/input_private.h"
@@ -220,6 +221,30 @@ namespace flame
 			nullptr
 		);
 
+		library->add_template("Update Transform", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto node = entity->get_component<cNode>();
+					if (node)
+						node->update_transform_from_root();
+				}
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
 		library->add_template("World To Screen", "",
 			{
 				{
@@ -407,6 +432,87 @@ namespace flame
 			nullptr
 		);
 
+		library->add_template("Add Blueprint", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Path",
+					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto& path = *(std::filesystem::path*)inputs[1].data;
+					if (!path.empty())
+					{
+						path = Path::get(path);
+						if (std::filesystem::exists(path))
+						{
+							if (auto ins = entity->get_component<cBpInstance>(); ins)
+								ins->set_bp_name(path);
+							else
+							{
+								ins = entity->add_component<cBpInstance>();
+								ins->set_bp_name(path);
+							}
+						}
+					}
+				}
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Get Blueprint Instance", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "Instance",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto name = *(uint*)inputs[1].data;
+					if (auto ins = entity->get_component<cBpInstance>(); ins)
+					{
+						if (ins->bp->name_hash == name)
+							*(BlueprintInstancePtr*)outputs[0].data = ins->bp_ins;
+						else
+							*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+					}
+					else
+						*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+				}
+				else
+					*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
 		library->add_template("Get Nearby Entities", "",
 			{
 				{
@@ -496,38 +602,22 @@ namespace flame
 			nullptr
 		);
 
-		library->add_template("Add Blueprint", "",
+		library->add_template("Set Default Material", "",
 			{
 				{
 					.name = "Entity",
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
-				},
-				{
-					.name = "Path",
-					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
 				}
 			},
 			{
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				auto e = *(EntityPtr*)inputs[0].data;
-				if (e)
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
 				{
-					auto& path = *(std::filesystem::path*)inputs[1].data;
-					if (!path.empty())
-					{
-						path = Path::get(path);
-						if (std::filesystem::exists(path))
-						{
-							if (auto ins = e->get_component<cBpInstance>(); ins)
-								ins->set_bp_name(path);
-							else
-							{
-								ins = e->add_component<cBpInstance>();
-								ins->set_bp_name(path);
-							}
-						}
-					}
+					auto mesh = entity->get_component<cMesh>();
+					if (mesh)
+						mesh->set_material_name(L"default");
 				}
 			},
 			nullptr,
@@ -536,40 +626,143 @@ namespace flame
 			nullptr
 		);
 
-		library->add_template("Get Blueprint Instance", "",
+		library->add_template("Set Default Red Material", "",
 			{
 				{
 					.name = "Entity",
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
-				},
-				{
-					.name = "Name_hash",
-					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
 			{
-				{
-					.name = "Instance",
-					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
-				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				auto e = *(EntityPtr*)inputs[0].data;
-				if (e)
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
 				{
-					auto name = *(uint*)inputs[1].data;
-					if (auto ins = e->get_component<cBpInstance>(); ins)
-					{
-						if (ins->bp->name_hash == name)
-							*(BlueprintInstancePtr*)outputs[0].data = ins->bp_ins;
-						else
-							*(BlueprintInstancePtr*)outputs[0].data = nullptr;
-					}
-					else
-						*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+					auto mesh = entity->get_component<cMesh>();
+					if (mesh)
+						mesh->set_material_name(L"default_red");
 				}
-				else
-					*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Set Default Green Material", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto mesh = entity->get_component<cMesh>();
+					if (mesh)
+						mesh->set_material_name(L"default_green");
+				}
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Set Default Blue Material", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto mesh = entity->get_component<cMesh>();
+					if (mesh)
+						mesh->set_material_name(L"default_blue");
+				}
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Set Default Yellow Material", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto mesh = entity->get_component<cMesh>();
+					if (mesh)
+						mesh->set_material_name(L"default_yellow");
+				}
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Set Default Purple Material", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto mesh = entity->get_component<cMesh>();
+					if (mesh)
+						mesh->set_material_name(L"default_purple");
+				}
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Set Default Cyan Material", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto mesh = entity->get_component<cMesh>();
+					if (mesh)
+						mesh->set_material_name(L"default_cyan");
+				}
 			},
 			nullptr,
 			nullptr,

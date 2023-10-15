@@ -1173,7 +1173,20 @@ void BlueprintView::on_draw()
 				std::string tooltip; vec2 tooltip_pos;
 				auto get_slot_value = [](const BlueprintAttribute& arg)->std::string {
 					if (arg.type->tag == TagD || is_pointer(arg.type->tag))
-						return std::format("Value: {}", arg.type->serialize(arg.data));
+					{
+						auto ret = std::format("Value: {}", arg.type->serialize(arg.data));
+						if (arg.type == TypeInfo::get<EntityPtr>())
+						{
+							auto entity = *(EntityPtr*)arg.data;
+							if (entity && entity != INVALID_POINTER && entity != (EntityPtr)0xCDCDCDCDCDCDCDCD)
+							{
+								auto node = entity->get_component<cNode>();
+								ret += std::format("\nName: {}\nPos: {}\nParent: {}\n", entity->name, 
+									node ? str(node->global_pos()) : "N\\A", entity->parent ? entity->parent->name : "[None]");
+							}
+						}
+						return ret;
+					}
 					return "";
 				};
 
@@ -1600,7 +1613,7 @@ void BlueprintView::on_draw()
 					}
 					else
 					{
-						if (ImGui::Selectable("Unset"))
+						if (ImGui::Selectable("Unset Breakpoint"))
 							blueprint_window.debugger->remove_break_node(context_node);
 					}
 					ImGui::EndPopup();
