@@ -1795,9 +1795,9 @@ void BlueprintView::on_draw()
 										if (new_node_link_slot)
 										{
 											if (new_node_link_slot->flags & BlueprintSlotFlagOutput)
-												blueprint->add_link(new_node_link_slot, n->inputs[1].get());
+												blueprint->add_link(new_node_link_slot, n->find_input(slot_name));
 											else
-												blueprint->add_link(n->outputs[0].get(), new_node_link_slot);
+												blueprint->add_link(n->find_output(slot_name), new_node_link_slot);
 										}
 
 										unsaved = true;
@@ -1827,7 +1827,17 @@ void BlueprintView::on_draw()
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
 										if (new_node_link_slot)
-											blueprint->add_link(new_node_link_slot, n->inputs[1].get());
+											blueprint->add_link(new_node_link_slot, n->find_input(slot_name));
+
+										unsaved = true;
+									});
+								}
+								if (show_node_template(name, {}, {}, slot_name))
+								{
+									actions.emplace_back("Clear", [&]() {
+										auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "array_clear"_h, location_name);
+										n->position = open_popup_pos;
+										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
 										unsaved = true;
 									});
