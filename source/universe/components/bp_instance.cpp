@@ -7,7 +7,7 @@ namespace flame
 {
 	cBpInstancePrivate::~cBpInstancePrivate()
 	{
-		if (bp_ins)
+		if (bp_ins && !bp_ins->is_static)
 			delete bp_ins;
 		if (bp)
 			Blueprint::release(bp);
@@ -21,7 +21,8 @@ namespace flame
 
 		if (bp_ins)
 		{
-			delete bp_ins;
+			if (!bp_ins->is_static)
+				delete bp_ins;
 			bp_ins = nullptr;
 		}
 		if (bp)
@@ -33,7 +34,10 @@ namespace flame
 		bp = Blueprint::get(bp_name);
 		if (bp)
 		{
-			bp_ins = BlueprintInstance::create(bp);
+			if (!bp->name.empty())
+				bp_ins = BlueprintInstance::get(bp->name_hash);
+			else
+				bp_ins = BlueprintInstance::create(bp);
 			bp_ins->set_variable("self"_h, entity);
 		}
 	}

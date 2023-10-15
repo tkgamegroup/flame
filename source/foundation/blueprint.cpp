@@ -344,12 +344,12 @@ namespace flame
 				auto idx = sht->find_column(variable_name);
 				if (idx == -1)
 				{
-					printf("blueprint add_variable_node: cannot find variable %d in sheet %s\n", variable_name, sht->name.c_str());
+					printf("blueprint add_variable_node: cannot find variable %d in sheet '%s'\n", variable_name, sht->name.c_str());
 					return nullptr;
 				}
 				if (sht->rows.empty())
 				{
-					printf("blueprint add_variable_node: there is no rows in sheet: %s\n", sht->name.c_str());
+					printf("blueprint add_variable_node: there is no rows in sheet '%s'\n", sht->name.c_str());
 					return nullptr;
 				}
 
@@ -376,13 +376,13 @@ namespace flame
 
 					if (!found)
 					{
-						printf("blueprint add_variable_node: cannot find variable %d in blueprint: %s\n", variable_name, bp->name.c_str());
+						printf("blueprint add_variable_node: cannot find variable %d in blueprint '%s'\n", variable_name, bp->name.c_str());
 						return nullptr;
 					}
 				}
 				else
 				{
-					printf("blueprint add_variable_node: cannot find sheet or blueprint %d\n", location_name);
+					printf("blueprint add_variable_node: cannot find sheet or blueprint: %d\n", location_name);
 					return nullptr;
 				}
 			}
@@ -2001,7 +2001,9 @@ namespace flame
 				ret->name = filename.filename().stem().string();
 				ret->name_hash = sh(ret->name.c_str());
 				assert(named_blueprints.find(ret->name_hash) == named_blueprints.end());
-				named_blueprints[ret->name_hash] = std::make_pair(ret, BlueprintInstance::create(ret));
+				auto ins = BlueprintInstance::create(ret);
+				ins->is_static = true;
+				named_blueprints[ret->name_hash] = std::make_pair(ret, ins);
 			}
 			ret->ref = 1;
 			loaded_blueprints.emplace_back(ret);
@@ -2647,8 +2649,13 @@ namespace flame
 						{
 							if (i->data_changed_frame > it->second.changed_frame)
 							{
-								assert(i->type == it->second.attribute.type);
-								i->type->copy(it->second.attribute.data, i->data);
+								auto& arg = it->second.attribute;
+								if (i->type == arg.type)
+									i->type->copy(arg.data, i->data);
+								else if (i->type == TypeInfo::get<std::string>() && arg.type == TypeInfo::get<uint>())
+									*(uint*)arg.data = sh((*(std::string*)i->data).c_str());
+								else
+									assert(0);
 								it->second.changed_frame = i->data_changed_frame;
 							}
 						}

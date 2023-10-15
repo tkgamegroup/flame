@@ -392,6 +392,7 @@ namespace flame
 		};
 
 		BlueprintPtr blueprint;
+		bool is_static = false;
 
 		std::unordered_map<uint, BlueprintAttribute>	variables; // key: variable name hash
 		std::unordered_map<uint, Group>					groups; // key: group name hash

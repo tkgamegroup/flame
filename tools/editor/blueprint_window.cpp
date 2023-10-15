@@ -1461,26 +1461,43 @@ void BlueprintView::on_draw()
 				if (ax::NodeEditor::BeginDelete())
 				{
 					BlueprintLinkPtr link;
-					ax::NodeEditor::NodeId node_id;
+					BlueprintNodePtr node;
+					std::vector<BlueprintLinkPtr> to_remove_links;
+					std::vector<BlueprintNodePtr> to_remove_nodes;
 					while (ax::NodeEditor::QueryDeletedLink((ax::NodeEditor::LinkId*)&link))
 					{
 						if (ax::NodeEditor::AcceptDeletedItem())
-						{
-							blueprint->remove_link(link);
-							unsaved = true;
-						}
+							to_remove_links.push_back(link);
 					}
-					while (ax::NodeEditor::QueryDeletedNode(&node_id))
+					if (!to_remove_links.empty())
+					{
+						for (auto l : to_remove_links)
+							blueprint->remove_link(l);
+						unsaved = true;
+					}
+					while (ax::NodeEditor::QueryDeletedNode((ax::NodeEditor::NodeId*)&node))
 					{
 						if (ax::NodeEditor::AcceptDeletedItem())
 						{
-							auto node = (BlueprintNodePtr)(uint64)node_id;
-
+							if (!if_contains_any_of(node, to_remove_nodes))
+								to_remove_nodes.push_back(node);
+						}
+					}
+					if (!to_remove_nodes.empty())
+					{
+						std::function<void(BlueprintNodePtr)> remove_preview;
+						remove_preview = [&](BlueprintNodePtr node) {
 							if (auto it = previews.find(node); it != previews.end())
 								previews.erase(it);
-							blueprint->remove_node(node);
-							unsaved = true;
+							for (auto c : node->children)
+								remove_preview(c);
+						};
+						for (auto n : to_remove_nodes)
+						{
+							remove_preview(n);
+							blueprint->remove_node(n);
 						}
+						unsaved = true;
 					}
 
 					if (blueprint_instance->built_frame < blueprint->dirty_frame)

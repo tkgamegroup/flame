@@ -71,7 +71,7 @@ namespace flame
 			nullptr
 		);
 
-#define GET_BP_TEMPLATE(TYPE) \
+#define GET_BP_TEMPLATE(TYPE, DV) \
 		library->add_template("Get BP " #TYPE, "", \
 			{\
 				{\
@@ -100,13 +100,13 @@ namespace flame
 						if (it->second.type == TypeInfo::get<TYPE>())\
 							*(TYPE*)outputs[0].data = *(TYPE*)it->second.data;\
 						else\
-							*(TYPE*)outputs[0].data = TYPE(0); \
+							*(TYPE*)outputs[0].data = TYPE(DV); \
 					}\
 					else\
-						*(TYPE*)outputs[0].data = TYPE(0);\
+						*(TYPE*)outputs[0].data = TYPE(DV);\
 				}\
 				else\
-					*(TYPE*)outputs[0].data = TYPE(0);\
+					*(TYPE*)outputs[0].data = TYPE(DV);\
 			},\
 			nullptr,\
 			nullptr,\
@@ -114,22 +114,25 @@ namespace flame
 			nullptr\
 		);
 
-		GET_BP_TEMPLATE(bool);
-		GET_BP_TEMPLATE(int);
-		GET_BP_TEMPLATE(uint);
-		GET_BP_TEMPLATE(float);
-		GET_BP_TEMPLATE(ivec2);
-		GET_BP_TEMPLATE(ivec3);
-		GET_BP_TEMPLATE(ivec4);
-		GET_BP_TEMPLATE(uvec2);
-		GET_BP_TEMPLATE(uvec3);
-		GET_BP_TEMPLATE(uvec4);
-		GET_BP_TEMPLATE(cvec2);
-		GET_BP_TEMPLATE(cvec3);
-		GET_BP_TEMPLATE(cvec4);
-		GET_BP_TEMPLATE(vec2);
-		GET_BP_TEMPLATE(vec3);
-		GET_BP_TEMPLATE(vec4);
+		GET_BP_TEMPLATE(bool, false);
+		GET_BP_TEMPLATE(int, 0);
+		GET_BP_TEMPLATE(uint, 0);
+		GET_BP_TEMPLATE(float, 0);
+		GET_BP_TEMPLATE(ivec2, 0);
+		GET_BP_TEMPLATE(ivec3, 0);
+		GET_BP_TEMPLATE(ivec4, 0);
+		GET_BP_TEMPLATE(uvec2, 0);
+		GET_BP_TEMPLATE(uvec3, 0);
+		GET_BP_TEMPLATE(uvec4, 0);
+		GET_BP_TEMPLATE(cvec2, 0);
+		GET_BP_TEMPLATE(cvec3, 0);
+		GET_BP_TEMPLATE(cvec4, 0);
+		GET_BP_TEMPLATE(vec2, 0);
+		GET_BP_TEMPLATE(vec3, 0);
+		GET_BP_TEMPLATE(vec4, 0);
+		GET_BP_TEMPLATE(std::string, "");
+		GET_BP_TEMPLATE(std::wstring, L"");
+		GET_BP_TEMPLATE(std::filesystem::path, L"");
 
 #define SET_BP_TEMPLATE(TYPE) \
 		library->add_template("Set BP " #TYPE, "", \
@@ -184,5 +187,8 @@ namespace flame
 		SET_BP_TEMPLATE(vec2);
 		SET_BP_TEMPLATE(vec3);
 		SET_BP_TEMPLATE(vec4);
+		SET_BP_TEMPLATE(std::string);
+		SET_BP_TEMPLATE(std::wstring);
+		SET_BP_TEMPLATE(std::filesystem::path);
 	}
 }

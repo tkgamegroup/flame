@@ -272,6 +272,50 @@ namespace flame
 			nullptr
 		);
 
+		library->add_template("Conditional Operator", "?:",
+			{
+				{
+					.name = "Condition",
+					.allowed_types = { TypeInfo::get<bool>(), TypeInfo::get<voidptr>() }
+				},
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				bool b;
+				if (inputs[0].type == TypeInfo::get<bool>())
+					b = *(bool*)inputs[0].data;
+				else
+					b = (*(voidptr*)inputs[0].data) != nullptr;
+
+				auto in_ti = b ? inputs[1].type : inputs[2].type;
+				auto in_p = b ? inputs[1].data : inputs[2].data;
+				if (outputs[0].type == TypeInfo::get<float>())
+					*(float*)outputs[0].data = in_ti->as_float(in_p);
+				else if (outputs[0].type == TypeInfo::get<int>())
+					*(float*)outputs[0].data = in_ti->as_int(in_p);
+				else if (outputs[0].type == TypeInfo::get<uint>())
+					*(float*)outputs[0].data = in_ti->as_uint(in_p);
+			},
+			nullptr,
+			nullptr,
+			[](TypeInfo** input_types, TypeInfo** output_types) {
+				*output_types = input_types[1];
+			}
+		);
+
 		library->add_template("Bit And", "&",
 			{
 				{

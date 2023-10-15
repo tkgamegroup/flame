@@ -281,67 +281,10 @@ namespace flame
 				{
 					.name = "Position",
 					.allowed_types = { TypeInfo::get<vec3>() }
-				}
-			},
-			{
-				{
-					.name = "Entity",
-					.allowed_types = { TypeInfo::get<EntityPtr>() }
-				}
-			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				EntityPtr e = nullptr;
-
-				auto& path = *(std::filesystem::path*)inputs[0].data;
-				if (!path.empty())
-				{
-					path = Path::get(path);
-					if (std::filesystem::exists(path))
-					{
-						if (auto parent = *(EntityPtr*)inputs[1].data; parent)
-						{
-							e = Entity::create();
-							e->load(path);
-							if (auto node = e->get_component<cNode>(); node)
-								node->set_pos(*(vec3*)inputs[2].data);
-							parent->add_child(e);
-						}
-					}
-				}
-
-				*(EntityPtr*)outputs[0].data = e;
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
-		);
-
-		library->add_template("Spawn Character", "",
-			{
-				{
-					.name = "Path",
-					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
-				},
-				{
-					.name = "Parent",
-					.allowed_types = { TypeInfo::get<EntityPtr>() }
-				},
-				{
-					.name = "Position",
-					.allowed_types = { TypeInfo::get<vec3>() }
 				},
 				{
 					.name = "Snap NavMesh",
 					.allowed_types = { TypeInfo::get<bool>() }
-				},
-				{
-					.name = "Tag To Add",
-					.allowed_types = { TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Bp To Add",
-					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
 				}
 			},
 			{
@@ -399,27 +342,7 @@ namespace flame
 									node->set_pos(pos);
 							}
 							if (e)
-							{
-								auto tag = *(uint*)inputs[4].data;
-								if (tag)
-									e->tag = e->tag | (TagFlags)tag;
-								auto bp_path = *(std::filesystem::path*)inputs[5].data;
-								if (!bp_path.empty())
-								{
-									bp_path = Path::get(bp_path);
-									if (std::filesystem::exists(bp_path))
-									{
-										if (auto ins = e->get_component<cBpInstance>(); ins)
-											ins->set_bp_name(bp_path);
-										else
-										{
-											ins = e->add_component<cBpInstance>();
-											ins->set_bp_name(bp_path);
-										}
-									}
-								}
 								parent->add_child(e);
-							}
 						}
 					}
 				}
@@ -444,6 +367,10 @@ namespace flame
 				}
 			},
 			{
+				{
+					.name = "Instance",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
@@ -456,15 +383,25 @@ namespace flame
 						if (std::filesystem::exists(path))
 						{
 							if (auto ins = entity->get_component<cBpInstance>(); ins)
+							{
 								ins->set_bp_name(path);
+								*(BlueprintInstancePtr*)outputs[0].data = ins->bp_ins;
+							}
 							else
 							{
 								ins = entity->add_component<cBpInstance>();
 								ins->set_bp_name(path);
+								*(BlueprintInstancePtr*)outputs[0].data = ins->bp_ins;
 							}
 						}
+						else
+							*(BlueprintInstancePtr*)outputs[0].data = nullptr;
 					}
+					else
+						*(BlueprintInstancePtr*)outputs[0].data = nullptr;
 				}
+				else
+					*(BlueprintInstancePtr*)outputs[0].data = nullptr;
 			},
 			nullptr,
 			nullptr,
