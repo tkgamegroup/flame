@@ -35,7 +35,7 @@ namespace flame
 
 		void*					add_variable(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;
 		void					remove_variable(BlueprintGroupPtr group, uint name) override;
-		void					alter_variable(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* type) override;
+		void					alter_variable(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* new_type) override;
 		BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
 			BlueprintNodeFunction function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
@@ -53,8 +53,10 @@ namespace flame
 		void					remove_group(BlueprintGroupPtr group) override;
 		void					add_group_input(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;
 		void					remove_group_input(BlueprintGroupPtr group, uint name) override;
+		void					alter_group_input(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* new_type) override;
 		void					add_group_output(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;
 		void					remove_group_output(BlueprintGroupPtr group, uint name) override;
+		void					alter_group_output(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* new_type) override;
 
 		void					save(const std::filesystem::path& path) override;
 	};

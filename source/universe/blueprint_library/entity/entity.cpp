@@ -9,6 +9,7 @@
 #include "../../systems/input_private.h"
 #include "../../systems/scene_private.h"
 #include "../../systems/renderer_private.h"
+#include "../../octree.h"
 
 namespace flame
 {
@@ -480,7 +481,7 @@ namespace flame
 			nullptr
 		);
 
-		library->add_template("Get Nearby Entities", "",
+		library->add_template("Get Nearest Entity", "",
 			{
 				{
 					.name = "Location",
@@ -490,16 +491,49 @@ namespace flame
 					.name = "Radius",
 					.allowed_types = { TypeInfo::get<float>() },
 					.default_value = "5"
+				},
+				{
+					.name = "Any Filter",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "4294967295"
+				},
+				{
+					.name = "All Filter",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "0"
 				}
 			},
 			{
 				{
-					.name = "Entities",
-					.allowed_types = { TypeInfo::get<std::vector<EntityPtr>>() }
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto location = *(vec3*)inputs[0].data;
+				auto radius = *(float*)inputs[1].data;
+				auto any_filter = *(uint*)inputs[2].data;
+				auto all_filter = *(uint*)inputs[3].data;
+				std::vector<cNodePtr> res;
+				sScene::instance()->octree->get_colliding(location, radius, res, any_filter, all_filter);
 
+				if (res.empty())
+					*(EntityPtr*)outputs[0].data = nullptr;
+				else if (res.size() == 1)
+					*(EntityPtr*)outputs[0].data = res[0]->entity;
+				else
+				{
+					std::vector<std::pair<float, cNodePtr>> nodes_with_distance(res.size());
+					for (auto i = 0; i < res.size(); i++)
+					{
+						auto n = res[i];
+						nodes_with_distance[i] = std::make_pair(distance(n->global_pos(), location), n);
+					}
+					std::sort(nodes_with_distance.begin(), nodes_with_distance.end(), [](const auto& a, const auto& b) {
+						return a.first < b.first;
+					});
+					*(EntityPtr*)outputs[0].data = nodes_with_distance[0].second->entity;
+				}
 			},
 			nullptr,
 			nullptr,

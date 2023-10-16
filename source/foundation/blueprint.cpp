@@ -28,6 +28,92 @@ namespace flame
 		uint u;
 	};
 
+	static void update_depth(BlueprintNodePtr n)
+	{
+		n->depth = n->parent->depth + 1;
+		for (auto& c : n->children)
+			update_depth(c);
+	}
+
+	static bool remove_link(BlueprintLinkPtr link)
+	{
+		auto group = link->from_slot->node->group;
+		for (auto it = group->links.begin(); it != group->links.end(); it++)
+		{
+			if (it->get() == link)
+			{
+				auto from_slot = link->from_slot;
+				auto to_node = link->to_slot->node;
+				auto to_slot = link->to_slot;
+				std::erase_if(from_slot->linked_slots, [&](const auto& slot) {
+					return slot == to_slot;
+					});
+				std::erase_if(to_slot->linked_slots, [&](const auto& slot) {
+					return slot == from_slot;
+					});
+				group->links.erase(it);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	static void change_slot_type(BlueprintSlotPtr slot, TypeInfo* new_type)
+	{
+		if (slot->type == new_type)
+			return;
+		auto has_data = slot->data != nullptr;
+		if (slot->data) // is input slot and has data
+		{
+			slot->type->destroy(slot->data);
+			slot->data = nullptr;
+		}
+		if (!(slot->type && (slot->type == TypeInfo::get<voidptr>() ||
+			(slot->type->tag == TagPU && new_type->tag == TagU)))) // if a udt type link to its pointer type, dont change the type
+		{
+			slot->type = new_type;
+			if (new_type && has_data) // is input slot and has data
+				slot->data = new_type->create();
+		}
+	}
+
+	static void clear_invalid_links(BlueprintGroupPtr group)
+	{
+		std::vector<BlueprintLinkPtr> to_remove_links;
+		auto done = false;
+		while (!done)
+		{
+			done = true;
+			for (auto& l : group->links)
+			{
+				if (!l->from_slot->type || !l->to_slot->type)
+				{
+					if (!l->to_slot->type && !l->to_slot->allowed_types.empty())
+						change_slot_type(l->to_slot, nullptr);
+					to_remove_links.push_back(l.get());
+					done = false;
+				}
+				if (!l->from_slot->node->parent->contains(l->to_slot->node))
+					to_remove_links.push_back(l.get());
+			}
+		}
+		for (auto l : to_remove_links)
+			remove_link(l);
+	}
+
+	static void remove_node_links(BlueprintNodePtr n)
+	{
+		auto group = n->group;
+		std::vector<BlueprintLinkPtr> to_remove_links;
+		for (auto& l : group->links)
+		{
+			if (l->from_slot->node == n || l->to_slot->node == n)
+				to_remove_links.push_back(l.get());
+		}
+		for (auto l : to_remove_links)
+			remove_link(l);
+	}
+
 	BlueprintSlotPrivate::~BlueprintSlotPrivate()
 	{
 		if (data)
@@ -143,7 +229,7 @@ namespace flame
 		dirty_frame = frame;
 	}
 
-	void BlueprintPrivate::alter_variable(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* type)
+	void BlueprintPrivate::alter_variable(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* new_type)
 	{
 		assert(!group || group->blueprint == this);
 		auto& vars = group ? group->variables : variables;
@@ -169,8 +255,7 @@ namespace flame
 									n->name_hash == "Array Add Item"_h ||
 									n->name_hash == "Array Clear"_h)
 								{
-									auto target_name = *(uint*)n->inputs[0]->data;
-									if (target_name == old_name)
+									if (*(uint*)n->inputs[0]->data == old_name)
 									{
 										switch (n->name_hash)
 										{
@@ -196,12 +281,99 @@ namespace flame
 						}
 					}
 				}
-				if (type)
+				if (new_type)
 				{
-					if (it->type != type)
+					if (it->type != new_type)
 					{
-						it->type = type;
-						// TOOD: break links that nolonger match the type
+						it->type = new_type;
+						auto process_group = [&](BlueprintGroupPtr group) {
+							for (auto& l : group->links)
+							{
+								auto from_node = l->from_slot->node;
+								auto to_node = l->to_slot->node;
+								if (from_node->name_hash == "Variable"_h)
+								{
+									if (*(uint*)from_node->inputs[0]->data == it->name_hash)
+									{
+										auto slot = from_node->find_output("V"_h);
+										if (blueprint_allow_type(slot->allowed_types, new_type))
+											change_slot_type(slot, new_type);
+										else
+											change_slot_type(slot, nullptr);
+									}
+								}
+								else if (to_node->name_hash == "Set Variable"_h)
+								{
+									if (*(uint*)to_node->inputs[0]->data == it->name_hash)
+									{
+										auto slot = to_node->find_input("V"_h);
+										if (blueprint_allow_type(slot->allowed_types, new_type))
+											change_slot_type(slot, new_type);
+										else
+											change_slot_type(slot, nullptr);
+									}
+								}
+								else if (from_node->name_hash == "Array Get Item"_h)
+								{
+									if (*(uint*)from_node->inputs[0]->data == it->name_hash)
+									{
+										auto slot = from_node->find_output("V"_h);
+										if (is_vector(new_type->tag))
+										{
+											auto item_type = new_type->get_wrapped();
+											if (blueprint_allow_type(slot->allowed_types, item_type))
+												change_slot_type(slot, new_type);
+											else
+												change_slot_type(slot, nullptr);
+										}
+										else
+											change_slot_type(slot, nullptr);
+									}
+								}
+								else if (to_node->name_hash == "Array Set Item"_h)
+								{
+									if (*(uint*)to_node->inputs[0]->data == it->name_hash)
+									{
+										auto slot = from_node->find_input("V"_h);
+										if (is_vector(new_type->tag))
+										{
+											auto item_type = new_type->get_wrapped();
+											if (blueprint_allow_type(slot->allowed_types, item_type))
+												change_slot_type(slot, new_type);
+											else
+												change_slot_type(slot, nullptr);
+										}
+										else
+											change_slot_type(slot, nullptr);
+									}
+								}
+								else if (to_node->name_hash == "Array Add Item"_h)
+								{
+									if (*(uint*)to_node->inputs[0]->data == it->name_hash)
+									{
+										auto slot = from_node->find_input("V"_h);
+										if (is_vector(new_type->tag))
+										{
+											auto item_type = new_type->get_wrapped();
+											if (blueprint_allow_type(slot->allowed_types, item_type))
+												change_slot_type(slot, new_type);
+											else
+												change_slot_type(slot, nullptr);
+										}
+										else
+											change_slot_type(slot, nullptr);
+									}
+								}
+							}
+							clear_invalid_links(group);
+						};
+						if (group)
+							process_group(group);
+						else
+						{
+							for (auto& g : groups)
+								process_group(g.get());
+						}
 					}
 				}
 
@@ -563,10 +735,10 @@ namespace flame
 
 			}
 			ret->function = [](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				auto array_type = inputs[0].type;
+				auto item_type = inputs[0].type->get_wrapped();
 				auto parray = (std::vector<char>*)inputs[0].data;
-				if (parray && array_type)
-					*(uint*)outputs[0].data = parray->size() / array_type->get_wrapped()->size;
+				if (parray)
+					*(uint*)outputs[0].data = parray->size() / item_type->size;
 			};
 			break;
 		case "array_get_item"_h:
@@ -762,8 +934,8 @@ namespace flame
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
 				i->object_id = next_object_id++;
-				i->name = "Item";
-				i->name_hash = "Item"_h;
+				i->name = "V";
+				i->name_hash = "V"_h;
 				i->flags = BlueprintSlotFlagInput;
 				i->allowed_types.push_back(variable.type->get_wrapped());
 				i->type = i->allowed_types.front();
@@ -992,92 +1164,6 @@ namespace flame
 		dirty_frame = frame;
 
 		return ret;
-	}
-
-	static void update_depth(BlueprintNodePtr n) 
-	{
-		n->depth = n->parent->depth + 1;
-		for (auto& c : n->children)
-			update_depth(c);
-	}
-
-	static bool remove_link(BlueprintLinkPtr link)
-	{
-		auto group = link->from_slot->node->group;
-		for (auto it = group->links.begin(); it != group->links.end(); it++)
-		{
-			if (it->get() == link)
-			{
-				auto from_slot = link->from_slot;
-				auto to_node = link->to_slot->node;
-				auto to_slot = link->to_slot;
-				std::erase_if(from_slot->linked_slots, [&](const auto& slot) {
-					return slot == to_slot;
-				});
-				std::erase_if(to_slot->linked_slots, [&](const auto& slot) {
-					return slot == from_slot;
-				});
-				group->links.erase(it);
-				return true;
-			}
-		}
-		return false;
-	}
-
-	static void remove_node_links(BlueprintNodePtr n)
-	{
-		auto group = n->group;
-		std::vector<BlueprintLinkPtr> to_remove_links;
-		for (auto& l : group->links)
-		{
-			if (l->from_slot->node == n || l->to_slot->node == n)
-				to_remove_links.push_back(l.get());
-		}
-		for (auto l : to_remove_links)
-			remove_link(l);
-	}
-
-	static void change_slot_type(BlueprintSlotPtr slot, TypeInfo* new_type)
-	{
-		if (slot->type == new_type)
-			return;
-		auto has_data = slot->data != nullptr;
-		if (slot->data) // is input slot and has data
-		{
-			slot->type->destroy(slot->data);
-			slot->data = nullptr;
-		}
-		if (!(slot->type && (slot->type == TypeInfo::get<voidptr>() ||
-			(slot->type->tag == TagPU && new_type->tag == TagU)))) // if a udt type link to its pointer type, dont change the type
-		{
-			slot->type = new_type;
-			if (new_type && has_data) // is input slot and has data
-				slot->data = new_type->create();
-		}
-	}
-
-	static void clear_invalid_links(BlueprintGroupPtr group)
-	{
-		std::vector<BlueprintLinkPtr> to_remove_links;
-		auto done = false;
-		while (!done)
-		{
-			done = true;
-			for (auto& l : group->links)
-			{
-				if (!l->from_slot->type || !l->to_slot->type)
-				{
-					if (!l->to_slot->type && !l->to_slot->allowed_types.empty())
-						change_slot_type(l->to_slot, nullptr);
-					to_remove_links.push_back(l.get());
-					done = false;
-				}
-				if (!l->from_slot->node->parent->contains(l->to_slot->node))
-					to_remove_links.push_back(l.get());
-			}
-		}
-		for (auto l : to_remove_links)
-			remove_link(l);
 	}
 
 	void BlueprintPrivate::remove_node(BlueprintNodePtr node, bool recursively)
@@ -1386,8 +1472,7 @@ namespace flame
 		n->position = old_position;
 		for (auto& l : old_links)
 		{
-			auto from_slot = n->find_output(l.first);
-			if (from_slot)
+			if (auto from_slot = n->find_output(l.first); from_slot)
 			{
 				for (auto& ll : l.second)
 					g->blueprint->add_link(from_slot, ll);
@@ -1436,6 +1521,48 @@ namespace flame
 		auto frame = frames;
 		group->structure_changed_frame = frame;
 		dirty_frame = frame;
+	}
+
+	void BlueprintPrivate::alter_group_input(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* new_type)
+	{
+		assert(group && group->blueprint == this);
+
+		for (auto it = group->inputs.begin(); it != group->inputs.end(); ++it)
+		{
+			if (it->name_hash == old_name)
+			{
+				auto input_node = group->find_node("Input"_h);
+				auto slot = input_node->find_output(it->name_hash);
+				if (!new_name.empty())
+				{
+					if (it->name != new_name)
+					{
+						it->name = new_name;
+						it->name_hash = sh(new_name.c_str());
+						slot->name = it->name;
+						slot->name_hash = it->name_hash;
+					}
+				}
+				if (new_type)
+				{
+					if (it->type != new_type)
+					{
+						it->type = new_type;
+						for (auto& l : group->links)
+						{
+							if (l->from_slot == slot)
+							{
+								if (blueprint_allow_type(l->to_slot->allowed_types, new_type))
+									change_slot_type(l->to_slot, new_type);
+								else
+									change_slot_type(l->to_slot, nullptr);
+							}
+						}
+					}
+					clear_invalid_links(group);
+				}
+			}
+		}
 	}
 
 	static void update_group_output_node(BlueprintGroupPtr g)
@@ -1515,6 +1642,48 @@ namespace flame
 		auto frame = frames;
 		group->structure_changed_frame = frame;
 		dirty_frame = frame;
+	}
+
+	void BlueprintPrivate::alter_group_output(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* new_type)
+	{
+		assert(group && group->blueprint == this);
+
+		for (auto it = group->outputs.begin(); it != group->outputs.end(); ++it)
+		{
+			if (it->name_hash == old_name)
+			{
+				auto output_node = group->find_node("Output"_h);
+				auto slot = output_node->find_input(it->name_hash);
+				if (!new_name.empty())
+				{
+					if (it->name != new_name)
+					{
+						it->name = new_name;
+						it->name_hash = sh(new_name.c_str());
+						slot->name = it->name;
+						slot->name_hash = it->name_hash;
+					}
+				}
+				if (new_type)
+				{
+					if (it->type != new_type)
+					{
+						it->type = new_type;
+						for (auto& l : group->links)
+						{
+							if (l->to_slot == slot)
+							{
+								if (blueprint_allow_type(l->from_slot->allowed_types, new_type))
+									change_slot_type(l->from_slot, new_type);
+								else
+									change_slot_type(l->from_slot, nullptr);
+							}
+						}
+						clear_invalid_links(group);
+					}
+				}
+			}
+		}
 	}
 
 	void BlueprintPrivate::save(const std::filesystem::path& path)

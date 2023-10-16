@@ -585,6 +585,112 @@ void BlueprintView::on_draw()
 		if (ImGui::Button("Zoom To Selection"))
 			ax::NodeEditor::NavigateToSelection(true, 0.f);
 
+		auto get_value_str = [](const BlueprintAttribute& arg)->std::string {
+			if (arg.type->tag == TagD || is_pointer(arg.type->tag))
+			{
+				auto ret = arg.type->serialize(arg.data);
+				if (arg.type == TypeInfo::get<EntityPtr>())
+				{
+					auto entity = *(EntityPtr*)arg.data;
+					if (entity && entity != INVALID_POINTER && entity != (EntityPtr)0xCDCDCDCDCDCDCDCD)
+					{
+						auto node = entity->get_component<cNode>();
+						ret += std::format("\nName: {}\nPos: {}\nParent: {}\n", entity->name,
+							node ? str(node->global_pos()) : "N\\A", entity->parent ? entity->parent->name : "[None]");
+					}
+				}
+				return ret;
+			}
+			else if (is_vector(arg.type->tag))
+			{
+				auto item_type = arg.type->get_wrapped();
+				auto parray = (std::vector<char>*)arg.data;
+				auto array_size = (uint)parray->size() / item_type->size;
+				auto ret = std::format("Size: {}", array_size);
+				for (auto i = 0; i < array_size; i++)
+				{
+					auto item = parray->data() + i * item_type->size;
+					ret += std::format("\n[{}]: {}", i, item_type->serialize(item));
+				}
+				return ret;
+			}
+			return "";
+		};
+
+		auto group = blueprint->find_group(group_name_hash);
+		if (!group)
+		{
+			group = blueprint->groups[0].get();
+			group_name = group->name;
+			group_name_hash = group->name_hash;
+		}
+
+		ImGui::SameLine();
+		if (ImGui::BeginCombo("##group_dropdown", "", ImGuiComboFlags_NoPreview))
+		{
+			for (auto& g : blueprint->groups)
+			{
+				if (ImGui::Selectable(g->name.c_str()))
+				{
+					group = g.get();
+					group_name = group->name;
+					group_name_hash = group->name_hash;
+				}
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100.f);
+		ImGui::InputText("##group", &group_name);
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			group_name_hash = sh(group_name.c_str());
+			group->name = group_name;
+			group->name_hash = group_name_hash;
+			group->structure_changed_frame = frame;
+			blueprint->dirty_frame = frame;
+			unsaved = true;
+		}
+		ImGui::SameLine();
+
+		if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
+		{
+			blueprint->remove_group(group);
+			group = blueprint->groups.back().get();
+			group_name = group->name;
+			group_name_hash = group->name_hash;
+			unsaved = true;
+
+			if (blueprint_instance->built_frame < blueprint->dirty_frame)
+				blueprint_instance->build();
+
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("New Group"))
+		{
+			auto name = get_unique_name("new_group", [&](const std::string& name) {
+				for (auto& g : blueprint->groups)
+				{
+					if (g->name == name)
+						return true;
+				}
+				return false;
+				});
+			group = blueprint->add_group(name);
+			group_name = group->name;
+			group_name_hash = group->name_hash;
+			unsaved = true;
+
+			if (blueprint_instance->built_frame < blueprint->dirty_frame)
+				blueprint_instance->build();
+		}
+
+		auto debugging_group = blueprint_window.debugger->debugging &&
+			blueprint_window.debugger->debugging->instance->blueprint == blueprint &&
+			blueprint_window.debugger->debugging->name == group_name_hash ?
+			blueprint_window.debugger->debugging : nullptr;
+		auto& instance_group = debugging_group ? *debugging_group : blueprint_instance->groups[group_name_hash];
+
 		if (ImGui::BeginTable("bp_editor", 2, ImGuiTableFlags_Resizable))
 		{
 			ImGui::TableNextRow();
@@ -719,16 +825,27 @@ void BlueprintView::on_draw()
 					{
 						if (auto type = show_types_menu(); type)
 						{
-							blueprint->alter_variable(nullptr, var.name_hash, "", var.type);
+							blueprint->alter_variable(nullptr, var.name_hash, "", type);
 							unsaved = true;
 						}
 
 						ImGui::EndCombo();
 					}
 					ImGui::TextUnformatted("Value");
-					auto changed = manipulate_value(var.type, var.data);
-					if (changed)
-						unsaved = true;
+					if (debugging_group)
+					{
+						auto it = debugging_group->instance->variables.find(var.name_hash);
+						if (it != debugging_group->instance->variables.end())
+						{
+							ImGui::SameLine();
+							ImGui::TextUnformatted(get_value_str(it->second).c_str());
+						}
+					}
+					else
+					{
+						if (manipulate_value(var.type, var.data))
+							unsaved = true;
+					}
 				}
 				ImGui::EndGroup();
 
@@ -744,106 +861,42 @@ void BlueprintView::on_draw()
 					});
 					blueprint->add_variable(nullptr, name, TypeInfo::get<float>());
 					selected_variable = blueprint->variables.size() - 1;
-
+					unsaved = true;
 				}
 				ImGui::SameLine();
 				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
 				{
 					if (selected_variable != -1)
+					{
 						blueprint->remove_variable(nullptr, blueprint->variables[selected_variable].name_hash);
+						unsaved = true;
+					}
 				}
 				ImGui::SameLine();
 				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
 				{
 					if (selected_variable > 0)
+					{
 						std::swap(blueprint->variables[selected_variable], blueprint->variables[selected_variable - 1]);
+						selected_variable--;
+						unsaved = true;
+					}
 				}
 				ImGui::SameLine();
 				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
 				{
 					if (selected_variable != -1 && selected_variable < blueprint->variables.size() - 1)
+					{
 						std::swap(blueprint->variables[selected_variable], blueprint->variables[selected_variable + 1]);
+						selected_variable++;
+						unsaved = true;
+					}
 				}
 				ImGui::PopID();
 
 				if (blueprint_instance->built_frame < blueprint->dirty_frame)
 					blueprint_instance->build();
 			}
-
-			ImGui::Separator();
-
-			auto group = blueprint->find_group(group_name_hash);
-			if (!group)
-			{
-				group = blueprint->groups[0].get();
-				group_name = group->name;
-				group_name_hash = group->name_hash;
-			}
-
-			if (ImGui::BeginCombo("##group_dropdown", "", ImGuiComboFlags_NoPreview))
-			{
-				for (auto& g : blueprint->groups)
-				{
-					if (ImGui::Selectable(g->name.c_str()))
-					{
-						group = g.get();
-						group_name = group->name;
-						group_name_hash = group->name_hash;
-					}
-				}
-				ImGui::EndCombo();
-			}
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(100.f);
-			ImGui::InputText("##group", &group_name);
-			if (ImGui::IsItemDeactivatedAfterEdit())
-			{
-				group_name_hash = sh(group_name.c_str());
-				group->name = group_name;
-				group->name_hash = group_name_hash;
-				group->structure_changed_frame = frame;
-				blueprint->dirty_frame = frame;
-				unsaved = true;
-			}
-			ImGui::SameLine();
-
-			if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
-			{
-				blueprint->remove_group(group);
-				group = blueprint->groups.back().get();
-				group_name = group->name;
-				group_name_hash = group->name_hash;
-				unsaved = true;
-
-				if (blueprint_instance->built_frame < blueprint->dirty_frame)
-					blueprint_instance->build();
-
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("New Group"))
-			{
-				auto name = get_unique_name("new_group", [&](const std::string& name) {
-					for (auto& g : blueprint->groups)
-					{
-						if (g->name == name)
-							return true;
-					}
-					return false;
-				});
-				group = blueprint->add_group(name);
-				group_name = group->name;
-				group_name_hash = group->name_hash;
-				unsaved = true;
-
-				if (blueprint_instance->built_frame < blueprint->dirty_frame)
-					blueprint_instance->build();
-			}
-
-			auto debugging_group = blueprint_window.debugger->debugging &&
-				blueprint_window.debugger->debugging->instance->blueprint == blueprint &&
-				blueprint_window.debugger->debugging->name == group_name_hash ?
-				blueprint_window.debugger->debugging : nullptr;
-			auto& instance_group = debugging_group ? *debugging_group : blueprint_instance->groups[group_name_hash];
 
 			if (ImGui::CollapsingHeader("Group Variables:"))
 			{
@@ -870,32 +923,35 @@ void BlueprintView::on_draw()
 					ImGui::InputText("Name", &var.name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-						auto name = var.name;
-						auto type = var.type;
-						blueprint->remove_variable(group, var.name_hash);
-						blueprint->add_variable(group, name, type);
-						selected_variable = -1;
+						blueprint->alter_variable(group, var.name_hash, name, var.type);
 						unsaved = true;
 					}
 					ImGui::SetNextItemWidth(200.f);
 					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
 					{
-						auto type = show_types_menu();
-						if (type)
+						if (auto type = show_types_menu(); type)
 						{
-							auto name = var.name;
-							blueprint->remove_variable(group, var.name_hash);
-							blueprint->add_variable(group, name, type);
-							selected_variable = -1;
+							blueprint->alter_variable(group, var.name_hash, "", type);
 							unsaved = true;
 						}
 
 						ImGui::EndCombo();
 					}
 					ImGui::TextUnformatted("Value");
-					auto changed = manipulate_value(var.type, var.data);
-					if (changed)
-						unsaved = true;
+					if (debugging_group)
+					{
+						auto it = debugging_group->variables.find(var.name_hash);
+						if (it != debugging_group->variables.end())
+						{
+							ImGui::SameLine();
+							ImGui::TextUnformatted(get_value_str(it->second).c_str());
+						}
+					}
+					else
+					{
+						if (manipulate_value(var.type, var.data))
+							unsaved = true;
+					}
 				}
 				ImGui::EndGroup();
 
@@ -911,24 +967,36 @@ void BlueprintView::on_draw()
 					});
 					blueprint->add_variable(group, name, TypeInfo::get<float>());
 					selected_variable = group->variables.size() - 1;
+					unsaved = true;
 				}
 				ImGui::SameLine();
 				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
 				{
 					if (selected_variable != -1)
+					{
 						blueprint->remove_variable(group, group->variables[selected_variable].name_hash);
+						unsaved = true;
+					}
 				}
 				ImGui::SameLine();
 				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
 				{
 					if (selected_variable > 0)
+					{
 						std::swap(group->variables[selected_variable], group->variables[selected_variable - 1]);
+						selected_variable--;
+						unsaved = true;
+					}
 				}
 				ImGui::SameLine();
 				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
 				{
 					if (selected_variable != -1 && selected_variable < group->variables.size() - 1)
+					{
 						std::swap(group->variables[selected_variable], group->variables[selected_variable + 1]);
+						selected_variable++;
+						unsaved = true;
+					}
 				}
 				ImGui::PopID();
 
@@ -961,23 +1029,15 @@ void BlueprintView::on_draw()
 					ImGui::InputText("Name", &var.name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-						auto name = var.name;
-						auto type = var.type;
-						blueprint->remove_group_input(group, var.name_hash);
-						blueprint->add_group_input(group, name, type);
-						selected_input = -1;
+						blueprint->alter_group_input(group, var.name_hash, name, var.type);
 						unsaved = true;
 					}
 					ImGui::SetNextItemWidth(200.f);
 					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
 					{
-						auto type = show_types_menu();
-						if (type)
+						if (auto type = show_types_menu(); type)
 						{
-							auto name = var.name;
-							blueprint->remove_group_input(group, var.name_hash);
-							blueprint->add_group_input(group, name, type);
-							selected_input = -1;
+							blueprint->alter_group_input(group, var.name_hash, "", type);
 							unsaved = true;
 						}
 
@@ -1014,6 +1074,7 @@ void BlueprintView::on_draw()
 					if (selected_input > 0)
 					{
 						std::swap(group->inputs[selected_input], group->inputs[selected_input - 1]);
+						selected_input--;
 						unsaved = true;
 					}
 				}
@@ -1023,6 +1084,7 @@ void BlueprintView::on_draw()
 					if (selected_input != -1 && selected_input < group->inputs.size() - 1)
 					{
 						std::swap(group->inputs[selected_input], group->inputs[selected_input + 1]);
+						selected_input++;
 						unsaved = true;
 					}
 				}
@@ -1056,23 +1118,15 @@ void BlueprintView::on_draw()
 					ImGui::InputText("Name", &var.name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-						auto name = var.name;
-						auto type = var.type;
-						blueprint->remove_group_output(group, var.name_hash);
-						blueprint->add_group_output(group, name, type);
-						selected_output = -1;
+						blueprint->alter_group_output(group, var.name_hash, name, var.type);
 						unsaved = true;
 					}
 					ImGui::SetNextItemWidth(200.f);
 					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
 					{
-						auto type = show_types_menu();
-						if (type)
+						if (auto type = show_types_menu(); type)
 						{
-							auto name = var.name;
-							blueprint->remove_group_output(group, var.name_hash);
-							blueprint->add_group_output(group, name, type);
-							selected_output = -1;
+							blueprint->alter_group_output(group, var.name_hash, "", type);
 							unsaved = true;
 						}
 
@@ -1109,6 +1163,7 @@ void BlueprintView::on_draw()
 					if (selected_output > 0)
 					{
 						std::swap(group->outputs[selected_output], group->outputs[selected_output - 1]);
+						selected_output--;
 						unsaved = true;
 					}
 				}
@@ -1118,6 +1173,7 @@ void BlueprintView::on_draw()
 					if (selected_output != -1 && selected_output < group->outputs.size() - 1)
 					{
 						std::swap(group->outputs[selected_output], group->outputs[selected_output + 1]);
+						selected_output++;
 						unsaved = true;
 					}
 				}
@@ -1156,24 +1212,6 @@ void BlueprintView::on_draw()
 				auto& style = ImGui::GetStyle();
 				auto dl = ImGui::GetWindowDrawList();
 				std::string tooltip; vec2 tooltip_pos;
-				auto get_slot_value = [](const BlueprintAttribute& arg)->std::string {
-					if (arg.type->tag == TagD || is_pointer(arg.type->tag))
-					{
-						auto ret = std::format("Value: {}", arg.type->serialize(arg.data));
-						if (arg.type == TypeInfo::get<EntityPtr>())
-						{
-							auto entity = *(EntityPtr*)arg.data;
-							if (entity && entity != INVALID_POINTER && entity != (EntityPtr)0xCDCDCDCDCDCDCDCD)
-							{
-								auto node = entity->get_component<cNode>();
-								ret += std::format("\nName: {}\nPos: {}\nParent: {}\n", entity->name, 
-									node ? str(node->global_pos()) : "N\\A", entity->parent ? entity->parent->name : "[None]");
-							}
-						}
-						return ret;
-					}
-					return "";
-				};
 
 				if (debugging_group)
 					ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_Bg, ImColor(100, 80, 60, 200));
@@ -1237,7 +1275,7 @@ void BlueprintView::on_draw()
 								if (it != instance_group.slot_datas.end())
 								{
 									auto& arg = it->second.attribute;
-									tooltip = std::format("{} ({})\nObject ID: {}", get_slot_value(arg), ti_str(arg.type), input->object_id);
+									tooltip = std::format("Value: {} ({})\nObject ID: {}", get_value_str(arg), ti_str(arg.type), input->object_id);
 								}
 							}
 							else
@@ -1283,7 +1321,7 @@ void BlueprintView::on_draw()
 								if (it != instance_group.slot_datas.end())
 								{
 									auto& arg = it->second.attribute;
-									tooltip = std::format("{} ({})\nObject ID: {}", get_slot_value(arg), ti_str(arg.type), output->object_id);
+									tooltip = std::format("Value: {} ({})\nObject ID: {}", get_value_str(arg), ti_str(arg.type), output->object_id);
 								}
 							}
 							else

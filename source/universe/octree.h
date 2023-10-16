@@ -57,7 +57,7 @@ namespace flame
 			}
 		}
 
-		bool is_colliding(const AABB& check_bounds, uint filter_tag = 0xffffffff)
+		bool is_colliding(const AABB& check_bounds, uint any_filter = 0xffffffff, uint all_filter = 0)
 		{
 			if (!bounds.intersects(check_bounds))
 				return false;
@@ -65,7 +65,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_enable || (filter_tag & e->tag) == 0)
+				if (!e->global_enable || (any_filter & e->tag) == 0 || (all_filter & e->tag) != all_filter)
 					continue;
 
 				if (obj->bounds.intersects(check_bounds))
@@ -74,14 +74,14 @@ namespace flame
 
 			for (auto& c : children)
 			{
-				if (c->is_colliding(check_bounds, filter_tag))
+				if (c->is_colliding(check_bounds, any_filter, all_filter))
 					return true;
 			}
 
 			return false;
 		}
 
-		void get_colliding(const AABB& check_bounds, std::vector<cNodePtr>& res, uint filter_tag = 0xffffffff)
+		void get_colliding(const AABB& check_bounds, std::vector<cNodePtr>& res, uint any_filter = 0xffffffff, uint all_filter = 0)
 		{
 			if (!bounds.intersects(check_bounds))
 				return;
@@ -89,7 +89,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_enable || (filter_tag & e->tag) == 0)
+				if (!e->global_enable || (any_filter & e->tag) == 0 || (all_filter & e->tag) != all_filter)
 					continue;
 
 				if (obj->bounds.intersects(check_bounds))
@@ -97,10 +97,10 @@ namespace flame
 			}
 
 			for (auto& c : children)
-				c->get_colliding(check_bounds, res, filter_tag);
+				c->get_colliding(check_bounds, res, any_filter, all_filter);
 		}
 
-		bool is_colliding(const vec2& check_center, float check_radius, uint filter_tag = 0xffffffff)
+		bool is_colliding(const vec2& check_center, float check_radius, uint any_filter = 0xffffffff, uint all_filter = 0)
 		{
 			if (!bounds.intersects(check_center, check_radius))
 				return false;
@@ -108,7 +108,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_enable || (filter_tag & e->tag) == 0)
+				if (!e->global_enable || (any_filter & e->tag) == 0 || (all_filter & e->tag) != all_filter)
 					continue;
 
 				if (obj->bounds.intersects(check_center, check_radius))
@@ -117,14 +117,14 @@ namespace flame
 
 			for (auto& c : children)
 			{
-				if (c->is_colliding(check_center, check_radius, filter_tag))
+				if (c->is_colliding(check_center, check_radius, any_filter, all_filter))
 					return true;
 			}
 
 			return false;
 		}
 
-		void get_colliding(const vec2& check_center, float check_radius, std::vector<cNodePtr>& res, uint filter_tag = 0xffffffff)
+		void get_colliding(const vec2& check_center, float check_radius, std::vector<cNodePtr>& res, uint any_filter = 0xffffffff, uint all_filter = 0)
 		{
 			if (!bounds.intersects(check_center, check_radius))
 				return;
@@ -132,7 +132,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_enable || (filter_tag & e->tag) == 0)
+				if (!e->global_enable || (any_filter & e->tag) == 0 || (all_filter & e->tag) != all_filter)
 					continue;
 
 				if (obj->bounds.intersects(check_center, check_radius))
@@ -140,10 +140,10 @@ namespace flame
 			}
 
 			for (auto& c : children)
-				c->get_colliding(check_center, check_radius, res, filter_tag);
+				c->get_colliding(check_center, check_radius, res, any_filter, all_filter);
 		}
 
-		bool is_colliding(const vec3& check_center, float check_radius, uint filter_tag = 0xffffffff)
+		bool is_colliding(const vec3& check_center, float check_radius, uint any_filter = 0xffffffff, uint all_filter = 0)
 		{
 			if (!bounds.intersects(check_center, check_radius))
 				return false;
@@ -151,7 +151,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_enable || (filter_tag & e->tag) == 0)
+				if (!e->global_enable || (any_filter & e->tag) == 0 || (all_filter & e->tag) != all_filter)
 					continue;
 
 				if (obj->bounds.intersects(check_center, check_radius))
@@ -160,14 +160,14 @@ namespace flame
 
 			for (auto& c : children)
 			{
-				if (c->is_colliding(check_center, check_radius, filter_tag))
+				if (c->is_colliding(check_center, check_radius, any_filter, all_filter))
 					return true;
 			}
 
 			return false;
 		}
 
-		void get_colliding(const vec3& check_center, float check_radius, std::vector<cNodePtr>& res, uint filter_tag = 0xffffffff)
+		void get_colliding(const vec3& check_center, float check_radius, std::vector<cNodePtr>& res, uint any_filter = 0xffffffff, uint all_filter = 0)
 		{
 			if (!bounds.intersects(check_center, check_radius))
 				return;
@@ -175,7 +175,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_enable || (filter_tag & e->tag) == 0)
+				if (!e->global_enable || (any_filter & e->tag) == 0 || (all_filter & e->tag) != all_filter)
 					continue;
 
 				if (obj->bounds.intersects(check_center, check_radius))
@@ -183,7 +183,7 @@ namespace flame
 			}
 
 			for (auto& c : children)
-				c->get_colliding(check_center, check_radius, res, filter_tag);
+				c->get_colliding(check_center, check_radius, res, any_filter, all_filter);
 		}
 
 		//bool is_colliding(const Ray& checkRay, float maxDistance = float.PositiveInfinity)
@@ -223,7 +223,7 @@ namespace flame
 		//		c->get_colliding(ref checkRay, result, maxDistance);
 		//}
 
-		void get_within_frustum(const Frustum& frustum, std::vector<cNodePtr>& res, uint filter_tag = 0xffffffff)
+		void get_within_frustum(const Frustum& frustum, std::vector<cNodePtr>& res, uint any_filter = 0xffffffff, uint all_filter = 0)
 		{
 			if (!AABB_frustum_check(frustum, bounds))
 				return;
@@ -231,7 +231,7 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_enable || (filter_tag & e->tag) == 0)
+				if (!e->global_enable || (any_filter & e->tag) == 0 || (all_filter & e->tag) != all_filter)
 					continue;
 
 				if (AABB_frustum_check(frustum, obj->bounds))
@@ -239,7 +239,7 @@ namespace flame
 			}
 
 			for (auto& c : children)
-				c->get_within_frustum(frustum, res, filter_tag);
+				c->get_within_frustum(frustum, res, any_filter, all_filter);
 		}
 
 		OctNode* shrink_if_possible()
