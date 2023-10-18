@@ -260,8 +260,9 @@ namespace flame
 		// Reflect
 		virtual std::vector<vec3> transform_feedback(cNodePtr node) = 0;
 
-		virtual void begin_hud(const vec2& pos, const vec2& size = vec2(0.f) /* 0 size means auto layout */, const cvec4& col = cvec4(0, 0, 0, 255), const vec2& pivot = vec2(0.f)) = 0;
+		virtual void begin_hud(const vec2& pos, const vec2& size = vec2(0.f) /* 0 size means auto layout */, const cvec4& col = cvec4(0, 0, 0, 255), const vec2& pivot = vec2(0.f), const vec2& item_spacing = vec2(2.f)) = 0;
 		virtual void end_hud() = 0;
+		virtual void hud_rect(const vec2& pos, const vec2& size, const cvec4& col) = 0;
 		virtual void hud_text(std::wstring_view label, const cvec4& col = cvec4(255, 255, 255, 255)) = 0;
 		virtual bool hud_button(std::wstring_view label) = 0;
 

@@ -59,6 +59,7 @@ namespace flame
 		vec2 hud_pos;
 		cvec4 hud_col;
 		vec2 hud_pivot;
+		vec2 hud_item_spacing;
 		vec2 hud_cursor;
 		float hud_cursor_x0;
 		float hud_max_w;
@@ -153,8 +154,9 @@ namespace flame
 		cElementPtr pick_up_2d(const uvec2& screen_pos) override;
 		std::vector<vec3> transform_feedback(cNodePtr node) override;
 
-		void begin_hud(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot) override;
+		void begin_hud(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const vec2& item_spacing) override;
 		void end_hud() override;
+		void hud_rect(const vec2& pos, const vec2& size, const cvec4& col) override;
 		void hud_text(std::wstring_view label, const cvec4& col) override;
 		bool hud_button(std::wstring_view label) override;
 

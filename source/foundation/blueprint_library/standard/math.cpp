@@ -345,6 +345,43 @@ namespace flame
 				}
 			}
 		);
+
+		library->add_template("HSV Color", "",
+			{
+				{
+					.name = "H",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "S",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "1"
+				},
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "1"
+				},
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "1"
+				}
+			},
+			{
+				{
+					.name = "RGB",
+					.allowed_types = { TypeInfo::get<cvec4>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto h = *(float*)inputs[0].data;
+				auto s = *(float*)inputs[1].data;
+				auto v = *(float*)inputs[2].data;
+				auto a = *(float*)inputs[3].data;
+				*(cvec4*)outputs[0].data = vec4(rgbColor(vec3(h, s, v)), a) * 255.f;
+			}
+		);
 		
 		library->add_template("Add", "+",
 			{

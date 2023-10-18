@@ -24,6 +24,11 @@ namespace flame
 				{
 					.name = "Pivot",
 					.allowed_types = { TypeInfo::get<vec2>() }
+				},
+				{
+					.name = "Item Spacing",
+					.allowed_types = { TypeInfo::get<vec2>() },
+					.default_value = "2,2"
 				}
 			},
 			{
@@ -39,14 +44,46 @@ namespace flame
 				auto size = *(vec2*)inputs[2].data;
 				auto col = *(cvec4*)inputs[3].data;
 				auto pivot = *(vec2*)inputs[4].data;
+				auto item_spacing = *(vec2*)inputs[5].data;
 
-				sRenderer::instance()->begin_hud(pos, size, col, pivot);
+				sRenderer::instance()->begin_hud(pos, size, col, pivot, item_spacing);
 
 				*max_execute_times = 1;
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				sRenderer::instance()->end_hud();
 			}
+		);
+
+		library->add_template("Hud Rect", "",
+			{
+				{
+					.name = "Pos",
+					.allowed_types = { TypeInfo::get<vec2>() }
+				},
+				{
+					.name = "Size",
+					.allowed_types = { TypeInfo::get<vec2>() }
+				},
+				{
+					.name = "Col",
+					.allowed_types = { TypeInfo::get<cvec4>() },
+					.default_value = "255,255,255,255"
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto pos = *(vec2*)inputs[0].data;
+				auto size = *(vec2*)inputs[1].data;
+				auto col = *(cvec4*)inputs[2].data;
+
+				sRenderer::instance()->hud_rect(pos, size, col);
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
 		);
 
 		library->add_template("Hud Text", "",

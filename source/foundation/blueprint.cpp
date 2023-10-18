@@ -1594,6 +1594,7 @@ namespace flame
 					}
 					clear_invalid_links(group);
 				}
+				update_group_input_node(group);
 			}
 		}
 	}
@@ -1715,6 +1716,7 @@ namespace flame
 						clear_invalid_links(group);
 					}
 				}
+				update_group_output_node(group);
 			}
 		}
 	}

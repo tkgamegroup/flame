@@ -4,6 +4,7 @@
 namespace flame
 {
 	void add_type_node_templates(BlueprintNodeLibraryPtr library);
+	void add_extern_node_templates(BlueprintNodeLibraryPtr library);
 	void add_logical_node_templates(BlueprintNodeLibraryPtr library);
 	void add_flow_control_node_templates(BlueprintNodeLibraryPtr library);
 	void add_math_node_templates(BlueprintNodeLibraryPtr library);
@@ -14,6 +15,7 @@ namespace flame
 		auto standard_library = BlueprintNodeLibrary::get(L"standard");
 
 		add_type_node_templates(standard_library);
+		add_extern_node_templates(standard_library);
 		add_logical_node_templates(standard_library);
 		add_flow_control_node_templates(standard_library);
 		add_math_node_templates(standard_library);

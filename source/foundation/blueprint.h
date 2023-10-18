@@ -251,8 +251,8 @@ namespace flame
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr, 
 			bool is_block = false, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr) = 0;
 		virtual BlueprintNodePtr		add_block(BlueprintGroupPtr group, BlueprintNodePtr parent) = 0;
-		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type = "get"_h, uint location_name = 0 /* from a sheet or a bp instance */ ) = 0;
-		virtual BlueprintNodePtr		add_call_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint group_name, uint location_name = 0 /* from other bp instance */ ) = 0; // add a node that will call another group
+		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type = "get"_h, uint location_name = 0 /* from a sheet or a static bp */ ) = 0;
+		virtual BlueprintNodePtr		add_call_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint group_name, uint location_name = 0 /* from other static bp */ ) = 0; // add a node that will call another group
 		virtual void					remove_node(BlueprintNodePtr node, bool recursively = true) = 0;
 		virtual void					set_nodes_parent(const std::vector<BlueprintNodePtr> nodes, BlueprintNodePtr new_parent) = 0;
 		virtual void					set_input_type(BlueprintSlotPtr slot, TypeInfo* type) = 0;

@@ -1022,7 +1022,7 @@ void BlueprintView::on_draw()
 					ImGui::InputText("Name", &var.name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-						blueprint->alter_group_input(group, var.name_hash, name, var.type);
+						blueprint->alter_group_input(group, var.name_hash, var.name, var.type);
 						unsaved = true;
 					}
 					ImGui::SetNextItemWidth(200.f);
@@ -1111,7 +1111,7 @@ void BlueprintView::on_draw()
 					ImGui::InputText("Name", &var.name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-						blueprint->alter_group_output(group, var.name_hash, name, var.type);
+						blueprint->alter_group_output(group, var.name_hash, var.name, var.type);
 						unsaved = true;
 					}
 					ImGui::SetNextItemWidth(200.f);
@@ -2151,6 +2151,21 @@ void BlueprintView::on_draw()
 								}
 								continue;
 							}
+							if (t.name == "Call BP void_bool")
+							{
+								if (ImGui::BeginMenu("Call BP"))
+								{
+									for (auto j = i; ; j++)
+									{
+										auto& t = standard_library->node_templates[j];
+										if (!t.name.starts_with("Call BP "))
+											break;
+										show_node_library_template(t);
+									}
+									ImGui::EndMenu();
+								}
+								continue;
+							}
 							if (t.name == "Branch 2")
 							{
 								if (ImGui::BeginMenu("Branch"))
@@ -2199,6 +2214,8 @@ void BlueprintView::on_draw()
 							if (t.name.starts_with("Get BP "))
 								continue;
 							if (t.name.starts_with("Set BP "))
+								continue;
+							if (t.name.starts_with("Call BP "))
 								continue;
 							if (t.name.starts_with("Branch "))
 								continue;

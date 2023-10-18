@@ -3064,7 +3064,7 @@ namespace flame
 		return ret;
 	}
 
-	void sRendererPrivate::begin_hud(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot)
+	void sRendererPrivate::begin_hud(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const vec2& item_spacing)
 	{
 		auto canvas = render_tasks.front()->canvas;
 
@@ -3072,7 +3072,8 @@ namespace flame
 		hud_size = size;
 		hud_col = col;
 		hud_pivot = pivot;
-		hud_cursor = pos + vec2(4.f, 2.f);
+		hud_item_spacing = item_spacing;
+		hud_cursor = pos + hud_item_spacing;
 		hud_cursor_x0 = hud_cursor.x;
 		hud_max_w = 0.f;
 
@@ -3135,8 +3136,21 @@ namespace flame
 		if (rect.contains(input->mpos))
 			input->mouse_used = true;
 		canvas->add_text(canvas->default_font_atlas, 24, hud_cursor, label, col, 0.5f, 0.2f);
-		hud_cursor = vec2(hud_cursor_x0, hud_cursor.y + sz.y + 2.f);
+		hud_cursor = vec2(hud_cursor_x0, hud_cursor.y + sz.y + hud_item_spacing.y);
 		hud_max_w = max(hud_max_w, sz.x);
+	}
+
+	void sRendererPrivate::hud_rect(const vec2& pos, const vec2& size, const cvec4& col)
+	{
+		auto canvas = render_tasks.front()->canvas;
+		auto input = sInput::instance();
+
+		Rect rect(hud_cursor, hud_cursor + size);
+		if (rect.contains(input->mpos))
+			input->mouse_used = true;
+		canvas->add_rect_filled(rect.a, rect.b, col);
+		hud_cursor = vec2(hud_cursor_x0, hud_cursor.y + size.y + hud_item_spacing.y);
+		hud_max_w = max(hud_max_w, size.x);
 	}
 
 	bool sRendererPrivate::hud_button(std::wstring_view label)
@@ -3158,7 +3172,7 @@ namespace flame
 		}
 		canvas->add_rect_filled(rect.a, rect.b, state == 0 ? cvec4(35, 69, 109, 255) : cvec4(66, 150, 250, 255));
 		canvas->add_text(canvas->default_font_atlas, 24, hud_cursor + vec2(2.f), label, cvec4(255), 0.5f, 0.2f);
-		hud_cursor = vec2(hud_cursor_x0, hud_cursor.y + sz.y + 2.f);
+		hud_cursor = vec2(hud_cursor_x0, hud_cursor.y + sz.y + hud_item_spacing.y);
 		hud_max_w = max(hud_max_w, sz.x);
 		return state == 2;
 	}
