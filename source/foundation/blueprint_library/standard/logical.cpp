@@ -305,9 +305,9 @@ namespace flame
 				if (outputs[0].type == TypeInfo::get<float>())
 					*(float*)outputs[0].data = in_ti->as_float(in_p);
 				else if (outputs[0].type == TypeInfo::get<int>())
-					*(float*)outputs[0].data = in_ti->as_int(in_p);
+					*(int*)outputs[0].data = in_ti->as_int(in_p);
 				else if (outputs[0].type == TypeInfo::get<uint>())
-					*(float*)outputs[0].data = in_ti->as_uint(in_p);
+					*(uint*)outputs[0].data = in_ti->as_uint(in_p);
 			},
 			nullptr,
 			nullptr,

@@ -138,7 +138,7 @@ BlueprintView::BlueprintView(const std::string& name) :
 
 				auto new_block = most_depth_block ? most_depth_block : g->nodes.front().get();
 				if (node->parent != new_block)
-					view.blueprint->set_node_parent(node, new_block);
+					view.blueprint->set_nodes_parent({ node }, new_block);
 
 				do_expand = true;
 			}
@@ -209,7 +209,7 @@ void BlueprintView::process_relationships(BlueprintNodePtr n)
 
 		auto new_block = most_depth_block ? most_depth_block : g->nodes.front().get();
 		if (node->parent != new_block)
-			blueprint->set_node_parent(node, new_block);
+			blueprint->set_nodes_parent({ node }, new_block);
 	};
 
 	if (!n->is_block)
@@ -378,12 +378,7 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 
 void BlueprintView::set_parent_to_last_node()
 {
-	std::vector<BlueprintNodePtr> nodes;
-	for (auto n : get_selected_nodes())
-	{
-		if (!if_contains_any_of(n, nodes))
-			nodes.push_back(n);
-	}
+	auto nodes = get_selected_nodes();
 	if (nodes.size() >= 2)
 	{
 		if (auto last_node = nodes.back(); last_node->is_block)
@@ -415,14 +410,12 @@ void BlueprintView::set_parent_to_last_node()
 			}
 
 			auto offset = last_node->rect.a - wrap_rect.a;
+			nodes.pop_back();
+			blueprint->set_nodes_parent(nodes, last_node);
 			for (auto n : nodes)
 			{
-				if (n != last_node)
-				{
-					blueprint->set_node_parent(n, last_node);
-					if (!grapes_mode)
-						set_offset_recurisely(n, offset);
-				}
+				if (!grapes_mode)
+					set_offset_recurisely(n, offset);
 			}
 		}
 	}
@@ -1440,6 +1433,15 @@ void BlueprintView::on_draw()
 				for (auto& l : group->links)
 					ax::NodeEditor::Link((uint64)l.get(), (uint64)l->from_slot, (uint64)l->to_slot);
 
+				static auto standard_library = BlueprintNodeLibrary::get(L"standard");
+				static auto noise_library = BlueprintNodeLibrary::get(L"graphics::noise");
+				static auto texture_library = BlueprintNodeLibrary::get(L"graphics::texture");
+				static auto geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
+				static auto entity_library = BlueprintNodeLibrary::get(L"universe::entity");
+				static auto navigation_library = BlueprintNodeLibrary::get(L"universe::navigation");
+				static auto input_library = BlueprintNodeLibrary::get(L"universe::input");
+				static auto hud_library = BlueprintNodeLibrary::get(L"universe::HUD");
+
 				auto mouse_pos = ImGui::GetMousePos();
 				static vec2				open_popup_pos;
 				static BlueprintSlotPtr	new_node_link_slot = nullptr;
@@ -1598,8 +1600,7 @@ void BlueprintView::on_draw()
 							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)b, b->position);
 							ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)b, b->rect.size());
 
-							for (auto n : nodes)
-								blueprint->set_node_parent(n, b);
+							blueprint->set_nodes_parent(nodes, b);
 
 							unsaved = true;
 						}
@@ -1616,6 +1617,165 @@ void BlueprintView::on_draw()
 						{
 							if (ImGui::Selectable("Set Parent To Last Node"))
 								set_parent_to_last_node();
+						}
+					}
+					if (context_node && context_node->name.starts_with("Branch "))
+					{
+						if (ImGui::BeginMenu("Change To.."))
+						{
+							auto src_n = context_node;
+							for (auto i = 0; i < standard_library->node_templates.size(); i++)
+							{
+								if (standard_library->node_templates[i].name.starts_with("Branch "))
+								{
+									for (auto j = i; ; j++)
+									{
+										auto& t = standard_library->node_templates[j];
+										if (!t.name.starts_with("Branch "))
+											break;
+										if (t.name != src_n->name)
+										{
+											if (ImGui::Selectable(t.name.c_str()))
+											{
+												auto n = blueprint->add_node(group, src_n->parent, t.name, t.display_name, t.inputs, t.outputs,
+													t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
+													t.is_block, t.begin_block_function, t.end_block_function);
+												n->position = src_n->position;
+												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+												if (n->is_block)
+												{
+													ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, n->rect.size());
+													ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, n->rect.size());
+												}
+
+												std::vector<std::pair<BlueprintSlotPtr, BlueprintSlotPtr>> to_link_args;
+												for (auto& l : src_n->group->links)
+												{
+													if (l->from_slot->node == src_n)
+														to_link_args.emplace_back(n->find_output(l->from_slot->name_hash), l->to_slot);
+													if (l->to_slot->node == src_n)
+														to_link_args.emplace_back(l->from_slot, n->find_input(l->to_slot->name_hash));
+												}
+												for (auto& args : to_link_args)
+													blueprint->add_link(args.first, args.second);
+
+												blueprint->remove_node(src_n);
+												context_node = nullptr;
+
+												unsaved = true;
+											}
+										}
+									}
+									break;
+								}
+							}
+							ImGui::EndMenu();
+						}
+					}
+					if (context_node && context_node->name.starts_with("Select Branch "))
+					{
+						if (ImGui::BeginMenu("Change To.."))
+						{
+							auto src_n = context_node;
+							for (auto i = 0; i < standard_library->node_templates.size(); i++)
+							{
+								if (standard_library->node_templates[i].name.starts_with("Select Branch "))
+								{
+									for (auto j = i; ; j++)
+									{
+										auto& t = standard_library->node_templates[j];
+										if (!t.name.starts_with("Select Branch "))
+											break;
+										if (t.name != src_n->name)
+										{
+											if (ImGui::Selectable(t.name.c_str()))
+											{
+												auto n = blueprint->add_node(group, src_n->parent, t.name, t.display_name, t.inputs, t.outputs,
+													t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
+													t.is_block, t.begin_block_function, t.end_block_function);
+												n->position = src_n->position;
+												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+												if (n->is_block)
+												{
+													ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, n->rect.size());
+													ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, n->rect.size());
+												}
+
+												std::vector<std::pair<BlueprintSlotPtr, BlueprintSlotPtr>> to_link_args;
+												for (auto& l : src_n->group->links)
+												{
+													if (l->from_slot->node == src_n)
+														to_link_args.emplace_back(n->find_output(l->from_slot->name_hash), l->to_slot);
+													if (l->to_slot->node == src_n)
+														to_link_args.emplace_back(l->from_slot, n->find_input(l->to_slot->name_hash));
+												}
+												for (auto& args : to_link_args)
+													blueprint->add_link(args.first, args.second);
+
+												blueprint->remove_node(src_n);
+												context_node = nullptr;
+
+												unsaved = true;
+											}
+										}
+									}
+									break;
+								}
+							}
+							ImGui::EndMenu();
+						}
+					}
+					if (context_node && context_node->name.starts_with("Ramp Branch "))
+					{
+						if (ImGui::BeginMenu("Change To.."))
+						{
+							auto src_n = context_node;
+							for (auto i = 0; i < standard_library->node_templates.size(); i++)
+							{
+								if (standard_library->node_templates[i].name.starts_with("Ramp Branch "))
+								{
+									for (auto j = i; ; j++)
+									{
+										auto& t = standard_library->node_templates[j];
+										if (!t.name.starts_with("Ramp Branch "))
+											break;
+										if (t.name != src_n->name)
+										{
+											if (ImGui::Selectable(t.name.c_str()))
+											{
+												auto n = blueprint->add_node(group, src_n->parent, t.name, t.display_name, t.inputs, t.outputs,
+													t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
+													t.is_block, t.begin_block_function, t.end_block_function);
+												n->position = src_n->position;
+												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+												if (n->is_block)
+												{
+													ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, n->rect.size());
+													ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, n->rect.size());
+												}
+
+												std::vector<std::pair<BlueprintSlotPtr, BlueprintSlotPtr>> to_link_args;
+												for (auto& l : src_n->group->links)
+												{
+													if (l->from_slot->node == src_n)
+														to_link_args.emplace_back(n->find_output(l->from_slot->name_hash), l->to_slot);
+													if (l->to_slot->node == src_n)
+														to_link_args.emplace_back(l->from_slot, n->find_input(l->to_slot->name_hash));
+												}
+												for (auto& args : to_link_args)
+													blueprint->add_link(args.first, args.second);
+
+												blueprint->remove_node(src_n);
+												context_node = nullptr;
+
+												unsaved = true;
+											}
+										}
+									}
+									break;
+								}
+							}
+							ImGui::EndMenu();
 						}
 					}
 					BlueprintBreakpointOption breakpoint_option;
@@ -1686,15 +1846,6 @@ void BlueprintView::on_draw()
 				}
 				if (ImGui::BeginPopup("add_node_context_menu"))
 				{
-					static auto standard_library = BlueprintNodeLibrary::get(L"standard");
-					static auto noise_library = BlueprintNodeLibrary::get(L"graphics::noise");
-					static auto texture_library = BlueprintNodeLibrary::get(L"graphics::texture");
-					static auto geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
-					static auto entity_library = BlueprintNodeLibrary::get(L"universe::entity");
-					static auto navigation_library = BlueprintNodeLibrary::get(L"universe::navigation");
-					static auto input_library = BlueprintNodeLibrary::get(L"universe::input");
-					static auto hud_library = BlueprintNodeLibrary::get(L"universe::HUD");
-
 					static std::string filter = "";
 					ImGui::InputText("Filter", &filter);
 
@@ -2196,7 +2347,7 @@ void BlueprintView::on_draw()
 							for (auto n : nodes)
 								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(0.f, +10.f));
 						}
-						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_P))
+						if (ImGui::IsKeyPressed(Keyboard_P))
 							set_parent_to_last_node();
 						if (ImGui::IsKeyPressed(Keyboard_F10))
 							step_blueprint(debugging_group);

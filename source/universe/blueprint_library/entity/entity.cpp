@@ -501,6 +501,11 @@ namespace flame
 					.name = "All Filter",
 					.allowed_types = { TypeInfo::get<uint>() },
 					.default_value = "0"
+				},
+				{
+					.name = "Parent Search Times",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "999"
 				}
 			},
 			{
@@ -514,25 +519,23 @@ namespace flame
 				auto radius = *(float*)inputs[1].data;
 				auto any_filter = *(uint*)inputs[2].data;
 				auto all_filter = *(uint*)inputs[3].data;
-				std::vector<cNodePtr> res;
-				sScene::instance()->octree->get_colliding(location, radius, res, any_filter, all_filter);
+				auto parent_search_times = *(uint*)inputs[4].data;
+				std::vector<std::pair<EntityPtr, cNodePtr>> res;
+				sScene::instance()->octree->get_colliding(location, radius, res, any_filter, all_filter, parent_search_times);
 
 				if (res.empty())
 					*(EntityPtr*)outputs[0].data = nullptr;
 				else if (res.size() == 1)
-					*(EntityPtr*)outputs[0].data = res[0]->entity;
+					*(EntityPtr*)outputs[0].data = res[0].first;
 				else
 				{
-					std::vector<std::pair<float, cNodePtr>> nodes_with_distance(res.size());
+					std::vector<std::pair<float, EntityPtr>> nodes_with_distance(res.size());
 					for (auto i = 0; i < res.size(); i++)
-					{
-						auto n = res[i];
-						nodes_with_distance[i] = std::make_pair(distance(n->global_pos(), location), n);
-					}
+						nodes_with_distance[i] = std::make_pair(distance(res[i].second->global_pos(), location), res[i].first);
 					std::sort(nodes_with_distance.begin(), nodes_with_distance.end(), [](const auto& a, const auto& b) {
 						return a.first < b.first;
 					});
-					*(EntityPtr*)outputs[0].data = nodes_with_distance[0].second->entity;
+					*(EntityPtr*)outputs[0].data = nodes_with_distance[0].second;
 				}
 			},
 			nullptr,
@@ -581,14 +584,14 @@ namespace flame
 
 				auto e = node->entity;
 				auto tag = *(uint*)inputs[0].data;
-				auto times = *(uint*)inputs[1].data;
+				auto parent_search_times = *(uint*)inputs[1].data;
 				while (e)
 				{
 					if (e->tag & tag)
 						break;
 					e = e->parent;
-					times--;
-					if (times == 0)
+					parent_search_times--;
+					if (parent_search_times == 0)
 					{
 						e = nullptr;
 						break;

@@ -1856,7 +1856,6 @@ bool App::cmd_delete_entities(std::vector<EntityPtr>&& es)
 	for (auto i = 0; i < es.size(); i++)
 	{
 		auto e = es[i];
-		names[i] = e->name;
 		add_event([e]() {
 			if (auto ins = get_root_prefab_instance(e); ins)
 				ins->remove_modification(e->parent->file_id.to_string() + (!e->prefab_instance ? '|' + e->file_id.to_string() : "") + "|add_child");
@@ -1864,8 +1863,9 @@ bool App::cmd_delete_entities(std::vector<EntityPtr>&& es)
 			return false;
 		});
 
-		if (e_prefab)
+		if (!e_playing && e_prefab)
 		{
+			names[i] = e->name;
 			ids[i] = e->file_id;
 			parents[i] = e->parent->instance_id;
 			indices[i] = e->index;

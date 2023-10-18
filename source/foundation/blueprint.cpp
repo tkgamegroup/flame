@@ -204,10 +204,10 @@ namespace flame
 			if (n->name_hash == "Variable"_h ||
 				n->name_hash == "Set Variable"_h ||
 				n->name_hash == "Array Size"_h ||
+				n->name_hash == "Array Clear"_h ||
 				n->name_hash == "Array Get Item"_h ||
 				n->name_hash == "Array Set Item"_h ||
-				n->name_hash == "Array Add Item"_h ||
-				n->name_hash == "Array Clear"_h)
+				n->name_hash == "Array Add Item"_h)
 			{
 				auto target_name = *(uint*)n->inputs[0]->data;
 				if (target_name == name)
@@ -250,10 +250,10 @@ namespace flame
 								if (n->name_hash == "Variable"_h ||
 									n->name_hash == "Set Variable"_h ||
 									n->name_hash == "Array Size"_h ||
+									n->name_hash == "Array Clear"_h ||
 									n->name_hash == "Array Get Item"_h ||
 									n->name_hash == "Array Set Item"_h ||
-									n->name_hash == "Array Add Item"_h ||
-									n->name_hash == "Array Clear"_h)
+									n->name_hash == "Array Add Item"_h)
 								{
 									if (*(uint*)n->inputs[0]->data == old_name)
 									{
@@ -262,10 +262,10 @@ namespace flame
 										case "Variable"_h: n->display_name = new_name; break;
 										case "Set Variable"_h: n->display_name = "Set " + new_name; break;
 										case "Array Size"_h: n->display_name = new_name + ": Size"; break;
+										case "Array Clear"_h: n->display_name = new_name + ": Clear"; break;
 										case "Array Get Item"_h: n->display_name = new_name + ": Get Item"; break;
 										case "Array Set Item"_h: n->display_name = new_name + ": Set Item"; break;
 										case "Array Add Item"_h: n->display_name = new_name + ": Add Item"; break;
-										case "Array Clear"_h: n->display_name = new_name + ": Clear"; break;
 										}
 										*(uint*)n->inputs[0]->data = it->name_hash;
 									}
@@ -741,6 +741,58 @@ namespace flame
 					*(uint*)outputs[0].data = parray->size() / item_type->size;
 			};
 			break;
+		case "array_clear"_h:
+			ret->name = "Array Clear";
+			ret->name_hash = "Array Clear"_h;
+			ret->display_name = variable.name + ": Clear";
+			{
+				auto i = new BlueprintSlotPrivate;
+				i->node = ret;
+				i->object_id = next_object_id++;
+				i->name = "Name";
+				i->name_hash = "Name"_h;
+				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
+				i->allowed_types.push_back(TypeInfo::get<uint>());
+				i->type = i->allowed_types.front();
+				i->data = i->type->create();
+				*(uint*)i->data = variable.name_hash;
+				ret->inputs.emplace_back(i);
+			}
+			{
+				auto i = new BlueprintSlotPrivate;
+				i->node = ret;
+				i->object_id = next_object_id++;
+				i->name = "Location";
+				i->name_hash = "Location"_h;
+				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
+				i->allowed_types.push_back(TypeInfo::get<uint>());
+				i->type = i->allowed_types.front();
+				i->data = i->type->create();
+				*(uint*)i->data = location_name;
+				i->default_value = "0";
+				ret->inputs.emplace_back(i);
+			}
+			ret->function = [](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto parray = inputs[0].data;
+				auto item_type = inputs[0].type->get_wrapped();
+				switch (item_type->tag)
+				{
+				case TagD:
+					if (item_type->pod)
+					{
+						auto& array = *(std::vector<char>*)parray;
+						array.clear();
+					}
+					break;
+				case TagPU:
+				{
+					auto& array = *(std::vector<voidptr>*)parray;
+					array.clear();
+				}
+					break;
+				}
+			};
+			break;
 		case "array_get_item"_h:
 			ret->name = "Array Get Item";
 			ret->name_hash = "Array Get Item"_h;
@@ -968,58 +1020,6 @@ namespace flame
 				}
 			};
 			break;
-		case "array_clear"_h:
-			ret->name = "Array Clear";
-			ret->name_hash = "Array Clear"_h;
-			ret->display_name = variable.name + ": Clear";
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Name";
-				i->name_hash = "Name"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = variable.name_hash;
-				ret->inputs.emplace_back(i);
-			}
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Location";
-				i->name_hash = "Location"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = location_name;
-				i->default_value = "0";
-				ret->inputs.emplace_back(i);
-			}
-			ret->function = [](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				auto parray = inputs[0].data;
-				auto item_type = inputs[0].type->get_wrapped();
-				switch (item_type->tag)
-				{
-				case TagD:
-					if (item_type->pod)
-					{
-						auto& array = *(std::vector<char>*)parray;
-						array.clear();
-					}
-					break;
-				case TagPU:
-				{
-					auto& array = *(std::vector<voidptr>*)parray;
-					array.clear();
-				}
-				break;
-				}
-			};
-			break;
 		}
 		ret->parent = parent;
 		if (parent)
@@ -1224,27 +1224,60 @@ namespace flame
 		dirty_frame = frame;
 	}
 
-	void BlueprintPrivate::set_node_parent(BlueprintNodePtr node, BlueprintNodePtr new_parent)
+	void BlueprintPrivate::set_nodes_parent(const std::vector<BlueprintNodePtr> _nodes, BlueprintNodePtr new_parent)
 	{
-		auto group = node->group;
-		assert(group && group->blueprint == this && group == new_parent->group);
-
-		if (node->parent == new_parent)
+		if (_nodes.empty())
 			return;
 
-		auto old_parent = node->parent;
-		for (auto it = old_parent->children.begin(); it != old_parent->children.end(); it++)
+		auto group = _nodes.front()->group;
+		assert(group && group->blueprint == this && group == new_parent->group);
+		for (auto& n : _nodes)
+			assert(group == n->group);
+
+		std::vector<BlueprintNodePtr> nodes;
+		nodes.push_back(_nodes.front());
+		if (nodes[0]->contains(new_parent))
+			return;
+		for (auto i = 1; i < _nodes.size(); i++)
 		{
-			if (*it == node)
+			auto _n = _nodes[i];
+			if (_n->contains(new_parent))
+				return;
+			for (auto j = 0; j < nodes.size(); j++)
 			{
-				old_parent->children.erase(it);
-				break;
+				auto n = nodes[j];
+				if (_n->depth < n->depth && _n->contains(n))
+				{
+					nodes[j] = _n;
+					_n = nullptr;
+					break;
+				}
+				else if (_n->depth > n->depth && n->contains(_n))
+				{
+					_n = nullptr;
+					break;
+				}
 			}
+			if (_n)
+				nodes.push_back(_n);
 		}
 
-		node->parent = new_parent;
-		update_depth(node);
-		new_parent->children.push_back(node);
+		for (auto n : nodes)
+		{
+			auto old_parent = n->parent;
+			for (auto it = old_parent->children.begin(); it != old_parent->children.end(); it++)
+			{
+				if (*it == n)
+				{
+					old_parent->children.erase(it);
+					break;
+				}
+			}
+
+			n->parent = new_parent;
+			update_depth(n);
+			new_parent->children.push_back(n);
+		}
 
 		clear_invalid_links(group);
 
@@ -2065,6 +2098,30 @@ namespace flame
 								n->position = s2t<2, float>(n_node.attribute("position").value());
 							}
 						}
+						else if (name == "Array Clear")
+						{
+							std::vector<pugi::xml_node> other_inputs;
+							uint name = 0;
+							uint location_name = 0;
+							for (auto n_input : n_node.child("inputs"))
+							{
+								std::string n_input_name = n_input.attribute("name").value();
+								if (n_input_name == "Name")
+									name = n_input.attribute("value").as_uint();
+								else if (n_input_name == "Location")
+									location_name = n_input.attribute("value").as_uint();
+								else
+									other_inputs.push_back(n_input);
+							}
+							auto n = ret->add_variable_node(g, parent, name, "array_clear"_h, location_name);
+							if (n)
+							{
+								for (auto n_input : other_inputs)
+									read_input(n, n_input);
+								node_map[n_node.attribute("object_id").as_uint()] = n;
+								n->position = s2t<2, float>(n_node.attribute("position").value());
+							}
+						}
 						else if (name == "Array Get Item")
 						{
 							std::vector<pugi::xml_node> other_inputs;
@@ -2129,30 +2186,6 @@ namespace flame
 									other_inputs.push_back(n_input);
 							}
 							auto n = ret->add_variable_node(g, parent, name, "array_add_item"_h, location_name);
-							if (n)
-							{
-								for (auto n_input : other_inputs)
-									read_input(n, n_input);
-								node_map[n_node.attribute("object_id").as_uint()] = n;
-								n->position = s2t<2, float>(n_node.attribute("position").value());
-							}
-						}
-						else if (name == "Array Clear")
-						{
-							std::vector<pugi::xml_node> other_inputs;
-							uint name = 0;
-							uint location_name = 0;
-							for (auto n_input : n_node.child("inputs"))
-							{
-								std::string n_input_name = n_input.attribute("name").value();
-								if (n_input_name == "Name")
-									name = n_input.attribute("value").as_uint();
-								else if (n_input_name == "Location")
-									location_name = n_input.attribute("value").as_uint();
-								else
-									other_inputs.push_back(n_input);
-							}
-							auto n = ret->add_variable_node(g, parent, name, "array_clear"_h, location_name);
 							if (n)
 							{
 								for (auto n_input : other_inputs)
@@ -2728,6 +2761,23 @@ namespace flame
 						}
 						return;
 					}
+					if (n->name_hash == "Array Clear"_h)
+					{
+						auto name = *(uint*)n->inputs[0]->data;
+						auto location_name = *(uint*)n->inputs[1]->data;
+						if (auto [vtype, vdata] = find_var(name, location_name); vtype && vdata)
+						{
+							{
+								Group::Data data;
+								data.changed_frame = frame;
+								data.attribute.type = vtype;
+								data.attribute.data = vdata;
+
+								node.inputs.push_back(data.attribute);
+							}
+						}
+						return;
+					}
 					if (n->name_hash == "Array Get Item"_h)
 					{
 						auto name = *(uint*)n->inputs[0]->data;
@@ -2823,23 +2873,6 @@ namespace flame
 								if (is_pointer(data.attribute.type->tag))
 									memset(data.attribute.data, 0, sizeof(voidptr));
 								slots_data.emplace(n->inputs[2]->object_id, data);
-
-								node.inputs.push_back(data.attribute);
-							}
-						}
-						return;
-					}
-					if (n->name_hash == "Array Clear"_h)
-					{
-						auto name = *(uint*)n->inputs[0]->data;
-						auto location_name = *(uint*)n->inputs[1]->data;
-						if (auto [vtype, vdata] = find_var(name, location_name); vtype && vdata)
-						{
-							{
-								Group::Data data;
-								data.changed_frame = frame;
-								data.attribute.type = vtype;
-								data.attribute.data = vdata;
 
 								node.inputs.push_back(data.attribute);
 							}

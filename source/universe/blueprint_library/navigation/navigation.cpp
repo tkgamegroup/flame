@@ -1,5 +1,6 @@
 #include "../../../foundation/blueprint.h"
 #include "../../../foundation/typeinfo.h"
+#include "../../components/nav_agent_private.h"
 #include "../../systems/scene_private.h"
 
 namespace flame
@@ -45,6 +46,62 @@ namespace flame
 					sScene::instance()->navmesh_generate(nodes, agent_radius, agent_height, walkable_climb, walkable_slope_angle);
 					return false;
 				});
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Nav Agent Set Target", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Position",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto nav_agent = entity->get_component<cNavAgent>();
+					if (nav_agent)
+						nav_agent->set_target(*(vec3*)inputs[1].data);
+				}
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Nav Agent Set Speed Scale", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Scale",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto nav_agent = entity->get_component<cNavAgent>();
+					if (nav_agent)
+						nav_agent->set_speed_scale(*(float*)inputs[1].data);
+				}
 			},
 			nullptr,
 			nullptr,

@@ -161,7 +161,7 @@ namespace flame
 	{
 		mat3 rot;
 		Frustum frustum;
-		std::vector<cNodePtr> culled_nodes;
+		std::vector<std::pair<EntityPtr, cNodePtr>> culled_nodes;
 		MeshBatcher batcher[DirShadowMaxLevels];
 		std::vector<TerrainDrawData> draw_terrains[DirShadowMaxLevels];
 		std::vector<VolumeDrawData> draw_MCs[DirShadowMaxLevels];
@@ -172,7 +172,7 @@ namespace flame
 
 	};
 
-	std::vector<cNodePtr> camera_culled_nodes;
+	std::vector<std::pair<EntityPtr, cNodePtr>> camera_culled_nodes;
 	DrawData draw_data;
 	MeshBatcher gbuffer_batcher;
 	MeshBatcher transparent_batcher;
@@ -1872,8 +1872,8 @@ namespace flame
 			sScene::instance()->octree->get_within_frustum(camera->frustum, camera_culled_nodes);
 
 			draw_data.reset(PassInstance, 0);
-			for (auto n : camera_culled_nodes)
-				n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+			for (auto& n : camera_culled_nodes)
+				n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
 
 			static auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
 
@@ -1917,9 +1917,9 @@ namespace flame
 				if (mode == RenderModeShaded)
 				{
 					draw_data.reset(PassLight, 0);
-					for (auto n : camera_culled_nodes)
+					for (auto& n : camera_culled_nodes)
 					{
-						n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+						n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
 						auto n_lights = n_dir_lights + n_pt_lights;
 						if (n_lights < draw_data.lights.size())
 						{
@@ -1940,7 +1940,7 @@ namespace flame
 											buf_lighting.mark_dirty(shadow_index);
 
 											auto& rot = dir_shadows[idx].rot;
-											rot = mat3(n->g_qut);
+											rot = mat3(n.second->g_qut);
 											rot[2] *= -1.f;
 
 											n_dir_shadows++;
@@ -2055,8 +2055,8 @@ namespace flame
 							s.culled_nodes.clear();
 							sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
 							draw_data.reset(PassInstance, 0);
-							for (auto n : s.culled_nodes)
-								n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+							for (auto& n : s.culled_nodes)
+								n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
 
 							auto z_min = -hf_zlen;
 							auto z_max = +hf_zlen;
@@ -2065,13 +2065,13 @@ namespace flame
 							auto n_MC_draws = 0;
 
 							draw_data.reset(PassOcculder, CateMesh | CateTerrain | CateMarchingCubes);
-							for (auto n : s.culled_nodes)
+							for (auto& n : s.culled_nodes)
 							{
-								n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+								n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
 								if (draw_data.meshes.size() > n_mesh_draws)
 								{
-									auto r = n->bounds.radius();
-									auto d = dot(n->global_pos() - c, s.rot[2]);
+									auto r = n.second->bounds.radius();
+									auto d = dot(n.second->global_pos() - c, s.rot[2]);
 									z_min = min(d - r, z_min);
 									z_max = max(d + r, z_max);
 
@@ -2079,7 +2079,7 @@ namespace flame
 								}
 								if (draw_data.terrains.size() > n_terrain_draws)
 								{
-									for (auto& p : n->bounds.get_points())
+									for (auto& p : n.second->bounds.get_points())
 									{
 										auto d = dot(p - c, s.rot[2]);
 										z_min = min(d, z_min);
@@ -2090,7 +2090,7 @@ namespace flame
 								}
 								if (draw_data.volumes.size() > n_MC_draws)
 								{
-									for (auto& p : n->bounds.get_points())
+									for (auto& p : n.second->bounds.get_points())
 									{
 										auto d = dot(p - c, s.rot[2]);
 										z_min = min(d, z_min);
@@ -2226,10 +2226,10 @@ namespace flame
 					for (auto& b : gbuffer_batcher.batches)
 						b.second.draw_indices.clear();
 					draw_data.reset(PassGBuffer, CateMesh | CateTerrain | CateSDF | CateMarchingCubes);
-					for (auto n : camera_culled_nodes)
+					for (auto& n : camera_culled_nodes)
 					{
-						if (n->entity->layer & camera->layer)
-							n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+						if (n.second->entity->layer & camera->layer)
+							n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
 					}
 					gbuffer_batcher.collect(draw_data, cb);
 
@@ -2341,10 +2341,10 @@ namespace flame
 					for (auto& b : transparent_batcher.batches)
 						b.second.draw_indices.clear();
 					draw_data.reset(PassForward, CateMesh | CateGrassField | CateParticle);
-					for (auto n : camera_culled_nodes)
+					for (auto& n : camera_culled_nodes)
 					{
-						if (n->entity->layer & camera->layer)
-							n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+						if (n.second->entity->layer & camera->layer)
+							n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
 					}
 					transparent_batcher.collect(draw_data, cb);
 				}
@@ -2403,10 +2403,10 @@ namespace flame
 				else
 				{
 					draw_data.reset(PassPickUp, CateMesh);
-					for (auto n : camera_culled_nodes)
+					for (auto& n : camera_culled_nodes)
 					{
-						if (n->entity->layer & camera->layer)
-							n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+						if (n.second->entity->layer & camera->layer)
+							n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
 					}
 
 					cb->image_barrier(img_dst_ms, {}, graphics::ImageLayoutAttachment);
@@ -2850,14 +2850,14 @@ namespace flame
 			auto n_terrain_draws = 0;
 			auto n_MC_draws = 0;
 			draw_data.reset(PassPickUp, CateMesh | CateTerrain | CateMarchingCubes);
-			std::vector<cNodePtr> camera_culled_nodes; // collect here (again), because there may have changes between render() and pick_up()
+			std::vector<std::pair<EntityPtr, cNodePtr>> camera_culled_nodes; // collect here (again), because there may have changes between render() and pick_up()
 			sScene::instance()->octree->get_within_frustum(camera->frustum, camera_culled_nodes);
-			for (auto n : camera_culled_nodes)
+			for (auto& n : camera_culled_nodes)
 			{
 				if (draw_callback)
-					draw_callback(n, draw_data);
+					draw_callback(n.second, draw_data);
 				else
-					n->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+					n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
 
 				for (auto i = n_mesh_draws; i < draw_data.meshes.size(); i++)
 				{
@@ -2882,7 +2882,7 @@ namespace flame
 						cb->draw_indexed(mesh_res.idx_cnt, mesh_res.idx_off, mesh_res.vtx_off, 1, m.ins_id);
 					}
 
-					nodes.push_back(n);
+					nodes.push_back(n.second);
 				}
 				n_mesh_draws = draw_data.meshes.size();
 
@@ -2895,7 +2895,7 @@ namespace flame
 					prm_fwd.push_constant(cb.get());
 					cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
 
-					nodes.push_back(n);
+					nodes.push_back(n.second);
 				}
 				n_terrain_draws = draw_data.terrains.size();
 
@@ -2919,7 +2919,7 @@ namespace flame
 						}
 					}
 
-					nodes.push_back(n);
+					nodes.push_back(n.second);
 				}
 				n_MC_draws = draw_data.volumes.size();
 			}

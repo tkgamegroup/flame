@@ -57,7 +57,7 @@ namespace flame
 			}
 		}
 
-		bool is_colliding(const AABB& check_bounds, uint any_filter = 0xffffffff, uint all_filter = 0)
+		bool is_colliding(const AABB& check_bounds, uint any_filter = 0xffffffff, uint all_filter = 0, uint parent_search_times = 0)
 		{
 			if (!bounds.intersects(check_bounds))
 				return false;
@@ -65,23 +65,37 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_enable || (any_filter & e->tag) == 0 || (all_filter & e->tag) != all_filter)
-					continue;
+				auto t = parent_search_times;
+				while (e)
+				{
+					if (e->global_enable && (any_filter & e->tag) != 0 && (all_filter & e->tag) == all_filter)
+						break;
+					e = e->parent;
+					t--;
+					if (t == 0)
+					{
+						e = nullptr;
+						break;
+					}
+				}
 
-				if (obj->bounds.intersects(check_bounds))
-					return true;
+				if (e)
+				{
+					if (obj->bounds.intersects(check_bounds))
+						return true;
+				}
 			}
 
 			for (auto& c : children)
 			{
-				if (c->is_colliding(check_bounds, any_filter, all_filter))
+				if (c->is_colliding(check_bounds, any_filter, all_filter, parent_search_times))
 					return true;
 			}
 
 			return false;
 		}
 
-		void get_colliding(const AABB& check_bounds, std::vector<cNodePtr>& res, uint any_filter = 0xffffffff, uint all_filter = 0)
+		void get_colliding(const AABB& check_bounds, std::vector<std::pair<EntityPtr, cNodePtr>>& res, uint any_filter = 0xffffffff, uint all_filter = 0, uint parent_search_times = 0)
 		{
 			if (!bounds.intersects(check_bounds))
 				return;
@@ -89,18 +103,32 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_enable || (any_filter & e->tag) == 0 || (all_filter & e->tag) != all_filter)
-					continue;
+				auto t = parent_search_times;
+				while (e)
+				{
+					if (e->global_enable && (any_filter & e->tag) != 0 && (all_filter & e->tag) == all_filter)
+						break;
+					e = e->parent;
+					t--;
+					if (t == 0)
+					{
+						e = nullptr;
+						break;
+					}
+				}
 
-				if (obj->bounds.intersects(check_bounds))
-					res.push_back(obj);
+				if (e)
+				{
+					if (obj->bounds.intersects(check_bounds))
+						res.emplace_back(e, obj);
+				}
 			}
 
 			for (auto& c : children)
-				c->get_colliding(check_bounds, res, any_filter, all_filter);
+				c->get_colliding(check_bounds, res, any_filter, all_filter, parent_search_times);
 		}
 
-		bool is_colliding(const vec2& check_center, float check_radius, uint any_filter = 0xffffffff, uint all_filter = 0)
+		bool is_colliding(const vec2& check_center, float check_radius, uint any_filter = 0xffffffff, uint all_filter = 0, uint parent_search_times = 0)
 		{
 			if (!bounds.intersects(check_center, check_radius))
 				return false;
@@ -108,11 +136,25 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_enable || (any_filter & e->tag) == 0 || (all_filter & e->tag) != all_filter)
-					continue;
+				auto t = parent_search_times;
+				while (e)
+				{
+					if (e->global_enable && (any_filter & e->tag) != 0 && (all_filter & e->tag) == all_filter)
+						break;
+					e = e->parent;
+					t--;
+					if (t == 0)
+					{
+						e = nullptr;
+						break;
+					}
+				}
 
-				if (obj->bounds.intersects(check_center, check_radius))
-					return true;
+				if (e)
+				{
+					if (obj->bounds.intersects(check_center, check_radius))
+						return true;
+				}
 			}
 
 			for (auto& c : children)
@@ -124,7 +166,7 @@ namespace flame
 			return false;
 		}
 
-		void get_colliding(const vec2& check_center, float check_radius, std::vector<cNodePtr>& res, uint any_filter = 0xffffffff, uint all_filter = 0)
+		void get_colliding(const vec2& check_center, float check_radius, std::vector<std::pair<EntityPtr, cNodePtr>>& res, uint any_filter = 0xffffffff, uint all_filter = 0, uint parent_search_times = 0)
 		{
 			if (!bounds.intersects(check_center, check_radius))
 				return;
@@ -132,18 +174,32 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_enable || (any_filter & e->tag) == 0 || (all_filter & e->tag) != all_filter)
-					continue;
+				auto t = parent_search_times;
+				while (e)
+				{
+					if (e->global_enable && (any_filter & e->tag) != 0 && (all_filter & e->tag) == all_filter)
+						break;
+					e = e->parent;
+					t--;
+					if (t == 0)
+					{
+						e = nullptr;
+						break;
+					}
+				}
 
-				if (obj->bounds.intersects(check_center, check_radius))
-					res.push_back(obj);
+				if (e)
+				{
+					if (obj->bounds.intersects(check_center, check_radius))
+						res.emplace_back(e, obj);
+				}
 			}
 
 			for (auto& c : children)
 				c->get_colliding(check_center, check_radius, res, any_filter, all_filter);
 		}
 
-		bool is_colliding(const vec3& check_center, float check_radius, uint any_filter = 0xffffffff, uint all_filter = 0)
+		bool is_colliding(const vec3& check_center, float check_radius, uint any_filter = 0xffffffff, uint all_filter = 0, uint parent_search_times = 0)
 		{
 			if (!bounds.intersects(check_center, check_radius))
 				return false;
@@ -151,11 +207,25 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_enable || (any_filter & e->tag) == 0 || (all_filter & e->tag) != all_filter)
-					continue;
+				auto t = parent_search_times;
+				while (e)
+				{
+					if (e->global_enable && (any_filter & e->tag) != 0 && (all_filter & e->tag) == all_filter)
+						break;
+					e = e->parent;
+					t--;
+					if (t == 0)
+					{
+						e = nullptr;
+						break;
+					}
+				}
 
-				if (obj->bounds.intersects(check_center, check_radius))
-					return true;
+				if (e)
+				{
+					if (obj->bounds.intersects(check_center, check_radius))
+						return true;
+				}
 			}
 
 			for (auto& c : children)
@@ -167,7 +237,7 @@ namespace flame
 			return false;
 		}
 
-		void get_colliding(const vec3& check_center, float check_radius, std::vector<cNodePtr>& res, uint any_filter = 0xffffffff, uint all_filter = 0)
+		void get_colliding(const vec3& check_center, float check_radius, std::vector<std::pair<EntityPtr, cNodePtr>>& res, uint any_filter = 0xffffffff, uint all_filter = 0, uint parent_search_times = 0)
 		{
 			if (!bounds.intersects(check_center, check_radius))
 				return;
@@ -175,11 +245,25 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_enable || (any_filter & e->tag) == 0 || (all_filter & e->tag) != all_filter)
-					continue;
+				auto t = parent_search_times;
+				while (e)
+				{
+					if (e->global_enable && (any_filter & e->tag) != 0 && (all_filter & e->tag) == all_filter)
+						break;
+					e = e->parent;
+					t--;
+					if (t == 0)
+					{
+						e = nullptr;
+						break;
+					}
+				}
 
-				if (obj->bounds.intersects(check_center, check_radius))
-					res.push_back(obj);
+				if (e)
+				{
+					if (obj->bounds.intersects(check_center, check_radius))
+						res.emplace_back(e, obj);
+				}
 			}
 
 			for (auto& c : children)
@@ -223,7 +307,7 @@ namespace flame
 		//		c->get_colliding(ref checkRay, result, maxDistance);
 		//}
 
-		void get_within_frustum(const Frustum& frustum, std::vector<cNodePtr>& res, uint any_filter = 0xffffffff, uint all_filter = 0)
+		void get_within_frustum(const Frustum& frustum, std::vector<std::pair<EntityPtr, cNodePtr>>& res, uint any_filter = 0xffffffff, uint all_filter = 0, uint parent_search_times = 0)
 		{
 			if (!AABB_frustum_check(frustum, bounds))
 				return;
@@ -231,11 +315,25 @@ namespace flame
 			for (auto obj : objects)
 			{
 				auto e = obj->entity;
-				if (!e->global_enable || (any_filter & e->tag) == 0 || (all_filter & e->tag) != all_filter)
-					continue;
+				auto t = parent_search_times;
+				while (e)
+				{
+					if (e->global_enable && (any_filter & e->tag) != 0 && (all_filter & e->tag) == all_filter)
+						break;
+					e = e->parent;
+					t--;
+					if (t == 0)
+					{
+						e = nullptr;
+						break;
+					}
+				}
 
-				if (AABB_frustum_check(frustum, obj->bounds))
-					res.push_back(obj);
+				if (e)
+				{
+					if (AABB_frustum_check(frustum, obj->bounds))
+						res.emplace_back(e, obj);
+				}
 			}
 
 			for (auto& c : children)
