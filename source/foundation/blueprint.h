@@ -122,6 +122,7 @@ namespace flame
 		BlueprintNodePtr								parent;
 		uint											depth = 0;
 		std::vector<BlueprintNodePtr>					children;
+		uint											degree = 0;
 
 		vec2 position;
 		Rect rect;

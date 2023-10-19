@@ -35,6 +35,22 @@ namespace flame
 			update_depth(c);
 	}
 
+	static void update_degree(BlueprintNodePtr n)
+	{
+		auto degree = 0U;
+		for (auto& i : n->inputs)
+		{
+			if (!i->linked_slots.empty())
+			{
+				auto ls = i->linked_slots[0];
+				degree = max(degree, ls->node->degree + 1);
+			}
+		}
+		n->degree = degree;
+		for (auto& c : n->children)
+			update_degree(c);
+	}
+
 	static bool remove_link(BlueprintLinkPtr link)
 	{
 		auto group = link->from_slot->node->group;
@@ -47,10 +63,10 @@ namespace flame
 				auto to_slot = link->to_slot;
 				std::erase_if(from_slot->linked_slots, [&](const auto& slot) {
 					return slot == to_slot;
-					});
+				});
 				std::erase_if(to_slot->linked_slots, [&](const auto& slot) {
 					return slot == from_slot;
-					});
+				});
 				group->links.erase(it);
 				return true;
 			}
@@ -1377,6 +1393,7 @@ namespace flame
 		change_slot_type(to_slot, from_slot->type);
 		update_node_output_types(to_slot->node);
 		clear_invalid_links(group);
+		update_degree(to_slot->node);
 
 		auto frame = frames;
 		group->structure_changed_frame = frame;
@@ -1407,6 +1424,7 @@ namespace flame
 				change_slot_type(to_slot, !to_slot->allowed_types.empty() ? to_slot->allowed_types.front() : nullptr);
 				update_node_output_types(to_node);
 				clear_invalid_links(group);
+				update_degree(to_node);
 				break;
 			}
 		}
@@ -1875,14 +1893,13 @@ namespace flame
 					}
 				}
 			}
+
 			auto n_links = n_group.append_child("links");
 			std::vector<BlueprintLinkPtr> sorted_links(g.first->links.size());
 			for (auto i = 0; i < sorted_links.size(); i++)
 				sorted_links[i] = g.first->links[i].get();
 			std::sort(sorted_links.begin(), sorted_links.end(), [](const auto a, const auto b) {
-				if (a->from_slot->node == b->to_slot->node)
-					return false;
-				return a->object_id < b->object_id;
+				return a->from_slot->node->degree < b->from_slot->node->degree;
 			});
 			for (auto l : sorted_links)
 			{

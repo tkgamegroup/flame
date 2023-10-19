@@ -36,7 +36,7 @@ static BlueprintNodeLibraryPtr hud_library;
 
 struct CopiedSlot
 {
-	TypeInfo* type;
+	TypeInfo* type = nullptr;
 	std::string value;
 };
 
@@ -285,13 +285,15 @@ void BlueprintView::copy_nodes(BlueprintGroupPtr g)
 			n.parent = src_n->parent->object_id;
 			for (auto& i : src_n->inputs)
 			{
-				auto value_str = i->type->serialize(i->data);
-				if ((!i->is_linked() && value_str != i->default_value) || i->type != i->allowed_types[0])
+				if (!i->is_linked())
 				{
 					CopiedSlot s;
-					s.type = i->type;
-					s.value = value_str;
-					n.input_datas.emplace(i->name_hash, s);
+					if ((i->type && i->allowed_types.empty() && i->type != i->allowed_types.front()))
+						s.type = i->type;
+					if (auto value_str = i->type->serialize(i->data); value_str != i->default_value)
+						s.value = value_str;
+					if (s.type || !s.value.empty())
+						n.input_datas.emplace(i->name_hash, s);
 				}
 			}
 			n.position = src_n->position;
@@ -302,16 +304,22 @@ void BlueprintView::copy_nodes(BlueprintGroupPtr g)
 		};
 		for (auto n : nodes)
 			add_node_recursively(n);
+		std::vector<BlueprintLinkPtr> sorted_links;
 		for (auto& src_l : g->links)
 		{
 			if (if_any_contains(nodes, src_l->from_slot->node) && if_any_contains(nodes, src_l->to_slot->node))
-			{
-				auto& l = copied_links.emplace_back();
-				l.from_node = src_l->from_slot->node->object_id;
-				l.from_slot = src_l->from_slot->name_hash;
-				l.to_node = src_l->to_slot->node->object_id;
-				l.to_slot = src_l->to_slot->name_hash;
-			}
+				sorted_links.push_back(src_l.get());
+		}
+		std::sort(sorted_links.begin(), sorted_links.end(), [](const auto a, const auto b) {
+			return a->from_slot->node->degree < b->from_slot->node->degree;
+		});
+		for (auto src_l : sorted_links)
+		{
+			auto& l = copied_links.emplace_back();
+			l.from_node = src_l->from_slot->node->object_id;
+			l.from_slot = src_l->from_slot->name_hash;
+			l.to_node = src_l->to_slot->node->object_id;
+			l.to_slot = src_l->to_slot->name_hash;
 		}
 	}
 
@@ -451,47 +459,51 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 	app.last_status = "Pasted";
 }
 
-void BlueprintView::set_parent_to_last_node()
+void BlueprintView::set_parent_to_hovered_node()
 {
-	auto nodes = get_selected_nodes();
-	if (nodes.size() >= 2)
+	auto hovered_node = (BlueprintNodePtr)(uint64)ax::NodeEditor::GetHoveredNode();
+	if (hovered_node)
 	{
-		if (auto last_node = nodes.back(); last_node->is_block)
+		if (!hovered_node->is_block)
+			return;
+	}
+
+	auto nodes = get_selected_nodes();
+	if (nodes.empty())
+		return;
+
+	Rect wrap_rect;
+	if (!grapes_mode && hovered_node)
+	{
+		for (auto n : nodes)
 		{
-			Rect wrap_rect;
-			if (!grapes_mode)
-			{
-				for (auto n : nodes)
-				{
-					if (n != last_node)
-					{
-						Rect rect;
-						rect.a = n->position;
-						rect.b = rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)n);
-						rect.expand(10.f);
-						wrap_rect.expand(rect);
-					}
-				}
+			Rect rect;
+			rect.a = n->position;
+			rect.b = rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)n);
+			rect.expand(10.f);
+			wrap_rect.expand(rect);
+		}
 
-				if (all(lessThan(last_node->rect.size(), wrap_rect.size())))
-				{
-					auto expand = wrap_rect.size() - last_node->rect.size();
-					last_node->rect.b += expand;
-					auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)last_node);
-					ax_node->m_GroupBounds.Max += expand;
-					ax_node->m_Bounds.Max += expand;
-					//ax_node_editor->MakeDirty(ax::NodeEditor::SaveReasonFlags::AddNode, ax_node);
-				}
-			}
+		if (all(lessThan(hovered_node->rect.size(), wrap_rect.size())))
+		{
+			auto expand = wrap_rect.size() - hovered_node->rect.size();
+			hovered_node->rect.b += expand;
+			auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)hovered_node);
+			ax_node->m_GroupBounds.Max += expand;
+			ax_node->m_Bounds.Max += expand;
+			//ax_node_editor->MakeDirty(ax::NodeEditor::SaveReasonFlags::AddNode, ax_node);
+		}
+	}
 
-			auto offset = last_node->rect.a - wrap_rect.a;
-			nodes.pop_back();
-			blueprint->set_nodes_parent(nodes, last_node);
-			for (auto n : nodes)
-			{
-				if (!grapes_mode)
-					set_offset_recurisely(n, offset);
-			}
+	blueprint->set_nodes_parent(nodes, hovered_node ? hovered_node : nodes.front()->group->nodes.front().get());
+
+	if (!grapes_mode && hovered_node)
+	{
+		auto offset = hovered_node->rect.a - wrap_rect.a;
+		for (auto n : nodes)
+		{
+			if (!grapes_mode && hovered_node)
+				set_offset_recurisely(n, offset);
 		}
 	}
 }
@@ -1684,8 +1696,8 @@ void BlueprintView::on_draw()
 						ax::NodeEditor::NodeId node_ids[2];
 						if (ax::NodeEditor::GetSelectedNodes(node_ids, 2) == 2)
 						{
-							if (ImGui::Selectable("Set Parent To Last Node"))
-								set_parent_to_last_node();
+							if (ImGui::Selectable("Set Parent To Hovered Node"))
+								set_parent_to_hovered_node();
 						}
 					}
 					if (context_node && context_node->name.starts_with("Branch "))
@@ -2437,7 +2449,7 @@ void BlueprintView::on_draw()
 								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(0.f, +10.f));
 						}
 						if (ImGui::IsKeyPressed(Keyboard_P))
-							set_parent_to_last_node();
+							set_parent_to_hovered_node();
 						if (ImGui::IsKeyPressed(Keyboard_F10))
 							step_blueprint(debugging_group);
 						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))

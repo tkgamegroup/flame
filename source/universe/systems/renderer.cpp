@@ -3088,7 +3088,7 @@ namespace flame
 		auto input = sInput::instance();
 
 		if (hud_size.x == 0.f && hud_size.y == 0.f)
-			hud_size = vec2(hud_max_w + 8.f, hud_cursor.y - hud_pos.y);
+			hud_size = vec2(hud_max_w + hud_item_spacing.x * 2.f, hud_cursor.y - hud_pos.y);
 		if (hud_pivot.x != 0.f || hud_pivot.y != 0.f)
 		{
 			auto translate = -hud_size * hud_pivot;
