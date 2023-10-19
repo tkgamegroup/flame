@@ -44,8 +44,10 @@ struct BlueprintView : View
 struct BlueprintWindow : Window
 {
 	BlueprintDebuggerPtr debugger = nullptr;
+	std::vector<BlueprintNodeLibraryPtr> node_libraries;
 
 	BlueprintWindow();
+	void init();
 	View* open_view(bool new_instance) override;
 	View* open_view(const std::string& name) override;
 };

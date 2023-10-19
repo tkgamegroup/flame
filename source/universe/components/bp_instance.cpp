@@ -34,7 +34,7 @@ namespace flame
 		bp = Blueprint::get(bp_name);
 		if (bp)
 		{
-			if (!bp->name.empty())
+			if (bp->is_static)
 				bp_ins = BlueprintInstance::get(bp->name_hash);
 			else
 				bp_ins = BlueprintInstance::create(bp);

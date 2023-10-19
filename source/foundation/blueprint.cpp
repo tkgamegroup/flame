@@ -1235,31 +1235,12 @@ namespace flame
 			assert(group == n->group);
 
 		std::vector<BlueprintNodePtr> nodes;
-		nodes.push_back(_nodes.front());
-		if (nodes[0]->contains(new_parent))
-			return;
-		for (auto i = 1; i < _nodes.size(); i++)
+		for (auto _n : _nodes)
+			blueprint_form_top_list(nodes, _n);
+		for (auto n : nodes)
 		{
-			auto _n = _nodes[i];
-			if (_n->contains(new_parent))
+			if (n->contains(new_parent))
 				return;
-			for (auto j = 0; j < nodes.size(); j++)
-			{
-				auto n = nodes[j];
-				if (_n->depth < n->depth && _n->contains(n))
-				{
-					nodes[j] = _n;
-					_n = nullptr;
-					break;
-				}
-				else if (_n->depth > n->depth && n->contains(_n))
-				{
-					_n = nullptr;
-					break;
-				}
-			}
-			if (_n)
-				nodes.push_back(_n);
 		}
 
 		for (auto n : nodes)
@@ -2307,10 +2288,11 @@ namespace flame
 			}
 
 			ret->filename = filename;
+			ret->name = filename.filename().stem().string();
+			ret->name_hash = sh(ret->name.c_str());
 			if (is_static)
 			{
-				ret->name = filename.filename().stem().string();
-				ret->name_hash = sh(ret->name.c_str());
+				ret->is_static = true;
 				assert(named_blueprints.find(ret->name_hash) == named_blueprints.end());
 				auto ins = BlueprintInstance::create(ret);
 				ins->is_static = true;

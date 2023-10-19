@@ -163,6 +163,30 @@ namespace flame
 		}
 	};
 
+	inline void blueprint_form_top_list(std::vector<BlueprintNodePtr>& list, BlueprintNodePtr node)
+	{
+		auto _n = (BlueprintNode*)node;
+		for (auto it = list.begin(); it != list.end();)
+		{
+			auto n = (BlueprintNode*)*it;
+			if (_n->depth < n->depth && _n->contains((BlueprintNodePtr)n))
+				it = list.erase(it);
+			else
+				it++;
+		}
+		for (auto i = 0; i < list.size(); i++)
+		{
+			auto n = (BlueprintNode*)list[i];
+			if (_n->depth > n->depth && n->contains((BlueprintNodePtr)_n))
+			{
+				_n = nullptr;
+				break;
+			}
+		}
+		if (_n)
+			list.push_back((BlueprintNodePtr)_n);
+	}
+
 	struct BlueprintVariable
 	{
 		std::string name;
@@ -228,6 +252,7 @@ namespace flame
 		std::filesystem::path							filename;
 		std::string										name;
 		uint											name_hash;
+		bool											is_static = false;
 		uint											ref = 0;
 
 		inline BlueprintGroupPtr find_group(uint name) const
