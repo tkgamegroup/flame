@@ -7,7 +7,9 @@ using namespace flame;
 
 int main(int argc, char** args) 
 {
-	auto wtf = SUS::find_case_insensitive("test", "Test");
+	char buf[256];
+	sprintf_s(buf, "123 %d 456 %d", 1, 2, nullptr, nullptr);
+
 	return 0;
 }
 

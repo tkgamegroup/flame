@@ -64,6 +64,69 @@ namespace flame
 			}
 		);
 
+		library->add_template("String Concatenate", "",
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(std::string*)outputs[0].data = *(std::string*)inputs[0].data + *(std::string*)inputs[1].data;
+			}
+		);
+
+		library->add_template("Format", "",
+			{
+				{
+					.name = "Fmt",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Arg1",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Arg2",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Arg3",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Arg4",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto& fmt = *(std::string*)inputs[0].data;
+				auto arg1 = inputs[1].data;
+				auto arg2 = inputs[2].data;
+				auto arg3 = inputs[3].data;
+				auto arg4 = inputs[4].data;
+				char buf[256];
+				sprintf_s(buf, fmt.c_str(), *(int*)arg1, *(int*)arg2, *(int*)arg3, *(int*)arg4);
+				*(std::string*)outputs[0].data = buf;
+			}
+		);
+
 		library->add_template("Print", "",
 			{
 				{

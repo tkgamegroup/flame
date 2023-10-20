@@ -430,7 +430,7 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 				auto i = n->find_input(src_i.first);
 				if (i->type != src_i.second.type)
 					blueprint->set_input_type(i, src_i.second.type);
-				src_i.second.type->unserialize(src_i.second.value, i->data);
+				i->type->unserialize(src_i.second.value, i->data);
 			}
 
 			n->position = pos + src_n.position - base_pos;
@@ -1702,7 +1702,7 @@ void BlueprintView::on_draw()
 					}
 					if (context_node && context_node->name_hash == "Variable"_h)
 					{
-						if (ImGui::BeginMenu("Change To Set"))
+						if (ImGui::Selectable("Change To Set"))
 						{
 							auto src_n = context_node;
 
@@ -1723,7 +1723,7 @@ void BlueprintView::on_draw()
 					}
 					if (context_node && context_node->name_hash == "Set Variable"_h)
 					{
-						if (ImGui::BeginMenu("Change To Get"))
+						if (ImGui::Selectable("Change To Get"))
 						{
 							auto src_n = context_node;
 

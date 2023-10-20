@@ -157,5 +157,18 @@ namespace flame
 
 #undef CALL_BP_TEMPLATE_void_T
 
+		library->add_template("Delta Time", "",
+			{
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(float*)outputs[0].data = delta_time;
+			}
+		);
 	}
 }

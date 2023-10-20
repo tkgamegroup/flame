@@ -59,7 +59,6 @@ namespace flame
 			}
 		);
 
-
 		library->add_template("Array Random Sample", "",
 			{
 				{

@@ -139,6 +139,26 @@ namespace flame
 			}
 		);
 
+		library->add_template("Set Enable", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+					entity->set_enable(*(bool*)inputs[1].data);
+			}
+		);
+
 		library->add_template("Get Parent", "",
 			{
 				{
