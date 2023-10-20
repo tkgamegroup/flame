@@ -414,7 +414,7 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 					if (t.name_hash == src_n.name)
 					{
 						n = blueprint->add_node(g, parent, t.name, t.display_name, t.inputs, t.outputs,
-							t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
+							t.function, t.extented_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
 							t.is_block, t.begin_block_function, t.end_block_function);
 						break;
 					}
@@ -1700,6 +1700,48 @@ void BlueprintView::on_draw()
 								set_parent_to_hovered_node();
 						}
 					}
+					if (context_node && context_node->name_hash == "Variable"_h)
+					{
+						if (ImGui::BeginMenu("Change To Set"))
+						{
+							auto src_n = context_node;
+
+							uint name = 0;
+							uint location = 0;
+							if (auto i = src_n->find_input("Name"_h); i)
+								name = *(uint*)i->data;
+							if (auto i = src_n->find_input("Location"_h); i)
+								location = *(uint*)i->data;
+
+							auto n = blueprint->add_variable_node(group, src_n->parent, name, "set"_h, location);
+							n->position = src_n->position;
+							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+							blueprint->remove_node(src_n);
+							context_node = nullptr;
+						}
+					}
+					if (context_node && context_node->name_hash == "Set Variable"_h)
+					{
+						if (ImGui::BeginMenu("Change To Get"))
+						{
+							auto src_n = context_node;
+
+							uint name = 0;
+							uint location = 0;
+							if (auto i = src_n->find_input("Name"_h); i)
+								name = *(uint*)i->data;
+							if (auto i = src_n->find_input("Location"_h); i)
+								location = *(uint*)i->data;
+
+							auto n = blueprint->add_variable_node(group, src_n->parent, name, "get"_h, location);
+							n->position = src_n->position;
+							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+							blueprint->remove_node(src_n);
+							context_node = nullptr;
+						}
+					}
 					if (context_node && context_node->name.starts_with("Branch "))
 					{
 						if (ImGui::BeginMenu("Change To.."))
@@ -1719,7 +1761,7 @@ void BlueprintView::on_draw()
 											if (ImGui::Selectable(t.name.c_str()))
 											{
 												auto n = blueprint->add_node(group, src_n->parent, t.name, t.display_name, t.inputs, t.outputs,
-													t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
+													t.function, t.extented_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
 													t.is_block, t.begin_block_function, t.end_block_function);
 												n->position = src_n->position;
 												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
@@ -1772,7 +1814,7 @@ void BlueprintView::on_draw()
 											if (ImGui::Selectable(t.name.c_str()))
 											{
 												auto n = blueprint->add_node(group, src_n->parent, t.name, t.display_name, t.inputs, t.outputs,
-													t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
+													t.function, t.extented_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
 													t.is_block, t.begin_block_function, t.end_block_function);
 												n->position = src_n->position;
 												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
@@ -1825,7 +1867,7 @@ void BlueprintView::on_draw()
 											if (ImGui::Selectable(t.name.c_str()))
 											{
 												auto n = blueprint->add_node(group, src_n->parent, t.name, t.display_name, t.inputs, t.outputs,
-													t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
+													t.function, t.extented_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
 													t.is_block, t.begin_block_function, t.end_block_function);
 												n->position = src_n->position;
 												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
@@ -1960,7 +2002,7 @@ void BlueprintView::on_draw()
 							if (ImGui::Selectable(t.name.c_str()))
 							{
 								auto n = blueprint->add_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, t.name, t.display_name, t.inputs, t.outputs,
-									t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
+									t.function, t.extented_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
 									t.is_block, t.begin_block_function, t.end_block_function);
 								n->position = open_popup_pos;
 								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
@@ -2115,21 +2157,18 @@ void BlueprintView::on_draw()
 							}
 							else
 							{
-								if (!name.starts_with("loop_index"))
+								if (show_node_template(name, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type}} }, {}, slot_name))
 								{
-									if (show_node_template(name, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type}} }, {}, slot_name))
-									{
-										actions.emplace_back("Set", [&]() {
-											auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "set"_h, location_name);
-											n->position = open_popup_pos;
-											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+									actions.emplace_back("Set", [&]() {
+										auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "set"_h, location_name);
+										n->position = open_popup_pos;
+										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
-											if (new_node_link_slot)
-												blueprint->add_link(new_node_link_slot, n->inputs.front().get());
+										if (new_node_link_slot)
+											blueprint->add_link(new_node_link_slot, n->inputs.front().get());
 
-											unsaved = true;
-										});
-									}
+										unsaved = true;
+									});
 								}
 							}
 							if (!actions.empty())

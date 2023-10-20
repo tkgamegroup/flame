@@ -30,11 +30,7 @@ namespace flame
 					ok = (*(voidptr*)inputs[0].data) != nullptr;
 				(*(BlueprintSignal*)outputs[0].data).v = ok ? 1 : 0;
 				(*(BlueprintSignal*)outputs[1].data).v = ok ? 0 : 1;
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("If True", "",
@@ -46,11 +42,6 @@ namespace flame
 			},
 			{
 			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr,
 			true,
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
 				bool ok;
@@ -71,11 +62,6 @@ namespace flame
 			},
 			{
 			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr,
 			true,
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
 				bool ok;
@@ -84,6 +70,20 @@ namespace flame
 				else
 					ok = (*(voidptr*)inputs[1].data) != nullptr;
 				*max_execute_times = ok ? 0 : 1;
+			}
+		);
+
+		library->add_template("Loop Index", "",
+			{
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](BlueprintExecutionData& execution, BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(uint*)outputs[0].data = execution.block->executed_times;
 			}
 		);
 
@@ -97,14 +97,31 @@ namespace flame
 			},
 			{
 			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr,
 			true,
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
 				*max_execute_times = *(uint*)inputs[1].data;
+			}
+		);
+
+		library->add_template("Semaphore", "",
+			{
+				{
+					.name = "Semaphore",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			{
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
+				auto semaphore = (bool*)inputs[1].data;
+				if (*semaphore)
+				{
+					*semaphore = false;
+					*max_execute_times = 1;
+				}
+				else
+					*max_execute_times = 0;
 			}
 		);
 
@@ -145,11 +162,7 @@ namespace flame
 						}\
 					}\
 					(*(BlueprintSignal*)outputs[N].data).v = 1;\
-				},\
-				nullptr,\
-				nullptr,\
-				nullptr,\
-				nullptr\
+				}\
 			);\
 		}
 
@@ -205,11 +218,7 @@ namespace flame
 						}\
 					}\
 					(*(BlueprintSignal*)outputs[N].data).v = 1;\
-				},\
-				nullptr,\
-				nullptr,\
-				nullptr,\
-				nullptr\
+				}\
 			);\
 		}
 
@@ -265,11 +274,7 @@ namespace flame
 						}\
 					}\
 					(*(BlueprintSignal*)outputs[N].data).v = 1;\
-				},\
-				nullptr,\
-				nullptr,\
-				nullptr,\
-				nullptr\
+				}\
 			);\
 		}
 
@@ -298,11 +303,6 @@ namespace flame
 			},
 			{
 			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr,
 			true,
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
 				auto& time = *(float*)inputs[1].data;

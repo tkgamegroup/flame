@@ -23,11 +23,7 @@ namespace flame
 				},
 				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 					*(float*)outputs[0].data = perlin_noise(*(vec2*)inputs[0].data);
-				},
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr
+				}
 			);
 		}
 	}

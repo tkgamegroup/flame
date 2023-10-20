@@ -17,11 +17,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				*(vec2*)outputs[0].data = sInput::instance()->mpos;
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Mouse Pressed", "",
@@ -35,11 +31,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				*(bool*)outputs[0].data = sInput::instance()->mpressed(Mouse_Left);
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 	}
 }

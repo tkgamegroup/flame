@@ -33,11 +33,6 @@ namespace flame
 			},
 			{
 			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr,
 			true,
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
 				auto pos = *(vec2*)inputs[1].data;
@@ -79,11 +74,7 @@ namespace flame
 				auto col = *(cvec4*)inputs[2].data;
 
 				sRenderer::instance()->hud_rect(pos, size, col);
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Hud Text", "",
@@ -105,11 +96,7 @@ namespace flame
 				auto col = *(cvec4*)inputs[1].data;
 
 				sRenderer::instance()->hud_text(text, col);
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Hud Button", "",
@@ -121,11 +108,6 @@ namespace flame
 			},
 			{
 			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr,
 			true,
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
 				auto& label = *(std::wstring*)inputs[1].data;

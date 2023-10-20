@@ -30,11 +30,7 @@ namespace flame
 					auto extent = *(vec3*)inputs[0].data;
 					auto& mesh = *(ControlMesh*)outputs[0].data;
 					mesh.init_as_cube(extent);
-				},
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr
+				}
 			);
 			library->add_template("Convert To Mesh", "",
 				{
@@ -139,11 +135,7 @@ namespace flame
 							mesh = std::move(next_level);
 						}
 					}
-				},
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr
+				}
 			);
 			library->add_template("Displace Control Mesh", "",
 				{
@@ -180,11 +172,7 @@ namespace flame
 					auto& mesh = *(ControlMesh*)outputs[0].data;
 					if (pcontrol_mesh)
 						pcontrol_mesh->displace(mesh, ptexture);
-				},
-				nullptr,
-				nullptr,
-				nullptr,
-				nullptr
+				}
 			);
 		}
 	}

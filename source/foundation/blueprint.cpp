@@ -10,18 +10,6 @@ namespace flame
 	std::map<uint, std::pair<BlueprintPtr, BlueprintInstancePtr>>	named_blueprints;
 	std::vector<std::unique_ptr<BlueprintNodeLibraryT>>				loaded_libraries;
 
-	static const char* loop_index_names[] = {
-		"loop_index_i",
-		"loop_index_j",
-		"loop_index_k",
-	};
-
-	static uint loop_index_hashes[] = {
-		"loop_index_i"_h,
-		"loop_index_j"_h,
-		"loop_index_k"_h,
-	};
-
 	struct PointerAndUint
 	{
 		void* p;
@@ -412,7 +400,8 @@ namespace flame
 
 	BlueprintNodePtr BlueprintPrivate::add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, const std::string& name, const std::string& display_name,
 		const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
-		BlueprintNodeFunction function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
+		BlueprintNodeFunction function, BlueprintNodeExtentedFunction extented_function, 
+		BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
 		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider, 
 		bool is_block, BlueprintNodeBeginBlockFunction begin_block_function, BlueprintNodeEndBlockFunction end_block_function)
 	{
@@ -487,6 +476,7 @@ namespace flame
 		ret->constructor = constructor;
 		ret->destructor = destructor;
 		ret->function = function;
+		ret->extented_function = extented_function;
 		ret->input_slot_changed_callback = input_slot_changed_callback;
 		ret->preview_provider = preview_provider;
 		ret->is_block = is_block;
@@ -514,7 +504,7 @@ namespace flame
 
 	BlueprintNodePtr BlueprintPrivate::add_block(BlueprintGroupPtr group, BlueprintNodePtr parent)
 	{
-		return add_node(group, parent, "Block", "", {}, {}, nullptr, nullptr, nullptr, nullptr, nullptr, true);
+		return add_node(group, parent, "Block", "", {}, {}, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, true);
 	}
 
 	BlueprintNodePtr BlueprintPrivate::add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type, uint location_name)
@@ -1443,8 +1433,6 @@ namespace flame
 		g->name_hash = sh(name.c_str());
 		groups.emplace_back(g);
 
-		for (auto n : loop_index_names)
-			add_variable(g, n, TypeInfo::get<uint>());
 		add_block(g, nullptr);
 
 		auto frame = frames;
@@ -1500,7 +1488,7 @@ namespace flame
 			o.name_hash = i.name_hash;
 			o.allowed_types = { i.type };
 		}
-		n = g->blueprint->add_node(g, nullptr, "Input", "", {}, outputs, nullptr, nullptr, nullptr, nullptr, nullptr);
+		n = g->blueprint->add_node(g, nullptr, "Input", "", {}, outputs, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
 		n->position = old_position;
 		for (auto& l : old_links)
 		{
@@ -1624,7 +1612,7 @@ namespace flame
 			i.name_hash = o.name_hash;
 			i.allowed_types = { o.type };
 		}
-		n = g->blueprint->add_node(g, nullptr, "Output", "", inputs, {}, nullptr, nullptr, nullptr, nullptr, nullptr);
+		n = g->blueprint->add_node(g, nullptr, "Output", "", inputs, {}, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
 		n->position = old_position;
 		for (auto& l : old_links)
 		{
@@ -2228,7 +2216,7 @@ namespace flame
 									if (t.name == name)
 									{
 										auto n = ret->add_node(g, parent, t.name, t.display_name, t.inputs, t.outputs,
-											t.function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider, 
+											t.function, t.extented_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider, 
 											t.is_block, t.begin_block_function, t.end_block_function);
 										for (auto n_input : n_node.child("inputs"))
 											read_input(n, n_input);
@@ -2346,11 +2334,10 @@ namespace flame
 	}Blueprint_release;
 	Blueprint::Release& Blueprint::release = Blueprint_release;
 
-	void BlueprintNodeLibraryPrivate::add_template(const std::string& name, const std::string& display_name, 
+	void BlueprintNodeLibraryPrivate::add_template(const std::string& name, const std::string& display_name,
 		const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
 		BlueprintNodeFunction function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
-		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider, 
-		bool is_block, BlueprintNodeBeginBlockFunction begin_block_function, BlueprintNodeEndBlockFunction end_block_function)
+		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider)
 	{
 		auto& t = node_templates.emplace_back();
 		t.name = name;
@@ -2363,6 +2350,60 @@ namespace flame
 		for (auto& o : t.outputs)
 			o.name_hash = sh(o.name.c_str());
 		t.function = function;
+		t.extented_function = nullptr;
+		t.constructor = constructor;
+		t.destructor = destructor;
+		t.input_slot_changed_callback = input_slot_changed_callback;
+		t.preview_provider = preview_provider;
+		t.is_block = false;
+		t.begin_block_function = nullptr;
+		t.end_block_function = nullptr;
+	}
+
+	void BlueprintNodeLibraryPrivate::add_template(const std::string& name, const std::string& display_name,
+		const std::vector<BlueprintSlotDesc>& inputs , const std::vector<BlueprintSlotDesc>& outputs,
+		BlueprintNodeExtentedFunction extented_function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
+		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider)
+	{
+		auto& t = node_templates.emplace_back();
+		t.name = name;
+		t.name_hash = sh(name.c_str());
+		t.display_name = display_name;
+		t.inputs = inputs;
+		for (auto& i : t.inputs)
+			i.name_hash = sh(i.name.c_str());
+		t.outputs = outputs;
+		for (auto& o : t.outputs)
+			o.name_hash = sh(o.name.c_str());
+		t.function = nullptr;
+		t.extented_function = extented_function;
+		t.constructor = constructor;
+		t.destructor = destructor;
+		t.input_slot_changed_callback = input_slot_changed_callback;
+		t.preview_provider = preview_provider;
+		t.is_block = false;
+		t.begin_block_function = nullptr;
+		t.end_block_function = nullptr;
+	}
+
+	void BlueprintNodeLibraryPrivate::add_template(const std::string& name, const std::string& display_name,
+		const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
+		bool is_block, BlueprintNodeBeginBlockFunction begin_block_function, BlueprintNodeEndBlockFunction end_block_function
+		, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
+		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider)
+	{
+		auto& t = node_templates.emplace_back();
+		t.name = name;
+		t.name_hash = sh(name.c_str());
+		t.display_name = display_name;
+		t.inputs = inputs;
+		for (auto& i : t.inputs)
+			i.name_hash = sh(i.name.c_str());
+		t.outputs = outputs;
+		for (auto& o : t.outputs)
+			o.name_hash = sh(o.name.c_str());
+		t.function = nullptr;
+		t.extented_function = nullptr;
 		t.constructor = constructor;
 		t.destructor = destructor;
 		t.input_slot_changed_callback = input_slot_changed_callback;
@@ -3094,11 +3135,6 @@ namespace flame
 
 		if (group->executing_stack.front().node->children.empty())
 			group->executing_stack.clear();
-		else
-		{
-			for (auto h : loop_index_hashes)
-				group->set_variable(h, 0U);
-		}
 	}
 
 	void BlueprintInstancePrivate::run(Group* group)
@@ -3121,13 +3157,6 @@ namespace flame
 			return nullptr;
 		if (group->executing_stack.empty())
 			return nullptr;
-
-		auto set_loop_index = [group]() {
-			auto& current_block = group->executing_stack.back();
-			auto depth = current_block.node->original->depth;
-			if (depth - 1 < countof(loop_index_names))
-				group->set_variable(loop_index_hashes[depth - 1], current_block.executed_times);
-		};
 
 		auto frame = frames;
 		{
@@ -3155,6 +3184,13 @@ namespace flame
 			}
 			if (node->function)
 				node->function(current_node.inputs.data(), current_node.outputs.data());
+			if (node->extented_function)
+			{
+				BlueprintExecutionData data;
+				data.group = group;
+				data.block = &current_block;
+				node->extented_function(data, current_node.inputs.data(), current_node.outputs.data());
+			}
 			if (node->is_block)
 			{
 				if (*(uint*)current_node.inputs[0].data)
@@ -3163,10 +3199,7 @@ namespace flame
 					if (node->begin_block_function)
 						node->begin_block_function(current_node.inputs.data(), current_node.outputs.data(), &max_execute_times);
 					if (max_execute_times > 0)
-					{
 						group->executing_stack.emplace_back(&current_node, -1, 0, max_execute_times);
-						set_loop_index();
-					}
 					*(uint*)current_node.outputs[0].data = 1;
 				}
 				else
@@ -3190,7 +3223,6 @@ namespace flame
 				!current_block.node->children.empty())
 			{
 				current_block.child_index = 0;
-				set_loop_index();
 				break;
 			}
 			auto node = current_block.node->original;

@@ -41,11 +41,7 @@ namespace flame
 				}\
 				else\
 					*(TYPE*)outputs[0].data = TYPE(DV);\
-			},\
-			nullptr,\
-			nullptr,\
-			nullptr,\
-			nullptr\
+			}\
 		);
 
 		GET_BP_TEMPLATE(bool, false);
@@ -67,6 +63,8 @@ namespace flame
 		GET_BP_TEMPLATE(std::string, "");
 		GET_BP_TEMPLATE(std::wstring, L"");
 		GET_BP_TEMPLATE(std::filesystem::path, L"");
+
+#undef GET_BP_TEMPLATE
 
 #define SET_BP_TEMPLATE(TYPE) \
 		library->add_template("Set BP " #TYPE, "", \
@@ -98,11 +96,7 @@ namespace flame
 							*(TYPE*)it->second.data = *(TYPE*)inputs[2].data;\
 					}\
 				}\
-			},\
-			nullptr,\
-			nullptr,\
-			nullptr,\
-			nullptr\
+			}\
 		);
 
 		SET_BP_TEMPLATE(bool);
@@ -124,6 +118,8 @@ namespace flame
 		SET_BP_TEMPLATE(std::string);
 		SET_BP_TEMPLATE(std::wstring);
 		SET_BP_TEMPLATE(std::filesystem::path);
+
+#undef SET_BP_TEMPLATE
 
 #define CALL_BP_TEMPLATE_void_T(TYPE) \
 		library->add_template("Call BP void_" #TYPE, "", \
@@ -152,15 +148,14 @@ namespace flame
 					input_args.push_back(inputs[2].data);\
 					instance->call(name, input_args.data(), nullptr);\
 				}\
-			},\
-			nullptr,\
-			nullptr,\
-			nullptr,\
-			nullptr\
+			}\
 		);
 
 		CALL_BP_TEMPLATE_void_T(bool);
 		CALL_BP_TEMPLATE_void_T(int);
 		CALL_BP_TEMPLATE_void_T(uint);
+
+#undef CALL_BP_TEMPLATE_void_T
+
 	}
 }

@@ -28,10 +28,7 @@ namespace flame
 				auto in0_p = (char*)inputs[0].data;
 				auto in1_p = (char*)inputs[1].data;
 				*(bool*)outputs[0].data = in0_ti->as_float(in0_p) < in1_ti->as_float(in1_p);
-			},
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Greater", ">",
@@ -57,10 +54,7 @@ namespace flame
 				auto in0_p = (char*)inputs[0].data;
 				auto in1_p = (char*)inputs[1].data;
 				*(bool*)outputs[0].data = in0_ti->as_float(in0_p) > in1_ti->as_float(in1_p);
-			},
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Equal", "==",
@@ -86,10 +80,7 @@ namespace flame
 				auto in0_p = (char*)inputs[0].data;
 				auto in1_p = (char*)inputs[1].data;
 				*(bool*)outputs[0].data = in0_ti->as_float(in0_p) == in1_ti->as_float(in1_p);
-			},
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Not Equal", "!=",
@@ -115,10 +106,7 @@ namespace flame
 				auto in0_p = (char*)inputs[0].data;
 				auto in1_p = (char*)inputs[1].data;
 				*(bool*)outputs[0].data = in0_ti->as_float(in0_p) != in1_ti->as_float(in1_p);
-			},
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Less Or Equal", "<=",
@@ -144,10 +132,7 @@ namespace flame
 				auto in0_p = (char*)inputs[0].data;
 				auto in1_p = (char*)inputs[1].data;
 				*(bool*)outputs[0].data = in0_ti->as_float(in0_p) <= in1_ti->as_float(in1_p);
-			},
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Greater Or Equal", "<=",
@@ -173,10 +158,7 @@ namespace flame
 				auto in0_p = (char*)inputs[0].data;
 				auto in1_p = (char*)inputs[1].data;
 				*(bool*)outputs[0].data = in0_ti->as_float(in0_p) >= in1_ti->as_float(in1_p);
-			},
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Not", "!",
@@ -194,10 +176,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				*(bool*)outputs[0].data = !(*(bool*)inputs[0].data);
-			},
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("And", "&&",
@@ -230,10 +209,7 @@ namespace flame
 					b2 = (*(voidptr*)inputs[1].data) != nullptr;
 
 				*(bool*)outputs[0].data = b1 && b2;
-			},
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Or", "||",
@@ -266,10 +242,7 @@ namespace flame
 					b2 = (*(voidptr*)inputs[1].data) != nullptr;
 
 				*(bool*)outputs[0].data = b1 || b2;
-			},
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Conditional Operator", "?:",
@@ -337,10 +310,7 @@ namespace flame
 				uint b1 = *(uint*)inputs[0].data;
 				uint b2 = *(uint*)inputs[1].data;
 				*(uint*)outputs[0].data = b1 & b2;
-			},
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Bit Or", "|",
@@ -364,10 +334,7 @@ namespace flame
 				uint b1 = *(uint*)inputs[0].data;
 				uint b2 = *(uint*)inputs[1].data;
 				*(uint*)outputs[0].data = b1 | b2;
-			},
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Bit Xor", "^",
@@ -391,10 +358,7 @@ namespace flame
 				uint b1 = *(uint*)inputs[0].data;
 				uint b2 = *(uint*)inputs[1].data;
 				*(uint*)outputs[0].data = b1 ^ b2;
-			},
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Bit Not", "~",
@@ -413,10 +377,7 @@ namespace flame
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				uint b1 = *(uint*)inputs[0].data;
 				*(uint*)outputs[0].data = ~b1;
-			},
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 	}
 }

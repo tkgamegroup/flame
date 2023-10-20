@@ -46,11 +46,7 @@ namespace flame
 					sScene::instance()->navmesh_generate(nodes, agent_radius, agent_height, walkable_climb, walkable_slope_angle);
 					return false;
 				});
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Nav Agent Set Target", "",
@@ -74,11 +70,7 @@ namespace flame
 					if (nav_agent)
 						nav_agent->set_target(*(vec3*)inputs[1].data);
 				}
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Nav Agent Set Speed Scale", "",
@@ -102,11 +94,7 @@ namespace flame
 					if (nav_agent)
 						nav_agent->set_speed_scale(*(float*)inputs[1].data);
 				}
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 	}
 }

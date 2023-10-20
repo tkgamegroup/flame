@@ -1068,10 +1068,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				*(float*)outputs[0].data = distance(*(vec3*)inputs[0].data, *(vec3*)inputs[1].data);
-			},
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Random", "",

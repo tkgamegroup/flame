@@ -25,11 +25,7 @@ namespace flame
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto in_ti = (TypeInfo_Data*)inputs[0].type;
 				*(std::string*)outputs[0].data = in_ti->serialize(inputs[0].data);
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("String To Int", "",
@@ -47,11 +43,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				*(int*)outputs[0].data = s2t<int>(*(std::string*)inputs[0].data);
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("To WString", "",
@@ -69,11 +61,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				*(std::wstring*)outputs[0].data = s2w(*(std::string*)inputs[0].data);
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Print", "",
@@ -89,11 +77,7 @@ namespace flame
 				auto& string = *(std::string*)inputs[0].data;
 				if (!string.empty())
 					printf("%s\n", string.c_str());
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 	}
 }

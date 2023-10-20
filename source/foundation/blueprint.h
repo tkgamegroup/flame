@@ -50,6 +50,8 @@ namespace flame
 		std::string				default_value;
 	};
 
+	struct BlueprintExecutionData;
+
 	inline bool blueprint_allow_type(const std::vector<TypeInfo*>& allowed_types, TypeInfo* type)
 	{
 		for (auto t : allowed_types)
@@ -76,8 +78,8 @@ namespace flame
 		uint					name_hash = 0;
 		BlueprintSlotFlags		flags = BlueprintSlotFlagNone;
 		std::vector<TypeInfo*>	allowed_types;
-		TypeInfo*				type = nullptr;
-		void*					data = nullptr;
+		TypeInfo* type = nullptr;
+		void* data = nullptr;
 		std::string				default_value;
 		uint					data_changed_frame = 0;
 
@@ -93,6 +95,7 @@ namespace flame
 	};
 
 	typedef void(*BlueprintNodeFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
+	typedef void(*BlueprintNodeExtentedFunction)(BlueprintExecutionData& execution, BlueprintAttribute* inputs, BlueprintAttribute* outputs);
 	typedef void(*BlueprintNodeBeginBlockFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times);
 	typedef void(*BlueprintNodeEndBlockFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
 	typedef void(*BlueprintNodeConstructor)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
@@ -111,6 +114,7 @@ namespace flame
 		std::vector<std::unique_ptr<BlueprintSlotT>>	inputs;
 		std::vector<std::unique_ptr<BlueprintSlotT>>	outputs;
 		BlueprintNodeFunction							function = nullptr;
+		BlueprintNodeExtentedFunction					extented_function = nullptr;
 		BlueprintNodeConstructor						constructor = nullptr;
 		BlueprintNodeDestructor							destructor = nullptr;
 		BlueprintNodeInputSlotChangedCallback			input_slot_changed_callback = nullptr;
@@ -192,8 +196,8 @@ namespace flame
 	{
 		std::string name;
 		uint		name_hash = 0;
-		TypeInfo*	type = nullptr;
-		void*		data = nullptr;
+		TypeInfo* type = nullptr;
+		void* data = nullptr;
 	};
 
 	struct BlueprintGroup
@@ -268,17 +272,18 @@ namespace flame
 
 		virtual ~Blueprint() {}
 
-		virtual void*					add_variable(BlueprintGroupPtr group /* or null for blueprint variable */, const std::string& name, TypeInfo* type) = 0; // return: the data of the variable
+		virtual void* add_variable(BlueprintGroupPtr group /* or null for blueprint variable */, const std::string& name, TypeInfo* type) = 0; // return: the data of the variable
 		virtual void					remove_variable(BlueprintGroupPtr group /* or null for blueprint variable */, uint name) = 0;
 		virtual void					alter_variable(BlueprintGroupPtr group /* or null for blueprint variable */, uint old_name, const std::string& new_name = "", TypeInfo* new_type = nullptr) = 0;
 		virtual BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
-			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
-			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr, 
+			BlueprintNodeFunction function = nullptr, BlueprintNodeExtentedFunction extented_function = nullptr,
+			BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
+			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr,
 			bool is_block = false, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr) = 0;
 		virtual BlueprintNodePtr		add_block(BlueprintGroupPtr group, BlueprintNodePtr parent) = 0;
-		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type = "get"_h, uint location_name = 0 /* from a sheet or a static bp */ ) = 0;
-		virtual BlueprintNodePtr		add_call_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint group_name, uint location_name = 0 /* from other static bp */ ) = 0; // add a node that will call another group
+		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type = "get"_h, uint location_name = 0 /* from a sheet or a static bp */) = 0;
+		virtual BlueprintNodePtr		add_call_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint group_name, uint location_name = 0 /* from other static bp */) = 0; // add a node that will call another group
 		virtual void					remove_node(BlueprintNodePtr node, bool recursively = true) = 0;
 		virtual void					set_nodes_parent(const std::vector<BlueprintNodePtr> nodes, BlueprintNodePtr new_parent) = 0;
 		virtual void					set_input_type(BlueprintSlotPtr slot, TypeInfo* type) = 0;
@@ -321,6 +326,7 @@ namespace flame
 			std::vector<BlueprintSlotDesc>			inputs;
 			std::vector<BlueprintSlotDesc>			outputs;
 			BlueprintNodeFunction					function = nullptr;
+			BlueprintNodeExtentedFunction			extented_function = nullptr;
 			BlueprintNodeConstructor				constructor = nullptr;
 			BlueprintNodeDestructor					destructor = nullptr;
 			BlueprintNodeInputSlotChangedCallback	input_slot_changed_callback = nullptr;
@@ -339,8 +345,16 @@ namespace flame
 		virtual void add_template(const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
-			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr, 
-			bool is_block = false, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr) = 0;
+			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
+		virtual void add_template(const std::string& name, const std::string& display_name,
+			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
+			BlueprintNodeExtentedFunction extented_function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
+			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
+		virtual void add_template(const std::string& name, const std::string& display_name,
+			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
+			bool is_block = true, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr
+			, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
+			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
 
 		struct Get
 		{
@@ -365,7 +379,7 @@ namespace flame
 
 		struct ExecutingBlock
 		{
-			Node*	node;
+			Node* node;
 			int		child_index;
 			uint	executed_times;
 			uint	max_execute_times;
@@ -387,8 +401,8 @@ namespace flame
 			std::map<uint, Data>							slot_datas; // key: slot id
 			Node											root_node;
 			std::map<uint, Node*>							node_map;
-			Node*											input_node = nullptr;
-			Node*											output_node = nullptr;
+			Node* input_node = nullptr;
+			Node* output_node = nullptr;
 			std::unordered_map<uint, BlueprintAttribute>	variables; // key: variable name hash
 
 			std::vector<ExecutingBlock>						executing_stack;
@@ -406,10 +420,22 @@ namespace flame
 			}
 
 			template<class T>
+			inline T get_variable_i(uint idx)
+			{
+				*(T*)variables[idx].data;
+			}
+
+			template<class T>
 			inline void set_variable(uint name, T v)
 			{
 				if (auto it = variables.find(name); it != variables.end())
 					*(T*)it->second.data = v;
+			}
+
+			template<class T>
+			inline void set_variable_i(uint idx, T v)
+			{
+				*(T*)variables[idx].data = v;
 			}
 
 			inline Node* executing_node() const
@@ -476,6 +502,12 @@ namespace flame
 		};
 		// Reflect static
 		FLAME_FOUNDATION_API static Get& get;
+	};
+
+	struct BlueprintExecutionData
+	{
+		BlueprintInstance::Group* group;
+		BlueprintInstance::ExecutingBlock* block;
 	};
 
 	struct BlueprintDebugger

@@ -31,11 +31,7 @@ namespace flame
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				*(std::string*)outputs[0].data = entity ? entity->name : "";
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Set Name", "",
@@ -55,11 +51,7 @@ namespace flame
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 					entity->name = *(std::string*)inputs[1].data;
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Get Tag", "",
@@ -78,11 +70,7 @@ namespace flame
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				*(uint*)outputs[0].data = entity ? entity->tag : 0;
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Set Tag", "",
@@ -102,11 +90,7 @@ namespace flame
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 					entity->tag = (TagFlags)*(uint*)inputs[1].data;
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Add Tag", "",
@@ -126,11 +110,7 @@ namespace flame
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 					entity->tag = entity->tag | (TagFlags)*(uint*)inputs[1].data;
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Check Tag", "",
@@ -156,11 +136,7 @@ namespace flame
 					*(bool*)outputs[0].data = (entity->tag & (*(uint*)inputs[1].data)) != 0;
 				else
 					*(bool*)outputs[0].data = false;
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Get Parent", "",
@@ -182,11 +158,7 @@ namespace flame
 					*(EntityPtr*)outputs[0].data = entity->parent;
 				else
 					*(EntityPtr*)outputs[0].data = nullptr;
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Get Child", "",
@@ -218,11 +190,7 @@ namespace flame
 				}
 				else
 					*(EntityPtr*)outputs[0].data = nullptr;
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Get Pos", "",
@@ -245,11 +213,7 @@ namespace flame
 					auto node = entity->get_component<cNode>();
 					*(vec3*)outputs[0].data = node ? node->global_pos() : vec3(0.f);
 				}
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Update Transform", "",
@@ -269,11 +233,7 @@ namespace flame
 					if (node)
 						node->update_transform_from_root();
 				}
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("World To Screen", "",
@@ -292,11 +252,7 @@ namespace flame
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto world_pos = *(vec3*)inputs[0].data;
 				*(vec2*)outputs[0].data = sRenderer::instance()->render_tasks.front()->camera->world_to_screen(world_pos);
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Spawn Prefab", "",
@@ -379,11 +335,7 @@ namespace flame
 				}
 
 				*(EntityPtr*)outputs[0].data = e;
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Add Blueprint", "",
@@ -433,11 +385,7 @@ namespace flame
 				}
 				else
 					*(BlueprintInstancePtr*)outputs[0].data = nullptr;
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Get Blueprint Instance", "",
@@ -474,11 +422,7 @@ namespace flame
 				}
 				else
 					*(BlueprintInstancePtr*)outputs[0].data = nullptr;
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Get Nearest Entity", "",
@@ -537,11 +481,7 @@ namespace flame
 					});
 					*(EntityPtr*)outputs[0].data = nodes_with_distance[0].second;
 				}
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Get Mouse Hovering", "",
@@ -599,11 +539,7 @@ namespace flame
 				}
 				*(EntityPtr*)outputs[0].data = e;
 				*(vec3*)outputs[1].data = e ? pos : vec3(-1000.f);
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Set Default Material", "",
@@ -623,11 +559,7 @@ namespace flame
 					if (mesh)
 						mesh->set_material_name(L"default");
 				}
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Set Default Red Material", "",
@@ -647,11 +579,7 @@ namespace flame
 					if (mesh)
 						mesh->set_material_name(L"default_red");
 				}
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Set Default Green Material", "",
@@ -671,11 +599,7 @@ namespace flame
 					if (mesh)
 						mesh->set_material_name(L"default_green");
 				}
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Set Default Blue Material", "",
@@ -695,11 +619,7 @@ namespace flame
 					if (mesh)
 						mesh->set_material_name(L"default_blue");
 				}
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Set Default Yellow Material", "",
@@ -719,11 +639,7 @@ namespace flame
 					if (mesh)
 						mesh->set_material_name(L"default_yellow");
 				}
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Set Default Purple Material", "",
@@ -743,11 +659,7 @@ namespace flame
 					if (mesh)
 						mesh->set_material_name(L"default_purple");
 				}
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("Set Default Cyan Material", "",
@@ -767,11 +679,7 @@ namespace flame
 					if (mesh)
 						mesh->set_material_name(L"default_cyan");
 				}
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 	}
 }

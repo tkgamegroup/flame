@@ -20,11 +20,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				*(float*)outputs[0].data = inputs[0].type->as_float(inputs[0].data);
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("To Int", "",
@@ -42,11 +38,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				*(int*)outputs[0].data = inputs[0].type->as_int(inputs[0].data);
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 		library->add_template("To Uint", "",
@@ -64,11 +56,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				*(uint*)outputs[0].data = inputs[0].type->as_uint(inputs[0].data);
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 
 
@@ -111,7 +99,10 @@ namespace flame
 								if (memcmp(&array[i], pmatch, sizeof(uint)) == 0)
 									temp.push_back(i);
 							}
-							*(uint*)outputs[0].data = temp[linearRand(0, (int)temp.size() - 1)];
+							if (!temp.empty())
+								*(uint*)outputs[0].data = temp[linearRand(0, (int)temp.size() - 1)];
+							else
+								*(uint*)outputs[0].data = 0;
 						}
 						else
 							*(uint*)outputs[0].data = 0;
@@ -123,11 +114,7 @@ namespace flame
 				}
 				else
 					*(uint*)outputs[0].data = 0;
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			nullptr
+			}
 		);
 	}
 }
