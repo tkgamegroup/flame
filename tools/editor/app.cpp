@@ -22,6 +22,7 @@
 #include <flame/universe/components/mesh.h>
 #include <flame/universe/components/directional_light.h>
 #include <flame/universe/systems/renderer.h>
+#include <flame/universe/graveyard.h>
 
 std::vector<Window*> windows;
 
@@ -2011,6 +2012,7 @@ bool App::cmd_stop()
 	if (!e_playing)
 		return false;
 	add_event([this]() {
+		Graveyard::instance()->clear();
 		e_playing->remove_from_parent();
 		e_playing = nullptr;
 		world->root->add_child(e_prefab);

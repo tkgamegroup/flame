@@ -10,6 +10,7 @@
 #include "../../systems/scene_private.h"
 #include "../../systems/renderer_private.h"
 #include "../../octree.h"
+#include "../../graveyard_private.h"
 
 namespace flame
 {
@@ -109,7 +110,27 @@ namespace flame
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
-					entity->tag = entity->tag | (TagFlags)*(uint*)inputs[1].data;
+					entity->tag = (TagFlags)(entity->tag | *(uint*)inputs[1].data);
+			}
+		);
+
+		library->add_template("Remove Tag", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Tag",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+					entity->tag = (TagFlags)(entity->tag & ~*(uint*)inputs[1].data);
 			}
 		);
 
@@ -699,6 +720,22 @@ namespace flame
 					if (mesh)
 						mesh->set_material_name(L"default_cyan");
 				}
+			}
+		);
+
+		library->add_template("Put To Graveyard", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+					Graveyard::instance()->add(entity);
 			}
 		);
 	}

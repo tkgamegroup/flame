@@ -428,7 +428,7 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 			for (auto& src_i : src_n.input_datas)
 			{
 				auto i = n->find_input(src_i.first);
-				if (i->type != src_i.second.type)
+				if (src_i.second.type && i->type != src_i.second.type)
 					blueprint->set_input_type(i, src_i.second.type);
 				i->type->unserialize(src_i.second.value, i->data);
 			}
