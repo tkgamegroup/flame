@@ -1051,23 +1051,48 @@ namespace flame
 			parent = group->nodes.front().get();
 
 		BlueprintGroupPtr call_group = nullptr;
-		for (auto& g : groups)
+		if (location_name == 0)
 		{
-			if (g->name_hash == group_name)
+			for (auto& g : groups)
 			{
-				call_group = g.get();
-				break;
+				if (g->name_hash == group_name)
+				{
+					call_group = g.get();
+					break;
+				}
+			}
+
+			if (!call_group)
+			{
+				printf("blueprint add_call_node: cannot find group %d\n", group_name);
+				return nullptr;
+			}
+			if (call_group == group)
+			{
+				printf("blueprint add_call_node: cannot call its own group %d\n", group_name);
+				return nullptr;
 			}
 		}
-		if (!call_group)
+		else
 		{
-			printf("blueprint add_call_node: cannot find group %d\n", group_name);
-			return nullptr;
-		}
-		if (call_group == group)
-		{
-			printf("blueprint add_call_node: cannot call its own group %d\n", group_name);
-			return nullptr;
+			auto bp = Blueprint::get(location_name);
+			if (bp)
+			{
+				for (auto& g : bp->groups)
+				{
+					if (g->name_hash == group_name)
+					{
+						call_group = g.get();
+						break;
+					}
+				}
+
+				if (!call_group)
+				{
+					printf("blueprint add_call_node: cannot find group %d in blueprint '%s'\n", group_name, bp->name.c_str());
+					return nullptr;
+				}
+			}
 		}
 
 		auto ret = new BlueprintNodePrivate;
@@ -2937,7 +2962,7 @@ namespace flame
 								node.inputs.push_back(data.attribute);
 
 								auto& pau = *(PointerAndUint*)data.attribute.data;
-								pau.p = this;
+								pau.p = call_group->instance;
 								pau.u = name;
 							}
 

@@ -121,6 +121,27 @@ namespace flame
 
 #undef SET_BP_TEMPLATE
 
+		library->add_template("Call BP void_void", "", 
+			{
+				{
+					.name = "Instance",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto instance = *(BlueprintInstancePtr*)inputs[0].data;
+				auto name = *(uint*)inputs[1].data;
+				if (instance)
+					instance->call(name, nullptr, nullptr);
+			}
+		);
+
 #define CALL_BP_TEMPLATE_void_T(TYPE) \
 		library->add_template("Call BP void_" #TYPE, "", \
 			{\

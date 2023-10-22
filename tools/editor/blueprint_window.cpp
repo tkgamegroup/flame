@@ -1689,7 +1689,10 @@ void BlueprintView::on_draw()
 					if (context_node->is_block)
 					{
 						if (ImGui::Selectable("Unwrap Block"))
+						{
 							blueprint->remove_node(context_node, false);
+							context_node = nullptr;
+						}
 					}
 					if (auto n = ax::NodeEditor::GetSelectedObjectCount(); n >= 2)
 					{
@@ -2237,6 +2240,37 @@ void BlueprintView::on_draw()
 								}
 							}
 						}
+						if (ImGui::BeginMenu("Other Blueprints"))
+						{
+							for (auto bp : app.project_static_blueprints)
+							{
+								if (bp == blueprint)
+									continue;
+								if (ImGui::BeginMenu(bp->name.c_str()))
+								{
+									for (auto& g : bp->groups)
+									{
+										uint slot_name = 0;
+										if (g->name_hash == "start"_h ||
+											g->name_hash == "update"_h)
+											continue;
+										if (show_node_template(g->name, {}, {}, slot_name))
+										{
+											if (ImGui::Selectable(g->name.c_str()))
+											{
+												auto n = blueprint->add_call_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, g->name_hash, bp->name_hash);
+												n->position = open_popup_pos;
+												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+												unsaved = true;
+											}
+										}
+									}
+									ImGui::EndMenu();
+								}
+							}
+							ImGui::EndMenu();
+						}
 						ImGui::EndMenu();
 					}
 					if (ImGui::BeginMenu("Standard"))
@@ -2274,7 +2308,7 @@ void BlueprintView::on_draw()
 								}
 								continue;
 							}
-							if (t.name == "Call BP void_bool")
+							if (t.name == "Call BP void_void")
 							{
 								if (ImGui::BeginMenu("Call BP"))
 								{

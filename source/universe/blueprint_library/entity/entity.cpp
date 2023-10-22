@@ -254,6 +254,54 @@ namespace flame
 					auto node = entity->get_component<cNode>();
 					*(vec3*)outputs[0].data = node ? node->global_pos() : vec3(0.f);
 				}
+				else
+					*(vec3*)outputs[0].data = vec3(0.f);
+			}
+		);
+
+		library->add_template("Set Pos", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Pos",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto node = entity->get_component<cNode>();
+					node->set_pos(*(vec3*)inputs[1].data);
+				}
+			}
+		);
+
+		library->add_template("Add Pos", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Pos",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto node = entity->get_component<cNode>();
+					node->add_pos(*(vec3*)inputs[1].data);
+				}
 			}
 		);
 

@@ -308,22 +308,23 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+				auto vec_size = in0_ti->vec_size;
 				switch (in0_ti->data_type)
 				{
 				case DataFloat:
-					for (auto i = 0; i < 4; i++)
-						*(float*)outputs[i].data = ((float*)inputs[i].data)[i];
+					for (auto i = 0; i < vec_size; i++)
+						*(float*)outputs[i].data = ((float*)inputs[0].data)[i];
 					break;
 				case DataInt:
 					if (in0_ti->is_signed)
 					{
-						for (auto i = 0; i < 4; i++)
-							*(int*)outputs[i].data = ((int*)inputs[i].data)[i];
+						for (auto i = 0; i < vec_size; i++)
+							*(int*)outputs[i].data = ((int*)inputs[0].data)[i];
 					}
 					else
 					{
-						for (auto i = 0; i < 4; i++)
-							*(uint*)outputs[i].data = ((uint*)inputs[i].data)[i];
+						for (auto i = 0; i < vec_size; i++)
+							*(uint*)outputs[i].data = ((uint*)inputs[0].data)[i];
 					}
 					break;
 				}
