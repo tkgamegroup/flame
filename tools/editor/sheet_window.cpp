@@ -69,17 +69,87 @@ void SheetView::on_draw()
 	{
 		if (ImGui::Button("Save"))
 			save_sheet();
+		ImGui::SameLine();
+		if (ImGui::Button("New Column"))
+			sheet->insert_column("new_column " + str(sheet->columns.size() + 1), TypeInfo::get<float>());
+		ImGui::SameLine();
+		if (ImGui::Button("Alter Column"))
+		{
+			struct AlterColumn : ImGui::Dialog
+			{
+				SheetView* view;
+				SheetPtr sheet;
+				int column_idx = 0;
+
+				static void open(SheetView* view)
+				{
+					auto dialog = new AlterColumn;
+					dialog->title = "Alter Column";
+					dialog->view = view;
+					dialog->sheet = view->sheet;
+					Dialog::open(dialog);
+				}
+
+				void draw() override 
+				{
+					if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
+					{
+						if (ImGui::Button(graphics::font_icon_str("arrow-left"_h).c_str()))
+						{
+							if (column_idx > 0)
+								column_idx--;
+						}
+						ImGui::SameLine();
+						ImGui::Text("%d", column_idx);
+						ImGui::SameLine();
+						if (ImGui::Button(graphics::font_icon_str("arrow-right"_h).c_str()))
+						{
+							if (column_idx < sheet->columns.size() - 1)
+								column_idx++;
+						}
+						if (!sheet->columns.empty())
+						{
+							auto& column = sheet->columns[column_idx];
+							ImGui::InputText("Name", &column.name);
+							if (ImGui::IsItemDeactivatedAfterEdit())
+							{
+								sheet->alter_column(column_idx, column.name, column.type);
+								view->unsaved = true;
+							}
+							if (ImGui::BeginCombo("Type", ti_str(column.type).c_str()))
+							{
+								if (auto type = show_types_menu(); type)
+								{
+									sheet->alter_column(column_idx, column.name, type);
+									view->unsaved = true;
+								}
+								ImGui::EndCombo();
+							}
+						}
+						if (ImGui::Button("OK"))
+							close();
+						ImGui::EndPopup();
+					}
+				}
+			};
+			AlterColumn::open(this);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Remove Column"))
+		{
+
+		}
 		column_offsets.resize(sheet->columns.size());
 		if (sheet->columns.size() > 0 && sheet->columns.size() < 64)
 		{
-			if (ImGui::BeginTable("##main", sheet->columns.size() + 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Borders | ImGuiTableFlags_NoSavedSettings, ImVec2(-100.f, 0.f)))
+			if (ImGui::BeginTable("##main", sheet->columns.size() + 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | ImGuiTableFlags_NoSavedSettings, ImVec2(0.f, 0.f)))
 			{
 				for (auto i = 0; i < sheet->columns.size(); i++)
 				{
 					auto& column = sheet->columns[i];
 					ImGui::TableSetupColumn(column.name.c_str(), ImGuiTableColumnFlags_WidthStretch, 200.f);
 				}
-				ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_NoReorder, 50.f);
+				ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 80.f);
 
 				ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
 				for (auto i = 0; i < sheet->columns.size(); i++)
@@ -90,30 +160,30 @@ void SheetView::on_draw()
 
 					ImGui::PushID(i);
 
-					ImGui::TableHeader("");
-					ImGui::SameLine();
-					if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
-					{
-						sheet->remove_column(i);
-						unsaved = true;
-						ImGui::PopID();
-						break;
-					}
-					ImGui::InputText("##Name", &column.name);
-					if (ImGui::IsItemDeactivatedAfterEdit())
-					{
-						sheet->alter_column(i, column.name, column.type);
-						unsaved = true;
-					}
-					if (ImGui::BeginCombo("##Type", ti_str(column.type).c_str()))
-					{
-						if (auto type = show_types_menu(); type)
-						{
-							sheet->alter_column(i, column.name, type);
-							unsaved = true;
-						}
-						ImGui::EndCombo();
-					}
+					ImGui::TableHeader(column.name.c_str());
+					//ImGui::SameLine();
+					//if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
+					//{
+					//	sheet->remove_column(i);
+					//	unsaved = true;
+					//	ImGui::PopID();
+					//	break;
+					//}
+					//ImGui::InputText("##Name", &column.name);
+					//if (ImGui::IsItemDeactivatedAfterEdit())
+					//{
+					//	sheet->alter_column(i, column.name, column.type);
+					//	unsaved = true;
+					//}
+					//if (ImGui::BeginCombo("##Type", ti_str(column.type).c_str()))
+					//{
+					//	if (auto type = show_types_menu(); type)
+					//	{
+					//		sheet->alter_column(i, column.name, type);
+					//		unsaved = true;
+					//	}
+					//	ImGui::EndCombo();
+					//}
 					ImGui::PopID();
 				}
 
@@ -142,6 +212,7 @@ void SheetView::on_draw()
 								changed |= ImGui::Checkbox("", (bool*)data);
 								break;
 							case DataInt:
+								ImGui::PushItemWidth(-FLT_MIN);
 								for (int i = 0; i < ti->vec_size; i++)
 								{
 									ImGui::PushID(i);
@@ -151,8 +222,10 @@ void SheetView::on_draw()
 									changed |= ImGui::IsItemDeactivatedAfterEdit();
 									ImGui::PopID();
 								}
+								ImGui::PopItemWidth();
 								break;
 							case DataFloat:
+								ImGui::PushItemWidth(-FLT_MIN);
 								for (int k = 0; k < ti->vec_size; k++)
 								{
 									ImGui::PushID(k);
@@ -162,10 +235,13 @@ void SheetView::on_draw()
 									changed |= ImGui::IsItemDeactivatedAfterEdit();
 									ImGui::PopID();
 								}
+								ImGui::PopItemWidth();
 								break;
 							case DataString:
+								ImGui::PushItemWidth(-FLT_MIN);
 								ImGui::InputText("", (std::string*)data);
 								changed |= ImGui::IsItemDeactivatedAfterEdit();
+								ImGui::PopItemWidth();
 								break;
 							}
 						}
@@ -178,7 +254,7 @@ void SheetView::on_draw()
 					{
 						ImGui::TableSetColumnIndex(sheet->columns.size());
 						ImGui::PushID(sheet->columns.size());
-						if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
+						if (ImGui::Button(graphics::font_icon_str("trash"_h).c_str()))
 						{
 							sheet->remove_row(i);
 							unsaved = true;
@@ -186,6 +262,16 @@ void SheetView::on_draw()
 
 							ImGui::PopID(); // row
 							break;
+						}
+						ImGui::SameLine();
+						if (ImGui::Button(graphics::font_icon_str("arrow-up"_h).c_str()))
+						{
+							// TODO
+						}
+						ImGui::SameLine();
+						if (ImGui::Button(graphics::font_icon_str("arrow-down"_h).c_str()))
+						{
+							// TODO
 						}
 						ImGui::PopID();
 					}
@@ -197,17 +283,9 @@ void SheetView::on_draw()
 		}
 		else
 			ImGui::TextUnformatted("Empty Sheet");
-		ImGui::SameLine();
-		ImGui::BeginGroup();
-		if (ImGui::Button("New Column"))
-		{
-			sheet->insert_column("new_column", TypeInfo::get<float>());
-		}
+
 		if (ImGui::Button("New Row"))
-		{
 			sheet->insert_row();
-		}
-		ImGui::EndGroup();
 	}
 
 	auto& io = ImGui::GetIO();
