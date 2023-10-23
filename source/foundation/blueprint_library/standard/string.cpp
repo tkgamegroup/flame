@@ -86,7 +86,122 @@ namespace flame
 			}
 		);
 
-		library->add_template("Format", "",
+		library->add_template("WString Concatenate", "",
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(std::wstring*)outputs[0].data = *(std::wstring*)inputs[0].data + *(std::wstring*)inputs[1].data;
+			}
+		);
+
+		library->add_template("Format1", "",
+			{
+				{
+					.name = "Fmt",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Arg1",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto& fmt = *(std::string*)inputs[0].data;
+				auto arg1 = inputs[1].data;
+				char buf[256];
+				sprintf_s(buf, fmt.c_str(), *(int*)arg1);
+				*(std::string*)outputs[0].data = buf;
+			}
+		);
+
+		library->add_template("Format2", "",
+			{
+				{
+					.name = "Fmt",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Arg1",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Arg2",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto& fmt = *(std::string*)inputs[0].data;
+				auto arg1 = inputs[1].data;
+				auto arg2 = inputs[2].data;
+				char buf[256];
+				sprintf_s(buf, fmt.c_str(), *(int*)arg1, *(int*)arg2);
+				*(std::string*)outputs[0].data = buf;
+			}
+		);
+
+		library->add_template("Format3", "",
+			{
+				{
+					.name = "Fmt",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Arg1",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Arg2",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Arg3",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto& fmt = *(std::string*)inputs[0].data;
+				auto arg1 = inputs[1].data;
+				auto arg2 = inputs[2].data;
+				auto arg3 = inputs[3].data;
+				char buf[256];
+				sprintf_s(buf, fmt.c_str(), *(int*)arg1, *(int*)arg2, *(int*)arg3);
+				*(std::string*)outputs[0].data = buf;
+			}
+		);
+
+		library->add_template("Format4", "",
 			{
 				{
 					.name = "Fmt",
@@ -124,6 +239,140 @@ namespace flame
 				char buf[256];
 				sprintf_s(buf, fmt.c_str(), *(int*)arg1, *(int*)arg2, *(int*)arg3, *(int*)arg4);
 				*(std::string*)outputs[0].data = buf;
+			}
+		);
+
+		library->add_template("WFormat1", "",
+			{
+				{
+					.name = "Fmt",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				},
+				{
+					.name = "Arg1",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto& fmt = *(std::wstring*)inputs[0].data;
+				auto arg1 = inputs[1].data;
+				wchar_t buf[256];
+				swprintf_s(buf, fmt.c_str(), *(int*)arg1);
+				*(std::wstring*)outputs[0].data = buf;
+			}
+		);
+
+		library->add_template("WFormat2", "",
+			{
+				{
+					.name = "Fmt",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				},
+				{
+					.name = "Arg1",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Arg2",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto& fmt = *(std::wstring*)inputs[0].data;
+				auto arg1 = inputs[1].data;
+				auto arg2 = inputs[2].data;
+				wchar_t buf[256];
+				swprintf_s(buf, fmt.c_str(), *(int*)arg1, *(int*)arg2);
+				*(std::wstring*)outputs[0].data = buf;
+			}
+		);
+
+		library->add_template("WFormat3", "",
+			{
+				{
+					.name = "Fmt",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				},
+				{
+					.name = "Arg1",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Arg2",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Arg3",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto& fmt = *(std::wstring*)inputs[0].data;
+				auto arg1 = inputs[1].data;
+				auto arg2 = inputs[2].data;
+				auto arg3 = inputs[3].data;
+				wchar_t buf[256];
+				swprintf_s(buf, fmt.c_str(), *(int*)arg1, *(int*)arg2, *(int*)arg3);
+				*(std::wstring*)outputs[0].data = buf;
+			}
+		);
+
+		library->add_template("WFormat4", "",
+			{
+				{
+					.name = "Fmt",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				},
+				{
+					.name = "Arg1",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Arg2",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Arg3",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Arg4",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto& fmt = *(std::wstring*)inputs[0].data;
+				auto arg1 = inputs[1].data;
+				auto arg2 = inputs[2].data;
+				auto arg3 = inputs[3].data;
+				auto arg4 = inputs[4].data;
+				wchar_t buf[256];
+				swprintf_s(buf, fmt.c_str(), *(int*)arg1, *(int*)arg2, *(int*)arg3, *(int*)arg4);
+				*(std::wstring*)outputs[0].data = buf;
 			}
 		);
 

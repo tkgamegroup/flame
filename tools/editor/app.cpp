@@ -1495,11 +1495,11 @@ void App::rebuild_typeinfo()
 {
 	auto ei_tag = find_enum("flame::TagFlags"_h);
 	auto& tag_items = ei_tag->items;
-	for (int i = tag_items.size() - 1; i >= 0; i++)
+	for (int i = tag_items.size() - 1; i >= 0; i--)
 	{
 		if (tag_items[i].name == "User")
 			break;
-		tag_items.erase(tag_items.begin() + i);
+		tag_items.pop_back();
 	}
 	for (auto sht : project_static_sheets)
 	{

@@ -25,27 +25,10 @@ SheetView::~SheetView()
 		Sheet::release(sheet);
 }
 
-static std::vector<float> column_offsets;
-
 void SheetView::save_sheet()
 {
 	if (unsaved)
 	{
-		std::vector<std::pair<uint, float>> column_idx_and_offsets(column_offsets.size());
-		for (auto i = 0; i < sheet->columns.size(); i++)
-			column_idx_and_offsets[i] = std::make_pair(i, column_offsets[i]);
-		std::sort(column_idx_and_offsets.begin(), column_idx_and_offsets.end(), [](const auto& a, const auto& b) {
-			return a.second < b.second;
-		});
-		for (auto i = 0; i < sheet->columns.size(); i++)
-		{
-			auto target_idx = column_idx_and_offsets[i].first;
-			if (i != target_idx)
-			{
-				sheet->reposition_columns(i, target_idx);
-				std::swap(column_idx_and_offsets[i], column_idx_and_offsets[target_idx]);
-			}
-		}
 		if (sheet->filename.native().starts_with(app.project_static_path.native()))
 			app.rebuild_typeinfo();
 		sheet->save();
@@ -71,11 +54,56 @@ void SheetView::on_draw()
 			save_sheet();
 		ImGui::SameLine();
 		if (ImGui::Button("New Column"))
-			sheet->insert_column("new_column " + str(sheet->columns.size() + 1), TypeInfo::get<float>());
+		{
+			struct NewColumnDialog : ImGui::Dialog
+			{
+				SheetView* view;
+				SheetPtr sheet;
+				std::string name;
+				TypeInfo* type;
+
+				static void open(SheetView* view)
+				{
+					auto dialog = new NewColumnDialog;
+					dialog->title = "New Column";
+					dialog->view = view;
+					dialog->sheet = view->sheet;
+					dialog->name = "new_column " + str(dialog->sheet->columns.size() + 1);
+					dialog->type = TypeInfo::get<float>();
+					Dialog::open(dialog);
+				}
+
+				void draw() override
+				{
+					if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
+					{
+						ImGui::InputText("Name", &name);
+						if (ImGui::BeginCombo("Type", ti_str(type).c_str()))
+						{
+							if (auto t = show_types_menu(); t)
+								type = t;
+							ImGui::EndCombo();
+						}
+
+						if (ImGui::Button("OK"))
+						{
+							sheet->insert_column(name, type);
+							view->unsaved = true;
+							close();
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("Cancel"))
+							close();
+						ImGui::EndPopup();
+					}
+				}
+			};
+			NewColumnDialog::open(this);
+		}
 		ImGui::SameLine();
 		if (ImGui::Button("Alter Column"))
 		{
-			struct AlterColumn : ImGui::Dialog
+			struct AlterColumnDialog : ImGui::Dialog
 			{
 				SheetView* view;
 				SheetPtr sheet;
@@ -83,7 +111,7 @@ void SheetView::on_draw()
 
 				static void open(SheetView* view)
 				{
-					auto dialog = new AlterColumn;
+					auto dialog = new AlterColumnDialog;
 					dialog->title = "Alter Column";
 					dialog->view = view;
 					dialog->sheet = view->sheet;
@@ -132,14 +160,18 @@ void SheetView::on_draw()
 					}
 				}
 			};
-			AlterColumn::open(this);
+			AlterColumnDialog::open(this);
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Remove Column"))
 		{
 
 		}
-		column_offsets.resize(sheet->columns.size());
+		ImGui::SameLine();
+		if (ImGui::Button("Reorder Columns"))
+		{
+
+		}
 		if (sheet->columns.size() > 0 && sheet->columns.size() < 64)
 		{
 			if (ImGui::BeginTable("##main", sheet->columns.size() + 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | ImGuiTableFlags_NoSavedSettings, ImVec2(0.f, 0.f)))
@@ -156,7 +188,6 @@ void SheetView::on_draw()
 				{
 					auto& column = sheet->columns[i];
 					ImGui::TableSetColumnIndex(i);
-					column_offsets[i] = ImGui::GetCursorPosX();
 
 					ImGui::PushID(i);
 

@@ -135,7 +135,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Greater Or Equal", "<=",
+		library->add_template("Greater Or Equal", ">=",
 			{
 				{
 					.name = "A",

@@ -128,6 +128,7 @@ namespace flame
 		};
 
 		auto doc_root = doc.append_child("sheet");
+		doc_root.append_attribute("name").set_value(name.c_str());
 		auto n_columns = doc_root.append_child("columns");
 		for (auto& c : columns)
 		{

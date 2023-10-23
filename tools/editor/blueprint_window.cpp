@@ -1703,6 +1703,53 @@ void BlueprintView::on_draw()
 								set_parent_to_hovered_node();
 						}
 					}
+					auto show_change_nodes = [&](BlueprintNodePtr src_n, const std::string& prefix) {
+						for (auto i = 0; i < standard_library->node_templates.size(); i++)
+						{
+							if (standard_library->node_templates[i].name.starts_with(prefix))
+							{
+								for (auto j = i; ; j++)
+								{
+									auto& t = standard_library->node_templates[j];
+									if (!t.name.starts_with(prefix))
+										break;
+									if (t.name != src_n->name)
+									{
+										if (ImGui::Selectable(t.name.c_str()))
+										{
+											auto n = blueprint->add_node(group, src_n->parent, t.name, t.display_name, t.inputs, t.outputs,
+												t.function, t.extented_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
+												t.is_block, t.begin_block_function, t.end_block_function);
+											n->position = src_n->position;
+											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+											if (n->is_block)
+											{
+												ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, n->rect.size());
+												ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, n->rect.size());
+											}
+
+											std::vector<std::pair<BlueprintSlotPtr, BlueprintSlotPtr>> to_link_args;
+											for (auto& l : src_n->group->links)
+											{
+												if (l->from_slot->node == src_n)
+													to_link_args.emplace_back(n->find_output(l->from_slot->name_hash), l->to_slot);
+												if (l->to_slot->node == src_n)
+													to_link_args.emplace_back(l->from_slot, n->find_input(l->to_slot->name_hash));
+											}
+											for (auto& args : to_link_args)
+												blueprint->add_link(args.first, args.second);
+
+											blueprint->remove_node(src_n);
+											context_node = nullptr;
+
+											unsaved = true;
+										}
+									}
+								}
+								break;
+							}
+						}
+					};
 					if (context_node && context_node->name_hash == "Variable"_h)
 					{
 						if (ImGui::Selectable("Change To Set"))
@@ -1745,56 +1792,30 @@ void BlueprintView::on_draw()
 							context_node = nullptr;
 						}
 					}
+					if (context_node && context_node->name.starts_with("Format"))
+					{
+						if (ImGui::BeginMenu("Change To.."))
+						{
+							auto src_n = context_node;
+							show_change_nodes(src_n, "Format");
+							ImGui::EndMenu();
+						}
+					}
+					if (context_node && context_node->name.starts_with("WFormat"))
+					{
+						if (ImGui::BeginMenu("Change To.."))
+						{
+							auto src_n = context_node;
+							show_change_nodes(src_n, "WFormat");
+							ImGui::EndMenu();
+						}
+					}
 					if (context_node && context_node->name.starts_with("Branch "))
 					{
 						if (ImGui::BeginMenu("Change To.."))
 						{
 							auto src_n = context_node;
-							for (auto i = 0; i < standard_library->node_templates.size(); i++)
-							{
-								if (standard_library->node_templates[i].name.starts_with("Branch "))
-								{
-									for (auto j = i; ; j++)
-									{
-										auto& t = standard_library->node_templates[j];
-										if (!t.name.starts_with("Branch "))
-											break;
-										if (t.name != src_n->name)
-										{
-											if (ImGui::Selectable(t.name.c_str()))
-											{
-												auto n = blueprint->add_node(group, src_n->parent, t.name, t.display_name, t.inputs, t.outputs,
-													t.function, t.extented_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
-													t.is_block, t.begin_block_function, t.end_block_function);
-												n->position = src_n->position;
-												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
-												if (n->is_block)
-												{
-													ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, n->rect.size());
-													ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, n->rect.size());
-												}
-
-												std::vector<std::pair<BlueprintSlotPtr, BlueprintSlotPtr>> to_link_args;
-												for (auto& l : src_n->group->links)
-												{
-													if (l->from_slot->node == src_n)
-														to_link_args.emplace_back(n->find_output(l->from_slot->name_hash), l->to_slot);
-													if (l->to_slot->node == src_n)
-														to_link_args.emplace_back(l->from_slot, n->find_input(l->to_slot->name_hash));
-												}
-												for (auto& args : to_link_args)
-													blueprint->add_link(args.first, args.second);
-
-												blueprint->remove_node(src_n);
-												context_node = nullptr;
-
-												unsaved = true;
-											}
-										}
-									}
-									break;
-								}
-							}
+							show_change_nodes(src_n, "Branch ");
 							ImGui::EndMenu();
 						}
 					}
@@ -1803,51 +1824,7 @@ void BlueprintView::on_draw()
 						if (ImGui::BeginMenu("Change To.."))
 						{
 							auto src_n = context_node;
-							for (auto i = 0; i < standard_library->node_templates.size(); i++)
-							{
-								if (standard_library->node_templates[i].name.starts_with("Select Branch "))
-								{
-									for (auto j = i; ; j++)
-									{
-										auto& t = standard_library->node_templates[j];
-										if (!t.name.starts_with("Select Branch "))
-											break;
-										if (t.name != src_n->name)
-										{
-											if (ImGui::Selectable(t.name.c_str()))
-											{
-												auto n = blueprint->add_node(group, src_n->parent, t.name, t.display_name, t.inputs, t.outputs,
-													t.function, t.extented_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
-													t.is_block, t.begin_block_function, t.end_block_function);
-												n->position = src_n->position;
-												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
-												if (n->is_block)
-												{
-													ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, n->rect.size());
-													ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, n->rect.size());
-												}
-
-												std::vector<std::pair<BlueprintSlotPtr, BlueprintSlotPtr>> to_link_args;
-												for (auto& l : src_n->group->links)
-												{
-													if (l->from_slot->node == src_n)
-														to_link_args.emplace_back(n->find_output(l->from_slot->name_hash), l->to_slot);
-													if (l->to_slot->node == src_n)
-														to_link_args.emplace_back(l->from_slot, n->find_input(l->to_slot->name_hash));
-												}
-												for (auto& args : to_link_args)
-													blueprint->add_link(args.first, args.second);
-
-												blueprint->remove_node(src_n);
-												context_node = nullptr;
-
-												unsaved = true;
-											}
-										}
-									}
-									break;
-								}
-							}
+							show_change_nodes(src_n, "Select Branch ");
 							ImGui::EndMenu();
 						}
 					}
@@ -1856,51 +1833,7 @@ void BlueprintView::on_draw()
 						if (ImGui::BeginMenu("Change To.."))
 						{
 							auto src_n = context_node;
-							for (auto i = 0; i < standard_library->node_templates.size(); i++)
-							{
-								if (standard_library->node_templates[i].name.starts_with("Ramp Branch "))
-								{
-									for (auto j = i; ; j++)
-									{
-										auto& t = standard_library->node_templates[j];
-										if (!t.name.starts_with("Ramp Branch "))
-											break;
-										if (t.name != src_n->name)
-										{
-											if (ImGui::Selectable(t.name.c_str()))
-											{
-												auto n = blueprint->add_node(group, src_n->parent, t.name, t.display_name, t.inputs, t.outputs,
-													t.function, t.extented_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
-													t.is_block, t.begin_block_function, t.end_block_function);
-												n->position = src_n->position;
-												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
-												if (n->is_block)
-												{
-													ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, n->rect.size());
-													ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, n->rect.size());
-												}
-
-												std::vector<std::pair<BlueprintSlotPtr, BlueprintSlotPtr>> to_link_args;
-												for (auto& l : src_n->group->links)
-												{
-													if (l->from_slot->node == src_n)
-														to_link_args.emplace_back(n->find_output(l->from_slot->name_hash), l->to_slot);
-													if (l->to_slot->node == src_n)
-														to_link_args.emplace_back(l->from_slot, n->find_input(l->to_slot->name_hash));
-												}
-												for (auto& args : to_link_args)
-													blueprint->add_link(args.first, args.second);
-
-												blueprint->remove_node(src_n);
-												context_node = nullptr;
-
-												unsaved = true;
-											}
-										}
-									}
-									break;
-								}
-							}
+							show_change_nodes(src_n, "Ramp Branch ");
 							ImGui::EndMenu();
 						}
 					}
@@ -2323,6 +2256,21 @@ void BlueprintView::on_draw()
 								}
 								continue;
 							}
+							if (t.name == "Get SHT bool")
+							{
+								if (ImGui::BeginMenu("Get SHT"))
+								{
+									for (auto j = i; ; j++)
+									{
+										auto& t = standard_library->node_templates[j];
+										if (!t.name.starts_with("Get SHT "))
+											break;
+										show_node_library_template(t);
+									}
+									ImGui::EndMenu();
+								}
+								continue;
+							}
 							if (t.name == "Branch 2")
 							{
 								if (ImGui::BeginMenu("Branch"))
@@ -2368,17 +2316,53 @@ void BlueprintView::on_draw()
 								}
 								continue;
 							}
+							if (t.name == "Format1")
+							{
+								if (ImGui::BeginMenu("Format"))
+								{
+									for (auto j = i; ; j++)
+									{
+										auto& t = standard_library->node_templates[j];
+										if (!t.name.starts_with("Format"))
+											break;
+										show_node_library_template(t);
+									}
+									ImGui::EndMenu();
+								}
+								continue;
+							}
+							if (t.name == "WFormat1")
+							{
+								if (ImGui::BeginMenu("WFormat"))
+								{
+									for (auto j = i; ; j++)
+									{
+										auto& t = standard_library->node_templates[j];
+										if (!t.name.starts_with("WFormat"))
+											break;
+										show_node_library_template(t);
+									}
+									ImGui::EndMenu();
+								}
+								continue;
+							}
 							if (t.name.starts_with("Get BP "))
 								continue;
 							if (t.name.starts_with("Set BP "))
 								continue;
 							if (t.name.starts_with("Call BP "))
 								continue;
+							if (t.name.starts_with("Get SHT "))
+								continue;
 							if (t.name.starts_with("Branch "))
 								continue;
 							if (t.name.starts_with("Select Branch "))
 								continue;
 							if (t.name.starts_with("Ramp Branch "))
+								continue;
+							if (t.name.starts_with("Format"))
+								continue;
+							if (t.name.starts_with("WFormat"))
 								continue;
 							show_node_library_template(t);
 						}

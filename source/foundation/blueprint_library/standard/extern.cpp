@@ -1,10 +1,29 @@
 #include "../../typeinfo_private.h"
 #include "../../blueprint_private.h"
+#include "../../sheet_private.h"
 
 namespace flame
 {
 	void add_extern_node_templates(BlueprintNodeLibraryPtr library)
 	{
+		library->add_template("Get Static Blueprint Instance", "",
+			{
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "Instance",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(BlueprintInstancePtr*)outputs[0].data = BlueprintInstance::get(*(uint*)inputs[0].data);
+			}
+		);
+
 #define GET_BP_TEMPLATE(TYPE, DV) \
 		library->add_template("Get BP " #TYPE, "", \
 			{\
@@ -177,6 +196,93 @@ namespace flame
 		CALL_BP_TEMPLATE_void_T(uint);
 
 #undef CALL_BP_TEMPLATE_void_T
+
+		library->add_template("Get Static Sheet", "",
+			{
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "Sheet",
+					.allowed_types = { TypeInfo::get<SheetPtr>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(SheetPtr*)outputs[0].data = Sheet::get(*(uint*)inputs[0].data);
+			}
+		);
+
+#define GET_SHT_TEMPLATE(TYPE, DV) \
+		library->add_template("Get SHT " #TYPE, "", \
+			{\
+				{\
+					.name = "Sheet",\
+					.allowed_types = { TypeInfo::get<SheetPtr>() }\
+				},\
+				{\
+					.name = "Name_hash",\
+					.allowed_types = { TypeInfo::get<std::string>() }\
+				},\
+				{\
+					.name = "Row",\
+					.allowed_types = { TypeInfo::get<uint>() }\
+				}\
+			},\
+			{\
+				{\
+					.name = "V",\
+					.allowed_types = { TypeInfo::get<TYPE>() }\
+				}\
+			},\
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {\
+				auto sheet = *(SheetPtr*)inputs[0].data;\
+				auto name = *(uint*)inputs[1].data;\
+				if (sheet)\
+				{\
+					auto column_idx = sheet->find_column(name);\
+					if (column_idx != -1)\
+					{\
+						if (sheet->columns[column_idx].type == TypeInfo::get<TYPE>())\
+						{\
+							auto row_idx = *(uint*)inputs[2].data;\
+							if (row_idx < sheet->rows.size())\
+								*(TYPE*)outputs[0].data = *(TYPE*)sheet->rows[row_idx].datas[column_idx];\
+							else\
+								*(TYPE*)outputs[0].data = TYPE(DV); \
+						}\
+						else\
+							*(TYPE*)outputs[0].data = TYPE(DV); \
+					}\
+					else\
+						*(TYPE*)outputs[0].data = TYPE(DV);\
+				}\
+				else\
+					*(TYPE*)outputs[0].data = TYPE(DV);\
+			}\
+		);
+
+		GET_SHT_TEMPLATE(bool, 0);
+		GET_SHT_TEMPLATE(int, 0);
+		GET_SHT_TEMPLATE(uint, 0);
+		GET_SHT_TEMPLATE(float, 0);
+		GET_SHT_TEMPLATE(ivec2, 0);
+		GET_SHT_TEMPLATE(ivec3, 0);
+		GET_SHT_TEMPLATE(ivec4, 0);
+		GET_SHT_TEMPLATE(uvec2, 0);
+		GET_SHT_TEMPLATE(uvec3, 0);
+		GET_SHT_TEMPLATE(uvec4, 0);
+		GET_SHT_TEMPLATE(cvec2, 0);
+		GET_SHT_TEMPLATE(cvec3, 0);
+		GET_SHT_TEMPLATE(cvec4, 0);
+		GET_SHT_TEMPLATE(vec2, 0);
+		GET_SHT_TEMPLATE(vec3, 0);
+		GET_SHT_TEMPLATE(vec4, 0);
+		GET_SHT_TEMPLATE(std::string, "");
+		GET_SHT_TEMPLATE(std::wstring, L"");
+		GET_SHT_TEMPLATE(std::filesystem::path, L"");
 
 		library->add_template("Delta Time", "",
 			{
