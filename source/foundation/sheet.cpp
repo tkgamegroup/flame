@@ -64,17 +64,28 @@ namespace flame
 		}
 	}
 
-	void SheetPrivate::reposition_columns(uint idx1, uint idx2)
+	void SheetPrivate::reorder_columns(uint target_column_index, int new_index)
 	{
-		assert(idx1 < columns.size());
-		assert(idx2 < columns.size());
+		assert(target_column_index < columns.size());
+		assert(new_index < columns.size());
 
-		if (idx1 != idx2)
+		if (target_column_index != new_index)
 		{
-			std::swap(columns[idx1], columns[idx2]);
-			std::swap(columns_map[columns[idx1].name_hash], columns_map[columns[idx2].name_hash]);
+			if (target_column_index < new_index)
+				std::rotate(columns.begin() + target_column_index, columns.begin() + target_column_index + 1, columns.begin() + new_index + 1);
+			else
+				std::rotate(columns.begin() + new_index, columns.begin() + target_column_index, columns.begin() + target_column_index + 1);
+			columns_map.clear();
+			for (auto i = 0; i < columns.size(); i++)
+				columns_map[columns[i].name_hash] = i;
+
 			for (auto& r : rows)
-				std::swap(r.datas[idx1], r.datas[idx2]);
+			{
+				if (target_column_index < new_index)
+					std::rotate(r.datas.begin() + target_column_index, r.datas.begin() + target_column_index + 1, r.datas.begin() + new_index + 1);
+				else
+					std::rotate(r.datas.begin() + new_index, r.datas.begin() + target_column_index, r.datas.begin() + target_column_index + 1);
+			}
 		}
 	}
 

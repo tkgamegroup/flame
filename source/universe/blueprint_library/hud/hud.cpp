@@ -107,11 +107,18 @@ namespace flame
 				}
 			},
 			{
+				{
+					.name = "Hovered",
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+				}
 			},
 			true,
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
 				auto& label = *(std::wstring*)inputs[1].data;
-				auto clicked = sRenderer::instance()->hud_button(label);
+				bool hovered = false;
+				auto clicked = sRenderer::instance()->hud_button(label, &hovered);
+
+				(*(BlueprintSignal*)outputs[1].data).v = hovered ? 1 : 0;
 
 				*max_execute_times = clicked ? 1 : 0;
 			}

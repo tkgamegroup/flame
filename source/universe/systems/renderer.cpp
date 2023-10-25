@@ -3153,7 +3153,7 @@ namespace flame
 		hud_max_w = max(hud_max_w, size.x);
 	}
 
-	bool sRendererPrivate::hud_button(std::wstring_view label)
+	bool sRendererPrivate::hud_button(std::wstring_view label, bool* p_hovered)
 	{
 		auto canvas = render_tasks.front()->canvas;
 		auto input = sInput::instance();
@@ -3174,6 +3174,8 @@ namespace flame
 		canvas->add_text(canvas->default_font_atlas, 24, hud_cursor + vec2(2.f), label, cvec4(255), 0.5f, 0.2f);
 		hud_cursor = vec2(hud_cursor_x0, hud_cursor.y + sz.y + hud_item_spacing.y);
 		hud_max_w = max(hud_max_w, sz.x);
+		if (p_hovered)
+			*p_hovered = state != 0;
 		return state == 2;
 	}
 

@@ -5,6 +5,29 @@ namespace flame
 {
 	void add_flow_control_node_templates(BlueprintNodeLibraryPtr library)
 	{
+		library->add_template("Join Flow", "",
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				(*(BlueprintSignal*)outputs[0].data).v = (*(uint*)inputs[0].data == 1 || *(uint*)inputs[1].data == 1)
+					? 1 : 0;
+			}
+		);
+
 		library->add_template("If", "",
 			{
 				{

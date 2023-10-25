@@ -289,7 +289,9 @@ namespace flame
 				{
 					if (it->type != new_type)
 					{
+						it->type->destroy(it->data);
 						it->type = new_type;
+						it->data = new_type->create();
 						auto process_group = [&](BlueprintGroupPtr group) {
 							for (auto& l : group->links)
 							{

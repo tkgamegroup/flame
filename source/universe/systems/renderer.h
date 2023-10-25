@@ -264,7 +264,7 @@ namespace flame
 		virtual void end_hud() = 0;
 		virtual void hud_rect(const vec2& pos, const vec2& size, const cvec4& col) = 0;
 		virtual void hud_text(std::wstring_view label, const cvec4& col = cvec4(255, 255, 255, 255)) = 0;
-		virtual bool hud_button(std::wstring_view label) = 0;
+		virtual bool hud_button(std::wstring_view label, bool* p_hovered = nullptr) = 0;
 
 		// Reflect
 		virtual void send_debug_string(const std::string& str) = 0;
