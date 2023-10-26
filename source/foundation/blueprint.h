@@ -223,6 +223,16 @@ namespace flame
 			return nullptr;
 		}
 
+		inline BlueprintNodePtr find_node_by_id(uint object_id) const
+		{
+			for (auto& n : nodes)
+			{
+				if (((BlueprintNode*)n.get())->object_id == object_id)
+					return (BlueprintNodePtr)n.get();
+			}
+			return nullptr;
+		}
+
 		vec2	offset;
 		float	scale = 1.f;
 

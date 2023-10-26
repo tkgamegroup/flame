@@ -240,6 +240,7 @@ void SheetView::on_draw()
 				{
 					if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
 					{
+						ImGui::PushID(0);
 						if (ImGui::Button(graphics::font_icon_str("arrow-left"_h).c_str()))
 						{
 							if (column_idx > 0)
@@ -248,12 +249,14 @@ void SheetView::on_draw()
 						ImGui::SameLine();
 						if (ImGui::Button(graphics::font_icon_str("arrow-right"_h).c_str()))
 						{
-							if (new_idx < sheet->columns.size() - 1)
-								new_idx++;
+							if (column_idx < sheet->columns.size() - 1)
+								column_idx++;
 						}
+						ImGui::PopID();
 						if (!sheet->columns.empty())
 							ImGui::Text("Target: %d %s", column_idx, sheet->columns[column_idx].name.c_str());
 
+						ImGui::PushID(1);
 						if (ImGui::Button(graphics::font_icon_str("arrow-left"_h).c_str()))
 						{
 							if (new_idx > 0)
@@ -264,9 +267,10 @@ void SheetView::on_draw()
 						ImGui::SameLine();
 						if (ImGui::Button(graphics::font_icon_str("arrow-right"_h).c_str()))
 						{
-							if (column_idx < sheet->columns.size() - 1)
-								column_idx++;
+							if (new_idx < sheet->columns.size() - 1)
+								new_idx++;
 						}
+						ImGui::PopID();
 						if (!sheet->columns.empty())
 						{
 							std::string old_orders;

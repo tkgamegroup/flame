@@ -508,6 +508,23 @@ void BlueprintView::set_parent_to_hovered_node()
 	}
 }
 
+void BlueprintView::navigate_to_node(BlueprintNodePtr n)
+{
+	if (n->group->name_hash != group_name_hash)
+	{
+		group_name = n->group->name;
+		group_name_hash = n->group->name_hash;
+		add_event([this, n]() { 
+			navigate_to_node(n);
+			return false;
+		});
+		return;
+	}
+	auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
+	if (ax_node)
+		ax_node_editor->NavigateTo(ax_node->GetBounds(), true, 0.f);
+}
+
 static BlueprintInstance::Node* step(BlueprintInstance::Group* debugging_group)
 {
 	blueprint_window.debugger->debugging = nullptr;
@@ -1262,9 +1279,46 @@ void BlueprintView::on_draw()
 				if (blueprint_instance->built_frame < blueprint->dirty_frame)
 					blueprint_instance->build();
 			}
+			if (ImGui::CollapsingHeader("Find:"))
+			{
+				static std::string find_str;
+				static BlueprintNodePtr last_found_node = nullptr;
+				auto do_find = false;
+				if (ImGui::InputText("##find", &find_str, ImGuiInputTextFlags_EnterReturnsTrue))
+					do_find = true;
+				if (ImGui::IsItemDeactivatedAfterEdit())
+					last_found_node = nullptr;
+				ImGui::SameLine();
+				if (ImGui::Button("Find"))
+					do_find = true;
+				if (do_find)
+				{
+					auto find_str_lower_case = find_str;
+					std::transform(find_str_lower_case.begin(), find_str_lower_case.end(), find_str_lower_case.begin(), ::tolower);
+
+					bool found = false;
+					for (auto& n : group->nodes)
+					{
+						auto display_name_lower_case = n->display_name;
+						std::transform(display_name_lower_case.begin(), display_name_lower_case.end(), display_name_lower_case.begin(), ::tolower);
+						if (display_name_lower_case.contains(find_str_lower_case))
+						{
+							if (last_found_node != n.get())
+							{
+								navigate_to_node(n.get());
+								last_found_node = n.get();
+								found = true;
+								break;
+							}
+						}
+					}
+					if (!found)
+						last_found_node = nullptr;
+				}
+			}
 			ImGui::EndChild();
 
-			ImGui::TableSetColumnIndex(1);
+			ImGui::TableSetColumnIndex(1); 
 			ImGui::BeginChild("main_area", ImVec2(0, -2));
 			{
 				if (group != last_group)
@@ -1344,7 +1398,9 @@ void BlueprintView::on_draw()
 						if (input->flags & BlueprintSlotFlagHideInUI)
 							continue;
 						ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
-						ImGui::Text("%s %s", graphics::font_icon_str("play"_h).c_str(), input->name_hash == "Execute"_h ? "" : input->name.c_str());
+						auto display_name = input->name_hash == "Execute"_h ? "" : input->name;
+						SUS::strip_tail_if(display_name, "_hash");
+						ImGui::Text("%s %s", graphics::font_icon_str("play"_h).c_str(), display_name.c_str());
 						ax::NodeEditor::EndPin();
 						if (ImGui::IsItemHovered())
 						{
@@ -1391,7 +1447,9 @@ void BlueprintView::on_draw()
 						if (!output->type || (output->flags & BlueprintSlotFlagHideInUI))
 							continue;
 						ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
-						ImGui::Text("%s %s", output->name_hash == "Execute"_h ? "" : output->name.c_str(), graphics::font_icon_str("play"_h).c_str());
+						auto display_name = output->name_hash == "Execute"_h ? "" : output->name;
+						SUS::strip_tail_if(display_name, "_hash");
+						ImGui::Text("%s %s", display_name.c_str(), graphics::font_icon_str("play"_h).c_str());
 						ax::NodeEditor::EndPin();
 						if (ImGui::IsItemHovered())
 						{
@@ -2256,6 +2314,21 @@ void BlueprintView::on_draw()
 								}
 								continue;
 							}
+							if (t.name == "Find bool Item In Sheet")
+							{
+								if (ImGui::BeginMenu("Find Item In Sheet"))
+								{
+									for (auto j = i; ; j++)
+									{
+										auto& t = standard_library->node_templates[j];
+										if (!SUS::match_head_tail(t.name, "Find ", " Item In Sheet"))
+											break;
+										show_node_library_template(t);
+									}
+									ImGui::EndMenu();
+								}
+								continue;
+							}
 							if (t.name == "Get SHT bool")
 							{
 								if (ImGui::BeginMenu("Get SHT"))
@@ -2264,6 +2337,21 @@ void BlueprintView::on_draw()
 									{
 										auto& t = standard_library->node_templates[j];
 										if (!t.name.starts_with("Get SHT "))
+											break;
+										show_node_library_template(t);
+									}
+									ImGui::EndMenu();
+								}
+								continue;
+							}
+							if (t.name == "Set SHT bool")
+							{
+								if (ImGui::BeginMenu("Set SHT"))
+								{
+									for (auto j = i; ; j++)
+									{
+										auto& t = standard_library->node_templates[j];
+										if (!t.name.starts_with("Set SHT "))
 											break;
 										show_node_library_template(t);
 									}
@@ -2352,7 +2440,11 @@ void BlueprintView::on_draw()
 								continue;
 							if (t.name.starts_with("Call BP "))
 								continue;
+							if (SUS::match_head_tail(t.name, "Find ", " Item In Sheet"))
+								continue;
 							if (t.name.starts_with("Get SHT "))
+								continue;
+							if (t.name.starts_with("Set SHT "))
 								continue;
 							if (t.name.starts_with("Branch "))
 								continue;

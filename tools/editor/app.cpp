@@ -992,13 +992,24 @@ void App::on_gui()
 	}
 	if (ImGui::BeginMenu("Debug"))
 	{
+		if (ImGui::MenuItem("Calculate Hash"))
+		{
+			ImGui::OpenInputDialog("Calculate Hash", "string", [](bool ok, const std::string& str) {
+				if (ok)
+				{
+					int hash = sh(str.c_str());
+					auto text = std::format("{}: {}", str, hash);
+					ImGui::OpenMessageDialog("String Hash", text);
+				}
+			});
+		}
+
 		struct UIStatusDialog
 		{
 			bool open = false;
 
 		};
 		static UIStatusDialog ui_status_dialog;
-
 		if (ImGui::MenuItem("UI Status", nullptr, &ui_status_dialog.open))
 		{
 			if (ui_status_dialog.open)
@@ -1012,7 +1023,7 @@ void App::on_gui()
 						ImGui::End();
 					}
 					return ui_status_dialog.open;
-					});
+				});
 			}
 		}
 		if (ImGui::MenuItem("Send Debug Cmd"))

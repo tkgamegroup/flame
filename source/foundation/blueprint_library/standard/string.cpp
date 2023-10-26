@@ -64,6 +64,42 @@ namespace flame
 			}
 		);
 
+		library->add_template("String Length", "",
+			{
+				{
+					.name = "String",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(uint*)outputs[0].data = (*(std::string*)inputs[0].data).size();
+			}
+		);
+
+		library->add_template("String Empty", "",
+			{
+				{
+					.name = "String",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(bool*)outputs[0].data = (*(std::string*)inputs[0].data).empty();
+			}
+		);
+
 		library->add_template("String Concatenate", "",
 			{
 				{
@@ -83,6 +119,42 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				*(std::string*)outputs[0].data = *(std::string*)inputs[0].data + *(std::string*)inputs[1].data;
+			}
+		);
+
+		library->add_template("WString Length", "",
+			{
+				{
+					.name = "WString",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(uint*)outputs[0].data = (*(std::wstring*)inputs[0].data).size();
+			}
+		);
+
+		library->add_template("WString Empty", "",
+			{
+				{
+					.name = "WString",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(bool*)outputs[0].data = (*(std::wstring*)inputs[0].data).empty();
 			}
 		);
 

@@ -215,6 +215,122 @@ namespace flame
 			}
 		);
 
+		library->add_template("Sheet Rows Count", "",
+			{
+				{
+					.name = "Sheet",
+					.allowed_types = { TypeInfo::get<SheetPtr>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto sht = *(SheetPtr*)inputs[0].data;
+				*(uint*)outputs[0].data = sht ? sht->rows.size() : 0;
+			}
+		);
+
+		library->add_template("Sheet Insert Column", "",
+			{
+				{
+					.name = "Sheet",
+					.allowed_types = { TypeInfo::get<SheetPtr>() }
+				},
+				{
+					.name = "Name",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Type",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto sht = *(SheetPtr*)inputs[0].data;
+				if (sht)
+				{
+					std::string name = *(std::string*)inputs[1].data;
+					std::string type_name = *(std::string*)inputs[2].data;
+					auto sp = SUS::to_string_vector(SUS::split(type_name, '@'));
+					TypeTag tag;
+					TypeInfo::unserialize_t(sp[0], tag);
+					auto type = TypeInfo::get(tag, sp[1]);
+					if (type)
+						sht->insert_column(name, type);
+				}
+			}
+		);
+
+#define FIND_ITEM_IN_SHEET_TEMPLATE(TYPE) \
+		library->add_template("Find " #TYPE " Item In Sheet", "",\
+			{\
+				{\
+					.name = "Sheet",\
+					.allowed_types = { TypeInfo::get<SheetPtr>() }\
+				},\
+				{\
+					.name = "Name_hash",\
+					.allowed_types = { TypeInfo::get<std::string>() }\
+				},\
+				{\
+					.name = "Value",\
+					.allowed_types = { TypeInfo::get<TYPE>() }\
+				}\
+			},\
+			{\
+				{\
+					.name = "Index",\
+					.allowed_types = { TypeInfo::get<int>() }\
+				}\
+			},\
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {\
+				auto sht = *(SheetPtr*)inputs[0].data;\
+				if (sht)\
+				{\
+					auto name = *(uint*)inputs[1].data;\
+					auto column_idx = sht->find_column(name);\
+					for (auto i = 0; i < sht->rows.size(); i++)\
+					{\
+						if (*(TYPE*)sht->rows[i].datas[column_idx] == *(TYPE*)inputs[2].data)\
+						{\
+							*(int*)outputs[0].data = i;\
+							break;\
+						}\
+					}\
+				}\
+				else\
+					*(int*)outputs[0].data = -1;\
+			}\
+		);
+
+		FIND_ITEM_IN_SHEET_TEMPLATE(bool);
+		FIND_ITEM_IN_SHEET_TEMPLATE(int);
+		FIND_ITEM_IN_SHEET_TEMPLATE(uint);
+		FIND_ITEM_IN_SHEET_TEMPLATE(float);
+		FIND_ITEM_IN_SHEET_TEMPLATE(ivec2);
+		FIND_ITEM_IN_SHEET_TEMPLATE(ivec3);
+		FIND_ITEM_IN_SHEET_TEMPLATE(ivec4);
+		FIND_ITEM_IN_SHEET_TEMPLATE(uvec2);
+		FIND_ITEM_IN_SHEET_TEMPLATE(uvec3);
+		FIND_ITEM_IN_SHEET_TEMPLATE(uvec4);
+		FIND_ITEM_IN_SHEET_TEMPLATE(cvec2);
+		FIND_ITEM_IN_SHEET_TEMPLATE(cvec3);
+		FIND_ITEM_IN_SHEET_TEMPLATE(cvec4);
+		FIND_ITEM_IN_SHEET_TEMPLATE(vec2);
+		FIND_ITEM_IN_SHEET_TEMPLATE(vec3);
+		FIND_ITEM_IN_SHEET_TEMPLATE(vec4);
+		FIND_ITEM_IN_SHEET_TEMPLATE(std::string);
+		FIND_ITEM_IN_SHEET_TEMPLATE(std::wstring);
+		FIND_ITEM_IN_SHEET_TEMPLATE(std::filesystem::path);
+
+#undef FIND_ITEM_IN_SHEET_TEMPLATE
+
 #define GET_SHT_TEMPLATE(TYPE, DV) \
 		library->add_template("Get SHT " #TYPE, "", \
 			{\
@@ -238,18 +354,18 @@ namespace flame
 				}\
 			},\
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {\
-				auto sheet = *(SheetPtr*)inputs[0].data;\
+				auto sht = *(SheetPtr*)inputs[0].data;\
 				auto name = *(uint*)inputs[1].data;\
-				if (sheet)\
+				if (sht)\
 				{\
-					auto column_idx = sheet->find_column(name);\
+					auto column_idx = sht->find_column(name);\
 					if (column_idx != -1)\
 					{\
-						if (sheet->columns[column_idx].type == TypeInfo::get<TYPE>())\
+						if (sht->columns[column_idx].type == TypeInfo::get<TYPE>())\
 						{\
 							auto row_idx = *(uint*)inputs[2].data;\
-							if (row_idx < sheet->rows.size())\
-								*(TYPE*)outputs[0].data = *(TYPE*)sheet->rows[row_idx].datas[column_idx];\
+							if (row_idx < sht->rows.size())\
+								*(TYPE*)outputs[0].data = *(TYPE*)sht->rows[row_idx].datas[column_idx];\
 							else\
 								*(TYPE*)outputs[0].data = TYPE(DV); \
 						}\
@@ -283,6 +399,71 @@ namespace flame
 		GET_SHT_TEMPLATE(std::string, "");
 		GET_SHT_TEMPLATE(std::wstring, L"");
 		GET_SHT_TEMPLATE(std::filesystem::path, L"");
+
+#undef GET_SHT_TEMPLATE
+
+#define SET_SHT_TEMPLATE(TYPE) \
+		library->add_template("Set SHT " #TYPE, "", \
+			{\
+				{\
+					.name = "Sheet",\
+					.allowed_types = { TypeInfo::get<SheetPtr>() }\
+				},\
+				{\
+					.name = "Name_hash",\
+					.allowed_types = { TypeInfo::get<std::string>() }\
+				},\
+				{\
+					.name = "Row",\
+					.allowed_types = { TypeInfo::get<uint>() }\
+				},\
+				{\
+					.name = "V",\
+					.allowed_types = { TypeInfo::get<TYPE>() }\
+				}\
+			},\
+			{\
+			},\
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {\
+				auto sht = *(SheetPtr*)inputs[0].data;\
+				auto name = *(uint*)inputs[1].data;\
+				if (sht)\
+				{\
+					auto column_idx = sht->find_column(name);\
+					if (column_idx != -1)\
+					{\
+						if (sht->columns[column_idx].type == TypeInfo::get<TYPE>())\
+						{\
+							auto row_idx = *(uint*)inputs[2].data;\
+							if (row_idx < sht->rows.size())\
+								*(TYPE*)sht->rows[row_idx].datas[column_idx] = *(TYPE*)inputs[3].data;\
+						}\
+					}\
+				}\
+			}\
+		);
+
+		SET_SHT_TEMPLATE(bool);
+		SET_SHT_TEMPLATE(int);
+		SET_SHT_TEMPLATE(uint);
+		SET_SHT_TEMPLATE(float);
+		SET_SHT_TEMPLATE(ivec2);
+		SET_SHT_TEMPLATE(ivec3);
+		SET_SHT_TEMPLATE(ivec4);
+		SET_SHT_TEMPLATE(uvec2);
+		SET_SHT_TEMPLATE(uvec3);
+		SET_SHT_TEMPLATE(uvec4);
+		SET_SHT_TEMPLATE(cvec2);
+		SET_SHT_TEMPLATE(cvec3);
+		SET_SHT_TEMPLATE(cvec4);
+		SET_SHT_TEMPLATE(vec2);
+		SET_SHT_TEMPLATE(vec3);
+		SET_SHT_TEMPLATE(vec4);
+		SET_SHT_TEMPLATE(std::string);
+		SET_SHT_TEMPLATE(std::wstring);
+		SET_SHT_TEMPLATE(std::filesystem::path);
+
+#undef SET_SHT_TEMPLATE
 
 		library->add_template("Delta Time", "",
 			{

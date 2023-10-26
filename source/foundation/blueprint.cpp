@@ -2277,6 +2277,7 @@ namespace flame
 								from_node = it->second;
 							else
 							{
+								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 								printf("link: cannot find node: %u\n", id);
 								continue;
 							}
@@ -2287,6 +2288,7 @@ namespace flame
 								to_node = it->second;
 							else
 							{
+								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 								printf("link: cannot find node: %u\n", id);
 								continue;
 							}
@@ -2296,6 +2298,7 @@ namespace flame
 							from_slot = from_node->find_output(name);
 							if (!from_slot)
 							{
+								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 								printf("link: cannot find output: %u in node: %s\n", name, from_node->name.c_str());
 								continue;
 							}
@@ -2305,6 +2308,7 @@ namespace flame
 							to_slot = to_node->find_input(name);
 							if (!to_slot)
 							{
+								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 								printf("link: cannot find input: %u in node: %s\n", name, to_node->name.c_str());
 								continue;
 							}

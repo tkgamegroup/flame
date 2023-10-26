@@ -18,7 +18,14 @@ namespace flame
 	}
 
 	void SheetPrivate::insert_column(const std::string& name, TypeInfo* type, int idx, const std::string& default_value)
-	{ 
+	{
+		auto name_hash = sh(name.c_str());
+		if (find_column(name_hash) != -1)
+		{
+			printf("sheet insert column: column with name: %s already exists\n", name.c_str());
+			return;
+		}
+
 		Column column;
 		if (idx < 0)
 			idx = columns.size() + (idx + 1);
@@ -121,7 +128,7 @@ namespace flame
 
 	void SheetPrivate::remove_row(uint idx)
 	{
-		assert(idx < columns.size());
+		assert(idx < rows.size());
 
 		auto& row = rows[idx];
 		for (auto i = 0; i < columns.size(); i++)

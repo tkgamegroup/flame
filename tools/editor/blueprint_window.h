@@ -32,6 +32,7 @@ struct BlueprintView : View
 	void copy_nodes(BlueprintGroupPtr g);
 	void paste_nodes(BlueprintGroupPtr g, const vec2& pos);
 	void set_parent_to_hovered_node();
+	void navigate_to_node(BlueprintNodePtr n);
 	void run_blueprint(BlueprintInstance::Group* debugging_group);
 	void step_blueprint(BlueprintInstance::Group* debugging_group);
 	void stop_blueprint(BlueprintInstance::Group* debugging_group);
