@@ -7,6 +7,7 @@
 
 #include <flame/foundation/typeinfo_serialize.h>
 #include <flame/foundation/bitmap.h>
+#include <flame/foundation/blueprint.h>
 #include <flame/graphics/extension.h>
 #include <flame/graphics/material.h>
 #include <flame/graphics/model.h>
@@ -21,6 +22,7 @@
 #include <flame/universe/components/terrain.h>
 #include <flame/universe/components/volume.h>
 #include <flame/universe/components/particle_system.h>
+#include <flame/universe/components/bp_instance.h>
 
 struct StagingVector
 {
@@ -1908,6 +1910,32 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 						ImGui::InputFloat("Time", &armature->playing_time, 0.f, 0.f, "%.3f", ImGuiInputTextFlags_ReadOnly);
 					}
 					ImGui::DragFloat("Speed", &armature->playing_speed, 0.01f);
+				}
+			}
+			else if (ui.name_hash == "flame::cBpInstance"_h)
+			{
+				if (cc.components.size() == 1)
+				{
+					auto comp_bp_ins = (cBpInstancePtr)cc.components[0];
+					auto bp_ins = comp_bp_ins->bp_ins;
+					if (bp_ins)
+					{
+						if (ImGui::CollapsingHeader("Bp Variables:"))
+						{
+							for (auto& v : comp_bp_ins->bp->variables)
+							{
+								if (ImGui::TreeNode(v.name.c_str()))
+								{
+									if (auto it = bp_ins->variables.find(v.name_hash); it != bp_ins->variables.end())
+									{
+										auto value_str = it->second.type->serialize(it->second.data);
+										ImGui::TextUnformatted(value_str.c_str());
+									}
+									ImGui::TreePop();
+								}
+							}
+						}
+					}
 				}
 			}
 		}
