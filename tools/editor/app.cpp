@@ -3,6 +3,7 @@
 #include "history.h"
 #include "scene_window.h"
 #include "project_window.h"
+#include "blueprint_window.h"
 #include "inspector_window.h"
 
 #include <flame/xml.h>
@@ -508,27 +509,12 @@ void App::on_gui()
 		if (ImGui::MenuItem("Close Project"))
 			close_project();
 		ImGui::Separator();
-		if (ImGui::MenuItem("New Prefab"))
-		{
-			ImGui::OpenFileDialog("New Prefab", [this](bool ok, const std::filesystem::path& path) {
-				if (ok)
-				{
-					new_prefab(path);
-					open_prefab(path);
-				}
-			});
-		}
-		if (ImGui::MenuItem("Open Prefab"))
-		{
-			ImGui::OpenFileDialog("Open Prefab", [this](bool ok, const std::filesystem::path& path) {
-				if (ok)
-					open_prefab(path);
-			});
-		}
-		if (ImGui::MenuItem("Save Prefab"))
-			save_prefab();
-		if (ImGui::MenuItem("Close Prefab"))
-			close_prefab();
+		if (ImGui::MenuItem("Save"))
+			;
+		if (ImGui::MenuItem("Save All"))
+			;
+		if (ImGui::MenuItem("Close"))
+			;
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("Edit"))
@@ -1533,6 +1519,74 @@ void App::rebuild_typeinfo()
 			}
 		}
 	}
+}
+
+static void update_references(void* location, uint variable_name, uint location_name, uint new_name)
+{
+	auto assets_path = app.project_path / L"assets";
+	for (auto it : std::filesystem::recursive_directory_iterator(assets_path))
+	{
+		if (it.is_regular_file())
+		{
+			auto ext = it.path().extension();
+			if (ext == L".bp")
+			{
+				if (auto bp = Blueprint::get(it.path()); bp)
+				{
+					if (bp != location)
+					{
+						auto changed = false;
+						for (auto& g : bp->groups)
+						{
+							std::vector<BlueprintNodePtr> to_update_nodes;
+							for (auto& n : g->nodes)
+							{
+								if (blueprint_is_variable_node(n->name_hash))
+								{
+									if (*(uint*)n->inputs[0]->data == variable_name &&
+										*(uint*)n->inputs[1]->data == location_name)
+									{
+										to_update_nodes.push_back(n.get());
+										changed = true;
+									}
+								}
+							}
+							for (auto n : to_update_nodes)
+								bp->update_variable_node(n, new_name);
+						}
+						if (changed)
+						{
+							auto is_editing = false;
+							for (auto& v : blueprint_window.views)
+							{
+								auto bv = (BlueprintView*)v.get();
+								if (bv->blueprint == bp)
+								{
+									bv->unsaved = true;
+									is_editing = true;
+								}
+							}
+							if (!is_editing)
+								bp->save();
+						}
+					}
+					Blueprint::release(bp);
+				}
+			}
+		}
+	}
+}
+
+void App::update_references(SheetPtr sheet, uint variable_name, uint location_name, uint new_name)
+{
+	if (std::find(project_static_sheets.begin(), project_static_sheets.end(), sheet) != project_static_sheets.end())
+		update_references(sheet, variable_name, location_name, new_name);
+}
+
+void App::update_references(BlueprintPtr blueprint, uint variable_name, uint location_name, uint new_name)
+{
+	if (std::find(project_static_blueprints.begin(), project_static_blueprints.end(), blueprint) != project_static_blueprints.end())
+		update_references(blueprint, variable_name, location_name, new_name);
 }
 
 void App::open_timeline(const std::filesystem::path& path)

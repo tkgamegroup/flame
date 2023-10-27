@@ -239,7 +239,7 @@ void BlueprintView::copy_nodes(BlueprintGroupPtr g)
 			auto& l = copied_links.emplace_back();
 			l.from_node = src_l->from_slot->node->object_id;
 			l.from_slot = src_l->from_slot->name_hash;
-			l.to_node = src_l->to_slot->node->object_id;
+			l.to_node = src_l->to_slot->node->object_id; 
 			l.to_slot = src_l->to_slot->name_hash;
 		}
 	}
@@ -251,6 +251,9 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 {
 	if (copied_nodes.empty())
 		return;
+
+	auto paste_nodes_count = 0;
+	auto paste_links_count = 0;
 
 	std::map<uint, BlueprintNodePtr> node_map; // the original id to the new node, use for linking
 	auto base_pos = vec2(+10000.f);
@@ -271,6 +274,16 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 			if (auto it = src_n.input_datas.find("Location"_h); it != src_n.input_datas.end())
 				location = s2t<uint>(it->second.value);
 			n = blueprint->add_variable_node(g, parent, name, blueprint_variable_name_to_type(src_n.name), location);
+		}
+		else if (src_n.name == "Call"_h)
+		{
+			uint name = 0;
+			uint location = 0;
+			if (auto it = src_n.input_datas.find("Name"_h); it != src_n.input_datas.end())
+				name = s2t<uint>(it->second.value);
+			if (auto it = src_n.input_datas.find("Location"_h); it != src_n.input_datas.end())
+				location = s2t<uint>(it->second.value);
+			n = blueprint->add_call_node(g, parent, name, location);
 		}
 		else if (src_n.name == "Block"_h)
 		{
@@ -312,6 +325,7 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 				ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)n, src_n.rect.size());
 			}
 			node_map[src_n.object_id] = n;
+			paste_nodes_count++;
 		}
 	}
 	for (auto& src_l : copied_links)
@@ -323,11 +337,15 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 		if (auto it = node_map.find(src_l.to_node); it != node_map.end())
 			to_node = it->second;
 		if (from_node && to_node)
+		{
 			blueprint->add_link(from_node->find_output(src_l.from_slot), to_node->find_input(src_l.to_slot));
+			paste_links_count++;
+		}
 	}
 
-	unsaved = true;
-	app.last_status = "Pasted";
+	if (paste_nodes_count || paste_links_count)
+		unsaved = true;
+	app.last_status = std::format("Pasted: {} nodes, {} links", paste_nodes_count, paste_links_count);
 }
 
 void BlueprintView::set_parent_to_hovered_node()
@@ -706,13 +724,12 @@ void BlueprintView::on_draw()
 
 					auto name = var.name;
 					auto old_name_hash = var.name_hash;
-					auto need_update_variable_nodes = false;
 					ImGui::SetNextItemWidth(200.f);
 					ImGui::InputText("Name", &name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
 						blueprint->alter_variable(nullptr, var.name_hash, name, var.type);
-						need_update_variable_nodes = true;
+						app.update_references(blueprint, old_name_hash, blueprint->name_hash, sh(name.c_str()));
 						unsaved = true;
 					}
 					ImGui::SetNextItemWidth(200.f);
@@ -721,73 +738,11 @@ void BlueprintView::on_draw()
 						if (auto type = show_types_menu(); type)
 						{
 							blueprint->alter_variable(nullptr, var.name_hash, "", type);
-							need_update_variable_nodes = true;
+							app.update_references(blueprint, old_name_hash, blueprint->name_hash, old_name_hash);
 							unsaved = true;
 						}
 
 						ImGui::EndCombo();
-					}
-
-					if (need_update_variable_nodes)
-					{
-						auto new_name_hash = sh(name.c_str());
-						auto blueprint_name_hash = blueprint->name_hash;
-
-						if (std::find(app.project_static_blueprints.begin(), app.project_static_blueprints.end(), blueprint) != app.project_static_blueprints.end())
-						{
-							auto assets_path = app.project_path / L"assets";
-							for (auto it : std::filesystem::recursive_directory_iterator(assets_path))
-							{
-								if (it.is_regular_file())
-								{
-									auto ext = it.path().extension();
-									if (ext == L".bp")
-									{
-										if (auto bp = Blueprint::get(it.path()); bp)
-										{
-											if (bp != blueprint)
-											{
-												auto changed = false;
-												for (auto& g : bp->groups)
-												{
-													std::vector<BlueprintNodePtr> to_update_nodes;
-													for (auto& n : g->nodes)
-													{
-														if (blueprint_is_variable_node(n->name_hash))
-														{
-															if (*(uint*)n->inputs[0]->data == old_name_hash &&
-																*(uint*)n->inputs[1]->data == blueprint_name_hash)
-															{
-																to_update_nodes.push_back(n.get());
-																changed = true;
-															}
-														}
-													}
-													for (auto n : to_update_nodes)
-														bp->update_variable_node(n, new_name_hash);
-												}
-												if (changed)
-												{
-													auto is_editing = false;
-													for (auto& v : blueprint_window.views)
-													{
-														auto bv = (BlueprintView*)v.get();
-														if (bv->blueprint == bp)
-														{
-															bv->unsaved = true;
-															is_editing = true;
-														}
-													}
-													if (!is_editing)
-														bp->save();
-												}
-											}
-											Blueprint::release(bp);
-										}
-									}
-								}
-							}
-						}
 					}
 
 					ImGui::TextUnformatted("Value");
@@ -878,8 +833,10 @@ void BlueprintView::on_draw()
 				{
 					auto& var = group->variables[selected_variable];
 
+					auto name = var.name;
+					auto old_name_hash = var.name_hash;
 					ImGui::SetNextItemWidth(200.f);
-					ImGui::InputText("Name", &var.name);
+					ImGui::InputText("Name", &name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
 						blueprint->alter_variable(group, var.name_hash, name, var.type);
@@ -896,6 +853,7 @@ void BlueprintView::on_draw()
 
 						ImGui::EndCombo();
 					}
+
 					ImGui::TextUnformatted("Value");
 					if (debugging_group)
 					{
@@ -1149,7 +1107,7 @@ void BlueprintView::on_draw()
 					auto n = selected_nodes.front();
 					ImGui::Text("Node: %s", n->name.c_str());
 					ImGui::Text("ID: %d", n->object_id);
-					if (blueprint_is_variable_node(n->name_hash))
+					if (blueprint_is_variable_node(n->name_hash) || n->name_hash == "Call"_h)
 					{
 						auto name = *(uint*)n->inputs[0]->data;
 						auto location = *(uint*)n->inputs[1]->data;

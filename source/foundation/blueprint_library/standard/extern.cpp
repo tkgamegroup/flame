@@ -215,7 +215,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Sheet Rows Count", "",
+		library->add_template("Sheet Columns Count", "",
 			{
 				{
 					.name = "Sheet",
@@ -230,7 +230,39 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto sht = *(SheetPtr*)inputs[0].data;
-				*(uint*)outputs[0].data = sht ? sht->rows.size() : 0;
+				*(uint*)outputs[0].data = sht ? sht->columns.size() : 0;
+			}
+		);
+
+		library->add_template("Sheet Get Column Name", "",
+			{
+				{
+					.name = "Sheet",
+					.allowed_types = { TypeInfo::get<SheetPtr>() }
+				},
+				{
+					.name = "Index",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto sht = *(SheetPtr*)inputs[0].data;
+				auto index = *(uint*)inputs[1].data;
+				if (sht)
+				{
+					if (index < sht->columns.size())
+						*(uint*)outputs[0].data = sht->columns[index].name_hash;
+					else
+						*(uint*)outputs[0].data = 0;
+				}
+				else
+					*(uint*)outputs[0].data = 0;
 			}
 		);
 
@@ -264,6 +296,25 @@ namespace flame
 					if (type)
 						sht->insert_column(name, type);
 				}
+			}
+		);
+
+		library->add_template("Sheet Rows Count", "",
+			{
+				{
+					.name = "Sheet",
+					.allowed_types = { TypeInfo::get<SheetPtr>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto sht = *(SheetPtr*)inputs[0].data;
+				*(uint*)outputs[0].data = sht ? sht->rows.size() : 0;
 			}
 		);
 
@@ -464,6 +515,47 @@ namespace flame
 		SET_SHT_TEMPLATE(std::filesystem::path);
 
 #undef SET_SHT_TEMPLATE
+
+		library->add_template("Assign Sheet Row To Blueprint Instance", "",
+			{
+				{
+					.name = "Sheet",
+					.allowed_types = { TypeInfo::get<SheetPtr>() }
+				},
+				{
+					.name = "Row",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Instance",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto sht = *(SheetPtr*)inputs[0].data;
+				auto row_idx = *(uint*)inputs[1].data;
+				auto ins = *(BlueprintInstancePtr*)inputs[2].data;
+				if (sht && ins)
+				{
+					if (row_idx < sht->rows.size())
+					{
+						auto& row = sht->rows[row_idx];
+						for (auto i = 0; i < sht->columns.size(); i++)
+						{
+							auto& column = sht->columns[i];
+							auto it = ins->variables.find(column.name_hash);
+							if (it != ins->variables.end())
+							{
+								if (it->second.type == column.type)
+									column.type->copy(it->second.data, row.datas[i]);
+							}
+						}
+					}
+				}
+			}
+		);
 
 		library->add_template("Delta Time", "",
 			{

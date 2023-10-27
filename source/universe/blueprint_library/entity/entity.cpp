@@ -421,6 +421,8 @@ namespace flame
 								parent->add_child(e);
 						}
 					}
+					else
+						wprintf(L"Spawn Prefab Node: cannot find %s\n", path.c_str());
 				}
 
 				*(EntityPtr*)outputs[0].data = e;

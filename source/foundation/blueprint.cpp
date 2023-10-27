@@ -174,11 +174,14 @@ namespace flame
 		v.data = v.type->create();
 
 		auto frame = frames;
-		variable_changed_frame = frame;
 		if (group)
+		{
+			group->variable_changed_frame = frame;
 			group->structure_changed_frame = frame;
+		}
 		else
 		{
+			variable_changed_frame = frame;
 			for (auto& g : groups)
 				g->structure_changed_frame = frame;
 		}
@@ -216,11 +219,14 @@ namespace flame
 			remove_node(n, false);
 
 		auto frame = frames;
-		variable_changed_frame = frame;
 		if (group)
+		{
+			group->variable_changed_frame = frame;
 			group->structure_changed_frame = frame;
+		}
 		else
 		{
+			variable_changed_frame = frame;
 			for (auto& g : groups)
 				g->structure_changed_frame = frame;
 		}
@@ -279,11 +285,14 @@ namespace flame
 				}
 
 				auto frame = frames;
-				variable_changed_frame = frame;
 				if (group)
+				{
+					group->variable_changed_frame = frame;
 					group->structure_changed_frame = frame;
+				}
 				else
 				{
+					variable_changed_frame = frame;
 					for (auto& g : groups)
 						g->structure_changed_frame = frame;
 				}

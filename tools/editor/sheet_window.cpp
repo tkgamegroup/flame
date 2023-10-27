@@ -166,61 +166,9 @@ void SheetView::on_draw()
 								{
 									auto old_name_hash = sheet->columns[i].name_hash;
 									auto new_name_hash = sh(new_names[i].c_str());
-									auto sheet_name_hash = sheet->name_hash;
 									sheet->alter_column(i, new_names[i], new_types[i]);
 
-									if (std::find(app.project_static_sheets.begin(), app.project_static_sheets.end(), sheet) != app.project_static_sheets.end())
-									{
-										auto assets_path = app.project_path / L"assets";
-										for (auto it : std::filesystem::recursive_directory_iterator(assets_path))
-										{
-											if (it.is_regular_file())
-											{
-												auto ext = it.path().extension();
-												if (ext == L".bp")
-												{
-													if (auto bp = Blueprint::get(it.path()); bp)
-													{
-														auto changed = false;
-														for (auto& g : bp->groups)
-														{
-															std::vector<BlueprintNodePtr> to_update_nodes;
-															for (auto& n : g->nodes)
-															{
-																if (blueprint_is_variable_node(n->name_hash))
-																{
-																	if (*(uint*)n->inputs[0]->data == old_name_hash &&
-																		*(uint*)n->inputs[1]->data == sheet_name_hash)
-																	{
-																		to_update_nodes.push_back(n.get());
-																		changed = true;
-																	}
-																}
-															}
-															for (auto n : to_update_nodes)
-																bp->update_variable_node(n, new_name_hash);
-														}
-														if (changed)
-														{
-															auto is_editing = false;
-															for (auto& v : blueprint_window.views)
-															{
-																auto bv = (BlueprintView*)v.get();
-																if (bv->blueprint == bp)
-																{
-																	bv->unsaved = true;
-																	is_editing = true;
-																}
-															}
-															if (!is_editing)
-																bp->save();
-														}
-														Blueprint::release(bp);
-													}
-												}
-											}
-										}
-									}
+									app.update_references(sheet, old_name_hash, sheet->name_hash, new_name_hash);
 
 									changed = true;
 								}
@@ -494,6 +442,28 @@ void SheetView::on_draw()
 										*(std::wstring*)data = s2w(s);
 								}
 								ImGui::PopItemWidth();
+								break;
+							case DataPath:
+								ImGui::PushItemWidth(-20.f);
+								{
+									auto s = (*(std::filesystem::path*)data).string();
+									ImGui::InputText("", &s, ImGuiInputTextFlags_ReadOnly);
+									if (ImGui::BeginDragDropTarget())
+									{
+										if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
+										{
+											*(std::filesystem::path*)data = Path::reverse(std::wstring((wchar_t*)payload->Data));
+											changed = true;
+										}
+										ImGui::EndDragDropTarget();
+									}
+									ImGui::SameLine();
+									if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
+									{
+										*(std::filesystem::path*)data = L"";
+										changed = true;
+									}
+								}
 								break;
 							}
 						}
