@@ -88,6 +88,23 @@ static std::vector<BlueprintNodePtr> get_selected_nodes()
 	return nodes;
 }
 
+static std::vector<BlueprintLinkPtr> get_selected_links()
+{
+	std::vector<BlueprintLinkPtr> links;
+	if (auto n = ax::NodeEditor::GetSelectedObjectCount(); n > 0)
+	{
+		std::vector<ax::NodeEditor::LinkId> link_ids(n);
+		n = ax::NodeEditor::GetSelectedLinks(link_ids.data(), n);
+		if (n > 0)
+		{
+			links.resize(n);
+			for (auto i = 0; i < n; i++)
+				links[i] = (BlueprintLinkPtr)(uint64)link_ids[i];
+		}
+	}
+	return links;
+}
+
 static BlueprintNodePtr				f9_bound_breakpoint = nullptr;
 static BlueprintBreakpointOption	f9_bound_breakpoint_option;
 
@@ -137,51 +154,6 @@ BlueprintView::BlueprintView(const std::string& name) :
 			node->group->structure_changed_frame = frame;
 			view.blueprint->dirty_frame = frame;
 		}
-		if (!view.grapes_mode)
-		{
-			auto do_expand = false;
-			if ((reason & ax::NodeEditor::SaveReasonFlags::AddNode) != ax::NodeEditor::SaveReasonFlags::None)
-			{
-				auto sz = ax::NodeEditor::GetNodeSize(node_id);
-				auto ready = node->is_block ? node->position != node->rect.a : ax::NodeEditor::GetNodeSize(node_id).x != 0.f;
-				if (!ready)
-				{
-					auto ax_node = view.ax_node_editor->FindNode(node_id);
-					add_event([&, ax_node]() {
-						view.ax_node_editor->MakeDirty(ax::NodeEditor::SaveReasonFlags::AddNode | ax::NodeEditor::SaveReasonFlags::Size, ax_node);
-						return false;
-					});
-					return true;
-				}
-
-				auto pos = node->position;
-				BlueprintNodePtr most_depth_block = nullptr;
-				uint most_depth = 0;
-				auto g = node->group;
-				for (auto& b : g->nodes)
-				{
-					if (b->is_block && b->rect.contains(pos))
-					{
-						if (b->depth > most_depth)
-						{
-							most_depth_block = b.get();
-							most_depth = b->depth;
-						}
-					}
-				}
-
-				auto new_block = most_depth_block ? most_depth_block : g->nodes.front().get();
-				if (node->parent != new_block)
-					view.blueprint->set_nodes_parent({ node }, new_block);
-
-				do_expand = true;
-			}
-			if (ImGui::IsKeyDown(Keyboard_Alt))
-				do_expand = true;
-			if (do_expand)
-				view.expand_block_sizes();
-			view.process_relationships(node);
-		}
 		view.unsaved = true;
 		return true;
 	};
@@ -213,58 +185,6 @@ BlueprintView::~BlueprintView()
 		delete blueprint_instance;
 	if (ax_node_editor)
 		ax::NodeEditor::DestroyEditor((ax::NodeEditor::EditorContext*)ax_node_editor);
-}
-
-void BlueprintView::process_relationships(BlueprintNodePtr n)
-{
-	if (grapes_mode)
-		return;
-
-	auto g = blueprint->find_group(group_name_hash);
-
-	auto try_change_node_block = [&](BlueprintNodePtr node) {
-		Rect node_rect;
-		node_rect.a = node->position;
-		node_rect.b = node_rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)node);
-		BlueprintNodePtr most_depth_block = nullptr;
-		uint most_depth = 0;
-		auto g = node->group;
-		for (auto& b : g->nodes)
-		{
-			if (b->is_block && b->rect.contains(node_rect))
-			{
-				if (b->depth > most_depth)
-				{
-					most_depth_block = b.get();
-					most_depth = b->depth;
-				}
-			}
-		}
-
-		auto new_block = most_depth_block ? most_depth_block : g->nodes.front().get();
-		if (node->parent != new_block)
-			blueprint->set_nodes_parent({ node }, new_block);
-	};
-
-	if (!n->is_block)
-		try_change_node_block(n);
-	else
-	{
-		for (auto& b : g->nodes)
-		{
-			if (b == g->nodes.front())
-				continue;
-			if (!b->is_block)
-				continue;
-
-			try_change_node_block(b.get());
-		}
-		for (auto& n : g->nodes)
-		{
-			if (!n->is_block)
-				try_change_node_block(n.get());
-		}
-	}
 }
 
 void BlueprintView::copy_nodes(BlueprintGroupPtr g)
@@ -304,16 +224,17 @@ void BlueprintView::copy_nodes(BlueprintGroupPtr g)
 		};
 		for (auto n : nodes)
 			add_node_recursively(n);
-		std::vector<BlueprintLinkPtr> sorted_links;
+
+		std::vector<BlueprintLinkPtr> relevant_links;
 		for (auto& src_l : g->links)
 		{
 			if (if_any_contains(nodes, src_l->from_slot->node) && if_any_contains(nodes, src_l->to_slot->node))
-				sorted_links.push_back(src_l.get());
+				relevant_links.push_back(src_l.get());
 		}
-		std::sort(sorted_links.begin(), sorted_links.end(), [](const auto a, const auto b) {
+		std::sort(relevant_links.begin(), relevant_links.end(), [](const auto a, const auto b) {
 			return a->from_slot->node->degree < b->from_slot->node->degree;
 		});
-		for (auto src_l : sorted_links)
+		for (auto src_l : relevant_links)
 		{
 			auto& l = copied_links.emplace_back();
 			l.from_node = src_l->from_slot->node->object_id;
@@ -341,7 +262,7 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 		auto parent = g->nodes.front().get();
 		if (auto it = node_map.find(src_n.parent); it != node_map.end())
 			parent = it->second;
-		if (src_n.name == "Variable"_h)
+		if (blueprint_is_variable_node(src_n.name))
 		{
 			uint name = 0;
 			uint location = 0;
@@ -349,57 +270,7 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 				name = s2t<uint>(it->second.value);
 			if (auto it = src_n.input_datas.find("Location"_h); it != src_n.input_datas.end())
 				location = s2t<uint>(it->second.value);
-			n = blueprint->add_variable_node(g, parent, name, "get"_h, location);
-		}
-		else if (src_n.name == "Set Variable"_h)
-		{
-			uint name = 0;
-			uint location = 0;
-			if (auto it = src_n.input_datas.find("Name"_h); it != src_n.input_datas.end())
-				name = s2t<uint>(it->second.value);
-			if (auto it = src_n.input_datas.find("Location"_h); it != src_n.input_datas.end())
-				location = s2t<uint>(it->second.value);
-			n = blueprint->add_variable_node(g, parent, name, "set"_h, location);
-		}
-		else if (src_n.name == "Array Size"_h)
-		{
-			uint name = 0;
-			uint location = 0;
-			if (auto it = src_n.input_datas.find("Name"_h); it != src_n.input_datas.end())
-				name = s2t<uint>(it->second.value);
-			if (auto it = src_n.input_datas.find("Location"_h); it != src_n.input_datas.end())
-				location = s2t<uint>(it->second.value);
-			n = blueprint->add_variable_node(g, parent, name, "array_size"_h, location);
-		}
-		else if (src_n.name == "Array Get Item"_h)
-		{
-			uint name = 0;
-			uint location = 0;
-			if (auto it = src_n.input_datas.find("Name"_h); it != src_n.input_datas.end())
-				name = s2t<uint>(it->second.value);
-			if (auto it = src_n.input_datas.find("Location"_h); it != src_n.input_datas.end())
-				location = s2t<uint>(it->second.value);
-			n = blueprint->add_variable_node(g, parent, name, "array_get_item"_h, location);
-		}
-		else if (src_n.name == "Array Set Item"_h)
-		{
-			uint name = 0;
-			uint location = 0;
-			if (auto it = src_n.input_datas.find("Name"_h); it != src_n.input_datas.end())
-				name = s2t<uint>(it->second.value);
-			if (auto it = src_n.input_datas.find("Location"_h); it != src_n.input_datas.end())
-				location = s2t<uint>(it->second.value);
-			n = blueprint->add_variable_node(g, parent, name, "array_set_item"_h, location);
-		}
-		else if (src_n.name == "Array Add Item"_h)
-		{
-			uint name = 0;
-			uint location = 0;
-			if (auto it = src_n.input_datas.find("Name"_h); it != src_n.input_datas.end())
-				name = s2t<uint>(it->second.value);
-			if (auto it = src_n.input_datas.find("Location"_h); it != src_n.input_datas.end())
-				location = s2t<uint>(it->second.value);
-			n = blueprint->add_variable_node(g, parent, name, "array_add_item"_h, location);
+			n = blueprint->add_variable_node(g, parent, name, blueprint_variable_name_to_type(src_n.name), location);
 		}
 		else if (src_n.name == "Block"_h)
 		{
@@ -472,40 +343,7 @@ void BlueprintView::set_parent_to_hovered_node()
 	if (nodes.empty())
 		return;
 
-	Rect wrap_rect;
-	if (!grapes_mode && hovered_node)
-	{
-		for (auto n : nodes)
-		{
-			Rect rect;
-			rect.a = n->position;
-			rect.b = rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)n);
-			rect.expand(10.f);
-			wrap_rect.expand(rect);
-		}
-
-		if (all(lessThan(hovered_node->rect.size(), wrap_rect.size())))
-		{
-			auto expand = wrap_rect.size() - hovered_node->rect.size();
-			hovered_node->rect.b += expand;
-			auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)hovered_node);
-			ax_node->m_GroupBounds.Max += expand;
-			ax_node->m_Bounds.Max += expand;
-			//ax_node_editor->MakeDirty(ax::NodeEditor::SaveReasonFlags::AddNode, ax_node);
-		}
-	}
-
 	blueprint->set_nodes_parent(nodes, hovered_node ? hovered_node : nodes.front()->group->nodes.front().get());
-
-	if (!grapes_mode && hovered_node)
-	{
-		auto offset = hovered_node->rect.a - wrap_rect.a;
-		for (auto n : nodes)
-		{
-			if (!grapes_mode && hovered_node)
-				set_offset_recurisely(n, offset);
-		}
-	}
 }
 
 void BlueprintView::navigate_to_node(BlueprintNodePtr n)
@@ -600,47 +438,6 @@ void BlueprintView::save_blueprint()
 	}
 }
 
-void BlueprintView::expand_block_sizes()
-{
-	if (grapes_mode)
-		return;
-	auto g = blueprint->find_group(group_name_hash);
-	std::function<void(BlueprintNodePtr)> fit_block_size;
-	fit_block_size = [&](BlueprintNodePtr b) {
-		Rect rect = b->rect;
-
-		for (auto& c : b->children)
-		{
-			if (c->is_block)
-				fit_block_size(c);
-
-			Rect block_rect;
-			block_rect.a = c->position;
-			block_rect.b = block_rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)c);
-			block_rect.expand(10.f);
-			rect.expand(block_rect);
-		}
-
-		if (b != g->nodes.front().get())
-		{
-			if (any(lessThan(rect.a, b->rect.a)) || any(greaterThan(rect.b, b->rect.b)))
-			{
-				auto lt_off = b->rect.a - rect.a;
-				auto rb_off = rect.b - b->rect.b;
-				b->position -= lt_off;
-				b->rect = rect;
-				ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)b, b->position);
-				auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)b);
-				ax_node->m_GroupBounds.Min = b->rect.a;
-				ax_node->m_GroupBounds.Max = b->rect.b;
-				ax_node->m_Bounds.Min -= lt_off;
-				ax_node->m_Bounds.Max += rb_off;
-			}
-		}
-	};
-	fit_block_size(g->nodes.front().get());
-}
-
 std::string BlueprintView::get_save_name()
 {
 	auto sp = SUS::split(name, '#');
@@ -669,8 +466,6 @@ void BlueprintView::on_draw()
 		if (blueprint_instance->built_frame < blueprint->dirty_frame)
 			blueprint_instance->build();
 
-		ImGui::Checkbox("Grapes Mode", &grapes_mode);
-		ImGui::SameLine();
 		ImGui::Checkbox("Show Misc", &show_misc);
 		ImGui::SameLine();
 		if (ImGui::Button("Save"))
@@ -910,11 +705,14 @@ void BlueprintView::on_draw()
 					auto& var = blueprint->variables[selected_variable];
 
 					auto name = var.name;
+					auto old_name_hash = var.name_hash;
+					auto need_update_variable_nodes = false;
 					ImGui::SetNextItemWidth(200.f);
 					ImGui::InputText("Name", &name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
 						blueprint->alter_variable(nullptr, var.name_hash, name, var.type);
+						need_update_variable_nodes = true;
 						unsaved = true;
 					}
 					ImGui::SetNextItemWidth(200.f);
@@ -923,11 +721,75 @@ void BlueprintView::on_draw()
 						if (auto type = show_types_menu(); type)
 						{
 							blueprint->alter_variable(nullptr, var.name_hash, "", type);
+							need_update_variable_nodes = true;
 							unsaved = true;
 						}
 
 						ImGui::EndCombo();
 					}
+
+					if (need_update_variable_nodes)
+					{
+						auto new_name_hash = sh(name.c_str());
+						auto blueprint_name_hash = blueprint->name_hash;
+
+						if (std::find(app.project_static_blueprints.begin(), app.project_static_blueprints.end(), blueprint) != app.project_static_blueprints.end())
+						{
+							auto assets_path = app.project_path / L"assets";
+							for (auto it : std::filesystem::recursive_directory_iterator(assets_path))
+							{
+								if (it.is_regular_file())
+								{
+									auto ext = it.path().extension();
+									if (ext == L".bp")
+									{
+										if (auto bp = Blueprint::get(it.path()); bp)
+										{
+											if (bp != blueprint)
+											{
+												auto changed = false;
+												for (auto& g : bp->groups)
+												{
+													std::vector<BlueprintNodePtr> to_update_nodes;
+													for (auto& n : g->nodes)
+													{
+														if (blueprint_is_variable_node(n->name_hash))
+														{
+															if (*(uint*)n->inputs[0]->data == old_name_hash &&
+																*(uint*)n->inputs[1]->data == blueprint_name_hash)
+															{
+																to_update_nodes.push_back(n.get());
+																changed = true;
+															}
+														}
+													}
+													for (auto n : to_update_nodes)
+														bp->update_variable_node(n, new_name_hash);
+												}
+												if (changed)
+												{
+													auto is_editing = false;
+													for (auto& v : blueprint_window.views)
+													{
+														auto bv = (BlueprintView*)v.get();
+														if (bv->blueprint == bp)
+														{
+															bv->unsaved = true;
+															is_editing = true;
+														}
+													}
+													if (!is_editing)
+														bp->save();
+												}
+											}
+											Blueprint::release(bp);
+										}
+									}
+								}
+							}
+						}
+					}
+
 					ImGui::TextUnformatted("Value");
 					if (debugging_group)
 					{
@@ -1279,41 +1141,66 @@ void BlueprintView::on_draw()
 				if (blueprint_instance->built_frame < blueprint->dirty_frame)
 					blueprint_instance->build();
 			}
-			if (ImGui::CollapsingHeader("Find:"))
+			if (ImGui::CollapsingHeader("Selections:"))
 			{
-				static std::string find_str;
-				static BlueprintNodePtr last_found_node = nullptr;
-				auto do_find = false;
-				if (ImGui::InputText("##find", &find_str, ImGuiInputTextFlags_EnterReturnsTrue))
-					do_find = true;
-				if (ImGui::IsItemDeactivatedAfterEdit())
-					last_found_node = nullptr;
-				ImGui::SameLine();
-				if (ImGui::Button("Find"))
-					do_find = true;
-				if (do_find)
+				auto selected_nodes = get_selected_nodes();
+				if (selected_nodes.size() == 1)
 				{
-					auto find_str_lower_case = find_str;
-					std::transform(find_str_lower_case.begin(), find_str_lower_case.end(), find_str_lower_case.begin(), ::tolower);
-
-					bool found = false;
-					for (auto& n : group->nodes)
+					auto n = selected_nodes.front();
+					ImGui::Text("Node: %s", n->name.c_str());
+					ImGui::Text("ID: %d", n->object_id);
+					if (blueprint_is_variable_node(n->name_hash))
 					{
-						auto display_name_lower_case = n->display_name;
-						std::transform(display_name_lower_case.begin(), display_name_lower_case.end(), display_name_lower_case.begin(), ::tolower);
-						if (display_name_lower_case.contains(find_str_lower_case))
+						auto name = *(uint*)n->inputs[0]->data;
+						auto location = *(uint*)n->inputs[1]->data;
+						if (location == 0)
 						{
-							if (last_found_node != n.get())
+							if (auto var = group->find_variable(name); var)
+								ImGui::Text("Variable: %s", var->name.c_str());
+							else
 							{
-								navigate_to_node(n.get());
-								last_found_node = n.get();
-								found = true;
-								break;
+								if (auto var = blueprint->find_variable(name); var)
+									ImGui::Text("Variable: %s", var->name.c_str());
+							}
+						}
+						else
+						{
+							auto sht = Sheet::get(location);
+							if (sht)
+							{
+								auto idx = sht->find_column(name);
+								if (idx != -1 && !sht->rows.empty())
+								{
+									auto& column = sht->columns[idx];
+									ImGui::Text("Variable: %s", column.name.c_str());
+									ImGui::Text("From Sheet: %s", sht->name.c_str());
+								}
+							}
+							else
+							{
+								auto bp = Blueprint::get(location);
+								if (bp)
+								{
+									auto var = bp->find_variable(name);
+									if (var)
+									{
+										ImGui::Text("Variable: %s", var->name.c_str());
+										ImGui::Text("From Blueprint: %s", bp->name.c_str());
+									}
+								}
 							}
 						}
 					}
-					if (!found)
-						last_found_node = nullptr;
+
+				}
+				auto selected_links = get_selected_links();
+				if (selected_links.size() == 1)
+				{
+					auto l = selected_links.front();
+					ImGui::TextUnformatted("Link: ");
+					ImGui::Text("ID: %d", l->object_id);
+					ImGui::Text("From: '%s' of '%s'", l->from_slot->name.c_str(), l->from_slot->node->name.c_str());
+					ImGui::Text("To: '%s' of '%s'", l->to_slot->name.c_str(), l->to_slot->node->name.c_str());
 				}
 			}
 			ImGui::EndChild();
@@ -1321,7 +1208,7 @@ void BlueprintView::on_draw()
 			ImGui::TableSetColumnIndex(1); 
 			ImGui::BeginChild("main_area", ImVec2(0, -2));
 			{
-				if (group != last_group)
+				if (group != last_group || group->structure_changed_frame > load_frame)
 				{
 					for (auto& n : group->nodes)
 					{
@@ -1411,11 +1298,11 @@ void BlueprintView::on_draw()
 								if (it != instance_group.slot_datas.end())
 								{
 									auto& arg = it->second.attribute;
-									tooltip = std::format("Value: {} ({})\nObject ID: {}", get_value_str(arg), ti_str(arg.type), input->object_id);
+									tooltip = std::format("Value: {} ({})\nID: {}", get_value_str(arg), ti_str(arg.type), input->object_id);
 								}
 							}
 							else
-								tooltip = std::format("({})\nObject ID: {}", ti_str(input->type), input->object_id);
+								tooltip = std::format("({})\nID: {}", ti_str(input->type), input->object_id);
 							ax::NodeEditor::Suspend();
 							tooltip_pos = io.MousePos;
 							ax::NodeEditor::Resume();
@@ -1459,11 +1346,11 @@ void BlueprintView::on_draw()
 								if (it != instance_group.slot_datas.end())
 								{
 									auto& arg = it->second.attribute;
-									tooltip = std::format("Value: {} ({})\nObject ID: {}", get_value_str(arg), ti_str(arg.type), output->object_id);
+									tooltip = std::format("Value: {} ({})\nID: {}", get_value_str(arg), ti_str(arg.type), output->object_id);
 								}
 							}
 							else
-								tooltip = std::format("({})\nObject ID: {}", ti_str(output->type), output->object_id);
+								tooltip = std::format("({})\nID: {}", ti_str(output->type), output->object_id);
 							ax::NodeEditor::Suspend();
 							tooltip_pos = io.MousePos;
 							ax::NodeEditor::Resume();
@@ -1511,15 +1398,13 @@ void BlueprintView::on_draw()
 
 							preview->model_previewer.update(instance_node->updated_frame);
 						}
-							break;
+							break;                                                            
 						}
 					}
 
 					auto ax_node = ax_node_editor->GetNodeBuilder().m_CurrentNode;
 					vec2 new_pos = ax_node->m_Bounds.Min;
-					if (!grapes_mode)
-						n->position = new_pos;
-					else if (n->position != new_pos)
+					if (n->position != new_pos)
 					{
 						if (!ImGui::IsKeyDown(Keyboard_Alt))
 						{
@@ -1532,45 +1417,19 @@ void BlueprintView::on_draw()
 						n->position = new_pos;
 					}
 
-					if (!grapes_mode)
+					if (n->is_block)
 					{
-						if (n->is_block)
-						{
-							auto bounds = ax_node->m_GroupBounds;
-							n->rect = Rect(bounds.Min, bounds.Max); // get rect from last frame
+						auto col = color_from_depth(n->depth + 1);
+						ImGui::InvisibleButton("block", ImVec2(80, 4));
+						auto p0 = ImGui::GetItemRectMin();
+						auto p1 = ImGui::GetItemRectMax();
+						dl->AddRectFilled(p0, p1, col);
+						col.Value.w = 0.3f;
 
-							ax::NodeEditor::Group(n->rect.size());
-						}
-
-						if (n->is_block)
-						{
-							// restore last pin
-							auto last_pin = ax_node->m_LastPin;
-							ax::NodeEditor::EndNode();
-							// recover last pin and re-active all pins, since our groups(blocks) can have pins
-							ax_node->m_LastPin = last_pin;
-							for (auto pin = ax_node->m_LastPin; pin; pin = pin->m_PreviousPin)
-								pin->m_IsLive = true;
-						}
-						else
-							ax::NodeEditor::EndNode();
+						for (auto c : n->children)
+							dl->AddLine(c->position, vec2((p0 + p1) * 0.5f), col);
 					}
-					else
-					{
-						if (n->is_block)
-						{
-							auto col = color_from_depth(n->depth + 1);
-							ImGui::InvisibleButton("block", ImVec2(80, 4));
-							auto p0 = ImGui::GetItemRectMin();
-							auto p1 = ImGui::GetItemRectMax();
-							dl->AddRectFilled(p0, p1, col);
-							col.Value.w = 0.3f;
-
-							for (auto c : n->children)
-								dl->AddLine(c->position, vec2((p0 + p1) * 0.5f), col);
-						}
-						ax::NodeEditor::EndNode();
-					}
+					ax::NodeEditor::EndNode();
 
 					ax::NodeEditor::PopStyleColor(2);
 				}

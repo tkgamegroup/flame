@@ -1,6 +1,8 @@
 #include "sheet_window.h"
+#include "blueprint_window.h"
 
 #include <flame/foundation/sheet.h>
+#include <flame/foundation/blueprint.h>
 
 SheetWindow sheet_window;
 
@@ -108,13 +110,22 @@ void SheetView::on_draw()
 				SheetView* view;
 				SheetPtr sheet;
 				int column_idx = 0;
+				std::vector<std::string> new_names;
+				std::vector<TypeInfo*> new_types;
 
 				static void open(SheetView* view)
 				{
 					auto dialog = new AlterColumnDialog;
 					dialog->title = "Alter Column";
 					dialog->view = view;
-					dialog->sheet = view->sheet;
+					auto sheet = view->sheet;
+					dialog->sheet = sheet;
+					dialog->new_names.resize(sheet->columns.size());
+					for (auto i = 0; i < sheet->columns.size(); i++)
+						dialog->new_names[i] = sheet->columns[i].name;
+					dialog->new_types.resize(sheet->columns.size());
+					for (auto i = 0; i < sheet->columns.size(); i++)
+						dialog->new_types[i] = sheet->columns[i].type;
 					Dialog::open(dialog);
 				}
 
@@ -137,24 +148,89 @@ void SheetView::on_draw()
 						}
 						if (!sheet->columns.empty())
 						{
-							auto& column = sheet->columns[column_idx];
-							ImGui::InputText("Name", &column.name);
-							if (ImGui::IsItemDeactivatedAfterEdit())
-							{
-								sheet->alter_column(column_idx, column.name, column.type);
-								view->unsaved = true;
-							}
-							if (ImGui::BeginCombo("Type", ti_str(column.type).c_str()))
+							ImGui::InputText("Name", &new_names[column_idx]);
+							
+							if (ImGui::BeginCombo("Type", ti_str(new_types[column_idx]).c_str()))
 							{
 								if (auto type = show_types_menu(); type)
-								{
-									sheet->alter_column(column_idx, column.name, type);
-									view->unsaved = true;
-								}
+									new_types[column_idx] = type;
 								ImGui::EndCombo();
 							}
 						}
 						if (ImGui::Button("OK"))
+						{
+							auto changed = false;
+							for (auto i = 0; i < sheet->columns.size(); i++)
+							{
+								if (sheet->columns[i].name != new_names[i] || sheet->columns[i].type != new_types[i])
+								{
+									auto old_name_hash = sheet->columns[i].name_hash;
+									auto new_name_hash = sh(new_names[i].c_str());
+									auto sheet_name_hash = sheet->name_hash;
+									sheet->alter_column(i, new_names[i], new_types[i]);
+
+									if (std::find(app.project_static_sheets.begin(), app.project_static_sheets.end(), sheet) != app.project_static_sheets.end())
+									{
+										auto assets_path = app.project_path / L"assets";
+										for (auto it : std::filesystem::recursive_directory_iterator(assets_path))
+										{
+											if (it.is_regular_file())
+											{
+												auto ext = it.path().extension();
+												if (ext == L".bp")
+												{
+													if (auto bp = Blueprint::get(it.path()); bp)
+													{
+														auto changed = false;
+														for (auto& g : bp->groups)
+														{
+															std::vector<BlueprintNodePtr> to_update_nodes;
+															for (auto& n : g->nodes)
+															{
+																if (blueprint_is_variable_node(n->name_hash))
+																{
+																	if (*(uint*)n->inputs[0]->data == old_name_hash &&
+																		*(uint*)n->inputs[1]->data == sheet_name_hash)
+																	{
+																		to_update_nodes.push_back(n.get());
+																		changed = true;
+																	}
+																}
+															}
+															for (auto n : to_update_nodes)
+																bp->update_variable_node(n, new_name_hash);
+														}
+														if (changed)
+														{
+															auto is_editing = false;
+															for (auto& v : blueprint_window.views)
+															{
+																auto bv = (BlueprintView*)v.get();
+																if (bv->blueprint == bp)
+																{
+																	bv->unsaved = true;
+																	is_editing = true;
+																}
+															}
+															if (!is_editing)
+																bp->save();
+														}
+														Blueprint::release(bp);
+													}
+												}
+											}
+										}
+									}
+
+									changed = true;
+								}
+							}
+							if (changed)
+								view->unsaved = true;
+							close();
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("Cancel"))
 							close();
 						ImGui::EndPopup();
 					}

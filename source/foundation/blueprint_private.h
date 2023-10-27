@@ -48,6 +48,7 @@ namespace flame
 		void					remove_node(BlueprintNodePtr node, bool recursively) override;
 		void					set_nodes_parent(const std::vector<BlueprintNodePtr> nodes, BlueprintNodePtr new_parent) override;
 		void					set_input_type(BlueprintSlotPtr slot, TypeInfo* type) override;
+		BlueprintNodePtr		update_variable_node(BlueprintNodePtr node, uint new_name) override;
 		BlueprintLinkPtr		add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot) override;
 		void					remove_link(BlueprintLinkPtr link) override;
 		BlueprintGroupPtr		add_group(const std::string& name) override;

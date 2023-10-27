@@ -44,7 +44,6 @@ void SearchView::on_draw()
 		sheet_results.clear();
 
 		auto assets_path = app.project_path / L"assets";
-		std::filesystem::create_directories(assets_path);
 		for (auto it : std::filesystem::recursive_directory_iterator(assets_path))
 		{
 			if (it.is_regular_file())
@@ -62,7 +61,32 @@ void SearchView::on_draw()
 							{
 								auto display_name_lower_case = n->display_name;
 								std::transform(display_name_lower_case.begin(), display_name_lower_case.end(), display_name_lower_case.begin(), ::tolower);
-								if (display_name_lower_case.contains(find_str_lower_case))
+								auto ok = display_name_lower_case.contains(find_str_lower_case);
+								if (!ok)
+								{
+									for (auto& i : n->inputs)
+									{
+										auto input_name_lower_case = i->name;
+										std::transform(input_name_lower_case.begin(), input_name_lower_case.end(), input_name_lower_case.begin(), ::tolower);
+										if (input_name_lower_case.contains(find_str_lower_case))
+										{
+											ok = true;
+											break;
+										}
+										if (!i->is_linked() && i->data)
+										{
+											auto value_str = i->type->serialize(i->data);
+											auto value_str_lower_case = value_str;
+											std::transform(value_str_lower_case.begin(), value_str_lower_case.end(), value_str_lower_case.begin(), ::tolower);
+											if (value_str_lower_case.contains(find_str_lower_case))
+											{
+												ok = true;
+												break;
+											}
+										}
+									}
+								}
+								if (ok)
 								{
 									if (blueprint_result_idx == -1)
 									{
@@ -82,7 +106,7 @@ void SearchView::on_draw()
 
 									auto& gr = blueprint_results[blueprint_result_idx].group_results[group_result_idx];
 									auto& nr = gr.node_results.emplace_back();
-									nr.name = n->display_name;
+									nr.name = !n->display_name.empty() ? n->display_name : n->name;
 									nr.id = n->object_id;
 								}
 							}

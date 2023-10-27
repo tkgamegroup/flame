@@ -70,6 +70,32 @@ namespace flame
 		return false;
 	}
 
+	inline bool blueprint_is_variable_node(uint name)
+	{
+		return name == "Variable"_h ||
+			name == "Set Variable"_h ||
+			name == "Array Size"_h ||
+			name == "Array Clear"_h ||
+			name == "Array Get Item"_h ||
+			name == "Array Set Item"_h ||
+			name == "Array Add Item"_h;
+	}
+
+	inline uint blueprint_variable_name_to_type(uint name)
+	{
+		switch (name)
+		{
+		case "Variable"_h: return "get"_h;
+		case "Set Variable"_h: return "set"_h;
+		case "Array Size"_h: return "array_size"_h;
+		case "Array Clear"_h: return "array_clear"_h;
+		case "Array Get Item"_h: return "array_get_item"_h;
+		case "Array Set Item"_h: return "array_set_item"_h;
+		case "Array Add Item"_h: return "array_add_item"_h;
+		}
+		return 0;
+	}
+
 	struct BlueprintSlot
 	{
 		uint					object_id;
@@ -213,6 +239,16 @@ namespace flame
 		std::vector<std::unique_ptr<BlueprintNodeT>>			nodes;
 		std::vector<std::unique_ptr<BlueprintLinkT>>			links;
 
+		inline BlueprintVariable* find_variable(uint name) const
+		{
+			for (auto& v : variables)
+			{
+				if (v.name_hash == name)
+					return (BlueprintVariable*)&v;
+			}
+			return nullptr;
+		}
+
 		inline BlueprintNodePtr find_node(uint name) const
 		{
 			for (auto& n : nodes)
@@ -270,6 +306,16 @@ namespace flame
 		bool											is_static = false;
 		uint											ref = 0;
 
+		inline BlueprintVariable* find_variable(uint name) const
+		{
+			for (auto& v : variables)
+			{
+				if (v.name_hash == name)
+					return (BlueprintVariable*)&v;
+			}
+			return nullptr;
+		}
+
 		inline BlueprintGroupPtr find_group(uint name) const
 		{
 			for (auto& g : groups)
@@ -297,6 +343,7 @@ namespace flame
 		virtual void					remove_node(BlueprintNodePtr node, bool recursively = true) = 0;
 		virtual void					set_nodes_parent(const std::vector<BlueprintNodePtr> nodes, BlueprintNodePtr new_parent) = 0;
 		virtual void					set_input_type(BlueprintSlotPtr slot, TypeInfo* type) = 0;
+		virtual BlueprintNodePtr		update_variable_node(BlueprintNodePtr node, uint new_name) = 0;
 		virtual BlueprintLinkPtr		add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot) = 0;
 		virtual void					remove_link(BlueprintLinkPtr link) = 0;
 		virtual BlueprintGroupPtr		add_group(const std::string& name) = 0;

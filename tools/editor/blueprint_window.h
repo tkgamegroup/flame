@@ -19,7 +19,6 @@ struct BlueprintView : View
 	uint group_name_hash = "main"_h;
 	uint load_frame = 0;
 	BlueprintGroupPtr last_group = nullptr;
-	bool grapes_mode = true; // relationships nolonger relate to the rect, but using lines to connect them
 	bool show_misc = false;
 	bool unsaved = false;
 
@@ -27,8 +26,6 @@ struct BlueprintView : View
 	BlueprintView(const std::string& name);
 	~BlueprintView();
 
-	void process_relationships(BlueprintNodePtr n);
-	void expand_block_sizes();
 	void copy_nodes(BlueprintGroupPtr g);
 	void paste_nodes(BlueprintGroupPtr g, const vec2& pos);
 	void set_parent_to_hovered_node();
