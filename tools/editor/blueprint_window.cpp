@@ -228,7 +228,7 @@ void BlueprintView::copy_nodes(BlueprintGroupPtr g)
 		std::vector<BlueprintLinkPtr> relevant_links;
 		for (auto& src_l : g->links)
 		{
-			if (if_any_contains(nodes, src_l->from_slot->node) && if_any_contains(nodes, src_l->to_slot->node))
+			if (if_any_contains(nodes, src_l->from_slot->node) || if_any_contains(nodes, src_l->to_slot->node))
 				relevant_links.push_back(src_l.get());
 		}
 		std::sort(relevant_links.begin(), relevant_links.end(), [](const auto a, const auto b) {
@@ -334,8 +334,12 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 		BlueprintNodePtr to_node = nullptr;
 		if (auto it = node_map.find(src_l.from_node); it != node_map.end())
 			from_node = it->second;
+		else if (auto n = g->find_node_by_id(src_l.from_node); n)
+			from_node = n;
 		if (auto it = node_map.find(src_l.to_node); it != node_map.end())
 			to_node = it->second;
+		else if (auto n = g->find_node_by_id(src_l.from_node); n)
+			to_node = n;
 		if (from_node && to_node)
 		{
 			blueprint->add_link(from_node->find_output(src_l.from_slot), to_node->find_input(src_l.to_slot));
@@ -729,7 +733,7 @@ void BlueprintView::on_draw()
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
 						blueprint->alter_variable(nullptr, var.name_hash, name, var.type);
-						app.update_references(blueprint, old_name_hash, blueprint->name_hash, sh(name.c_str()));
+						app.update_blueprint_references(blueprint, old_name_hash, blueprint->name_hash, sh(name.c_str()));
 						unsaved = true;
 					}
 					ImGui::SetNextItemWidth(200.f);
@@ -738,7 +742,7 @@ void BlueprintView::on_draw()
 						if (auto type = show_types_menu(); type)
 						{
 							blueprint->alter_variable(nullptr, var.name_hash, "", type);
-							app.update_references(blueprint, old_name_hash, blueprint->name_hash, old_name_hash);
+							app.update_blueprint_references(blueprint, old_name_hash, blueprint->name_hash, old_name_hash);
 							unsaved = true;
 						}
 

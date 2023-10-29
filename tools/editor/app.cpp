@@ -1577,13 +1577,13 @@ static void update_references(void* location, uint variable_name, uint location_
 	}
 }
 
-void App::update_references(SheetPtr sheet, uint variable_name, uint location_name, uint new_name)
+void App::update_sheet_references(SheetPtr sheet, uint variable_name, uint location_name, uint new_name)
 {
 	if (std::find(project_static_sheets.begin(), project_static_sheets.end(), sheet) != project_static_sheets.end())
 		update_references(sheet, variable_name, location_name, new_name);
 }
 
-void App::update_references(BlueprintPtr blueprint, uint variable_name, uint location_name, uint new_name)
+void App::update_blueprint_references(BlueprintPtr blueprint, uint variable_name, uint location_name, uint new_name)
 {
 	if (std::find(project_static_blueprints.begin(), project_static_blueprints.end(), blueprint) != project_static_blueprints.end())
 		update_references(blueprint, variable_name, location_name, new_name);

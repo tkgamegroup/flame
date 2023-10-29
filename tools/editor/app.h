@@ -208,8 +208,8 @@ struct App : UniverseApplication
 	void load_project_cpp();
 	void unload_project_cpp();
 	void rebuild_typeinfo();
-	void update_references(SheetPtr sheet, uint variable_name, uint location_name, uint new_name);
-	void update_references(BlueprintPtr blueprint, uint variable_name, uint location_name, uint new_name);
+	void update_sheet_references(SheetPtr sheet, uint variable_name, uint location_name, uint new_name);
+	void update_blueprint_references(BlueprintPtr blueprint, uint variable_name, uint location_name, uint new_name);
 	void open_timeline(const std::filesystem::path& path);
 	void close_timeline();
 	void set_timeline_host(EntityPtr e);

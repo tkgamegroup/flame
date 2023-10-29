@@ -101,7 +101,8 @@ namespace flame
 		assert(idx < columns.size());
 
 		auto type = columns[idx].type;
-		columns_map.erase(columns[idx].name_hash);
+		auto name = columns[idx].name_hash;
+		columns_map.erase(name);
 		columns.erase(columns.begin() + idx);
 		for (auto& r : rows)
 		{

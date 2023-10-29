@@ -6,6 +6,60 @@ namespace flame
 {
 	void add_string_node_templates(BlueprintNodeLibraryPtr library)
 	{
+		library->add_template("String Length", "",
+			{
+				{
+					.name = "String",
+					.allowed_types = { TypeInfo::get<std::string>(), 
+						TypeInfo::get<std::wstring>(), 
+						TypeInfo::get<std::filesystem::path>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				if (inputs[0].type == TypeInfo::get<std::string>())
+					*(uint*)outputs[0].data = (*(std::string*)inputs[0].data).size();
+				else if (inputs[0].type == TypeInfo::get<std::wstring>())
+					*(uint*)outputs[0].data = (*(std::wstring*)inputs[0].data).size();
+				else if (inputs[0].type == TypeInfo::get<std::filesystem::path>())
+					*(uint*)outputs[0].data = (*(std::filesystem::path*)inputs[0].data).native().size();
+				else
+					*(uint*)outputs[0].data = 0;
+			}
+		);
+
+		library->add_template("String Empty", "",
+			{
+				{
+					.name = "String",
+					.allowed_types = { TypeInfo::get<std::string>(),
+						TypeInfo::get<std::wstring>(),
+						TypeInfo::get<std::filesystem::path>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				if (inputs[0].type == TypeInfo::get<std::string>())
+					*(bool*)outputs[0].data = (*(std::string*)inputs[0].data).empty();
+				else if (inputs[0].type == TypeInfo::get<std::wstring>())
+					*(bool*)outputs[0].data = (*(std::wstring*)inputs[0].data).empty();
+				else if (inputs[0].type == TypeInfo::get<std::filesystem::path>())
+					*(bool*)outputs[0].data = (*(std::filesystem::path*)inputs[0].data).native().empty();
+				else
+					*(bool*)outputs[0].data = true;
+			}
+		);
+
 		library->add_template("To String", "",
 			{
 				{
@@ -61,42 +115,6 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				*(std::wstring*)outputs[0].data = s2w(*(std::string*)inputs[0].data);
-			}
-		);
-
-		library->add_template("String Length", "",
-			{
-				{
-					.name = "String",
-					.allowed_types = { TypeInfo::get<std::string>() }
-				}
-			},
-			{
-				{
-					.name = "V",
-					.allowed_types = { TypeInfo::get<uint>() }
-				}
-			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				*(uint*)outputs[0].data = (*(std::string*)inputs[0].data).size();
-			}
-		);
-
-		library->add_template("String Empty", "",
-			{
-				{
-					.name = "String",
-					.allowed_types = { TypeInfo::get<std::string>() }
-				}
-			},
-			{
-				{
-					.name = "V",
-					.allowed_types = { TypeInfo::get<bool>() }
-				}
-			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				*(bool*)outputs[0].data = (*(std::string*)inputs[0].data).empty();
 			}
 		);
 
