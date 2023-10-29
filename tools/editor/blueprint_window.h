@@ -19,6 +19,7 @@ struct BlueprintView : View
 	uint group_name_hash = "main"_h;
 	uint load_frame = 0;
 	BlueprintGroupPtr last_group = nullptr;
+	uint last_block = 0;
 	bool show_misc = false;
 	bool unsaved = false;
 

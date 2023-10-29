@@ -365,7 +365,9 @@ void BlueprintView::set_parent_to_hovered_node()
 	if (nodes.empty())
 		return;
 
-	blueprint->set_nodes_parent(nodes, hovered_node ? hovered_node : nodes.front()->group->nodes.front().get());
+	auto block = hovered_node ? hovered_node : nodes.front()->group->nodes.front().get();
+	blueprint->set_nodes_parent(nodes, block);
+	last_block = block->object_id;
 }
 
 void BlueprintView::navigate_to_node(BlueprintNodePtr n)
@@ -1784,6 +1786,10 @@ void BlueprintView::on_draw()
 				}
 				if (ImGui::BeginPopup("add_node_context_menu"))
 				{
+					auto new_node_block = new_node_link_slot ? new_node_link_slot->node->parent : nullptr;
+					if (!new_node_block)
+						new_node_block = group->find_node_by_id(last_block);
+
 					static std::string filter = "";
 					ImGui::InputText("Filter", &filter);
 
@@ -1816,7 +1822,7 @@ void BlueprintView::on_draw()
 						{
 							if (ImGui::Selectable(t.name.c_str()))
 							{
-								auto n = blueprint->add_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, t.name, t.display_name, t.inputs, t.outputs,
+								auto n = blueprint->add_node(group, new_node_block, t.name, t.display_name, t.inputs, t.outputs,
 									t.function, t.extented_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
 									t.is_block, t.begin_block_function, t.end_block_function);
 								n->position = open_popup_pos;
@@ -1854,7 +1860,7 @@ void BlueprintView::on_draw()
 						{
 							if (ImGui::Selectable("Block"))
 							{
-								auto b = blueprint->add_block(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr);
+								auto b = blueprint->add_block(group, new_node_block);
 								b->position = open_popup_pos;
 								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)b, b->position);
 								ax::NodeEditor::SetGroupSize((ax::NodeEditor::NodeId)b, b->rect.size());
@@ -1884,7 +1890,7 @@ void BlueprintView::on_draw()
 							if (show_node_template(name, {}, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {type}} }, slot_name))
 							{
 								actions.emplace_back("Get", [&]() {
-									auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "get"_h, location_name);
+									auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "get"_h, location_name);
 									n->position = open_popup_pos;
 									ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -1900,7 +1906,7 @@ void BlueprintView::on_draw()
 								if (show_node_template(name, {}, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {TypeInfo::get<uint>()}} }, slot_name))
 								{
 									actions.emplace_back("Size", [&]() {
-										auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "array_size"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "array_size"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -1915,7 +1921,7 @@ void BlueprintView::on_draw()
 									{ BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {type->get_wrapped()}} }, slot_name))
 								{
 									actions.emplace_back("Get Item", [&]() {
-										auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "array_get_item"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "array_get_item"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -1936,7 +1942,7 @@ void BlueprintView::on_draw()
 									{}, slot_name))
 								{
 									actions.emplace_back("Set Item", [&]() {
-										auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "array_set_item"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "array_set_item"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -1949,7 +1955,7 @@ void BlueprintView::on_draw()
 								if (show_node_template(name, { BlueprintSlotDesc{.name = "Item", .name_hash = "Item"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type->get_wrapped()}} }, {}, slot_name))
 								{
 									actions.emplace_back("Add Item", [&]() {
-										auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "array_add_item"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "array_add_item"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -1962,7 +1968,7 @@ void BlueprintView::on_draw()
 								if (show_node_template(name, {}, {}, slot_name))
 								{
 									actions.emplace_back("Clear", [&]() {
-										auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "array_clear"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "array_clear"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -1975,7 +1981,7 @@ void BlueprintView::on_draw()
 								if (show_node_template(name, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type}} }, {}, slot_name))
 								{
 									actions.emplace_back("Set", [&]() {
-										auto n = blueprint->add_variable_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, name_hash, "set"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "set"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -2044,7 +2050,7 @@ void BlueprintView::on_draw()
 							{
 								if (ImGui::Selectable(g->name.c_str()))
 								{
-									auto n = blueprint->add_call_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, g->name_hash);
+									auto n = blueprint->add_call_node(group, new_node_block, g->name_hash);
 									n->position = open_popup_pos;
 									ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -2070,7 +2076,7 @@ void BlueprintView::on_draw()
 										{
 											if (ImGui::Selectable(g->name.c_str()))
 											{
-												auto n = blueprint->add_call_node(group, new_node_link_slot ? new_node_link_slot->node->parent : nullptr, g->name_hash, bp->name_hash);
+												auto n = blueprint->add_call_node(group, new_node_block, g->name_hash, bp->name_hash);
 												n->position = open_popup_pos;
 												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
