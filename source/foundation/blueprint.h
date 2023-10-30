@@ -436,10 +436,10 @@ namespace flame
 
 		struct ExecutingBlock
 		{
-			Node* node;
-			int		child_index;
-			uint	executed_times;
-			uint	max_execute_times;
+			Node*				node = nullptr;
+			int					child_index = -1;
+			uint				executed_times = 0;
+			uint				max_execute_times = 0;
 		};
 
 		struct Group

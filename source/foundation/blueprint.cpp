@@ -3134,21 +3134,20 @@ namespace flame
 							{
 								for (auto b : stack)
 								{
-									auto child_idx = 0;
-									auto executed_times = 0;
-									auto max_execute_times = 0;
+									ExecutingBlock new_executing_block;
+									new_executing_block.node = b;
 
 									for (auto& b2 : it->second)
 									{
 										if (b2.node->object_id == b->object_id)
 										{
-											child_idx = b2.child_index;
-											executed_times = b2.executed_times;
-											max_execute_times = b2.max_execute_times;
+											new_executing_block.child_index = b2.child_index;
+											new_executing_block.executed_times = b2.executed_times;
+											new_executing_block.max_execute_times = b2.max_execute_times;
 											break;
 										}
 									}
-									g.second.executing_stack.emplace_back(b, child_idx, executed_times, max_execute_times);
+									g.second.executing_stack.push_back(new_executing_block);
 								}
 								return;
 							}

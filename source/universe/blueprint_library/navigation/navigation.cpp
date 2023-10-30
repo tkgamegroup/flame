@@ -96,5 +96,25 @@ namespace flame
 				}
 			}
 		);
+
+		library->add_template("Nav Agent Stop", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto nav_agent = entity->get_component<cNavAgent>();
+					if (nav_agent)
+						nav_agent->stop();
+				}
+			}
+		);
 	}
 }

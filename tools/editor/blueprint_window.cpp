@@ -338,8 +338,6 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 			from_node = n;
 		if (auto it = node_map.find(src_l.to_node); it != node_map.end())
 			to_node = it->second;
-		else if (auto n = g->find_node_by_id(src_l.from_node); n)
-			to_node = n;
 		if (from_node && to_node)
 		{
 			blueprint->add_link(from_node->find_output(src_l.from_slot), to_node->find_input(src_l.to_slot));
