@@ -126,7 +126,7 @@ BlueprintView::BlueprintView(const std::string& name) :
 		{
 			group_name = sp[1];
 			group_name_hash = sh(group_name.c_str());
-			View::name = std::string(sp[0]) + "##" + std::string(sp[2]);
+			View::name = std::string(sp[0]) + "##Blueprint";
 		}
 	}
 
@@ -464,7 +464,7 @@ std::string BlueprintView::get_save_name()
 {
 	auto sp = SUS::split(name, '#');
 	if (sp.size() == 2)
-		return std::string(sp[0]) + '#' + group_name + "##" + std::string(sp[1]);
+		return std::string(sp[0]) + '#' + group_name + "##" + "Blueprint";
 	return name;
 }
 

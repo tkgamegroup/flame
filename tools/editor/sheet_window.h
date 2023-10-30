@@ -6,6 +6,7 @@ struct SheetView : View
 {
 	std::filesystem::path sheet_path;
 	SheetPtr sheet = nullptr;
+	bool vertical_mode = false;
 	bool unsaved = false;
 
 	SheetView();
@@ -14,6 +15,7 @@ struct SheetView : View
 
 	void save_sheet();
 	void on_draw() override;
+	std::string get_save_name() override;
 };
 
 struct SheetWindow : Window
