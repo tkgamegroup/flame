@@ -2526,8 +2526,8 @@ namespace flame
 	void BlueprintInstancePrivate::build()
 	{
 		auto frame = frames;
-		std::map<uint, std::vector<BlueprintExecutingBlock>> old_ececuting_stacks;
-		std::map<uint, uint>						old_ececuting_node_id;
+		std::map<uint, std::list<BlueprintExecutingBlock>>	old_ececuting_stacks;
+		std::map<uint, uint>								old_ececuting_node_id;
 		for (auto& g : groups)
 		{
 			old_ececuting_stacks[g.first] = g.second.executing_stack;
@@ -3147,6 +3147,8 @@ namespace flame
 											break;
 										}
 									}
+									if (!g.second.executing_stack.empty())
+										new_executing_block.parent = &g.second.executing_stack.back();
 									g.second.executing_stack.push_back(new_executing_block);
 								}
 								return;
@@ -3179,7 +3181,12 @@ namespace flame
 				return;
 			group->executing_stack.clear();
 		}
-		group->executing_stack.emplace_back(&group->root_node, 0, 0, 1);
+		BlueprintExecutingBlock root_block;
+		root_block.node = &group->root_node;
+		root_block.child_index = 0;
+		root_block.executed_times = 0;
+		root_block.max_execute_times = 1;
+		group->executing_stack.push_back(root_block);
 
 		if (group->executing_stack.front().node->children.empty())
 			group->executing_stack.clear();
@@ -3253,6 +3260,7 @@ namespace flame
 						node->begin_block_function(current_node.inputs.data(), current_node.outputs.data(), new_block);
 					if (new_block.max_execute_times > 0)
 					{
+						new_block.parent = &current_block;
 						new_block.node = &current_node;
 						group->executing_stack.push_back(new_block);
 					}

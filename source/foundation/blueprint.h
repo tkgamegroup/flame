@@ -436,6 +436,7 @@ namespace flame
 
 	struct BlueprintExecutingBlock
 	{
+		BlueprintExecutingBlock* parent = nullptr;
 		BlueprintInstanceNode* node = nullptr;
 		int		child_index = -1;
 		uint	executed_times = 0;
@@ -458,13 +459,13 @@ namespace flame
 		uint					name;
 
 		std::map<uint, Data>							slot_datas; // key: slot id
-		BlueprintInstanceNode											root_node;
-		std::map<uint, BlueprintInstanceNode*>							node_map;
-		BlueprintInstanceNode* input_node = nullptr;
-		BlueprintInstanceNode* output_node = nullptr;
+		BlueprintInstanceNode							root_node;
+		std::map<uint, BlueprintInstanceNode*>			node_map;
+		BlueprintInstanceNode*							input_node = nullptr;
+		BlueprintInstanceNode*							output_node = nullptr;
 		std::unordered_map<uint, BlueprintAttribute>	variables; // key: variable name hash
 
-		std::vector<BlueprintExecutingBlock>						executing_stack;
+		std::list<BlueprintExecutingBlock>				executing_stack;
 
 		uint											variable_updated_frame = 0;
 		uint											structure_updated_frame = 0;

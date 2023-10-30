@@ -1836,6 +1836,9 @@ void BlueprintView::on_draw()
 										blueprint->add_link(n->find_output(slot_name), new_node_link_slot);
 								}
 
+								if (n->is_block)
+									last_block = n->object_id;
+
 								unsaved = true;
 							}
 						}
@@ -1875,6 +1878,8 @@ void BlueprintView::on_draw()
 									else
 										blueprint->add_link(b->outputs.front().get(), new_node_link_slot);
 								}
+
+								last_block = b->object_id;
 
 								unsaved = true;
 							}

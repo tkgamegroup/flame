@@ -126,6 +126,41 @@ namespace flame
 			}
 		);
 
+		library->add_template("Break", "",
+			{
+				{
+					.name = "Levels",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "2"
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				auto levels = *(uint*)inputs[0].data;
+				auto stop_block = execution.block;
+				while (levels && stop_block)
+				{
+					stop_block = stop_block->parent;
+					levels--;
+				}
+				if (stop_block)
+				{
+					auto block = execution.block;
+					while (block != stop_block)
+					{
+						block->child_index = 99999;
+						block->max_execute_times = 0;
+						block = block->parent;
+					}
+				}
+			}
+		);
+
 		library->add_template("Semaphore", "",
 			{
 				{
