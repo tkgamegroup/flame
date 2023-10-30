@@ -176,7 +176,7 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 	}
 }
 
-std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num = 1, const std::vector<uint> excludes = {}, const std::function<void(uint)>&cb = {});
+std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num = 1, const std::vector<uint> excludes = {}, const std::function<void(uint, uint&, uint&)>&cb = {});
 
 int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash, int offset, const FunctionInfo* getter, const FunctionInfo* setter, const std::string& default_value, 
 	voidptr* objs, uint num, const void* id, bool hide_name = false)
@@ -1106,7 +1106,7 @@ int manipulate_attribute(const Attribute& a, voidptr* objs, uint num, bool hide_
 		objs, num, &a, hide_name);
 }
 
-std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num, const std::vector<uint> excludes, const std::function<void(uint)>& cb)
+std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num, const std::vector<uint> excludes, const std::function<void(uint, uint&, uint&)>& cb)
 {
 	uint ret_changed = 0;
 	uint ret_changed_name = 0;
@@ -1134,7 +1134,7 @@ std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num,
 			if (changed)
 				ret_changed_name = v.name_hash;
 			if (cb)
-				cb(v.name_hash);
+				cb(v.name_hash, ret_changed, ret_changed_name);
 		}
 	}
 	else
@@ -1160,7 +1160,7 @@ std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num,
 			if (changed)
 				ret_changed_name = a.name_hash;
 			if (cb)
-				cb(a.name_hash);
+				cb(a.name_hash, ret_changed, ret_changed_name);
 		}
 	}
 	return std::make_pair(ret_changed, ret_changed_name);
@@ -1715,7 +1715,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 			static bool open_select_hash = false;
 			static std::vector<std::string> hash_candidates;
 			static const Attribute* op_attr;
-			get_changed(manipulate_udt(ui, (voidptr*)cc.components.data(), cc.components.size(), {}, [&ui, &cc](uint name) {
+			get_changed(manipulate_udt(ui, (voidptr*)cc.components.data(), cc.components.size(), {}, [&ui, &cc](uint name, uint& ret_changed, uint& ret_changed_name) {
 				ImGui::PushID(name);
 				if (name == "mesh_name"_h)
 				{
@@ -1728,14 +1728,20 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 				}
 				else if (name == "material_name"_h)
 				{
+					auto& name = *(std::filesystem::path*)ui.find_attribute("material_name"_h)->get_value(cc.components[0]);
+
 					ImGui::SameLine();
 					if (ImGui::Button("D"))
 					{
-						auto path = std::filesystem::path(L"default");
-						ui.find_function("set_material_name"_h)->call<void, void*>(cc.components[0], &path);
+						if (name != L"default")
+						{
+							auto path = std::filesystem::path(L"default");
+							ui.find_function("set_material_name"_h)->call<void, void*>(cc.components[0], &path);
+							ret_changed |= 2;
+							ret_changed_name = "material_name"_h;
+						}
 					}
 
-					auto& name = *(std::filesystem::path*)ui.find_attribute("material_name"_h)->get_value(cc.components[0]);
 					if (!name.empty() && name != L"default" && !name.native().starts_with(L"0x"))
 					{
 						if (ImGui::TreeNode("##embed"))

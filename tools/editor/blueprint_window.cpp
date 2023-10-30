@@ -1889,7 +1889,7 @@ void BlueprintView::on_draw()
 							std::vector<std::pair<std::string, std::function<void()>>> actions;
 							if (show_node_template(name, {}, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {type}} }, slot_name))
 							{
-								actions.emplace_back("Get", [&]() {
+								actions.emplace_back("Get", [&, slot_name]() {
 									auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "get"_h, location_name);
 									n->position = open_popup_pos;
 									ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
@@ -1905,7 +1905,7 @@ void BlueprintView::on_draw()
 							{
 								if (show_node_template(name, {}, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {TypeInfo::get<uint>()}} }, slot_name))
 								{
-									actions.emplace_back("Size", [&]() {
+									actions.emplace_back("Size", [&, slot_name]() {
 										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "array_size"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
@@ -1920,7 +1920,7 @@ void BlueprintView::on_draw()
 									{ BlueprintSlotDesc{.name = "Index", .name_hash = "Index"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {TypeInfo::get<uint>()}} },
 									{ BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {type->get_wrapped()}} }, slot_name))
 								{
-									actions.emplace_back("Get Item", [&]() {
+									actions.emplace_back("Get Item", [&, slot_name]() {
 										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "array_get_item"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
@@ -1941,7 +1941,7 @@ void BlueprintView::on_draw()
 									  BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type->get_wrapped()}} },
 									{}, slot_name))
 								{
-									actions.emplace_back("Set Item", [&]() {
+									actions.emplace_back("Set Item", [&, slot_name]() {
 										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "array_set_item"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
@@ -1952,9 +1952,9 @@ void BlueprintView::on_draw()
 										unsaved = true;
 									});
 								}
-								if (show_node_template(name, { BlueprintSlotDesc{.name = "Item", .name_hash = "Item"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type->get_wrapped()}} }, {}, slot_name))
+								if (show_node_template(name, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type->get_wrapped()}} }, {}, slot_name))
 								{
-									actions.emplace_back("Add Item", [&]() {
+									actions.emplace_back("Add Item", [&, slot_name]() {
 										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "array_add_item"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
@@ -1967,7 +1967,7 @@ void BlueprintView::on_draw()
 								}
 								if (show_node_template(name, {}, {}, slot_name))
 								{
-									actions.emplace_back("Clear", [&]() {
+									actions.emplace_back("Clear", [&, slot_name]() {
 										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "array_clear"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
@@ -1980,7 +1980,7 @@ void BlueprintView::on_draw()
 							{
 								if (show_node_template(name, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type}} }, {}, slot_name))
 								{
-									actions.emplace_back("Set", [&]() {
+									actions.emplace_back("Set", [&, slot_name]() {
 										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "set"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
