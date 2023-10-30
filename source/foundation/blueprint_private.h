@@ -38,7 +38,7 @@ namespace flame
 		void					alter_variable(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* new_type) override;
 		BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
-			BlueprintNodeFunction function, BlueprintNodeExtentedFunction extented_function,
+			BlueprintNodeFunction function, BlueprintNodeLoopFunction loop_function,
 			BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider, 
 			bool is_block = false, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr) override;
@@ -71,7 +71,7 @@ namespace flame
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) override;
 		void add_template(const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
-			BlueprintNodeExtentedFunction extented_function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
+			BlueprintNodeLoopFunction loop_function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) override;
 		void add_template(const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
@@ -86,10 +86,10 @@ namespace flame
 		~BlueprintInstancePrivate();
 
 		void build() override;
-		void prepare_executing(Group* group) override;
-		void run(Group* group) override;
-		Node* step(Group* group) override;
-		void stop(Group* group) override;
+		void prepare_executing(BlueprintInstanceGroup* group) override;
+		void run(BlueprintInstanceGroup* group) override;
+		BlueprintInstanceNode* step(BlueprintInstanceGroup* group) override;
+		void stop(BlueprintInstanceGroup* group) override;
 		void call(uint group_name, void** inputs, void** outputs) override;
 	};
 

@@ -36,7 +36,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
 				auto pos = *(vec2*)inputs[1].data;
 				auto size = *(vec2*)inputs[2].data;
 				auto col = *(cvec4*)inputs[3].data;
@@ -45,7 +45,7 @@ namespace flame
 
 				sRenderer::instance()->begin_hud(pos, size, col, pivot, item_spacing);
 
-				*max_execute_times = 1;
+				block.max_execute_times = 1;
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				sRenderer::instance()->end_hud();
@@ -115,14 +115,14 @@ namespace flame
 				}
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
 				auto& label = *(std::wstring*)inputs[1].data;
 				bool hovered = false;
 				auto clicked = sRenderer::instance()->hud_button(label, &hovered);
 
 				(*(BlueprintSignal*)outputs[1].data).v = hovered ? 1 : 0;
 
-				*max_execute_times = clicked ? 1 : 0;
+				block.max_execute_times =  clicked ? 1 : 0;
 			}
 		);
 

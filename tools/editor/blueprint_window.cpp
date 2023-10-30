@@ -298,7 +298,7 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 					if (t.name_hash == src_n.name)
 					{
 						n = blueprint->add_node(g, parent, t.name, t.display_name, t.inputs, t.outputs,
-							t.function, t.extented_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
+							t.function, t.loop_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
 							t.is_block, t.begin_block_function, t.end_block_function);
 						break;
 					}
@@ -385,7 +385,7 @@ void BlueprintView::navigate_to_node(BlueprintNodePtr n)
 		ax_node_editor->NavigateTo(ax_node->GetBounds(), true, 0.f);
 }
 
-static BlueprintInstance::Node* step(BlueprintInstance::Group* debugging_group)
+static BlueprintInstanceNode* step(BlueprintInstanceGroup* debugging_group)
 {
 	blueprint_window.debugger->debugging = nullptr;
 
@@ -405,7 +405,7 @@ static BlueprintInstance::Node* step(BlueprintInstance::Group* debugging_group)
 	return next_node;
 };
 
-void BlueprintView::run_blueprint(BlueprintInstance::Group* debugging_group)
+void BlueprintView::run_blueprint(BlueprintInstanceGroup* debugging_group)
 {
 	if (!debugging_group)
 	{
@@ -420,7 +420,7 @@ void BlueprintView::run_blueprint(BlueprintInstance::Group* debugging_group)
 	}
 }
 
-void BlueprintView::step_blueprint(BlueprintInstance::Group* debugging_group)
+void BlueprintView::step_blueprint(BlueprintInstanceGroup* debugging_group)
 {
 	if (!debugging_group)
 	{
@@ -442,7 +442,7 @@ void BlueprintView::step_blueprint(BlueprintInstance::Group* debugging_group)
 	}
 }
 
-void BlueprintView::stop_blueprint(BlueprintInstance::Group* debugging_group)
+void BlueprintView::stop_blueprint(BlueprintInstanceGroup* debugging_group)
 {
 	if (debugging_group)
 	{
@@ -1597,7 +1597,7 @@ void BlueprintView::on_draw()
 										if (ImGui::Selectable(t.name.c_str()))
 										{
 											auto n = blueprint->add_node(group, src_n->parent, t.name, t.display_name, t.inputs, t.outputs,
-												t.function, t.extented_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
+												t.function, t.loop_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
 												t.is_block, t.begin_block_function, t.end_block_function);
 											n->position = src_n->position;
 											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
@@ -1821,7 +1821,7 @@ void BlueprintView::on_draw()
 							if (ImGui::Selectable(t.name.c_str()))
 							{
 								auto n = blueprint->add_node(group, new_node_block, t.name, t.display_name, t.inputs, t.outputs,
-									t.function, t.extented_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
+									t.function, t.loop_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
 									t.is_block, t.begin_block_function, t.end_block_function);
 								n->position = open_popup_pos;
 								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);

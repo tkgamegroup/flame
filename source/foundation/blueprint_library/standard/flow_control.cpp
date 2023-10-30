@@ -66,13 +66,13 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
 				bool ok;
 				if (inputs[1].type == TypeInfo::get<bool>())
 					ok = *(bool*)inputs[1].data;
 				else
 					ok = (*(voidptr*)inputs[1].data) != nullptr;
-				*max_execute_times = ok ? 1 : 0;
+				block.max_execute_times = ok ? 1 : 0;
 			}
 		);
 
@@ -86,13 +86,13 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
 				bool ok;
 				if (inputs[1].type == TypeInfo::get<bool>())
 					ok = *(bool*)inputs[1].data;
 				else
 					ok = (*(voidptr*)inputs[1].data) != nullptr;
-				*max_execute_times = ok ? 0 : 1;
+				block.max_execute_times = ok ? 0 : 1;
 			}
 		);
 
@@ -105,7 +105,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintExecutionData& execution, BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				*(uint*)outputs[0].data = execution.block->executed_times;
 			}
 		);
@@ -121,8 +121,8 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
-				*max_execute_times = *(uint*)inputs[1].data;
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				block.max_execute_times = *(uint*)inputs[1].data;
 			}
 		);
 
@@ -136,15 +136,15 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
 				auto semaphore = (bool*)inputs[1].data;
 				if (*semaphore)
 				{
 					*semaphore = false;
-					*max_execute_times = 1;
+					block.max_execute_times = 1;
 				}
 				else
-					*max_execute_times = 0;
+					block.max_execute_times = 0;
 			}
 		);
 
@@ -327,7 +327,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, uint* max_execute_times) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
 				auto& time = *(float*)inputs[1].data;
 				auto interval = *(float*)inputs[2].data;
 
@@ -335,10 +335,10 @@ namespace flame
 				if (time >= interval)
 				{
 					*(float*)inputs[1].data = 0.f;
-					*max_execute_times = 1;
+					block.max_execute_times = 1;
 				}
 				else
-					*max_execute_times = 0;
+					block.max_execute_times = 0;
 			}
 		);
 	}
