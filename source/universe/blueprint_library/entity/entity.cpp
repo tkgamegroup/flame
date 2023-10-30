@@ -9,8 +9,8 @@
 #include "../../systems/input_private.h"
 #include "../../systems/scene_private.h"
 #include "../../systems/renderer_private.h"
+#include "../../systems/graveyard_private.h"
 #include "../../octree.h"
-#include "../../graveyard_private.h"
 
 namespace flame
 {

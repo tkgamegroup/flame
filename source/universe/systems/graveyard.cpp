@@ -1,4 +1,4 @@
-#include "entity_private.h"
+#include "../entity_private.h"
 #include "graveyard_private.h"
 
 namespace flame

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "universe.h"
+#include "../universe.h"
 
 namespace flame
 {

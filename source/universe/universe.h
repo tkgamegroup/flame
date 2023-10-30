@@ -35,6 +35,7 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(Timeline);
 	FLAME_UNIVERSE_TYPE(TimelineInstance);
 	FLAME_UNIVERSE_TYPE(Graveyard);
+	FLAME_UNIVERSE_TYPE(FloatingText);
 
 	FLAME_UNIVERSE_TYPE(cBpInstance);
 	FLAME_UNIVERSE_TYPE(cElement);
