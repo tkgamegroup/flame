@@ -2422,8 +2422,8 @@ namespace flame
 
 	void BlueprintNodeLibraryPrivate::add_template(const std::string& name, const std::string& display_name,
 		const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
-		bool is_block, BlueprintNodeBeginBlockFunction begin_block_function, BlueprintNodeEndBlockFunction end_block_function
-		, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
+		bool is_block, BlueprintNodeBeginBlockFunction begin_block_function, BlueprintNodeEndBlockFunction end_block_function, 
+		BlueprintNodeLoopFunction loop_function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
 		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider)
 	{
 		auto& t = node_templates.emplace_back();
@@ -2446,6 +2446,7 @@ namespace flame
 		t.is_block = is_block;
 		t.begin_block_function = begin_block_function;
 		t.end_block_function = end_block_function;
+		t.loop_function = loop_function;
 	}
 
 	struct BlueprintNodeLibraryGet : BlueprintNodeLibrary::Get
@@ -3229,7 +3230,7 @@ namespace flame
 			{
 				if (node->function)
 					node->function(current_node.inputs.data(), current_node.outputs.data());
-				if (node->loop_function)
+				if (node->loop_function) // node's loop funtion is used as the odinary function but with execution data
 				{
 					BlueprintExecutionData execution_data;
 					execution_data.group = group;
@@ -3270,6 +3271,14 @@ namespace flame
 			current_block.child_index++;
 			if (current_block.child_index < current_block.node->children.size())
 				break;
+			auto node = current_block.node->original;
+			if (node && node->loop_function) // block's loop funtion is used for executing after every loop
+			{
+				BlueprintExecutionData execution_data;
+				execution_data.group = group;
+				execution_data.block = &current_block;
+				node->loop_function(current_block.node->inputs.data(), current_block.node->outputs.data(), execution_data);
+			}
 			current_block.executed_times++;
 			if (group->executing_stack.size() > 1 && // not the root block
 				current_block.executed_times < current_block.max_execute_times &&
@@ -3278,7 +3287,6 @@ namespace flame
 				current_block.child_index = 0;
 				break;
 			}
-			auto node = current_block.node->original;
 			if (node && node->end_block_function)
 				node->end_block_function(current_block.node->inputs.data(), current_block.node->outputs.data());
 			group->executing_stack.pop_back();

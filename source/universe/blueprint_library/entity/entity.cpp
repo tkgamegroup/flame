@@ -625,6 +625,53 @@ namespace flame
 					*(BlueprintInstancePtr*)outputs[0].data = nullptr;
 			}
 		);
+		
+		library->add_template("Loop Var Entity", "",
+			{
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				auto block_node = execution.block->node;
+				auto vec_idx = execution.block->loop_vector_index;
+				if (vec_idx != -1)
+				{
+					BlueprintAttribute vec_arg = { nullptr, nullptr };
+					if (vec_idx < block_node->inputs.size())
+						vec_arg = block_node->inputs[vec_idx];
+					else
+					{
+						vec_idx -= block_node->inputs.size();
+						if (vec_idx < block_node->outputs.size())
+							vec_arg = block_node->outputs[vec_idx];
+					}
+					if (vec_arg.data && vec_arg.type)
+					{
+						auto i = execution.block->executed_times;
+						auto item_type = vec_arg.type->get_wrapped();
+						if (item_type == TypeInfo::get<EntityPtr>())
+						{
+							auto& vec = *(std::vector<char>*)vec_arg.data;
+							auto length = vec.size() / item_type->size;
+							if (i < length)
+								*(EntityPtr*)outputs[0].data = *(EntityPtr*)(vec.data() + i * item_type->size);
+							else
+								*(EntityPtr*)outputs[0].data = nullptr;
+						}
+						else
+							*(EntityPtr*)outputs[0].data = nullptr;
+					}
+					else
+						*(EntityPtr*)outputs[0].data = nullptr;
+				}
+				else
+					*(EntityPtr*)outputs[0].data = nullptr;
+			}
+		);
 
 		library->add_template("Get Nearest Entity", "",
 			{
@@ -650,7 +697,7 @@ namespace flame
 				{
 					.name = "Parent Search Times",
 					.allowed_types = { TypeInfo::get<uint>() },
-					.default_value = "999"
+					.default_value = "3"
 				}
 			},
 			{
@@ -685,6 +732,90 @@ namespace flame
 			}
 		);
 
+		library->add_template("Find Nearest Entity", "",
+			{
+				{
+					.name = "Location",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Radius",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "5"
+				},
+				{
+					.name = "Any Filter",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "4294967295"
+				},
+				{
+					.name = "All Filter",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "0"
+				},
+				{
+					.name = "Parent Search Times",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "3"
+				}
+			},
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "temp_array",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<std::vector<EntityPtr>>() }
+				},
+				{
+					.name = "ok",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<bool>() },
+					.default_value = "false"
+				}
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				auto location = *(vec3*)inputs[1].data;
+				auto radius = *(float*)inputs[2].data;
+				auto any_filter = *(uint*)inputs[3].data;
+				auto all_filter = *(uint*)inputs[4].data;
+				auto parent_search_times = *(uint*)inputs[5].data;
+				std::vector<std::pair<EntityPtr, cNodePtr>> res;
+				sScene::instance()->octree->get_colliding(location, radius, res, any_filter, all_filter, parent_search_times);
+
+				std::vector<std::pair<float, EntityPtr>> nodes_with_distance(res.size());
+				for (auto i = 0; i < res.size(); i++)
+					nodes_with_distance[i] = std::make_pair(distance(res[i].second->global_pos(), location), res[i].first);
+				std::sort(nodes_with_distance.begin(), nodes_with_distance.end(), [](const auto& a, const auto& b) {
+					return a.first < b.first;
+				});
+
+				auto& temp_array = *(std::vector<EntityPtr>*)outputs[2].data;
+				temp_array.resize(res.size());
+				for (auto i = 0; i < res.size(); i++)
+					temp_array[i] = (nodes_with_distance[i].second);
+				*(EntityPtr*)outputs[1].data = nullptr;
+				*(bool*)outputs[3].data = false;
+				block.max_execute_times = temp_array.size();
+				block.loop_vector_index = 8;
+				block.block_output_index = 9;
+			},
+			nullptr,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				auto ok = *(bool*)outputs[3].data;
+				if (ok)
+				{
+					auto& temp_array = *(std::vector<EntityPtr>*)outputs[2].data;
+					*(EntityPtr*)outputs[1].data = temp_array[execution.block->executed_times];
+					execution.block->child_index = 99999;
+					execution.block->max_execute_times = 0;
+				}
+			}
+		);
+
 		library->add_template("Get Mouse Hovering", "",
 			{
 				{
@@ -694,7 +825,7 @@ namespace flame
 				{
 					.name = "Parent Search Times",
 					.allowed_types = { TypeInfo::get<uint>() },
-					.default_value = "999"
+					.default_value = "3"
 				}
 			},
 			{

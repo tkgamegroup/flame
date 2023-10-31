@@ -96,17 +96,147 @@ namespace flame
 			}
 		);
 
-		library->add_template("Loop Index", "",
-			{
-			},
+		library->add_template("If Less", "",
 			{
 				{
-					.name = "V",
-					.allowed_types = { TypeInfo::get<uint>() }
+					.name = "A",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				*(uint*)outputs[0].data = execution.block->executed_times;
+			{
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
+				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
+				auto in0_p = (char*)inputs[1].data;
+				auto in1_p = (char*)inputs[2].data;
+				auto ok = in0_ti->as_float(in0_p) < in1_ti->as_float(in1_p);
+				block.max_execute_times = ok ? 1 : 0;
+			}
+		);
+
+		library->add_template("If Greater", "",
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
+				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
+				auto in0_p = (char*)inputs[1].data;
+				auto in1_p = (char*)inputs[2].data;
+				auto ok = in0_ti->as_float(in0_p) > in1_ti->as_float(in1_p);
+				block.max_execute_times = ok ? 1 : 0;
+			}
+		);
+
+		library->add_template("If Equal", "",
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
+				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
+				auto in0_p = (char*)inputs[1].data;
+				auto in1_p = (char*)inputs[2].data;
+				auto ok = in0_ti->as_float(in0_p) == in1_ti->as_float(in1_p);
+				block.max_execute_times = ok ? 1 : 0;
+			}
+		);
+
+		library->add_template("If Not Equal", "",
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
+				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
+				auto in0_p = (char*)inputs[1].data;
+				auto in1_p = (char*)inputs[2].data;
+				auto ok = in0_ti->as_float(in0_p) != in1_ti->as_float(in1_p);
+				block.max_execute_times = ok ? 1 : 0;
+			}
+		);
+
+		library->add_template("If Less Or Equal", "",
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
+				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
+				auto in0_p = (char*)inputs[1].data;
+				auto in1_p = (char*)inputs[2].data;
+				auto ok = in0_ti->as_float(in0_p) <= in1_ti->as_float(in1_p);
+				block.max_execute_times = ok ? 1 : 0;
+			}
+		);
+
+		library->add_template("If Greater Or Equal", "",
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
+				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
+				auto in0_p = (char*)inputs[1].data;
+				auto in1_p = (char*)inputs[2].data;
+				auto ok = in0_ti->as_float(in0_p) >= in1_ti->as_float(in1_p);
+				block.max_execute_times = ok ? 1 : 0;
 			}
 		);
 
@@ -125,6 +255,183 @@ namespace flame
 				block.max_execute_times = *(uint*)inputs[1].data;
 			}
 		);
+
+		library->add_template("Loop Index", "",
+			{
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				*(uint*)outputs[0].data = execution.block->executed_times;
+			}
+		);
+
+		library->add_template("Foreach", "",
+			{
+				{
+					.name = "Vector",
+					.allowed_types = { TypeInfo::get<voidptr>() }
+				}
+			},
+			{
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				auto vec_type = inputs[1].type;
+				auto vec = (std::vector<char>*)inputs[1].data;
+				if (vec && is_vector(vec_type->tag))
+				{
+					block.loop_vector_index = 1;
+					block.max_execute_times = vec->size() / vec_type->get_wrapped()->size;
+				}
+				else
+					block.max_execute_times = 0;
+			}
+		);
+
+#define LOOP_VAR_TEMPLATE(TYPE, DV) \
+		library->add_template("Loop Var " #TYPE, "",\
+			{\
+			},\
+			{\
+				{\
+					.name = "V",\
+					.allowed_types = { TypeInfo::get<TYPE>() }\
+				}\
+			},\
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {\
+				auto block_node = execution.block->node;\
+				auto vec_idx = execution.block->loop_vector_index;\
+				if (vec_idx != -1)\
+				{\
+					BlueprintAttribute vec_arg = { nullptr, nullptr };\
+					if (vec_idx < block_node->inputs.size())\
+						vec_arg = block_node->inputs[vec_idx];\
+					else\
+					{\
+						vec_idx -= block_node->inputs.size();\
+						if (vec_idx < block_node->outputs.size())\
+							vec_arg = block_node->outputs[vec_idx];\
+					}\
+					if (vec_arg.data && vec_arg.type)\
+					{\
+						auto i = execution.block->executed_times;\
+						auto item_type = vec_arg.type->get_wrapped();\
+						if (item_type == TypeInfo::get<TYPE>())\
+						{\
+							auto& vec = *(std::vector<char>*)vec_arg.data;\
+							auto length = vec.size() / item_type->size;\
+							if (i < length)\
+								*(TYPE*)outputs[0].data = *(TYPE*)(vec.data() + i * item_type->size);\
+							else\
+								*(TYPE*)outputs[0].data = TYPE(DV);\
+						}\
+						else\
+							*(TYPE*)outputs[0].data = TYPE(DV);\
+					}\
+					else\
+						*(TYPE*)outputs[0].data = TYPE(DV);\
+				}\
+				else\
+					*(TYPE*)outputs[0].data = TYPE(DV);\
+			}\
+		);
+
+		LOOP_VAR_TEMPLATE(bool, false);
+		LOOP_VAR_TEMPLATE(int, 0);
+		LOOP_VAR_TEMPLATE(uint, 0);
+		LOOP_VAR_TEMPLATE(float, 0);
+		LOOP_VAR_TEMPLATE(ivec2, 0);
+		LOOP_VAR_TEMPLATE(ivec3, 0);
+		LOOP_VAR_TEMPLATE(ivec4, 0);
+		LOOP_VAR_TEMPLATE(uvec2, 0);
+		LOOP_VAR_TEMPLATE(uvec3, 0);
+		LOOP_VAR_TEMPLATE(uvec4, 0);
+		LOOP_VAR_TEMPLATE(cvec2, 0);
+		LOOP_VAR_TEMPLATE(cvec3, 0);
+		LOOP_VAR_TEMPLATE(cvec4, 0);
+		LOOP_VAR_TEMPLATE(vec2, 0);
+		LOOP_VAR_TEMPLATE(vec3, 0);
+		LOOP_VAR_TEMPLATE(vec4, 0);
+		LOOP_VAR_TEMPLATE(std::string, "");
+		LOOP_VAR_TEMPLATE(std::wstring, L"");
+		LOOP_VAR_TEMPLATE(std::filesystem::path, L"");
+
+#undef LOOP_VAR_TEMPLATE
+
+#define RETURN_TEMPLATE(TYPE) \
+		library->add_template("Return " #TYPE, "",\
+			{\
+				{\
+					.name = "V",\
+					.allowed_types = { TypeInfo::get<TYPE>() }\
+				},\
+				{\
+					.name = "Levels",\
+					.allowed_types = { TypeInfo::get<uint>() },\
+					.default_value = "2"\
+				}\
+			},\
+			{\
+			},\
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {\
+				auto levels = *(uint*)inputs[1].data - 1;\
+				auto target_block = execution.block;\
+				while (levels && target_block)\
+				{\
+					target_block = target_block->parent;\
+					levels--;\
+				}\
+				if (target_block)\
+				{\
+					auto block_node = target_block->node;\
+					auto out_idx = target_block->block_output_index;\
+					if (out_idx != -1)\
+					{\
+						BlueprintAttribute out_arg = { nullptr, nullptr };\
+						if (out_idx < block_node->inputs.size())\
+							out_arg = block_node->inputs[out_idx];\
+						else\
+						{\
+							out_idx -= block_node->inputs.size();\
+							if (out_idx < block_node->outputs.size())\
+								out_arg = block_node->outputs[out_idx];\
+						}\
+						if (out_arg.data && out_arg.type)\
+						{\
+							if (out_arg.type == TypeInfo::get<TYPE>())\
+								*(TYPE*)out_arg.data = *(TYPE*)inputs[0].data;\
+						}\
+					}\
+				}\
+			}\
+		);
+
+		RETURN_TEMPLATE(bool);
+		RETURN_TEMPLATE(int);
+		RETURN_TEMPLATE(uint);
+		RETURN_TEMPLATE(float);
+		RETURN_TEMPLATE(ivec2);
+		RETURN_TEMPLATE(ivec3);
+		RETURN_TEMPLATE(ivec4);
+		RETURN_TEMPLATE(uvec2);
+		RETURN_TEMPLATE(uvec3);
+		RETURN_TEMPLATE(uvec4);
+		RETURN_TEMPLATE(cvec2);
+		RETURN_TEMPLATE(cvec3);
+		RETURN_TEMPLATE(cvec4);
+		RETURN_TEMPLATE(vec2);
+		RETURN_TEMPLATE(vec3);
+		RETURN_TEMPLATE(vec4);
+		RETURN_TEMPLATE(std::string);
+		RETURN_TEMPLATE(std::wstring);
+		RETURN_TEMPLATE(std::filesystem::path);
+
+#undef RETURN_TEMPLATE
 
 		library->add_template("Break", "",
 			{

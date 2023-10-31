@@ -393,6 +393,12 @@ namespace flame
 			bool									is_block = false;
 			BlueprintNodeBeginBlockFunction			begin_block_function = nullptr;
 			BlueprintNodeEndBlockFunction			end_block_function = nullptr;
+
+			inline BlueprintNodePtr create_node(BlueprintPtr blueprint, BlueprintGroupPtr group, BlueprintNodePtr parent) const
+			{
+				return ((Blueprint*)blueprint)->add_node(group, parent, name, display_name, inputs, outputs, function, loop_function,
+					constructor, destructor, input_slot_changed_callback, preview_provider, is_block, begin_block_function, end_block_function);
+			}
 		};
 
 		std::vector<NodeTemplate>	node_templates;
@@ -421,8 +427,8 @@ namespace flame
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
 		virtual void add_template(const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
-			bool is_block = true, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr
-			, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
+			bool is_block = true, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr,
+			BlueprintNodeLoopFunction loop_function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
 			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
 
 		struct Get
@@ -451,8 +457,8 @@ namespace flame
 		int		child_index = -1;
 		uint	executed_times = 0;
 		uint	max_execute_times = 0;
-		int		loop_vector_index = -1; // in block node's outputs
-		int		loop_output_index = -1; // in block node's inputs
+		int		loop_vector_index = -1; // in block node's inputs or outputs, index < inputs.size() means input, otherwise output
+		int		block_output_index = -1; // in block node's inputs or outputs, index < inputs.size() means input, otherwise output
 	};
 
 	struct BlueprintInstanceGroup

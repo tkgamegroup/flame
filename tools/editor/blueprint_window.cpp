@@ -296,9 +296,7 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 				{
 					if (t.name_hash == src_n.name)
 					{
-						n = blueprint->add_node(g, parent, t.name, t.display_name, t.inputs, t.outputs,
-							t.function, t.loop_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
-							t.is_block, t.begin_block_function, t.end_block_function);
+						n = t.create_node(blueprint, g, parent);
 						break;
 					}
 				}
@@ -1417,12 +1415,47 @@ void BlueprintView::on_draw()
 								std::swap(from_slot, to_slot);
 							if (!(from_slot->flags & BlueprintSlotFlagInput) && !(to_slot->flags & BlueprintSlotFlagOutput))
 							{
-								if (blueprint_allow_type(to_slot->allowed_types, from_slot->type))
+								if (from_slot->node->parent->contains(to_slot->node))
 								{
-									if (ax::NodeEditor::AcceptNewItem())
+									if (to_slot->allowed_types.size() == 1 && to_slot->allowed_types.front() != from_slot->type)
 									{
-										blueprint->add_link(from_slot, to_slot);
-										unsaved = true;
+										if (from_slot->type == TypeInfo::get<float>() ||
+											from_slot->type == TypeInfo::get<int>() ||
+											from_slot->type == TypeInfo::get<uint>())
+										{
+											auto to_type = to_slot->allowed_types.front();
+											if (to_type == TypeInfo::get<float>() ||
+												to_type == TypeInfo::get<int>() ||
+												to_type == TypeInfo::get<uint>())
+											{
+												if (ax::NodeEditor::AcceptNewItem())
+												{
+													BlueprintNodeLibrary::NodeTemplate* t = nullptr;
+													if (to_type == TypeInfo::get<float>())
+														t = standard_library->find_node_template("To Float"_h);
+													else if (to_type == TypeInfo::get<int>())
+														t = standard_library->find_node_template("To Int"_h);
+													else if (to_type == TypeInfo::get<uint>())
+														t = standard_library->find_node_template("To Uint"_h);
+													if (t)
+													{
+														auto convert_node = t->create_node(blueprint, group, to_slot->node->parent);
+														convert_node->position = to_slot->node->position + vec2(-96.f, 0.f);
+														blueprint->add_link(from_slot, convert_node->find_input("V"_h));
+														blueprint->add_link(convert_node->find_output("V"_h), to_slot);
+														unsaved = true;
+													}
+												}
+											}
+										}
+									}
+									if (blueprint_allow_type(to_slot->allowed_types, from_slot->type))
+									{
+										if (ax::NodeEditor::AcceptNewItem())
+										{
+											blueprint->add_link(from_slot, to_slot);
+											unsaved = true;
+										}
 									}
 								}
 							}
@@ -1577,9 +1610,7 @@ void BlueprintView::on_draw()
 									{
 										if (ImGui::Selectable(t.name.c_str()))
 										{
-											auto n = blueprint->add_node(group, src_n->parent, t.name, t.display_name, t.inputs, t.outputs,
-												t.function, t.loop_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
-												t.is_block, t.begin_block_function, t.end_block_function);
+											auto n = t.create_node(blueprint, group, src_n->parent);
 											n->position = src_n->position;
 											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -1758,21 +1789,22 @@ void BlueprintView::on_draw()
 						;
 					ImGui::EndPopup();
 				}
+
+				static std::string add_node_filter = "";
 				if (ImGui::BeginPopup("add_node_context_menu"))
 				{
 					auto new_node_block = new_node_link_slot ? new_node_link_slot->node->parent : nullptr;
 					if (!new_node_block)
 						new_node_block = group->find_node_by_id(last_block);
 
-					static std::string filter = "";
-					ImGui::InputText("Filter", &filter);
+					ImGui::InputText("Filter", &add_node_filter);
 
 					std::string header = "";
 
 					auto show_node_template = [&](const std::string& name, const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs, uint& slot_name) {
-						if (!filter.empty())
+						if (!add_node_filter.empty())
 						{
-							if (!SUS::find_case_insensitive(name, filter))
+							if (!SUS::find_case_insensitive(name, add_node_filter))
 								return false;
 						}
 
@@ -1792,7 +1824,7 @@ void BlueprintView::on_draw()
 								return false;
 						}
 
-						if (!filter.empty() && !header.empty())
+						if (!add_node_filter.empty() && !header.empty())
 						{
 							ImGui::TextDisabled(header.c_str());
 							header = "";
@@ -1806,9 +1838,7 @@ void BlueprintView::on_draw()
 						{
 							if (ImGui::Selectable(t.name.c_str()))
 							{
-								auto n = blueprint->add_node(group, new_node_block, t.name, t.display_name, t.inputs, t.outputs,
-									t.function, t.loop_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider,
-									t.is_block, t.begin_block_function, t.end_block_function);
+								auto n = t.create_node(blueprint, group, new_node_block);
 								n->position = open_popup_pos;
 								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -1840,9 +1870,7 @@ void BlueprintView::on_draw()
 								case "Loop"_h:
 									if (auto t2 = t.library->find_node_template("Loop Index"_h); t2)
 									{
-										auto n2 = blueprint->add_node(group, n, t2->name, t2->display_name, t2->inputs, t2->outputs,
-											t2->function, t2->loop_function, t2->constructor, t2->destructor, t2->input_slot_changed_callback, t2->preview_provider,
-											t2->is_block, t2->begin_block_function, t2->end_block_function);
+										auto n2 = t.create_node(blueprint, group, n);
 										n2->position = n->position + vec2(0.f, 112.f);
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n2, n2->position);
 									}
@@ -1890,7 +1918,7 @@ void BlueprintView::on_draw()
 							}
 						}
 					}
-					if (!filter.empty() || ImGui::BeginMenu("Variables"))
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Variables"))
 					{
 						header = "Variables";
 
@@ -2018,46 +2046,46 @@ void BlueprintView::on_draw()
 						for (auto& v : group->variables)
 							show_variable(v.name, v.name_hash, v.type, 0);
 
-						if (!filter.empty() || ImGui::BeginMenu("Sheets"))
+						if (!add_node_filter.empty() || ImGui::BeginMenu("Sheets"))
 						{
 							for (auto sht : app.project_static_sheets)
 							{
-								if (!filter.empty() || ImGui::BeginMenu(sht->name.c_str()))
+								if (!add_node_filter.empty() || ImGui::BeginMenu(sht->name.c_str()))
 								{
 									header = "Sheet: " + sht->name;
 									for (auto& col : sht->columns)
 										show_variable(col.name, col.name_hash, col.type, sht->name_hash);
-									if (filter.empty())
+									if (add_node_filter.empty())
 										ImGui::EndMenu();
 								}
 							}
-							if (filter.empty())
+							if (add_node_filter.empty())
 								ImGui::EndMenu();
 						}
 
-						if (!filter.empty() || ImGui::BeginMenu("Other Blueprints"))
+						if (!add_node_filter.empty() || ImGui::BeginMenu("Other Blueprints"))
 						{
 							for (auto bp : app.project_static_blueprints)
 							{
 								if (bp == blueprint)
 									continue;
-								if (!filter.empty() || ImGui::BeginMenu(bp->name.c_str()))
+								if (!add_node_filter.empty() || ImGui::BeginMenu(bp->name.c_str()))
 								{
 									header = "Blueprint: " + bp->name;
 									for (auto& v : bp->variables)
 										show_variable(v.name, v.name_hash, v.type, bp->name_hash);
-									if (filter.empty())
+									if (add_node_filter.empty())
 										ImGui::EndMenu();
 								}
 							}
-							if (filter.empty())
+							if (add_node_filter.empty())
 								ImGui::EndMenu();
 						}
 
-						if (filter.empty())
+						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
-					if (!filter.empty() || ImGui::BeginMenu("Call"))
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Call"))
 					{
 						header = "Call";
 						for (auto& g : blueprint->groups)
@@ -2080,13 +2108,13 @@ void BlueprintView::on_draw()
 							}
 						}
 
-						if (!filter.empty() || ImGui::BeginMenu("Other Blueprints"))
+						if (!add_node_filter.empty() || ImGui::BeginMenu("Other Blueprints"))
 						{
 							for (auto bp : app.project_static_blueprints)
 							{
 								if (bp == blueprint)
 									continue;
-								if (!filter.empty() || ImGui::BeginMenu(bp->name.c_str()))
+								if (!add_node_filter.empty() || ImGui::BeginMenu(bp->name.c_str()))
 								{
 									header = "Call Blueprint: " + bp->name;
 									for (auto& g : bp->groups)
@@ -2107,25 +2135,40 @@ void BlueprintView::on_draw()
 											}
 										}
 									}
-									if (filter.empty())
+									if (add_node_filter.empty())
 										ImGui::EndMenu();
 								}
 							}
-							if (filter.empty())
+							if (add_node_filter.empty())
 								ImGui::EndMenu();
 						}
 
-						if (filter.empty())
+						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
-					if (!filter.empty() || ImGui::BeginMenu("Standard"))
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Standard"))
 					{
 						header = "Standard";
 						for (auto i = 0; i < standard_library->node_templates.size(); i++)
 						{
 							auto& t = standard_library->node_templates[i];
-							if (filter.empty())
+							if (add_node_filter.empty())
 							{
+								if (t.name == "Loop Var bool")
+								{
+									if (ImGui::BeginMenu("Loop Var"))
+									{
+										for (auto j = i; ; j++)
+										{
+											auto& t = standard_library->node_templates[j];
+											if (!t.name.starts_with("Loop Var "))
+												break;
+											show_node_library_template(t);
+										}
+										ImGui::EndMenu();
+									}
+									continue;
+								}
 								if (t.name == "Branch 2")
 								{
 									if (ImGui::BeginMenu("Branch"))
@@ -2201,6 +2244,8 @@ void BlueprintView::on_draw()
 									}
 									continue;
 								}
+								if (t.name.starts_with("Loop Var "))
+									continue;
 								if (t.name.starts_with("Branch "))
 									continue;
 								if (t.name.starts_with("Select Branch "))
@@ -2214,16 +2259,16 @@ void BlueprintView::on_draw()
 							}
 							show_node_library_template(t);
 						}
-						if (filter.empty())
+						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
-					if (!filter.empty() || ImGui::BeginMenu("Extern"))
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Extern"))
 					{
 						header = "Extern";
 						for (auto i = 0; i < extern_library->node_templates.size(); i++)
 						{
 							auto& t = extern_library->node_templates[i];
-							if (filter.empty())
+							if (add_node_filter.empty())
 							{
 								if (t.name == "Get BP bool")
 								{
@@ -2330,63 +2375,73 @@ void BlueprintView::on_draw()
 							}
 							show_node_library_template(t);
 						}
-						if (filter.empty())
+						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
-					if (!filter.empty() || ImGui::BeginMenu("Noise"))
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Noise"))
 					{
+						header = "Noise";
 						for (auto& t : noise_library->node_templates)
 							show_node_library_template(t);
-						if (filter.empty())
+						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
-					if (!filter.empty() || ImGui::BeginMenu("Texture"))
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Texture"))
 					{
+						header = "Texture";
 						for (auto& t : texture_library->node_templates)
 							show_node_library_template(t);
-						if (filter.empty())
+						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
-					if (!filter.empty() || ImGui::BeginMenu("Geometry"))
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Geometry"))
 					{
+						header = "Geometry";
 						for (auto& t : geometry_library->node_templates)
 							show_node_library_template(t);
-						if (filter.empty())
+						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
-					if (!filter.empty() || ImGui::BeginMenu("Entity"))
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Entity"))
 					{
+						header = "Entity";
 						for (auto& t : entity_library->node_templates)
 							show_node_library_template(t);
-						if (filter.empty())
+						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
-					if (!filter.empty() || ImGui::BeginMenu("Navigation"))
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Navigation"))
 					{
+						header = "Navigation";
 						for (auto& t : navigation_library->node_templates)
 							show_node_library_template(t);
-						if (filter.empty())
+						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
-					if (!filter.empty() || ImGui::BeginMenu("Input"))
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Input"))
 					{
+						header = "Input";
 						for (auto& t : input_library->node_templates)
 							show_node_library_template(t);
-						if (filter.empty())
+						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
-					if (!filter.empty() || ImGui::BeginMenu("HUD"))
+					if (!add_node_filter.empty() || ImGui::BeginMenu("HUD"))
 					{
+						header = "HUD";
 						for (auto& t : hud_library->node_templates)
 							show_node_library_template(t);
-						if (filter.empty())
+						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
 
 					ImGui::EndPopup();
 				}
 				else
+				{
+					add_node_filter = "";
 					new_node_link_slot = nullptr;
+				}
 
 				if (blueprint_instance->built_frame < blueprint->dirty_frame)
 					blueprint_instance->build();
