@@ -91,6 +91,7 @@ struct View
 {
 	Window* window;
 	std::string name;
+	void* imgui_window = nullptr;
 
 	View(Window* w, const std::string& name) :
 		window(w),

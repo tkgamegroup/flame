@@ -157,7 +157,6 @@ namespace flame
 		uint											degree = 0;
 
 		vec2 position;
-		Rect rect;
 		bool collapsed = false;
 
 		virtual ~BlueprintNode() {}
@@ -379,6 +378,7 @@ namespace flame
 	{
 		struct NodeTemplate
 		{
+			BlueprintNodeLibraryPtr					library;
 			std::string								name;
 			uint									name_hash = 0;
 			std::string display_name;
@@ -396,6 +396,16 @@ namespace flame
 		};
 
 		std::vector<NodeTemplate>	node_templates;
+
+		inline NodeTemplate* find_node_template(uint name) const
+		{
+			for (auto& t : node_templates)
+			{
+				if (t.name_hash == name)
+					return (NodeTemplate*)&t;
+			}
+			return nullptr;
+		}
 
 		std::filesystem::path		filename;
 		uint						ref = 0;
@@ -461,8 +471,8 @@ namespace flame
 		std::map<uint, Data>							slot_datas; // key: slot id
 		BlueprintInstanceNode							root_node;
 		std::map<uint, BlueprintInstanceNode*>			node_map;
-		BlueprintInstanceNode*							input_node = nullptr;
-		BlueprintInstanceNode*							output_node = nullptr;
+		BlueprintInstanceNode* input_node = nullptr;
+		BlueprintInstanceNode* output_node = nullptr;
 		std::unordered_map<uint, BlueprintAttribute>	variables; // key: variable name hash
 
 		std::list<BlueprintExecutingBlock>				executing_stack;

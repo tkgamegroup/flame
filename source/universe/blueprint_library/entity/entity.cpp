@@ -180,6 +180,61 @@ namespace flame
 			}
 		);
 
+		library->add_template("Create Entity", "",
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto e = Entity::create();
+				*(EntityPtr*)outputs[0].data = e;
+				auto parent = *(EntityPtr*)inputs[0].data;
+				if (parent)
+					parent->add_child(e);
+				else
+					printf("A free entity is created! Please remember to destroy it\n");
+			}
+		);
+
+		library->add_template("Remove Entity", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Immediately",
+					.allowed_types = { TypeInfo::get<bool>() },
+					.default_value = "false"
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					if (*(bool*)inputs[1].data)
+					{
+						if (entity->parent)
+							entity->remove_from_parent();
+						else
+							delete entity;
+					}
+					else
+						Graveyard::instance()->add(entity);
+				}
+			}
+		);
+
 		library->add_template("Get Parent", "",
 			{
 				{
@@ -231,6 +286,61 @@ namespace flame
 				}
 				else
 					*(EntityPtr*)outputs[0].data = nullptr;
+			}
+		);
+
+		library->add_template("Add Child", "",
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Child",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Position",
+					.allowed_types = { TypeInfo::get<int>() },
+					.default_value = "-1"
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto parent = *(EntityPtr*)inputs[0].data;
+				if (parent)
+				{
+					auto child = *(EntityPtr*)inputs[1].data;
+					auto position = *(int*)inputs[2].data;
+					if (child)
+						parent->add_child(child, position);
+				}
+			}
+		);
+
+		library->add_template("Add Component", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "Component",
+					.allowed_types = { TypeInfo::get<Component*>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				auto hash = *(uint*)inputs[1].data;
+				if (entity && hash)
+					*(Component**)outputs[0].data = entity->add_component_h(hash);
 			}
 		);
 
@@ -770,22 +880,6 @@ namespace flame
 					if (mesh)
 						mesh->set_material_name(L"default_cyan");
 				}
-			}
-		);
-
-		library->add_template("Put To Graveyard", "",
-			{
-				{
-					.name = "Entity",
-					.allowed_types = { TypeInfo::get<EntityPtr>() }
-				}
-			},
-			{
-			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
-					Graveyard::instance()->add(entity);
 			}
 		);
 	}

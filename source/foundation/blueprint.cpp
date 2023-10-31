@@ -394,11 +394,6 @@ namespace flame
 			parent->children.push_back(ret);
 			ret->depth = parent->depth + 1;
 		}
-		if (is_block)
-		{
-			ret->rect.a = vec2(0.f);
-			ret->rect.b = vec2(200.f);
-		}
 		group->nodes.emplace_back(ret);
 
 		auto frame = frames;
@@ -1865,7 +1860,6 @@ namespace flame
 						n_node.append_attribute("parent_id").set_value(n->parent->object_id);
 					n_node.append_attribute("name").set_value(n->name.c_str());
 					n_node.append_attribute("position").set_value(str(n->position).c_str());
-					n_node.append_attribute("rect").set_value(str((vec4)n->rect).c_str());
 					continue;
 				}
 				if (n->name == "Input")
@@ -1891,8 +1885,6 @@ namespace flame
 					n_node.append_attribute("parent_id").set_value(n->parent->object_id);
 				n_node.append_attribute("name").set_value(n->name.c_str());
 				n_node.append_attribute("position").set_value(str(n->position).c_str());
-				if (n->is_block)
-					n_node.append_attribute("rect").set_value(str((vec4)n->rect).c_str());
 
 				pugi::xml_node n_inputs;
 				for (auto& i : n->inputs)
@@ -2041,7 +2033,6 @@ namespace flame
 							auto n = ret->add_block(g, parent);
 							node_map[n_node.attribute("object_id").as_uint()] = n;
 							n->position = s2t<2, float>(n_node.attribute("position").value());
-							n->rect = s2t<4, float>(n_node.attribute("rect").value());
 						}
 						else if (name == "Input")
 						{
@@ -2265,12 +2256,6 @@ namespace flame
 											read_input(n, n_input);
 										node_map[n_node.attribute("object_id").as_uint()] = n;
 										n->position = s2t<2, float>(n_node.attribute("position").value());
-										if (n->is_block)
-										{
-											n->rect = s2t<4, float>(n_node.attribute("rect").value());
-											if (n->rect.invalid())
-												n->rect.a = n->rect.b = n->position;
-										}
 
 										added = true;
 										break;
@@ -2387,6 +2372,7 @@ namespace flame
 		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider)
 	{
 		auto& t = node_templates.emplace_back();
+		t.library = this;
 		t.name = name;
 		t.name_hash = sh(name.c_str());
 		t.display_name = display_name;
@@ -2413,6 +2399,7 @@ namespace flame
 		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider)
 	{
 		auto& t = node_templates.emplace_back();
+		t.library = this;
 		t.name = name;
 		t.name_hash = sh(name.c_str());
 		t.display_name = display_name;
@@ -2440,6 +2427,7 @@ namespace flame
 		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider)
 	{
 		auto& t = node_templates.emplace_back();
+		t.library = this;
 		t.name = name;
 		t.name_hash = sh(name.c_str());
 		t.display_name = display_name;

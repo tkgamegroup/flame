@@ -37,9 +37,6 @@ void SearchView::on_draw()
 		do_find = true;
 	if (do_find)
 	{
-		auto find_str_lower_case = find_str;
-		std::transform(find_str_lower_case.begin(), find_str_lower_case.end(), find_str_lower_case.begin(), ::tolower);
-
 		blueprint_results.clear();
 		sheet_results.clear();
 
@@ -59,16 +56,15 @@ void SearchView::on_draw()
 							auto group_result_idx = -1;
 							for (auto& n : g->nodes)
 							{
-								auto display_name_lower_case = n->display_name;
-								std::transform(display_name_lower_case.begin(), display_name_lower_case.end(), display_name_lower_case.begin(), ::tolower);
-								auto ok = display_name_lower_case.contains(find_str_lower_case);
+								auto name = !n->display_name.empty() ? n->display_name : n->name;
+								auto ok = SUS::find_case_insensitive(name, find_str);
 								if (!ok)
 								{
 									for (auto& i : n->inputs)
 									{
 										auto input_name_lower_case = i->name;
 										std::transform(input_name_lower_case.begin(), input_name_lower_case.end(), input_name_lower_case.begin(), ::tolower);
-										if (input_name_lower_case.contains(find_str_lower_case))
+										if (input_name_lower_case.contains(find_str))
 										{
 											ok = true;
 											break;
@@ -78,7 +74,7 @@ void SearchView::on_draw()
 											auto value_str = i->type->serialize(i->data);
 											auto value_str_lower_case = value_str;
 											std::transform(value_str_lower_case.begin(), value_str_lower_case.end(), value_str_lower_case.begin(), ::tolower);
-											if (value_str_lower_case.contains(find_str_lower_case))
+											if (value_str_lower_case.contains(find_str))
 											{
 												ok = true;
 												break;
@@ -155,8 +151,16 @@ void SearchView::on_draw()
 										{
 											if (auto g = bv->blueprint->find_group(gr.name_hash); g)
 											{
+												if (bv->imgui_window)
+													ImGui::FocusWindow((ImGuiWindow*)bv->imgui_window);
 												if (auto n = g->find_node_by_id(r.id); n)
-													bv->navigate_to_node(n);
+												{
+													add_event([n, bv]() {
+														bv->navigate_to_node(n);
+														return false; 
+													}, 0.f, 3U); // tricky: we need to wait for the blueprint to be rendered
+													app.render_frames += 5; // tricky: we need these frames to wait
+												}
 											}
 											break;
 										}
