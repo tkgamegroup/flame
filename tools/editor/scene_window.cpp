@@ -136,8 +136,6 @@ void SceneView::on_draw()
 	if (app.e_prefab)
 	{
 		open_name = "Scene - " + app.prefab_path.filename().stem().string();
-		if (app.prefab_unsaved)
-			open_name += " *";
 		open_name += "###";
 		open_name += name;
 	}
