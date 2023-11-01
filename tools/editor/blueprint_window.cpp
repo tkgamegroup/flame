@@ -34,6 +34,7 @@ static BlueprintNodeLibraryPtr entity_library;
 static BlueprintNodeLibraryPtr navigation_library;
 static BlueprintNodeLibraryPtr input_library;
 static BlueprintNodeLibraryPtr hud_library;
+static BlueprintNodeLibraryPtr audio_library;
 
 struct CopiedSlot
 {
@@ -1150,6 +1151,8 @@ void BlueprintView::on_draw()
 					}
 
 				}
+				else if (selected_nodes.size() > 1)
+					ImGui::Text("%d Nodes Selected", (int)selected_nodes.size());
 				auto selected_links = get_selected_links();
 				if (selected_links.size() == 1)
 				{
@@ -1159,6 +1162,8 @@ void BlueprintView::on_draw()
 					ImGui::Text("From: '%s' of '%s'", l->from_slot->name.c_str(), l->from_slot->node->name.c_str());
 					ImGui::Text("To: '%s' of '%s'", l->to_slot->name.c_str(), l->to_slot->node->name.c_str());
 				}
+				else if (selected_links.size() > 1)
+					ImGui::Text("%d Links Selected", (int)selected_links.size());
 			}
 			ImGui::EndChild();
 
@@ -2434,6 +2439,14 @@ void BlueprintView::on_draw()
 						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Audio"))
+					{
+						header = "audio";
+						for (auto& t : audio_library->node_templates)
+							show_node_library_template(t);
+						if (add_node_filter.empty())
+							ImGui::EndMenu();
+					}
 
 					ImGui::EndPopup();
 				}
@@ -2615,6 +2628,7 @@ void BlueprintWindow::init()
 		navigation_library = BlueprintNodeLibrary::get(L"universe::navigation");
 		input_library = BlueprintNodeLibrary::get(L"universe::input");
 		hud_library = BlueprintNodeLibrary::get(L"universe::HUD");
+		audio_library = BlueprintNodeLibrary::get(L"universe::audio");
 		node_libraries.push_back(standard_library);
 		node_libraries.push_back(extern_library);
 		node_libraries.push_back(noise_library);
@@ -2624,6 +2638,7 @@ void BlueprintWindow::init()
 		node_libraries.push_back(navigation_library);
 		node_libraries.push_back(input_library);
 		node_libraries.push_back(hud_library);
+		node_libraries.push_back(audio_library);
 	}
 }
 

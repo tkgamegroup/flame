@@ -11,6 +11,8 @@ namespace flame
 	{
 		sAudioPrivate();
 		~sAudioPrivate();
+
+		void play_once(const std::filesystem::path& path) override;
 		void update() override;
 	};
 }

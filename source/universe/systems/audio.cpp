@@ -1,6 +1,8 @@
 #include "audio_private.h"
 #if USE_AUDIO_MODULE
 #include "../../audio/device.h"
+#include "../../audio/buffer.h"
+#include "../../audio/source.h"
 #endif
 
 namespace flame
@@ -15,6 +17,24 @@ namespace flame
 	sAudioPrivate::~sAudioPrivate()
 	{
 
+	}
+
+	void sAudioPrivate::play_once(const std::filesystem::path& path)
+	{
+		if (auto buf = audio::Buffer::get(path); buf)
+		{
+			auto src = audio::Source::create();
+			src->add_buffer(buf);
+			src->play();
+
+			add_event([buf, src]() {
+				if (src->is_player())
+					return true;
+				delete src;
+				audio::Buffer::release(buf);
+				return false;
+			});
+		}
 	}
 
 	void sAudioPrivate::update()

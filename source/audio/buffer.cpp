@@ -162,7 +162,7 @@ namespace flame
 					alBufferData(ret->al_buf, al_fmt, pcm_data.data(), pcm_data.size(), fmt.ulSamplesPerSec);
 					return ret;
 				}
-				else if (ext == L".flac")
+				//else if (ext == L".flac") TODO
 				{
 
 				}

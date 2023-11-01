@@ -18,6 +18,8 @@ namespace flame
 
 		void set_buffer_names(const std::vector<std::pair<std::filesystem::path, std::string>>& names) override;
 
+		void add_buffer_name(const std::filesystem::path& path, const std::string& name) override;
+
 		~cAudioSourcePrivate();
 
 		void play(uint name, float volumn) override;

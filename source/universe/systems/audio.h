@@ -7,6 +7,8 @@ namespace flame
 	// Reflect ctor
 	struct sAudio : System
 	{
+		virtual void play_once(const std::filesystem::path& path) = 0;
+
 		struct Instance
 		{
 			virtual sAudioPtr operator()() = 0;

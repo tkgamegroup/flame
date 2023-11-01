@@ -15,6 +15,7 @@ namespace flame
 
 			virtual void add_buffer(BufferPtr buffer) = 0;
 			virtual void remove_buffer(BufferPtr buffer) = 0;
+			virtual bool is_player() const = 0;
 			virtual void play() = 0;
 			virtual void stop() = 0;
 			virtual void pause() = 0;

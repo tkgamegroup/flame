@@ -35,8 +35,7 @@ namespace flame
 		{
 			if (!n.first.empty())
 			{
-				auto buf = audio::Buffer::get(n.first);
-				if (buf)
+				if (auto buf = audio::Buffer::get(n.first); buf)
 				{
 					auto& src = sources[sh(n.second.c_str())];
 					src.buf = buf;
@@ -48,6 +47,29 @@ namespace flame
 
 		node->mark_transform_dirty();
 		data_changed("buffer_names"_h);
+#endif
+	}
+
+	void cAudioSourcePrivate::add_buffer_name(const std::filesystem::path& path, const std::string& name)
+	{
+#if USE_AUDIO_MODULE
+		auto hash = sh(name.c_str());
+		if (sources.find(hash) != sources.end())
+		{
+			printf("cAudioSource add buffer name: %s already existed\n", name.c_str());
+			return;
+		}
+
+		if (!path.empty())
+		{
+			if (auto buf = audio::Buffer::get(path); buf)
+			{
+				auto& src = sources[hash];
+				src.buf = buf;
+				src.src = audio::Source::create();
+				src.src->add_buffer(buf);
+			}
+		}
 #endif
 	}
 

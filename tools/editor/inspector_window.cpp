@@ -23,6 +23,7 @@
 #include <flame/universe/components/volume.h>
 #include <flame/universe/components/particle_system.h>
 #include <flame/universe/components/bp_instance.h>
+#include <flame/universe/systems/audio.h>
 
 struct StagingVector
 {
@@ -1715,6 +1716,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 			static bool open_select_hash = false;
 			static std::vector<std::string> hash_candidates;
 			static const Attribute* op_attr;
+			auto last_item_id = ImGui::GetItemID();
 			get_changed(manipulate_udt(ui, (voidptr*)cc.components.data(), cc.components.size(), {}, [&ui, &cc](uint name, uint& ret_changed, uint& ret_changed_name) {
 				ImGui::PushID(name);
 				if (name == "mesh_name"_h)
@@ -1786,6 +1788,8 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 				}
 				ImGui::PopID();
 			}));
+			if (ImGui::GetItemID() == last_item_id)
+				ImGui::TextDisabled("No Attributes");
 
 			if (open_select_standard_model)
 			{
@@ -1923,10 +1927,9 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 				if (cc.components.size() == 1)
 				{
 					auto comp_bp_ins = (cBpInstancePtr)cc.components[0];
-					auto bp_ins = comp_bp_ins->bp_ins;
-					if (bp_ins)
+					if (auto bp_ins = comp_bp_ins->bp_ins; bp_ins)
 					{
-						if (ImGui::CollapsingHeader("Bp Variables:"))
+						if (ImGui::TreeNode("Bp Variables:"))
 						{
 							for (auto& v : comp_bp_ins->bp->variables)
 							{
@@ -1940,6 +1943,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 									ImGui::TreePop();
 								}
 							}
+							ImGui::TreePop();
 						}
 					}
 				}
@@ -2496,6 +2500,11 @@ void InspectorView::on_draw()
 							graphics::GraphicsPipeline::release(pl);
 					}
 				}
+			}
+			else if (ext == L".wav")
+			{
+				if (ImGui::Button("Play"))
+					sAudio::instance()->play_once(path);
 			}
 		}
 		else
