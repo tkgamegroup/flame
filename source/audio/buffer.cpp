@@ -81,12 +81,11 @@ namespace flame
 
 					auto file = _wfopen(filename.c_str(), L"rb");
 					fread(&header, 1, sizeof(WAV_HEADER), file);
-					if (std::string(header.szRIFF, header.szRIFF + 4) == "RIFF" && std::string(header.szWAVE, header.szWAVE + 4) == "WAVE")
+					if (strncmp(header.szRIFF, "RIFF", 4) == 0 && strncmp(header.szWAVE, "WAVE", 4) == 0)
 					{
 						while (fread(&riff_chunk, 1, sizeof(RIFF_CHUNK), file) == sizeof(RIFF_CHUNK))
 						{
-							auto chunk_name = std::string(riff_chunk.szChunkName, riff_chunk.szChunkName + 4);
-							if (chunk_name == "fmt ")
+							if (strncmp(riff_chunk.szChunkName, "fmt ", 4) == 0)
 							{
 								if (riff_chunk.ulChunkSize <= sizeof(WAV_FMT))
 								{
@@ -98,14 +97,14 @@ namespace flame
 									else if (fmt.usFormatTag == 0xFFFE /*extensible*/)
 									{
 										file_type = WF_EXT;
-										// not supprt yet
+										// TODO
 										return nullptr;
 									}
 								}
 								else
 									fseek(file, riff_chunk.ulChunkSize, SEEK_CUR);
 							}
-							else if (chunk_name == "data")
+							else if (strncmp(riff_chunk.szChunkName, "data", 4) == 0)
 							{
 								pcm_data.resize(riff_chunk.ulChunkSize);
 								fread(pcm_data.data(), 1, pcm_data.size(), file);
@@ -147,6 +146,39 @@ namespace flame
 							break;
 						case 16:
 							al_fmt = AL_FORMAT_STEREO16;
+							break;
+						case 24:
+						{
+							al_fmt = AL_FORMAT_STEREO16;
+
+							auto samples = (uint)pcm_data.size() / 3;
+							std::string new_pcm_data;
+							new_pcm_data.resize(samples * 2);
+
+							for (auto i = 0; i < samples; i++)
+							{
+								union
+								{
+									uchar b[4];
+									uint  i;
+								}d;
+								d.b[0] = pcm_data[i * 3 + 0];
+								d.b[1] = pcm_data[i * 3 + 1];
+								d.b[2] = pcm_data[i * 3 + 2];
+								d.b[3] = 0;
+
+								union
+								{
+									uchar b[2];
+									ushort s;
+								}v;
+								v.s = ((double)d.i / (0x00ffffff) * 0xffff);
+								new_pcm_data[i * 2 + 0] = v.b[0];
+								new_pcm_data[i * 2 + 1] = v.b[1];
+							}
+
+							pcm_data = std::move(new_pcm_data);
+						}
 							break;
 						}
 						break;
