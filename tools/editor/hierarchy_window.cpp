@@ -217,6 +217,7 @@ void HierarchyView::on_draw()
 	bool opened = true;
 	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
 	ImGui::Begin(name.c_str(), &opened, app.prefab_unsaved ? ImGuiWindowFlags_UnsavedDocument : 0);
+	imgui_window = ImGui::GetCurrentWindow();
 
 	EntityPtr select_entity = nullptr;
 	static bool released_after_select = false;

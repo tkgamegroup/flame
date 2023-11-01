@@ -136,9 +136,8 @@ ProjectView::ProjectView() :
 ProjectView::ProjectView(const std::string& name) :
 	View(&project_window, name)
 {
+	explorer.select_button = ImGuiMouseButton_Middle;
 	explorer.select_callback = [this](const std::filesystem::path& path) {
-		if (!ImGui::IsKeyDown(Keyboard_Alt))
-			return;
 		if (path.empty())
 		{
 			selection.clear("project"_h);
@@ -165,6 +164,7 @@ ProjectView::ProjectView(const std::string& name) :
 		}
 		else
 			selection.select(path, "project"_h);
+
 		explorer.selected_paths = selection.get_paths();
 	};
 	explorer.dbclick_callback = [this](const std::filesystem::path& path) {
@@ -177,7 +177,8 @@ ProjectView::ProjectView(const std::string& name) :
 				auto bv = (BlueprintView*)v.get();
 				if (bv->blueprint_path == path)
 				{
-					// TODO: bv->set_focus();
+					if (bv->imgui_window)
+						ImGui::FocusWindow((ImGuiWindow*)bv->imgui_window);
 					opend = true;
 					break;
 				}
@@ -193,7 +194,8 @@ ProjectView::ProjectView(const std::string& name) :
 				auto sv = (SheetView*)v.get();
 				if (sv->sheet_path == path)
 				{
-					// TODO: sv->set_focus();
+					if (sv->imgui_window)
+						ImGui::FocusWindow((ImGuiWindow*)sv->imgui_window);
 					opend = true;
 					break;
 				}
@@ -202,7 +204,12 @@ ProjectView::ProjectView(const std::string& name) :
 				sheet_window.open_view(Path::reverse(path).string() + "##Sheet");
 		}
 		else if (ext == L".prefab")
+		{
 			app.open_prefab(path);
+			auto sv = scene_window.first_view();
+			if (sv->imgui_window)
+				ImGui::FocusWindow((ImGuiWindow*)sv->imgui_window);
+		}
 		else if (ext == L".h" || ext == L".cpp")
 			app.open_file_in_vs(path);
 		else if (ext == L".timeline")
@@ -375,9 +382,9 @@ ProjectView::ProjectView(const std::string& name) :
 				app.open_timeline(path);
 		}
 		if (ImGui::MenuItem("Refresh"))
-		{
 			update_thumbnail(path);
-		}
+
+		explorer.selected_paths = selection.get_paths();
 	};
 	explorer.folder_context_menu_callback = [this](const std::filesystem::path& path) {
 		auto in_assets = false;
@@ -1037,6 +1044,7 @@ void ProjectView::on_draw()
 	bool opened = true;
 	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
 	ImGui::Begin(name.c_str(), &opened);
+	imgui_window = ImGui::GetCurrentWindow();
 
 	title_context_menu();
 

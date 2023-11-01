@@ -20,6 +20,7 @@ void TimelineView::on_draw()
 	bool opened = true;
 	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
 	ImGui::Begin(name.c_str(), &opened);
+	imgui_window = ImGui::GetCurrentWindow();
 
 	auto& io = ImGui::GetIO();
 	static auto frame_width = 10.f;

@@ -2110,7 +2110,8 @@ void InspectorView::on_draw()
 
 	bool opened = true;
 	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
-	ImGui::Begin(name.c_str(), &opened); 
+	ImGui::Begin(name.c_str(), &opened);
+	imgui_window = ImGui::GetCurrentWindow();
 
 	title_context_menu();
 
@@ -2164,10 +2165,52 @@ void InspectorView::on_draw()
 		if (inspected_paths.size() == 1)
 		{
 			auto path = inspected_paths.front();
-			ImGui::TextUnformatted(Path::reverse(path).string().c_str());
+			if (ImGui::Button(graphics::font_icon_str("arrow-left"_h).c_str()))
+			{
+				if (auto pv = project_window.first_view(); pv)
+				{
+					for (auto i = 0; i < pv->explorer.items.size(); i++)
+					{
+						if (pv->explorer.items[i]->path == path)
+						{
+							if (i > 0)
+							{
+								auto& previous = pv->explorer.items[i - 1]->path;
+								selection.select(previous, "app"_h);
+								pv->explorer.selected_paths = { previous };
+							}
+							break;
+						}
+					}
+				}
+			}
+			ImGui::SameLine();
+			if (ImGui::Button(graphics::font_icon_str("arrow-right"_h).c_str()))
+			{
+				if (auto pv = project_window.first_view(); pv)
+				{
+					for (auto i = 0; i < pv->explorer.items.size(); i++)
+					{
+						if (pv->explorer.items[i]->path == path)
+						{
+							if (i < pv->explorer.items.size() - 1)
+							{
+								auto& next = pv->explorer.items[i + 1]->path;
+								selection.select(next, "app"_h);
+								pv->explorer.selected_paths = { next };
+							}
+							break;
+						}
+					}
+				}
+			}
+			ImGui::SameLine();
+			auto path_str = Path::reverse(path).string();
+			ImGui::InputText("##path", &path_str, ImGuiInputTextFlags_ReadOnly);
 			ImGui::SameLine();
 			if (ImGui::Button(graphics::font_icon_str("location-crosshairs"_h).c_str()))
 				project_window.ping(Path::get(path));
+
 			auto ext = path.extension().wstring();
 			SUW::to_lower(ext);
 			if (ext == L".obj" || ext == L".fbx" || ext == L".gltf" || ext == L".glb")

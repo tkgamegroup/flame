@@ -22,6 +22,7 @@ void SearchView::on_draw()
 	bool opened = true;
 	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
 	ImGui::Begin(name.c_str(), &opened);
+	imgui_window = ImGui::GetCurrentWindow();
 
 	if (ImGui::ToolButton("Blueprint", find_in_blueprints))
 		find_in_blueprints = !find_in_blueprints;

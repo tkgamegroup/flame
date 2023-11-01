@@ -8,7 +8,7 @@
 
 void tile_map_editing()
 {
-	auto fv = scene_window.last_focused_view();
+	auto fv = scene_window.first_view();
 	if (!fv)
 		return;
 

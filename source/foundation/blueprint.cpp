@@ -201,19 +201,27 @@ namespace flame
 			{
 				it->type->destroy(it->data);
 				vars.erase(it);
-				return;
+				break;
 			}
 		}
 
 		std::vector<BlueprintNodePtr> to_remove_nodes;
-		for (auto& n : group->nodes)
-		{
-			if (blueprint_is_variable_node(n->name_hash))
+		auto process_group = [&](BlueprintGroupPtr group) {
+			for (auto& n : group->nodes)
 			{
-				auto target_name = *(uint*)n->inputs[0]->data;
-				if (target_name == name)
-					to_remove_nodes.push_back(n.get());
+				if (blueprint_is_variable_node(n->name_hash))
+				{
+					if (*(uint*)n->inputs[0]->data == name && *(uint*)n->inputs[1]->data == 0)
+						to_remove_nodes.push_back(n.get());
+				}
 			}
+		};
+		if (group)
+			process_group(group);
+		else
+		{
+			for (auto& g : groups)
+				process_group(g.get());
 		}
 		for (auto n : to_remove_nodes)
 			remove_node(n, false);

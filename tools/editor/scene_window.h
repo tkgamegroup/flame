@@ -76,13 +76,11 @@ struct SceneView : View
 struct SceneWindow : Window
 {
 	bool fixed_render_target_size = false;
-	std::string last_focused_view_name;
 
 	SceneWindow();
 	View* open_view(bool new_instance) override;
 	View* open_view(const std::string& name) override;
 	SceneView* first_view() const;
-	SceneView* last_focused_view() const;
 };
 
 extern SceneWindow scene_window;

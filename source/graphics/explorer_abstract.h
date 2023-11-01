@@ -160,6 +160,7 @@ namespace flame
 			std::string							filter;
 			bool								show_as_list = false;
 
+			int																			select_button = ImGuiMouseButton_Left;
 			std::function<void(const std::filesystem::path&)>							select_callback;
 			std::function<void(const std::filesystem::path&)>							dbclick_callback;
 			std::function<void(const std::filesystem::path&)>							item_context_menu_callback;
@@ -382,6 +383,8 @@ namespace flame
 				ImVec2 content_pos;
 				ImVec2 content_size;
 
+				auto any_item_hovered = false;
+
 				if (ImGui::BeginTable("main", 2, ImGuiTableFlags_Resizable))
 				{
 					ImGui::TableNextRow();
@@ -572,7 +575,7 @@ namespace flame
 												}
 											}
 										}
-										if (io.MouseClicked[ImGuiMouseButton_Left])
+										if (io.MouseClicked[select_button])
 										{
 											if (select_callback)
 												select_callback(item->path);
@@ -582,6 +585,8 @@ namespace flame
 									}
 									if (pinged)
 										pinged_path = L"";
+
+									any_item_hovered = true;
 								}
 
 								if (ImGui::BeginDragDropSource())
@@ -696,7 +701,7 @@ namespace flame
 											}
 										}
 									}
-									if (io.MouseClicked[ImGuiMouseButton_Left])
+									if (io.MouseClicked[select_button])
 									{
 										if (select_callback)
 											select_callback(item->path);
@@ -706,6 +711,8 @@ namespace flame
 								}
 								if (pinged)
 									pinged_path = L"";
+
+								any_item_hovered = true;
 							}
 
 							if (ImGui::BeginDragDropSource())
@@ -767,7 +774,7 @@ namespace flame
 
 				ImGui::SetCursorPos(content_pos);
 				ImGui::InvisibleButton("background", content_size);
-				if (io.MouseClicked[ImGuiMouseButton_Left] && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlapped))
+				if (!any_item_hovered && io.MouseClicked[select_button] && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlapped))
 				{
 					if (select_callback)
 						select_callback(L"");

@@ -132,23 +132,23 @@ void SceneView::selected_to_focus()
 
 void SceneView::on_draw()
 {
-	std::string open_name = name;
+	std::string open_name;
 	if (app.e_prefab)
 	{
 		open_name = "Scene - " + app.prefab_path.filename().stem().string();
 		open_name += "###";
 		open_name += name;
 	}
+	else
+		open_name = "###" + name;
 
 	bool opened = true;
 	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
 	ImGui::Begin(open_name.c_str(), &opened, app.prefab_unsaved ? ImGuiWindowFlags_UnsavedDocument : 0);
+	imgui_window = ImGui::GetCurrentWindow();
 	// there is a bug that ImGui do not reset the pointer to window's name in draw list, so that
 	//  ImGuizmo not work properly
 	ImGui::GetWindowDrawList()->_OwnerName = ImGui::GetCurrentWindow()->Name;
-
-	if (ImGui::IsWindowFocused())
-		scene_window.last_focused_view_name = name;
 
 	auto& camera_list = cCamera::list();
 	{
@@ -198,7 +198,7 @@ void SceneView::on_draw()
 	if (ImGui::ToolButton("Navigation", show_navigation))
 		show_navigation = !show_navigation;
 
-	auto last_focused_scene = scene_window.last_focused_view();
+	auto last_focused_scene = scene_window.first_view();
 
 	// toolbar begin
 	ImGui::Dummy(vec2(0.f, 20.f));
@@ -1210,12 +1210,3 @@ SceneView* SceneWindow::first_view() const
 	return views.empty() ? nullptr : (SceneView*)views.front().get();
 }
 
-SceneView* SceneWindow::last_focused_view() const
-{
-	for (auto& v : views)
-	{
-		if (v->name == last_focused_view_name)
-			return (SceneView*)v.get();
-	}
-	return nullptr;
-}

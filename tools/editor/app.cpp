@@ -487,7 +487,7 @@ bool App::on_update()
 
 void App::on_gui()
 {
-	auto last_focused_scene = scene_window.last_focused_view();
+	auto last_focused_scene = scene_window.first_view();
 
 	ImGui::BeginMainMenuBar();
 	if (ImGui::BeginMenu("File"))
@@ -838,7 +838,7 @@ void App::on_gui()
 							ImGui::TextUnformatted(("    " + str(end)).c_str());
 							if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsKeyDown(Keyboard_Ctrl))
 							{
-								if (auto fv = scene_window.last_focused_view(); fv)
+								if (auto fv = scene_window.first_view(); fv)
 								{
 									if (v == 0)
 										start = fv->hovering_pos;
@@ -2042,7 +2042,7 @@ bool App::cmd_play()
 
 			if (camera)
 			{
-				if (auto fv = scene_window.last_focused_view(); fv)
+				if (auto fv = scene_window.first_view(); fv)
 				{
 					auto& camera_list = cCamera::list();
 					for (auto i = 0; i < camera_list.size(); i++)
@@ -2088,7 +2088,7 @@ bool App::cmd_stop()
 		world->update_components = false;
 		always_render = false;
 
-		auto fv = scene_window.last_focused_view();
+		auto fv = scene_window.first_view();
 		auto& camera_list = cCamera::list();
 		if (camera_list.size() > 0)
 		{
