@@ -2176,7 +2176,7 @@ void InspectorView::on_draw()
 							if (i > 0)
 							{
 								auto& previous = pv->explorer.items[i - 1]->path;
-								selection.select(previous, "app"_h);
+								selection.select(previous, "project"_h);
 								pv->explorer.selected_paths = { previous };
 							}
 							break;
@@ -2196,7 +2196,7 @@ void InspectorView::on_draw()
 							if (i < pv->explorer.items.size() - 1)
 							{
 								auto& next = pv->explorer.items[i + 1]->path;
-								selection.select(next, "app"_h);
+								selection.select(next, "project"_h);
 								pv->explorer.selected_paths = { next };
 							}
 							break;

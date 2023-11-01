@@ -1211,22 +1211,25 @@ void BlueprintView::on_draw()
 					if (blueprint_window.debugger->has_break_node(n.get()))
 					{
 						if (executing_node && executing_node->original == n.get())
-						{
-							display_name = "=> " + display_name;
 							bg_color = ImColor(204, 116, 45, 200);
-						}
 						else
 							bg_color = ImColor(197, 81, 89, 200);
 					}
 					else if (executing_node && executing_node->original == n.get())
-					{
-						display_name = "=> " + display_name;
 						bg_color = ImColor(211, 151, 0, 200);
-					}
 					ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_NodeBg, bg_color);
 					ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_NodeBorder, border_color);
 
 					ax::NodeEditor::BeginNode((uint64)n.get());
+
+					if (executing_node && executing_node->original == n.get())
+					{
+						vec2 pos = ImGui::GetCursorPos();
+						pos.x -= 20.f;
+						pos.y -= ImGui::GetTextLineHeight();
+						pos.y -= style.FramePadding.y * 2;
+						dl->AddText(pos, ImColor(1.f, 1.f, 1.f), "=>");
+					}
 					if (show_misc)
 					{
 						vec2 pos = ImGui::GetCursorPos();
@@ -1242,25 +1245,28 @@ void BlueprintView::on_draw()
 						auto input = n->inputs[i].get();
 						if (input->flags & BlueprintSlotFlagHideInUI)
 							continue;
+						ImGui::BeginGroup();
 						ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
+						ImGui::TextUnformatted(graphics::font_icon_str("play"_h).c_str());
+						ax::NodeEditor::EndPin();
 						auto display_name = input->name_hash == "Execute"_h ? "" : input->name;
 						SUS::strip_tail_if(display_name, "_hash");
-						ImGui::Text("%s %s", graphics::font_icon_str("play"_h).c_str(), display_name.c_str());
-						ax::NodeEditor::EndPin();
+						ImGui::SameLine();
+						ImGui::TextUnformatted(display_name.c_str());
+						ImGui::EndGroup();
 						if (ImGui::IsItemHovered())
 						{
 							if (debugging_group)
 							{
 								auto id = input->is_linked() ? input->get_linked(0)->object_id : input->object_id;
-								auto it = instance_group.slot_datas.find(id);
-								if (it != instance_group.slot_datas.end())
+								if (auto it = instance_group.slot_datas.find(id); it != instance_group.slot_datas.end())
 								{
 									auto& arg = it->second.attribute;
-									tooltip = std::format("Value: {} ({})\nID: {}", get_value_str(arg), ti_str(arg.type), input->object_id);
+									tooltip = std::format("Value: {} ({})", get_value_str(arg), ti_str(arg.type));
 								}
 							}
 							else
-								tooltip = std::format("({})\nID: {}", ti_str(input->type), input->object_id);
+								tooltip = std::format("({})", ti_str(input->type));
 							ax::NodeEditor::Suspend();
 							tooltip_pos = io.MousePos;
 							ax::NodeEditor::Resume();
@@ -1291,24 +1297,27 @@ void BlueprintView::on_draw()
 						auto output = n->outputs[i].get();
 						if (!output->type || (output->flags & BlueprintSlotFlagHideInUI))
 							continue;
-						ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
+						ImGui::BeginGroup();
 						auto display_name = output->name_hash == "Execute"_h ? "" : output->name;
 						SUS::strip_tail_if(display_name, "_hash");
-						ImGui::Text("%s %s", display_name.c_str(), graphics::font_icon_str("play"_h).c_str());
+						ImGui::TextUnformatted(display_name.c_str());
+						ImGui::SameLine();
+						ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
+						ImGui::TextUnformatted(graphics::font_icon_str("play"_h).c_str());
 						ax::NodeEditor::EndPin();
+						ImGui::EndGroup();
 						if (ImGui::IsItemHovered())
 						{
 							if (debugging_group)
 							{
-								auto it = instance_group.slot_datas.find(output->object_id);
-								if (it != instance_group.slot_datas.end())
+								if (auto it = instance_group.slot_datas.find(output->object_id); it != instance_group.slot_datas.end())
 								{
 									auto& arg = it->second.attribute;
-									tooltip = std::format("Value: {} ({})\nID: {}", get_value_str(arg), ti_str(arg.type), output->object_id);
+									tooltip = std::format("Value: {} ({})", get_value_str(arg), ti_str(arg.type));
 								}
 							}
 							else
-								tooltip = std::format("({})\nID: {}", ti_str(output->type), output->object_id);
+								tooltip = std::format("({})", ti_str(output->type));
 							ax::NodeEditor::Suspend();
 							tooltip_pos = io.MousePos;
 							ax::NodeEditor::Resume();

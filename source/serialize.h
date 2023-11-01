@@ -450,6 +450,13 @@ namespace flame
 			return false;
 		}
 
+		static bool match_case_insensitive(std::basic_string_view<CH> a, std::basic_string_view<CH> b)
+		{
+			return std::equal(a.begin(), a.end(), b.begin(), b.end(), [](CH a, CH b) {
+				return std::tolower(a) == std::tolower(b); 
+			});
+		}
+
 		static bool find_case_insensitive(std::basic_string_view<CH> str, std::basic_string_view<CH> token)
 		{
 			auto it = std::search(

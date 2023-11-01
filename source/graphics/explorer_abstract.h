@@ -173,6 +173,16 @@ namespace flame
 			std::string																	rename_string;
 			uint																		rename_start_frame;
 
+			Item* find_item(const std::filesystem::path& path) const
+			{
+				for (auto& i : items)
+				{
+					if (i->path == path)
+						return i.get();
+				}
+				return nullptr;
+			}
+
 			void reset_n(const std::vector<std::filesystem::path>& paths)
 			{
 				items.clear();

@@ -1163,7 +1163,25 @@ void ProjectWindow::ping(const std::filesystem::path& path)
 	for (auto& v : views)
 	{
 		auto pv = (ProjectView*)v.get();
-		pv->explorer.ping(path);
+		if (pv->explorer.find_item(path))
+		{
+			if (pv->imgui_window)
+				ImGui::FocusWindow((ImGuiWindow*)pv->imgui_window);
+			pv->explorer.ping(path);
+			return;
+		}
+	}
+
+	// not found, force the first view to navigate to that path
+	if (auto pv = project_window.first_view(); pv)
+	{
+		pv->explorer.peeding_open_path = path.parent_path();
+		if (pv->imgui_window)
+			ImGui::FocusWindow((ImGuiWindow*)pv->imgui_window);
+		add_event([pv, path]() {
+			pv->explorer.ping(path);
+			return false; 
+		});
 	}
 }
 

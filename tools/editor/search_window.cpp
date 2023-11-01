@@ -24,11 +24,23 @@ void SearchView::on_draw()
 	ImGui::Begin(name.c_str(), &opened);
 	imgui_window = ImGui::GetCurrentWindow();
 
-	if (ImGui::ToolButton("Blueprint", find_in_blueprints))
-		find_in_blueprints = !find_in_blueprints;
+	if (ImGui::ToolButton("Blueprint", search_in_blueprints))
+		search_in_blueprints = !search_in_blueprints;
 	ImGui::SameLine();
-	if (ImGui::ToolButton("Sheet", find_in_sheets))
-		find_in_sheets = !find_in_sheets;
+	if (ImGui::ToolButton("Sheet", search_in_sheets))
+		search_in_sheets = !search_in_sheets;
+	ImGui::SameLine();
+	if (ImGui::ToolButton("Names", search_in_names))
+		search_in_names = !search_in_names;
+	ImGui::SameLine();
+	if (ImGui::ToolButton("Values", search_in_values))
+		search_in_values = !search_in_values;
+	ImGui::SameLine();
+	if (ImGui::ToolButton("Case", match_case))
+		match_case = !match_case;
+	ImGui::SameLine();
+	if (ImGui::ToolButton("Whole Word", match_whole_word))
+		match_whole_word = !match_whole_word;
 
 	auto do_find = false;
 	if (ImGui::InputText("##find", &find_str, ImGuiInputTextFlags_EnterReturnsTrue))
@@ -36,7 +48,7 @@ void SearchView::on_draw()
 	ImGui::SameLine();
 	if (ImGui::Button("Find"))
 		do_find = true;
-	if (do_find)
+	if (do_find && !find_str.empty())
 	{
 		blueprint_results.clear();
 		sheet_results.clear();
@@ -47,7 +59,7 @@ void SearchView::on_draw()
 			if (it.is_regular_file())
 			{
 				auto ext = it.path().extension();
-				if (find_in_blueprints && ext == L".bp")
+				if (search_in_blueprints && ext == L".bp")
 				{
 					if (auto bp = Blueprint::get(it.path()); bp)
 					{
@@ -58,27 +70,49 @@ void SearchView::on_draw()
 							for (auto& n : g->nodes)
 							{
 								auto name = !n->display_name.empty() ? n->display_name : n->name;
-								auto ok = SUS::find_case_insensitive(name, find_str);
+								auto ok = false;
+								if (search_in_names)
+								{
+									if (match_whole_word)
+									{
+										if (match_case)
+											ok = name == find_str;
+										else
+											ok = SUS::match_case_insensitive(name, find_str);
+									}
+									else
+									{
+										if (match_case)
+											ok = name.find(find_str) != std::string::npos;
+										else
+											ok = SUS::find_case_insensitive(name, find_str);
+									}
+								}
 								if (!ok)
 								{
-									for (auto& i : n->inputs)
+									if (search_in_values)
 									{
-										auto input_name_lower_case = i->name;
-										std::transform(input_name_lower_case.begin(), input_name_lower_case.end(), input_name_lower_case.begin(), ::tolower);
-										if (input_name_lower_case.contains(find_str))
+										for (auto& i : n->inputs)
 										{
-											ok = true;
-											break;
-										}
-										if (!i->is_linked() && i->data)
-										{
-											auto value_str = i->type->serialize(i->data);
-											auto value_str_lower_case = value_str;
-											std::transform(value_str_lower_case.begin(), value_str_lower_case.end(), value_str_lower_case.begin(), ::tolower);
-											if (value_str_lower_case.contains(find_str))
+											if (!i->is_linked() && i->data)
 											{
-												ok = true;
-												break;
+												auto value_str = i->type->serialize(i->data);
+												if (match_whole_word)
+												{
+													if (match_case)
+														ok = value_str == find_str;
+													else
+														ok = SUS::match_case_insensitive(value_str, find_str);
+												}
+												else
+												{
+													if (match_case)
+														ok = value_str.find(find_str) != std::string::npos;
+													else
+														ok = SUS::find_case_insensitive(value_str, find_str);
+												}
+												if (ok)
+													break;
 											}
 										}
 									}
@@ -112,9 +146,12 @@ void SearchView::on_draw()
 						Blueprint::release(bp);
 					}
 				}
-				if (find_in_sheets && ext == L".sht")
+				if (search_in_sheets && ext == L".sht")
 				{
+					if (auto sht = Sheet::get(it.path()); sht)
+					{
 
+					}
 				}
 			}
 		}

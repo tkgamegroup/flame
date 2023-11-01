@@ -26,11 +26,16 @@ struct SearchView : View
 
 	struct SheetResult
 	{
-
+		std::filesystem::path path;
+		std::string path_str;
 	};
 
-	bool find_in_blueprints = true;
-	bool find_in_sheets = false;
+	bool search_in_blueprints = true;
+	bool search_in_sheets = false;
+	bool search_in_names = true;
+	bool search_in_values = true;
+	bool match_case = false;
+	bool match_whole_word = false;
 	std::string find_str;
 	std::vector<BlueprintResult> blueprint_results;
 	std::vector<SheetResult> sheet_results;
