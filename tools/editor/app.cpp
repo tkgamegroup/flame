@@ -464,7 +464,7 @@ void App::init()
 	add_event([this]() {
 		save_preferences();
 		return true; 
-	}, 60.f);
+	}, 30.f);
 	main_window->native->destroy_listeners.add([this]() {
 		save_preferences();
 	}, "app"_h);
@@ -609,7 +609,7 @@ void App::on_gui()
 				void draw() override
 				{
 					bool open = true;
-					if (ImGui::Begin(title.c_str(), &open))
+					if (ImGui::Begin(title.c_str(), &open, ImGuiWindowFlags_NoSavedSettings))
 					{
 						if (ImGui::TreeNode("Nodes"))
 						{
@@ -709,7 +709,7 @@ void App::on_gui()
 					void draw() override
 					{
 						bool open = true;
-						if (ImGui::Begin(title.c_str(), &open))
+						if (ImGui::Begin(title.c_str(), &open, ImGuiWindowFlags_NoSavedSettings))
 						{
 							auto s = filename.string();
 							ImGui::InputText("File Name", s.data(), ImGuiInputTextFlags_ReadOnly);
@@ -828,7 +828,7 @@ void App::on_gui()
 					void draw() override
 					{
 						bool open = true;
-						if (ImGui::Begin(title.c_str(), &open))
+						if (ImGui::Begin(title.c_str(), &open, ImGuiWindowFlags_NoSavedSettings))
 						{
 							static int v = 0;
 							ImGui::TextUnformatted("use ctrl+click to set start/end");
@@ -897,7 +897,7 @@ void App::on_gui()
 					ImGui::OpenPopup("Preferences");
 				}
 
-				if (ImGui::BeginPopupModal("Preferences"))
+				if (ImGui::BeginPopupModal("Preferences", nullptr, ImGuiWindowFlags_NoSavedSettings))
 				{
 					ImGui::Checkbox("Use Flame Debugger", &preferences.use_flame_debugger);
 					if (ImGui::Button("Close"))
@@ -1003,7 +1003,7 @@ void App::on_gui()
 				dialogs.push_back([&]() {
 					if (ui_status_dialog.open)
 					{
-						ImGui::Begin("UI Status", &ui_status_dialog.open);
+						ImGui::Begin("UI Status", &ui_status_dialog.open, ImGuiWindowFlags_NoSavedSettings);
 						ImGui::Text("Want Capture Mouse: %d", (int)graphics::gui_want_mouse());
 						ImGui::Text("Want Capture Keyboard: %d", (int)graphics::gui_want_keyboard());
 						ImGui::End();
@@ -1031,7 +1031,7 @@ void App::on_gui()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	ImGui::Begin("Main", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
 		ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-		ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus);
+		ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoSavedSettings);
 	ImGui::PopStyleVar(2);
 
 	// dock space
@@ -1150,6 +1150,8 @@ void App::load_preferences()
 		open_prefab(e.values[0]);
 		break;
 	}
+
+	ImGui::GetIO().IniSavingRate = 10000.f;
 }
 
 void App::save_preferences()
@@ -1183,6 +1185,8 @@ void App::save_preferences()
 		preferences_o << prefab_path.string() << "\n";
 	}
 	preferences_o.close();
+
+	ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
 }
 
 void App::new_project(const std::filesystem::path& path)
@@ -1298,7 +1302,7 @@ void App::open_project(const std::filesystem::path& path)
 					ImGui::OpenPopup("Build Project");
 				}
 
-				if (ImGui::BeginPopupModal("Build Project", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+				if (ImGui::BeginPopupModal("Build Project", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings))
 				{
 					ImGui::Checkbox("Use Flame Debugger", &preferences.use_flame_debugger);
 					if (ImGui::Button("OK"))

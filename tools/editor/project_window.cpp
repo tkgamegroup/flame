@@ -336,7 +336,7 @@ ProjectView::ProjectView(const std::string& name) :
 					void draw() override
 					{
 						bool open = true;
-						if (ImGui::Begin(title.c_str(), &open))
+						if (ImGui::Begin(title.c_str(), &open, ImGuiWindowFlags_NoSavedSettings))
 						{
 							if (!invalid)
 							{
@@ -563,7 +563,7 @@ ProjectView::ProjectView(const std::string& name) :
 					void draw() override
 					{
 						bool open = true;
-						if (ImGui::Begin(title.c_str(), &open))
+						if (ImGui::Begin(title.c_str(), &open, ImGuiWindowFlags_NoSavedSettings))
 						{
 							ImGui::InputText("name", &name);
 							static const char* formats[] = {
@@ -742,7 +742,7 @@ ProjectView::ProjectView(const std::string& name) :
 					void draw() override
 					{
 						bool open = true;
-						if (ImGui::Begin(title.c_str(), &open))
+						if (ImGui::Begin(title.c_str(), &open, ImGuiWindowFlags_NoSavedSettings))
 						{
 							auto s = source_path.string();
 							ImGui::InputText("Source Path (file or directory)", s.data(), ImGuiInputTextFlags_ReadOnly);
@@ -752,7 +752,7 @@ ProjectView::ProjectView(const std::string& name) :
 								ImGui::OpenFileDialog("Path", [this](bool ok, const std::filesystem::path& path) {
 									if (ok)
 										source_path = path;
-									});
+								});
 							}
 
 							ImGui::Text("Destination: %s", destination.string().c_str());

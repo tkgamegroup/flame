@@ -464,10 +464,7 @@ void SheetView::on_draw()
 					{
 						auto& column = sheet->columns[i];
 						ImGui::TableSetColumnIndex(i);
-
-						ImGui::PushID(i);
 						ImGui::TableHeader(column.name.c_str());
-						ImGui::PopID();
 					}
 
 					for (auto i = 0; i < sheet->rows.size(); i++)
@@ -504,12 +501,20 @@ void SheetView::on_draw()
 							ImGui::SameLine();
 							if (ImGui::Button(graphics::font_icon_str("arrow-up"_h).c_str()))
 							{
-								// TODO
+								if (i > 0)
+								{
+									std::swap(sheet->rows[i], sheet->rows[i - 1]);
+									unsaved = true;
+								}
 							}
 							ImGui::SameLine();
 							if (ImGui::Button(graphics::font_icon_str("arrow-down"_h).c_str()))
 							{
-								// TODO
+								if (i < sheet->rows.size() - 1)
+								{
+									std::swap(sheet->rows[i], sheet->rows[i + 1]);
+									unsaved = true;
+								}
 							}
 							ImGui::PopID();
 						}
