@@ -1834,7 +1834,6 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 			static bool open_select_hash = false;
 			static std::vector<std::string> hash_candidates;
 			static const Attribute* op_attr;
-			auto last_item_id = ImGui::GetItemID();
 			get_changed(manipulate_udt(ui, (voidptr*)cc.components.data(), cc.components.size(), {}, [&ui, &cc](uint name, uint& ret_changed, uint& ret_changed_name) {
 				ImGui::PushID(name);
 				if (name == "mesh_name"_h)
@@ -1906,8 +1905,6 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 				}
 				ImGui::PopID();
 			}));
-			if (ImGui::GetItemID() == last_item_id)
-				ImGui::TextDisabled("No Attributes");
 
 			if (open_select_standard_model)
 			{
@@ -2701,7 +2698,7 @@ void InspectorView::on_draw()
 					}
 				}
 			}
-			else if (ext == L".wav")
+			else if (ext == L".wav" || ext == L".ogg")
 			{
 				if (ImGui::Button("Play"))
 					sAudio::instance()->play_once(path);

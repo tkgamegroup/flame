@@ -291,6 +291,8 @@ namespace flame
 					auto c = (Entity*)cc.get();
 					if (callback((EntityPtr)c, depth++))
 						queue.push_back(c);
+					else
+						return;
 				}
 			}
 		}
@@ -300,7 +302,7 @@ namespace flame
 			std::vector<EntityPtr> ret;
 			forward_traversal([&](EntityPtr e) {
 				ret.push_back(e);
-			});
+				});
 			return ret;
 		}
 

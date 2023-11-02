@@ -131,8 +131,9 @@ namespace flame
 	void cAudioSourcePrivate::update()
 	{
 #if USE_AUDIO_MODULE
+		auto pos = node->global_pos();
 		for (auto& src : sources)
-			src.second.src->set_pos(node->global_pos());
+			src.second.src->set_pos(pos);
 #endif
 	}
 

@@ -5,6 +5,7 @@ if(USE_OPENAL)
 	set_target_properties(flame_audio PROPERTIES FOLDER "flame")
 	target_compile_definitions(flame_audio PRIVATE FLAME_AUDIO_MODULE)
 	target_include_directories(flame_audio PRIVATE "${OPENAL_INCLUDE_DIR}")
+target_include_directories(flame_audio PRIVATE "${STB_INCLUDE_DIR}")
 	target_link_libraries(flame_audio "${OPENAL_LIB_PATH}")
 	target_link_libraries(flame_audio flame_foundation)
 

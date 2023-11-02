@@ -425,6 +425,7 @@ namespace flame
 			parent = group->nodes.front().get();
 
 		BlueprintVariable variable;
+		std::string location;
 		auto found = false;
 		if (location_name == 0)
 		{
@@ -474,6 +475,7 @@ namespace flame
 
 				auto& col = sht->columns[idx];
 				auto& row = sht->rows[0];
+				location = sht->name + '.';
 				variable.name = col.name;
 				variable.name_hash = col.name_hash;
 				variable.type = col.type;
@@ -487,6 +489,7 @@ namespace flame
 					{
 						if (v.name_hash == variable_name)
 						{
+							location = bp->name + '.';
 							variable = v;
 							found = true;
 							break;
@@ -515,7 +518,7 @@ namespace flame
 		case "get"_h:
 			ret->name = "Variable";
 			ret->name_hash = "Variable"_h;
-			ret->display_name = variable.name;
+			ret->display_name = location + variable.name;
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -559,7 +562,7 @@ namespace flame
 		case "set"_h:
 			ret->name = "Set Variable";
 			ret->name_hash = "Set Variable"_h;
-			ret->display_name = "Set " + variable.name;
+			ret->display_name = "Set " + location + variable.name;
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -609,7 +612,7 @@ namespace flame
 		case "array_size"_h:
 			ret->name = "Array Size";
 			ret->name_hash = "Array Size"_h;
-			ret->display_name = variable.name + ": Size";
+			ret->display_name = location + variable.name + ": Size";
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -659,7 +662,7 @@ namespace flame
 		case "array_clear"_h:
 			ret->name = "Array Clear";
 			ret->name_hash = "Array Clear"_h;
-			ret->display_name = variable.name + ": Clear";
+			ret->display_name = location + variable.name + ": Clear";
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -711,7 +714,7 @@ namespace flame
 		case "array_get_item"_h:
 			ret->name = "Array Get Item";
 			ret->name_hash = "Array Get Item"_h;
-			ret->display_name = variable.name + ": Get Item";
+			ret->display_name = location + variable.name + ": Get Item";
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -794,7 +797,7 @@ namespace flame
 		case "array_set_item"_h:
 			ret->name = "Array Set Item";
 			ret->name_hash = "Array Set Item"_h;
-			ret->display_name = variable.name + ": Set Item";
+			ret->display_name = location + variable.name + ": Set Item";
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -869,7 +872,7 @@ namespace flame
 		case "array_add_item"_h:
 			ret->name = "Array Add Item";
 			ret->name_hash = "Array Add Item"_h;
-			ret->display_name = variable.name + ": Add Item";
+			ret->display_name = location + variable.name + ": Add Item";
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -959,6 +962,7 @@ namespace flame
 		else
 			parent = group->nodes.front().get();
 
+		std::string location;
 		BlueprintGroupPtr call_group = nullptr;
 		if (location_name == 0)
 		{
@@ -991,6 +995,7 @@ namespace flame
 				{
 					if (g->name_hash == group_name)
 					{
+						location = bp->name + '.';
 						call_group = g.get();
 						break;
 					}
@@ -1009,7 +1014,7 @@ namespace flame
 		ret->object_id = next_object_id++;
 		ret->name = "Call";
 		ret->name_hash = "Call"_h;
-		ret->display_name = "Call " + call_group->name;
+		ret->display_name = "Call " + location + call_group->name;
 		{
 			auto i = new BlueprintSlotPrivate;
 			i->node = ret;

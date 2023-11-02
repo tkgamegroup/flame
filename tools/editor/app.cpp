@@ -2033,7 +2033,7 @@ bool App::cmd_play()
 			paused = false;
 
 			cCameraPtr camera = nullptr;
-			e_prefab->traversal_bfs([&](EntityPtr e, int) {
+			e_playing->traversal_bfs([&](EntityPtr e, int) {
 				camera = e->get_component<cCamera>();
 				if (camera)
 					return false;
@@ -2048,7 +2048,7 @@ bool App::cmd_play()
 					for (auto i = 0; i < camera_list.size(); i++)
 					{
 						if (camera_list[i] == camera)
-							fv->camera_idx = 1;
+							fv->camera_idx = i;
 					}
 				}
 			}

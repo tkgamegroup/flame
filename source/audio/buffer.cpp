@@ -1,5 +1,7 @@
 #include "buffer_private.h"
 
+#include <stb_vorbis.c>
+
 namespace flame
 {
 	namespace audio
@@ -120,6 +122,7 @@ namespace flame
 					else
 					{
 						wprintf(L"cannot open wav: %s\n", _filename.c_str());
+						fclose(file);
 						return nullptr;
 					}
 					fclose(file);
@@ -194,10 +197,23 @@ namespace flame
 					alBufferData(ret->al_buf, al_fmt, pcm_data.data(), pcm_data.size(), fmt.ulSamplesPerSec);
 					return ret;
 				}
-				//else if (ext == L".flac") TODO
+				else if (ext == L".ogg")
+				{
+					auto file_content = get_file_content(filename);
+					int channel, sample_rate; short* ogg_data;
+					auto samples = stb_vorbis_decode_memory((uchar*)file_content.data(), file_content.size(), &channel, &sample_rate, &ogg_data);
+					auto ret = new BufferPrivate;
+					alGenBuffers(1, &ret->al_buf);
+					alBufferData(ret->al_buf, channel == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16, ogg_data, samples * channel * sizeof(short), sample_rate);
+					free(ogg_data);
+					return ret;
+				}
+				/*
+				else if (ext == L".flac") // TODO
 				{
 
 				}
+				*/
 
 				wprintf(L"cannot open audio: %s, unknown format\n", _filename.c_str());
 
