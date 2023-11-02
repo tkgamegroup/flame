@@ -1294,6 +1294,8 @@ namespace flame
 				if (only_animations)
 					return;
 
+				std::vector<std::string> material_names;
+
 				for (auto i = 0; i < scene->mNumMaterials; i++)
 				{
 					aiString ai_name;
@@ -1327,11 +1329,13 @@ namespace flame
 						}
 					}
 
-					auto fn = destination / format_res_name(ai_mat->GetName().C_Str(), "fmat", i);
+					auto material_name = format_res_name(ai_mat->GetName().C_Str(), "fmat", i);
+					auto fn = materials_destination / material_name;
 					material->save(fn);
 					material->filename = Path::reverse(fn);
 
 					materials.emplace_back(material);
+					material_names.push_back(material_name);
 				}
 
 				for (auto i = 0; i < scene->mNumMeshes; i++)
@@ -1483,8 +1487,9 @@ namespace flame
 							auto n_mesh = n_components.append_child("item");
 							n_mesh.append_attribute("type_name").set_value("flame::cMesh");
 							auto mesh_idx = src->mMeshes[0];
+							auto mesh = scene->mMeshes[mesh_idx];
 							n_mesh.append_attribute("mesh_name").set_value(("models\\" + model_name + "#mesh" + str(mesh_idx)).c_str());
-							n_mesh.append_attribute("material_name").set_value(("materials\\" + (materials[scene->mMeshes[mesh_idx]->mMaterialIndex]->filename).string()).c_str());
+							n_mesh.append_attribute("material_name").set_value(("materials\\" + std::filesystem::path(material_names[mesh->mMaterialIndex]).string()).c_str());
 							if (name == "mesh_collider")
 							{
 								auto n_rigid = n_components.append_child("item");
