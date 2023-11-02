@@ -1072,6 +1072,24 @@ namespace flame
 			}
 		);
 
+		library->add_template("Normalize", "",
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(vec3*)outputs[0].data = normalize(*(vec3*)inputs[0].data);
+			}
+		);
+
 		library->add_template("Random", "",
 			{
 				{

@@ -182,14 +182,6 @@ std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num 
 int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash, int offset, const FunctionInfo* getter, const FunctionInfo* setter, const std::string& default_value, 
 	voidptr* objs, uint num, const void* id, bool in_table = true)
 {
-	if (in_table)
-	{
-		ImGui::TableNextRow();
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(get_display_name(name).c_str());
-		ImGui::TableNextColumn();
-	}
-
 	auto changed = 0;
 	bool just_exit_editing;
 	auto direct_io = !getter && !setter;
@@ -371,6 +363,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 	{
 	case TagE:
 	{
+		if (in_table)
+		{
+			ImGui::TableNextRow();
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(get_display_name(name).c_str());
+			ImGui::TableNextColumn();
+		}
+
 		auto ti = (TypeInfo_Enum*)type;
 		auto ei = ti->ei;
 		auto data = type->get_value(objs[0], offset, getter, getter);
@@ -458,6 +458,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		{
 		case DataBool:
 		{
+			if (in_table)
+			{
+				ImGui::TableNextRow();
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(get_display_name(name).c_str());
+				ImGui::TableNextColumn();
+			}
+
 			auto value = same[0] ? *(bool*)data : true;
 			if (!same[0])
 				ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, true);
@@ -482,6 +490,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 			break;
 		case DataInt:
+			if (in_table)
+			{
+				ImGui::TableNextRow();
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(get_display_name(name).c_str());
+				ImGui::TableNextColumn();
+			}
+
 			changed = input_int_n(ti->vec_size, (int*)data);
 			if (ImGui::IsItemActivated())
 			{
@@ -529,6 +545,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			changed = just_exit_editing ? 2 : changed > 0;
 			break;
 		case DataFloat:
+			if (in_table)
+			{
+				ImGui::TableNextRow();
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(get_display_name(name).c_str());
+				ImGui::TableNextColumn();
+			}
+
 			changed = input_float_n(ti->vec_size, (float*)data);
 			if (ImGui::IsItemActivated())
 			{
@@ -580,6 +604,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			{
 			case 4:
 			{
+				if (in_table)
+				{
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(get_display_name(name).c_str());
+					ImGui::TableNextColumn();
+				}
+
 				vec4 color = *(cvec4*)data;
 				color /= 255.f;
 				changed = ImGui::ColorEdit4("", &color[0]);
@@ -616,6 +648,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			break;
 		case DataString:
 		{
+			if (in_table)
+			{
+				ImGui::TableNextRow();
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(get_display_name(name).c_str());
+				ImGui::TableNextColumn();
+			}
+
 			if (same[0])
 				changed = ImGui::InputText("", (std::string*)data);
 			else
@@ -653,6 +693,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			break;
 		case DataWString:
 		{
+			if (in_table)
+			{
+				ImGui::TableNextRow();
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(get_display_name(name).c_str());
+				ImGui::TableNextColumn();
+			}
+
 			if (same[0])
 			{
 				auto s = w2s(*(std::wstring*)data);
@@ -695,6 +743,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			break;
 		case DataPath:
 		{
+			if (in_table)
+			{
+				ImGui::TableNextRow();
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(get_display_name(name).c_str());
+				ImGui::TableNextColumn();
+			}
+
 			auto& path = *(std::filesystem::path*)data;
 			auto s = path.string();
 			ImGui::InputText("", s.data(), ImGuiInputTextFlags_ReadOnly);
@@ -744,6 +800,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			break;
 		case DataGUID:
 		{
+			if (in_table)
+			{
+				ImGui::TableNextRow();
+				ImGui::TableNextColumn();
+				ImGui::TextUnformatted(get_display_name(name).c_str());
+				ImGui::TableNextColumn();
+			}
+
 			GUID& guid = *(GUID*)data;
 			auto s = guid.to_string();
 			ImGui::InputText("", s.data(), ImGuiInputTextFlags_ReadOnly);
@@ -799,12 +863,18 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			}
 		}
 			break;
-		default:
-			ImGui::InvisibleButton("", ImVec2(20.f, ImGui::GetTextLineHeight()));
 		}
 	}
 		break;
 	case TagU:
+		if (in_table)
+		{
+			ImGui::TableNextRow();
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(get_display_name(name).c_str());
+			ImGui::TableNextColumn();
+		}
+
 		if (num == 1 && ImGui::TreeNode(""))
 		{
 			auto ti = (TypeInfo_Udt*)type;
@@ -820,6 +890,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		break;
 	case TagO:
+		if (in_table)
+		{
+			ImGui::TableNextRow();
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(get_display_name(name).c_str());
+			ImGui::TableNextColumn();
+		}
+
 		if (num == 1 && ImGui::TreeNode(""))
 		{
 			editing_objects.push(EditingObjects());
@@ -874,6 +952,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		break;
 	case TagVD:
+		if (in_table)
+		{
+			ImGui::TableNextRow();
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(get_display_name(name).c_str());
+			ImGui::TableNextColumn();
+		}
+
 		if (num == 1 && ImGui::TreeNode(""))
 		{
 			assert(!getter);
@@ -923,6 +1009,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		break;
 	case TagVU:
+		if (in_table)
+		{
+			ImGui::TableNextRow();
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(get_display_name(name).c_str());
+			ImGui::TableNextColumn();
+		}
+
 		if (num == 1 && ImGui::TreeNode(""))
 		{
 			assert(!getter);
@@ -974,6 +1068,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		break;
 	case TagVR:
+		if (in_table)
+		{
+			ImGui::TableNextRow();
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(get_display_name(name).c_str());
+			ImGui::TableNextColumn();
+		}
+
 		if (num == 1 && ImGui::TreeNode(""))
 		{
 			assert(!getter);
@@ -1028,6 +1130,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		break;
 	case TagVT:
+		if (in_table)
+		{
+			ImGui::TableNextRow();
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted(get_display_name(name).c_str());
+			ImGui::TableNextColumn();
+		}
+
 		if (num == 1 && ImGui::TreeNode(""))
 		{
 			assert(!getter);
