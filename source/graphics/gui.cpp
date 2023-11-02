@@ -628,6 +628,15 @@ namespace flame
 			style.WindowRounding = 0.0f;
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 
+			for (int i = 0; i <= ImGuiCol_COUNT; i++)
+			{
+				ImVec4& col = style.Colors[i];
+				float H, S, V;
+				ImGui::ColorConvertRGBtoHSV(col.x, col.y, col.z, H, S, V);
+				H += 0.1f;
+				ImGui::ColorConvertHSVtoRGB(H, S, V, col.x, col.y, col.z);
+			}
+
 			ImGuiIO& io = ImGui::GetIO();
 			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;

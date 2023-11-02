@@ -894,6 +894,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			};
 			int n = sv.count();
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
+			n = clamp(n, 0, 100000);
 			context_menu(pv);
 			ImGui::Separator();
 			if (size_changed)
@@ -943,6 +944,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			auto& ui = *ti->retrive_ui();
 			int n = sv.count();
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
+			n = clamp(n, 0, 100000);
 			context_menu(pv);
 			ImGui::Separator();
 			if (size_changed)
@@ -992,6 +994,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			};
 			int n = sv.count();
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
+			n = clamp(n, 0, 100000);
 			context_menu(pv);
 			ImGui::Separator();
 			if (size_changed)
@@ -1047,6 +1050,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				sv.assign(nullptr, pv);
 			int n = sv.count();
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
+			n = clamp(n, 0, 100000);
 			context_menu(pv);
 			ImGui::Separator();
 			if (size_changed)
@@ -1447,6 +1451,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 		else
 			editing_objects.emplace(EditingObjects(EditingObjects::GeneralPrefab, th<Component>(), &prefab_path, 1, nullptr));
 		ImGui::PushID(cc.type_hash);
+		ImGui::Spacing();
 		auto open = ImGui::CollapsingHeader("", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
 		ImGui::SameLine();
 		{
