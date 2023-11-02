@@ -355,7 +355,7 @@ void SheetView::on_draw()
 						changed |= ImGui::Checkbox("", (bool*)data);
 						break;
 					case DataInt:
-						ImGui::PushItemWidth(-FLT_MIN);
+						ImGui::PushMultiItemsWidths(ti->vec_size, ImGui::GetContentRegionAvail().x);
 						for (int i = 0; i < ti->vec_size; i++)
 						{
 							ImGui::PushID(i);
@@ -364,11 +364,11 @@ void SheetView::on_draw()
 							ImGui::DragScalar("", ImGuiDataType_S32, &((int*)data)[i]);
 							changed |= ImGui::IsItemDeactivatedAfterEdit();
 							ImGui::PopID();
+							ImGui::PopItemWidth();
 						}
-						ImGui::PopItemWidth();
 						break;
 					case DataFloat:
-						ImGui::PushItemWidth(-FLT_MIN);
+						ImGui::PushMultiItemsWidths(ti->vec_size, ImGui::GetContentRegionAvail().x);
 						for (int k = 0; k < ti->vec_size; k++)
 						{
 							ImGui::PushID(k);
@@ -377,8 +377,8 @@ void SheetView::on_draw()
 							ImGui::DragScalar("", ImGuiDataType_Float, &((float*)data)[k], 0.01f);
 							changed |= ImGui::IsItemDeactivatedAfterEdit();
 							ImGui::PopID();
+							ImGui::PopItemWidth();
 						}
-						ImGui::PopItemWidth();
 						break;
 					case DataString:
 						ImGui::PushItemWidth(-FLT_MIN);

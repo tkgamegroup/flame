@@ -180,11 +180,16 @@ void add_modify_history(uint attr_hash, const std::string& new_value)
 std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num = 1, const std::vector<uint> excludes = {}, const std::function<void(uint, uint&, uint&)>&cb = {});
 
 int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash, int offset, const FunctionInfo* getter, const FunctionInfo* setter, const std::string& default_value, 
-	voidptr* objs, uint num, const void* id, bool hide_name = false)
+	voidptr* objs, uint num, const void* id, bool in_table = true)
 {
-	auto display_name = get_display_name(name);
-	if (hide_name)
-		display_name = "##" + display_name;
+	if (in_table)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(get_display_name(name).c_str());
+		ImGui::TableNextColumn();
+	}
+
 	auto changed = 0;
 	bool just_exit_editing;
 	auto direct_io = !getter && !setter;
@@ -253,8 +258,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 
 		auto inner_spaceing = ImGui::GetStyle().ItemInnerSpacing.x;
 		ImGui::BeginGroup();
-		ImGui::PushID(name.c_str());
-		ImGui::PushMultiItemsWidths(n, ImGui::CalcItemWidth());
+		ImGui::PushMultiItemsWidths(n, ImGui::GetContentRegionAvail().x);
 		for (int i = 0; i < n; i++)
 		{
 			ImGui::PushID(i);
@@ -280,11 +284,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			ImGui::PopID();
 			ImGui::PopItemWidth();
 		}
-		ImGui::PopID();
-
-		ImGui::SameLine(0.f, inner_spaceing);
-		ImGui::TextEx(display_name.c_str());
-
 		ImGui::EndGroup();
 		return ret;
 	};
@@ -294,8 +293,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 
 		auto inner_spaceing = ImGui::GetStyle().ItemInnerSpacing.x;
 		ImGui::BeginGroup();
-		ImGui::PushID(name.c_str());
-		ImGui::PushMultiItemsWidths(n, ImGui::CalcItemWidth());
+		ImGui::PushMultiItemsWidths(n, ImGui::GetContentRegionAvail().x);
 		for (int i = 0; i < n; i++)
 		{
 			ImGui::PushID(i);
@@ -325,23 +323,15 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			ImGui::PopID();
 			ImGui::PopItemWidth();
 		}
-		ImGui::PopID();
-
-		ImGui::SameLine(0.f, inner_spaceing);
-		ImGui::TextEx(display_name.c_str());
-
 		ImGui::EndGroup();
 		return ret;
 	};
 
 	static TypeInfo* copied_type = nullptr;
 	auto context_menu = [&](void* data) {
-		if (!name_hash || hide_name)
+		if (!name_hash || !in_table)
 			return;
-		ImGui::SameLine();
-		if (ImGui::Button("..."))
-			ImGui::OpenPopup("context_menu");
-		if (ImGui::BeginPopup("context_menu"))
+		if (ImGui::BeginPopupContextItem("value_context"))
 		{
 			if (ImGui::MenuItem("Reset Value"))
 			{
@@ -388,7 +378,8 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		if (!ei->is_flags)
 		{
 			value = clamp(value, 0, (int)ei->items.size() - 1);
-			if (ImGui::BeginCombo(display_name.c_str(), same[0] ? ei->items[value].name.c_str() : "-"))
+			ImGui::SetNextItemWidth(-FLT_MIN);
+			if (ImGui::BeginCombo("", same[0] ? ei->items[value].name.c_str() : "-"))
 			{
 				for (auto& ii : ei->items)
 				{
@@ -424,7 +415,8 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			}
 			else
 				str_value = "-";
-			if (ImGui::BeginCombo(display_name.c_str(), str_value.c_str()))
+			ImGui::SetNextItemWidth(-FLT_MIN);
+			if (ImGui::BeginCombo("", str_value.c_str()))
 			{
 				for (auto& ii : ei->items)
 				{
@@ -469,7 +461,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			auto value = same[0] ? *(bool*)data : true;
 			if (!same[0])
 				ImGui::PushItemFlag(ImGuiItemFlags_MixedValue, true);
-			changed = ImGui::Checkbox(display_name.c_str(), &value);
+			changed = ImGui::Checkbox("", &value);
 			if (!same[0])
 				ImGui::PopItemFlag();
 			context_menu(data);
@@ -590,7 +582,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			{
 				vec4 color = *(cvec4*)data;
 				color /= 255.f;
-				changed = ImGui::ColorEdit4(display_name.c_str(), &color[0]);
+				changed = ImGui::ColorEdit4("", &color[0]);
 				if (changed)
 					*(cvec4*)data = color * 255.f;
 				if (ImGui::IsItemActivated())
@@ -625,11 +617,11 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		case DataString:
 		{
 			if (same[0])
-				changed = ImGui::InputText(display_name.c_str(), (std::string*)data);
+				changed = ImGui::InputText("", (std::string*)data);
 			else
 			{
 				std::string s = "-";
-				changed = ImGui::InputText(display_name.c_str(), &s);
+				changed = ImGui::InputText("", &s);
 				if (changed)
 					*(std::string*)data = s;
 			}
@@ -664,14 +656,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (same[0])
 			{
 				auto s = w2s(*(std::wstring*)data);
-				changed = ImGui::InputText(display_name.c_str(), &s);
+				changed = ImGui::InputText("", &s);
 				if (changed)
 					*(std::wstring*)data = s2w(s);
 			}
 			else
 			{
 				std::string s = "-";
-				changed = ImGui::InputText(display_name.c_str(), &s);
+				changed = ImGui::InputText("", &s);
 				if (changed)
 					*(std::wstring*)data = s2w(s);
 			}
@@ -705,7 +697,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		{
 			auto& path = *(std::filesystem::path*)data;
 			auto s = path.string();
-			ImGui::InputText(display_name.c_str(), s.data(), ImGuiInputTextFlags_ReadOnly);
+			ImGui::InputText("", s.data(), ImGuiInputTextFlags_ReadOnly);
 			if (ImGui::BeginDragDropTarget())
 			{
 				if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
@@ -721,6 +713,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				}
 				ImGui::EndDragDropTarget();
 			}
+			context_menu(data);
 			ImGui::SameLine();
 			if (ImGui::Button(graphics::font_icon_str("location-crosshairs"_h).c_str()))
 				project_window.ping(Path::get(path));
@@ -736,7 +729,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				changed = true;
 				add_modify_history(name_hash, path.string());
 			}
-			context_menu(data);
 			if (changed)
 			{
 				if (!direct_io)
@@ -754,7 +746,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		{
 			GUID& guid = *(GUID*)data;
 			auto s = guid.to_string();
-			ImGui::InputText(display_name.c_str(), s.data(), ImGuiInputTextFlags_ReadOnly);
+			ImGui::InputText("", s.data(), ImGuiInputTextFlags_ReadOnly);
 			if (ImGui::BeginDragDropTarget())
 			{
 				if (auto payload = ImGui::AcceptDragDropPayload("Entity"); payload)
@@ -772,6 +764,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				}
 				ImGui::EndDragDropTarget();
 			}
+			context_menu(data);
 			ImGui::SameLine();
 			if (ImGui::Button(graphics::font_icon_str("location-crosshairs"_h).c_str()))
 			{
@@ -793,7 +786,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				changed = true;
 				add_modify_history(name_hash, guid.to_string());
 			}
-			context_menu(data);
 			if (changed)
 			{
 				if (!direct_io)
@@ -807,11 +799,13 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			}
 		}
 			break;
+		default:
+			ImGui::InvisibleButton("", ImVec2(20.f, ImGui::GetTextLineHeight()));
 		}
 	}
 		break;
 	case TagU:
-		if (num == 1 && ImGui::TreeNode(display_name.c_str()))
+		if (num == 1 && ImGui::TreeNode(""))
 		{
 			auto ti = (TypeInfo_Udt*)type;
 			auto ui = ti->ui;
@@ -826,7 +820,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		break;
 	case TagO:
-		if (num == 1 && ImGui::TreeNode(display_name.c_str()))
+		if (num == 1 && ImGui::TreeNode(""))
 		{
 			editing_objects.push(EditingObjects());
 
@@ -880,7 +874,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		break;
 	case TagVD:
-		if (num == 1 && ImGui::TreeNode(display_name.c_str()))
+		if (num == 1 && ImGui::TreeNode(""))
 		{
 			assert(!getter);
 			auto pv = (char*)objs[0] + offset;
@@ -929,7 +923,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		break;
 	case TagVU:
-		if (num == 1 && ImGui::TreeNode(display_name.c_str()))
+		if (num == 1 && ImGui::TreeNode(""))
 		{
 			assert(!getter);
 			auto pv = (char*)objs[0] + offset;
@@ -980,7 +974,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		break;
 	case TagVR:
-		if (num == 1 && ImGui::TreeNode(display_name.c_str()))
+		if (num == 1 && ImGui::TreeNode(""))
 		{
 			assert(!getter);
 			auto pv = (char*)objs[0] + offset;
@@ -1034,7 +1028,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		break;
 	case TagVT:
-		if (num == 1 && ImGui::TreeNode(display_name.c_str()))
+		if (num == 1 && ImGui::TreeNode(""))
 		{
 			assert(!getter);
 			auto pv = (char*)objs[0] + offset;
@@ -1102,13 +1096,13 @@ int manipulate_variable(const VariableInfo& v, voidptr* objs, uint num)
 	return manipulate_variable(v.type, v.name, v.name_hash, v.offset, nullptr, nullptr, v.default_value, objs, num, &v);
 }
 
-int manipulate_attribute(const Attribute& a, voidptr* objs, uint num, bool hide_name = false)
+int manipulate_attribute(const Attribute& a, voidptr* objs, uint num, bool in_table = true)
 {
 	return manipulate_variable(a.type, a.name, a.name_hash, a.var_off(),
 		a.getter_idx != -1 ? &a.ui->functions[a.getter_idx] : nullptr,
 		a.setter_idx != -1 ? &a.ui->functions[a.setter_idx] : nullptr,
 		a.default_value,
-		objs, num, &a, hide_name);
+		objs, num, &a, in_table);
 }
 
 std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num, const std::vector<uint> excludes, const std::function<void(uint, uint&, uint&)>& cb)
@@ -1116,57 +1110,65 @@ std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num,
 	uint ret_changed = 0;
 	uint ret_changed_name = 0;
 
-	if (ui.attributes.empty())
+	if (ImGui::BeginTableEx("inspector", "inspector"_h, 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
 	{
-		for (auto& v : ui.variables)
+		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100);
+		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0);
+
+		if (ui.attributes.empty())
 		{
-			bool skip = false;
-			if (!excludes.empty())
+			for (auto& v : ui.variables)
 			{
-				for (auto h : excludes)
+				bool skip = false;
+				if (!excludes.empty())
 				{
-					if (h == v.name_hash)
+					for (auto h : excludes)
 					{
-						skip = true;
-						break;
+						if (h == v.name_hash)
+						{
+							skip = true;
+							break;
+						}
 					}
 				}
+				if (skip)
+					continue;
+				auto changed = manipulate_variable(v, objs, num);
+				ret_changed |= changed;
+				if (changed)
+					ret_changed_name = v.name_hash;
+				if (cb)
+					cb(v.name_hash, ret_changed, ret_changed_name);
 			}
-			if (skip)
-				continue;
-			auto changed = manipulate_variable(v, objs, num);
-			ret_changed |= changed;
-			if (changed)
-				ret_changed_name = v.name_hash;
-			if (cb)
-				cb(v.name_hash, ret_changed, ret_changed_name);
 		}
-	}
-	else
-	{
-		for (auto& a : ui.attributes)
+		else
 		{
-			bool skip = false;
-			if (!excludes.empty())
+			for (auto& a : ui.attributes)
 			{
-				for (auto h : excludes)
+				bool skip = false;
+				if (!excludes.empty())
 				{
-					if (h == a.name_hash)
+					for (auto h : excludes)
 					{
-						skip = true;
-						break;
+						if (h == a.name_hash)
+						{
+							skip = true;
+							break;
+						}
 					}
 				}
+				if (skip)
+					continue;
+				auto changed = manipulate_attribute(a, objs, num);
+				ret_changed |= changed;
+				if (changed)
+					ret_changed_name = a.name_hash;
+				if (cb)
+					cb(a.name_hash, ret_changed, ret_changed_name);
 			}
-			if (skip)
-				continue;
-			auto changed = manipulate_attribute(a, objs, num);
-			ret_changed |= changed;
-			if (changed)
-				ret_changed_name = a.name_hash;
-			if (cb)
-				cb(a.name_hash, ret_changed, ret_changed_name);
 		}
+
+		ImGui::EndTable();
 	}
 	return std::make_pair(ret_changed, ret_changed_name);
 }
@@ -1328,20 +1330,21 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 	else
 		editing_objects.emplace(EditingObjects(EditingObjects::GeneralPrefab, 0, &prefab_path, 1, nullptr));
 	ImGui::PushID("flame::Entity"_h);
+	auto ui_entity = TypeInfo::get<Entity>()->retrive_ui();
 	{
 		auto hash = "enable"_h;
-		get_changed2(manipulate_attribute(*TypeInfo::get<Entity>()->retrive_ui()->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
+		get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), false), hash);
 	}
 	ImGui::SameLine();
 	{
 		auto hash = "name"_h;
-		get_changed2(manipulate_attribute(*TypeInfo::get<Entity>()->retrive_ui()->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
+		get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), false), hash);
 	}
 	ImGui::SameLine();
 	{
 		ImGui::SetNextItemWidth(100.f);
 		auto hash = "tag"_h;
-		get_changed2(manipulate_attribute(*TypeInfo::get<Entity>()->retrive_ui()->find_attribute(hash), (voidptr*)entities.data(), entities.size(), true), hash);
+		get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), false), hash);
 	}
 	if (entities.size() == 1 && entity->prefab_instance)
 	{
@@ -1456,7 +1459,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 		ImGui::SameLine();
 		{
 			auto hash = "enable"_h;
-			get_changed2(manipulate_attribute(*TypeInfo::get<Component>()->retrive_ui()->find_attribute(hash), (voidptr*)cc.components.data(), cc.components.size(), true), hash);
+			get_changed2(manipulate_attribute(*TypeInfo::get<Component>()->retrive_ui()->find_attribute(hash), (voidptr*)cc.components.data(), cc.components.size(), false), hash);
 		}
 		editing_objects.pop();
 
@@ -1883,13 +1886,52 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 				if (cc.components.size() == 1)
 				{
 					auto node = (cNodePtr)cc.components[0];
-					ImGui::InputFloat4("qut", (float*)&node->qut, "%.3f", ImGuiInputTextFlags_ReadOnly);
-					auto g_pos = node->global_pos();
-					auto g_qut = node->global_qut();
-					auto g_scl = node->global_scl();
-					ImGui::InputFloat3("global pos", (float*)&g_pos, "%.3f", ImGuiInputTextFlags_ReadOnly);
-					ImGui::InputFloat4("global qut", (float*)&g_qut, "%.3f", ImGuiInputTextFlags_ReadOnly);
-					ImGui::InputFloat3("global scl", (float*)&g_scl, "%.3f", ImGuiInputTextFlags_ReadOnly);
+					if (ImGui::BeginTableEx("inspector", "inspector"_h, 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
+					{
+						ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100);
+						ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0);
+
+						auto show_floats = [](uint n, const char* label, float* data) {
+							auto inner_spaceing = ImGui::GetStyle().ItemInnerSpacing.x;
+							ImGui::PushMultiItemsWidths(n, ImGui::GetContentRegionAvail().x);
+							for (int i = 0; i < n; i++)
+							{
+								ImGui::PushID(i);
+								if (i > 0)
+									ImGui::SameLine(0.f, inner_spaceing);
+								ImGui::InputScalar(label, ImGuiDataType_Float, &data[i], nullptr, nullptr, "%.3f", ImGuiInputTextFlags_ReadOnly);
+								ImGui::PopID();
+								ImGui::PopItemWidth();
+							}
+						};
+
+						ImGui::TableNextRow();
+						ImGui::TableNextColumn();
+						ImGui::TextUnformatted("qut");
+						ImGui::TableNextColumn();
+						show_floats(4, "##qut", (float*)&node->qut);
+
+						auto g_pos = node->global_pos();
+						auto g_qut = node->global_qut();
+						auto g_scl = node->global_scl();
+
+						ImGui::TableNextColumn();
+						ImGui::TextUnformatted("global pos");
+						ImGui::TableNextColumn();
+						show_floats(3, "##global pos", (float*)&g_pos);
+
+						ImGui::TableNextColumn();
+						ImGui::TextUnformatted("global qut");
+						ImGui::TableNextColumn();
+						show_floats(4, "##global qut", (float*)&g_qut);
+
+						ImGui::TableNextColumn();
+						ImGui::TextUnformatted("global scl");
+						ImGui::TableNextColumn();
+						show_floats(3, "##global scl", (float*)&g_scl);
+
+						ImGui::EndTable();
+					}
 				}
 			}
 			else if (ui.name_hash == "flame::cArmature"_h)
