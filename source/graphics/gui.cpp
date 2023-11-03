@@ -210,7 +210,7 @@ namespace ImGui
 				explorer.draw();
 				ImGui::EndChild();
 				auto str = path.string();
-				if (ImGui::InputText("Path", &str))
+				if (ImGui::InputText("Name", &str))
 					path = str;
 				if (ImGui::Button("OK"))
 				{

@@ -316,7 +316,7 @@ namespace flame
 		const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
 		BlueprintNodeFunction function, BlueprintNodeLoopFunction loop_function,
 		BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
-		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider, 
+		BlueprintNodeInputTypeChangedCallback input_type_changed_callback, BlueprintNodePreviewProvider preview_provider, 
 		bool is_block, BlueprintNodeBeginBlockFunction begin_block_function, BlueprintNodeEndBlockFunction end_block_function)
 	{
 		assert(group && group->blueprint == this);
@@ -391,7 +391,7 @@ namespace flame
 		ret->destructor = destructor;
 		ret->function = function;
 		ret->loop_function = loop_function;
-		ret->input_slot_changed_callback = input_slot_changed_callback;
+		ret->input_type_changed_callback = input_type_changed_callback;
 		ret->preview_provider = preview_provider;
 		ret->is_block = is_block;
 		ret->begin_block_function = begin_block_function;
@@ -1221,7 +1221,7 @@ namespace flame
 			auto n = input_changed_nodes.front();
 			input_changed_nodes.pop_front();
 
-			if (n->input_slot_changed_callback)
+			if (n->input_type_changed_callback)
 			{
 				std::vector<TypeInfo*> input_types(n->inputs.size());
 				std::vector<TypeInfo*> output_types(n->outputs.size());
@@ -1230,7 +1230,7 @@ namespace flame
 				for (auto i = 0; i < output_types.size(); i++)
 					output_types[i] = n->outputs[i]->type;
 
-				n->input_slot_changed_callback(input_types.data(), output_types.data());
+				n->input_type_changed_callback(input_types.data(), output_types.data());
 
 				for (auto i = 0; i < output_types.size(); i++)
 				{
@@ -2263,7 +2263,7 @@ namespace flame
 									if (t.name == name)
 									{
 										auto n = ret->add_node(g, parent, t.name, t.display_name, t.inputs, t.outputs,
-											t.function, t.loop_function, t.constructor, t.destructor, t.input_slot_changed_callback, t.preview_provider, 
+											t.function, t.loop_function, t.constructor, t.destructor, t.input_type_changed_callback, t.preview_provider, 
 											t.is_block, t.begin_block_function, t.end_block_function);
 										for (auto n_input : n_node.child("inputs"))
 											read_input(n, n_input);
@@ -2382,7 +2382,7 @@ namespace flame
 	void BlueprintNodeLibraryPrivate::add_template(const std::string& name, const std::string& display_name,
 		const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
 		BlueprintNodeFunction function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
-		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider)
+		BlueprintNodeInputTypeChangedCallback input_type_changed_callback, BlueprintNodePreviewProvider preview_provider)
 	{
 		auto& t = node_templates.emplace_back();
 		t.library = this;
@@ -2399,7 +2399,7 @@ namespace flame
 		t.loop_function = nullptr;
 		t.constructor = constructor;
 		t.destructor = destructor;
-		t.input_slot_changed_callback = input_slot_changed_callback;
+		t.input_type_changed_callback = input_type_changed_callback;
 		t.preview_provider = preview_provider;
 		t.is_block = false;
 		t.begin_block_function = nullptr;
@@ -2409,7 +2409,7 @@ namespace flame
 	void BlueprintNodeLibraryPrivate::add_template(const std::string& name, const std::string& display_name,
 		const std::vector<BlueprintSlotDesc>& inputs , const std::vector<BlueprintSlotDesc>& outputs,
 		BlueprintNodeLoopFunction loop_function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
-		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider)
+		BlueprintNodeInputTypeChangedCallback input_type_changed_callback, BlueprintNodePreviewProvider preview_provider)
 	{
 		auto& t = node_templates.emplace_back();
 		t.library = this;
@@ -2426,7 +2426,7 @@ namespace flame
 		t.loop_function = loop_function;
 		t.constructor = constructor;
 		t.destructor = destructor;
-		t.input_slot_changed_callback = input_slot_changed_callback;
+		t.input_type_changed_callback = input_type_changed_callback;
 		t.preview_provider = preview_provider;
 		t.is_block = false;
 		t.begin_block_function = nullptr;
@@ -2437,7 +2437,7 @@ namespace flame
 		const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
 		bool is_block, BlueprintNodeBeginBlockFunction begin_block_function, BlueprintNodeEndBlockFunction end_block_function, 
 		BlueprintNodeLoopFunction loop_function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
-		BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider)
+		BlueprintNodeInputTypeChangedCallback input_type_changed_callback, BlueprintNodePreviewProvider preview_provider)
 	{
 		auto& t = node_templates.emplace_back();
 		t.library = this;
@@ -2454,7 +2454,7 @@ namespace flame
 		t.loop_function = nullptr;
 		t.constructor = constructor;
 		t.destructor = destructor;
-		t.input_slot_changed_callback = input_slot_changed_callback;
+		t.input_type_changed_callback = input_type_changed_callback;
 		t.preview_provider = preview_provider;
 		t.is_block = is_block;
 		t.begin_block_function = begin_block_function;

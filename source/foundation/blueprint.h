@@ -128,7 +128,7 @@ namespace flame
 	typedef void(*BlueprintNodeEndBlockFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
 	typedef void(*BlueprintNodeConstructor)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
 	typedef void(*BlueprintNodeDestructor)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
-	typedef void(*BlueprintNodeInputSlotChangedCallback)(TypeInfo** input_types, TypeInfo** output_types);
+	typedef void(*BlueprintNodeInputTypeChangedCallback)(TypeInfo** input_types, TypeInfo** output_types);
 	typedef void(*BlueprintNodePreviewProvider)(BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintNodePreview* preview);
 
 	struct BlueprintNode
@@ -145,7 +145,7 @@ namespace flame
 		BlueprintNodeLoopFunction						loop_function = nullptr;
 		BlueprintNodeConstructor						constructor = nullptr;
 		BlueprintNodeDestructor							destructor = nullptr;
-		BlueprintNodeInputSlotChangedCallback			input_slot_changed_callback = nullptr;
+		BlueprintNodeInputTypeChangedCallback			input_type_changed_callback = nullptr;
 		BlueprintNodePreviewProvider					preview_provider = nullptr;
 		bool											is_block = false;
 		BlueprintNodeBeginBlockFunction					begin_block_function = nullptr;
@@ -336,7 +336,7 @@ namespace flame
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeLoopFunction loop_function = nullptr,
 			BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
-			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr,
+			BlueprintNodeInputTypeChangedCallback input_type_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr,
 			bool is_block = false, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr) = 0;
 		virtual BlueprintNodePtr		add_block(BlueprintGroupPtr group, BlueprintNodePtr parent) = 0;
 		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type = "get"_h, uint location_name = 0 /* from a sheet or a static bp */) = 0;
@@ -388,7 +388,7 @@ namespace flame
 			BlueprintNodeLoopFunction				loop_function = nullptr;
 			BlueprintNodeConstructor				constructor = nullptr;
 			BlueprintNodeDestructor					destructor = nullptr;
-			BlueprintNodeInputSlotChangedCallback	input_slot_changed_callback = nullptr;
+			BlueprintNodeInputTypeChangedCallback	input_type_changed_callback = nullptr;
 			BlueprintNodePreviewProvider			preview_provider = nullptr;
 			bool									is_block = false;
 			BlueprintNodeBeginBlockFunction			begin_block_function = nullptr;
@@ -397,7 +397,7 @@ namespace flame
 			inline BlueprintNodePtr create_node(BlueprintPtr blueprint, BlueprintGroupPtr group, BlueprintNodePtr parent) const
 			{
 				return ((Blueprint*)blueprint)->add_node(group, parent, name, display_name, inputs, outputs, function, loop_function,
-					constructor, destructor, input_slot_changed_callback, preview_provider, is_block, begin_block_function, end_block_function);
+					constructor, destructor, input_type_changed_callback, preview_provider, is_block, begin_block_function, end_block_function);
 			}
 		};
 
@@ -420,16 +420,16 @@ namespace flame
 		virtual void add_template(const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
-			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
+			BlueprintNodeInputTypeChangedCallback input_type_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
 		virtual void add_template(const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeLoopFunction loop_function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
-			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
+			BlueprintNodeInputTypeChangedCallback input_type_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
 		virtual void add_template(const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			bool is_block = true, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr,
 			BlueprintNodeLoopFunction loop_function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
-			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
+			BlueprintNodeInputTypeChangedCallback input_type_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) = 0;
 
 		struct Get
 		{

@@ -426,8 +426,11 @@ void SheetView::on_draw()
 
 			if (vertical_mode && sheet->rows.size() <= 1)
 			{
-				if (ImGui::BeginTable("##main", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | ImGuiTableFlags_NoSavedSettings, ImVec2(0.f, 0.f)))
+				if (ImGui::BeginTable("##main", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollX | ImGuiTableFlags_NoSavedSettings, ImVec2(0.f, -30.f)))
 				{
+					ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 200.f);
+					ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 200.f);
+
 					auto& row = sheet->rows[0];
 					for (auto i = 0; i < sheet->columns.size(); i++)
 					{
@@ -451,12 +454,12 @@ void SheetView::on_draw()
 			}
 			else
 			{
-				if (ImGui::BeginTable("##main", sheet->columns.size() + 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | ImGuiTableFlags_NoSavedSettings, ImVec2(0.f, 0.f)))
+				if (ImGui::BeginTable("##main", sheet->columns.size() + 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollX | ImGuiTableFlags_NoSavedSettings, ImVec2(0.f, -30.f)))
 				{
 					for (auto i = 0; i < sheet->columns.size(); i++)
 					{
 						auto& column = sheet->columns[i];
-						ImGui::TableSetupColumn(column.name.c_str(), ImGuiTableColumnFlags_WidthStretch, 200.f);
+						ImGui::TableSetupColumn(column.name.c_str(), ImGuiTableColumnFlags_WidthFixed, 200.f);
 					}
 					ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 80.f);
 

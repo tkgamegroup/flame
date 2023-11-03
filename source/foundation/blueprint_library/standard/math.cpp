@@ -383,515 +383,241 @@ namespace flame
 				*(cvec4*)outputs[0].data = vec4(rgbColor(vec3(h, s, v)), a) * 255.f;
 			}
 		);
-		
-		library->add_template("Add", "+",
+
+		std::vector<TypeInfo*> generic_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
+			TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
+			TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
+		};
+
+		auto input_type_changed_function = [](TypeInfo** input_types, TypeInfo** output_types) {
+			auto ti0 = (TypeInfo_Data*)input_types[0];
+			auto ti1 = (TypeInfo_Data*)input_types[1];
+			if (ti0->vec_size != ti1->vec_size)
 			{
+				if (ti0->vec_size != 1 && ti1->vec_size != 1)
 				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				},
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}
-			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				auto out_ti = (TypeInfo_Data*)outputs[0].type;
-				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
-				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
-				switch (out_ti->data_type)
-				{
-				case DataFloat:
-				{
-					auto p = (float*)outputs[0].data;
-					auto in0_p = (char*)inputs[0].data;
-					auto in1_p = (char*)inputs[1].data;
-					for (auto i = 0; i < out_ti->vec_size; i++)
-					{
-						if (i < in0_ti->vec_size)
-							p[i] = in0_ti->as_float(in0_p);
-						else
-							p[i] = 0;
-
-						if (i < in1_ti->vec_size)
-							p[i] += in1_ti->as_float(in1_p);
-						in0_p += sizeof(float);
-						in1_p += sizeof(float);
-					}
-				}
-					break;
-				case DataInt:
-				{
-					if (out_ti->is_signed)
-					{
-						auto p = (int*)outputs[0].data;
-						auto in0_p = (char*)inputs[0].data;
-						auto in1_p = (char*)inputs[1].data;
-						for (auto i = 0; i < out_ti->vec_size; i++)
-						{
-							if (i < in0_ti->vec_size)
-								p[i] = in0_ti->as_int(in0_p);
-							else
-								p[i] = 0;
-
-							if (i < in1_ti->vec_size)
-								p[i] += in1_ti->as_int(in1_p);
-							in0_p += sizeof(int);
-							in1_p += sizeof(int);
-						}
-					}
-					else
-					{
-						auto p = (uint*)outputs[0].data;
-						auto in0_p = (char*)inputs[0].data;
-						auto in1_p = (char*)inputs[1].data;
-						for (auto i = 0; i < out_ti->vec_size; i++)
-						{
-							if (i < in0_ti->vec_size)
-								p[i] = in0_ti->as_uint(in0_p);
-							else
-								p[i] = 0;
-
-							if (i < in1_ti->vec_size)
-								p[i] += in1_ti->as_uint(in1_p);
-							in0_p += sizeof(uint);
-							in1_p += sizeof(uint);
-						}
-					}
-				}
-					break;
-				}
-			},
-			nullptr,
-			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				auto ti0 = (TypeInfo_Data*)input_types[0];
-				auto ti1 = (TypeInfo_Data*)input_types[1];
-				auto data_type = DataFloat;
-				auto vec_size = max(ti0->vec_size, ti1->vec_size);
-				auto is_signed = ti0->is_signed || ti1->is_signed;
-				if (ti0->data_type == DataInt && ti1->data_type == DataInt)
-					data_type = DataInt;
-				switch (data_type)
-				{
-				case DataFloat:
-					switch (vec_size)
-					{
-					case 1: *output_types = TypeInfo::get<float>(); break;
-					case 2: *output_types = TypeInfo::get<vec2>(); break;
-					case 3: *output_types = TypeInfo::get<vec3>(); break;
-					case 4: *output_types = TypeInfo::get<vec4>(); break;
-					}
-					break;
-				case DataInt:
-					switch (vec_size)
-					{
-					case 1: *output_types = is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>(); break;
-					case 2: *output_types = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>(); break;
-					case 3: *output_types = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>(); break;
-					case 4: *output_types = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>(); break;
-					}
-					break;
+					*output_types = nullptr;
+					return;
 				}
 			}
-		);
-		
-		library->add_template("Subtract", "-",
+
+			auto vec_size = max(ti0->vec_size, ti1->vec_size);
+			if (ti0->data_type == DataInt && ti1->data_type == DataInt)
 			{
-				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				},
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}
-			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				auto out_ti = (TypeInfo_Data*)outputs[0].type;
-				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
-				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
-				switch (out_ti->data_type)
-				{
-				case DataFloat:
-				{
-					auto p = (float*)outputs[0].data;
-					auto in0_p = (char*)inputs[0].data;
-					auto in1_p = (char*)inputs[1].data;
-					for (auto i = 0; i < out_ti->vec_size; i++)
-					{
-						if (i < in0_ti->vec_size)
-							p[i] = in0_ti->as_float(in0_p);
-						else
-							p[i] = 0;
-
-						if (i < in1_ti->vec_size)
-							p[i] -= in1_ti->as_float(in1_p);
-						in0_p += sizeof(float);
-						in1_p += sizeof(float);
-					}
-				}
-					break;
-				case DataInt:
-				{
-					if (out_ti->is_signed)
-					{
-						auto p = (int*)outputs[0].data;
-						auto in0_p = (char*)inputs[0].data;
-						auto in1_p = (char*)inputs[1].data;
-						for (auto i = 0; i < out_ti->vec_size; i++)
-						{
-							if (i < in0_ti->vec_size)
-								p[i] = in0_ti->as_int(in0_p);
-							else
-								p[i] = 0;
-
-							if (i < in1_ti->vec_size)
-								p[i] -= in1_ti->as_int(in1_p);
-							in0_p += sizeof(int);
-							in1_p += sizeof(int);
-						}
-					}
-					else
-					{
-						auto p = (uint*)outputs[0].data;
-						auto in0_p = (char*)inputs[0].data;
-						auto in1_p = (char*)inputs[1].data;
-						for (auto i = 0; i < out_ti->vec_size; i++)
-						{
-							if (i < in0_ti->vec_size)
-								p[i] = in0_ti->as_uint(in0_p);
-							else
-								p[i] = 0;
-
-							if (i < in1_ti->vec_size)
-								p[i] -= in1_ti->as_uint(in1_p);
-							in0_p += sizeof(uint);
-							in1_p += sizeof(uint);
-						}
-					}
-				}
-					break;
-				}
-			},
-			nullptr,
-			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				auto ti0 = (TypeInfo_Data*)input_types[0];
-				auto ti1 = (TypeInfo_Data*)input_types[1];
-				auto data_type = DataFloat;
-				auto vec_size = max(ti0->vec_size, ti1->vec_size);
 				auto is_signed = ti0->is_signed || ti1->is_signed;
-				if (ti0->data_type == DataInt && ti1->data_type == DataInt)
-					data_type = DataInt;
-				switch (data_type)
+				switch (vec_size)
 				{
-				case DataFloat:
-					switch (vec_size)
-					{
-					case 1: *output_types = TypeInfo::get<float>(); break;
-					case 2: *output_types = TypeInfo::get<vec2>(); break;
-					case 3: *output_types = TypeInfo::get<vec3>(); break;
-					case 4: *output_types = TypeInfo::get<vec4>(); break;
-					}
-					break;
-				case DataInt:
-					switch (vec_size)
-					{
-					case 1: *output_types = is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>(); break;
-					case 2: *output_types = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>(); break;
-					case 3: *output_types = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>(); break;
-					case 4: *output_types = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>(); break;
-					}
-					break;
+				case 1: *output_types = is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>(); break;
+				case 2: *output_types = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>(); break;
+				case 3: *output_types = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>(); break;
+				case 4: *output_types = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>(); break;
 				}
 			}
-		);
-		
-		library->add_template("Multiply", "*",
+			else
 			{
+				switch (vec_size)
 				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				},
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}
-			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				auto out_ti = (TypeInfo_Data*)outputs[0].type;
-				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
-				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
-				switch (out_ti->data_type)
-				{
-				case DataFloat:
-				{
-					auto p = (float*)outputs[0].data;
-					auto in0_p = (char*)inputs[0].data;
-					auto in1_p = (char*)inputs[1].data;
-					for (auto i = 0; i < out_ti->vec_size; i++)
-					{
-						if (i < in0_ti->vec_size)
-							p[i] = in0_ti->as_float(in0_p);
-						else
-							p[i] = 0;
-
-						if (i < in1_ti->vec_size)
-							p[i] *= in1_ti->as_float(in1_p);
-						in0_p += sizeof(float);
-						in1_p += sizeof(float);
-					}
-				}
-					break;
-				case DataInt:
-				{
-					if (out_ti->is_signed)
-					{
-						auto p = (int*)outputs[0].data;
-						auto in0_p = (char*)inputs[0].data;
-						auto in1_p = (char*)inputs[1].data;
-						for (auto i = 0; i < out_ti->vec_size; i++)
-						{
-							if (i < in0_ti->vec_size)
-								p[i] = in0_ti->as_int(in0_p);
-							else
-								p[i] = 0;
-
-							if (i < in1_ti->vec_size)
-								p[i] *= in1_ti->as_int(in1_p);
-							in0_p += sizeof(int);
-							in1_p += sizeof(int);
-						}
-					}
-					else
-					{
-						auto p = (uint*)outputs[0].data;
-						auto in0_p = (char*)inputs[0].data;
-						auto in1_p = (char*)inputs[1].data;
-						for (auto i = 0; i < out_ti->vec_size; i++)
-						{
-							if (i < in0_ti->vec_size)
-								p[i] = in0_ti->as_uint(in0_p);
-							else
-								p[i] = 0;
-
-							if (i < in1_ti->vec_size)
-								p[i] *= in1_ti->as_uint(in1_p);
-							in0_p += sizeof(uint);
-							in1_p += sizeof(uint);
-						}
-					}
-				}
-					break;
-				}
-			},
-			nullptr,
-			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				auto ti0 = (TypeInfo_Data*)input_types[0];
-				auto ti1 = (TypeInfo_Data*)input_types[1];
-				auto data_type = DataFloat;
-				auto vec_size = max(ti0->vec_size, ti1->vec_size);
-				auto is_signed = ti0->is_signed || ti1->is_signed;
-				if (ti0->data_type == DataInt && ti1->data_type == DataInt)
-					data_type = DataInt;
-				switch (data_type)
-				{
-				case DataFloat:
-					switch (vec_size)
-					{
-					case 1: *output_types = TypeInfo::get<float>(); break;
-					case 2: *output_types = TypeInfo::get<vec2>(); break;
-					case 3: *output_types = TypeInfo::get<vec3>(); break;
-					case 4: *output_types = TypeInfo::get<vec4>(); break;
-					}
-					break;
-				case DataInt:
-					switch (vec_size)
-					{
-					case 1: *output_types = is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>(); break;
-					case 2: *output_types = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>(); break;
-					case 3: *output_types = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>(); break;
-					case 4: *output_types = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>(); break;
-					}
-					break;
+				case 1: *output_types = TypeInfo::get<float>(); break;
+				case 2: *output_types = TypeInfo::get<vec2>(); break;
+				case 3: *output_types = TypeInfo::get<vec3>(); break;
+				case 4: *output_types = TypeInfo::get<vec4>(); break;
 				}
 			}
+		};
+
+#define BINARY_OPERATION_TEMPLATE(node_name, op)\
+		library->add_template(node_name, #op,\
+			{\
+				{\
+					.name = "A",\
+					.allowed_types = generic_types\
+				},\
+				{\
+					.name = "B",\
+					.allowed_types = generic_types\
+				}\
+			},\
+			{\
+				{\
+					.name = "Out",\
+					.allowed_types = generic_types\
+				}\
+			},\
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {\
+				auto out_ti = (TypeInfo_Data*)outputs[0].type;\
+				auto in0_ti = (TypeInfo_Data*)inputs[0].type;\
+				auto in1_ti = (TypeInfo_Data*)inputs[1].type;\
+				auto in0_p = (char*)inputs[0].data;\
+				auto in1_p = (char*)inputs[1].data;\
+\
+				if (out_ti->data_type == DataFloat)\
+				{\
+					switch (out_ti->vec_size)\
+					{\
+					case 1:\
+						*(float*)outputs[0].data = in0_ti->as_float(in0_p) op in1_ti->as_float(in1_p);\
+						break;\
+					case 2:\
+					{\
+						vec2 a, b;\
+						if (in0_ti->vec_size == 1)\
+							a = vec2(in0_ti->as_float(in0_p));\
+						else\
+							in0_ti->as_floats(in0_p, 2, &a[0]);\
+						if (in1_ti->vec_size == 1)\
+							b = vec2(in1_ti->as_float(in1_p));\
+						else\
+							in1_ti->as_floats(in1_p, 2, &b[0]);\
+						*(vec2*)outputs[0].data = a op b;\
+					}\
+						break;\
+					case 3:\
+					{\
+						vec3 a, b;\
+						if (in0_ti->vec_size == 1)\
+							a = vec3(in0_ti->as_float(in0_p));\
+						else\
+							in0_ti->as_floats(in0_p, 3, &a[0]);\
+						if (in1_ti->vec_size == 1)\
+							b = vec3(in1_ti->as_float(in1_p));\
+						else\
+							in1_ti->as_floats(in1_p, 3, &b[0]);\
+						*(vec3*)outputs[0].data = a op b;\
+					}\
+						break;\
+					case 4:\
+					{\
+						vec4 a, b;\
+						if (in0_ti->vec_size == 1)\
+							a = vec4(in0_ti->as_float(in0_p));\
+						else\
+							in0_ti->as_floats(in0_p, 4, &a[0]);\
+						if (in1_ti->vec_size == 1)\
+							b = vec4(in1_ti->as_float(in1_p));\
+						else\
+							in1_ti->as_floats(in1_p, 4, &b[0]);\
+						*(vec4*)outputs[0].data = a op b;\
+					}\
+						break;\
+					}\
+				}\
+				else\
+				{\
+					if (out_ti->is_signed)\
+					{\
+						switch (out_ti->vec_size)\
+						{\
+						case 1:\
+							*(int*)outputs[0].data = in0_ti->as_int(in0_p) op in1_ti->as_int(in1_p);\
+							break;\
+						case 2:\
+						{\
+							ivec2 a, b;\
+							if (in0_ti->vec_size == 1)\
+								a = ivec2(in0_ti->as_int(in0_p));\
+							else\
+								in0_ti->as_ints(in0_p, 2, &a[0]);\
+							if (in1_ti->vec_size == 1)\
+								b = ivec2(in1_ti->as_int(in1_p));\
+							else\
+								in1_ti->as_ints(in1_p, 2, &b[0]);\
+							*(ivec2*)outputs[0].data = a op b;\
+						}\
+							break;\
+						case 3:\
+						{\
+							ivec3 a, b;\
+							if (in0_ti->vec_size == 1)\
+								a = ivec3(in0_ti->as_int(in0_p));\
+							else\
+								in0_ti->as_ints(in0_p, 3, &a[0]);\
+							if (in1_ti->vec_size == 1)\
+								b = ivec3(in1_ti->as_int(in1_p));\
+							else\
+								in1_ti->as_ints(in1_p, 3, &b[0]);\
+							*(ivec3*)outputs[0].data = a op b;\
+						}\
+							break;\
+						case 4:\
+						{\
+							ivec4 a, b;\
+							if (in0_ti->vec_size == 1)\
+								a = ivec4(in0_ti->as_int(in0_p));\
+							else\
+								in0_ti->as_ints(in0_p, 4, &a[0]);\
+							if (in1_ti->vec_size == 1)\
+								b = ivec4(in1_ti->as_int(in1_p));\
+							else\
+								in1_ti->as_ints(in1_p, 4, &b[0]);\
+							*(ivec4*)outputs[0].data = a op b;\
+						}\
+							break;\
+						}\
+					}\
+					else\
+					{\
+						switch (out_ti->vec_size)\
+						{\
+						case 1:\
+							*(int*)outputs[0].data = in0_ti->as_uint(in0_p) op in1_ti->as_uint(in1_p);\
+							break;\
+						case 2:\
+						{\
+							uvec2 a, b;\
+							if (in0_ti->vec_size == 1)\
+								a = uvec2(in0_ti->as_uint(in0_p));\
+							else\
+								in0_ti->as_uints(in0_p, 2, &a[0]);\
+							if (in1_ti->vec_size == 1)\
+								b = uvec2(in1_ti->as_uint(in1_p));\
+							else\
+								in1_ti->as_uints(in1_p, 2, &b[0]);\
+							*(uvec2*)outputs[0].data = a op b;\
+						}\
+							break;\
+						case 3:\
+						{\
+							uvec3 a, b;\
+							if (in0_ti->vec_size == 1)\
+								a = uvec3(in0_ti->as_uint(in0_p));\
+							else\
+								in0_ti->as_uints(in0_p, 3, &a[0]);\
+							if (in1_ti->vec_size == 1)\
+								b = uvec3(in1_ti->as_uint(in1_p));\
+							else\
+								in1_ti->as_uints(in1_p, 3, &b[0]);\
+							*(uvec3*)outputs[0].data = a op b;\
+						}\
+							break;\
+						case 4:\
+						{\
+							uvec4 a, b;\
+							if (in0_ti->vec_size == 1)\
+								a = uvec4(in0_ti->as_uint(in0_p));\
+							else\
+								in0_ti->as_uints(in0_p, 4, &a[0]);\
+							if (in1_ti->vec_size == 1)\
+								b = uvec4(in1_ti->as_uint(in1_p));\
+							else\
+								in1_ti->as_uints(in1_p, 4, &b[0]);\
+							*(uvec4*)outputs[0].data = a op b;\
+						}\
+							break;\
+						}\
+					}\
+				}\
+			},\
+			nullptr,\
+			nullptr,\
+			input_type_changed_function\
 		);
-		
-		library->add_template("Divide", "/",
-			{
-				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				},
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
-				}
-			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				
-				auto out_ti = (TypeInfo_Data*)outputs[0].type;
-				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
-				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
-				switch (out_ti->data_type)
-				{
-				case DataFloat:
-				{
-					auto p = (float*)outputs[0].data;
-					auto in0_p = (char*)inputs[0].data;
-					auto in1_p = (char*)inputs[1].data;
-					for (auto i = 0; i < out_ti->vec_size; i++)
-					{
-						if (i < in0_ti->vec_size)
-							p[i] = in0_ti->as_float(in0_p);
-						else
-							p[i] = 0;
 
-						if (i < in1_ti->vec_size)
-							p[i] /= in1_ti->as_float(in1_p);
-						in0_p += sizeof(float);
-						in1_p += sizeof(float);
-					}
-				}
-					break;
-				case DataInt:
-				{
-					if (out_ti->is_signed)
-					{
-						auto p = (int*)outputs[0].data;
-						auto in0_p = (char*)inputs[0].data;
-						auto in1_p = (char*)inputs[1].data;
-						for (auto i = 0; i < out_ti->vec_size; i++)
-						{
-							if (i < in0_ti->vec_size)
-								p[i] = in0_ti->as_int(in0_p);
-							else
-								p[i] = 0;
+	BINARY_OPERATION_TEMPLATE("Add", +);
+	BINARY_OPERATION_TEMPLATE("Subtract", -);
+	BINARY_OPERATION_TEMPLATE("Multiply", *);
+	BINARY_OPERATION_TEMPLATE("Divide", /);
 
-							if (i < in1_ti->vec_size)
-								p[i] /= in1_ti->as_int(in1_p);
-							in0_p += sizeof(int);
-							in1_p += sizeof(int);
-						}
-					}
-					else
-					{
-						auto p = (uint*)outputs[0].data;
-						auto in0_p = (char*)inputs[0].data;
-						auto in1_p = (char*)inputs[1].data;
-						for (auto i = 0; i < out_ti->vec_size; i++)
-						{
-							if (i < in0_ti->vec_size)
-								p[i] = in0_ti->as_uint(in0_p);
-							else
-								p[i] = 0;
-
-							if (i < in1_ti->vec_size)
-								p[i] /= in1_ti->as_uint(in1_p);
-							in0_p += sizeof(uint);
-							in1_p += sizeof(uint);
-						}
-					}
-				}
-					break;
-				}
-			},
-			nullptr,
-			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				auto ti0 = (TypeInfo_Data*)input_types[0];
-				auto ti1 = (TypeInfo_Data*)input_types[1];
-				auto data_type = DataFloat;
-				auto vec_size = max(ti0->vec_size, ti1->vec_size);
-				auto is_signed = ti0->is_signed || ti1->is_signed;
-				if (ti0->data_type == DataInt && ti1->data_type == DataInt)
-					data_type = DataInt;
-				switch (data_type)
-				{
-				case DataFloat:
-					switch (vec_size)
-					{
-					case 1: *output_types = TypeInfo::get<float>(); break;
-					case 2: *output_types = TypeInfo::get<vec2>(); break;
-					case 3: *output_types = TypeInfo::get<vec3>(); break;
-					case 4: *output_types = TypeInfo::get<vec4>(); break;
-					}
-					break;
-				case DataInt:
-					switch (vec_size)
-					{
-					case 1: *output_types = is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>(); break;
-					case 2: *output_types = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>(); break;
-					case 3: *output_types = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>(); break;
-					case 4: *output_types = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>(); break;
-					}
-					break;
-				}
-			}
-		);
+#undef BINARY_OPERATION_TEMPLATE
 		
 		library->add_template("Integer Divide", "\\",
 			{
@@ -926,58 +652,130 @@ namespace flame
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
-				switch (out_ti->data_type)
-				{
-				case DataInt:
-				{
-					if (out_ti->is_signed)
-					{
-						auto p0 = (int*)outputs[0].data;
-						auto p1 = (int*)outputs[1].data;
-						auto in0_p = (char*)inputs[0].data;
-						auto in1_p = (char*)inputs[1].data;
-						for (auto i = 0; i < out_ti->vec_size; i++)
-						{
-							if (i < in0_ti->vec_size)
-								p0[i] = p1[i] = in0_ti->as_int(in0_p);
-							else
-								p0[i] = p1[i] = 0;
+				auto p0 = (int*)outputs[0].data;
+				auto p1 = (int*)outputs[1].data;
+				auto in0_p = (char*)inputs[0].data;
+				auto in1_p = (char*)inputs[1].data;
 
-							if (i < in1_ti->vec_size)
-							{
-								auto divisor = in1_ti->as_int(in1_p);
-								p0[i] /= divisor;
-								p1[i] %= divisor;
-							}
-							in0_p += sizeof(int);
-							in1_p += sizeof(int);
-						}
+				if (out_ti->is_signed)
+				{
+					switch (out_ti->vec_size)
+					{
+					case 1:
+					{
+						int a, b;
+						a = in0_ti->as_uint(in0_p);
+						b = in1_ti->as_uint(in1_p);
+						*(int*)outputs[0].data = a / b;
+						*(int*)outputs[1].data = a % b;
 					}
-					else
+						break;
+					case 2:
 					{
-						auto p0 = (int*)outputs[0].data;
-						auto p1 = (int*)outputs[1].data;
-						auto in0_p = (char*)inputs[0].data;
-						auto in1_p = (char*)inputs[1].data;
-						for (auto i = 0; i < out_ti->vec_size; i++)
-						{
-							if (i < in0_ti->vec_size)
-								p0[i] = p1[i] = in0_ti->as_uint(in0_p);
-							else
-								p0[i] = p1[i] = 0;
-
-							if (i < in1_ti->vec_size)
-							{
-								auto divisor = in1_ti->as_uint(in1_p);
-								p0[i] /= divisor;
-								p1[i] %= divisor;
-							}
-							in0_p += sizeof(uint);
-							in1_p += sizeof(uint);
-						}
+						ivec2 a, b;
+						if (in0_ti->vec_size == 1)
+							a = ivec2(in0_ti->as_int(in0_p));
+						else
+							in0_ti->as_ints(in0_p, 2, &a[0]); 
+						if (in1_ti->vec_size == 1)
+							b = ivec2(in1_ti->as_int(in1_p));
+						else
+							in1_ti->as_ints(in1_p, 2, &b[0]); 
+						*(ivec2*)outputs[0].data = a / b;
+						*(ivec2*)outputs[1].data = a % b;
+					}
+						break;
+					case 3:
+					{
+						ivec3 a, b;
+						if (in0_ti->vec_size == 1)
+							a = ivec3(in0_ti->as_int(in0_p));
+						else
+							in0_ti->as_ints(in0_p, 3, &a[0]); 
+						if (in1_ti->vec_size == 1)
+							b = ivec3(in1_ti->as_int(in1_p));
+						else
+							in1_ti->as_ints(in1_p, 3, &b[0]); 
+						*(ivec3*)outputs[0].data = a / b;
+						*(ivec3*)outputs[1].data = a % b;
+					}
+						break;
+					case 4:
+					{
+						ivec4 a, b;
+						if (in0_ti->vec_size == 1)
+							a = ivec4(in0_ti->as_int(in0_p));
+						else
+							in0_ti->as_ints(in0_p, 4, &a[0]); 
+						if (in1_ti->vec_size == 1)
+							b = ivec4(in1_ti->as_int(in1_p));
+						else
+							in1_ti->as_ints(in1_p, 4, &b[0]); 
+						*(ivec4*)outputs[0].data = a / b;
+						*(ivec4*)outputs[1].data = a % b;
+					}
+						break;
 					}
 				}
-					break;
+				else
+				{
+					switch (out_ti->vec_size)
+					{
+					case 1:
+					{
+						uint a, b;
+						a = in0_ti->as_uint(in0_p);
+						b = in1_ti->as_uint(in1_p);
+						*(uint*)outputs[0].data = a / b;
+						*(uint*)outputs[1].data = a % b;
+					}
+						break;
+					case 2:
+					{
+						uvec2 a, b;
+						if (in0_ti->vec_size == 1)
+							a = uvec2(in0_ti->as_uint(in0_p));
+						else
+							in0_ti->as_uints(in0_p, 2, &a[0]); 
+						if (in1_ti->vec_size == 1)
+							b = uvec2(in1_ti->as_uint(in1_p));
+						else
+							in1_ti->as_uints(in1_p, 2, &b[0]); 
+						*(uvec2*)outputs[0].data = a / b;
+						*(uvec2*)outputs[1].data = a % b;
+					}
+						break;
+					case 3:
+					{
+						uvec3 a, b;
+						if (in0_ti->vec_size == 1)
+							a = uvec3(in0_ti->as_uint(in0_p));
+						else
+							in0_ti->as_uints(in0_p, 3, &a[0]); 
+						if (in1_ti->vec_size == 1)
+							b = uvec3(in1_ti->as_uint(in1_p));
+						else
+							in1_ti->as_uints(in1_p, 3, &b[0]); 
+						*(uvec3*)outputs[0].data = a / b;
+						*(uvec3*)outputs[1].data = a % b;
+					}
+						break;
+					case 4:
+					{
+						uvec4 a, b;
+						if (in0_ti->vec_size == 1)
+							a = uvec4(in0_ti->as_uint(in0_p));
+						else
+							in0_ti->as_uints(in0_p, 4, &a[0]); 
+						if (in1_ti->vec_size == 1)
+							b = uvec4(in1_ti->as_uint(in1_p));
+						else
+							in1_ti->as_uints(in1_p, 4, &b[0]); 
+						*(uvec4*)outputs[0].data = a / b;
+						*(uvec4*)outputs[1].data = a % b;
+					}
+						break;
+					}
 				}
 			},
 			nullptr,
@@ -985,22 +783,28 @@ namespace flame
 			[](TypeInfo** input_types, TypeInfo** output_types) {
 				auto ti0 = (TypeInfo_Data*)input_types[0];
 				auto ti1 = (TypeInfo_Data*)input_types[1];
-				auto data_type = DataFloat;
+				if (ti0->data_type != DataInt || ti1->data_type != DataInt)
+				{
+					output_types[0] = output_types[1] = nullptr;
+					return;
+				}
+				if (ti0->vec_size != ti1->vec_size)
+				{
+					if (ti1->vec_size != 1)
+					{
+						output_types[0] = output_types[1] = nullptr;
+						return;
+					}
+				}
+
 				auto vec_size = max(ti0->vec_size, ti1->vec_size);
 				auto is_signed = ti0->is_signed || ti1->is_signed;
-				if (ti0->data_type == DataInt && ti1->data_type == DataInt)
-					data_type = DataInt;
-				switch (data_type)
+				switch (vec_size)
 				{
-				case DataInt:
-					switch (vec_size)
-					{
-					case 1: output_types[0] = output_types[1] = is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>(); break;
-					case 2: output_types[0] = output_types[1] = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>(); break;
-					case 3: output_types[0] = output_types[1] = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>(); break;
-					case 4: output_types[0] = output_types[1] = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>(); break;
-					}
-					break;
+				case 1: output_types[0] = output_types[1] = is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>(); break;
+				case 2: output_types[0] = output_types[1] = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>(); break;
+				case 3: output_types[0] = output_types[1] = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>(); break;
+				case 4: output_types[0] = output_types[1] = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>(); break;
 				}
 			}
 		);

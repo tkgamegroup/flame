@@ -260,9 +260,12 @@ namespace flame
 		virtual void unserialize(const std::string& str, void* p) const {}
 
 		virtual void* get_v() const { return nullptr; }
-		virtual float as_float(void* p) const { assert(0); return std::numeric_limits<float>::quiet_NaN(); }
-		virtual int as_int(void* p) const { assert(0); return std::numeric_limits<int>::max(); }
-		virtual uint as_uint(void* p) const { assert(0); return std::numeric_limits<uint>::max(); }
+		virtual void as_floats(void* src, uint n, float* dst) const { assert(0); for (auto i = 0; i < n; i++) dst[i] = std::numeric_limits<float>::quiet_NaN(); }
+		inline float as_float(void* p) const { float f; as_floats(p, 1, &f); return f; }
+		virtual void as_ints(void* src, uint n, int* dst) const { assert(0); for (auto i = 0; i < n; i++) dst[i] = std::numeric_limits<int>::max(); }
+		virtual int as_int(void* p) const { int i; as_ints(p, 1, &i); return i; }
+		virtual void as_uints(void* src, uint n, uint* dst) const { assert(0); for (auto i = 0; i < n; i++) dst[i] = std::numeric_limits<uint>::max(); }
+		virtual uint as_uint(void* p) const { uint u; as_uints(p, 1, &u); return u; }
 		virtual TypeInfo* get_wrapped() const { return nullptr; }
 		virtual void call_getter(const FunctionInfo* fi, void* obj, void* dst) const {};
 		virtual void call_setter(const FunctionInfo* fi, void* obj, void* src) const {};
@@ -1048,17 +1051,23 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(char*)p;
+			dst[0] = *(char*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(char*)p;
+			dst[0] = *(char*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(char*)p;
+			dst[0] = *(char*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1106,17 +1115,23 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(uchar*)p;
+			dst[0] = *(uchar*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(uchar*)p;
+			dst[0] = *(uchar*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(uchar*)p;
+			dst[0] = *(uchar*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1163,17 +1178,23 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(short*)p;
+			dst[0] = *(short*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(short*)p;
+			dst[0] = *(short*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(short*)p;
+			dst[0] = *(short*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1221,17 +1242,23 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(ushort*)p;
+			dst[0] = *(ushort*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(ushort*)p;
+			dst[0] = *(ushort*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(ushort*)p;
+			dst[0] = *(ushort*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1278,17 +1305,23 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(int*)p;
+			dst[0] = *(int*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(int*)p;
+			dst[0] = *(int*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(int*)p;
+			dst[0] = *(int*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1336,17 +1369,23 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(uint*)p;
+			dst[0] = *(uint*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(uint*)p;
+			dst[0] = *(uint*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(uint*)p;
+			dst[0] = *(uint*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1393,17 +1432,23 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(int64*)p;
+			dst[0] = *(int64*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(int64*)p;
+			dst[0] = *(int64*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(int64*)p;
+			dst[0] = *(int64*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1451,17 +1496,23 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(uint64*)p;
+			dst[0] = *(uint64*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(uint64*)p;
+			dst[0] = *(uint64*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(uint64*)p;
+			dst[0] = *(uint64*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1508,17 +1559,23 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(float*)p;
+			dst[0] = *(float*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(float*)p;
+			dst[0] = *(float*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(float*)p;
+			dst[0] = *(float*)src;
+			for (auto i = 1; i < n; i++)
+				dst[i] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1567,17 +1624,26 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(uchar*)p;
+			for (auto i = 0; i < n && i < 2; i++)
+				dst[i] = (*(cvec2*)src)[i];
+			for (auto i = 2; i < n; i++)
+				dst[i] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(uchar*)p;
+			for (auto i = 0; i < n && i < 2; i++)
+				dst[i] = (*(cvec2*)src)[i];
+			for (auto i = 2; i < n; i++)
+				dst[i] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(uchar*)p;
+			for (auto i = 0; i < n && i < 2; i++)
+				dst[i] = (*(cvec2*)src)[i];
+			for (auto i = 2; i < n; i++)
+				dst[i] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1626,17 +1692,26 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(uchar*)p;
+			for (auto i = 0; i < n && i < 3; i++)
+				dst[i] = (*(cvec3*)src)[i];
+			if (n > 3)
+				dst[3] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(uchar*)p;
+			for (auto i = 0; i < n && i < 3; i++)
+				dst[i] = (*(cvec3*)src)[i];
+			if (n > 3)
+				dst[3] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(uchar*)p;
+			for (auto i = 0; i < n && i < 3; i++)
+				dst[i] = (*(cvec3*)src)[i];
+			if (n > 3)
+				dst[3] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1685,17 +1760,20 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(uchar*)p;
+			for (auto i = 0; i < n && i < 4; i++)
+				dst[i] = (*(uvec4*)src)[i];
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(uchar*)p;
+			for (auto i = 0; i < n && i < 4; i++)
+				dst[i] = (*(uvec4*)src)[i];
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(uchar*)p;
+			for (auto i = 0; i < n && i < 4; i++)
+				dst[i] = (*(uvec4*)src)[i];
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1743,17 +1821,26 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(int*)p;
+			for (auto i = 0; i < n && i < 2; i++)
+				dst[i] = (*(ivec2*)src)[i];
+			for (auto i = 2; i < n; i++)
+				dst[i] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(int*)p;
+			for (auto i = 0; i < n && i < 2; i++)
+				dst[i] = (*(ivec2*)src)[i];
+			for (auto i = 2; i < n; i++)
+				dst[i] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(int*)p;
+			for (auto i = 0; i < n && i < 2; i++)
+				dst[i] = (*(ivec2*)src)[i];
+			for (auto i = 2; i < n; i++)
+				dst[i] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1801,17 +1888,26 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(int*)p;
+			for (auto i = 0; i < n && i < 3; i++)
+				dst[i] = (*(ivec3*)src)[i];
+			if (n > 3)
+				dst[3] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(int*)p;
+			for (auto i = 0; i < n && i < 3; i++)
+				dst[i] = (*(ivec3*)src)[i];
+			if (n > 3)
+				dst[3] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(int*)p;
+			for (auto i = 0; i < n && i < 3; i++)
+				dst[i] = (*(ivec3*)src)[i];
+			if (n > 3)
+				dst[3] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1859,17 +1955,20 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(int*)p;
+			for (auto i = 0; i < n && i < 4; i++)
+				dst[i] = (*(ivec4*)src)[i];
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(int*)p;
+			for (auto i = 0; i < n && i < 4; i++)
+				dst[i] = (*(ivec4*)src)[i];
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(int*)p;
+			for (auto i = 0; i < n && i < 4; i++)
+				dst[i] = (*(ivec4*)src)[i];
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1918,17 +2017,26 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(uint*)p;
+			for (auto i = 0; i < n && i < 2; i++)
+				dst[i] = (*(uvec2*)src)[i];
+			for (auto i = 2; i < n; i++)
+				dst[i] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(uint*)p;
+			for (auto i = 0; i < n && i < 2; i++)
+				dst[i] = (*(uvec2*)src)[i];
+			for (auto i = 2; i < n; i++)
+				dst[i] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(uint*)p;
+			for (auto i = 0; i < n && i < 2; i++)
+				dst[i] = (*(uvec2*)src)[i];
+			for (auto i = 2; i < n; i++)
+				dst[i] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -1977,17 +2085,20 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(uint*)p;
+			for (auto i = 0; i < n && i < 4; i++)
+				dst[i] = (*(uvec4*)src)[i];
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(uint*)p;
+			for (auto i = 0; i < n && i < 4; i++)
+				dst[i] = (*(uvec4*)src)[i];
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(uint*)p;
+			for (auto i = 0; i < n && i < 4; i++)
+				dst[i] = (*(uvec4*)src)[i];
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -2036,17 +2147,26 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(uint*)p;
+			for (auto i = 0; i < n && i < 3; i++)
+				dst[i] = (*(uvec3*)src)[i];
+			if (n > 3)
+				dst[3] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(uint*)p;
+			for (auto i = 0; i < n && i < 3; i++)
+				dst[i] = (*(uvec3*)src)[i];
+			if (n > 3)
+				dst[3] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(uint*)p;
+			for (auto i = 0; i < n && i < 3; i++)
+				dst[i] = (*(uvec3*)src)[i];
+			if (n > 3)
+				dst[3] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -2094,17 +2214,26 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(float*)p;
+			for (auto i = 0; i < n && i < 2; i++)
+				dst[i] = (*(vec2*)src)[i];
+			for (auto i = 2; i < n; i++)
+				dst[i] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(float*)p;
+			for (auto i = 0; i < n && i < 2; i++)
+				dst[i] = (*(vec2*)src)[i];
+			for (auto i = 2; i < n; i++)
+				dst[i] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(float*)p;
+			for (auto i = 0; i < n && i < 2; i++)
+				dst[i] = (*(vec2*)src)[i];
+			for (auto i = 2; i < n; i++)
+				dst[i] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -2152,17 +2281,26 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(float*)p;
+			for (auto i = 0; i < n && i < 3; i++)
+				dst[i] = (*(vec3*)src)[i];
+			if (n > 3)
+				dst[3] = 0;
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(float*)p;
+			for (auto i = 0; i < n && i < 3; i++)
+				dst[i] = (*(vec3*)src)[i];
+			if (n > 3)
+				dst[3] = 0;
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(float*)p;
+			for (auto i = 0; i < n && i < 3; i++)
+				dst[i] = (*(vec3*)src)[i];
+			if (n > 3)
+				dst[3] = 0;
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{
@@ -2210,17 +2348,20 @@ namespace flame
 		{
 			return &v;
 		}
-		float as_float(void* p) const override
+		void as_floats(void* src, uint n, float* dst) const override
 		{
-			return *(float*)p;
+			for (auto i = 0; i < n && i < 4; i++)
+				dst[i] = (*(vec4*)src)[i];
 		}
-		int as_int(void* p) const override
+		void as_ints(void* src, uint n, int* dst) const override
 		{
-			return *(float*)p;
+			for (auto i = 0; i < n && i < 4; i++)
+				dst[i] = (*(vec4*)src)[i];
 		}
-		uint as_uint(void* p) const override
+		void as_uints(void* src, uint n, uint* dst) const override
 		{
-			return *(float*)p;
+			for (auto i = 0; i < n && i < 4; i++)
+				dst[i] = (*(vec4*)src)[i];
 		}
 		void call_getter(const FunctionInfo* fi, void* obj, void* dst) const override
 		{

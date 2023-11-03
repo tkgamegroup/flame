@@ -40,7 +40,7 @@ namespace flame
 			const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
 			BlueprintNodeFunction function, BlueprintNodeLoopFunction loop_function,
 			BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
-			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback, BlueprintNodePreviewProvider preview_provider, 
+			BlueprintNodeInputTypeChangedCallback input_type_changed_callback, BlueprintNodePreviewProvider preview_provider, 
 			bool is_block = false, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr) override;
 		BlueprintNodePtr		add_block(BlueprintGroupPtr group, BlueprintNodePtr parent) override;
 		BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type, uint location_name) override;
@@ -68,16 +68,16 @@ namespace flame
 		void add_template(const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
-			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) override;
+			BlueprintNodeInputTypeChangedCallback input_type_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) override;
 		void add_template(const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeLoopFunction loop_function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
-			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) override;
+			BlueprintNodeInputTypeChangedCallback input_type_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) override;
 		void add_template(const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			bool is_block = true, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr, 
 			BlueprintNodeLoopFunction loop_function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
-			BlueprintNodeInputSlotChangedCallback input_slot_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) override;
+			BlueprintNodeInputTypeChangedCallback input_type_changed_callback = nullptr, BlueprintNodePreviewProvider preview_provider = nullptr) override;
 	};
 
 	struct BlueprintInstancePrivate : BlueprintInstance

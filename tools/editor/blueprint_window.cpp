@@ -262,7 +262,7 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 	for (auto& src_n : copied_nodes)
 	{
 		BlueprintNodePtr n = nullptr;
-		auto parent = g->nodes.front().get();
+		auto parent = g->find_node_by_id(last_block);
 		if (auto it = node_map.find(src_n.parent); it != node_map.end())
 			parent = it->second;
 		if (blueprint_is_variable_node(src_n.name))
@@ -2183,6 +2183,21 @@ void BlueprintView::on_draw()
 									}
 									continue;
 								}
+								if (t.name == "Return bool")
+								{
+									if (ImGui::BeginMenu("Return"))
+									{
+										for (auto j = i; ; j++)
+										{
+											auto& t = standard_library->node_templates[j];
+											if (!t.name.starts_with("Return "))
+												break;
+											show_node_library_template(t);
+										}
+										ImGui::EndMenu();
+									}
+									continue;
+								}
 								if (t.name == "Branch 2")
 								{
 									if (ImGui::BeginMenu("Branch"))
@@ -2259,6 +2274,8 @@ void BlueprintView::on_draw()
 									continue;
 								}
 								if (t.name.starts_with("Loop Var "))
+									continue;
+								if (t.name.starts_with("Return "))
 									continue;
 								if (t.name.starts_with("Branch "))
 									continue;
