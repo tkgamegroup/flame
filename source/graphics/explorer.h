@@ -7,7 +7,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct ExplorerAbstract
+		struct Explorer
 		{
 			struct FolderTreeNode
 			{
@@ -39,13 +39,16 @@ namespace flame
 					children.clear();
 					if (std::filesystem::is_directory(path))
 					{
-						for (auto& it : std::filesystem::directory_iterator(path))
+						if (path.filename() != L"System Volume Information")
 						{
-							if (std::filesystem::is_directory(it.status()) || it.path().extension() == L".fmod")
+							for (auto& it : std::filesystem::directory_iterator(path))
 							{
-								auto c = new FolderTreeNode(it.path());
-								c->parent = this;
-								children.emplace_back(c);
+								if (std::filesystem::is_directory(it.status()) || it.path().extension() == L".fmod")
+								{
+									auto c = new FolderTreeNode(it.path());
+									c->parent = this;
+									children.emplace_back(c);
+								}
 							}
 						}
 					}
@@ -287,34 +290,37 @@ namespace flame
 					{
 						if (std::filesystem::is_directory(folder->path))
 						{
-							std::vector<Item*> dirs;
-							std::vector<Item*> files;
-							for (auto& it : std::filesystem::directory_iterator(folder->path))
+							if (folder->path.filename() != L"System Volume Information")
 							{
-								if (std::filesystem::is_directory(it.status()))
-									dirs.push_back(new Item(it.path()));
-								else
-									files.push_back(new Item(it.path()));
-							}
-							std::sort(dirs.begin(), dirs.end(), [](const auto& a, const auto& b) {
-								return a->path < b->path;
+								std::vector<Item*> dirs;
+								std::vector<Item*> files;
+								for (auto& it : std::filesystem::directory_iterator(folder->path))
+								{
+									if (std::filesystem::is_directory(it.status()))
+										dirs.push_back(new Item(it.path()));
+									else
+										files.push_back(new Item(it.path()));
+								}
+								std::sort(dirs.begin(), dirs.end(), [](const auto& a, const auto& b) {
+									return a->path < b->path;
 								});
-							std::sort(files.begin(), files.end(), [](const auto& a, const auto& b) {
-								return a->path < b->path;
+								std::sort(files.begin(), files.end(), [](const auto& a, const auto& b) {
+									return a->path < b->path;
 								});
-							for (auto i : dirs)
-							{
-								if (item_created_callback)
-									item_created_callback(i);
-								i->on_added();
-								items.emplace_back(i);
-							}
-							for (auto i : files)
-							{
-								if (item_created_callback)
-									item_created_callback(i);
-								i->on_added();
-								items.emplace_back(i);
+								for (auto i : dirs)
+								{
+									if (item_created_callback)
+										item_created_callback(i);
+									i->on_added();
+									items.emplace_back(i);
+								}
+								for (auto i : files)
+								{
+									if (item_created_callback)
+										item_created_callback(i);
+									i->on_added();
+									items.emplace_back(i);
+								}
 							}
 						}
 					}
@@ -397,10 +403,11 @@ namespace flame
 
 				if (ImGui::BeginTable("main", 2, ImGuiTableFlags_Resizable))
 				{
+					ImGui::TableSetupColumn("folders", ImGuiTableColumnFlags_WidthFixed, 200.f);
+
 					ImGui::TableNextRow();
 
 					ImGui::TableSetColumnIndex(0);
-					ImGui::BeginChild("folders", ImVec2(0, -2));
 					if (folder_tree)
 					{
 						std::function<void(FolderTreeNode*)> draw_node;
@@ -439,7 +446,6 @@ namespace flame
 						else
 							draw_node(folder_tree.get());
 					}
-					ImGui::EndChild();
 
 					ImGui::TableSetColumnIndex(1);
 					if (ImGui::Button(font_icon_str("arrow-left"_h).c_str()))

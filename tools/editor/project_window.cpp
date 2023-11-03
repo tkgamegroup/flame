@@ -928,7 +928,7 @@ ProjectView::ProjectView(const std::string& name) :
 			}
 		}
 	};
-	using ExplorerItem = graphics::ExplorerAbstract::Item;
+	using ExplorerItem = graphics::Explorer::Item;
 	explorer.item_created_callback = [](ExplorerItem* item) {
 		if (auto thumbnails_dir = item->path.parent_path() / L".thumbnails"; std::filesystem::is_directory(thumbnails_dir))
 		{

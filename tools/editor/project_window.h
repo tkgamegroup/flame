@@ -3,11 +3,11 @@
 #include "app.h"
 
 #include <flame/foundation/system.h>
-#include <flame/graphics/explorer_abstract.h>
+#include <flame/graphics/explorer.h>
 
 struct ProjectView : View
 {
-	graphics::ExplorerAbstract explorer;
+	graphics::Explorer explorer;
 
 	ProjectView();
 	ProjectView(const std::string& name);

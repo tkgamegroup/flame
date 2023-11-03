@@ -2,7 +2,7 @@
 #include "../foundation/window.h"
 #include "../foundation/system.h"
 #include "gui.h"
-#include "explorer_abstract.h"
+#include "explorer.h"
 #include "window_private.h"
 #include "renderpass_private.h"
 #include "font_private.h"
@@ -196,26 +196,25 @@ namespace ImGui
 
 	struct FileDialog : Dialog
 	{
-		graphics::ExplorerAbstract explorer;
-		std::filesystem::path path;
+		graphics::Explorer explorer;
+		std::string name;
 		std::function<void(bool, const std::filesystem::path&)> callback;
 
 		void draw() override
 		{
 #ifdef USE_IMGUI
-			ImGui::SetNextWindowSize(vec2(500.f, 300.f), ImGuiCond_Appearing);
+			ImGui::SetNextWindowSize(vec2(800.f, 600.f), ImGuiCond_FirstUseEver);
 			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
 			{
 				ImGui::BeginChild("explorer", ImVec2(0, -ImGui::GetFontSize() * 2.f - ImGui::GetStyle().ItemSpacing.y * 5));
 				explorer.draw();
 				ImGui::EndChild();
-				auto str = path.string();
-				if (ImGui::InputText("Name", &str))
-					path = str;
+
+				ImGui::InputText("Name", &name);
 				if (ImGui::Button("OK"))
 				{
 					if (callback)
-						callback(true, explorer.opened_folder ? explorer.opened_folder->path / path : path);
+						callback(true, explorer.opened_folder ? explorer.opened_folder->path / name : name);
 					close();
 				}
 				ImGui::SameLine();
@@ -292,7 +291,8 @@ namespace ImGui
 		dialog->explorer.reset(!start_dir.empty() ? start_dir : L"This Computer");
 		dialog->explorer.peeding_open_node = { dialog->explorer.folder_tree.get(), false };
 		dialog->explorer.select_callback = [dialog](const std::filesystem::path& path) {
-			dialog->path = path.filename();
+			dialog->name = path.filename().string();
+			dialog->explorer.selected_paths = { path };
 		};
 		Dialog::open(dialog);
 	}
