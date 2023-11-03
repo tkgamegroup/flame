@@ -30,11 +30,13 @@ namespace flame
 		float stop_distance = 0.3f;
 		// Reflect
 		uint separation_group = 1;
+		// Reflect
+		bool flying = false;
 
 		vec3 target_pos;
 		float dist = -1; // the distance between agent and target. <0 means no target
 		float ang_diff = 0.f; // the angle different between agent and target
-		vec3 reached_pos = vec3(10000.f);
+		bool reached = false;
 
 		virtual void set_target(const vec3& pos) = 0;
 		virtual void stop() = 0;

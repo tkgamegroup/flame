@@ -37,7 +37,7 @@ namespace flame
 		if (dt_id != -1 && dt_crowd)
 		{
 			target_pos = pos;
-			reached_pos = vec3(10000.f);
+			reached = false;
 			dist_ang_diff(node->pos, target_pos, node->get_eul().x - 90.f, dist, ang_diff);
 
 			dtPolyRef poly_ref = dt_nearest_poly(pos, vec3(2.f, 4.f, 2.f));
@@ -75,6 +75,8 @@ namespace flame
 
 	void cNavAgentPrivate::on_active()
 	{
+		if (flying)
+			return;
 		nav_agents.push_back(this);
 	}
 
@@ -99,44 +101,54 @@ namespace flame
 			return;
 
 		dist_ang_diff(node->pos, target_pos, angle_xz(node->z_axis()), dist, ang_diff);
-		if (speed_scale == 0.f)
+
+		if (flying)
 		{
 			auto turn_angle = radians(sign_min(ang_diff, turn_speed * turn_speed_scale * delta_time));
 			node->mul_qut(angleAxis(turn_angle, vec3(0.f, 1.f, 0.f)));
+
+			if (dist > stop_distance && ang_diff < 15.f)
+				node->add_pos(normalize(target_pos - node->pos) * speed * delta_time);
 		}
 		else
 		{
-#ifdef USE_RECASTNAV
-			if (dt_id != -1 && dt_crowd)
+			if (speed_scale == 0.f)
 			{
-				auto agent = dt_crowd->getEditableAgent(dt_id);
-				auto dvel = *(vec3*)agent->dvel;
-				auto dmag = dot(dvel, dvel);
-				if (dmag > 0.1f && dist > stop_distance)
+				auto turn_angle = radians(sign_min(ang_diff, turn_speed * turn_speed_scale * delta_time));
+				node->mul_qut(angleAxis(turn_angle, vec3(0.f, 1.f, 0.f)));
+			}
+			else
+			{
+#ifdef USE_RECASTNAV
+				if (dt_id != -1 && dt_crowd)
 				{
-					auto path_ang_diff = angle_diff(angle_xz(node->z_axis()), angle_xz(dvel));
-					auto turn_angle = radians(sign_min(path_ang_diff, turn_speed * turn_speed_scale * delta_time));
-					node->mul_qut(angleAxis(turn_angle, vec3(0.f, 1.f, 0.f)));
-					if (abs(path_ang_diff) < 15.f)
+					auto agent = dt_crowd->getEditableAgent(dt_id);
+					auto dvel = *(vec3*)agent->dvel;
+					auto dmag = dot(dvel, dvel);
+					if (dmag > 0.1f && dist > stop_distance)
 					{
-						npos = *(vec3*)agent->npos;
-						node->set_pos(npos);
+						auto path_ang_diff = angle_diff(angle_xz(node->z_axis()), angle_xz(dvel));
+						auto turn_angle = radians(sign_min(path_ang_diff, turn_speed * turn_speed_scale * delta_time));
+						node->mul_qut(angleAxis(turn_angle, vec3(0.f, 1.f, 0.f)));
+						if (abs(path_ang_diff) < 15.f)
+						{
+							npos = *(vec3*)agent->npos;
+							node->set_pos(npos);
+						}
+						else
+						{
+							*(vec3*)agent->npos = npos;
+							*(vec3*)agent->vel = vec3(0.f);
+						}
 					}
 					else
 					{
-						*(vec3*)agent->npos = npos;
-						*(vec3*)agent->vel = vec3(0.f);
+						if (agent->targetState == DT_CROWDAGENT_TARGET_VALID)
+							reached = true;
 					}
 				}
-				else
-				{
-					if (agent->targetState == DT_CROWDAGENT_TARGET_VALID)
-					{
-						reached_pos = target_pos;
-					}
-				}
-			}
 #endif
+			}
 		}
 	}
 

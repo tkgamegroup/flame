@@ -1,7 +1,8 @@
 struct MeshInstance
 {
 	mat4 mat;
-	mat4 nor;
+	mat3 nor;
+	vec4 col;
 };
 
 struct ArmatureInstance

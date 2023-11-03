@@ -116,5 +116,29 @@ namespace flame
 				}
 			}
 		);
+
+		library->add_template("Nav Agent Set Flying", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto nav_agent = entity->get_component<cNavAgent>();
+					if (nav_agent)
+						nav_agent->flying = *(bool*)inputs[1].data;
+				}
+			}
+		);
 	}
 }

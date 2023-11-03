@@ -1616,7 +1616,7 @@ namespace flame
 	{
 		auto ins = buf_instance.mark_dirty_ci("meshes"_h, id);
 		ins.child("mat"_h).as<mat4>() = mat;
-		ins.child("nor"_h).as<mat4>() = nor;
+		ins.child("nor"_h).as<mat3>() = nor;
 	}
 
 	int sRendererPrivate::register_armature_instance(int id)
