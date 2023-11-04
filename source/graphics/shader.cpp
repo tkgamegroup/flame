@@ -375,7 +375,12 @@ namespace flame
 				for (auto& l : lines)
 				{
 					auto tl = SUS::get_trimed(l);
-					if (SUS::strip_head_if(tl, "#if "))
+					if (SUS::strip_head_if(tl, "#define "))
+					{
+						auto sp = SUS::split(tl, ' ');
+						defines.emplace_back(std::string(sp.front()), sp.size() > 1 ? std::string(sp.back()) : "");
+					}
+					else if (SUS::strip_head_if(tl, "#if "))
 					{
 						auto& s = states.emplace_back();
 						s.first = pass_condition(tl);
