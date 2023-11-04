@@ -32,6 +32,40 @@ namespace flame
 					mesh.init_as_cube(extent);
 				}
 			);
+
+			library->add_template("Control Mesh: Cone", "",
+				{
+					{
+						.name = "Radius",
+						.allowed_types = { TypeInfo::get<float>() },
+						.default_value = "1"
+					},
+					{
+						.name = "Depth",
+						.allowed_types = { TypeInfo::get<float>() },
+						.default_value = "2"
+					},
+					{
+						.name = "Vertices",
+						.allowed_types = { TypeInfo::get<uint>() },
+						.default_value = "4"
+					}
+				},
+				{
+					{
+						.name = "Mesh",
+						.allowed_types = { TypeInfo::get<ControlMesh>() }
+					}
+				},
+				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+					auto radius = *(float*)inputs[0].data;
+					auto depth = *(float*)inputs[1].data;
+					auto vertices = *(uint*)inputs[2].data;
+					auto& mesh = *(ControlMesh*)outputs[0].data;
+					mesh.init_as_cone(radius, depth, vertices);
+				}
+			);
+
 			library->add_template("Convert To Mesh", "",
 				{
 					{
@@ -64,6 +98,7 @@ namespace flame
 					preview->data = &mesh;
 				}
 			);
+
 			library->add_template("Cube Mesh", "",
 				{
 					{
@@ -94,6 +129,7 @@ namespace flame
 					preview->data = &mesh;
 				}
 			);
+
 			library->add_template("Subdivide Control Mesh", "",
 				{
 					{
@@ -137,6 +173,7 @@ namespace flame
 					}
 				}
 			);
+
 			library->add_template("Displace Control Mesh", "",
 				{
 					{

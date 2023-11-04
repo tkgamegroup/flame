@@ -2143,6 +2143,9 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 	}
 	if (ImGui::BeginPopup("add_component"))
 	{
+		static std::string filter;
+		ImGui::InputText("Filter", &filter);
+
 		if (prefab_path.empty())
 			editing_objects.emplace(EditingObjects(EditingObjects::GeneralEntity, 0, entities.data(), entities.size(), &sync_states));
 		else
@@ -2150,6 +2153,8 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 
 		for (auto ui : comp_udts)
 		{
+			if (!filter.empty() && !SUS::find_case_insensitive(ui->name, filter))
+				continue;
 			if (ImGui::Selectable(ui->name.c_str()))
 			{
 				auto changed = false;

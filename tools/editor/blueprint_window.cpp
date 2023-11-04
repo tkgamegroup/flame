@@ -466,7 +466,11 @@ void BlueprintView::on_draw()
 {
 	bool opened = true;
 	ImGui::SetNextWindowSize(vec2(400, 400), ImGuiCond_FirstUseEver);
-	ImGui::Begin(name.c_str(), &opened, unsaved ? ImGuiWindowFlags_UnsavedDocument : 0);
+	if (!ImGui::Begin(name.c_str(), &opened, unsaved ? ImGuiWindowFlags_UnsavedDocument : 0))
+	{
+		ImGui::End();
+		return;
+	}
 	imgui_window = ImGui::GetCurrentWindow();
 
 	ax::NodeEditor::SetCurrentEditor((ax::NodeEditor::EditorContext*)ax_node_editor);

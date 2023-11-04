@@ -8,6 +8,6 @@ namespace flame
 	{
 		~cProcedureMeshPrivate();
 
-		void start() override;
+		void set_blueprint_name(const std::filesystem::path& name) override;
 	};
 }

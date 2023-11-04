@@ -44,7 +44,7 @@ void SearchView::on_draw()
 
 	auto do_find = false;
 	if (ImGui::InputText("##find", &find_str, ImGuiInputTextFlags_EnterReturnsTrue))
-		do_find = true;;
+		do_find = true;
 	ImGui::SameLine();
 	if (ImGui::Button("Find"))
 		do_find = true;

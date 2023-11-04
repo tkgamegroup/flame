@@ -83,6 +83,37 @@ namespace flame
 				faces[5].normal = vec3(+0.f, -1.f, +0.f);
 			}
 
+			void init_as_cone(float radius, float depth, uint vertices_number)
+			{
+				auto top_vertex_id = vertices.size();
+				vertices.push_back(vec3(0.f, +depth * 0.5f, 0.f));
+
+				auto ring_vertices_id_start = vertices.size();
+				vertices.resize(vertices.size() + vertices_number);
+				auto ang = 2.f * pi<float>() / vertices_number;
+				for (auto i = 0; i < vertices_number; i++)
+					vertices[ring_vertices_id_start + i] = vec3(cos(ang * i), -depth * 0.5f, sin(ang * i)) * radius;
+
+				// cone faces
+				for (auto i = 0; i < vertices_number; i++)
+				{
+					auto& f = faces.emplace_back();
+					auto id0 = ring_vertices_id_start + i;
+					auto id1 = i + 1 == vertices_number ? ring_vertices_id_start : id0 + 1;
+					f.corners.resize(3);
+					f.corners[0].vertex_id = id0;
+					f.corners[1].vertex_id = top_vertex_id;
+					f.corners[2].vertex_id = id1;
+					f.normal = -normalize(cross(vertices[id1] - vertices[id0], vertices[top_vertex_id] - vertices[id0]));
+				}
+
+				auto& bottom_face = faces.emplace_back();
+				bottom_face.corners.resize(vertices_number);
+				for (auto i = 0; i < bottom_face.corners.size(); i++)
+					bottom_face.corners[i].vertex_id = ring_vertices_id_start + i;
+				bottom_face.normal = vec3(0.f, -1.f, 0.f);
+			}
+
 			void subdivide(ControlMesh& oth)
 			{
 				oth.reset();
@@ -532,22 +563,28 @@ namespace flame
 				mesh.reset();
 				for (auto& f : faces)
 				{
-					if (f.corners.size() == 4)
-					{
-						auto vtx_off = mesh.positions.size();
-						for (auto i = 0; i < 4; i++)
-						{
-							mesh.positions.push_back(vertices[f.corners[i].vertex_id]);
-							mesh.uvs.push_back(f.corners[i].uv);
-							mesh.normals.push_back(f.normal);
-						}
+					auto mesh_vtx_off = mesh.positions.size();
 
-						mesh.indices.push_back(vtx_off + 0);
-						mesh.indices.push_back(vtx_off + 2);
-						mesh.indices.push_back(vtx_off + 1);
-						mesh.indices.push_back(vtx_off + 0);
-						mesh.indices.push_back(vtx_off + 3);
-						mesh.indices.push_back(vtx_off + 2);
+					mesh.positions.push_back(vertices[f.corners[0].vertex_id]);
+					mesh.uvs.push_back(f.corners[0].uv);
+					mesh.normals.push_back(f.normal);
+
+					mesh.positions.push_back(vertices[f.corners[1].vertex_id]);
+					mesh.uvs.push_back(f.corners[1].uv);
+					mesh.normals.push_back(f.normal);
+
+					auto vtx_off = 2;
+					for (auto i = 0; i < f.corners.size() - 2; i++)
+					{
+						mesh.positions.push_back(vertices[f.corners[i + 2].vertex_id]);
+						mesh.uvs.push_back(f.corners[i + 2].uv);
+						mesh.normals.push_back(f.normal);
+
+						mesh.indices.push_back(mesh_vtx_off);
+						mesh.indices.push_back(mesh_vtx_off + vtx_off - 1);
+						mesh.indices.push_back(mesh_vtx_off + vtx_off);
+
+						vtx_off++;
 					}
 				}
 				mesh.calc_bounds();

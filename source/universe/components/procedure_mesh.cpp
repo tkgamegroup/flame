@@ -17,11 +17,15 @@ namespace flame
 		}
 	}
 
-	void cProcedureMeshPrivate::start()
+	void cProcedureMeshPrivate::set_blueprint_name(const std::filesystem::path& name)
 	{
-		if (!blueprint_path.empty())
+		if (blueprint_name == name)
+			return;
+		blueprint_name = name;
+
+		if (!blueprint_name.empty())
 		{
-			auto bp = Blueprint::get(blueprint_path);
+			auto bp = Blueprint::get(blueprint_name);
 			auto ins = BlueprintInstance::create(bp);
 			graphics::ControlMesh* p_control_mesh = nullptr;
 			std::vector<voidptr> outputs;
@@ -41,8 +45,6 @@ namespace flame
 
 			delete ins;
 			Blueprint::release(bp);
-
-			return;
 		}
 	}
 

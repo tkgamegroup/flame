@@ -12,7 +12,9 @@ namespace flame
 		cMeshPtr mesh = nullptr;
 
 		// Reflect
-		std::filesystem::path blueprint_path; // use a blueprint as procedure mesh
+		std::filesystem::path blueprint_name; // use a blueprint as procedure mesh
+		// Reflect
+		virtual void set_blueprint_name(const std::filesystem::path& name) = 0;
 
 		graphics::Mesh converted_mesh;
 
