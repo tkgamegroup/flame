@@ -353,6 +353,12 @@ namespace flame
 					}
 					else
 					{
+						for (auto& d : defines)
+						{
+							if (d.first == line && s2t<uint>(d.second) != 0)
+								return true;
+						}
+
 						if (s2t<uint>(line) != 0)
 							return true;
 					}
@@ -377,8 +383,13 @@ namespace flame
 					auto tl = SUS::get_trimed(l);
 					if (SUS::strip_head_if(tl, "#define "))
 					{
-						auto sp = SUS::split(tl, ' ');
-						defines.emplace_back(std::string(sp.front()), sp.size() > 1 ? std::string(sp.back()) : "");
+						if (ok)
+						{
+							auto sp = SUS::split_parentheses(tl, '(', ')', ' ');
+							defines.emplace_back(std::string(sp.front()), sp.size() > 1 ? std::string(sp.back()) : "");
+							ret += l;
+							ret += "\n";
+						}
 					}
 					else if (SUS::strip_head_if(tl, "#if "))
 					{
@@ -435,7 +446,7 @@ namespace flame
 							s.first = false;
 						eval_state();
 					}
-					else if (tl == "#endif")
+					else if (tl.starts_with("#endif"))
 					{
 						states.pop_back();
 						eval_state();

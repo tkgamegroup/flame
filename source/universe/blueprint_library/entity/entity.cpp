@@ -972,6 +972,31 @@ namespace flame
 			}
 		);
 
+		library->add_template("Set Object Color", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Color",
+					.allowed_types = { TypeInfo::get<cvec4>() },
+					.default_value = "255,255,255,255"
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto mesh = entity->get_component<cMesh>();
+					if (mesh)
+						mesh->set_color(*(cvec4*)inputs[1].data);
+				}
+			}
+		);
+
 		library->add_template("Set Default Material", "",
 			{
 				{

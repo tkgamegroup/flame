@@ -26,15 +26,22 @@ layout(location = 3) out vec4 o_gbufferD;
 #endif
 #endif
 
+#ifdef MAT_CODE
+// MATERIAL CODE BEGIN:
+
+#include MAT_CODE
+
+// MATERIAL CODE END:
+#endif
+
 void main()
 {
 #ifdef MAT_CODE
 	vec4 color = vec4(((i_color & 0x000000ff)) / 255.0, ((i_color & 0x0000ff00) >> 8) / 255.0,
 		((i_color & 0x00ff0000) >> 16) / 255.0, ((i_color & 0xff000000) >> 24) / 255.0);
-	#define HAS_COLOR
 
 	MaterialInfo material = material.infos[i_mat_id];
-	#include MAT_CODE
+	material_main(material, color);
 #else
 	#ifndef DEPTH_ONLY
 		#ifndef GBUFFER_PASS

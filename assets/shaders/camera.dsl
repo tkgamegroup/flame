@@ -22,5 +22,5 @@ layout (set = SET, binding = 0) uniform Camera
 	
 	vec4 frustum_planes[6];
 
-	uint time;
+	float time;
 }camera;
