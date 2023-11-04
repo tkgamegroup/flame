@@ -7,9 +7,8 @@ using namespace flame;
 
 int main(int argc, char** args) 
 {
-	char buf[256];
-	sprintf_s(buf, "123 %d 456 %d", 1, 2, nullptr, nullptr);
-
+	mat4x3 a = mat4x3(mat3(1.f));
+	mat3x4 b = mat3x4(mat3(1.f));
 	return 0;
 }
 

@@ -1,17 +1,18 @@
 #include "mesh.vi"
 
-layout(location = 0) out flat uint o_matid;
-layout(location = 1) out vec2 o_uv;
+layout(location = 0) out flat uint	o_mat_id;
+layout(location = 1) out vec2		o_uv;
+layout(location = 2) out flat uint	o_color;
 #ifndef DEPTH_ONLY
-layout(location = 2) out vec3 o_normal; 
-layout(location = 3) out vec3 o_tangent; 
-layout(location = 4) out vec3 o_coordw;
+layout(location = 3) out vec3 o_normal; 
+layout(location = 4) out vec3 o_tangent; 
+layout(location = 5) out vec3 o_coordw;
 #endif
 
 void main()
 {
 	uint id = gl_InstanceIndex & 0xffff;
-	o_matid = gl_InstanceIndex >> 16;
+	o_mat_id = gl_InstanceIndex >> 16;
 	o_uv = i_uv;
 
 #ifdef ARMATURE
@@ -30,13 +31,15 @@ void main()
 		o_normal = normalize(normal_mat * i_nor);
 		o_tangent = normalize(normal_mat * i_tan);
 	#endif
+	o_color = 0xffffffff;
 #else
 	vec3 world_pos = vec3(instance.meshes[id].mat * vec4(i_pos, 1.0));
 	#ifndef DEPTH_ONLY
-		mat3 normal_mat = mat3(instance.meshes[id].nor);
+		mat3 normal_mat = instance.meshes[id].nor;
 		o_normal = normalize(normal_mat * i_nor);
 		o_tangent = normalize(normal_mat * i_tan);
 	#endif
+	o_color = instance.meshes[id].col;
 #endif
 
 #ifdef DEPTH_ONLY

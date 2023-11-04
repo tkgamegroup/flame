@@ -6,12 +6,13 @@
 #endif
 #endif
 
-layout(location = 0) in flat uint i_matid;
+layout(location = 0) in flat uint i_mat_id;
 layout(location = 1) in	     vec2 i_uv;
+layout(location = 2) in flat uint i_color;
 #ifndef DEPTH_ONLY
-layout(location = 2) in      vec3 i_normal;
-layout(location = 3) in      vec3 i_tangent;
-layout(location = 4) in      vec3 i_coordw;
+layout(location = 3) in      vec3 i_normal;
+layout(location = 4) in      vec3 i_tangent;
+layout(location = 5) in      vec3 i_coordw;
 #endif
 
 #ifndef DEPTH_ONLY
@@ -28,7 +29,11 @@ layout(location = 3) out vec4 o_gbufferD;
 void main()
 {
 #ifdef MAT_CODE
-	MaterialInfo material = material.infos[i_matid];
+	vec4 color = vec4(((i_color & 0x000000ff)) / 255.0, ((i_color & 0x0000ff00) >> 8) / 255.0,
+		((i_color & 0x00ff0000) >> 16) / 255.0, ((i_color & 0xff000000) >> 24) / 255.0);
+	#define HAS_COLOR
+
+	MaterialInfo material = material.infos[i_mat_id];
 	#include MAT_CODE
 #else
 	#ifndef DEPTH_ONLY

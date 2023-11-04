@@ -217,7 +217,7 @@ namespace flame
 		// Reflect
 		virtual int register_mesh_instance(int id) = 0;
 		// Reflect
-		virtual void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) = 0;
+		virtual void set_mesh_instance(uint id, const mat4& mat, const mat3& nor, const cvec4& col) = 0;
 
 		// id == -1 to register or to unregister id
 		// Reflect

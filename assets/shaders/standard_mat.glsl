@@ -17,9 +17,11 @@
 #endif
 
 #ifndef DEPTH_ONLY
-	vec4 color;
+	#ifndef HAS_COLOR
+	vec4 color = vec4(1.0);
+	#endif
 	#ifdef COLOR_MAP
-		color = SAMPLE_MAP(COLOR_MAP);
+		color *= SAMPLE_MAP(COLOR_MAP);
 		#ifdef TINT_COLOR
 			color *= material.color;
 		#endif
@@ -29,10 +31,10 @@
 					discard;
 			#endif
 		#else
-			color.a = alpha;
+			color.a *= alpha;
 		#endif
 	#else
-		color = material.color;
+		color *= material.color;
 	#endif
 
 	#ifndef UNLIT

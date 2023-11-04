@@ -2,7 +2,7 @@ struct MeshInstance
 {
 	mat4 mat;
 	mat3 nor;
-	vec4 col;
+	uint col;
 };
 
 struct ArmatureInstance

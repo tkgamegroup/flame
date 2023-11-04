@@ -128,7 +128,7 @@ namespace flame
 		void set_pt_light_instance(uint id, const vec3& pos, const vec3& color, float range) override;
 
 		int register_mesh_instance(int id) override;
-		void set_mesh_instance(uint id, const mat4& mat, const mat3& nor) override;
+		void set_mesh_instance(uint id, const mat4& mat, const mat3& nor, const cvec4& col) override;
 
 		int register_armature_instance(int id) override;
 		void set_armature_instance(uint id, const mat4* mats, uint size) override;

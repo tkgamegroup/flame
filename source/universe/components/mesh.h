@@ -27,6 +27,11 @@ namespace flame
 		}
 
 		// Reflect
+		cvec4 color = cvec4(255);
+		// Reflect
+		virtual void set_color(const cvec4& col) = 0;
+
+		// Reflect
 		bool cast_shadow = true;
 		// Reflect
 		virtual void set_cast_shadow(bool v) = 0;

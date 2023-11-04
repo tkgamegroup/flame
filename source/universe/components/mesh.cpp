@@ -66,7 +66,7 @@ namespace flame
 				{
 					if (dirty)
 					{
-						sRenderer::instance()->set_mesh_instance(instance_id, node->transform, transpose(inverse(mat3(node->transform))));
+						sRenderer::instance()->set_mesh_instance(instance_id, node->transform, transpose(inverse(mat3(node->transform))), color);
 						dirty = false;
 					}
 				}
@@ -197,6 +197,17 @@ namespace flame
 
 		node->mark_drawing_dirty();
 		data_changed("material_name"_h);
+	}
+
+	void cMeshPrivate::set_color(const cvec4& col)
+	{
+		if (color == col)
+			return;
+		color = col;
+
+		dirty = true;
+		node->mark_drawing_dirty();
+		data_changed("color"_h);
 	}
 
 	void cMeshPrivate::set_cast_shadow(bool v)

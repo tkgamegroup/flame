@@ -14,6 +14,7 @@ namespace flame
 
 		void set_mesh_name(const std::filesystem::path& mesh_name) override;
 		void set_material_name(const std::filesystem::path& material_name) override;
+		void set_color(const cvec4& col) override;
 
 		void set_cast_shadow(bool v) override;
 		void set_enable_render(bool v) override;

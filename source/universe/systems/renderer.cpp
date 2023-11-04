@@ -1605,18 +1605,19 @@ namespace flame
 		{
 			id = mesh_instances.get_free_item();
 			if (id != -1)
-				set_mesh_instance(id, mat4(1.f), mat3(1.f));
+				set_mesh_instance(id, mat4(1.f), mat3(1.f), cvec4(255));
 		}
 		else
 			mesh_instances.release_item(id);
 		return id;
 	}
 
-	void sRendererPrivate::set_mesh_instance(uint id, const mat4& mat, const mat3& nor)
+	void sRendererPrivate::set_mesh_instance(uint id, const mat4& mat, const mat3& nor, const cvec4& col)
 	{
 		auto ins = buf_instance.mark_dirty_ci("meshes"_h, id);
 		ins.child("mat"_h).as<mat4>() = mat;
-		ins.child("nor"_h).as<mat3>() = nor;
+		ins.child("nor"_h).as<mat3x4>() = nor;
+		ins.child("col"_h).as<cvec4>() = col;
 	}
 
 	int sRendererPrivate::register_armature_instance(int id)
