@@ -1501,7 +1501,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 						{
 							for (auto i : seize_indices)
 								root_ins_mods.erase(root_ins_mods.begin() + i);
-							entity->save(Path::get(ins->filename), true);
+							entity->save(Path::get(ins->filename), false);
 							ins->modifications.clear();
 						}
 					});
@@ -1514,7 +1514,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 					ImGui::OpenYesNoDialog("Are you sure to apply all modifications?", "This action cannot be redo", [entity, ins](bool yes) {
 						if (yes && !ins->modifications.empty())
 						{
-							entity->save(Path::get(ins->filename), true);
+							entity->save(Path::get(ins->filename), false);
 							ins->modifications.clear();
 						}
 					});

@@ -25,26 +25,29 @@ namespace flame
 
 		if (!blueprint_name.empty())
 		{
-			auto bp = Blueprint::get(blueprint_name);
-			auto ins = BlueprintInstance::create(bp);
-			graphics::ControlMesh* p_control_mesh = nullptr;
-			std::vector<voidptr> outputs;
-			outputs.push_back(&p_control_mesh);
-			ins->call("main"_h, nullptr, outputs.data());
-
-			if (p_control_mesh)
+			if (auto bp = Blueprint::get(blueprint_name); bp)
 			{
-				p_control_mesh->convert_to_mesh(converted_mesh);
-				assert(mesh->mesh_res_id == -1);
-				mesh->mesh = &converted_mesh;
-				mesh->mesh_res_id = sRenderer::instance()->get_mesh_res(&converted_mesh, -1);
-				mesh->node->mark_transform_dirty();
+				auto ins = BlueprintInstance::create(bp);
+				std::vector<voidptr> outputs;
 
-				mesh->set_material_name(L"default");
+				graphics::ControlMesh* p_control_mesh = nullptr;
+				outputs.push_back(&p_control_mesh);
+				ins->call("main"_h, nullptr, outputs.data());
+
+				if (p_control_mesh)
+				{
+					p_control_mesh->convert_to_mesh(converted_mesh);
+					assert(mesh->mesh_res_id == -1);
+					mesh->mesh = &converted_mesh;
+					mesh->mesh_res_id = sRenderer::instance()->get_mesh_res(&converted_mesh, -1);
+					mesh->node->mark_transform_dirty();
+
+					mesh->set_material_name(L"default");
+				}
+
+				delete ins;
+				Blueprint::release(bp);
 			}
-
-			delete ins;
-			Blueprint::release(bp);
 		}
 	}
 

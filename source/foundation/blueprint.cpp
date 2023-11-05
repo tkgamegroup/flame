@@ -1511,6 +1511,25 @@ namespace flame
 				break;
 			}
 		}
+
+		auto frame = frames;
+		dirty_frame = frame;
+	}
+
+	void BlueprintPrivate::alter_group(uint old_name, const std::string& new_name)
+	{
+		for (auto it = groups.begin(); it != groups.end(); it++)
+		{
+			if (it != groups.end())
+			{
+				(*it)->name = new_name;
+				(*it)->name_hash = sh(new_name.c_str());
+
+				auto frame = frames;
+				dirty_frame = frame;
+				return;
+			}
+		}
 	}
 
 	static void update_group_input_node(BlueprintGroupPtr g)

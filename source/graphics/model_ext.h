@@ -24,6 +24,7 @@ namespace flame
 
 			std::vector<vec3> vertices;
 			std::vector<Face> faces;
+			cvec4 color = cvec4(255);
 
 			void reset()
 			{
@@ -86,13 +87,13 @@ namespace flame
 			void init_as_cone(float radius, float depth, uint vertices_number)
 			{
 				auto top_vertex_id = vertices.size();
-				vertices.push_back(vec3(0.f, +depth * 0.5f, 0.f));
+				vertices.push_back(vec3(0.f, +depth, 0.f));
 
 				auto ring_vertices_id_start = vertices.size();
 				vertices.resize(vertices.size() + vertices_number);
 				auto ang = 2.f * pi<float>() / vertices_number;
 				for (auto i = 0; i < vertices_number; i++)
-					vertices[ring_vertices_id_start + i] = vec3(cos(ang * i), -depth * 0.5f, sin(ang * i)) * radius;
+					vertices[ring_vertices_id_start + i] = vec3(cos(ang * i), 0.f, sin(ang * i)) * radius;
 
 				// cone faces
 				for (auto i = 0; i < vertices_number; i++)

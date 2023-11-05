@@ -854,6 +854,31 @@ namespace flame
 			}
 		);
 
+		library->add_template("Pow", "",
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "Exp",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(float*)outputs[0].data = pow(*(float*)inputs[0].data, *(float*)inputs[1].data);
+			},
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
 		library->add_template("Distance", "",
 			{
 				{
@@ -899,6 +924,16 @@ namespace flame
 				{
 					.name = "Seed",
 					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Min",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "0"
+				},
+				{
+					.name = "Max",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "1"
 				}
 			},
 			{
@@ -908,7 +943,7 @@ namespace flame
 				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				*(float*)outputs[0].data = linearRand(0.f, 1.f);
+				*(float*)outputs[0].data = linearRand(*(float*)inputs[1].data, *(float*)inputs[2].data);
 			},
 			nullptr,
 			nullptr,

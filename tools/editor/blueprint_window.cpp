@@ -31,6 +31,7 @@ static BlueprintNodeLibraryPtr noise_library;
 static BlueprintNodeLibraryPtr texture_library;
 static BlueprintNodeLibraryPtr geometry_library;
 static BlueprintNodeLibraryPtr entity_library;
+static BlueprintNodeLibraryPtr procedural_library;
 static BlueprintNodeLibraryPtr navigation_library;
 static BlueprintNodeLibraryPtr input_library;
 static BlueprintNodeLibraryPtr hud_library;
@@ -557,21 +558,29 @@ void BlueprintView::on_draw()
 		ImGui::InputText("##group", &group_name);
 		if (ImGui::IsItemDeactivatedAfterEdit())
 		{
-			group_name_hash = sh(group_name.c_str());
-			group->name = group_name;
-			group->name_hash = group_name_hash;
-			group->structure_changed_frame = frame;
-			blueprint->dirty_frame = frame;
+			blueprint->alter_group(group_name_hash, group_name);
+			group_name_hash = group->name_hash;
 			unsaved = true;
+
+			if (blueprint_instance->built_frame < blueprint->dirty_frame)
+				blueprint_instance->build();
 		}
 		ImGui::SameLine();
 
 		if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
 		{
 			blueprint->remove_group(group);
-			group = blueprint->groups.back().get();
-			group_name = group->name;
-			group_name_hash = group->name_hash;
+			if (!blueprint->groups.empty())
+			{
+				group = blueprint->groups.back().get();
+				group_name = group->name;
+				group_name_hash = group->name_hash;
+			}
+			else
+			{
+				group_name = "";
+				group_name_hash = 0;
+			}
 			unsaved = true;
 
 			if (blueprint_instance->built_frame < blueprint->dirty_frame)
@@ -1888,7 +1897,7 @@ void BlueprintView::on_draw()
 								case "Loop"_h:
 									if (auto t2 = t.library->find_node_template("Loop Index"_h); t2)
 									{
-										auto n2 = t.create_node(blueprint, group, n);
+										auto n2 = t2->create_node(blueprint, group, n);
 										n2->position = n->position + vec2(0.f, 112.f);
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n2, n2->position);
 									}
@@ -2049,14 +2058,16 @@ void BlueprintView::on_draw()
 								}
 							}
 							if (!actions.empty())
-							if (ImGui::BeginMenu(name.c_str()))
 							{
-								for (auto& item : actions)
+								if (ImGui::BeginMenu(name.c_str()))
 								{
-									if (ImGui::Selectable(item.first.c_str()))
-										item.second();
+									for (auto& item : actions)
+									{
+										if (ImGui::Selectable(item.first.c_str()))
+											item.second();
+									}
+									ImGui::EndMenu();
 								}
-								ImGui::EndMenu();
 							}
 						};
 						for (auto& v : blueprint->variables)
@@ -2072,7 +2083,7 @@ void BlueprintView::on_draw()
 								{
 									header = "Sheet: " + sht->name;
 									for (auto& col : sht->columns)
-										show_variable(col.name, col.name_hash, col.type, sht->name_hash);
+										show_variable(sht->name + '.' + col.name, col.name_hash, col.type, sht->name_hash);
 									if (add_node_filter.empty())
 										ImGui::EndMenu();
 								}
@@ -2091,7 +2102,7 @@ void BlueprintView::on_draw()
 								{
 									header = "Blueprint: " + bp->name;
 									for (auto& v : bp->variables)
-										show_variable(v.name, v.name_hash, v.type, bp->name_hash);
+										show_variable(bp->name + '.' + v.name, v.name_hash, v.type, bp->name_hash);
 									if (add_node_filter.empty())
 										ImGui::EndMenu();
 								}
@@ -2141,7 +2152,7 @@ void BlueprintView::on_draw()
 										if (g->name_hash == "start"_h ||
 											g->name_hash == "update"_h)
 											continue;
-										if (show_node_template(g->name, {}, {}, slot_name))
+										if (show_node_template(bp->name + '.' + g->name, {}, {}, slot_name))
 										{
 											if (ImGui::Selectable(g->name.c_str()))
 											{
@@ -2453,6 +2464,14 @@ void BlueprintView::on_draw()
 						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Procedural"))
+					{
+						header = "Procedural";
+						for (auto& t : procedural_library->node_templates)
+							show_node_library_template(t);
+						if (add_node_filter.empty())
+							ImGui::EndMenu();
+					}
 					if (!add_node_filter.empty() || ImGui::BeginMenu("Input"))
 					{
 						header = "Input";
@@ -2656,6 +2675,7 @@ void BlueprintWindow::init()
 		geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
 		entity_library = BlueprintNodeLibrary::get(L"universe::entity");
 		navigation_library = BlueprintNodeLibrary::get(L"universe::navigation");
+		procedural_library = BlueprintNodeLibrary::get(L"universe::procedural");
 		input_library = BlueprintNodeLibrary::get(L"universe::input");
 		hud_library = BlueprintNodeLibrary::get(L"universe::HUD");
 		audio_library = BlueprintNodeLibrary::get(L"universe::audio");
@@ -2666,6 +2686,7 @@ void BlueprintWindow::init()
 		node_libraries.push_back(geometry_library);
 		node_libraries.push_back(entity_library);
 		node_libraries.push_back(navigation_library);
+		node_libraries.push_back(procedural_library);
 		node_libraries.push_back(input_library);
 		node_libraries.push_back(hud_library);
 		node_libraries.push_back(audio_library);

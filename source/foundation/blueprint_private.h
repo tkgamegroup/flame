@@ -53,6 +53,7 @@ namespace flame
 		void					remove_link(BlueprintLinkPtr link) override;
 		BlueprintGroupPtr		add_group(const std::string& name) override;
 		void					remove_group(BlueprintGroupPtr group) override;
+		void					alter_group(uint old_name, const std::string& new_name) override;
 		void					add_group_input(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;
 		void					remove_group_input(BlueprintGroupPtr group, uint name) override;
 		void					alter_group_input(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* new_type) override;

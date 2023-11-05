@@ -329,7 +329,7 @@ namespace flame
 
 		virtual ~Blueprint() {}
 
-		virtual void* add_variable(BlueprintGroupPtr group /* or null for blueprint variable */, const std::string& name, TypeInfo* type) = 0; // return: the data of the variable
+		virtual void*					add_variable(BlueprintGroupPtr group /* or null for blueprint variable */, const std::string& name, TypeInfo* type) = 0; // return: the data of the variable
 		virtual void					remove_variable(BlueprintGroupPtr group /* or null for blueprint variable */, uint name) = 0;
 		virtual void					alter_variable(BlueprintGroupPtr group /* or null for blueprint variable */, uint old_name, const std::string& new_name = "", TypeInfo* new_type = nullptr) = 0;
 		virtual BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, const std::string& name, const std::string& display_name,
@@ -349,6 +349,7 @@ namespace flame
 		virtual void					remove_link(BlueprintLinkPtr link) = 0;
 		virtual BlueprintGroupPtr		add_group(const std::string& name) = 0;
 		virtual void					remove_group(BlueprintGroupPtr group) = 0;
+		virtual void					alter_group(uint old_name, const std::string& new_name) = 0;
 		virtual void					add_group_input(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) = 0;
 		virtual void					remove_group_input(BlueprintGroupPtr group, uint name) = 0;
 		virtual void					alter_group_input(BlueprintGroupPtr group, uint old_name, const std::string& new_name = "", TypeInfo* new_type = nullptr) = 0;
