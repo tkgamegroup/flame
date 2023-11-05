@@ -100,9 +100,9 @@ namespace flame
 				if (!l->from_slot->node->parent->contains(l->to_slot->node))
 					to_remove_links.push_back(l.get());
 			}
+			for (auto l : to_remove_links)
+				remove_link(l);
 		}
-		for (auto l : to_remove_links)
-			remove_link(l);
 	}
 
 	static void remove_node_links(BlueprintNodePtr n)

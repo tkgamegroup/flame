@@ -947,9 +947,7 @@ namespace flame
 			},
 			nullptr,
 			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				*output_types = input_types[0];
-			}
+			nullptr
 		);
 
 		library->add_template("RandomInt", "",
@@ -974,13 +972,41 @@ namespace flame
 				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				*(int*)outputs[0].data = linearRand(*(int*)inputs[0].data, *(int*)inputs[1].data);
+				*(int*)outputs[0].data = linearRand(*(int*)inputs[1].data, *(int*)inputs[2].data);
 			},
 			nullptr,
 			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				*output_types = input_types[0];
-			}
+			nullptr
+		);
+
+		library->add_template("Circle Position", "",
+			{
+				{
+					.name = "Radius",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "1"
+				},
+				{
+					.name = "Angle",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "0"
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto radius = *(float*)inputs[0].data;
+				auto angle = *(float*)inputs[1].data;
+				auto rad = radians(angle);
+				*(vec3*)outputs[0].data = vec3(cos(rad) * radius, 0.f, sin(rad) * radius);
+			},
+			nullptr,
+			nullptr,
+			nullptr
 		);
 
 		library->add_template("Circle Random", "",
@@ -1015,9 +1041,7 @@ namespace flame
 			},
 			nullptr,
 			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				*output_types = input_types[0];
-			}
+			nullptr
 		);
 	}
 }

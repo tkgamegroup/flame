@@ -43,6 +43,7 @@ namespace flame
 						pcontrol_mesh->convert_to_mesh(procedure_mesh->converted_mesh);
 						mesh->mesh = &procedure_mesh->converted_mesh;
 						mesh->mesh_res_id = sRenderer::instance()->get_mesh_res(&procedure_mesh->converted_mesh, -1);
+						mesh->color = pcontrol_mesh->color;
 						mesh->node->mark_transform_dirty();
 
 						mesh->set_material_name(L"default");

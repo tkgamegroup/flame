@@ -30,16 +30,17 @@ namespace flame
 				auto ins = BlueprintInstance::create(bp);
 				std::vector<voidptr> outputs;
 
-				graphics::ControlMesh* p_control_mesh = nullptr;
-				outputs.push_back(&p_control_mesh);
+				graphics::ControlMesh* pcontrol_mesh = nullptr;
+				outputs.push_back(&pcontrol_mesh);
 				ins->call("main"_h, nullptr, outputs.data());
 
-				if (p_control_mesh)
+				if (pcontrol_mesh)
 				{
-					p_control_mesh->convert_to_mesh(converted_mesh);
+					pcontrol_mesh->convert_to_mesh(converted_mesh);
 					assert(mesh->mesh_res_id == -1);
 					mesh->mesh = &converted_mesh;
 					mesh->mesh_res_id = sRenderer::instance()->get_mesh_res(&converted_mesh, -1);
+					mesh->color = pcontrol_mesh->color;
 					mesh->node->mark_transform_dirty();
 
 					mesh->set_material_name(L"default");

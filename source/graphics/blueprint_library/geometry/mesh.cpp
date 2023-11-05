@@ -182,7 +182,7 @@ namespace flame
 					},
 					{
 						.name = "Scale",
-						.allowed_types = { TypeInfo::get<vec3>() }
+						.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec3>() }
 					}
 				},
 				{
@@ -193,7 +193,7 @@ namespace flame
 				},
 				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 					auto pcontrol_mesh = *(ControlMesh**)inputs[0].data;
-					auto scale = *(vec3*)inputs[1].data;
+					auto scale = inputs[1].type == TypeInfo::get<float>() ? vec3(*(float*)inputs[1].data) : *(vec3*)inputs[1].data;
 					auto& out_control_mesh = *(ControlMesh*)outputs[0].data;
 					if (pcontrol_mesh)
 					{
@@ -234,6 +234,8 @@ namespace flame
 						auto rotation_matrix = eulerAngleYXZ(rotation.x, rotation.y, rotation.z);
 						for (auto& v : out_control_mesh.vertices)
 							v = rotation_matrix * vec4(v, 1.f);
+						for (auto& f : out_control_mesh.faces)
+							f.normal = rotation_matrix * vec4(f.normal, 0.f);
 						out_control_mesh.color = pcontrol_mesh->color;
 					}
 				}
