@@ -412,7 +412,7 @@ namespace flame
 						s.second = s.first;
 						eval_state();
 					}
-					else if (tl == "#else")
+					else if (tl.starts_with("#else"))
 					{
 						auto& s = states.back();
 						if (!s.second)

@@ -113,8 +113,8 @@ namespace flame
 			default_font_atlas->get_glyph(0, font_size); // get empty slot at first place to allow embed a white pixel in it
 			default_font_atlas->init_latin_glyphs(font_size);
 			main_img = default_font_atlas->image.get();
-			main_img->set_pixel(0, 0, 0, 0, vec4(1.f));
-			main_img->upload_pixels(0, 0, 1, 1, 0, 0);
+			main_img->set_staging_pixel(0, 0, 0, 0, vec4(1.f));
+			main_img->upload_staging_pixels(0, 0, 1, 1, 0, 0);
 			main_img->change_layout(ImageLayoutShaderReadOnly);
 			main_ds.reset(DescriptorSet::create(nullptr, prm.get_dsl(""_h)));
 			main_ds->set_image_i(0, 0, main_img->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(FilterNearest, FilterNearest, false, AddressClampToEdge));

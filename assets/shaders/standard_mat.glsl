@@ -87,5 +87,7 @@ void material_main(MaterialInfo material, vec4 color)
 			o_gbufferC = vec4(metallic, roughness, 0.0, material.flags / 255.0);
 			o_gbufferD = vec4(emissive, 0.0);
 		#endif
-	#endif
+	#else // DEPTH_ONLY
+		o_exp_depth = gl_FragCoord.z;
+	#endif // DEPTH_ONLY
 }

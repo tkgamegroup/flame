@@ -303,7 +303,13 @@ namespace flame
 				else
 					ret |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 				if (sc != SampleCount_1 && !(fmt >= Format_Depth_Begin && fmt <= Format_Depth_End))
+				{
 					ret |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
+					ret = ret & ~VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+					ret = ret & ~VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+					ret = ret & ~VK_IMAGE_USAGE_SAMPLED_BIT;
+					ret = ret & ~VK_IMAGE_USAGE_STORAGE_BIT;
+				}
 			}
 			return ret;
 		}

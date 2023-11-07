@@ -308,7 +308,7 @@ namespace flame
 		for (auto y = 0; y < sz1.y; y++)
 		{
 			for (auto x = 0; x < sz1.x; x++)
-				heights[y * sz1.x + x] = height_map->linear_sample(vec2((float)x / sz0.x, (float)y / sz0.y)).x;
+				heights[y * sz1.x + x] = height_map->linear_sample_staging_pixels(vec2((float)x / sz0.x, (float)y / sz0.y)).x;
 		}
 
 		graphics::StagingBuffer nor_stag(sizeof(cvec4) * sz0.x * sz0.y);

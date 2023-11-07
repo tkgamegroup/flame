@@ -265,8 +265,51 @@ namespace flame
 			cb.excute();
 		}
 
+		vec4 pixel_to_vec4(Format format, uchar* pixel)
+		{
+			switch (format)
+			{
+			case Format_R8_UNORM:
+				return vec4(pixel[0] / 255.f, 0.f, 0.f, 0.f);
+			case Format_R8G8B8A8_UNORM:
+				return vec4(pixel[0] / 255.f, pixel[1] / 255.f, pixel[2] / 255.f, pixel[3] / 255.f);
+			case Format_R16G16B16A16_SFLOAT:
+				return vec4(unpackHalf1x16(((ushort*)pixel)[0]), unpackHalf1x16(((ushort*)pixel)[1]),
+					unpackHalf1x16(((ushort*)pixel)[2]), unpackHalf1x16(((ushort*)pixel)[3]));
+			case Format_Depth16:
+				return vec4(unpackUnorm1x16(((ushort*)pixel)[0]), 0.f, 0.f, 0.f);
+			case Format_R32_SFLOAT:
+			case Format_Depth32:
+				return vec4(((float*)pixel)[0], 0.f, 0.f, 0.f);
+			default:
+				assert(0);
+			}
+		}
+
+		vec4 ImagePrivate::get_pixel(int x, int y, uint level, uint layer)
+		{
+			if (!(usage & ImageUsageTransferSrc))
+				return vec4(0.f);
+
+			auto& lv = levels[level];
+			StagingBuffer sb(pixel_size);
+			InstanceCommandBuffer cb;
+			BufferImageCopy cpy;
+			cpy.img_off = uvec3(x, y, 0);
+			cpy.img_ext = uvec3(1);
+			cpy.img_sub = { level, 1, layer, 1 };
+			cb->image_barrier(this, cpy.img_sub, ImageLayoutTransferSrc);
+			cb->copy_image_to_buffer(this, sb.get(), { &cpy, 1 });
+			cb->image_barrier(this, cpy.img_sub, ImageLayoutShaderReadOnly);
+			cb.excute();
+			return pixel_to_vec4(format, (uchar*)sb->mapped);
+		}
+
 		void ImagePrivate::stage_surface_data(uint level, uint layer)
 		{
+			if (!(usage & ImageUsageTransferSrc))
+				return;
+
 			auto& lv = levels[level];
 			auto& ly = lv.layers[layer];
 			if (!ly.data)
@@ -285,8 +328,11 @@ namespace flame
 			}
 		}
 
-		vec4 ImagePrivate::get_pixel(int x, int y, uint level, uint layer)
+		vec4 ImagePrivate::get_staging_pixel(int x, int y, uint level, uint layer)
 		{
+			if (!(usage & ImageUsageTransferSrc))
+				return vec4(0.f);
+
 			stage_surface_data(level, layer);
 
 			auto& lv = levels[level];
@@ -296,24 +342,14 @@ namespace flame
 			y = clamp(y, 0, (int)lv.extent.y - 1);
 
 			auto pixel = ly.data.get() + lv.pitch * y + pixel_size * x;
-			switch (format)
-			{
-			case Format_R8_UNORM:
-				return vec4(pixel[0] / 255.f, 0.f, 0.f, 0.f);
-			case Format_R8G8B8A8_UNORM:
-				return vec4(pixel[0] / 255.f, pixel[1] / 255.f, pixel[2] / 255.f, pixel[3] / 255.f);
-			case Format_R16G16B16A16_SFLOAT:
-				return vec4(unpackHalf1x16(((ushort*)pixel)[0]), unpackHalf1x16(((ushort*)pixel)[1]),
-					unpackHalf1x16(((ushort*)pixel)[2]), unpackHalf1x16(((ushort*)pixel)[3]));
-			case Format_Depth16:
-				return vec4(unpackUnorm1x16(((ushort*)pixel)[0]), 0.f, 0.f, 0.f);
-			default:
-				assert(0);
-			}
+			return pixel_to_vec4(format, pixel);
 		}
 
-		void ImagePrivate::set_pixel(int x, int y, uint level, uint layer, const vec4& v)
+		void ImagePrivate::set_staging_pixel(int x, int y, uint level, uint layer, const vec4& v)
 		{
+			if (!(usage & ImageUsageTransferDst))
+				return;
+
 			stage_surface_data(level, layer);
 
 			auto& lv = levels[level];
@@ -339,8 +375,11 @@ namespace flame
 			}
 		}
 
-		void ImagePrivate::upload_pixels(int x, int y, int w, int h, uint level, uint layer)
+		void ImagePrivate::upload_staging_pixels(int x, int y, int w, int h, uint level, uint layer)
 		{
+			if (!(usage & ImageUsageTransferDst))
+				return;
+
 			auto& lv = levels[level];
 			auto& ly = lv.layers[layer];
 			if (ly.data)
@@ -369,7 +408,7 @@ namespace flame
 			}
 		}
 
-		void ImagePrivate::clear_staging_data()
+		void ImagePrivate::clear_staging_pixels()
 		{
 			for (auto level = 0; level < n_levels; level++)
 			{
@@ -382,15 +421,15 @@ namespace flame
 			}
 		}
 
-		vec4 ImagePrivate::linear_sample(const vec2& uv, uint level, uint layer)
+		vec4 ImagePrivate::linear_sample_staging_pixels(const vec2& uv, uint level, uint layer)
 		{
 			auto coord = uv * vec2(levels[level].extent) - 0.5f;
 			auto coordi = ivec2(floor(coord));
 			auto coordf = coord - vec2(coordi);
 
 			return mix(
-				mix(get_pixel(coordi.x, coordi.y, level, layer), get_pixel(coordi.x + 1, coordi.y, level, layer), coordf.x),
-				mix(get_pixel(coordi.x, coordi.y + 1, level, layer), get_pixel(coordi.x + 1, coordi.y + 1, level, layer), coordf.x),
+				mix(get_staging_pixel(coordi.x, coordi.y, level, layer), get_staging_pixel(coordi.x + 1, coordi.y, level, layer), coordf.x),
+				mix(get_staging_pixel(coordi.x, coordi.y + 1, level, layer), get_staging_pixel(coordi.x + 1, coordi.y + 1, level, layer), coordf.x),
 				coordf.y);
 		}
 
@@ -517,7 +556,7 @@ namespace flame
 			{
 				for (auto x = 0; x < size.x; x++)
 				{
-					if (img->get_pixel(x, y, level, 0)[ch] * scale > ref)
+					if (img->get_staging_pixel(x, y, level, 0)[ch] * scale > ref)
 						coverage += 1.f;
 				}
 			}
@@ -565,9 +604,9 @@ namespace flame
 				for (auto x = 0; x < lv.extent.x; x++)
 				{
 					auto pos = ivec2(x, y);
-					auto v = img->get_pixel(x, y, level, 0);
+					auto v = img->get_staging_pixel(x, y, level, 0);
 					v[ch] *= best_alpha_scale;
-					img->set_pixel(x, y, level, 0, v);
+					img->set_staging_pixel(x, y, level, 0, v);
 				}
 			}
 
@@ -586,6 +625,11 @@ namespace flame
 		{
 			ImagePtr operator()(Format format, const uvec3& extent, ImageUsageFlags usage, uint levels, uint layers, SampleCount sample_count) override
 			{
+				uint u;
+				auto additional_usage_transfer = device->get_config("image_additional_usage_transfer"_h, u) ? u == 1 : false;
+				if (additional_usage_transfer)
+					usage = usage | ImageUsageTransferSrc | ImageUsageTransferDst;
+
 				VkImageCreateInfo imageInfo;
 				imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 				imageInfo.flags = 0;

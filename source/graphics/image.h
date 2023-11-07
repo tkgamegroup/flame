@@ -57,6 +57,8 @@ namespace flame
 				return 16;
 			case Format_Depth16:
 				return 2;
+			case Format_Depth32:
+				return 4;
 			}
 			return 0;
 		}
@@ -123,10 +125,11 @@ namespace flame
 			virtual void clear(const vec4& color, ImageLayout dst_layout) = 0;
 
 			virtual vec4 get_pixel(int x, int y, uint level, uint layer) = 0;
-			virtual void set_pixel(int x, int y, uint level, uint layer, const vec4& v) = 0;
-			virtual void upload_pixels(int x, int y, int w, int h, uint level, uint layer) = 0;
-			virtual vec4 linear_sample(const vec2& uv, uint level = 0, uint layer = 0) = 0;
-			virtual void clear_staging_data() = 0;
+			virtual vec4 get_staging_pixel(int x, int y, uint level, uint layer) = 0;
+			virtual void set_staging_pixel(int x, int y, uint level, uint layer, const vec4& v) = 0;
+			virtual void upload_staging_pixels(int x, int y, int w, int h, uint level, uint layer) = 0;
+			virtual vec4 linear_sample_staging_pixels(const vec2& uv, uint level = 0, uint layer = 0) = 0;
+			virtual void clear_staging_pixels() = 0;
 
 			virtual void save(const std::filesystem::path& filename, bool compress = false) = 0;
 

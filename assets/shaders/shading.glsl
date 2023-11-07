@@ -246,19 +246,6 @@ vec3 get_fog(vec3 color, float dist)
 
 vec3 shading(vec3 world_pos, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness, float ao, vec3 emissive, bool receive_ssr)
 {
-#ifdef ALBEDO_DATA
-	return albedo;
-#endif
-#ifdef NORMAL_DATA
-	return N;
-#endif
-#ifdef METALLIC_DATA
-	return vec3(metallic);
-#endif
-#ifdef ROUGHNESS_DATA
-	return vec3(roughness);
-#endif
-
 	vec3 ret = emissive;
 
 	vec3 V = camera.coord - world_pos;

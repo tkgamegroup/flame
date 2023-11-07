@@ -2406,47 +2406,11 @@ void InspectorView::on_draw()
 					{
 						static int view_swizzle = ImGui::ImageViewRGBA;
 						static int view_sampler = ImGui::ImageViewLinear;
-						static float scale = 1.f;
-						ImGui::PushItemWidth(100.f);
-						static const char* swizzle_names[] = {
-							"RGBA",
-							"R", "G", "B", "A",
-							"RGB"
-						};
-						static const char* sampler_names[] = {
-							"Linear",
-							"Nearest"
-						};
-						ImGui::Combo("View Swizzle", &view_swizzle, swizzle_names, countof(swizzle_names));
-						ImGui::SameLine();
-						ImGui::Combo("View Sampler", &view_sampler, sampler_names, countof(sampler_names));
-						ImGui::SameLine();
-						ImGui::DragFloat("Scale", &scale, 0.01f, 0.01f, 10.f);
-						ImGui::PopItemWidth();
-						if (image->extent.z == 1)
-						{
-							if (view_swizzle != ImGui::ImageViewRGBA || view_sampler != ImGui::ImageViewLinear)
-								ImGui::PushImageViewType(ImGui::ImageViewType{ (ImGui::ImageViewSwizzle)view_swizzle, (ImGui::ImageViewSampler)view_sampler });
-							ImGui::Image(image, vec2(image->extent) * scale);
-							if (view_swizzle != ImGui::ImageViewRGBA || view_sampler != ImGui::ImageViewLinear)
-								ImGui::PopImageViewType();
-							if (ImGui::IsItemHovered())
-							{
-								vec2 p0 = ImGui::GetItemRectMin();
-								vec2 p1 = ImGui::GetItemRectMax();
-								vec2 pos = ImGui::GetMousePos();
-								auto uv = (pos - p0) / (p1 - p0);
-								uvec2 pixel = (vec2)image->extent * uv;
-								ImGui::BeginTooltip();
-								ImGui::Text("Pixel: %s", str(pixel).c_str());
-								ImGui::Text("UV: %s", str(uv).c_str());
-								cvec4 color = image->get_pixel(pixel.x, pixel.y, 0, 0) * 255.f;
-								ImGui::Text("Color: %s", str(color).c_str());
-								ImGui::EndTooltip();
-							}
-						}
-						else
-							ImGui::TextUnformatted("Cannot not view a multi-layer image now.");
+						static int view_level = 0;
+						static int view_layer = 0;
+						static float view_scale = 1.f;
+
+						view_image(image, &view_swizzle, &view_sampler, &view_level, &view_layer, &view_scale);
 					}
 				}
 			}

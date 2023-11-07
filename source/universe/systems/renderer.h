@@ -12,10 +12,6 @@ namespace flame
 		RenderModeSimple, // forward shading, no post processing
 		RenderModeShaded,
 		RenderModeCameraLight,
-		RenderModeAlbedoData,
-		RenderModeNormalData,
-		RenderModeMetallicData,
-		RenderModeRoughnessData,
 		RenderModeIBLValue,
 		RenderModeFogValue
 	};
@@ -259,6 +255,8 @@ namespace flame
 		virtual cElementPtr pick_up_2d(const uvec2& screen_pos) = 0;
 		// Reflect
 		virtual std::vector<vec3> transform_feedback(cNodePtr node) = 0;
+		// Reflect
+		virtual graphics::ImagePtr get_image(uint name) = 0;
 
 		virtual void begin_hud(const vec2& pos, const vec2& size = vec2(0.f) /* 0 size means auto layout */, const cvec4& col = cvec4(0, 0, 0, 255), const vec2& pivot = vec2(0.f), const vec2& item_spacing = vec2(2.f)) = 0;
 		virtual void end_hud() = 0;

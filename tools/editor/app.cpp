@@ -271,6 +271,60 @@ void open_message_dialog(const std::string& title, const std::string& message)
 		ImGui::OpenMessageDialog(title, message);
 }
 
+void view_image(graphics::ImagePtr image, int* view_swizzle, int* view_sampler, int* view_level, int* view_layer, float* view_scale)
+{
+	ImGui::PushItemWidth(100.f);
+	static const char* swizzle_names[] = {
+		"RGBA",
+		"R", "G", "B", "A",
+		"RGB", "RRR", "GGG", "BBB", "AAA"
+	};
+	static const char* sampler_names[] = {
+		"Linear",
+		"Nearest"
+	};
+	ImGui::Combo("Swizzle", view_swizzle, swizzle_names, countof(swizzle_names));
+	ImGui::SameLine();
+	ImGui::Combo("Sampler", view_sampler, sampler_names, countof(sampler_names));
+	ImGui::SameLine();
+	ImGui::SliderInt("Level", view_level, 0, image->n_levels - 1);
+	ImGui::SameLine();
+	ImGui::SliderInt("Layer", view_layer, 0, image->n_layers - 1);
+	ImGui::SameLine();
+	ImGui::DragFloat("Scale", view_scale, 0.01f, 0.01f, 10.f);
+	ImGui::PopItemWidth();
+
+	//ImGui::BeginChild("image", vec2(-2, -2), false, ImGuiWindowFlags_HorizontalScrollbar);
+	ImGui::PushImageViewType(ImGui::ImageViewType{ (ImGui::ImageViewSwizzle)*view_swizzle, (ImGui::ImageViewSampler)*view_sampler, (uint)*view_level, (uint)*view_layer });
+	auto sz = image->levels[*view_level].extent;
+	ImGui::Image(image, vec2(sz) * (*view_scale));
+	ImGui::PopImageViewType();
+	if (ImGui::IsItemHovered())
+	{
+		vec2 p0 = ImGui::GetItemRectMin();
+		vec2 p1 = ImGui::GetItemRectMax();
+		vec2 pos = ImGui::GetMousePos();
+		auto uv = (pos - p0) / (p1 - p0);
+		uvec2 pixel = (vec2)sz * uv;
+		ImGui::BeginTooltip();
+		ImGui::Text("Pixel: %s", str(pixel).c_str());
+		ImGui::Text("UV: %s", str(uv).c_str());
+		switch (image->format)
+		{
+		case graphics::Format_R32_SFLOAT:
+		case graphics::Format_Depth16:
+		case graphics::Format_Depth32:
+			ImGui::Text("Value: %f", image->get_pixel(pixel.x, pixel.y, 0, 0).x);
+			break;
+		default:
+			cvec4 color = image->get_pixel(pixel.x, pixel.y, 0, 0) * 255.f;
+			ImGui::Text("Color: %s", str(color).c_str());
+		}
+		ImGui::EndTooltip();
+	}
+	//ImGui::EndChild();
+}
+
 void ModelPreviewer::init()
 {
 	if (!model)
@@ -962,14 +1016,6 @@ void App::on_gui()
 			render_task->mode = RenderModeShaded;
 		if (ImGui::MenuItem("Camera Light", nullptr, render_task->mode == RenderModeCameraLight))
 			render_task->mode = RenderModeCameraLight;
-		if (ImGui::MenuItem("Albedo Data", nullptr, render_task->mode == RenderModeAlbedoData))
-			render_task->mode = RenderModeAlbedoData;
-		if (ImGui::MenuItem("Normal Data", nullptr, render_task->mode == RenderModeNormalData))
-			render_task->mode = RenderModeNormalData;
-		if (ImGui::MenuItem("Metallic Data", nullptr, render_task->mode == RenderModeMetallicData))
-			render_task->mode = RenderModeMetallicData;
-		if (ImGui::MenuItem("Roughness Data", nullptr, render_task->mode == RenderModeRoughnessData))
-			render_task->mode = RenderModeRoughnessData;
 		if (ImGui::MenuItem("IBL Value", nullptr, render_task->mode == RenderModeIBLValue))
 			render_task->mode = RenderModeIBLValue;
 		if (ImGui::MenuItem("Fog Value", nullptr, render_task->mode == RenderModeFogValue))
@@ -2172,6 +2218,8 @@ int main(int argc, char** args)
 		app.graphics_configs.emplace_back("mesh_shader"_h, 0);
 	if (ap.has("-replace_renderpass_attachment_dont_care_to_load"))
 		app.graphics_configs.emplace_back("replace_renderpass_attachment_dont_care_to_load"_h, 1);
+	if (ap.has("-image_additional_usage_transfer"))
+		app.graphics_configs.emplace_back("image_additional_usage_transfer"_h, 1);
 
 	app.init();
 	app.load_preferences();

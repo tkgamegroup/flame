@@ -571,7 +571,7 @@ namespace flame
 								for (auto x = 0; x < cx + 1; x++)
 								{
 									positions[pos_off + z * (cx + 1) + x] = mat * vec4(x * extent.x,
-										height_map->linear_sample(vec2((float)x / cx, (float)z / cz)).x * extent.y,
+										height_map->linear_sample_staging_pixels(vec2((float)x / cx, (float)z / cz)).x * extent.y,
 										z * extent.z, 1.f);
 								}
 							}

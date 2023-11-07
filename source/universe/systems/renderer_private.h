@@ -153,6 +153,7 @@ namespace flame
 		cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos, const std::function<void(cNodePtr, DrawData&)>& draw_callback) override;
 		cElementPtr pick_up_2d(const uvec2& screen_pos) override;
 		std::vector<vec3> transform_feedback(cNodePtr node) override;
+		graphics::ImagePtr get_image(uint name) override;
 
 		void begin_hud(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const vec2& item_spacing) override;
 		void end_hud() override;

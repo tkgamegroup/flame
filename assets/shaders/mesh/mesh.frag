@@ -16,14 +16,16 @@ layout(location = 5) in      vec3 i_coordw;
 #endif
 
 #ifndef DEPTH_ONLY
-#ifndef GBUFFER_PASS
-layout(location = 0) out vec4 o_color;
+	#ifndef GBUFFER_PASS
+		layout(location = 0) out vec4 o_color;
+	#else
+		layout(location = 0) out vec4 o_gbufferA;
+		layout(location = 1) out vec4 o_gbufferB;
+		layout(location = 2) out vec4 o_gbufferC;
+		layout(location = 3) out vec4 o_gbufferD;
+	#endif
 #else
-layout(location = 0) out vec4 o_gbufferA;
-layout(location = 1) out vec4 o_gbufferB;
-layout(location = 2) out vec4 o_gbufferC;
-layout(location = 3) out vec4 o_gbufferD;
-#endif
+	layout(location = 0) out float o_exp_depth;
 #endif
 
 #ifdef MAT_CODE

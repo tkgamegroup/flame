@@ -508,7 +508,7 @@ namespace flame
 				int global_vtx_offset = 0;
 				int global_idx_offset = 0;
 				ImagePtr last_tex = nullptr;
-				ImGui::ImageViewType last_view_type = { ImGui::ImageViewRGBA, ImGui::ImageViewLinear };
+				ImGui::ImageViewType last_view_type;
 				for (int n = 0; n < draw_data->CmdListsCount; n++)
 				{
 					const ImDrawList* cmd_list = draw_data->CmdLists[n];
@@ -527,6 +527,8 @@ namespace flame
 							continue;
 
 						ImGui::ImageViewType view_type;
+						if (pcmd->UserCallbackData)
+							int cut = 1;
 						memcpy(&view_type, &pcmd->UserCallbackData, sizeof(view_type));
 						if (last_tex != pcmd->TextureId || last_view_type != view_type)
 						{
@@ -542,6 +544,10 @@ namespace flame
 							case ImGui::ImageViewB: swizzle = { SwizzleZero, SwizzleZero, SwizzleB, SwizzleOne }; break;
 							case ImGui::ImageViewA: swizzle = { SwizzleA, SwizzleA, SwizzleA, SwizzleOne }; break;
 							case ImGui::ImageViewRGB: swizzle = { SwizzleR, SwizzleG, SwizzleB, SwizzleOne }; break;
+							case ImGui::ImageViewRRR: swizzle = { SwizzleR, SwizzleR, SwizzleR, SwizzleOne }; break;
+							case ImGui::ImageViewGGG: swizzle = { SwizzleG, SwizzleG, SwizzleG, SwizzleOne }; break;
+							case ImGui::ImageViewBBB: swizzle = { SwizzleB, SwizzleB, SwizzleB, SwizzleOne }; break;
+							case ImGui::ImageViewAAA: swizzle = { SwizzleA, SwizzleA, SwizzleA, SwizzleOne }; break;
 							}
 							switch (view_type.sampler)
 							{
@@ -552,7 +558,13 @@ namespace flame
 								sampler = sp_nearest;
 								break;
 							}
-							cb->bind_descriptor_set(0, tex ? tex->get_shader_read_src(0, 0, sampler, swizzle) : imgui_ds.get());
+							if (tex)
+							{
+								cb->image_barrier(tex, { view_type.level, 1, view_type.layer, 1 }, graphics::ImageLayoutShaderReadOnly);
+								cb->bind_descriptor_set(0, tex->get_shader_read_src(view_type.level, view_type.layer, sampler, swizzle));
+							}
+							else
+								cb->bind_descriptor_set(0, imgui_ds.get());
 							last_tex = tex;
 							last_view_type = view_type;
 						}

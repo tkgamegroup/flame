@@ -114,11 +114,11 @@ namespace flame
 					{
 						for (auto y = 0; y < preview_size; y++)
 						{
-							texture.image->set_pixel(x, y, 0, 0, 
+							texture.image->set_staging_pixel(x, y, 0, 0, 
 								vec4(voronoi_noise(vec2(x, y) / (float)preview_size * scale), 0.f, 0.f, 0.f));
 						}
 					}
-					texture.image->upload_pixels(0, 0, preview_size, preview_size, 0, 0);
+					texture.image->upload_staging_pixels(0, 0, preview_size, preview_size, 0, 0);
 				},
 				nullptr,
 				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {

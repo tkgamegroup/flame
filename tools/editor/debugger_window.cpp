@@ -22,18 +22,37 @@ void DebuggerView::on_draw()
 	ImGui::Begin(name.c_str(), &opened);
 	imgui_window = ImGui::GetCurrentWindow();
 
-	if (ImGui::TreeNode("Images"))
+	title_context_menu();
+
+	if (ImGui::BeginTable("main", 2, ImGuiTableFlags_Resizable))
 	{
-		auto all_images = graphics::Debug::get_images();
-		for (auto i : all_images)
+		ImGui::TableSetupColumn("left", ImGuiTableColumnFlags_WidthFixed, 200.f);
+		ImGui::TableNextRow();
+
+		ImGui::TableSetColumnIndex(0);
+
+		auto found_last_image = false;
+		if (ImGui::TreeNode("Images"))
 		{
-			if (ImGui::TreeNode(std::format("{} {} {}", str(i), TypeInfo::serialize_t(i->format), str(i->extent)).c_str()))
+			auto all_images = graphics::Debug::get_images();
+			for (auto i : all_images)
 			{
-				ImGui::Image(i, (vec2)i->extent);
-				ImGui::TreePop();
+				auto display_name = std::format("{} {}", i->filename.string(), str(i));
+				if (ImGui::Selectable(display_name.c_str(), i == selected_image))
+					selected_image = i;
+				if (i == selected_image)
+					found_last_image = true;
 			}
+			ImGui::TreePop();
 		}
-		ImGui::TreePop();
+		if (!found_last_image)
+			selected_image = nullptr;
+
+		ImGui::TableSetColumnIndex(1);
+		if (selected_image)
+			view_image(selected_image, &view_swizzle, &view_sampler, &view_level, &view_layer, &view_scale);
+
+		ImGui::EndTable();
 	}
 
 	ImGui::End();

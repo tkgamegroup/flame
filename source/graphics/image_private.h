@@ -27,13 +27,14 @@ namespace flame
 			void change_layout(ImageLayout dst_layout) override;
 			void clear(const vec4& color, ImageLayout dst_layout) override;
 
-			void stage_surface_data(uint level, uint layer);
 			vec4 get_pixel(int x, int y, uint level, uint layer) override;
-			void set_pixel(int x, int y, uint level, uint layer, const vec4& v) override;
-			void upload_pixels(int x, int y, int w, int h, uint level, uint layer) override;
-			void clear_staging_data() override;
+			void stage_surface_data(uint level, uint layer);
+			vec4 get_staging_pixel(int x, int y, uint level, uint layer) override;
+			void set_staging_pixel(int x, int y, uint level, uint layer, const vec4& v) override;
+			void upload_staging_pixels(int x, int y, int w, int h, uint level, uint layer) override;
+			void clear_staging_pixels() override;
 
-			vec4 linear_sample(const vec2& uv, uint level, uint layer) override;
+			vec4 linear_sample_staging_pixels(const vec2& uv, uint level, uint layer) override;
 
 			void save(const std::filesystem::path& filename, bool compress) override;
 
@@ -53,13 +54,10 @@ namespace flame
 		{
 			if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
 				return ImageAspectColor;
+			if (fmt >= Format_DepthStencil_Begin && fmt <= Format_DepthStencil_End)
+				return ImageAspectDepth | ImageAspectStencil;
 			if (fmt >= Format_Depth_Begin && fmt <= Format_Depth_End)
-			{
-				auto a = (int)ImageAspectDepth;
-				if (fmt >= Format_DepthStencil_Begin && fmt <= Format_DepthStencil_End)
-					a |= ImageAspectStencil;
-				return (ImageAspectFlags)a;
-			}
+				return ImageAspectDepth;
 			return ImageAspectColor;
 		}
 

@@ -24,7 +24,7 @@ namespace flame
 {
 	const auto col_fmt = graphics::Format::Format_R16G16B16A16_SFLOAT;
 	const auto dep_fmt = graphics::Format::Format_Depth32;
-	const auto esm_fmt = graphics::Format::Format_Depth32;
+	const auto esm_fmt = graphics::Format::Format_R32_SFLOAT;
 	const auto sample_count = graphics::SampleCount_4;
 	const auto ShadowMapSize = uvec2(2048);
 	const auto DirShadowMaxCount = 4U;
@@ -69,6 +69,7 @@ namespace flame
 	graphics::RenderpassPtr rp_gbuf = nullptr;
 	graphics::RenderpassPtr rp_dep = nullptr;
 	graphics::RenderpassPtr rp_col_dep = nullptr;
+	graphics::RenderpassPtr rp_esm = nullptr;
 	graphics::RenderpassPtr rp_primitive = nullptr;
 	// Images
 	std::unique_ptr<graphics::Image> img_black;
@@ -79,10 +80,13 @@ namespace flame
 	std::unique_ptr<graphics::Image> img_black3D;
 	std::unique_ptr<graphics::Image> img_white3D;
 	// Shadow Maps
-	std::vector<std::unique_ptr<graphics::Image>>	imgs_dir_shadow;
-	std::vector<std::unique_ptr<graphics::Image>>	imgs_pt_shadow;
-	std::unique_ptr<graphics::Image>				img_dir_shadow_back;
-	std::unique_ptr<graphics::Image>				img_pt_shadow_back;
+	std::unique_ptr<graphics::Image>					img_shadow_depth;
+	std::vector<std::unique_ptr<graphics::Image>>		imgs_dir_shadow;
+	std::vector<std::unique_ptr<graphics::Image>>		imgs_pt_shadow;
+	std::vector<std::unique_ptr<graphics::Framebuffer>> fbs_dir_shadow;
+	std::vector<std::unique_ptr<graphics::Framebuffer>> fbs_pt_shadow;
+	std::unique_ptr<graphics::Image>					img_dir_shadow_back;
+	std::unique_ptr<graphics::Image>					img_pt_shadow_back;
 	// Generic Pipeline Layouts
 	graphics::PipelineLayoutPtr pll_fwd = nullptr;
 	graphics::PipelineLayoutPtr pll_gbuf = nullptr;
@@ -232,7 +236,7 @@ namespace flame
 		case "marching_cubes"_h:
 			if (modifier2 == "DEPTH_ONLY"_h)
 			{
-				defines.push_back("rp=" + str(rp_dep));
+				defines.push_back("rp=" + str(rp_esm));
 				defines.push_back("pll=" + str(pll_fwd));
 				defines.push_back("cull_mode=" + TypeInfo::serialize_t(graphics::CullModeFront));
 			}
@@ -490,25 +494,25 @@ namespace flame
 		auto img0 = targets.front()->image;
 		auto tar_ext = img0->extent;
 
-		auto device = graphics::Device::current();
+		auto graphics_device = graphics::Device::current();
 		static auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
 		static auto sp_nearest_dep = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToBorder);
 
 		img_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
-		img_dst->filename = L"##img_dst";
-		device->set_object_debug_name(img_dst.get(), "Dst");
+		img_dst->filename = L"#img_dst";
+		graphics_device->set_object_debug_name(img_dst.get(), "Dst");
 		img_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-		img_dep->filename = L"##img_dep";
-		device->set_object_debug_name(img_dep.get(), "Dep");
+		img_dep->filename = L"#img_dep";
+		graphics_device->set_object_debug_name(img_dep.get(), "Dep");
 
 		if (mode != RenderModeSimple)
 		{
 			img_back0.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 0));
-			img_back0->filename = L"##img_back0";
-			device->set_object_debug_name(img_back0.get(), "Back0");
+			img_back0->filename = L"#img_back0";
+			graphics_device->set_object_debug_name(img_back0.get(), "Back0");
 			img_back1.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-			img_back1->filename = L"##img_back1";
-			device->set_object_debug_name(img_back1.get(), "Back1");
+			img_back1->filename = L"#img_back1";
+			graphics_device->set_object_debug_name(img_back1.get(), "Back1");
 		}
 
 		img_dst_ms.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
@@ -518,9 +522,17 @@ namespace flame
 			img_last_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
 			img_last_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 			img_gbufferA.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+			img_gbufferA->filename = L"#img_gbufferA";
+			graphics_device->set_object_debug_name(img_gbufferA.get(), "GBufferA");
 			img_gbufferB.reset(graphics::Image::create(graphics::Format_A2R10G10B10_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+			img_gbufferB->filename = L"#img_gbufferB";
+			graphics_device->set_object_debug_name(img_gbufferB.get(), "GBufferB");
 			img_gbufferC.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+			img_gbufferC->filename = L"#img_gbufferC";
+			graphics_device->set_object_debug_name(img_gbufferC.get(), "GBufferC");
 			img_gbufferD.reset(graphics::Image::create(graphics::Format_B10G11R11_UFLOAT, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+			img_gbufferD->filename = L"#img_gbufferD";
+			graphics_device->set_object_debug_name(img_gbufferC.get(), "GBufferD");
 		}
 
 		if (mode != RenderModeSimple)
@@ -626,6 +638,9 @@ namespace flame
 		rp_col_dep = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
 			{ "col_fmt=" + TypeInfo::serialize_t(graphics::Format_R8G8B8A8_UNORM),
 			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
+		rp_esm = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
+			{ "col_fmt=" + TypeInfo::serialize_t(esm_fmt),
+			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
 		rp_primitive = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
 			{ "col_fmt=" + TypeInfo::serialize_t(col_fmt),
 			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt),
@@ -690,18 +705,39 @@ namespace flame
 		buf_lighting.create(graphics::BufferUsageStorage, dsl_lighting->get_buf_ui("Lighting"_h));
 		dir_lights.init(buf_lighting.child_type<TI_A>("dir_lights"_h)->extent);
 		pt_lights.init(buf_lighting.child_type<TI_A>("pt_lights"_h)->extent);
+		img_shadow_depth.reset(graphics::Image::create(dep_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment));
+		img_shadow_depth->filename = L"#img_shadow_depth";
+		graphics_device->set_object_debug_name(img_shadow_depth.get(), "Shadow Depth");
 		imgs_dir_shadow.resize(dsl_lighting->get_binding("dir_shadow_maps"_h).count);
-		for (auto& i : imgs_dir_shadow)
+		for (auto i = 0; i < imgs_dir_shadow.size(); i++)
 		{
-			i.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels));
-			i->change_layout(graphics::ImageLayoutShaderReadOnly);
+			auto img = graphics::Image::create(esm_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels);
+			imgs_dir_shadow[i].reset(img);
+			img->filename = L"#img_dir_shadow" + wstr(i);
+			graphics_device->set_object_debug_name(img, "Directional Shadow " + str(i));
+			img->change_layout(graphics::ImageLayoutShaderReadOnly);
+		}
+		for (auto i = 0; i < imgs_dir_shadow.size(); i++)
+		{
+			auto img = imgs_dir_shadow[i].get();
+			for (auto ly = 0; ly < img->n_layers; ly++)
+				fbs_dir_shadow.emplace_back(graphics::Framebuffer::create(rp_esm, { img->get_view({ 0, 1, (uint)ly }), img_shadow_depth->get_view() }));
 		}
 		img_dir_shadow_back.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels));
 		imgs_pt_shadow.resize(dsl_lighting->get_binding("pt_shadow_maps"_h).count);
-		for (auto& i : imgs_pt_shadow)
+		for (auto i = 0; i < imgs_pt_shadow.size(); i++)
 		{
-			i.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize / 2U, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1));
-			i->change_layout(graphics::ImageLayoutShaderReadOnly);
+			auto img = graphics::Image::create(esm_fmt, uvec3(ShadowMapSize / 2U, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1);
+			imgs_pt_shadow[i].reset(img);
+			img->filename = L"#img_pt_shadow" + wstr(i);
+			graphics_device->set_object_debug_name(img, "Point Shadow " + str(i));
+			img->change_layout(graphics::ImageLayoutShaderReadOnly);
+		}
+		for (auto i = 0; i < imgs_pt_shadow.size(); i++)
+		{
+			auto img = imgs_pt_shadow[i].get();
+			for (auto ly = 0; ly < img->n_layers; ly++)
+				fbs_pt_shadow.emplace_back(graphics::Framebuffer::create(rp_esm, { img->get_view({ 0, 1, (uint)ly }), img_shadow_depth->get_view() }));
 		}
 		img_pt_shadow_back.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize / 2U, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1));
 		ds_lighting->set_buffer("Lighting"_h, 0, buf_lighting.buf.get());
@@ -934,7 +970,7 @@ namespace flame
 	{
 		if (csm_levels == lv)
 			return;
-		csm_levels = lv;
+		csm_levels = min(lv, 4U);
 
 		dirty = true;
 	}
@@ -2153,7 +2189,7 @@ namespace flame
 					auto& s = dir_shadows[i];
 					for (auto lv = 0U; lv < csm_levels; lv++)
 					{
-						cb->begin_renderpass(nullptr, imgs_dir_shadow[i]->get_shader_write_dst(0, lv, graphics::AttachmentLoadClear), { vec4(1.f, 0.f, 0.f, 0.f) });
+						cb->begin_renderpass(nullptr, fbs_dir_shadow[i * DirShadowMaxLevels + lv].get(), { vec4(1.f, 0.f, 0.f, 0.f), vec4(1.f, 0.f, 0.f, 0.f) });
 						prm_fwd.bind_dss(cb);
 						prm_fwd.pc.mark_dirty_c("i"_h).as<ivec4>() = ivec4(0, i, lv, 0);
 						prm_fwd.push_constant(cb);
@@ -2198,14 +2234,14 @@ namespace flame
 					{
 						cb->image_barrier(img_dir_shadow_back.get(), { 0U, 1U, lv, 1 }, graphics::ImageLayoutAttachment);
 						cb->begin_renderpass(nullptr, img_dir_shadow_back->get_shader_write_dst(0, lv));
-						cb->bind_pipeline(pl_blur_depth_h);
+						cb->bind_pipeline(pl_blur_h);
 						cb->bind_descriptor_set(0, imgs_dir_shadow[i]->get_shader_read_src(0, lv));
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 
 						cb->image_barrier(img_dir_shadow_back.get(), { 0U, 1U, lv, 1 }, graphics::ImageLayoutShaderReadOnly);
 						cb->begin_renderpass(nullptr, imgs_dir_shadow[i]->get_shader_write_dst(0, lv));
-						cb->bind_pipeline(pl_blur_depth_v);
+						cb->bind_pipeline(pl_blur_v);
 						cb->bind_descriptor_set(0, img_dir_shadow_back->get_shader_read_src(0, lv));
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
@@ -2294,10 +2330,6 @@ namespace flame
 					auto pl_mod = 0;
 					switch (mode)
 					{
-					case RenderModeAlbedoData: pl_mod = "ALBEDO_DATA"_h; break;
-					case RenderModeNormalData: pl_mod = "NORMAL_DATA"_h; break;
-					case RenderModeMetallicData: pl_mod = "METALLIC_DATA"_h; break;
-					case RenderModeRoughnessData: pl_mod = "ROUGHNESS_DATA"_h; break;
 					case RenderModeIBLValue: pl_mod = "IBL_VALUE"_h; break;
 					case RenderModeFogValue: pl_mod = "FOG_VALUE"_h; break;
 					}
@@ -2401,7 +2433,7 @@ namespace flame
 
 					cb->end_renderpass();
 				}
-				else
+				else if (mode == RenderModeSimple)
 				{
 					draw_data.reset(PassPickUp, CateMesh);
 					for (auto& n : camera_culled_nodes)
@@ -3063,6 +3095,22 @@ namespace flame
 		}
 
 		return ret;
+	}
+
+	graphics::ImagePtr sRendererPrivate::get_image(uint name)
+	{
+		switch (name)
+		{
+		case "GBufferA"_h:
+			return render_tasks.front()->img_gbufferA.get();
+		case "GBufferB"_h:
+			return render_tasks.front()->img_gbufferB.get();
+		case "GBufferC"_h:
+			return render_tasks.front()->img_gbufferC.get();
+		case "GBufferD"_h:
+			return render_tasks.front()->img_gbufferD.get();
+		}
+		return nullptr;
 	}
 
 	void sRendererPrivate::begin_hud(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const vec2& item_spacing)

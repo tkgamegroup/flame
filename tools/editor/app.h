@@ -143,6 +143,7 @@ inline Window::~Window()
 void show_entities_menu();
 TypeInfo* show_types_menu();
 void open_message_dialog(const std::string& title, const std::string& message);
+void view_image(graphics::ImagePtr image, int* view_swizzle, int* view_sampler, int* view_level, int* view_layer, float* view_scale);
 
 struct ModelPreviewer
 {

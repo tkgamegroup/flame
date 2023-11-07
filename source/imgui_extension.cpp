@@ -58,7 +58,7 @@ namespace ImGui
 	ImageViewType GetCurrentImageViewType()
 	{
 		if (image_view_types.empty())
-			return { ImageViewRGBA, ImageViewLinear };
+			return {};
 		return image_view_types.top();
 	}
 
