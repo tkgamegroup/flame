@@ -64,12 +64,17 @@ vec3 get_lighting(vec3 world_pos, float distv, vec3 N, vec3 V, float metallic, v
 			for (uint lv = 0; lv < 4; lv++)
 			{
 				vec4 splits = lighting.dir_shadows[li.shadow_index].splits;
-				if (distv < splits[lv])
+				float far = splits[lv];
+				if (distv < far)
 				{
 					vec4 coordl = lighting.dir_shadows[li.shadow_index].mats[lv] * vec4(world_pos, 1.0);
+					coordl /= coordl.w;
 					coordl.xy = coordl.xy * 0.5 + 0.5;
 					float ref = texture(dir_shadow_maps[li.shadow_index], vec3(coordl.xy, lv)).r;
-					f_shadow *= clamp(exp(-lighting.esm_factor * (coordl.z - ref)), 0.0, 1.0);
+					float shadow_factor = saturate(ref * exp(-lighting.esm_factor * coordl.z));
+					shadow_factor = linstep(lighting.shadow_bleeding_reduction, 1.0, shadow_factor);
+					shadow_factor = lighting.shadow_darkening + (1.0 - lighting.shadow_darkening) * shadow_factor;
+					f_shadow *= shadow_factor;
 					break;
 				}
 			}
@@ -99,9 +104,12 @@ vec3 get_lighting(vec3 world_pos, float distv, vec3 N, vec3 V, float metallic, v
 			float far = lighting.pt_shadows[li.shadow_index].far;
 			if (dist < far)
 			{
-				float ref = texture(pt_shadow_maps[li.shadow_index], -L).r * 2.0 - 1.0;
-				ref = linear_depth(lighting.pt_shadows[li.shadow_index].near, far, ref);
-				f_shadow = clamp(exp(-lighting.esm_factor * (dist - ref)), 0.0, 1.0);
+				float ref = texture(pt_shadow_maps[li.shadow_index], -L).r;
+				dist /= far;
+				float shadow_factor = saturate(ref * exp(-lighting.esm_factor * dist));
+				shadow_factor = linstep(lighting.shadow_bleeding_reduction, 1.0, shadow_factor);
+				shadow_factor = lighting.shadow_darkening + (1.0 - lighting.shadow_darkening) * shadow_factor;
+				f_shadow *= shadow_factor;
 			}
 		}
 		

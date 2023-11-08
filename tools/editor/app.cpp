@@ -271,7 +271,7 @@ void open_message_dialog(const std::string& title, const std::string& message)
 		ImGui::OpenMessageDialog(title, message);
 }
 
-void view_image(graphics::ImagePtr image, int* view_swizzle, int* view_sampler, int* view_level, int* view_layer, float* view_scale)
+void view_image(graphics::ImagePtr image, int* view_swizzle, int* view_sampler, int* view_level, int* view_layer, float* view_zoom, float* view_range_min, float* view_range_max)
 {
 	ImGui::PushItemWidth(100.f);
 	static const char* swizzle_names[] = {
@@ -291,13 +291,16 @@ void view_image(graphics::ImagePtr image, int* view_swizzle, int* view_sampler, 
 	ImGui::SameLine();
 	ImGui::SliderInt("Layer", view_layer, 0, image->n_layers - 1);
 	ImGui::SameLine();
-	ImGui::DragFloat("Scale", view_scale, 0.01f, 0.01f, 10.f);
+	ImGui::DragFloat("Zoom", view_zoom, 0.01f, 0.01f, 10.f);
+	ImGui::SameLine();
+	ImGui::DragFloatRange2("Range", view_range_min, view_range_max, 0.01f, 0.f, 1.f);
 	ImGui::PopItemWidth();
 
 	//ImGui::BeginChild("image", vec2(-2, -2), false, ImGuiWindowFlags_HorizontalScrollbar);
-	ImGui::PushImageViewType(ImGui::ImageViewType{ (ImGui::ImageViewSwizzle)*view_swizzle, (ImGui::ImageViewSampler)*view_sampler, (uint)*view_level, (uint)*view_layer });
+	ImGui::PushImageViewType(ImGui::ImageViewArguments{ (ImGui::ImageViewSwizzle)*view_swizzle, (ImGui::ImageViewSampler)*view_sampler, 
+		(uint)*view_level, (uint)*view_layer, (ushort)packHalf1x16(*view_range_min), (ushort)packHalf1x16(*view_range_max) });
 	auto sz = image->levels[*view_level].extent;
-	ImGui::Image(image, vec2(sz) * (*view_scale));
+	ImGui::Image(image, vec2(sz) * (*view_zoom));
 	ImGui::PopImageViewType();
 	if (ImGui::IsItemHovered())
 	{

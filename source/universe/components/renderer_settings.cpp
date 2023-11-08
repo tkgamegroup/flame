@@ -109,6 +109,26 @@ namespace flame
 			sRenderer::instance()->set_esm_factor(esm_factor);
 	}
 
+	void cRendererSettingsPrivate::set_shadow_bleeding_reduction(float f)
+	{
+		if (shadow_bleeding_reduction == f)
+			return;
+		shadow_bleeding_reduction = f;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_shadow_bleeding_reduction(shadow_bleeding_reduction);
+	}
+
+	void cRendererSettingsPrivate::set_shadow_darkening(float f)
+	{
+		if (shadow_darkening == f)
+			return;
+		shadow_darkening = f;
+
+		if (!settings.empty() && settings.front() == this)
+			sRenderer::instance()->set_shadow_darkening(shadow_darkening);
+	}
+
 	void cRendererSettingsPrivate::set_post_processing_enable(bool v)
 	{
 		if (post_processing_enable == v)
@@ -280,6 +300,8 @@ namespace flame
 			sRenderer::instance()->set_shadow_distance(shadow_distance);
 			sRenderer::instance()->set_csm_levels(csm_levels);
 			sRenderer::instance()->set_esm_factor(esm_factor);
+			sRenderer::instance()->set_shadow_bleeding_reduction(shadow_bleeding_reduction);
+			sRenderer::instance()->set_shadow_darkening(shadow_darkening);
 			sRenderer::instance()->set_post_processing_enable(post_processing_enable);
 			sRenderer::instance()->set_ssr_enable(ssr_enable);
 			sRenderer::instance()->set_ssr_thickness(ssr_thickness);

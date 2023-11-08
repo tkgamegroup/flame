@@ -498,9 +498,13 @@ namespace flame
 				cb->bind_index_buffer(imgui_buf_idx.buf.get(), sizeof(ImDrawIdx) == 2 ? IndiceTypeUshort : IndiceTypeUint);
 				cb->bind_descriptor_set(0, imgui_ds.get());
 				auto scale = 2.f / vec2(draw_data->DisplaySize.x, draw_data->DisplaySize.y);
-				cb->push_constant_t(vec4(scale,
-					-1.f - draw_data->DisplayPos.x * scale[0],
-					-1.f - draw_data->DisplayPos.y * scale[1]));
+				auto translate = vec2(-1.f) - draw_data->DisplayPos * scale;
+				vec2 view_range(0.f, 1.f);
+				float pc_data[6];
+				memcpy(pc_data + 0, &scale,			sizeof(vec2));
+				memcpy(pc_data + 2, &translate,		sizeof(vec2));
+				memcpy(pc_data + 4, &view_range,	sizeof(vec2));
+				cb->push_constant(0, sizeof(pc_data), pc_data);
 
 				ImVec2 clip_off = draw_data->DisplayPos;
 				ImVec2 clip_scale = draw_data->FramebufferScale;
@@ -508,7 +512,7 @@ namespace flame
 				int global_vtx_offset = 0;
 				int global_idx_offset = 0;
 				ImagePtr last_tex = nullptr;
-				ImGui::ImageViewType last_view_type;
+				ImGui::ImageViewArguments last_view_args;
 				for (int n = 0; n < draw_data->CmdListsCount; n++)
 				{
 					const ImDrawList* cmd_list = draw_data->CmdLists[n];
@@ -526,47 +530,61 @@ namespace flame
 						if (clip_max.x < clip_min.x || clip_max.y < clip_min.y)
 							continue;
 
-						ImGui::ImageViewType view_type;
+						ImGui::ImageViewArguments view_args;
 						if (pcmd->UserCallbackData)
 							int cut = 1;
-						memcpy(&view_type, &pcmd->UserCallbackData, sizeof(view_type));
-						if (last_tex != pcmd->TextureId || last_view_type != view_type)
+						memcpy(&view_args, &pcmd->UserCallbackData, sizeof(view_args));
+						if (last_tex != pcmd->TextureId || last_view_args != view_args)
 						{
 							static auto sp_nearest = Sampler::get(FilterNearest, FilterNearest, false, AddressClampToEdge);
 
 							auto tex = (ImagePtr)pcmd->TextureId;
-							ImageSwizzle swizzle;
-							SamplerPtr sampler;
-							switch (view_type.swizzle)
-							{
-							case ImGui::ImageViewR: swizzle = { SwizzleR, SwizzleZero, SwizzleZero, SwizzleOne }; break;
-							case ImGui::ImageViewG: swizzle = { SwizzleZero, SwizzleG, SwizzleZero, SwizzleOne }; break;
-							case ImGui::ImageViewB: swizzle = { SwizzleZero, SwizzleZero, SwizzleB, SwizzleOne }; break;
-							case ImGui::ImageViewA: swizzle = { SwizzleA, SwizzleA, SwizzleA, SwizzleOne }; break;
-							case ImGui::ImageViewRGB: swizzle = { SwizzleR, SwizzleG, SwizzleB, SwizzleOne }; break;
-							case ImGui::ImageViewRRR: swizzle = { SwizzleR, SwizzleR, SwizzleR, SwizzleOne }; break;
-							case ImGui::ImageViewGGG: swizzle = { SwizzleG, SwizzleG, SwizzleG, SwizzleOne }; break;
-							case ImGui::ImageViewBBB: swizzle = { SwizzleB, SwizzleB, SwizzleB, SwizzleOne }; break;
-							case ImGui::ImageViewAAA: swizzle = { SwizzleA, SwizzleA, SwizzleA, SwizzleOne }; break;
-							}
-							switch (view_type.sampler)
-							{
-							case ImGui::ImageViewLinear:
-								sampler = nullptr;
-								break;
-							case ImGui::ImageViewNearest:
-								sampler = sp_nearest;
-								break;
-							}
 							if (tex)
 							{
-								cb->image_barrier(tex, { view_type.level, 1, view_type.layer, 1 }, graphics::ImageLayoutShaderReadOnly);
-								cb->bind_descriptor_set(0, tex->get_shader_read_src(view_type.level, view_type.layer, sampler, swizzle));
+								ImageSwizzle swizzle;
+								SamplerPtr sampler;
+								switch (view_args.swizzle)
+								{
+								case ImGui::ImageViewR: swizzle = { SwizzleR, SwizzleZero, SwizzleZero, SwizzleOne }; break;
+								case ImGui::ImageViewG: swizzle = { SwizzleZero, SwizzleG, SwizzleZero, SwizzleOne }; break;
+								case ImGui::ImageViewB: swizzle = { SwizzleZero, SwizzleZero, SwizzleB, SwizzleOne }; break;
+								case ImGui::ImageViewA: swizzle = { SwizzleA, SwizzleA, SwizzleA, SwizzleOne }; break;
+								case ImGui::ImageViewRGB: swizzle = { SwizzleR, SwizzleG, SwizzleB, SwizzleOne }; break;
+								case ImGui::ImageViewRRR: swizzle = { SwizzleR, SwizzleR, SwizzleR, SwizzleOne }; break;
+								case ImGui::ImageViewGGG: swizzle = { SwizzleG, SwizzleG, SwizzleG, SwizzleOne }; break;
+								case ImGui::ImageViewBBB: swizzle = { SwizzleB, SwizzleB, SwizzleB, SwizzleOne }; break;
+								case ImGui::ImageViewAAA: swizzle = { SwizzleA, SwizzleA, SwizzleA, SwizzleOne }; break;
+								}
+								switch (view_args.sampler)
+								{
+								case ImGui::ImageViewLinear:
+									sampler = nullptr;
+									break;
+								case ImGui::ImageViewNearest:
+									sampler = sp_nearest;
+									break;
+								}
+
+								cb->image_barrier(tex, { view_args.level, 1, view_args.layer, 1 }, graphics::ImageLayoutShaderReadOnly);
+								cb->bind_descriptor_set(0, tex->get_shader_read_src(view_args.level, view_args.layer, sampler, swizzle));
+								
+								if (!(view_args.range_min == 0 && (view_args.range_max == 0 || view_args.range_max == 15360)))
+								{
+									vec2 range;
+									range.x = unpackHalf1x16(view_args.range_min);
+									range.y = unpackHalf1x16(view_args.range_max);
+									cb->push_constant(sizeof(float) * 4, sizeof(range), &range);
+								}
+								else
+									cb->push_constant_t(vec2(0.f, 1.f), sizeof(float) * 4);
 							}
 							else
+							{
 								cb->bind_descriptor_set(0, imgui_ds.get());
+								cb->push_constant_t(vec2(0.f, 1.f), sizeof(float) * 4);
+							}
 							last_tex = tex;
-							last_view_type = view_type;
+							last_view_args = view_args;
 						}
 
 						cb->set_scissor(Rect(clip_min.x, clip_min.y, clip_max.x, clip_max.y));

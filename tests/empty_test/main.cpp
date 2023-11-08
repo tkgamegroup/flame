@@ -7,8 +7,7 @@ using namespace flame;
 
 int main(int argc, char** args) 
 {
-	mat4x3 a = mat4x3(mat3(1.f));
-	mat3x4 b = mat3x4(mat3(1.f));
+	auto wtf = glm::packHalf2x16(vec2(0, 1));
 	return 0;
 }
 

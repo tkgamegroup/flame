@@ -53,29 +53,29 @@ namespace ImGui
 		return clicked;
 	}
 
-	std::stack<ImageViewType> image_view_types;
+	std::stack<ImageViewArguments> image_view_args_list;
 
-	ImageViewType GetCurrentImageViewType()
+	ImageViewArguments GetCurrentImageViewType()
 	{
-		if (image_view_types.empty())
+		if (image_view_args_list.empty())
 			return {};
-		return image_view_types.top();
+		return image_view_args_list.top();
 	}
 
 	static int cmd_beg;
 
-	void PushImageViewType(ImageViewType type)
+	void PushImageViewType(ImageViewArguments args)
 	{
 		cmd_beg = GetWindowDrawList()->CmdBuffer.Size;
-		image_view_types.push(type);
+		image_view_args_list.push(args);
 	}
 
 	void PopImageViewType()
 	{
-		auto type = image_view_types.top();
-		image_view_types.pop();
+		auto args = image_view_args_list.top();
+		image_view_args_list.pop();
 		auto& cmds = GetWindowDrawList()->CmdBuffer;
 		for (auto i = cmd_beg; i < cmds.Size; i++)
-			memcpy(&cmds[i].UserCallbackData, &type, sizeof(type));
+			memcpy(&cmds[i].UserCallbackData, &args, sizeof(args));
 	}
 }

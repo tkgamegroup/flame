@@ -8,7 +8,9 @@ struct DebuggerView : View
 	int view_sampler = ImGui::ImageViewLinear;
 	int view_level = 0;
 	int view_layer = 0;
-	float view_scale = 1.f;
+	float view_zoom = 1.f;
+	float view_range_min = 0.f;
+	float view_range_max = 1.f;
 
 	graphics::ImagePtr selected_image = nullptr;
 

@@ -16,6 +16,51 @@ float length_squared(vec3 v)
 	return v.x * v.x + v.y * v.y + v.z * v.z;
 }
 
+float saturate(float x)
+{
+	return clamp(x, 0.0, 1.0);
+}
+
+vec2 saturate(vec2 x)
+{
+	return clamp(x, vec2(0.0), vec2(1.0));
+}
+
+vec3 saturate(vec3 x)
+{
+	return clamp(x, vec3(0.0), vec3(1.0));
+}
+
+vec4 saturate(vec4 x)
+{
+	return clamp(x, vec4(0.0), vec4(1.0));
+}
+
+float map_01(float x, float v0, float v1)
+{
+  return (x - v0) / (v1 - v0);
+}
+
+vec2 map_01(vec2 x, float v0, float v1)
+{
+  return vec2(map_01(x.x, v0, v1), map_01(x.y, v0, v1));
+}
+
+vec3 map_01(vec3 x, float v0, float v1)
+{
+  return vec3(map_01(x.x, v0, v1), map_01(x.y, v0, v1), map_01(x.z, v0, v1));
+}
+
+vec4 map_01(vec4 x, float v0, float v1)
+{
+  return vec4(map_01(x.x, v0, v1), map_01(x.y, v0, v1), map_01(x.z, v0, v1), map_01(x.w, v0, v1));
+}
+
+float linstep(float low, float high, float v)
+{
+	return saturate((v - low) / (high - low));
+}
+
 float rand(vec2 co)
 {
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);

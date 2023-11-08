@@ -458,6 +458,12 @@ namespace flame
 							std::filesystem::path header_path;
 							if (SUS::strip_head_tail_if(tl, "\"", "\""))
 								header_path = tl;
+							else if (SUS::strip_head_tail_if(tl, "<", ">"))
+							{
+								std::filesystem::path p(L"flame/shaders");
+								p /= tl;
+								header_path = Path::get(p);
+							}
 							else
 							{
 								for (auto& d : defines)

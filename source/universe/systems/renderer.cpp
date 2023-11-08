@@ -841,7 +841,9 @@ namespace flame
 		set_fog_color(vec3(1.f));
 		set_shadow_distance(100.f);
 		set_csm_levels(2);
-		set_esm_factor(100.f);
+		set_esm_factor(30.f);
+		set_shadow_bleeding_reduction(0.95f);
+		set_shadow_darkening(0.575f);
 		set_post_processing_enable(true);
 		set_ssao_enable(true);
 		set_ssao_radius(0.5f);
@@ -981,6 +983,26 @@ namespace flame
 			return;
 		esm_factor = f;
 		buf_lighting.mark_dirty_c("esm_factor"_h).as<float>() = esm_factor;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_shadow_bleeding_reduction(float f)
+	{
+		if (shadow_bleeding_reduction == f)
+			return;
+		shadow_bleeding_reduction = f;
+		buf_lighting.mark_dirty_c("shadow_bleeding_reduction"_h).as<float>() = shadow_bleeding_reduction;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_shadow_darkening(float f)
+	{
+		if (shadow_darkening == f)
+			return;
+		shadow_darkening = f;
+		buf_lighting.mark_dirty_c("shadow_darkening"_h).as<float>() = shadow_darkening;
 
 		dirty = true;
 	}

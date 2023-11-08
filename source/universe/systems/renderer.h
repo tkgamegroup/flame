@@ -108,6 +108,14 @@ namespace flame
 		// Reflect
 		virtual void set_esm_factor(float f) = 0;
 		// Reflect
+		float shadow_bleeding_reduction = 0.f;
+		// Reflect
+		virtual void set_shadow_bleeding_reduction(float f) = 0;
+		// Reflect
+		float shadow_darkening = 0.f;
+		// Reflect
+		virtual void set_shadow_darkening(float f) = 0;
+		// Reflect
 		bool post_processing_enable = false;
 		// Reflect
 		virtual void set_post_processing_enable(bool v) = 0;

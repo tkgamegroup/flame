@@ -28,9 +28,17 @@ namespace flame
 		// Reflect
 		virtual void set_csm_levels(uint lv) = 0;
 		// Reflect
-		float esm_factor = 100.f;
+		float esm_factor = 30.f;
 		// Reflect
 		virtual void set_esm_factor(float f) = 0;
+		// Reflect
+		float shadow_bleeding_reduction = 0.95f;
+		// Reflect
+		virtual void set_shadow_bleeding_reduction(float f) = 0;
+		// Reflect
+		float shadow_darkening = 0.575f;
+		// Reflect
+		virtual void set_shadow_darkening(float f) = 0;
 		// Reflect
 		bool post_processing_enable = true;
 		// Reflect

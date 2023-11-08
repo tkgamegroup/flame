@@ -26,15 +26,18 @@ namespace ImGui
 		ImageViewNearest
 	};
 
-	struct ImageViewType
+	struct ImageViewArguments
 	{
 		ImageViewSwizzle swizzle : 8 = ImageViewRGBA;
 		ImageViewSampler sampler : 8 = ImageViewLinear;
 		uint level : 8 = 0;
 		uint layer : 8 = 0;
+
+		uint range_min : 16 = 0;
+		uint range_max : 16 = 15360;
 	};
 
-	inline bool operator==(const ImageViewType& a, const ImageViewType& b)
+	inline bool operator==(const ImageViewArguments& a, const ImageViewArguments& b)
 	{
 		return a.swizzle == b.swizzle && a.sampler == b.sampler && a.level == b.level && a.layer == b.layer;
 	}
@@ -44,7 +47,7 @@ namespace ImGui
 
 	bool ToolButton(const char* label, bool selected = false, float rotate = 0.f);
 
-	ImageViewType GetCurrentImageViewType();
-	void PushImageViewType(ImageViewType type);
+	ImageViewArguments GetCurrentImageViewType();
+	void PushImageViewType(ImageViewArguments args);
 	void PopImageViewType();
 }

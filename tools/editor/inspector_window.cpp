@@ -2408,9 +2408,11 @@ void InspectorView::on_draw()
 						static int view_sampler = ImGui::ImageViewLinear;
 						static int view_level = 0;
 						static int view_layer = 0;
-						static float view_scale = 1.f;
+						static float view_zoom = 1.f;
+						static float view_range_min = 0.f;
+						static float view_range_max = 1.f;
 
-						view_image(image, &view_swizzle, &view_sampler, &view_level, &view_layer, &view_scale);
+						view_image(image, &view_swizzle, &view_sampler, &view_level, &view_layer, &view_zoom, &view_range_min, &view_range_max);
 					}
 				}
 			}

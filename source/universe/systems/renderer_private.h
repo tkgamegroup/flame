@@ -87,6 +87,8 @@ namespace flame
 		void set_shadow_distance(float d) override;
 		void set_csm_levels(uint lv) override;
 		void set_esm_factor(float f) override;
+		void set_shadow_bleeding_reduction(float f) override;
+		void set_shadow_darkening(float f) override;
 		void set_post_processing_enable(bool v) override;
 		void set_ssao_enable(bool v) override;
 		void set_ssao_radius(float v) override;

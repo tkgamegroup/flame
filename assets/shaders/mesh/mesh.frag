@@ -8,8 +8,10 @@
 
 layout(location = 0) in flat uint i_mat_id;
 layout(location = 1) in	     vec2 i_uv;
+#ifdef DEPTH_ONLY
+layout(location = 2) in		 vec4 i_position;
+#else
 layout(location = 2) in flat uint i_color;
-#ifndef DEPTH_ONLY
 layout(location = 3) in      vec3 i_normal;
 layout(location = 4) in      vec3 i_tangent;
 layout(location = 5) in      vec3 i_coordw;
@@ -39,8 +41,12 @@ layout(location = 5) in      vec3 i_coordw;
 void main()
 {
 #ifdef MAT_CODE
-	vec4 color = vec4(((i_color & 0x000000ff)) / 255.0, ((i_color & 0x0000ff00) >> 8) / 255.0,
-		((i_color & 0x00ff0000) >> 16) / 255.0, ((i_color & 0xff000000) >> 24) / 255.0);
+	#ifndef DEPTH_ONLY
+		vec4 color = vec4(((i_color & 0x000000ff)) / 255.0, ((i_color & 0x0000ff00) >> 8) / 255.0,
+			((i_color & 0x00ff0000) >> 16) / 255.0, ((i_color & 0xff000000) >> 24) / 255.0);
+	#else
+		vec4 color = vec4(1.0);
+	#endif
 
 	MaterialInfo material = material.infos[i_mat_id];
 	material_main(material, color);
@@ -60,6 +66,8 @@ void main()
 			o_gbufferC = vec4(0.0, 1.0, 0.0, 0.0);
 			o_gbufferD = vec4(0.0, 0.0, 0.0, 0.0);
 		#endif
+	#else
+		#include <esm_value.glsl>
 	#endif
 #endif
 }

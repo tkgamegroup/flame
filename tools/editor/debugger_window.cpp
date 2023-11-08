@@ -50,7 +50,7 @@ void DebuggerView::on_draw()
 
 		ImGui::TableSetColumnIndex(1);
 		if (selected_image)
-			view_image(selected_image, &view_swizzle, &view_sampler, &view_level, &view_layer, &view_scale);
+			view_image(selected_image, &view_swizzle, &view_sampler, &view_level, &view_layer, &view_zoom, &view_range_min, &view_range_max);
 
 		ImGui::EndTable();
 	}

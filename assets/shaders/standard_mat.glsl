@@ -88,6 +88,6 @@ void material_main(MaterialInfo material, vec4 color)
 			o_gbufferD = vec4(emissive, 0.0);
 		#endif
 	#else // DEPTH_ONLY
-		o_exp_depth = gl_FragCoord.z;
+		#include <esm_value.glsl>
 	#endif // DEPTH_ONLY
 }
