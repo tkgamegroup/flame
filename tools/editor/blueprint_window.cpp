@@ -1610,6 +1610,7 @@ void BlueprintView::on_draw()
 					{
 						if (ImGui::Selectable("Unwrap Block"))
 						{
+							ax::NodeEditor::ClearSelection();
 							blueprint->remove_node(context_node, false);
 							context_node = nullptr;
 						}

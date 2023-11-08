@@ -59,6 +59,74 @@ namespace flame
 			}
 		);
 
+		library->add_template("Arrary Remove If", "",
+			{
+				{
+					.name = "Array",
+					.allowed_types = { TypeInfo::get<voidptr>() }
+				}
+			},
+			{
+				{
+					.name = "ok",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<bool>() },
+					.default_value = "false"
+				},
+				{
+					.name = "to_remove_indices",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<std::vector<int>>() }
+				}
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				auto array_type = inputs[1].type;
+				if (array_type && is_vector(array_type->tag))
+				{
+					auto parray = (std::vector<char>*)inputs[1].data;
+					auto item_type = array_type->get_wrapped();
+					int size = parray->size() / item_type->size;
+
+					block.max_execute_times = size;
+					block.loop_vector_index = 1;
+					block.block_output_index = 3;
+				}
+				else
+					block.max_execute_times = 0;
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto& to_remove_list = *(std::vector<int>*)outputs[2].data;
+				if (!to_remove_list.empty())
+				{
+					auto array_type = inputs[1].type;
+					auto parray = (std::vector<char>*)inputs[1].data;
+					auto item_type = array_type->get_wrapped();
+
+					for (auto i = 0; i < to_remove_list.size(); i++)
+					{
+						auto index = to_remove_list[i];
+						parray->erase(parray->begin() + index * item_type->size, parray->begin() + (index + 1) * item_type->size);
+						for (auto j = i + 1; j < to_remove_list.size(); j++)
+						{
+							if (to_remove_list[j] > index)
+								to_remove_list[j]--;
+						}
+					}
+					to_remove_list.clear();
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				auto ok = *(bool*)outputs[1].data;
+				if (ok)
+				{
+					auto& to_remove_list = *(std::vector<int>*)outputs[2].data;
+					to_remove_list.push_back(execution.block->executed_times);
+					*(bool*)outputs[1].data = false;
+				}
+			}
+		);
+
 		library->add_template("Array Random Sample", "",
 			{
 				{

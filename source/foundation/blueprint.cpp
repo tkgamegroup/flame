@@ -1520,7 +1520,7 @@ namespace flame
 	{
 		for (auto it = groups.begin(); it != groups.end(); it++)
 		{
-			if (it != groups.end())
+			if ((*it)->name_hash == old_name)
 			{
 				(*it)->name = new_name;
 				(*it)->name_hash = sh(new_name.c_str());
