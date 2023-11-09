@@ -12,6 +12,7 @@ namespace flame
 			VkBuffer vk_buffer;
 			VkDeviceMemory vk_memory;
 
+			BufferPrivate();
 			~BufferPrivate();
 
 			void create();
@@ -23,6 +24,8 @@ namespace flame
 
 			void recreate(uint new_size) override;
 		};
+
+		extern std::vector<BufferPtr> buffers;
 	}
 }
 

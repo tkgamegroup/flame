@@ -8,6 +8,12 @@ namespace flame
 	{
 		struct Debug
 		{
+			struct GetBuffers
+			{
+				virtual std::vector<BufferPtr> operator()() = 0;
+			};
+			FLAME_GRAPHICS_API static GetBuffers& get_buffers;
+
 			struct GetImages
 			{
 				virtual std::vector<ImagePtr> operator()() = 0;

@@ -1,5 +1,6 @@
 #include "debug.h"
 #include "material_private.h"
+#include "buffer_private.h"
 #include "image_private.h"
 #include "shader_private.h"
 
@@ -20,6 +21,15 @@ namespace flame
 {
 	namespace graphics
 	{
+		struct DebugGetBuffers : Debug::GetBuffers
+		{
+			std::vector<BufferPtr> operator()() override
+			{
+				return buffers;
+			}
+		}Debug_get_buffers;
+		Debug::GetBuffers& Debug::get_buffers = Debug_get_buffers;
+
 		struct DebugGetImages : Debug::GetImages
 		{
 			std::vector<ImagePtr> operator()() override

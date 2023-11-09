@@ -45,20 +45,21 @@ namespace flame
 			case Format_BC4_UNORM: case Format_BC4_SNORM:
 				return 1;
 			case Format_R16_UNORM:
+			case Format_Depth16:
 				return 2;
 			case Format_R32_SFLOAT:
-				return 4;
-			case Format_R8G8B8A8_UNORM: case Format_B8G8R8A8_UNORM:
+			case Format_R8G8B8A8_UNORM:
+			case Format_B8G8R8A8_UNORM:
+			case Format_A2R10G10B10_UNORM:
+			case Format_B10G11R11_UFLOAT:
 			case Format_BC7_UNORM:
+			case Format_Depth32:
 				return 4;
-			case Format_R16G16B16A16_UNORM: case Format_R16G16B16A16_SFLOAT:
+			case Format_R16G16B16A16_UNORM: 
+			case Format_R16G16B16A16_SFLOAT:
 				return 8;
 			case Format_R32G32B32A32_SFLOAT:
 				return 16;
-			case Format_Depth16:
-				return 2;
-			case Format_Depth32:
-				return 4;
 			}
 			return 0;
 		}
@@ -71,10 +72,13 @@ namespace flame
 			case Format_R16_UNORM:
 			case Format_R32_SFLOAT:
 			case Format_Depth16:
-			case Format_BC4_UNORM: case Format_BC4_SNORM:
+			case Format_BC4_UNORM: 
+			case Format_BC4_SNORM:
 				return 1;
-			case Format_R8G8B8A8_UNORM: case Format_B8G8R8A8_UNORM:
-			case Format_R16G16B16A16_UNORM: case Format_R16G16B16A16_SFLOAT:
+			case Format_R8G8B8A8_UNORM: 
+			case Format_B8G8R8A8_UNORM:
+			case Format_R16G16B16A16_UNORM: 
+			case Format_R16G16B16A16_SFLOAT:
 			case Format_R32G32B32A32_SFLOAT:
 			case Format_BC7_UNORM:
 				return 4;
@@ -87,7 +91,7 @@ namespace flame
 			struct Layer
 			{
 				ImageLayout layout = ImageLayoutUndefined;
-				std::unique_ptr<uchar[]> data;
+				std::unique_ptr<uchar[]> staging_data;
 			};
 
 			struct Level

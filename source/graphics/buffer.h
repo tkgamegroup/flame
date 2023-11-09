@@ -13,6 +13,7 @@ namespace flame
 			MemoryPropertyFlags mem_prop;
 
 			void* mapped = nullptr;
+			UdtInfo* ui = nullptr;
 
 			virtual ~Buffer() {};
 

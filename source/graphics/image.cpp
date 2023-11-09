@@ -281,9 +281,8 @@ namespace flame
 			case Format_R32_SFLOAT:
 			case Format_Depth32:
 				return vec4(((float*)pixel)[0], 0.f, 0.f, 0.f);
-			default:
-				assert(0);
 			}
+			return vec4(0.f);
 		}
 
 		vec4 ImagePrivate::get_pixel(int x, int y, uint level, uint layer)
@@ -312,7 +311,7 @@ namespace flame
 
 			auto& lv = levels[level];
 			auto& ly = lv.layers[layer];
-			if (!ly.data)
+			if (!ly.staging_data)
 			{
 				StagingBuffer sb(lv.data_size);
 				InstanceCommandBuffer cb;
@@ -323,8 +322,8 @@ namespace flame
 				cb->copy_image_to_buffer(this, sb.get(), { &cpy, 1 });
 				cb->image_barrier(this, cpy.img_sub, ImageLayoutShaderReadOnly);
 				cb.excute();
-				ly.data.reset(new uchar[lv.data_size]);
-				memcpy(ly.data.get(), sb->mapped, lv.data_size);
+				ly.staging_data.reset(new uchar[lv.data_size]);
+				memcpy(ly.staging_data.get(), sb->mapped, lv.data_size);
 			}
 		}
 
@@ -341,7 +340,7 @@ namespace flame
 			x = clamp(x, 0, (int)lv.extent.x - 1);
 			y = clamp(y, 0, (int)lv.extent.y - 1);
 
-			auto pixel = ly.data.get() + lv.pitch * y + pixel_size * x;
+			auto pixel = ly.staging_data.get() + lv.pitch * y + pixel_size * x;
 			return pixel_to_vec4(format, pixel);
 		}
 
@@ -358,7 +357,7 @@ namespace flame
 			x = clamp(x, 0, (int)lv.extent.x - 1);
 			y = clamp(y, 0, (int)lv.extent.y - 1);
 
-			auto pixel = ly.data.get() + lv.pitch * y + pixel_size * x;
+			auto pixel = ly.staging_data.get() + lv.pitch * y + pixel_size * x;
 			switch (format)
 			{
 			case Format_R8_UNORM:
@@ -382,12 +381,12 @@ namespace flame
 
 			auto& lv = levels[level];
 			auto& ly = lv.layers[layer];
-			if (ly.data)
+			if (ly.staging_data)
 			{
 				auto img_line_size = image_pitch(lv.extent.x * pixel_size);
 				auto copy_line_size = image_pitch(w * pixel_size);
 				StagingBuffer sb(copy_line_size * h);
-				auto src = ly.data.get() + y * img_line_size + x * pixel_size;
+				auto src = ly.staging_data.get() + y * img_line_size + x * pixel_size;
 				auto dst = (uchar*)sb->mapped;
 				for (auto i = 0; i < h; i++)
 				{
@@ -416,7 +415,7 @@ namespace flame
 				for (auto layer = 0; layer < n_layers; layer++)
 				{
 					auto& ly = lv.layers[layer];
-					ly.data.reset();
+					ly.staging_data.reset();
 				}
 			}
 		}
@@ -513,7 +512,7 @@ namespace flame
 					for (auto j = 0; j < n_layers; j++)
 					{
 						stage_surface_data(i, j);
-						memcpy(gli_texture.data(j, 0, i), levels[i].layers[j].data.get(), size);
+						memcpy(gli_texture.data(j, 0, i), levels[i].layers[j].staging_data.get(), size);
 					}
 				}
 				gli::save(gli_texture, filename.string());
@@ -610,7 +609,7 @@ namespace flame
 				}
 			}
 
-			StagingBuffer sb(lv.data_size, ly.data.get());
+			StagingBuffer sb(lv.data_size, ly.staging_data.get());
 			InstanceCommandBuffer cb;
 			BufferImageCopy cpy;
 			cpy.img_ext = uvec3(lv.extent, 1);

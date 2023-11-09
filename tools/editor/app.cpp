@@ -273,6 +273,12 @@ void open_message_dialog(const std::string& title, const std::string& message)
 
 void view_image(graphics::ImagePtr image, int* view_swizzle, int* view_sampler, int* view_level, int* view_layer, float* view_zoom, float* view_range_min, float* view_range_max)
 {
+	ImGui::Text("Format: %s", TypeInfo::serialize_t(image->format).c_str());
+	ImGui::SameLine();
+	ImGui::Text("Extent: %s", str(image->extent).c_str());
+	ImGui::SameLine();
+	ImGui::Text("Usage: %s", TypeInfo::serialize_t(image->usage).c_str());
+
 	ImGui::PushItemWidth(100.f);
 	static const char* swizzle_names[] = {
 		"RGBA",

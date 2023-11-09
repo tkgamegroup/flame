@@ -1,44 +1,21 @@
 namespace flame
 {
-	struct ElementDrawCmd
-	{
-		uint res;
-		std::vector<ElementVertex> vertices;
-		std::vector<uint> indices;
-		Rect scissor;
-	};
-
 	struct ElemenetRenderData
 	{
-		std::vector<ImageView*> reses;
-
 		Rect						scissor;
 		std::vector<ElementDrawCmd> layers[128];
 		uint						max_layer = 0;
-
-		SequentialBuffer<ElementVertex>	buf_vtx;
-		SequentialBuffer<uint>			buf_idx;
-		std::unique_ptr<DescriptorSet>	ds_element;
-
-		Pipeline* pl_element;
 	};
 
 	struct NodeRenderData
 	{
-		std::vector<std::pair<uint, uint>>				waters[MaterialTypeCount];
-
-		SequentialArrayStorageBuffer<water::DSL_water::WaterInfos>			buf_water;
-		std::unique_ptr<DescriptorSet>										ds_water;
-
-		std::unique_ptr<Image> img_ao_back;=
+		std::unique_ptr<Image> img_ao_back;
 
 		StorageBuffer<DSL_ssao::SampleLocations>	buf_ssao_loc;
 		StorageBuffer<DSL_ssao::SampleNoises>		buf_ssao_noi;
 		Pipeline*									pl_ssao;
 		Pipeline*									pl_ssao_blur;
 		std::unique_ptr<DescriptorSet>				ds_ssao;
-
-		Pipeline* pl_bright;
 	};
 
 	uint sRendererPrivate::element_render(uint layer, cElementPrivate* element)
@@ -128,181 +105,6 @@ namespace flame
 		nd.ds_ssao->set_image(DSL_ssao::img_nor_rou_binding, 0, nd.img_nor_rou->get_view(), sp_nearest);
 		nd.ds_ssao->set_image(DSL_ssao::img_dep_binding, 0, nd.img_dep->get_view(), sp_nearest);
 		nd.ds_ssao->update();
-
-		nd.ds_water->set_image(water::DSL_water::img_depth_binding, 0, nd.img_dep_back->get_view(), sp_nearest);
-		nd.ds_water->update();
-	}
-
-	void sRendererPrivate::fill(uint layer, uint pt_cnt, const vec2* pts, const cvec4& color)
-	{
-		if (pt_cnt == 0)
-			return;
-
-		auto& ed = *_ed;
-
-		auto vtx_cnt = 3 * (pt_cnt - 2);
-		auto idx_cnt = vtx_cnt;
-		ed.buf_vtx.stag_num += vtx_cnt;
-		ed.buf_idx.stag_num += idx_cnt;
-
-		auto& info = ed.layers[layer].emplace_back();
-		info.res = 0;
-		info.vertices.resize(vtx_cnt);
-		info.indices.resize(idx_cnt);
-
-		auto off = 0;
-		for (auto i = 0; i < pt_cnt - 2; i++)
-		{
-			info.vertices[off + 0] = { pts[0],		vec2(0.5f), color };
-			info.vertices[off + 1] = { pts[i + 1],	vec2(0.5f), color };
-			info.vertices[off + 2] = { pts[i + 2],	vec2(0.5f), color };
-
-			info.indices[off + 0] = off + 0;
-			info.indices[off + 1] = off + 2;
-			info.indices[off + 2] = off + 1;
-
-			off += 3;
-		}
-	}
-
-	void sRendererPrivate::stroke(uint layer, uint pt_cnt, const vec2* pts, float thickness, const cvec4& color, bool closed)
-	{
-		if (pt_cnt == 0)
-			return;
-
-		auto& ed = *_ed;
-
-		auto vtx_cnt = 2 * pt_cnt;
-		auto idx_cnt = 6 * (pt_cnt - 1);
-		if (closed)
-			idx_cnt += 6;
-		ed.buf_vtx.stag_num += vtx_cnt;
-		ed.buf_idx.stag_num += idx_cnt;
-
-		auto& info = ed.layers[layer].emplace_back();
-		info.res = 0;
-		info.vertices.resize(vtx_cnt);
-		info.indices.resize(idx_cnt);
-
-		auto get_normal = [](const vec2& p1, const vec2& p2) {
-			auto d = normalize(p2 - p1);
-			return vec2(d.y, -d.x);
-		};
-
-		auto vtx_off = 0;
-		auto idx_off = 0;
-		vec2 first_normal;
-		vec2 last_normal;
-
-		first_normal = last_normal = get_normal(pts[0], pts[1]);
-		info.vertices[0] = { pts[0] + first_normal * thickness, vec2(0.5f), color };
-		info.vertices[1] = { pts[0] - first_normal * thickness, vec2(0.5f), color };
-
-		vtx_off += 2;
-		for (auto i = 1; i < pt_cnt - 1; i++)
-		{
-			auto _n = get_normal(pts[i], pts[i + 1]);
-			auto n = (last_normal + _n) * 0.5f;
-			last_normal = _n;
-			info.vertices[vtx_off + 0] = { pts[i] + n * thickness, vec2(0.5f), color };
-			info.vertices[vtx_off + 1] = { pts[i] - n * thickness, vec2(0.5f), color };
-
-			info.indices[idx_off + 0] = vtx_off - 2;
-			info.indices[idx_off + 1] = vtx_off - 1;
-			info.indices[idx_off + 2] = vtx_off + 1;
-			info.indices[idx_off + 3] = vtx_off - 2;
-			info.indices[idx_off + 4] = vtx_off + 1;
-			info.indices[idx_off + 5] = vtx_off + 0;
-
-			vtx_off += 2;
-			idx_off += 6;
-		}
-
-		if (closed)
-		{
-			auto _n = get_normal(pts[pt_cnt - 1], pts[0]);
-			auto n = (last_normal + _n) * 0.5f;
-
-			info.vertices[vtx_off + 0] = { pts[pt_cnt - 1] + n * thickness, vec2(0.5f), color };
-			info.vertices[vtx_off + 1] = { pts[pt_cnt - 1] - n * thickness, vec2(0.5f), color };
-
-			info.indices[idx_off + 0] = vtx_off - 2;
-			info.indices[idx_off + 1] = vtx_off - 1;
-			info.indices[idx_off + 2] = vtx_off + 1;
-			info.indices[idx_off + 3] = vtx_off - 2;
-			info.indices[idx_off + 4] = vtx_off + 1;
-			info.indices[idx_off + 5] = vtx_off + 0;
-
-			vtx_off += 2;
-			idx_off += 6;
-
-			n = (_n + first_normal) * 0.5f;
-
-			info.vertices[0] = { pts[0] + n * thickness, vec2(0.5f), color };
-			info.vertices[1] = { pts[0] - n * thickness, vec2(0.5f), color };
-
-			info.indices[idx_off + 0] = vtx_off - 2;
-			info.indices[idx_off + 1] = vtx_off - 1;
-			info.indices[idx_off + 2] = 1;
-			info.indices[idx_off + 3] = vtx_off - 2;
-			info.indices[idx_off + 4] = 1;
-			info.indices[idx_off + 5] = 0;
-		}
-		else
-		{
-			info.vertices[vtx_off + 0] = { pts[pt_cnt - 1] + last_normal * thickness, vec2(0.5f), color };
-			info.vertices[vtx_off + 1] = { pts[pt_cnt - 1] - last_normal * thickness, vec2(0.5f), color };
-
-			info.indices[idx_off + 0] = vtx_off - 2;
-			info.indices[idx_off + 1] = vtx_off - 1;
-			info.indices[idx_off + 2] = vtx_off + 1;
-			info.indices[idx_off + 3] = vtx_off - 2;
-			info.indices[idx_off + 4] = vtx_off + 1;
-			info.indices[idx_off + 5] = vtx_off + 0;
-
-			vtx_off += 2;
-			idx_off += 6;
-		}
-	}
-
-	void sRendererPrivate::draw_glyphs(uint layer, uint cnt, const GlyphDraw* glyphs, uint res_id, const cvec4& color)
-	{
-		if (cnt == 0)
-			return;
-
-		auto& ed = *_ed;
-
-		auto vtx_cnt = 4 * cnt;
-		auto idx_cnt = 6 * cnt;
-		ed.buf_vtx.stag_num += vtx_cnt;
-		ed.buf_idx.stag_num += idx_cnt;
-
-		auto& info = ed.layers[layer].emplace_back();
-		info.res = res_id;
-		info.vertices.resize(vtx_cnt);
-		info.indices.resize(idx_cnt);
-
-		auto vtx_off = 0;
-		auto idx_off = 0;
-		for (auto i = 0; i < cnt; i++)
-		{
-			auto& g = glyphs[i];
-
-			info.vertices[vtx_off + 0] = { g.points[0],	g.uvs.xy(), color };
-			info.vertices[vtx_off + 1] = { g.points[1],	g.uvs.xw(), color };
-			info.vertices[vtx_off + 2] = { g.points[2],	g.uvs.zw(), color };
-			info.vertices[vtx_off + 3] = { g.points[3],	g.uvs.zy(), color };
-
-			info.indices[idx_off + 0] = vtx_off + 0;
-			info.indices[idx_off + 1] = vtx_off + 2;
-			info.indices[idx_off + 2] = vtx_off + 1;
-			info.indices[idx_off + 3] = vtx_off + 0;
-			info.indices[idx_off + 4] = vtx_off + 3;
-			info.indices[idx_off + 5] = vtx_off + 2;
-
-			vtx_off += 4;
-			idx_off += 6;
-		}
 	}
 
 	void sRendererPrivate::draw_image(uint layer, const vec2* pts, uint res_id, const vec4& uvs, const cvec4& tint_color)
@@ -328,20 +130,6 @@ namespace flame
 		info.indices[3] = 0;
 		info.indices[4] = 3;
 		info.indices[5] = 2;
-	}
-
-	void sRendererPrivate::draw_water(const vec3& coord, const vec2& extent,
-		uint material_id, ShadingFlags flags)
-	{
-		auto& nd = *_nd;
-
-		if (render_type != ShadingMaterial)
-			flags = (ShadingFlags)(flags & ~ShadingMaterial);
-
-		auto& data = nd.buf_water.add_item();
-		data.coord = coord;
-		data.extent = extent;
-		data.material_id = material_id;
 	}
 
 	void sRendererPrivate::render(uint tar_idx, CommandBuffer* cb)
@@ -408,8 +196,6 @@ namespace flame
 					data.far = nd.pt_shadow_dist;
 				}
 			}
-
-			nd.buf_water.upload(cb);
 
 			if (render_type == RenderShaded)
 			{
@@ -479,11 +265,6 @@ namespace flame
 				cb->bind_vertex_buffer(nd.buf_arm_mesh_vtx.buf.get(), 0);
 				cb->bind_index_buffer(nd.buf_arm_mesh_idx.buf.get(), IndiceTypeUint);
 				mesh_arm_indirs_off = draw_meshes(MaterialForMeshArmature, trn_mesh_arm_indirs, mesh_arm_indirs_off);
-				if (!nd.waters[MaterialCustom].empty())
-				{
-					bind_water_res();
-					draw_waters();
-				}
 				cb->end_renderpass();
 			}
 		}
@@ -576,13 +357,6 @@ namespace flame
 			ed.reses[i] = iv_white;
 		}
 		ed.ds_element->update();
-
-		nd.buf_water.create(BufferUsageStorage);
-		nd.ds_water.reset(DescriptorSet::create(nullptr, DescriptorSetLayout::get(nullptr, L"water/water.dsl")));
-		nd.ds_water->set_buffer(water::DSL_water::WaterInfos_binding, 0, nd.buf_water.buf.get());
-		nd.ds_water->update();
-
-		nd.pll_water = PipelineLayout::get(nullptr, L"water/water.pll");
 
 		std::uniform_real_distribution<float> r(0.f, 1.f);
 		std::default_random_engine rd;

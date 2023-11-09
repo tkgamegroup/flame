@@ -8,9 +8,20 @@ namespace flame
 {
 	namespace graphics
 	{
+		std::vector<BufferPtr> buffers;
+
+		BufferPrivate::BufferPrivate()
+		{
+			buffers.push_back(this);
+		}
+
 		BufferPrivate::~BufferPrivate()
 		{
 			if (app_exiting) return;
+
+			std::erase_if(buffers, [&](const auto& i) {
+				return i == this;
+			});
 
 			destroy();
 		}

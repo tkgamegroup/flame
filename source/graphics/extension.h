@@ -228,7 +228,9 @@ namespace flame
 			{
 				usage = _usage;
 				buf.reset(Buffer::create(ui->size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
+				buf->ui = ui;
 				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc | _stag_usage, MemoryPropertyHost | MemoryPropertyCoherent));
+				stag->ui = ui;
 				stag->map();
 
 				VirtualObject::type = TypeInfo::get(TagU, ui->name, *ui->db);

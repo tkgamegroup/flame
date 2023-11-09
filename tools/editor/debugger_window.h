@@ -12,7 +12,16 @@ struct DebuggerView : View
 	float view_range_min = 0.f;
 	float view_range_max = 1.f;
 
+	graphics::BufferPtr selected_buffer = nullptr;
 	graphics::ImagePtr selected_image = nullptr;
+	graphics::RenderpassPtr selected_renderpass = nullptr;
+	graphics::FramebufferPtr selected_framebuffer = nullptr;
+	graphics::DescriptorSetLayoutPtr selected_descriptor_layout = nullptr;
+	graphics::DescriptorSetPtr selected_descriptor_set = nullptr;
+	graphics::PipelineLayoutPtr selected_pipeline_layout = nullptr;
+	graphics::GraphicsPipelinePtr selected_graphics_pipeline = nullptr;
+	graphics::ComputePipelinePtr selected_compute_pipeline = nullptr;
+	graphics::ShaderPtr selected_shader = nullptr;
 
 	DebuggerView();
 	DebuggerView(const std::string& name);
