@@ -640,6 +640,25 @@ ProjectView::ProjectView(const std::string& name) :
 					}
 				});
 			}
+			if (ImGui::MenuItem("New BP Material Code"))
+			{
+				ImGui::OpenInputDialog("New BP Material Code", "File Name", [path](bool ok, const std::string& str) {
+					if (ok && !str.empty())
+					{
+						auto fn = path / str;
+						fn.replace_extension(L".bp");
+						if (!std::filesystem::exists(fn))
+						{
+							auto bp = Blueprint::get(fn);
+							auto g = bp->groups.front().get();
+							bp->add_group_output(g, "o_color", TypeInfo::get<vec4>());
+						}
+						else
+							ImGui::OpenMessageDialog("Failed to create Blueprint", "Blueprint already existed");
+					}
+				});
+
+			}
 			if (ImGui::BeginMenu("New Prefab"))
 			{
 				if (ImGui::MenuItem("Empty"))
@@ -1314,6 +1333,18 @@ void ProjectWindow::process_changed_paths()
 						}
 					}
 				}
+				else if (ext == L".bp")
+				{
+					if (p.second & FileModified)
+					{
+						get_materials();
+						for (auto mat : materials.first)
+						{
+							if (Path::get(mat->code_file) == p.first)
+								mat->generate_code();
+						}
+					}
+				}
 				else if (ext == L".prefab")
 				{
 					if (p.second & FileModified)
@@ -1368,18 +1399,17 @@ void ProjectWindow::process_changed_paths()
 				}
 				else if (ext == L".glsl")
 				{
-					get_materials();
-					get_shaders();
-					get_graphics_pipelines();
-					for (auto mat : materials.first)
+					if (p.second & FileModified)
 					{
+						get_shaders();
+						get_graphics_pipelines();
 						for (auto sd : shaders.first)
 						{
 							for (auto& d : sd->dependencies)
 							{
-								if (d.second == mat)
+								if (d == p.first)
 								{
-									changed_shaders[sd] = 0;
+									changed_shaders[sd] = 1;
 									break;
 								}
 							}
@@ -1388,9 +1418,9 @@ void ProjectWindow::process_changed_paths()
 						{
 							for (auto& d : pl->dependencies)
 							{
-								if (d.second == mat)
+								if (d == p.first)
 								{
-									changed_pipelines[pl] = 0;
+									changed_pipelines[pl] = 1;
 									break;
 								}
 							}
@@ -1404,7 +1434,7 @@ void ProjectWindow::process_changed_paths()
 					for (auto sd : shaders.first)
 					{
 						if (sd->filename == p.first)
-							changed_shaders[sd] = 0;
+							changed_shaders[sd]= 1;
 					}
 				}
 				else if (ext == L".pipeline")
@@ -1413,7 +1443,7 @@ void ProjectWindow::process_changed_paths()
 					for (auto pl : graphics_pipelines.first)
 					{
 						if (pl->filename == p.first)
-							changed_pipelines[pl] = 0;
+							changed_pipelines[pl]= 1;
 					}
 				}
 			}
@@ -1479,7 +1509,7 @@ void ProjectWindow::process_changed_paths()
 					{
 						if (sd.first == _sd)
 						{
-							changed_pipelines[pl] = 0;
+							changed_pipelines[pl]= 1;
 							break;
 						}
 					}

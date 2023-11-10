@@ -2475,7 +2475,7 @@ void InspectorView::on_draw()
 				if (inspected_obj)
 				{
 					auto material = (graphics::MaterialPtr)inspected_obj;
-					auto changed = false;
+					auto changed = 0;
 					editing_objects.emplace(EditingObjects(EditingObjects::GeneralAsset, th<graphics::Material>(), &path, 1));
 					if (ImGui::BeginTableEx("inspector", "inspector"_h, 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
 					{
@@ -2664,7 +2664,7 @@ void InspectorView::on_draw()
 
 				if (inspected_obj)
 				{
-					auto changed = false;
+					auto changed = 0;
 					editing_objects.emplace(EditingObjects(EditingObjects::GeneralAsset, info.ui->name_hash, &path, 1));
 					if (ImGui::BeginTableEx("inspector", "inspector"_h, 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
 					{

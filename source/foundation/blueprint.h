@@ -161,24 +161,36 @@ namespace flame
 
 		virtual ~BlueprintNode() {}
 
+		inline int find_input_i(uint name) const
+		{
+			for (auto i = 0; i < inputs.size(); i++)
+			{
+				if (((BlueprintSlot*)inputs[i].get())->name_hash == name)
+					return i;
+			}
+			return -1;
+		}
+
 		inline BlueprintSlotPtr find_input(uint name) const
 		{
-			for (auto& i : inputs)
+			auto idx = find_input_i(name);
+			return idx != -1 ? (BlueprintSlotPtr)inputs[idx].get() : nullptr;
+		}
+
+		inline int find_output_i(uint name) const
+		{
+			for (auto i = 0; i < outputs.size(); i++)
 			{
-				if (((BlueprintSlot*)i.get())->name_hash == name)
-					return (BlueprintSlotPtr)i.get();
+				if (((BlueprintSlot*)outputs[i].get())->name_hash == name)
+					return i;
 			}
-			return nullptr;
+			return -1;
 		}
 
 		inline BlueprintSlotPtr find_output(uint name) const
 		{
-			for (auto& o : outputs)
-			{
-				if (((BlueprintSlot*)o.get())->name_hash == name)
-					return (BlueprintSlotPtr)o.get();
-			}
-			return nullptr;
+			auto idx = find_output_i(name);
+			return idx != -1 ? (BlueprintSlotPtr)outputs[idx].get() : nullptr;
 		}
 
 		inline bool contains(BlueprintNodePtr oth) const

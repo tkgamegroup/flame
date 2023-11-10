@@ -110,6 +110,8 @@ namespace flame
 			// Reflect
 			virtual void set_textures(const std::vector<FileTexture>& textures) = 0;
 
+			virtual void generate_code() = 0;
+
 			Listeners<void(uint)> data_listeners;
 
 			std::filesystem::path filename;

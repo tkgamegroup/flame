@@ -33,6 +33,8 @@ namespace flame
 
 			void set_textures(const std::vector<FileTexture>& textures) override;
 
+			void generate_code() override;
+
 			void save(const std::filesystem::path& filename) override;
 		};
 

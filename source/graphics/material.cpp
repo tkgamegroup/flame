@@ -1,6 +1,7 @@
 #include "../xml.h"
 #include "../foundation/typeinfo.h"
 #include "../foundation/typeinfo_serialize.h"
+#include "../foundation/blueprint.h"
 #include "image_private.h"
 #include "material_private.h"
 
@@ -203,6 +204,7 @@ namespace flame
 			if (code_file == path)
 				return;
 			code_file = path;
+			generate_code();
 
 			data_changed("code_file"_h);
 		}
@@ -219,6 +221,111 @@ namespace flame
 			textures = _textures;
 
 			data_changed("textures"_h);
+		}
+
+		void MaterialPrivate::generate_code()
+		{
+			if (!code_file.empty())
+			{
+				auto ext = code_file.extension();
+				if (ext == L".bp")
+				{
+					auto code_file_abs_path = Path::get(code_file);
+					auto code_file_path = code_file_abs_path;
+					code_file_path += L".glsl";
+					if (!std::filesystem::exists(code_file_path) ||
+						std::filesystem::last_write_time(code_file_path) < std::filesystem::last_write_time(code_file_abs_path))
+					{
+						auto bp = Blueprint::get(code_file);
+						auto bp_ins = BlueprintInstance::create(bp);
+						std::ofstream file(code_file_path);
+						
+						if (auto it = bp_ins->groups.find("main"_h); it != bp_ins->groups.end())
+						{
+							auto format_name = [](const std::string& name)->std::string {
+								auto ret = name;
+								SUS::strip_head_if(ret, "glm::");
+								return ret;
+							};
+
+							auto& g = it->second;
+							if (render_queue == RenderQueue::Opaque || render_queue == RenderQueue::AlphaTest)
+							{
+
+							}
+							else if (render_queue == RenderQueue::Transparent)
+							{
+								for (auto& kv : g.slot_datas)
+								{
+									auto& arg = kv.second.attribute;
+									file << std::format("{} v_{};\n", format_name(arg.type->name), kv.first);
+								}
+
+								file << "void material_main(MaterialInfo material, vec4 color)\n{\n";
+
+								std::function<void(BlueprintInstanceNode& n)> process_node;
+								process_node = [&](BlueprintInstanceNode& n) {
+									auto ori = n.original;
+									if (ori)
+									{
+										auto get_input_data_id = [&](uint idx)->int {
+											auto slot_id = ori->inputs[idx]->object_id;
+											if (auto it = g.slot_datas.find(slot_id); it != g.slot_datas.end())
+												return slot_id;
+											auto slot_data = n.inputs[idx].data;
+											for (auto& kv : g.slot_datas)
+											{
+												if (kv.second.attribute.data == slot_data)
+													return kv.first;
+											}
+											return -1;
+										};
+
+										for (auto i = 0; i < ori->inputs.size(); i++)
+										{
+											auto& input = ori->inputs[i];
+											auto slot_id = input->object_id;
+											if (auto it = g.slot_datas.find(slot_id); it != g.slot_datas.end())
+											{
+												auto& arg = it->second.attribute;
+												file << std::format("\tv_{} = {};\n", it->first, arg.type->serialize(arg.data));
+											}
+										}
+
+										switch (ori->name_hash)
+										{
+										case "Vec4"_h:
+											file << std::format("\tv_{} = vec4(v_{}, v_{}, v_{}, v_{});\n", 
+												ori->outputs[0]->object_id,
+												get_input_data_id(0),
+												get_input_data_id(1),
+												get_input_data_id(2),
+												get_input_data_id(3));
+											break;
+										case "Output"_h:
+											if (auto o_color_idx = ori->find_input_i("o_color"_h); o_color_idx != -1)
+											{
+												file << std::format("\to_color = v_{};\n",
+													get_input_data_id(o_color_idx));
+											}
+											break;
+										}
+									}
+									for (auto& c : n.children)
+										process_node(c);
+								};
+								process_node(g.root_node);
+
+								file << "}\n";
+							}
+						}
+
+						file.close();
+						delete bp_ins;
+						Blueprint::release(bp);
+					}
+				}
+			}
 		}
 
 		void MaterialPrivate::save(const std::filesystem::path& filename)
@@ -255,6 +362,10 @@ namespace flame
 			}
 		}Material_create;
 		Material::Create& Material::create = Material_create;
+
+		static void generate_shader_code_by_blueprint(Material* mat, BlueprintInstance* bp_ins, std::ofstream& file)
+		{
+		}
 
 		struct MaterialGet : Material::Get
 		{
@@ -310,6 +421,8 @@ namespace flame
 					return false;
 				};
 				unserialize_xml(doc_root, ret, spec);
+
+				ret->generate_code();
 
 				ret->filename = filename;
 				ret->ref = 1;

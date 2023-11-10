@@ -184,7 +184,7 @@ namespace flame
 			UdtInfo* in_ui = nullptr;
 			UdtInfo* out_ui = nullptr;
 
-			std::vector<std::pair<uint, void*>> dependencies;
+			std::vector<std::filesystem::path> dependencies;
 
 			virtual ~Shader() {}
 
@@ -274,7 +274,7 @@ namespace flame
 			bool dynamic_renderpass = true;
 			uint ref = 0;
 
-			std::vector<std::pair<uint, void*>> dependencies;
+			std::vector<std::filesystem::path> dependencies;
 
 			virtual ~GraphicsPipeline() {}
 
@@ -335,7 +335,7 @@ namespace flame
 			std::vector<std::string> defines;
 			uint ref = 0;
 
-			std::vector<std::pair<uint, void*>> dependencies;
+			std::vector<std::filesystem::path> dependencies;
 
 			virtual ~ComputePipeline() {}
 

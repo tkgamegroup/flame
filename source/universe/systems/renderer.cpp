@@ -269,7 +269,12 @@ namespace flame
 
 		combine_global_defines(defines);
 		if (!res.mat->code_file.empty())
-			defines.push_back(std::format("frag:MAT_CODE={}", Path::get(res.mat->code_file).string()));
+		{
+			auto path = res.mat->code_file;
+			if (path.extension() == L".bp")
+				path += L".glsl";
+			defines.push_back(std::format("frag:MAT_CODE={}", Path::get(path).string()));
+		}
 		for (auto& d : res.defines)
 		{
 			if (!d.empty())
@@ -320,8 +325,12 @@ namespace flame
 		if (ret)
 		{
 			res.pls[key] = ret;
-			ret->frag()->dependencies.emplace_back("flame::Graphics::Material"_h, res.mat);
-			ret->dependencies.emplace_back("flame::Graphics::Material"_h, res.mat);
+			auto path = res.mat->code_file;
+			if (path.extension() == L".bp")
+				path += L".glsl";
+			auto dependency = Path::get(path);
+			ret->frag()->dependencies.emplace_back(dependency);
+			ret->dependencies.emplace_back(dependency);
 		}
 		return ret;
 	}
