@@ -266,11 +266,12 @@ namespace flame
 		// Reflect
 		virtual graphics::ImagePtr get_image(uint name) = 0;
 
-		virtual void begin_hud(const vec2& pos, const vec2& size = vec2(0.f) /* 0 size means auto layout */, const cvec4& col = cvec4(0, 0, 0, 255), const vec2& pivot = vec2(0.f), const vec2& item_spacing = vec2(2.f)) = 0;
+		virtual void begin_hud(const vec2& pos, const vec2& size = vec2(0.f) /* 0 size means auto layout */, const vec2& scl = vec2(1.f), const cvec4& col = cvec4(0, 0, 0, 255), const vec2& pivot = vec2(0.f), const vec2& item_spacing = vec2(2.f)) = 0;
 		virtual void end_hud() = 0;
 		virtual void hud_rect(const vec2& pos, const vec2& size, const cvec4& col) = 0;
-		virtual void hud_text(std::wstring_view label, const cvec4& col = cvec4(255, 255, 255, 255)) = 0;
-		virtual bool hud_button(std::wstring_view label, bool* p_hovered = nullptr) = 0;
+		virtual void hud_text(std::wstring_view text, uint font_size = 24, const cvec4& col = cvec4(255)) = 0;
+		virtual void hud_image(const vec2& pos, const vec2& size, graphics::ImagePtr image, const cvec4& col = cvec4(255)) = 0;
+		virtual bool hud_button(std::wstring_view label, uint font_size = 24, bool* p_hovered = nullptr) = 0;
 
 		// Reflect
 		virtual void send_debug_string(const std::string& str) = 0;

@@ -14,7 +14,7 @@ struct InspectedEntities
 {
 	InspectorView* inspector;
 	std::vector<EntityPtr> entities;
-	std::unordered_map<const void*, uvec4> sync_states;
+	std::unordered_map<const void*, cvec4> sync_states;
 	std::vector<CommonComponents> common_components;
 	std::filesystem::path prefab_path;
 

@@ -99,14 +99,14 @@ struct EditingObjects
 	uint type = 0;
 	void* objs = nullptr;
 	int num = 0;
-	std::unordered_map<const void*, uvec4>* sync_states = nullptr;
+	std::unordered_map<const void*, cvec4>* sync_states = nullptr;
 
 	EditingObjects()
 	{
 	}
 
 	EditingObjects(General general, uint type, void* objs, int num, 
-		std::unordered_map<const void*, uvec4>* sync_states = nullptr) :
+		std::unordered_map<const void*, cvec4>* sync_states = nullptr) :
 		general(general),
 		type(type),
 		objs(objs),
@@ -219,34 +219,35 @@ void record_keyframe(const std::string& name, const std::string& value, int vect
 	}
 }
 
+static bool context_show_name = true;
+static bool context_enable_record = false;
+static uchar* context_same = nullptr;
+
 std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num = 1, const std::vector<uint> excludes = {},
-	const std::function<bool(uint name, TypeInfo* type, void* data, uvec4& same, bool enable_record, int& changed)>& edit_func = {}, const std::function<void(uint, uint&, uint&)>& after_callback = {});
+	const std::function<bool(uint name, TypeInfo* type, void* data, int& changed)>& edit_func = {}, const std::function<void(uint, uint&, uint&)>& after_callback = {});
 
 int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash, int offset, const FunctionInfo* getter, const FunctionInfo* setter, const std::string& default_value, 
-	voidptr* objs, uint num, const void* id, bool show_name = true, const std::function<bool(uint name, TypeInfo* type, void* data, uvec4& same, bool enable_record, int& changed)>& edit_func = {})
+	voidptr* objs, uint num, const void* id, const std::function<bool(uint name, TypeInfo* type, void* data, int& changed)>& edit_func = {})
 {
 	auto changed = 0;
 	bool just_exit_editing;
 	auto direct_io = !getter && !setter;
 	auto& eos = editing_objects.top();
-	uvec4 same;
-	if (num > 1)
-		same = eos.sync_states->at(id);
-	else
-		same = uvec4(1);
+	cvec4 same = num > 1 ? same = eos.sync_states->at(id) : same = cvec4(1);
+	context_same = &same[0];
 
-	auto enable_record = false;
+	context_enable_record = false;
 	if (eos.type == 1 && eos.num > 0)
 	{
 		if (app.timeline_recording)
 		{
-			enable_record = true;
+			context_enable_record = true;
 			for (auto i = 0; i < eos.num; i++)
 			{
 				auto e = ((EntityPtr*)eos.objs)[i];
 				if (e != app.e_timeline_host && !is_ancestor(app.e_timeline_host, e))
 				{
-					enable_record = false;
+					context_enable_record = false;
 					break;
 				}
 			}
@@ -265,7 +266,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (i > 0)
 				ImGui::SameLine(0.f, inner_spaceing);
 			auto changed = ImGui::InputScalar("", ImGuiDataType_S32, &data[i], nullptr, nullptr, same[i] ? "%d" : "-", 0);
-			if (enable_record)
+			if (context_enable_record)
 			{
 				ImGui::SameLine();
 				if (ImGui::SmallButton(graphics::font_icon_str("diamond"_h).c_str()))
@@ -293,7 +294,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (i > 0)
 				ImGui::SameLine(0.f, inner_spaceing);
 			auto changed = ImGui::DragScalar("", ImGuiDataType_Float, &data[i], 0.1f, nullptr, nullptr, same[i] ? "%.3f" : "-", 0);
-			if (enable_record)
+			if (context_enable_record)
 			{
 				ImGui::SameLine();
 				if (ImGui::SmallButton(graphics::font_icon_str("diamond"_h).c_str()))
@@ -315,7 +316,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 
 	static TypeInfo* copied_type = nullptr;
 	auto context_menu = [&](void* data) {
-		if (!name_hash || !show_name)
+		if (!name_hash || !context_show_name)
 			return;
 		if (ImGui::BeginPopupContextItem("value_context"))
 		{
@@ -357,7 +358,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 	{
 	case TagE:
 	{
-		if (show_name)
+		if (context_show_name)
 		{
 			ImGui::TableNextRow();
 			ImGui::TableNextColumn();
@@ -437,7 +438,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				type->set_value(objs[i], offset, setter, &value);
 			add_modify_history(name_hash, str(value));
 			if (num > 1)
-				eos.sync_states->at(id) = uvec4(1);
+				eos.sync_states->at(id) = cvec4(1);
 
 			changed = 2;
 		}
@@ -452,7 +453,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		{
 		case DataBool:
 		{
-			if (show_name)
+			if (context_show_name)
 			{
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
@@ -476,7 +477,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					type->set_value(objs[i], offset, setter, &value);
 				add_modify_history(name_hash, str(value));
 				if (num > 1)
-					eos.sync_states->at(id) = uvec4(1);
+					eos.sync_states->at(id) = cvec4(1);
 			}
 			data = nullptr;
 			if (changed)
@@ -484,7 +485,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 			break;
 		case DataInt:
-			if (show_name)
+			if (context_show_name)
 			{
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
@@ -518,7 +519,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			{
 				auto new_value = str(ti->vec_size, (int*)data);
 				add_modify_history(name_hash, new_value);
-				if (enable_record)
+				if (context_enable_record)
 				{
 					auto sp = SUS::split(new_value, ',');
 					for (auto i = 0; i < eos.num; i++)
@@ -539,7 +540,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			changed = just_exit_editing ? 2 : changed > 0;
 			break;
 		case DataFloat:
-			if (show_name)
+			if (context_show_name)
 			{
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
@@ -547,7 +548,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				ImGui::TableNextColumn();
 			}
 
-			if (!edit_func || !edit_func(name_hash, type, data, same, enable_record, changed))
+			if (!edit_func || !edit_func(name_hash, type, data, changed))
 				changed = input_float_n(ti->vec_size, (float*)data);
 			if (ImGui::IsItemActivated())
 			{
@@ -574,7 +575,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			{
 				auto new_value = str(ti->vec_size, (float*)data);
 				add_modify_history(name_hash, new_value);
-				if (enable_record)
+				if (context_enable_record)
 				{
 					auto sp = SUS::split(new_value, ',');
 					for (auto i = 0; i < eos.num; i++)
@@ -599,7 +600,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			{
 			case 4:
 			{
-				if (show_name)
+				if (context_show_name)
 				{
 					ImGui::TableNextRow();
 					ImGui::TableNextColumn();
@@ -631,7 +632,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 							type->set_value(objs[i], offset, setter, data);
 					}
 					if (num > 1)
-						eos.sync_states->at(id) = uvec4(1);
+						eos.sync_states->at(id) = cvec4(1);
 				}
 				if (just_exit_editing)
 					add_modify_history(name_hash, str(*(cvec4*)data));
@@ -643,7 +644,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			break;
 		case DataString:
 		{
-			if (show_name)
+			if (context_show_name)
 			{
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
@@ -679,7 +680,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 						type->set_value(objs[i], offset, setter, data);
 				}
 				if (num > 1)
-					eos.sync_states->at(id) = uvec4(1);
+					eos.sync_states->at(id) = cvec4(1);
 			}
 			if (just_exit_editing)
 				add_modify_history(name_hash, *(std::string*)data);
@@ -688,7 +689,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			break;
 		case DataWString:
 		{
-			if (show_name)
+			if (context_show_name)
 			{
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
@@ -729,7 +730,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 						type->set_value(objs[i], offset, setter, data);
 				}
 				if (num > 1)
-					eos.sync_states->at(id) = uvec4(1);
+					eos.sync_states->at(id) = cvec4(1);
 			}
 			if (just_exit_editing)
 				add_modify_history(name_hash, w2s(*(std::wstring*)data));
@@ -738,7 +739,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			break;
 		case DataPath:
 		{
-			if (show_name)
+			if (context_show_name)
 			{
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
@@ -787,7 +788,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				for (auto i = 1; i < num; i++)
 					type->set_value(objs[i], offset, setter, data);
 				if (num > 1)
-					eos.sync_states->at(id) = uvec4(1);
+					eos.sync_states->at(id) = cvec4(1);
 
 				changed = 2;
 			}
@@ -795,7 +796,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			break;
 		case DataGUID:
 		{
-			if (show_name)
+			if (context_show_name)
 			{
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
@@ -852,7 +853,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				for (auto i = 1; i < num; i++)
 					type->set_value(objs[i], offset, setter, data);
 				if (num > 1)
-					eos.sync_states->at(id) = uvec4(1);
+					eos.sync_states->at(id) = cvec4(1);
 
 				changed = 2;
 			}
@@ -862,7 +863,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 	}
 		break;
 	case TagU:
-		if (show_name)
+		if (context_show_name)
 		{
 			ImGui::TableNextRow();
 			ImGui::TableNextColumn();
@@ -877,7 +878,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			editing_objects.push(EditingObjects());
 
 			voidptr ptr = (char*)objs[0] + offset;
-			if (manipulate_udt(*ui, &ptr).first)
+			if (manipulate_udt(*ui, &ptr, 1).first)
 				changed = true;
 
 			editing_objects.pop();
@@ -885,7 +886,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		break;
 	case TagO:
-		if (show_name)
+		if (context_show_name)
 		{
 			ImGui::TableNextRow();
 			ImGui::TableNextColumn();
@@ -947,7 +948,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		break;
 	case TagVD:
-		if (show_name)
+		if (context_show_name)
 		{
 			ImGui::TableNextRow();
 			ImGui::TableNextColumn();
@@ -968,6 +969,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					type->set_value(objs[0], offset, setter, &sv.v);
 			};
 			int n = sv.count();
+			ImGui::SetNextItemWidth(100.f);
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
 			n = clamp(n, 0, 100000);
 			context_menu(pv);
@@ -1004,7 +1006,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		break;
 	case TagVU:
-		if (show_name)
+		if (context_show_name)
 		{
 			ImGui::TableNextRow();
 			ImGui::TableNextColumn();
@@ -1026,6 +1028,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			};
 			auto& ui = *ti->retrive_ui();
 			int n = sv.count();
+			ImGui::SetNextItemWidth(100.f);
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
 			n = clamp(n, 0, 100000);
 			context_menu(pv);
@@ -1047,7 +1050,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					if (i > 0) ImGui::Separator();
 					ImGui::PushID(i);
 					voidptr obj = sv.v.data() + ui.size * i;
-					if (manipulate_udt(ui, &obj).first)
+					if (manipulate_udt(ui, &obj, 1).first)
 						changed = true;
 					ImGui::PopID();
 				}
@@ -1063,7 +1066,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		break;
 	case TagVR:
-		if (show_name)
+		if (context_show_name)
 		{
 			ImGui::TableNextRow();
 			ImGui::TableNextColumn();
@@ -1084,6 +1087,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					type->set_value(objs[0], offset, setter, &sv.v);
 			};
 			int n = sv.count();
+			ImGui::SetNextItemWidth(100.f);
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
 			n = clamp(n, 0, 100000);
 			context_menu(pv);
@@ -1125,7 +1129,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		break;
 	case TagVT:
-		if (show_name)
+		if (context_show_name)
 		{
 			ImGui::TableNextRow();
 			ImGui::TableNextColumn();
@@ -1148,6 +1152,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (ImGui::IsItemDeactivated())
 				sv.assign(nullptr, pv);
 			int n = sv.count();
+			ImGui::SetNextItemWidth(100.f);
 			auto size_changed = ImGui::InputInt("size", &n, 1, 1);
 			n = clamp(n, 0, 100000);
 			context_menu(pv);
@@ -1196,30 +1201,25 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 	return changed;
 }
 
-int manipulate_variable(const VariableInfo& v, voidptr* objs, uint num, const std::function<bool(uint name, TypeInfo* type, void* data, uvec4& same, bool enable_record, int& changed)>& edit_func = {})
+int manipulate_variable(const VariableInfo& v, voidptr* objs, uint num, const std::function<bool(uint name, TypeInfo* type, void* data, int& changed)>& edit_func = {})
 {
-	return manipulate_variable(v.type, v.name, v.name_hash, v.offset, nullptr, nullptr, v.default_value, objs, num, &v, true, edit_func);
+	return manipulate_variable(v.type, v.name, v.name_hash, v.offset, nullptr, nullptr, v.default_value, objs, num, &v, edit_func);
 }
 
-int manipulate_attribute(const Attribute& a, voidptr* objs, uint num, bool show_name = true, const std::function<bool(uint name, TypeInfo* type, void* data, uvec4& same, bool enable_record, int& changed)>& edit_func = {})
+int manipulate_attribute(const Attribute& a, voidptr* objs, uint num, const std::function<bool(uint name, TypeInfo* type, void* data, int& changed)>& edit_func = {})
 {
 	return manipulate_variable(a.type, a.name, a.name_hash, a.var_off(),
 		a.getter_idx != -1 ? &a.ui->functions[a.getter_idx] : nullptr,
 		a.setter_idx != -1 ? &a.ui->functions[a.setter_idx] : nullptr,
 		a.default_value,
-		objs, num, &a, show_name, edit_func);
+		objs, num, &a, edit_func);
 }
 
-std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num, const std::vector<uint> excludes, 
-	const std::function<bool(uint name, TypeInfo* type, void* data, uvec4& same, bool enable_record, int& changed)>& edit_func, const std::function<void(uint, uint&, uint&)>& after_callback)
+std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num, const std::vector<uint> excludes,
+	const std::function<bool(uint name, TypeInfo* type, void* data, int& changed)>& edit_func, const std::function<void(uint, uint&, uint&)>& after_callback)
 {
 	uint ret_changed = 0;
 	uint ret_changed_name = 0;
-
-	if (ImGui::BeginTableEx("inspector", "inspector"_h, 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
-	{
-		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100);
-		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0);
 
 		if (ui.attributes.empty())
 		{
@@ -1265,7 +1265,7 @@ std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num,
 				}
 				if (skip)
 					continue;
-				auto changed = manipulate_attribute(a, objs, num, true, edit_func);
+				auto changed = manipulate_attribute(a, objs, num, edit_func);
 				ret_changed |= changed;
 				if (changed)
 					ret_changed_name = a.name_hash;
@@ -1274,8 +1274,6 @@ std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num,
 			}
 		}
 
-		ImGui::EndTable();
-	}
 	return std::make_pair(ret_changed, ret_changed_name);
 }
 
@@ -1437,21 +1435,23 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 		editing_objects.emplace(EditingObjects(EditingObjects::GeneralPrefab, 0, &prefab_path, 1, nullptr));
 	ImGui::PushID("flame::Entity"_h);
 	auto ui_entity = TypeInfo::get<Entity>()->retrive_ui();
+	context_show_name = false;
 	{
 		auto hash = "enable"_h;
-		get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), false), hash);
+		get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size()), hash);
 	}
 	ImGui::SameLine();
 	{
 		auto hash = "name"_h;
-		get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), false), hash);
+		get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size()), hash);
 	}
 	ImGui::SameLine();
 	{
 		ImGui::SetNextItemWidth(100.f);
 		auto hash = "tag"_h;
-		get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size(), false), hash);
+		get_changed2(manipulate_attribute(*ui_entity->find_attribute(hash), (voidptr*)entities.data(), entities.size()), hash);
 	}
+	context_show_name = true;
 	if (entities.size() == 1 && entity->prefab_instance)
 	{
 		auto ins = entity->prefab_instance.get();
@@ -1564,8 +1564,10 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 		auto open = ImGui::CollapsingHeader("", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
 		ImGui::SameLine();
 		{
+			context_show_name = false;
 			auto hash = "enable"_h;
-			get_changed2(manipulate_attribute(*TypeInfo::get<Component>()->retrive_ui()->find_attribute(hash), (voidptr*)cc.components.data(), cc.components.size(), false), hash);
+			get_changed2(manipulate_attribute(*TypeInfo::get<Component>()->retrive_ui()->find_attribute(hash), (voidptr*)cc.components.data(), cc.components.size()), hash);
+			context_show_name = true;
 		}
 		editing_objects.pop();
 
@@ -1830,114 +1832,122 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 			static bool open_select_hash = false;
 			static std::vector<std::string> hash_candidates;
 			static const Attribute* op_attr;
-			get_changed(manipulate_udt(ui, (voidptr*)cc.components.data(), cc.components.size(), {}, 
-				[](uint name, TypeInfo* type, void* data, uvec4& same, bool enable_record, int& ret_changed) {
-					if (name == "scl"_h && type == TypeInfo::get<vec3>())
-					{
-						static bool unify = true;
-						ImGui::Checkbox("Unify Scaling", &unify);
+			if (ImGui::BeginTableEx("inspector", "inspector"_h, 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
+			{
+				ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100);
+				ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0);
 
-						if (unify)
+				get_changed(manipulate_udt(ui, (voidptr*)cc.components.data(), cc.components.size(), {},
+					[](uint name, TypeInfo* type, void* data, int& ret_changed) {
+						if (name == "scl"_h && type == TypeInfo::get<vec3>())
 						{
-							auto& scl = *(vec3*)data;
+							static bool unify = true;
+							ImGui::Checkbox("Unify Scaling", &unify);
 
-							ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-							auto changed = ImGui::DragScalar("", ImGuiDataType_Float, &scl[0], 0.1f, nullptr, nullptr, same[0] ? "%.3f" : "-", 0);
-							if (enable_record)
+							if (unify)
 							{
-								ImGui::SameLine();
-								if (ImGui::SmallButton(graphics::font_icon_str("diamond"_h).c_str()))
+								auto& scl = *(vec3*)data;
+
+								ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+								auto changed = ImGui::DragScalar("", ImGuiDataType_Float, &scl[0], 0.1f, nullptr, nullptr, context_same[0] ? "%.3f" : "-", 0);
+								if (context_enable_record)
 								{
-									auto value_str = str(scl[0]);
-									for (auto i = 0; i < 3; i++)
-										record_keyframe("scl", value_str, i);
+									ImGui::SameLine();
+									if (ImGui::SmallButton(graphics::font_icon_str("diamond"_h).c_str()))
+									{
+										auto value_str = str(scl[0]);
+										for (auto i = 0; i < 3; i++)
+											record_keyframe("scl", value_str, i);
+									}
+								}
+								if (changed)
+								{
+									scl[1] = scl[2] = scl[0];
+									context_same[0] = context_same[1] = context_same[2] = 1;
+									ret_changed = 1;
+									if (!ImGui::TempInputIsActive(ImGui::GetItemID()))
+										ret_changed = 2;
 								}
 							}
-							if (changed)
-							{
-								scl[1] = scl[2] = scl[0];
-								same[0] = same[1] = same[2] = 1;
-								ret_changed = 1;
-								if (!ImGui::TempInputIsActive(ImGui::GetItemID()))
-									ret_changed = 2;
-							}
-						}
 
-						return true;
-					}
-					return false;
-				},
-				[&ui, &cc](uint name, uint& ret_changed, uint& ret_changed_name) {
-				ImGui::PushID(name);
-				if (name == "mesh_name"_h)
-				{
-					ImGui::SameLine();
-					if (ImGui::Button("S"))
-					{
-						open_select_standard_model = true;
-						op_attr = ui.find_attribute(name);
-					}
-				}
-				else if (name == "material_name"_h)
-				{
-					auto& name = *(std::filesystem::path*)ui.find_attribute("material_name"_h)->get_value(cc.components[0]);
-
-					ImGui::SameLine();
-					if (ImGui::Button("D"))
-					{
-						if (name != L"default")
-						{
-							auto path = std::filesystem::path(L"default");
-							ui.find_function("set_material_name"_h)->call<void, void*>(cc.components[0], &path);
-							ret_changed |= 2;
-							ret_changed_name = "material_name"_h;
+							return true;
 						}
-					}
-
-					if (!name.empty() && name != L"default" && !name.native().starts_with(L"0x"))
-					{
-						if (ImGui::TreeNode("##embed"))
-						{
-							// the material is loaded and registered to renderer
-							if (auto material = graphics::Material::get(name); material)
-							{
-								editing_objects.emplace(EditingObjects(EditingObjects::GeneralAsset, th<graphics::Material>(), &name, 1));
-								auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1).first;
-								editing_objects.pop();
-								graphics::Material::release(material);
-								if (changed >= 2)
-								{
-									auto path = Path::get(name);
-									material->save(path);
-									auto asset = AssetManagemant::find(path);
-									if (asset)
-										asset->lwt = std::filesystem::last_write_time(path);
-								}
-							}
-							ImGui::TreePop();
-						}
-					}
-				}
-				else
-				{
-					auto& a = *ui.find_attribute(name);
-					if (a.var_idx != -1)
-					{
-						std::string meta;
-						if (ui.variables[a.var_idx].metas.get("hash"_h, &meta))
+						return false;
+					},
+					[&ui, &cc](uint name, uint& ret_changed, uint& ret_changed_name) {
+						ImGui::PushID(name);
+						if (name == "mesh_name"_h)
 						{
 							ImGui::SameLine();
 							if (ImGui::Button("S"))
 							{
-								open_select_hash = true;
-								hash_candidates = SUS::to_string_vector(SUS::split(meta, '|'));
-								op_attr = &a;
+								open_select_standard_model = true;
+								op_attr = ui.find_attribute(name);
 							}
 						}
-					}
-				}
-				ImGui::PopID();
-			}));
+						else if (name == "material_name"_h)
+						{
+							auto& name = *(std::filesystem::path*)ui.find_attribute("material_name"_h)->get_value(cc.components[0]);
+
+							ImGui::SameLine();
+							if (ImGui::Button("D"))
+							{
+								if (name != L"default")
+								{
+									auto path = std::filesystem::path(L"default");
+									ui.find_function("set_material_name"_h)->call<void, void*>(cc.components[0], &path);
+									ret_changed |= 2;
+									ret_changed_name = "material_name"_h;
+								}
+							}
+
+							if (!name.empty() && name != L"default" && !name.native().starts_with(L"0x"))
+							{
+								if (ImGui::TreeNode("##embed"))
+								{
+									// the material is loaded and registered to renderer
+									if (auto material = graphics::Material::get(name); material)
+									{
+										editing_objects.emplace(EditingObjects(EditingObjects::GeneralAsset, th<graphics::Material>(), &name, 1));
+										auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1).first;
+										editing_objects.pop();
+										graphics::Material::release(material);
+										if (changed >= 2)
+										{
+											auto path = Path::get(name);
+											material->save(path);
+											auto asset = AssetManagemant::find(path);
+											if (asset)
+												asset->lwt = std::filesystem::last_write_time(path);
+										}
+									}
+									ImGui::TreePop();
+								}
+							}
+						}
+						else
+						{
+							auto& a = *ui.find_attribute(name);
+							if (a.var_idx != -1)
+							{
+								std::string meta;
+								if (ui.variables[a.var_idx].metas.get("hash"_h, &meta))
+								{
+									ImGui::SameLine();
+									if (ImGui::Button("S"))
+									{
+										open_select_hash = true;
+										hash_candidates = SUS::to_string_vector(SUS::split(meta, '|'));
+										op_attr = &a;
+									}
+								}
+							}
+						}
+						ImGui::PopID();
+				}));
+
+				ImGui::EndTable();
+			}
 
 			if (open_select_standard_model)
 			{
@@ -2408,7 +2418,7 @@ void InspectorView::on_draw()
 			if (ext == L".obj" || ext == L".fbx" || ext == L".gltf" || ext == L".glb")
 			{
 				static vec3 rotation = vec3(0, 0, 0);
-				static float scaling = 1.f;
+				static float scaling = 0.01f;
 				static bool only_animation = false;
 				ImGui::DragFloat3("Rotation", (float*)&rotation);
 				ImGui::DragFloat("Scaling", &scaling);
@@ -2465,8 +2475,17 @@ void InspectorView::on_draw()
 				if (inspected_obj)
 				{
 					auto material = (graphics::MaterialPtr)inspected_obj;
+					auto changed = false;
 					editing_objects.emplace(EditingObjects(EditingObjects::GeneralAsset, th<graphics::Material>(), &path, 1));
-					auto changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1).first;
+					if (ImGui::BeginTableEx("inspector", "inspector"_h, 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
+					{
+						ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100);
+						ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0);
+
+						changed = manipulate_udt(*TypeInfo::get<graphics::Material>()->retrive_ui(), (voidptr*)&material, 1).first;
+
+						ImGui::EndTable();
+					}
 					editing_objects.pop();
 					if (changed >= 2)
 					{
@@ -2645,8 +2664,17 @@ void InspectorView::on_draw()
 
 				if (inspected_obj)
 				{
+					auto changed = false;
 					editing_objects.emplace(EditingObjects(EditingObjects::GeneralAsset, info.ui->name_hash, &path, 1));
-					auto changed = manipulate_udt(*info.ui, (voidptr*)&inspected_obj, 1).first;
+					if (ImGui::BeginTableEx("inspector", "inspector"_h, 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
+					{
+						ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100);
+						ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0);
+
+						changed = manipulate_udt(*info.ui, (voidptr*)&inspected_obj, 1).first;
+
+						ImGui::EndTable();
+					}
 					editing_objects.pop();
 
 					if (changed)
@@ -2683,7 +2711,16 @@ void InspectorView::on_draw()
 				if (inspected_obj)
 				{
 					uint changed = manipulate_variable(TypeInfo::get<decltype(default_defines)>(), "default defines", 0, 0, nullptr, nullptr, "", (voidptr*)&default_defines, 1, nullptr);
-					changed |= manipulate_udt(*ser_ui, (voidptr*)&inspected_obj, 1).first;
+
+					if (ImGui::BeginTableEx("inspector", "inspector"_h, 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
+					{
+						ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100);
+						ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0);
+
+						changed |= manipulate_udt(*ser_ui, (voidptr*)&inspected_obj, 1).first;
+
+						ImGui::EndTable();
+					}
 					if (changed >= 2)
 					{
 						std::ofstream file(path);

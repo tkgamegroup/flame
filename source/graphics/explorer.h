@@ -477,8 +477,10 @@ namespace flame
 						for (auto& stem : Path::reverse(opened_folder->path))
 						{
 							ImGui::SameLine();
+							ImGui::PushID(lv);
 							if (ImGui::SmallButton(stem.string().c_str()))
 								jump_lv = lv;
+							ImGui::PopID();
 							ImGui::SameLine();
 							ImGui::TextUnformatted("\\");
 							lv++;

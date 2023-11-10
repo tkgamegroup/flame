@@ -29,11 +29,11 @@ void main()
 
 	vec3 world_pos = vec3(deform * vec4(i_pos, 1.0));
 	#ifndef DEPTH_ONLY
+		o_color = 0xffffffff;
 		mat3 normal_mat = transpose(inverse(mat3(deform)));
 		o_normal = normalize(normal_mat * i_nor);
 		o_tangent = normalize(normal_mat * i_tan);
 	#endif
-	o_color = 0xffffffff;
 #else
 	vec3 world_pos = vec3(instance.meshes[id].mat * vec4(i_pos, 1.0));
 	#ifndef DEPTH_ONLY

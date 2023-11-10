@@ -157,11 +157,12 @@ namespace flame
 		std::vector<vec3> transform_feedback(cNodePtr node) override;
 		graphics::ImagePtr get_image(uint name) override;
 
-		void begin_hud(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const vec2& item_spacing) override;
+		void begin_hud(const vec2& pos, const vec2& size, const vec2& scl, const cvec4& col, const vec2& pivot, const vec2& item_spacing) override;
 		void end_hud() override;
 		void hud_rect(const vec2& pos, const vec2& size, const cvec4& col) override;
-		void hud_text(std::wstring_view label, const cvec4& col) override;
-		bool hud_button(std::wstring_view label, bool* p_hovered = nullptr) override;
+		void hud_text(std::wstring_view text, uint font_size, const cvec4& col) override;
+		void hud_image(const vec2& pos, const vec2& size, graphics::ImagePtr image, const cvec4& col) override;
+		bool hud_button(std::wstring_view label, uint font_size, bool* p_hovered) override;
 
 		void send_debug_string(const std::string& str) override;
 	};
