@@ -1868,9 +1868,8 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 									if (!ImGui::TempInputIsActive(ImGui::GetItemID()))
 										ret_changed = 2;
 								}
+								return true;
 							}
-
-							return true;
 						}
 						return false;
 					},

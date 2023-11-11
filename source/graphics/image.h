@@ -176,6 +176,12 @@ namespace flame
 
 			virtual ~Sampler() {}
 
+			struct Create
+			{
+				virtual SamplerPtr operator()(Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode, float custom_border_color) = 0;
+			};
+			FLAME_GRAPHICS_API static Create& create;
+
 			struct Get
 			{
 				virtual SamplerPtr operator()(Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode, BorderColor border_color = BorderColorWhite) = 0;

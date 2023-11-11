@@ -541,7 +541,7 @@ namespace flame
 			graphics_device->set_object_debug_name(img_gbufferC.get(), "GBufferC");
 			img_gbufferD.reset(graphics::Image::create(graphics::Format_B10G11R11_UFLOAT, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 			img_gbufferD->filename = L"#img_gbufferD";
-			graphics_device->set_object_debug_name(img_gbufferC.get(), "GBufferD");
+			graphics_device->set_object_debug_name(img_gbufferD.get(), "GBufferD");
 		}
 
 		if (mode != RenderModeSimple)
@@ -610,7 +610,7 @@ namespace flame
 
 		auto graphics_device = graphics::Device::current();
 		static auto sp_trilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
-		static auto sp_shadow = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder);
+		static auto sp_shadow = graphics::Sampler::create(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder, std::numeric_limits<float>::max());
 
 		graphics::InstanceCommandBuffer cb;
 
@@ -982,6 +982,7 @@ namespace flame
 		if (csm_levels == lv)
 			return;
 		csm_levels = min(lv, 4U);
+		buf_lighting.mark_dirty_c("csm_levels"_h).as<uint>() = csm_levels;
 
 		dirty = true;
 	}
@@ -2220,7 +2221,7 @@ namespace flame
 					auto& s = dir_shadows[i];
 					for (auto lv = 0U; lv < csm_levels; lv++)
 					{
-						cb->begin_renderpass(nullptr, fbs_dir_shadow[i * DirShadowMaxLevels + lv].get(), { vec4(1.f, 0.f, 0.f, 0.f), vec4(1.f, 0.f, 0.f, 0.f) });
+						cb->begin_renderpass(nullptr, fbs_dir_shadow[i * DirShadowMaxLevels + lv].get(), { vec4(std::numeric_limits<float>::max(), 0.f, 0.f, 0.f), vec4(1.f, 0.f, 0.f, 0.f) });
 						prm_fwd.bind_dss(cb);
 						prm_fwd.pc.mark_dirty_c("i"_h).as<ivec4>() = ivec4(0, i, lv, 0);
 						prm_fwd.push_constant(cb);

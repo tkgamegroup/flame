@@ -230,3 +230,40 @@ vec3 Yxy2rgb(vec3 _Yxy)
 {
 	return xyz2rgb(Yxy2xyz(_Yxy) );
 }
+
+float random(ivec2 st)
+{
+    return fract(sin(dot(st, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+float noise(vec2 st)
+{
+    ivec2 i = ivec2(floor(st));
+    vec2 f = fract(st);
+
+    float a = random(i);
+    float b = random(i + ivec2(1, 0));
+    float c = random(i + ivec2(0, 1));
+    float d = random(i + ivec2(1, 1));
+
+    vec2 u = f * f * (3.0 - 2.0 * f);
+
+    return mix(a, b, u.x) +
+            (c - a)* u.y * (1.0 - u.x) +
+            (d - b) * u.x * u.y;
+}
+
+#define PERLIN_FBM_OCTAVES 6
+float perlin(vec2 st) 
+{
+    float value = 0.0;
+    float amplitude = 0.5;
+
+    for (int i = 0; i < PERLIN_FBM_OCTAVES; i++) 
+    {
+        value += amplitude * noise(st);
+        st *= 2.0;
+        amplitude *= 0.5;
+    }
+    return value;
+}

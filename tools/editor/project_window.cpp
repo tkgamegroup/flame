@@ -1399,7 +1399,7 @@ void ProjectWindow::process_changed_paths()
 				}
 				else if (ext == L".glsl")
 				{
-					if (p.second & FileModified)
+					if ((p.second & FileModified) || (p.second & FileRenamed))
 					{
 						get_shaders();
 						get_graphics_pipelines();

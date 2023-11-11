@@ -239,85 +239,93 @@ namespace flame
 						auto bp = Blueprint::get(code_file);
 						auto bp_ins = BlueprintInstance::create(bp);
 						std::ofstream file(code_file_path);
+
+						std::string define_str;
+						std::string function_str;
 						
 						if (auto it = bp_ins->groups.find("main"_h); it != bp_ins->groups.end())
 						{
+							auto& g = it->second;
+
 							auto format_name = [](const std::string& name)->std::string {
 								auto ret = name;
 								SUS::strip_head_if(ret, "glm::");
+								if (ret == "cvec4")
+									ret = "vec4";
 								return ret;
 							};
 
-							auto& g = it->second;
-							if (render_queue == RenderQueue::Opaque || render_queue == RenderQueue::AlphaTest)
+							std::vector<std::pair<uint, BlueprintAttribute*>> output_slot_datas;
+							std::map<void*, uint> data_to_id;
+							for (auto& kv : g.slot_datas)
 							{
-
+								auto& arg = kv.second.attribute;
+								output_slot_datas.emplace_back(kv.first, &arg); // we first put all slot datas into it, and then remove the input ones later
+								data_to_id[arg.data] = kv.first;
 							}
-							else if (render_queue == RenderQueue::Transparent)
-							{
-								for (auto& kv : g.slot_datas)
+
+							std::function<void(BlueprintInstanceNode& n)> process_node;
+							process_node = [&](BlueprintInstanceNode& n) {
+								auto ori = n.original;
+								if (ori)
 								{
-									auto& arg = kv.second.attribute;
-									file << std::format("{} v_{};\n", format_name(arg.type->name), kv.first);
-								}
-
-								file << "void material_main(MaterialInfo material, vec4 color)\n{\n";
-
-								std::function<void(BlueprintInstanceNode& n)> process_node;
-								process_node = [&](BlueprintInstanceNode& n) {
-									auto ori = n.original;
-									if (ori)
-									{
-										auto get_input_data_id = [&](uint idx)->int {
-											auto slot_id = ori->inputs[idx]->object_id;
-											if (auto it = g.slot_datas.find(slot_id); it != g.slot_datas.end())
-												return slot_id;
-											auto slot_data = n.inputs[idx].data;
-											for (auto& kv : g.slot_datas)
-											{
-												if (kv.second.attribute.data == slot_data)
-													return kv.first;
-											}
-											return -1;
-										};
-
-										for (auto i = 0; i < ori->inputs.size(); i++)
+									auto get_input = [&](uint idx)->std::string {
+										auto slot_id = ori->inputs[idx]->object_id;
+										if (auto it = g.slot_datas.find(slot_id); it != g.slot_datas.end())
 										{
-											auto& input = ori->inputs[i];
-											auto slot_id = input->object_id;
-											if (auto it = g.slot_datas.find(slot_id); it != g.slot_datas.end())
-											{
-												auto& arg = it->second.attribute;
-												file << std::format("\tv_{} = {};\n", it->first, arg.type->serialize(arg.data));
-											}
+											// remove the input ones from output_slot_datas
+											std::erase_if(output_slot_datas, [&](const auto& i) {
+												return i.first == slot_id;
+											});
+											auto& arg = it->second.attribute;
+											return arg.type->serialize(arg.data);
 										}
+										if (auto it = data_to_id.find(n.inputs[idx].data); it != data_to_id.end())
+											return std::format("v_{}", it->second);
+										return "";
+									};
 
-										switch (ori->name_hash)
+									switch (ori->name_hash)
+									{
+									case "Vec4"_h:
+										function_str += std::format("\tv_{} = vec4({}, {}, {}, {});\n",
+											ori->outputs[0]->object_id,
+											get_input(0),
+											get_input(1),
+											get_input(2),
+											get_input(3));
+										break;
+									case "Input"_h:
+										if (auto i_coordw_idx = ori->find_output_i("i_coordw"_h); i_coordw_idx != -1)
+											function_str += std::format("\tv_{} = i_coordw;\n", ori->outputs[i_coordw_idx]->object_id);
+										break;
+									case "Output"_h:
+										if (render_queue == RenderQueue::Opaque || render_queue == RenderQueue::AlphaTest)
 										{
-										case "Vec4"_h:
-											file << std::format("\tv_{} = vec4(v_{}, v_{}, v_{}, v_{});\n", 
-												ori->outputs[0]->object_id,
-												get_input_data_id(0),
-												get_input_data_id(1),
-												get_input_data_id(2),
-												get_input_data_id(3));
-											break;
-										case "Output"_h:
+
+										}
+										else if (render_queue == RenderQueue::Transparent)
+										{
 											if (auto o_color_idx = ori->find_input_i("o_color"_h); o_color_idx != -1)
 											{
-												file << std::format("\to_color = v_{};\n",
-													get_input_data_id(o_color_idx));
+												function_str += std::format("\to_color = {};\n",
+													get_input(o_color_idx));
 											}
-											break;
 										}
+										break;
 									}
-									for (auto& c : n.children)
-										process_node(c);
-								};
-								process_node(g.root_node);
+								}
+								for (auto& c : n.children)
+									process_node(c);
+							};
+							process_node(g.root_node);
 
-								file << "}\n";
-							}
+							file << "void material_main(MaterialInfo material, vec4 color)\n{\n";
+							for (auto& s : output_slot_datas)
+								define_str += std::format("\t{} v_{};\n", format_name(s.second->type->name), s.first);
+							file << define_str;
+							file << function_str;
+							file << "}\n";
 						}
 
 						file.close();

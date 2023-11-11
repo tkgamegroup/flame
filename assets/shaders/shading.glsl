@@ -52,6 +52,7 @@ vec3 get_lighting(vec3 world_pos, float distv, vec3 N, vec3 V, float metallic, v
 {
 	vec3 ret = vec3(0.0);
 
+	uint csm_levels = lighting.csm_levels;
 	uint dir_num = lighting.dir_lights_count;
 	for (int i = 0; i < dir_num; i++)
 	{
@@ -61,7 +62,7 @@ vec3 get_lighting(vec3 world_pos, float distv, vec3 N, vec3 V, float metallic, v
 		float f_shadow = 1.0;
 		if (li.shadow_index != -1)
 		{
-			for (uint lv = 0; lv < 4; lv++)
+			for (uint lv = 0; lv < csm_levels; lv++)
 			{
 				vec4 splits = lighting.dir_shadows[li.shadow_index].splits;
 				float far = splits[lv];

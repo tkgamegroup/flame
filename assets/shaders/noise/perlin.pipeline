@@ -33,46 +33,11 @@ layout (location = 1) in float i_val_base;
 
 layout (location = 0) out vec4 o_col;
 
-float random(ivec2 st)
-{
-    return fract(sin(dot(st, vec2(12.9898, 78.233))) * 43758.5453123);
-}
-
-float noise(vec2 st)
-{
-    ivec2 i = ivec2(floor(st));
-    vec2 f = fract(st);
-
-    float a = random(i);
-    float b = random(i + ivec2(1, 0));
-    float c = random(i + ivec2(0, 1));
-    float d = random(i + ivec2(1, 1));
-
-    vec2 u = f * f * (3.0 - 2.0 * f);
-
-    return mix(a, b, u.x) +
-            (c - a)* u.y * (1.0 - u.x) +
-            (d - b) * u.x * u.y;
-}
-
-#define OCTAVES 6
-float fbm(vec2 st) 
-{
-    float value = 0.0;
-    float amplitude = 0.5;
-
-    for (int i = 0; i < OCTAVES; i++) 
-    {
-        value += amplitude * noise(st);
-        st *= 2.0;
-        amplitude *= 0.5;
-    }
-    return value;
-}
+#include "../math.h"
 
 void main()
 {
-    float value = pow(fbm(i_uv * pc.uv_scl + pc.uv_off), pc.power);
+    float value = pow(perlin(i_uv * pc.uv_scl + pc.uv_off), pc.power);
     float to_edge = min(min(i_uv.x, 1.0 - i_uv.x), min(i_uv.y, 1.0 - i_uv.y));
     if (to_edge < pc.falloff)
     {

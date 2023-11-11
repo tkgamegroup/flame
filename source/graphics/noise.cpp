@@ -195,39 +195,42 @@ namespace flame
             return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
         }
 
-        float perlin_noise(const vec2& coord)
+        float random(const ivec2& st)
         {
-            auto x = coord.x;
-            auto y = coord.y;
-            auto z = 0.f;
-            auto p = noise_hash_uchar_512;
+            return fract(sin(dot(vec2(st), vec2(12.9898, 78.233))) * 43758.5453123);
+        }
 
-            // Find the unit cube that contains the point
-            int X = (int)floor(x) & 255;
-            int Y = (int)floor(y) & 255;
-            int Z = (int)floor(z) & 255;
+        float noise(const vec2& st)
+        {
+            ivec2 i = ivec2(floor(st));
+            vec2 f = fract(st);
 
-            // Find relative x, y,z of point in cube
-            x -= floor(x);
-            y -= floor(y);
-            z -= floor(z);
+            float a = random(i);
+            float b = random(i + ivec2(1, 0));
+            float c = random(i + ivec2(0, 1));
+            float d = random(i + ivec2(1, 1));
 
-            // Compute fade curves for each of x, y, z
-            float u = fade(x);
-            float v = fade(y);
-            float w = fade(z);
+            vec2 u = f * f * (3.f - 2.f * f);
 
-            // Hash coordinates of the 8 cube corners
-            int A = p[X] + Y;
-            int AA = p[A] + Z;
-            int AB = p[A + 1] + Z;
-            int B = p[X + 1] + Y;
-            int BA = p[B] + Z;
-            int BB = p[B + 1] + Z;
+            return mix(a, b, u.x) +
+                (c - a) * u.y * (1.f - u.x) +
+                (d - b) * u.x * u.y;
+        }
 
-            // Add blended results from 8 corners of cube
-            float res = lerp(w, lerp(v, lerp(u, grad(p[AA], x, y, z), grad(p[BA], x - 1, y, z)), lerp(u, grad(p[AB], x, y - 1, z), grad(p[BB], x - 1, y - 1, z))), lerp(v, lerp(u, grad(p[AA + 1], x, y, z - 1), grad(p[BA + 1], x - 1, y, z - 1)), lerp(u, grad(p[AB + 1], x, y - 1, z - 1), grad(p[BB + 1], x - 1, y - 1, z - 1))));
-            return (res + 1.f) / 2.f;
+#define PERLIN_FBM_OCTAVES 6
+        float perlin_noise(const vec2& _st)
+        {
+            float value = 0.0;
+            float amplitude = 0.5;
+
+            auto st = _st;
+            for (int i = 0; i < PERLIN_FBM_OCTAVES; i++)
+            {
+                value += amplitude * noise(st);
+                st *= 2.f;
+                amplitude *= 0.5f;
+            }
+            return value;
         }
     }
 }

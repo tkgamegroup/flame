@@ -469,7 +469,10 @@ namespace flame
 								for (auto& d : defines)
 								{
 									if (d.first == tl)
+									{
 										header_path = d.second;
+										break;
+									}
 								}
 							}
 							if (!header_path.is_absolute())

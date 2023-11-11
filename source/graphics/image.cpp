@@ -19,7 +19,7 @@ namespace flame
 	{
 		std::vector<ImagePtr> images;
 		std::vector<std::unique_ptr<ImageT>> loaded_images;
-		std::vector<std::unique_ptr<SamplerT>> samplers;
+		std::vector<std::unique_ptr<SamplerT>> shared_samplers;
 
 		ImagePrivate::ImagePrivate()
 		{
@@ -969,11 +969,60 @@ namespace flame
 			unregister_object(vk_sampler);
 		}
 
+		VkSampler create_vk_sampler(Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode, BorderColor border_color, float custom_border_color = 1.f)
+		{
+			VkSampler ret;
+
+			VkSamplerCreateInfo info = {};
+			info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+			info.magFilter = to_backend(mag_filter);
+			info.minFilter = to_backend(min_filter);
+			info.mipmapMode = linear_mipmap ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
+			info.addressModeU = info.addressModeV = info.addressModeW = to_backend(address_mode);
+			info.maxAnisotropy = 1.f;
+			info.maxLod = VK_LOD_CLAMP_NONE;
+			info.compareOp = VK_COMPARE_OP_ALWAYS;
+			info.borderColor = to_backend(border_color);
+			if (border_color == BorderColorCustom)
+			{
+				static VkSamplerCustomBorderColorCreateInfoEXT vk_custom_border;
+				vk_custom_border.sType = VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT;
+				vk_custom_border.pNext = nullptr;
+				for (auto i = 0; i < 4; i++)
+					vk_custom_border.customBorderColor.float32[i] = custom_border_color;
+				vk_custom_border.format = VK_FORMAT_R32_SFLOAT;
+				info.pNext = &vk_custom_border;
+			}
+
+			chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &ret));
+			register_object(ret, "Sampler", ret);
+
+			return ret;
+		}
+
+		struct SamplerCreate : Sampler::Create
+		{
+			SamplerPtr operator()(Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode, float custom_border_color) override
+			{
+				auto ret = new SamplerPrivate;
+				ret->mag_filter = mag_filter;
+				ret->min_filter = min_filter;
+				ret->linear_mipmap = linear_mipmap;
+				ret->address_mode = address_mode;
+				ret->border_color = BorderColorCustom;
+
+				ret->vk_sampler = create_vk_sampler(mag_filter, min_filter, linear_mipmap, address_mode, BorderColorCustom, custom_border_color);
+
+				return ret;
+			}
+		}Sampler_create;
+		Sampler::Create& Sampler::create = Sampler_create;
+
 		struct SamplerGet : Sampler::Get
 		{
 			SamplerPtr operator()(Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode, BorderColor border_color) override
 			{
-				for (auto& s : samplers)
+				for (auto& s : shared_samplers)
 				{
 					if (s->mag_filter == mag_filter && s->min_filter == min_filter && s->linear_mipmap == linear_mipmap && s->address_mode == address_mode && s->border_color == border_color)
 						return s.get();
@@ -986,21 +1035,9 @@ namespace flame
 				ret->address_mode = address_mode;
 				ret->border_color = border_color;
 
-				VkSamplerCreateInfo info = {};
-				info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-				info.magFilter = to_backend(mag_filter);
-				info.minFilter = to_backend(min_filter);
-				info.mipmapMode = linear_mipmap ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
-				info.addressModeU = info.addressModeV = info.addressModeW = to_backend(address_mode);
-				info.maxAnisotropy = 1.f;
-				info.maxLod = VK_LOD_CLAMP_NONE;
-				info.compareOp = VK_COMPARE_OP_ALWAYS;
-				info.borderColor = to_backend(border_color);
+				ret->vk_sampler = create_vk_sampler(mag_filter, min_filter, linear_mipmap, address_mode, border_color);
 
-				chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &ret->vk_sampler));
-				register_object(ret->vk_sampler, "Sampler", ret);
-
-				samplers.emplace_back(ret);
+				shared_samplers.emplace_back(ret);
 				return ret;
 			}
 		}Sampler_get;

@@ -411,6 +411,8 @@ namespace flame
 				return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
 			case BorderColorTransparentWhite:
 				return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+			case BorderColorCustom:
+				return VK_BORDER_COLOR_FLOAT_CUSTOM_EXT;
 			}
 		}
 

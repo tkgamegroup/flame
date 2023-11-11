@@ -292,6 +292,13 @@ namespace flame
 				*next_feature = &feature_8bit_storage;
 				next_feature = &feature_8bit_storage.pNext;
 
+				VkPhysicalDeviceCustomBorderColorFeaturesEXT feature_custom_border_color = {};
+				feature_custom_border_color.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT;
+				feature_custom_border_color.customBorderColors = true;
+				feature_custom_border_color.customBorderColorWithoutFormat = true;
+				*next_feature = &feature_custom_border_color;
+				next_feature = &feature_custom_border_color.pNext;
+
 				if (use_mesh_shader)
 				{
 					VkPhysicalDeviceMaintenance4Features feature_maintenance4 = {};
@@ -305,6 +312,7 @@ namespace flame
 				required_device_extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 				required_device_extensions.push_back(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
 				required_device_extensions.push_back(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+				required_device_extensions.push_back(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
 #if defined(VK_VERSION_1_3) && VK_HEADER_VERSION >= 231
 				if (use_mesh_shader)
 				{

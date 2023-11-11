@@ -229,7 +229,8 @@ namespace flame
 			BorderColorBlack,
 			BorderColorWhite,
 			BorderColorTransparentBlack,
-			BorderColorTransparentWhite
+			BorderColorTransparentWhite,
+			BorderColorCustom
 		};
 
 		enum AccessFlags

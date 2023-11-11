@@ -14,7 +14,7 @@ layout(location = 2) in		 vec4 i_position;
 layout(location = 2) in flat uint i_color;
 layout(location = 3) in      vec3 i_normal;
 layout(location = 4) in      vec3 i_tangent;
-layout(location = 5) in      vec3 i_coordw;
+layout(location = 5) in      vec3 i_coordw; 
 #endif
 
 #ifndef DEPTH_ONLY
