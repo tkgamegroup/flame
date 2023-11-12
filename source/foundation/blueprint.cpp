@@ -411,6 +411,24 @@ namespace flame
 		return ret;
 	}
 
+	BlueprintNodePtr BlueprintPrivate::add_node(BlueprintGroupPtr g, BlueprintNodePtr parent, uint name_hash)
+	{
+		for (auto& library : loaded_libraries)
+		{
+			for (auto& t : library->node_templates)
+			{
+				if (t.name_hash == name_hash)
+				{
+					auto n = add_node(g, parent, t.name, t.display_name, t.inputs, t.outputs,
+						t.function, t.loop_function, t.constructor, t.destructor, t.input_type_changed_callback, t.preview_provider,
+						t.is_block, t.begin_block_function, t.end_block_function);
+					return n;
+				}
+			}
+		}
+		return nullptr;
+	}
+
 	BlueprintNodePtr BlueprintPrivate::add_block(BlueprintGroupPtr group, BlueprintNodePtr parent)
 	{
 		return add_node(group, parent, "Block", "", {}, {}, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, true);
@@ -1659,7 +1677,7 @@ namespace flame
 	static void update_group_output_node(BlueprintGroupPtr g)
 	{
 		auto n = g->find_node("Output"_h);
-		vec2 old_position = vec2(0.f);
+		vec2 old_position = vec2(500.f, 0.f);
 		std::vector<std::pair<BlueprintSlotPtr, uint>> old_links;
 		if (n)
 		{
@@ -2274,29 +2292,15 @@ namespace flame
 						}
 						else
 						{
-							auto added = false;
-							for (auto& library : loaded_libraries)
+							auto n = ret->add_node(g, parent, sh(name.c_str()));
+							if (n)
 							{
-								for (auto& t : library->node_templates)
-								{
-									if (t.name == name)
-									{
-										auto n = ret->add_node(g, parent, t.name, t.display_name, t.inputs, t.outputs,
-											t.function, t.loop_function, t.constructor, t.destructor, t.input_type_changed_callback, t.preview_provider, 
-											t.is_block, t.begin_block_function, t.end_block_function);
-										for (auto n_input : n_node.child("inputs"))
-											read_input(n, n_input);
-										node_map[n_node.attribute("object_id").as_uint()] = n;
-										n->position = s2t<2, float>(n_node.attribute("position").value());
-
-										added = true;
-										break;
-									}
-								}
-								if (added)
-									break;
+								for (auto n_input : n_node.child("inputs"))
+									read_input(n, n_input);
+								node_map[n_node.attribute("object_id").as_uint()] = n;
+								n->position = s2t<2, float>(n_node.attribute("position").value());
 							}
-							if (!added)
+							else
 								printf("cannot find node template: %s\n", name.c_str());
 						}
 					}

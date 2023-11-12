@@ -384,6 +384,24 @@ namespace flame
 			}
 		);
 
+		library->add_template("Color To Vec4", "",
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<cvec4>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<vec4>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(vec4*)outputs[0].data = vec4(*(cvec4*)inputs[0].data) / 255.f;
+			}
+		);
+
 		std::vector<TypeInfo*> generic_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
 			TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
 			TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()

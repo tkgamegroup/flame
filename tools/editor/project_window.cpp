@@ -640,9 +640,9 @@ ProjectView::ProjectView(const std::string& name) :
 					}
 				});
 			}
-			if (ImGui::MenuItem("New BP Material Code"))
+			if (ImGui::MenuItem("New BP Material"))
 			{
-				ImGui::OpenInputDialog("New BP Material Code", "File Name", [path](bool ok, const std::string& str) {
+				ImGui::OpenInputDialog("New BP Material", "File Name", [path](bool ok, const std::string& str) {
 					if (ok && !str.empty())
 					{
 						auto fn = path / str;
@@ -651,7 +651,47 @@ ProjectView::ProjectView(const std::string& name) :
 						{
 							auto bp = Blueprint::get(fn);
 							auto g = bp->groups.front().get();
+							bp->add_group_input(g, "i_mat_id", TypeInfo::get<uint>());
+							bp->add_group_input(g, "i_uv", TypeInfo::get<vec2>());
+							bp->add_group_input(g, "i_color", TypeInfo::get<cvec4>());
+							bp->add_group_input(g, "i_normal", TypeInfo::get<vec3>());
+							bp->add_group_input(g, "i_coordw", TypeInfo::get<vec3>());
 							bp->add_group_output(g, "o_color", TypeInfo::get<vec4>());
+							bp->add_group_output(g, "o_normal", TypeInfo::get<vec3>());
+							bp->add_group_output(g, "o_metallic", TypeInfo::get<float>());
+							bp->add_group_output(g, "o_roughness", TypeInfo::get<float>());
+							bp->add_group_output(g, "o_emissive", TypeInfo::get<vec3>());
+							bp->add_group_output(g, "o_ao", TypeInfo::get<float>());
+							auto n_input = g->find_node("Input"_h);
+							auto n_output = g->find_node("Output"_h);
+							{
+								auto n_defalut = bp->add_node(g, nullptr, "Vec4"_h);
+								n_defalut->position = vec2(300, -200);
+								bp->add_link(n_defalut->find_output("Out"_h), n_output->find_input("o_color"_h));
+							}
+							bp->add_link(n_input->find_output("i_normal"_h), n_output->find_input("o_normal"_h));
+							{
+								auto n_defalut = bp->add_node(g, nullptr, "Scalar"_h);
+								n_defalut->position = vec2(300, 0);
+								bp->add_link(n_defalut->find_output("Out"_h), n_output->find_input("o_metallic"_h));
+							}
+							{
+								auto n_defalut = bp->add_node(g, nullptr, "Scalar"_h);
+								n_defalut->position = vec2(300, 80);
+								bp->add_link(n_defalut->find_output("Out"_h), n_output->find_input("o_roughness"_h));
+							}
+							{
+								auto n_defalut = bp->add_node(g, nullptr, "Vec3"_h);
+								n_defalut->position = vec2(300, 160);
+								bp->add_link(n_defalut->find_output("Out"_h), n_output->find_input("o_emissive"_h));
+							}
+							{
+								auto n_defalut = bp->add_node(g, nullptr, "Scalar"_h);
+								n_defalut->position = vec2(300, 320);
+								*(float*)n_defalut->find_input("V"_h)->data = 1.f;
+								bp->add_link(n_defalut->find_output("Out"_h), n_output->find_input("o_ao"_h));
+							}
+							bp->save();
 						}
 						else
 							ImGui::OpenMessageDialog("Failed to create Blueprint", "Blueprint already existed");

@@ -231,6 +231,18 @@ vec3 Yxy2rgb(vec3 _Yxy)
 	return xyz2rgb(Yxy2xyz(_Yxy) );
 }
 
+vec3 hsvColor(vec3 c)
+{    
+	vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+vec4 hsvColor(float h, float s, float v, float a)
+{
+	return vec4(hsvColor(vec3(h, s, v)), a);
+}
+
 float random(ivec2 st)
 {
     return fract(sin(dot(st, vec2(12.9898, 78.233))) * 43758.5453123);
