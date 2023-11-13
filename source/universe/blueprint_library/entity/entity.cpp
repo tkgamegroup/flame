@@ -1,6 +1,7 @@
 #include "../../../foundation/blueprint.h"
 #include "../../../foundation/typeinfo.h"
 #include "../../entity_private.h"
+#include "../../world_private.h"
 #include "../../components/node_private.h"
 #include "../../components/camera_private.h"
 #include "../../components/mesh_private.h"
@@ -482,6 +483,82 @@ namespace flame
 			}
 		);
 
+		library->add_template("Spawn Cube", "",
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Position",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				EntityPtr e = nullptr;
+
+				if (auto parent = *(EntityPtr*)inputs[0].data; parent)
+				{
+					auto pos = *(vec3*)inputs[1].data;
+
+					e = Entity::create();
+
+					auto node = e->add_component<cNode>();
+					node->set_pos(pos);
+
+					auto mesh = e->add_component<cMesh>();
+					mesh->set_mesh_and_material(L"standard_cube", L"default");
+
+					parent->add_child(e);
+				}
+				*(EntityPtr*)outputs[0].data = e;
+			}
+		);
+
+		library->add_template("Spawn Sphere", "",
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Position",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				EntityPtr e = nullptr;
+
+				if (auto parent = *(EntityPtr*)inputs[1].data; parent)
+				{
+					auto pos = *(vec3*)inputs[2].data;
+
+					e = Entity::create();
+
+					auto node = e->add_component<cNode>();
+					node->set_pos(pos);
+
+					auto mesh = e->add_component<cMesh>();
+					mesh->set_mesh_and_material(L"standard_sphere", L"default");
+
+					parent->add_child(e);
+				}
+				*(EntityPtr*)outputs[0].data = e;
+			}
+		);
+
 		library->add_template("Spawn Prefab", "",
 			{
 				{
@@ -827,6 +904,29 @@ namespace flame
 					});
 					*(EntityPtr*)outputs[0].data = nodes_with_distance[0].second;
 				}
+			}
+		);
+
+		library->add_template("For Each Entity", "",
+			{
+			},
+			{
+				{
+					.name = "temp_array",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<std::vector<EntityPtr>>() }
+				}
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				auto& temp_array = *(std::vector<EntityPtr>*)outputs[1].data;
+				temp_array.clear();
+				World::instance()->root->forward_traversal([&](EntityPtr e) {
+					temp_array.push_back(e);
+				});
+
+				block.max_execute_times = temp_array.size();
+				block.loop_vector_index = 2;
 			}
 		);
 

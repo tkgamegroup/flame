@@ -219,6 +219,13 @@ void record_keyframe(const std::string& name, const std::string& value, int vect
 	}
 }
 
+enum EditRange
+{
+	EditRangeNoLimit,
+	EditRangeZeroOne,
+	EditRangeNegetiveOnePositiveOne
+};
+
 static bool context_show_name = true;
 static bool context_enable_record = false;
 static uchar* context_same = nullptr;
@@ -227,7 +234,8 @@ std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num 
 	const std::function<bool(uint name, TypeInfo* type, void* data, int& changed)>& edit_func = {}, const std::function<void(uint, uint&, uint&)>& after_callback = {});
 
 int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash, int offset, const FunctionInfo* getter, const FunctionInfo* setter, const std::string& default_value, 
-	voidptr* objs, uint num, const void* id, const std::function<bool(uint name, TypeInfo* type, void* data, int& changed)>& edit_func = {})
+	voidptr* objs, uint num, const void* id, EditRange edit_range = EditRangeNoLimit,
+	const std::function<bool(uint name, TypeInfo* type, void* data, int& changed)>& edit_func = {})
 {
 	auto changed = 0;
 	bool just_exit_editing;
@@ -293,7 +301,14 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			ImGui::PushID(i);
 			if (i > 0)
 				ImGui::SameLine(0.f, inner_spaceing);
-			auto changed = ImGui::DragScalar("", ImGuiDataType_Float, &data[i], 0.1f, nullptr, nullptr, same[i] ? "%.3f" : "-", 0);
+			float speed = 0.05f;
+			float min = FLT_MIN, max = FLT_MAX;
+			switch (edit_range)
+			{
+			case EditRangeZeroOne: min = 0.f; max = 1.f; speed = 0.005f; break;
+			case EditRangeNegetiveOnePositiveOne: min = -1.f; max = +1.f; speed = 0.005f; break;
+			}
+			auto changed = ImGui::DragScalar("", ImGuiDataType_Float, &data[i], speed, &min, &max, same[i] ? "%.3f" : "-", 0);
 			if (context_enable_record)
 			{
 				ImGui::SameLine();
@@ -1201,18 +1216,18 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 	return changed;
 }
 
-int manipulate_variable(const VariableInfo& v, voidptr* objs, uint num, const std::function<bool(uint name, TypeInfo* type, void* data, int& changed)>& edit_func = {})
+int manipulate_variable(const VariableInfo& v, voidptr* objs, uint num, EditRange edit_range = EditRangeNoLimit, const std::function<bool(uint name, TypeInfo* type, void* data, int& changed)>& edit_func = {})
 {
-	return manipulate_variable(v.type, v.name, v.name_hash, v.offset, nullptr, nullptr, v.default_value, objs, num, &v, edit_func);
+	return manipulate_variable(v.type, v.name, v.name_hash, v.offset, nullptr, nullptr, v.default_value, objs, num, &v, edit_range, edit_func);
 }
 
-int manipulate_attribute(const Attribute& a, voidptr* objs, uint num, const std::function<bool(uint name, TypeInfo* type, void* data, int& changed)>& edit_func = {})
+int manipulate_attribute(const Attribute& a, voidptr* objs, uint num, EditRange edit_range = EditRangeNoLimit, const std::function<bool(uint name, TypeInfo* type, void* data, int& changed)>& edit_func = {})
 {
 	return manipulate_variable(a.type, a.name, a.name_hash, a.var_off(),
 		a.getter_idx != -1 ? &a.ui->functions[a.getter_idx] : nullptr,
 		a.setter_idx != -1 ? &a.ui->functions[a.setter_idx] : nullptr,
 		a.default_value,
-		objs, num, &a, edit_func);
+		objs, num, &a, edit_range, edit_func);
 }
 
 std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num, const std::vector<uint> excludes,
@@ -1221,58 +1236,74 @@ std::pair<uint, uint> manipulate_udt(const UdtInfo& ui, voidptr* objs, uint num,
 	uint ret_changed = 0;
 	uint ret_changed_name = 0;
 
-		if (ui.attributes.empty())
+	auto get_edit_range = [](const VariableInfo& v) {
+		EditRange ret = EditRangeNoLimit;
+		std::string range_meta;
+		if (v.metas.get("RANGE"_h, &range_meta))
 		{
-			for (auto& v : ui.variables)
+			if (range_meta == "ZO")
+				ret = EditRangeZeroOne;
+			else if (range_meta == "NOPO")
+				ret = EditRangeNegetiveOnePositiveOne;
+		}
+		return ret;
+	};
+
+	if (ui.attributes.empty())
+	{
+		for (auto& v : ui.variables)
+		{
+			bool skip = false;
+			if (!excludes.empty())
 			{
-				bool skip = false;
-				if (!excludes.empty())
+				for (auto h : excludes)
 				{
-					for (auto h : excludes)
+					if (h == v.name_hash)
 					{
-						if (h == v.name_hash)
-						{
-							skip = true;
-							break;
-						}
+						skip = true;
+						break;
 					}
 				}
-				if (skip)
-					continue;
-				auto changed = manipulate_variable(v, objs, num, edit_func);
-				ret_changed |= changed;
-				if (changed)
-					ret_changed_name = v.name_hash;
-				if (after_callback)
-					after_callback(v.name_hash, ret_changed, ret_changed_name);
 			}
+			if (skip)
+				continue;
+			auto changed = manipulate_variable(v, objs, num, get_edit_range(v), edit_func);
+			ret_changed |= changed;
+			if (changed)
+				ret_changed_name = v.name_hash;
+			if (after_callback)
+				after_callback(v.name_hash, ret_changed, ret_changed_name);
 		}
-		else
+	}
+	else
+	{
+		for (auto& a : ui.attributes)
 		{
-			for (auto& a : ui.attributes)
+			bool skip = false;
+			if (!excludes.empty())
 			{
-				bool skip = false;
-				if (!excludes.empty())
+				for (auto h : excludes)
 				{
-					for (auto h : excludes)
+					if (h == a.name_hash)
 					{
-						if (h == a.name_hash)
-						{
-							skip = true;
-							break;
-						}
+						skip = true;
+						break;
 					}
 				}
-				if (skip)
-					continue;
-				auto changed = manipulate_attribute(a, objs, num, edit_func);
-				ret_changed |= changed;
-				if (changed)
-					ret_changed_name = a.name_hash;
-				if (after_callback)
-					after_callback(a.name_hash, ret_changed, ret_changed_name);
 			}
+			if (skip)
+				continue;
+			EditRange edit_range = EditRangeNoLimit;
+			if (auto pv = a.var(); pv)
+				edit_range = get_edit_range(*pv);
+			auto changed = manipulate_attribute(a, objs, num, edit_range, edit_func);
+			ret_changed |= changed;
+			if (changed)
+				ret_changed_name = a.name_hash;
+			if (after_callback)
+				after_callback(a.name_hash, ret_changed, ret_changed_name);
 		}
+	}
 
 	return std::make_pair(ret_changed, ret_changed_name);
 }
@@ -2183,10 +2214,10 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 		comp_udts.insert(comp_udts.end(), temp1.begin(), temp1.end());
 		comp_udts.insert(comp_udts.end(), temp2.begin(), temp2.end());
 	}
+	static std::string add_component_filter;
 	if (ImGui::BeginPopup("add_component"))
 	{
-		static std::string filter;
-		ImGui::InputText("Filter", &filter);
+		ImGui::InputText("Filter", &add_component_filter);
 
 		if (prefab_path.empty())
 			editing_objects.emplace(EditingObjects(EditingObjects::GeneralEntity, 0, entities.data(), entities.size(), &sync_states));
@@ -2195,7 +2226,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 
 		for (auto ui : comp_udts)
 		{
-			if (!filter.empty() && !SUS::find_case_insensitive(ui->name, filter))
+			if (!add_component_filter.empty() && !SUS::find_case_insensitive(ui->name, add_component_filter))
 				continue;
 			if (ImGui::Selectable(ui->name.c_str()))
 			{
@@ -2229,7 +2260,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 						{
 							std::vector<GUID> ids(eos.num);
 							std::vector<uint> indices(eos.num);
-							for (auto i = 0; i < eos.num; i++) 
+							for (auto i = 0; i < eos.num; i++)
 							{
 								ids[i] = ((EntityPtr*)eos.objs)[i]->instance_id;
 								indices[i] = ((EntityPtr*)eos.objs)[i]->find_component_i(ui->name_hash);
@@ -2258,6 +2289,8 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 
 		ImGui::EndPopup();
 	}
+	else
+		add_component_filter = "";
 
 	return { ret_changed, ret_changed_name };
 }

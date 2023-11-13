@@ -653,7 +653,7 @@ ProjectView::ProjectView(const std::string& name) :
 							auto g = bp->groups.front().get();
 							bp->add_group_input(g, "i_mat_id", TypeInfo::get<uint>());
 							bp->add_group_input(g, "i_uv", TypeInfo::get<vec2>());
-							bp->add_group_input(g, "i_color", TypeInfo::get<cvec4>());
+							bp->add_group_input(g, "i_color", TypeInfo::get<vec4>());
 							bp->add_group_input(g, "i_normal", TypeInfo::get<vec3>());
 							bp->add_group_input(g, "i_coordw", TypeInfo::get<vec3>());
 							bp->add_group_output(g, "o_color", TypeInfo::get<vec4>());

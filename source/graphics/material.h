@@ -29,11 +29,11 @@ namespace flame
 			vec4 color = vec4(1.f);
 			// Reflect
 			virtual void set_color(const vec4& v) = 0;
-			// Reflect
+			// Reflect RANGE=ZO
 			float metallic = 0.f;
 			// Reflect
 			virtual void set_metallic(float v) = 0;
-			// Reflect
+			// Reflect RANGE=ZO
 			float roughness = 1.f;
 			// Reflect
 			virtual void set_roughness(float v) = 0;

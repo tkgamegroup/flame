@@ -60,6 +60,28 @@ namespace flame
 			}
 		);
 
+		library->add_template("String Equal", "",
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(bool*)outputs[0].data = *(std::string*)inputs[0].data == *(std::string*)inputs[1].data;
+			}
+		);
+
 		library->add_template("To String", "",
 			{
 				{

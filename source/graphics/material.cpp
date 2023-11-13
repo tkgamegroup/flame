@@ -390,6 +390,14 @@ namespace flame
 							function_str += std::format("\tv_{} = perlin({});\n", ori->outputs[0]->object_id, get_input(0));
 							break;
 						case "Input"_h:
+							if (auto idx = ori->find_output_i("i_color"_h); idx != -1)
+							{
+								auto slot_id = ori->outputs[idx]->object_id;
+								std::erase_if(output_slot_values, [&](const auto& i) {
+									return i.first == slot_id;
+								});
+								id_to_var_name[slot_id] = "color";
+							}
 							if (auto idx = ori->find_output_i("i_uv"_h); idx != -1)
 							{
 								auto slot_id = ori->outputs[idx]->object_id;
