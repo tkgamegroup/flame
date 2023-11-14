@@ -1,9 +1,9 @@
-﻿#include <flame/graphics/application.h>
-#include <flame/foundation/system.h>
+﻿#include <flame/foundation/system.h>
 #include <flame/foundation/typeinfo.h>
 #include <flame/graphics/image.h>
 #include <flame/graphics/extension.h>
 #include <flame/graphics/shader.h>
+#include <flame/graphics/application.h>
 
 using namespace flame;
 using namespace graphics;

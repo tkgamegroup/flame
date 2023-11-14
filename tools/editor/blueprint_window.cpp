@@ -795,6 +795,8 @@ void BlueprintView::on_draw()
 					if (selected_variable != -1)
 					{
 						blueprint->remove_variable(nullptr, blueprint->variables[selected_variable].name_hash);
+						if (blueprint->variables.empty())
+							selected_variable = -1;
 						unsaved = true;
 					}
 				}
@@ -904,6 +906,8 @@ void BlueprintView::on_draw()
 					if (selected_variable != -1)
 					{
 						blueprint->remove_variable(group, group->variables[selected_variable].name_hash);
+						if (group->variables.empty())
+							selected_variable = -1;
 						unsaved = true;
 					}
 				}
@@ -994,6 +998,8 @@ void BlueprintView::on_draw()
 					if (selected_input != -1)
 					{
 						blueprint->remove_group_input(group, group->inputs[selected_input].name_hash);
+						if (group->inputs.empty())
+							selected_input = -1;
 						unsaved = true;
 					}
 				}
@@ -1083,6 +1089,8 @@ void BlueprintView::on_draw()
 					if (selected_output != -1)
 					{
 						blueprint->remove_group_output(group, group->outputs[selected_output].name_hash);
+						if (group->outputs.empty())
+							selected_output = -1;
 						unsaved = true;
 					}
 				}
