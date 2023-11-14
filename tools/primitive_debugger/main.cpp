@@ -262,9 +262,9 @@ struct App : GraphicsApplication
 						disp = radians(disp);
 						auto qut = angleAxis(disp.x, vec3(0.f, 1.f, 0.f)) * camera_qut;
 						qut = angleAxis(disp.y, qut * vec3(1.f, 0.f, 0.f)) * qut;
+						camera_pos = camera_target() + (qut * vec3(0.f, 0.f, 1.f)) * camera_zoom;
 						camera_qut = qut;
 						camera_rot = mat3(camera_qut);
-						camera_pos = camera_target() + (qut * vec3(0.f, 0.f, 1.f)) * camera_zoom;
 					}
 				}
 			}
