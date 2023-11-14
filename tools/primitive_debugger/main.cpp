@@ -95,9 +95,9 @@ struct App : GraphicsApplication
 		}
 		if (ImGui::SmallButton("P"))
 		{
-			// 123,456,789
 			vec3 p;
-			TypeInfo::unserialize_t(w2s(get_clipboard()), p);
+			auto str = w2s(get_clipboard());
+			sscanf_s(str.data(), "{x=%f y=%f z=%f", &p.x, &p.y, &p.z);
 			points.push_back(p);
 		}
 		ImGui::SameLine();
