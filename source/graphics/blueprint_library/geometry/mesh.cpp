@@ -276,7 +276,7 @@ namespace flame
 							ControlMesh next_level;
 							for (auto i = 0; i < levels; i++)
 							{
-								current_level.subdivide(next_level);
+								current_level.subdivide_CatmullClark(next_level);
 								current_level = next_level;
 							}
 							out_control_mesh = std::move(current_level);

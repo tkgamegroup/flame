@@ -9,11 +9,12 @@ namespace flame
 
 	enum RenderMode
 	{
-		RenderModeSimple, // forward shading, no post processing
+		RenderModeSimple, // forward shading, no shadows, no post-processing
 		RenderModeShaded,
 		RenderModeCameraLight,
-		RenderModeIBLValue,
-		RenderModeFogValue
+		RenderModeWireframe, // forward shading, wireframe, no shadows, no post-processing
+		RenderModeIBLValue, // obsoleted
+		RenderModeFogValue // obsoleted
 	};
 
 	struct RenderTask

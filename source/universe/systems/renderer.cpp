@@ -157,7 +157,7 @@ namespace flame
 		graphics::IndirectBuffer buf_idr;
 		std::unordered_map<graphics::GraphicsPipelinePtr, Batch> batches;
 
-		void collect(const DrawData& draw_data, graphics::CommandBufferPtr cb, uint mod2 = 0);
+		void collect(RenderMode render_mode, const DrawData& draw_data, graphics::CommandBufferPtr cb, uint mod2 = 0);
 		void draw(graphics::CommandBufferPtr cb);
 	};
 
@@ -220,7 +220,7 @@ namespace flame
 		}
 	}
 
-	static graphics::GraphicsPipelinePtr get_material_pipeline(sRenderer::MatRes& res, uint type, uint modifier1 = 0, uint modifier2 = 0)
+	static graphics::GraphicsPipelinePtr get_material_pipeline(RenderMode render_mode, sRenderer::MatRes& res, uint type, uint modifier1 = 0, uint modifier2 = 0)
 	{
 		auto key = type + modifier1 + modifier2;
 		auto it = res.pls.find(key);
@@ -266,6 +266,9 @@ namespace flame
 			defines.push_back("frag:UNLIT");
 			break;
 		}
+
+		if (render_mode == RenderModeWireframe)
+			defines.push_back("pm=" + TypeInfo::serialize_t(graphics::PolygonModeLine));
 
 		combine_global_defines(defines);
 		if (!res.mat->code_file.empty())
@@ -377,14 +380,14 @@ namespace flame
 		return pl;
 	}
 
-	void MeshBatcher::collect(const DrawData& draw_data, graphics::CommandBufferPtr cb, uint mod2)
+	void MeshBatcher::collect(RenderMode render_mode, const DrawData& draw_data, graphics::CommandBufferPtr cb, uint mod2)
 	{
 		for (auto i = 0; i < draw_data.meshes.size(); i++)
 		{
 			auto& m = draw_data.meshes[i];
 			auto& mesh_r = mesh_reses[m.mesh_id];
 			auto& mat_r = mat_reses[m.mat_id];
-			auto pl = get_material_pipeline(mat_r, "mesh"_h, mesh_r.arm ? "ARMATURE"_h : 0, mod2);
+			auto pl = get_material_pipeline(render_mode, mat_r, "mesh"_h, mesh_r.arm ? "ARMATURE"_h : 0, mod2);
 			auto it = batches.find(pl);
 			if (it == batches.end())
 			{
@@ -546,8 +549,7 @@ namespace flame
 
 		if (mode != RenderModeSimple)
 			fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
-		else
-			fb_fwd_clear.reset(graphics::Framebuffer::create(rp_fwd_clear, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
+		fb_fwd_clear.reset(graphics::Framebuffer::create(rp_fwd_clear, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
 
 		if (mode != RenderModeSimple)
 		{
@@ -2169,7 +2171,7 @@ namespace flame
 									n_MC_draws = draw_data.volumes.size();
 								}
 							}
-							s.batcher[lv].collect(draw_data, cb, "DEPTH_ONLY"_h);
+							s.batcher[lv].collect(mode, draw_data, cb, "DEPTH_ONLY"_h);
 							s.draw_terrains[lv] = draw_data.terrains;
 							s.draw_MCs[lv] = draw_data.volumes;
 
@@ -2230,14 +2232,14 @@ namespace flame
 
 						for (auto& t : s.draw_terrains[lv])
 						{
-							cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, "DEPTH_ONLY"_h));
+							cb->bind_pipeline(get_material_pipeline(mode, mat_reses[t.mat_id], "terrain"_h, 0, "DEPTH_ONLY"_h));
 							prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (t.mat_id << 16) + t.ins_id;
 							prm_fwd.push_constant(cb);
 							cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
 						}
 						for (auto& v : s.draw_MCs[lv])
 						{
-							cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, "DEPTH_ONLY"_h));
+							cb->bind_pipeline(get_material_pipeline(mode, mat_reses[v.mat_id], "marching_cubes"_h, 0, "DEPTH_ONLY"_h));
 							prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (v.mat_id << 16) + v.ins_id;
 							for (auto z = 0; z < v.blocks.z; z++)
 							{
@@ -2287,7 +2289,7 @@ namespace flame
 
 			cb->set_viewport_and_scissor(Rect(vec2(0), ext));
 
-			if (mode != RenderModeSimple)
+			if (mode != RenderModeSimple && mode != RenderModeWireframe)
 			{
 				// deferred shading pass
 				cb->begin_debug_label("Deferred Shading");
@@ -2300,7 +2302,7 @@ namespace flame
 						if (n.second->entity->layer & camera->layer)
 							n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
 					}
-					gbuffer_batcher.collect(draw_data, cb);
+					gbuffer_batcher.collect(mode, draw_data, cb);
 
 					cb->image_barrier(img_dst, {}, graphics::ImageLayoutAttachment);
 					cb->set_viewport_and_scissor(Rect(vec2(0), ext));
@@ -2321,21 +2323,21 @@ namespace flame
 
 						for (auto& t : draw_data.terrains)
 						{
-							cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "terrain"_h, 0, 0));
+							cb->bind_pipeline(get_material_pipeline(mode, mat_reses[t.mat_id], "terrain"_h, 0, 0));
 							prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (t.mat_id << 16) + t.ins_id;
 							prm_gbuf.push_constant(cb);
 							cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
 						}
 						for (auto& s : draw_data.sdfs)
 						{
-							cb->bind_pipeline(get_material_pipeline(mat_reses[s.mat_id], "sdf"_h, 0, 0));
+							cb->bind_pipeline(get_material_pipeline(mode, mat_reses[s.mat_id], "sdf"_h, 0, 0));
 							prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (s.mat_id << 16) + s.ins_id;
 							prm_gbuf.push_constant(cb);
 							cb->draw(3, 1, 0, 0);
 						}
 						for (auto& v : draw_data.volumes)
 						{
-							cb->bind_pipeline(get_material_pipeline(mat_reses[v.mat_id], "marching_cubes"_h, 0, 0));
+							cb->bind_pipeline(get_material_pipeline(mode, mat_reses[v.mat_id], "marching_cubes"_h, 0, 0));
 							prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (v.mat_id << 16) + v.ins_id;
 							for (auto z = 0; z < v.blocks.z; z++)
 							{
@@ -2384,7 +2386,7 @@ namespace flame
 			// forward pass
 			cb->begin_debug_label("Forward Shading");
 			{
-				if (mode != RenderModeSimple)
+				if (mode != RenderModeSimple && mode != RenderModeWireframe)
 				{
 					cb->image_barrier(img_dst, {}, graphics::ImageLayoutShaderReadOnly);
 					cb->begin_renderpass(nullptr, img_dst_ms->get_shader_write_dst());
@@ -2401,7 +2403,7 @@ namespace flame
 					cb->end_renderpass();
 				}
 
-				if (mode != RenderModeSimple)
+				if (mode != RenderModeSimple && mode != RenderModeWireframe)
 				{
 					for (auto& b : transparent_batcher.batches)
 						b.second.draw_indices.clear();
@@ -2411,10 +2413,10 @@ namespace flame
 						if (n.second->entity->layer & camera->layer)
 							n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
 					}
-					transparent_batcher.collect(draw_data, cb);
+					transparent_batcher.collect(mode, draw_data, cb);
 				}
 
-				if (mode != RenderModeSimple)
+				if (mode != RenderModeSimple && mode != RenderModeWireframe)
 				{
 					for (auto& p : draw_data.particles)
 					{
@@ -2435,7 +2437,7 @@ namespace flame
 					buf_particles.reset();
 				}
 
-				if (mode != RenderModeSimple)
+				if (mode != RenderModeSimple && mode != RenderModeWireframe)
 				{
 					cb->image_barrier(img_dst, {}, graphics::ImageLayoutAttachment);
 					cb->image_barrier(img_dep, {}, graphics::ImageLayoutAttachment);
@@ -2446,7 +2448,7 @@ namespace flame
 
 					for (auto& t : draw_data.terrains)
 					{
-						cb->bind_pipeline(get_material_pipeline(mat_reses[t.mat_id], "grass_field"_h, 0, 0));
+						cb->bind_pipeline(get_material_pipeline(mode, mat_reses[t.mat_id], "grass_field"_h, 0, 0));
 						prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (t.mat_id << 16) + t.ins_id;
 						prm_fwd.push_constant(cb);
 						cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
@@ -2457,7 +2459,7 @@ namespace flame
 						auto vtx_off = 0;
 						for (auto& p : draw_data.particles)
 						{
-							cb->bind_pipeline(get_material_pipeline(mat_reses[p.mat_id], "particle"_h, 0, 0));
+							cb->bind_pipeline(get_material_pipeline(mode, mat_reses[p.mat_id], "particle"_h, 0, 0));
 							cb->draw(p.ptcs.size(), 1, vtx_off, p.mat_id << 16);
 							vtx_off += p.ptcs.size();
 						}
@@ -2465,7 +2467,7 @@ namespace flame
 
 					cb->end_renderpass();
 				}
-				else if (mode == RenderModeSimple)
+				else
 				{
 					draw_data.reset(PassPickUp, CateMesh);
 					for (auto& n : camera_culled_nodes)
@@ -2489,14 +2491,14 @@ namespace flame
 						{
 							cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 							cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-							cb->bind_pipeline(get_material_pipeline(mat_res, "mesh"_h, 0, "FORCE_FORWARD"_h));
+							cb->bind_pipeline(get_material_pipeline(mode, mat_res, "mesh"_h, 0, "FORCE_FORWARD"_h));
 							cb->draw_indexed(mesh_res.idx_cnt, mesh_res.idx_off, mesh_res.vtx_off, 1, (m.mat_id << 16) + m.ins_id);
 						}
 						else
 						{
 							cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
 							cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
-							cb->bind_pipeline(get_material_pipeline(mat_res, "mesh"_h, "ARMATURE"_h, "FORCE_FORWARD"_h));
+							cb->bind_pipeline(get_material_pipeline(mode, mat_res, "mesh"_h, "ARMATURE"_h, "FORCE_FORWARD"_h));
 							cb->draw_indexed(mesh_res.idx_cnt, mesh_res.idx_off, mesh_res.vtx_off, 1, (m.mat_id << 16) + m.ins_id);
 						}
 					}

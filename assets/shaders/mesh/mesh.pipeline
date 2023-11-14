@@ -1,5 +1,6 @@
 %rp=../forward.rp
 %pll=../forward.pll
+%pm=Fill
 %cull_mode=Back
 %a2c=false
 %blend=false
@@ -11,6 +12,8 @@ shaders
   mesh.frag
 renderpass
   {rp}
+polygon_mode
+  {pm}
 cull_mode
   {cull_mode}
 alpha_to_coverage

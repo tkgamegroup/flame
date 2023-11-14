@@ -99,7 +99,6 @@ namespace flame
 				return;
 			render_queue = q;
 
-			generate_code(true);
 			data_changed("render_queue"_h);
 		}
 
@@ -440,19 +439,16 @@ namespace flame
 							if (auto idx = ori->find_input_i("o_emissive"_h); idx != -1)
 								function_str += std::format("\to_emissive = {};\n", get_input(idx));
 
-							if (render_queue == RenderQueue::Opaque || render_queue == RenderQueue::AlphaTest)
-							{
-								function_str += "\to_gbufferA = vec4(o_color.rgb, 0.0);\n";
-								function_str += "\to_gbufferB = vec4(o_normal * 0.5 + 0.5, 0.0);\n";
-								function_str += "\to_gbufferC = vec4(o_metallic, o_roughness, 0.0, 0.0);\n";
-								function_str += "\to_gbufferD = vec4(o_emissive, 0.0);\n";
-							}
-							else if (render_queue == RenderQueue::Transparent)
-							{
-								function_str += "\tvec3 albedo = (1.0 - o_metallic) * o_color.rgb;\n";
-								function_str += "\tvec3 f0 = mix(vec3(0.04), o_color.rgb, o_metallic);\n";
-								function_str += "\to_color = vec4(shading(i_coordw, o_normal, o_metallic, albedo, f0, o_roughness, 1.0, o_emissive, false), o_color.a);\n";
-							}
+							function_str += "\t#ifndef GBUFFER_PASS\n";
+							function_str += "\tvec3 albedo = (1.0 - o_metallic) * o_color.rgb;\n";
+							function_str += "\tvec3 f0 = mix(vec3(0.04), o_color.rgb, o_metallic);\n";
+							function_str += "\to_color = vec4(shading(i_coordw, o_normal, o_metallic, albedo, f0, o_roughness, 1.0, o_emissive, false), o_color.a);\n";
+							function_str += "\t#else\n";
+							function_str += "\to_gbufferA = vec4(o_color.rgb, 0.0);\n";
+							function_str += "\to_gbufferB = vec4(o_normal * 0.5 + 0.5, 0.0);\n";
+							function_str += "\to_gbufferC = vec4(o_metallic, o_roughness, 0.0, 0.0);\n";
+							function_str += "\to_gbufferD = vec4(o_emissive, 0.0);\n";
+							function_str += "\t#endif\n";
 							break;
 						}
 					}

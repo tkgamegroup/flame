@@ -115,7 +115,7 @@ namespace flame
 				bottom_face.normal = vec3(0.f, -1.f, 0.f);
 			}
 
-			void subdivide(ControlMesh& oth)
+			void subdivide_CatmullClark(ControlMesh& oth)
 			{
 				oth.reset();
 
@@ -125,36 +125,25 @@ namespace flame
 				{
 					auto& f = faces[i];
 
-					uint v0 = f.corners[0].vertex_id;
-					uint v1 = f.corners[1].vertex_id;
-					uint v2 = f.corners[2].vertex_id;
-					uint v3 = f.corners[3].vertex_id;
-
-					vertices_adjacent_face_count[v0]++;
-					vertices_adjacent_face_count[v1]++;
-					vertices_adjacent_face_count[v2]++;
-					vertices_adjacent_face_count[v3]++;
-
-					faces_adjacent[{v1, v0}] = i;
-					faces_adjacent[{v2, v1}] = i;
-					faces_adjacent[{v3, v2}] = i;
-					faces_adjacent[{v0, v3}] = i;
+					for (auto j = 0; j < f.corners.size(); j++)
+					{
+						uint v0 = f.corners[j].vertex_id;
+						uint v1 = f.corners[j + 1 < f.corners.size() ? j + 1 : 0].vertex_id;
+						vertices_adjacent_face_count[v0]++;
+						faces_adjacent[{v1, v0}] = i;
+					}
 				}
 
-				std::vector<vec3> face_points;
-				face_points.resize(faces.size());
+				std::vector<vec3> face_points(faces.size());
 
 				for (auto i = 0; i < faces.size(); i++)
 				{
 					auto& f = faces[i];
 
-					uint v0 = f.corners[0].vertex_id;
-					uint v1 = f.corners[1].vertex_id;
-					uint v2 = f.corners[2].vertex_id;
-					uint v3 = f.corners[3].vertex_id;
-
-					vec3 face_point = (vertices[v0] + vertices[v1] + vertices[v2] + vertices[v3]) * 0.25f;
-
+					vec3 face_point(0.f);
+					for (auto& c : f.corners)
+						face_point += vertices[c.vertex_id];
+					face_point *= 1.f / (float)f.corners.size();
 					face_points[i] = face_point;
 				}
 
@@ -163,79 +152,143 @@ namespace flame
 				for (auto i = 0; i < faces.size(); i++)
 				{
 					auto& f = faces[i];
+					if (f.corners.size() > 4)
+						continue;
 
-					uint v0 = f.corners[0].vertex_id;
-					uint v1 = f.corners[1].vertex_id;
-					uint v2 = f.corners[2].vertex_id;
-					uint v3 = f.corners[3].vertex_id;
+					if (f.corners.size() == 3)
+					{
+						uint v0 = f.corners[0].vertex_id;
+						uint v1 = f.corners[1].vertex_id;
+						uint v2 = f.corners[2].vertex_id;
 
-					auto k01 = std::make_pair(v0, v1);
-					auto k12 = std::make_pair(v1, v2);
-					auto k23 = std::make_pair(v2, v3);
-					auto k30 = std::make_pair(v3, v0);
-					auto k03 = std::make_pair(v0, v3);
-					auto k32 = std::make_pair(v3, v2);
-					auto k21 = std::make_pair(v2, v1);
-					auto k10 = std::make_pair(v1, v0);
+						auto k01 = std::make_pair(v0, v1);
+						auto k12 = std::make_pair(v1, v2);
+						auto k20 = std::make_pair(v2, v0);
+						auto k10 = std::make_pair(v1, v0);
+						auto k21 = std::make_pair(v2, v1);
+						auto k02 = std::make_pair(v0, v2);
 
-					uint adjacent_f03 = faces_adjacent[k30];
-					vec3 edge_point_03 = (face_points[i] + face_points[adjacent_f03] +
-						vertices[v0] + vertices[v3]) * 0.25f;
-					edge_points[k30] = edge_point_03;
-					edge_points[k03] = edge_point_03;
+						uint adjacent_f01 = faces_adjacent[k01];
+						vec3 edge_point_01 = (face_points[i] + face_points[adjacent_f01] +
+							vertices[v0] + vertices[v1]) * 0.25f;
+						edge_points[k01] = edge_point_01;
+						edge_points[k10] = edge_point_01;
 
-					uint adjacent_f32 = faces_adjacent[k23];
-					vec3 edge_point_32 = (face_points[i] + face_points[adjacent_f32] +
-						vertices[v3] + vertices[v2]) * 0.25f;
-					edge_points[k23] = edge_point_32;
-					edge_points[k32] = edge_point_32;
+						uint adjacent_f12 = faces_adjacent[k12];
+						vec3 edge_point_12 = (face_points[i] + face_points[adjacent_f12] +
+							vertices[v1] + vertices[v2]) * 0.25f;
+						edge_points[k12] = edge_point_12;
+						edge_points[k21] = edge_point_12;
 
-					uint adjacent_f21 = faces_adjacent[k12];
-					vec3 edge_point_21 = (face_points[i] + face_points[adjacent_f21] +
-						vertices[v2] + vertices[v1]) * 0.25f;
-					edge_points[k12] = edge_point_21;
-					edge_points[k21] = edge_point_21;
+						uint adjacent_f20 = faces_adjacent[k20];
+						vec3 edge_point_20 = (face_points[i] + face_points[adjacent_f20] +
+							vertices[v2] + vertices[v0]) * 0.25f;
+						edge_points[k20] = edge_point_20;
+						edge_points[k02] = edge_point_20;
 
-					uint adjacent_f10 = faces_adjacent[k01];
-					vec3 edge_point_10 = (face_points[i] + face_points[adjacent_f10] +
-						vertices[v1] + vertices[v0]) * 0.25f;
-					edge_points[k01] = edge_point_10;
-					edge_points[k10] = edge_point_10;
+					}
+					else if (f.corners.size() == 4)
+					{
+						uint v0 = f.corners[0].vertex_id;
+						uint v1 = f.corners[1].vertex_id;
+						uint v2 = f.corners[2].vertex_id;
+						uint v3 = f.corners[3].vertex_id;
+
+						auto k01 = std::make_pair(v0, v1);
+						auto k12 = std::make_pair(v1, v2);
+						auto k23 = std::make_pair(v2, v3);
+						auto k30 = std::make_pair(v3, v0);
+						auto k03 = std::make_pair(v0, v3);
+						auto k32 = std::make_pair(v3, v2);
+						auto k21 = std::make_pair(v2, v1);
+						auto k10 = std::make_pair(v1, v0);
+
+						uint adjacent_f03 = faces_adjacent[k30];
+						vec3 edge_point_03 = (face_points[i] + face_points[adjacent_f03] +
+							vertices[v0] + vertices[v3]) * 0.25f;
+						edge_points[k30] = edge_point_03;
+						edge_points[k03] = edge_point_03;
+
+						uint adjacent_f32 = faces_adjacent[k23];
+						vec3 edge_point_32 = (face_points[i] + face_points[adjacent_f32] +
+							vertices[v3] + vertices[v2]) * 0.25f;
+						edge_points[k23] = edge_point_32;
+						edge_points[k32] = edge_point_32;
+
+						uint adjacent_f21 = faces_adjacent[k12];
+						vec3 edge_point_21 = (face_points[i] + face_points[adjacent_f21] +
+							vertices[v2] + vertices[v1]) * 0.25f;
+						edge_points[k12] = edge_point_21;
+						edge_points[k21] = edge_point_21;
+
+						uint adjacent_f10 = faces_adjacent[k01];
+						vec3 edge_point_10 = (face_points[i] + face_points[adjacent_f10] +
+							vertices[v1] + vertices[v0]) * 0.25f;
+						edge_points[k01] = edge_point_10;
+						edge_points[k10] = edge_point_10;
+					}
 				}
 
 				int vertex_size = vertices.size();
-				std::vector<vec3> vertex_points;
-				vertex_points.resize(vertex_size);
+				std::vector<vec3> vertex_points(vertex_size);
+				for (auto& v : vertex_points) v = vec3(0.f);
 
 				for (auto i = 0; i < faces.size(); i++)
 				{
 					auto& f = faces[i];
+					if (f.corners.size() > 4)
+						continue;
 
-					uint v0 = f.corners[0].vertex_id;
-					uint v1 = f.corners[1].vertex_id;
-					uint v2 = f.corners[2].vertex_id;
-					uint v3 = f.corners[3].vertex_id;
+					if (f.corners.size() == 3)
+					{
+						uint v0 = f.corners[0].vertex_id;
+						uint v1 = f.corners[1].vertex_id;
+						uint v2 = f.corners[2].vertex_id;
 
-					uint n0 = vertices_adjacent_face_count[v0];
-					uint n1 = vertices_adjacent_face_count[v1];
-					uint n2 = vertices_adjacent_face_count[v2];
-					uint n3 = vertices_adjacent_face_count[v3];
+						uint n0 = vertices_adjacent_face_count[v0];
+						uint n1 = vertices_adjacent_face_count[v1];
+						uint n2 = vertices_adjacent_face_count[v2];
 
-					vertex_points[v0] += face_points[i] / (float)n0;
-					vertex_points[v0] += (vertices[v0] + vertices[v1]) * 0.5f / (float)n0;
-					vertex_points[v0] += (vertices[v3] + vertices[v0]) * 0.5f / (float)n0;
+						vertex_points[v0] += face_points[i] / (float)n0;
+						vertex_points[v0] += (vertices[v0] + vertices[v1]) * 0.5f / (float)n0;
+						vertex_points[v0] += (vertices[v2] + vertices[v0]) * 0.5f / (float)n0;
 
-					vertex_points[v1] += face_points[i] / (float)n1;
-					vertex_points[v1] += (vertices[v0] + vertices[v1]) * 0.5f / (float)n1;
-					vertex_points[v1] += (vertices[v1] + vertices[v2]) * 0.5f / (float)n1;
+						vertex_points[v1] += face_points[i] / (float)n1;
+						vertex_points[v1] += (vertices[v0] + vertices[v1]) * 0.5f / (float)n1;
+						vertex_points[v1] += (vertices[v1] + vertices[v2]) * 0.5f / (float)n1;
 
-					vertex_points[v2] += face_points[i] / (float)n2;
-					vertex_points[v2] += (vertices[v1] + vertices[v2]) * 0.5f / (float)n2;
-					vertex_points[v2] += (vertices[v2] + vertices[v3]) * 0.5f / (float)n2;
+						vertex_points[v2] += face_points[i] / (float)n2;
+						vertex_points[v2] += (vertices[v1] + vertices[v2]) * 0.5f / (float)n2;
+						vertex_points[v2] += (vertices[v2] + vertices[v0]) * 0.5f / (float)n2;
+					}
+					else if (f.corners.size() == 4)
+					{
+						uint v0 = f.corners[0].vertex_id;
+						uint v1 = f.corners[1].vertex_id;
+						uint v2 = f.corners[2].vertex_id;
+						uint v3 = f.corners[3].vertex_id;
 
-					vertex_points[v3] += face_points[i] / (float)n3;
-					vertex_points[v3] += (vertices[v3] + vertices[v0]) * 0.5f / (float)n3;
-					vertex_points[v3] += (vertices[v2] + vertices[v3]) * 0.5f / (float)n3;
+						uint n0 = vertices_adjacent_face_count[v0];
+						uint n1 = vertices_adjacent_face_count[v1];
+						uint n2 = vertices_adjacent_face_count[v2];
+						uint n3 = vertices_adjacent_face_count[v3];
+
+						vertex_points[v0] += face_points[i] / (float)n0;
+						vertex_points[v0] += (vertices[v0] + vertices[v1]) * 0.5f / (float)n0;
+						vertex_points[v0] += (vertices[v3] + vertices[v0]) * 0.5f / (float)n0;
+
+						vertex_points[v1] += face_points[i] / (float)n1;
+						vertex_points[v1] += (vertices[v0] + vertices[v1]) * 0.5f / (float)n1;
+						vertex_points[v1] += (vertices[v1] + vertices[v2]) * 0.5f / (float)n1;
+
+						vertex_points[v2] += face_points[i] / (float)n2;
+						vertex_points[v2] += (vertices[v1] + vertices[v2]) * 0.5f / (float)n2;
+						vertex_points[v2] += (vertices[v2] + vertices[v3]) * 0.5f / (float)n2;
+
+						vertex_points[v3] += face_points[i] / (float)n3;
+						vertex_points[v3] += (vertices[v3] + vertices[v0]) * 0.5f / (float)n3;
+						vertex_points[v3] += (vertices[v2] + vertices[v3]) * 0.5f / (float)n3;
+					}
 				}
 				for (auto i = 0; i < vertex_size; i++)
 				{
@@ -243,257 +296,457 @@ namespace flame
 					vertex_points[i] = (vertex_points[i] + (float)(n - 3) * vertices[i]) / (float)n;
 				}
 
-				//Quad
-				//3           2  
-				//
-				//
-				//
-				//0           1
-
-				//4 quads
-
-				//3    e23    2  
-				//
-				//e30  f     e12
-				//
-				//0   e01     1
-
-				uint vertex_ind = 0;
+				uint vertex_idx = 0;
 
 				std::vector<vec3> new_vertices;
-				std::vector<Face> new_quads;
+				std::vector<Face> new_faces;
 				std::unordered_map<std::pair<uint, uint>, uint, uint_pair_hasher> process_vertex;
 
 				for (auto i = 0; i < faces.size(); i++)
 				{
 					auto& f = faces[i];
+					if (f.corners.size() > 4)
+						continue;
 
-					auto ind_f = vertex_ind;
-
-					vertex_ind++;
-
+					auto idx_f = vertex_idx;
+					vertex_idx++;
 					new_vertices.emplace_back(face_points[i]);
 
-					uint v0 = f.corners[0].vertex_id;
-					uint v1 = f.corners[1].vertex_id;
-					uint v2 = f.corners[2].vertex_id;
-					uint v3 = f.corners[3].vertex_id;
-
-					auto e01 = std::make_pair(v0, v1);
-					auto e12 = std::make_pair(v1, v2);
-					auto e23 = std::make_pair(v2, v3);
-					auto e30 = std::make_pair(v3, v0);
-					auto e10 = std::make_pair(v1, v0);
-					auto e21 = std::make_pair(v2, v1);
-					auto e32 = std::make_pair(v3, v2);
-					auto e03 = std::make_pair(v0, v3);
-
-					//check edge vertex
-					uint ind_e01;
-					uint ind_e12;
-					uint ind_e23;
-					uint ind_e30;
-
-					if (process_vertex.find(e01) != process_vertex.end() || process_vertex.find(e10) != process_vertex.end())
+					if (f.corners.size() == 3)
 					{
-						if (process_vertex.find(e01) != process_vertex.end())
-							ind_e01 = process_vertex[e01];
-						else
-							ind_e01 = process_vertex[e10];
-					}
-					else
-					{
-						ind_e01 = vertex_ind;
 
+						//Triangle
+						//2
+						//|\
+						//| \
+						//|  \
+						//0---1
+
+						//3 Quads
+						//       2
+						//      / \
+						//     /   \
+						//    /     \
+						//  e20     e12
+						//  /    f    \
+						// /           \
+						///             \ 
+						//0-----e01-----1\
+
+						uint v0 = f.corners[0].vertex_id;
+						uint v1 = f.corners[1].vertex_id;
+						uint v2 = f.corners[2].vertex_id;
+
+						auto e01 = std::make_pair(v0, v1);
+						auto e12 = std::make_pair(v1, v2);
+						auto e20 = std::make_pair(v2, v0);
 						auto e10 = std::make_pair(v1, v0);
-
-						process_vertex[e01] = vertex_ind;
-
-						if (edge_points.find(e01) != edge_points.end())
-							new_vertices.emplace_back(edge_points[e01]);
-						else
-							new_vertices.emplace_back(edge_points[e10]);
-
-						++vertex_ind;
-					}
-
-					if (process_vertex.find(e12) != process_vertex.end() || process_vertex.find(e21) != process_vertex.end())
-					{
-						if (process_vertex.find(e12) != process_vertex.end())
-							ind_e12 = process_vertex[e12];
-						else
-							ind_e12 = process_vertex[e21];
-					}
-					else
-					{
-						ind_e12 = vertex_ind;
-
 						auto e21 = std::make_pair(v2, v1);
+						auto e02 = std::make_pair(v0, v2);
 
-						process_vertex[e12] = vertex_ind;
+						//check edge vertex
+						uint idx_e01;
+						uint idx_e12;
+						uint idx_e20;
 
-						if (edge_points.find(e12) != edge_points.end())
-							new_vertices.emplace_back(edge_points[e12]);
+						if (process_vertex.find(e01) != process_vertex.end() || process_vertex.find(e10) != process_vertex.end())
+						{
+							if (process_vertex.find(e01) != process_vertex.end())
+								idx_e01 = process_vertex[e01];
+							else
+								idx_e01 = process_vertex[e10];
+						}
 						else
-							new_vertices.emplace_back(edge_points[e21]);
-						++vertex_ind;
-					}
+						{
+							idx_e01 = vertex_idx;
 
-					if (process_vertex.find(e23) != process_vertex.end() || process_vertex.find(e32) != process_vertex.end())
-					{
-						if (process_vertex.find(e23) != process_vertex.end())
-							ind_e23 = process_vertex[e23];
+							auto e10 = std::make_pair(v1, v0);
+
+							process_vertex[e01] = vertex_idx;
+
+							if (edge_points.find(e01) != edge_points.end())
+								new_vertices.emplace_back(edge_points[e01]);
+							else
+								new_vertices.emplace_back(edge_points[e10]);
+
+							++vertex_idx;
+						}
+
+						if (process_vertex.find(e12) != process_vertex.end() || process_vertex.find(e21) != process_vertex.end())
+						{
+							if (process_vertex.find(e12) != process_vertex.end())
+								idx_e12 = process_vertex[e12];
+							else
+								idx_e12 = process_vertex[e21];
+						}
 						else
-							ind_e23 = process_vertex[e32];
-					}
-					else
-					{
-						ind_e23 = vertex_ind;
+						{
+							idx_e12 = vertex_idx;
 
+							auto e21 = std::make_pair(v2, v1);
+
+							process_vertex[e12] = vertex_idx;
+
+							if (edge_points.find(e12) != edge_points.end())
+								new_vertices.emplace_back(edge_points[e12]);
+							else
+								new_vertices.emplace_back(edge_points[e21]);
+							++vertex_idx;
+						}
+
+						if (process_vertex.find(e20) != process_vertex.end() || process_vertex.find(e02) != process_vertex.end())
+						{
+							if (process_vertex.find(e20) != process_vertex.end())
+								idx_e20 = process_vertex[e20];
+							else
+								idx_e20 = process_vertex[e02];
+						}
+						else
+						{
+							idx_e20 = vertex_idx;
+
+							auto e03 = std::make_pair(v0, v2);
+
+							process_vertex[e20] = vertex_idx;
+
+							if (edge_points.find(e20) != edge_points.end())
+								new_vertices.emplace_back(edge_points[e20]);
+							else
+								new_vertices.emplace_back(edge_points[e03]);
+							++vertex_idx;
+						}
+
+						//check point vertex
+						uint idx_v0;
+						uint idx_v1;
+						uint idx_v2;
+
+						auto p0 = std::make_pair(v0, 0xffffffff);
+						auto p1 = std::make_pair(v1, 0xffffffff);
+						auto p2 = std::make_pair(v2, 0xffffffff);
+
+						if (process_vertex.find(p0) != process_vertex.end())
+							idx_v0 = process_vertex[p0];
+						else
+						{
+							new_vertices.emplace_back(vertex_points[v0]);
+							process_vertex[p0] = vertex_idx;
+							idx_v0 = vertex_idx++;
+						}
+
+						if (process_vertex.find(p1) != process_vertex.end())
+							idx_v1 = process_vertex[p1];
+						else
+						{
+							new_vertices.emplace_back(vertex_points[v1]);
+							process_vertex[p1] = vertex_idx;
+							idx_v1 = vertex_idx++;
+						}
+
+						if (process_vertex.find(p2) != process_vertex.end())
+							idx_v2 = process_vertex[p2];
+						else
+						{
+							new_vertices.emplace_back(vertex_points[v2]);
+							process_vertex[p2] = vertex_idx;
+							idx_v2 = vertex_idx++;
+						}
+
+						//       2
+						//      / \
+						//     /   \
+						//    /     \
+						//  e20     e12
+						//  /    f    \
+						// /           \
+						///             \ 
+						//0-----e01-----1\
+						//Final Add Quads
+
+						auto uv_v0 = f.corners[0].uv;
+						auto uv_v1 = f.corners[0].uv;
+						auto uv_v2 = f.corners[0].uv;
+
+						auto uv_e01 = (uv_v0 + uv_v1) * 0.5f;
+						auto uv_e12 = (uv_v1 + uv_v2) * 0.5f;
+						auto uv_e20 = (uv_v2 + uv_v0) * 0.5f;
+
+						auto uv_f = (uv_v0 + uv_v1 + uv_v2) * (1.f / 3.f);
+
+						Face quad1;
+						quad1.corners.resize(4);
+						quad1.corners[0] = { .vertex_id = idx_f, .uv = uv_f };
+						quad1.corners[1] = { .vertex_id = idx_e01, .uv = uv_e01 };
+						quad1.corners[2] = { .vertex_id = idx_v0, .uv = uv_v0 };
+						quad1.corners[3] = { .vertex_id = idx_e20, .uv = uv_e20 };
+						quad1.normal = normalize(cross(new_vertices[idx_f] - new_vertices[idx_e20],
+							new_vertices[idx_f] - new_vertices[idx_e01]));
+
+						Face quad2;
+						quad2.corners.resize(4);
+						quad2.corners[0] = { .vertex_id = idx_f, .uv = uv_f };
+						quad2.corners[1] = { .vertex_id = idx_e12, .uv = uv_e12 };
+						quad2.corners[2] = { .vertex_id = idx_v1, .uv = uv_v1 };
+						quad2.corners[3] = { .vertex_id = idx_e01, .uv = uv_e01 };
+						quad2.normal = normalize(cross(new_vertices[idx_f] - new_vertices[idx_e01],
+							new_vertices[idx_f] - new_vertices[idx_e12]));
+
+						Face quad3;
+						quad3.corners.resize(4);
+						quad3.corners[0] = { .vertex_id = idx_f, .uv = uv_f };
+						quad3.corners[1] = { .vertex_id = idx_e20, .uv = uv_e20 };
+						quad3.corners[2] = { .vertex_id = idx_v2, .uv = uv_v2 };
+						quad3.corners[3] = { .vertex_id = idx_e12, .uv = uv_e12 };
+						quad3.normal = normalize(cross(new_vertices[idx_f] - new_vertices[idx_e12],
+							new_vertices[idx_f] - new_vertices[idx_e20]));
+
+						new_faces.emplace_back(quad1);
+						new_faces.emplace_back(quad2);
+						new_faces.emplace_back(quad3);
+					}
+					else if (f.corners.size() == 4)
+					{
+						//Quad
+						//3           2  
+						//
+						//
+						//
+						//0           1
+
+						//4 quads
+
+						//3    e23    2  
+						//
+						//e30  f     e12
+						//
+						//0   e01     1
+
+						uint v0 = f.corners[0].vertex_id;
+						uint v1 = f.corners[1].vertex_id;
+						uint v2 = f.corners[2].vertex_id;
+						uint v3 = f.corners[3].vertex_id;
+
+						auto e01 = std::make_pair(v0, v1);
+						auto e12 = std::make_pair(v1, v2);
+						auto e23 = std::make_pair(v2, v3);
+						auto e30 = std::make_pair(v3, v0);
+						auto e10 = std::make_pair(v1, v0);
+						auto e21 = std::make_pair(v2, v1);
 						auto e32 = std::make_pair(v3, v2);
-
-						process_vertex[e23] = vertex_ind;
-
-						if (edge_points.find(e23) != edge_points.end())
-							new_vertices.emplace_back(edge_points[e23]);
-						else
-							new_vertices.emplace_back(edge_points[e32]);
-
-						++vertex_ind;
-					}
-
-					if (process_vertex.find(e30) != process_vertex.end() || process_vertex.find(e03) != process_vertex.end())
-					{
-						if (process_vertex.find(e30) != process_vertex.end())
-							ind_e30 = process_vertex[e30];
-						else
-							ind_e30 = process_vertex[e03];
-					}
-					else
-					{
-						ind_e30 = vertex_ind;
-
 						auto e03 = std::make_pair(v0, v3);
 
-						process_vertex[e30] = vertex_ind;
+						//check edge vertex
+						uint idx_e01;
+						uint idx_e12;
+						uint idx_e23;
+						uint idx_e30;
 
-						if (edge_points.find(e30) != edge_points.end())
-							new_vertices.emplace_back(edge_points[e30]);
+						if (process_vertex.find(e01) != process_vertex.end() || process_vertex.find(e10) != process_vertex.end())
+						{
+							if (process_vertex.find(e01) != process_vertex.end())
+								idx_e01 = process_vertex[e01];
+							else
+								idx_e01 = process_vertex[e10];
+						}
 						else
-							new_vertices.emplace_back(edge_points[e03]);
-						++vertex_ind;
+						{
+							idx_e01 = vertex_idx;
+
+							auto e10 = std::make_pair(v1, v0);
+
+							process_vertex[e01] = vertex_idx;
+
+							if (edge_points.find(e01) != edge_points.end())
+								new_vertices.emplace_back(edge_points[e01]);
+							else
+								new_vertices.emplace_back(edge_points[e10]);
+
+							++vertex_idx;
+						}
+
+						if (process_vertex.find(e12) != process_vertex.end() || process_vertex.find(e21) != process_vertex.end())
+						{
+							if (process_vertex.find(e12) != process_vertex.end())
+								idx_e12 = process_vertex[e12];
+							else
+								idx_e12 = process_vertex[e21];
+						}
+						else
+						{
+							idx_e12 = vertex_idx;
+
+							auto e21 = std::make_pair(v2, v1);
+
+							process_vertex[e12] = vertex_idx;
+
+							if (edge_points.find(e12) != edge_points.end())
+								new_vertices.emplace_back(edge_points[e12]);
+							else
+								new_vertices.emplace_back(edge_points[e21]);
+							++vertex_idx;
+						}
+
+						if (process_vertex.find(e23) != process_vertex.end() || process_vertex.find(e32) != process_vertex.end())
+						{
+							if (process_vertex.find(e23) != process_vertex.end())
+								idx_e23 = process_vertex[e23];
+							else
+								idx_e23 = process_vertex[e32];
+						}
+						else
+						{
+							idx_e23 = vertex_idx;
+
+							auto e32 = std::make_pair(v3, v2);
+
+							process_vertex[e23] = vertex_idx;
+
+							if (edge_points.find(e23) != edge_points.end())
+								new_vertices.emplace_back(edge_points[e23]);
+							else
+								new_vertices.emplace_back(edge_points[e32]);
+
+							++vertex_idx;
+						}
+
+						if (process_vertex.find(e30) != process_vertex.end() || process_vertex.find(e03) != process_vertex.end())
+						{
+							if (process_vertex.find(e30) != process_vertex.end())
+								idx_e30 = process_vertex[e30];
+							else
+								idx_e30 = process_vertex[e03];
+						}
+						else
+						{
+							idx_e30 = vertex_idx;
+
+							auto e03 = std::make_pair(v0, v3);
+
+							process_vertex[e30] = vertex_idx;
+
+							if (edge_points.find(e30) != edge_points.end())
+								new_vertices.emplace_back(edge_points[e30]);
+							else
+								new_vertices.emplace_back(edge_points[e03]);
+							++vertex_idx;
+						}
+
+						//check point vertex
+						uint idx_v0;
+						uint idx_v1;
+						uint idx_v2;
+						uint idx_v3;
+
+						auto p0 = std::make_pair(v0, 0xffffffff);
+						auto p1 = std::make_pair(v1, 0xffffffff);
+						auto p2 = std::make_pair(v2, 0xffffffff);
+						auto p3 = std::make_pair(v3, 0xffffffff);
+
+						if (process_vertex.find(p0) != process_vertex.end())
+							idx_v0 = process_vertex[p0];
+						else
+						{
+							new_vertices.emplace_back(vertex_points[v0]);
+							process_vertex[p0] = vertex_idx;
+							idx_v0 = vertex_idx++;
+						}
+
+						if (process_vertex.find(p1) != process_vertex.end())
+							idx_v1 = process_vertex[p1];
+						else
+						{
+							new_vertices.emplace_back(vertex_points[v1]);
+							process_vertex[p1] = vertex_idx;
+							idx_v1 = vertex_idx++;
+						}
+
+						if (process_vertex.find(p2) != process_vertex.end())
+							idx_v2 = process_vertex[p2];
+						else
+						{
+							new_vertices.emplace_back(vertex_points[v2]);
+							process_vertex[p2] = vertex_idx;
+							idx_v2 = vertex_idx++;
+						}
+
+						if (process_vertex.find(p3) != process_vertex.end())
+							idx_v3 = process_vertex[p3];
+						else
+						{
+							new_vertices.emplace_back(vertex_points[v3]);
+							process_vertex[p3] = vertex_idx;
+							idx_v3 = vertex_idx++;
+						}
+
+						//3    e23    2  
+						//
+						//e30  f     e12
+						//
+						//0   e01     1
+						//Final Add Quads
+
+						auto uv_v0 = f.corners[0].uv;
+						auto uv_v1 = f.corners[0].uv;
+						auto uv_v2 = f.corners[0].uv;
+						auto uv_v3 = f.corners[0].uv;
+
+						auto uv_e01 = (uv_v0 + uv_v1) * 0.5f;
+						auto uv_e12 = (uv_v1 + uv_v2) * 0.5f;
+						auto uv_e23 = (uv_v2 + uv_v3) * 0.5f;
+						auto uv_e30 = (uv_v3 + uv_v0) * 0.5f;
+
+						auto uv_f = (uv_v0 + uv_v1 + uv_v2 + uv_v3) * 0.25f;
+
+						Face quad1;
+						quad1.corners.resize(4);
+						quad1.corners[0] = { .vertex_id = idx_f, .uv = uv_f };
+						quad1.corners[1] = { .vertex_id = idx_e01, .uv = uv_e01 };
+						quad1.corners[2] = { .vertex_id = idx_v0, .uv = uv_v0 };
+						quad1.corners[3] = { .vertex_id = idx_e30, .uv = uv_e30 };
+						quad1.normal = normalize(cross(new_vertices[idx_f] - new_vertices[idx_e30],
+							new_vertices[idx_f] - new_vertices[idx_e01]));
+
+						Face quad2;
+						quad2.corners.resize(4);
+						quad2.corners[0] = { .vertex_id = idx_f, .uv = uv_f };
+						quad2.corners[1] = { .vertex_id = idx_e12, .uv = uv_e12 };
+						quad2.corners[2] = { .vertex_id = idx_v1, .uv = uv_v1 };
+						quad2.corners[3] = { .vertex_id = idx_e01, .uv = uv_e01 };
+						quad2.normal = normalize(cross(new_vertices[idx_f] - new_vertices[idx_e01],
+							new_vertices[idx_f] - new_vertices[idx_e12]));
+
+						Face quad3;
+						quad3.corners.resize(4);
+						quad3.corners[0] = { .vertex_id = idx_f, .uv = uv_f };
+						quad3.corners[1] = { .vertex_id = idx_e23, .uv = uv_e23 };
+						quad3.corners[2] = { .vertex_id = idx_v2, .uv = uv_v2 };
+						quad3.corners[3] = { .vertex_id = idx_e12, .uv = uv_e12 };
+						quad3.normal = normalize(cross(new_vertices[idx_f] - new_vertices[idx_e12],
+							new_vertices[idx_f] - new_vertices[idx_e23]));
+
+						Face quad4;
+						quad4.corners.resize(4);
+						quad4.corners[0] = { .vertex_id = idx_f, .uv = uv_f };
+						quad4.corners[1] = { .vertex_id = idx_e30, .uv = uv_e30 };
+						quad4.corners[2] = { .vertex_id = idx_v3, .uv = uv_v3 };
+						quad4.corners[3] = { .vertex_id = idx_e23, .uv = uv_e23 };
+						quad4.normal = normalize(cross(new_vertices[idx_f] - new_vertices[idx_e23],
+							new_vertices[idx_f] - new_vertices[idx_e30]));
+
+						new_faces.emplace_back(quad1);
+						new_faces.emplace_back(quad2);
+						new_faces.emplace_back(quad3);
+						new_faces.emplace_back(quad4);
 					}
-
-					//check point vertex
-					uint ind_v0;
-					uint ind_v1;
-					uint ind_v2;
-					uint ind_v3;
-
-					auto p0 = std::make_pair(v0, 0xffffffff);
-					auto p1 = std::make_pair(v1, 0xffffffff);
-					auto p2 = std::make_pair(v2, 0xffffffff);
-					auto p3 = std::make_pair(v3, 0xffffffff);
-
-					if (process_vertex.find(p0) != process_vertex.end())
-						ind_v0 = process_vertex[p0];
-					else
-					{
-						new_vertices.emplace_back(vertex_points[v0]);
-						process_vertex[p0] = vertex_ind;
-						ind_v0 = vertex_ind++;
-					}
-
-					if (process_vertex.find(p1) != process_vertex.end())
-						ind_v1 = process_vertex[p1];
-					else
-					{
-						new_vertices.emplace_back(vertex_points[v1]);
-						process_vertex[p1] = vertex_ind;
-						ind_v1 = vertex_ind++;
-					}
-
-					if (process_vertex.find(p2) != process_vertex.end())
-						ind_v2 = process_vertex[p2];
-					else
-					{
-						new_vertices.emplace_back(vertex_points[v2]);
-						process_vertex[p2] = vertex_ind;
-						ind_v2 = vertex_ind++;
-					}
-
-					if (process_vertex.find(p3) != process_vertex.end())
-						ind_v3 = process_vertex[p3];
-					else
-					{
-						new_vertices.emplace_back(vertex_points[v3]);
-						process_vertex[p3] = vertex_ind;
-						ind_v3 = vertex_ind++;
-					}
-
-					//3    e23    2  
-					//
-					//e30  f     e12
-					//
-					//0   e01     1
-					//Final Add Quads
-
-					auto uv_v0 = f.corners[0].uv;
-					auto uv_v1 = f.corners[0].uv;
-					auto uv_v2 = f.corners[0].uv;
-					auto uv_v3 = f.corners[0].uv;
-
-					auto uv_e01 = (uv_v0 + uv_v1) * 0.5f;
-					auto uv_e12 = (uv_v1 + uv_v2) * 0.5f;
-					auto uv_e23 = (uv_v2 + uv_v3) * 0.5f;
-					auto uv_e30 = (uv_v3 + uv_v0) * 0.5f;
-
-					auto uv_f = (uv_v0 + uv_v1 + uv_v2 + uv_v3) * 0.25f;
-
-					Face quad1;
-					quad1.corners.resize(4);
-					quad1.corners[0] = { .vertex_id = ind_f, .uv = uv_f };
-					quad1.corners[1] = { .vertex_id = ind_e01, .uv = uv_e01 };
-					quad1.corners[2] = { .vertex_id = ind_v0, .uv = uv_v0 };
-					quad1.corners[3] = { .vertex_id = ind_e30, .uv = uv_e30 };
-					quad1.normal = normalize(cross(new_vertices[ind_f] - new_vertices[ind_e30], 
-						new_vertices[ind_f] - new_vertices[ind_e01]));
-
-					Face quad2;
-					quad2.corners.resize(4);
-					quad2.corners[0] = { .vertex_id = ind_f, .uv = uv_f };
-					quad2.corners[1] = { .vertex_id = ind_e12, .uv = uv_e12 };
-					quad2.corners[2] = { .vertex_id = ind_v1, .uv = uv_v1 };
-					quad2.corners[3] = { .vertex_id = ind_e01, .uv = uv_e01 };
-					quad2.normal = normalize(cross(new_vertices[ind_f] - new_vertices[ind_e01],
-						new_vertices[ind_f] - new_vertices[ind_e12]));
-
-					Face quad3;
-					quad3.corners.resize(4);
-					quad3.corners[0] = { .vertex_id = ind_f, .uv = uv_f };
-					quad3.corners[1] = { .vertex_id = ind_e23, .uv = uv_e23 };
-					quad3.corners[2] = { .vertex_id = ind_v2, .uv = uv_v2 };
-					quad3.corners[3] = { .vertex_id = ind_e12, .uv = uv_e12 };
-					quad3.normal = normalize(cross(new_vertices[ind_f] - new_vertices[ind_e12],
-						new_vertices[ind_f] - new_vertices[ind_e23]));
-
-					Face quad4;
-					quad4.corners.resize(4);
-					quad4.corners[0] = { .vertex_id = ind_f, .uv = uv_f };
-					quad4.corners[1] = { .vertex_id = ind_e30, .uv = uv_e30 };
-					quad4.corners[2] = { .vertex_id = ind_v3, .uv = uv_v3 };
-					quad4.corners[3] = { .vertex_id = ind_e23, .uv = uv_e23 };
-					quad4.normal = normalize(cross(new_vertices[ind_f] - new_vertices[ind_e23],
-						new_vertices[ind_f] - new_vertices[ind_e30]));
-
-					new_quads.emplace_back(quad1);
-					new_quads.emplace_back(quad2);
-					new_quads.emplace_back(quad3);
-					new_quads.emplace_back(quad4);
 				}
 
 				oth.vertices = std::move(new_vertices);
-				oth.faces = std::move(new_quads);
+				oth.faces = std::move(new_faces);
+			}
+
+			void subdivide_Loop(ControlMesh& oth)
+			{
+
 			}
 
 			void displace(ControlMesh& oth, Texture* ptexture)
@@ -564,7 +817,7 @@ namespace flame
 				mesh.reset();
 				for (auto& f : faces)
 				{
-					auto mesh_vtx_off = mesh.positions.size();
+					auto face_vtx_off = mesh.positions.size();
 
 					mesh.positions.push_back(vertices[f.corners[0].vertex_id]);
 					mesh.uvs.push_back(f.corners[0].uv);
@@ -581,9 +834,9 @@ namespace flame
 						mesh.uvs.push_back(f.corners[i + 2].uv);
 						mesh.normals.push_back(f.normal);
 
-						mesh.indices.push_back(mesh_vtx_off);
-						mesh.indices.push_back(mesh_vtx_off + vtx_off - 1);
-						mesh.indices.push_back(mesh_vtx_off + vtx_off);
+						mesh.indices.push_back(face_vtx_off);
+						mesh.indices.push_back(face_vtx_off + vtx_off - 1);
+						mesh.indices.push_back(face_vtx_off + vtx_off);
 
 						vtx_off++;
 					}
