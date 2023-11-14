@@ -8,7 +8,7 @@ using namespace graphics;
 
 struct App : GraphicsApplication
 {
-	std::vector<vec3> points;
+	std::vector<std::pair<vec3, std::string>> points;
 	std::vector<std::vector<int>> primitives;
 	std::vector<int> selected_points;
 	int selected_primitive = -1;
@@ -33,12 +33,13 @@ struct App : GraphicsApplication
 
 		ImGui::BeginGroup();
 
-		if (ImGui::BeginListBox("##points", vec2(200, 400)))
+		if (ImGui::BeginListBox("##points", vec2(200, 200)))
 		{
 			for (auto i = 0; i < points.size(); i++)
 			{
 				ImGui::PushID(i);
-				if (ImGui::Selectable(str(points[i]).c_str(), std::find(selected_points.begin(), selected_points.end(), i) != selected_points.end()))
+				if (ImGui::Selectable(points[i].second.empty() ? str(points[i].first).c_str() : points[i].second.c_str(), 
+					std::find(selected_points.begin(), selected_points.end(), i) != selected_points.end()))
 				{
 					if (ImGui::IsKeyDown(Keyboard_Ctrl))
 					{
@@ -88,17 +89,12 @@ struct App : GraphicsApplication
 			ImGui::EndListBox();
 		}
 		ImGui::PushID("point_buttons");
-		if (selected_points.size() == 1)
-		{
-			ImGui::SetNextItemWidth(200.f);
-			ImGui::InputFloat3("##values", &points[selected_points[0]].x);
-		}
 		if (ImGui::SmallButton("P"))
 		{
 			vec3 p;
 			auto str = w2s(get_clipboard());
 			sscanf_s(str.data(), "{x=%f y=%f z=%f", &p.x, &p.y, &p.z);
-			points.push_back(p);
+			points.emplace_back(p, "");
 		}
 		ImGui::SameLine();
 		if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
@@ -157,8 +153,15 @@ struct App : GraphicsApplication
 				selected_points[0]++;
 			}
 		}
+		if (selected_points.size() == 1)
+		{
+			ImGui::SetNextItemWidth(200.f);
+			ImGui::InputText("##name", &points[selected_points[0]].second);
+			ImGui::SetNextItemWidth(200.f);
+			ImGui::InputFloat3("##values", &points[selected_points[0]].first.x);
+		}
 		ImGui::PopID();
-		if (ImGui::BeginListBox("##primitives", vec2(200, 400)))
+		if (ImGui::BeginListBox("##primitives", vec2(200, 200)))
 		{
 			for (auto i = 0; i < primitives.size(); i++)
 			{
@@ -217,7 +220,7 @@ struct App : GraphicsApplication
 			AABB bounds;
 			bounds.reset();
 			for (auto& p : points)
-				bounds.expand(p);
+				bounds.expand(p.first);
 			camera_pos = fit_camera_to_object(camera_rot, camera_fovy, camera_zNear, camera_zFar, bounds);
 			camera_zoom = distance(camera_pos, bounds.center());
 		}
@@ -296,9 +299,9 @@ struct App : GraphicsApplication
 		dl->AddRect(p0, p1, ImColor(1.f, 1.f, 1.f));
 		for (auto& p : points)
 		{
-			auto pos = origin + get_projected(p);
+			auto pos = origin + get_projected(p.first);
 			dl->AddCircleFilled(pos, 2.f, ImColor(1.f, 1.f, 1.f), 8);
-			dl->AddText(pos + vec2(0.f, 4.f), ImColor(1.f, 1.f, 1.f), str(p).c_str());
+			dl->AddText(pos + vec2(0.f, 4.f), ImColor(1.f, 1.f, 1.f), p.second.empty() ? str(p.first).c_str() : p.second.c_str());
 		}
 		for (auto& p : primitives)
 		{
@@ -310,24 +313,22 @@ struct App : GraphicsApplication
 				auto next = i + 1;
 				if (next >= p.size()) next = 0;
 
-				auto a = points[p[i]];
-				auto b = points[p[next]];
-				draw_points.push_back(get_projected(a));
-				draw_points.push_back(get_projected(b));
+				draw_points.push_back(get_projected(points[p[i]].first));
+				draw_points.push_back(get_projected(points[p[next]].first));
 			}
 
-			bool front_face = true;
+			bool back_face = true;
 			for (auto i = 0; i < draw_points.size() - 2; i += 2)
 			{
 				if (cross(vec3(draw_points[i + 1] - draw_points[i + 0], 0.f), vec3(draw_points[i + 3] - draw_points[i + 2], 0.f)).z < 0.f)
 				{
-					front_face = false;
+					back_face = false;
 					break;
 				}
 			}
 
 			for (auto i = 0; i < draw_points.size(); i += 2)
-				dl->AddLine(origin + draw_points[i], origin + draw_points[i + 1], front_face ? ImColor(1.f, 1.f, 1.f) : ImColor(0.8f, 0.5f, 0.5f));
+				dl->AddLine(origin + draw_points[i], origin + draw_points[i + 1], back_face ? ImColor(0.8f, 0.5f, 0.5f) : ImColor(1.f, 1.f, 1.f));
 		}
 		ImGui::EndGroup();
 
@@ -341,7 +342,7 @@ static App app;
 
 int main(int argc, char** args)
 {
-	app.create("Primitive Debugger", uvec2(500, 500), WindowFrame | WindowResizable, true, true);
+	app.create("Primitive Debugger", uvec2(800, 600), WindowFrame | WindowResizable, true, true);
 	app.run();
 
 	return 0;
