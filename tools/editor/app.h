@@ -160,7 +160,7 @@ struct ModelPreviewer
 
 	void init();
 	void destroy();
-	void update(uint changed_frame, bool show_image = true);
+	bool update(uint changed_frame, bool show_image = true);
 };
 
 struct App : UniverseApplication

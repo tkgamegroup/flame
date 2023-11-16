@@ -552,10 +552,8 @@ namespace flame
 		fb_fwd_clear.reset(graphics::Framebuffer::create(rp_fwd_clear, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
 
 		if (mode != RenderModeSimple)
-		{
 			fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_gbufferA->get_view(), img_gbufferB->get_view(), img_gbufferC->get_view(), img_gbufferD->get_view(), img_dep->get_view() }));
-			fb_primitive.reset(graphics::Framebuffer::create(rp_primitive, { img_dst->get_view(), img_dep->get_view() }));
-		}
+		fb_primitive.reset(graphics::Framebuffer::create(rp_primitive, { img_dst->get_view(), img_dep->get_view() }));
 
 		ds_target->set_image("img_dep"_h, 0, img_dep->get_view(), sp_nearest_dep);
 		if (mode != RenderModeSimple)
@@ -2753,7 +2751,7 @@ namespace flame
 				cb->end_debug_label();
 			}
 
-			if (mode != RenderModeSimple)
+			if (mode != RenderModeSimple && mode != RenderModeWireframe)
 			{
 				cb->begin_debug_label("Outline (max)");
 				{

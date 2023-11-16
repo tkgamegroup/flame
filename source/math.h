@@ -549,6 +549,25 @@ namespace flame
 		{
 			return dot(n, p) + d;
 		}
+
+		bool intersects(const vec3& segment_p0, const vec3& segment_p1, vec3* out_p = nullptr, float* out_t = nullptr) const
+		{
+			auto seg_dir = segment_p1 - segment_p0;
+			auto dot_plane_seg = abs(dot(n, seg_dir));
+			if (dot_plane_seg < 1e-6)
+				return false;
+
+			float t = abs(dot(n, segment_p0) + d) / dot_plane_seg;
+			if (t < 0.f || t > 1.f)
+				return false;
+
+			if (out_p)
+				*out_p = segment_p0 + t * seg_dir;
+			if (out_t)
+				*out_t = t;
+
+			return true;
+		}
 	};
 
 	struct Frustum

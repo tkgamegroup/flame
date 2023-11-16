@@ -286,6 +286,83 @@ namespace flame
 				}
 			);
 
+			library->add_template("Loop Cut Control Mesh XZ-Plane", "",
+				{
+					{
+						.name = "Mesh",
+						.allowed_types = { TypeInfo::get<ControlMesh*>() }
+					},
+					{
+						.name = "Offset",
+						.allowed_types = { TypeInfo::get<float>() }
+					}
+				},
+				{
+					{
+						.name = "Mesh",
+						.allowed_types = { TypeInfo::get<ControlMesh>() }
+					}
+				},
+				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+					auto pcontrol_mesh = *(ControlMesh**)inputs[0].data;
+					auto offset = *(float*)inputs[1].data;
+					auto& out_control_mesh = *(ControlMesh*)outputs[0].data;
+					if (pcontrol_mesh)
+						pcontrol_mesh->loop_cut(out_control_mesh, { Plane(vec3(0.f, 1.f, 0.f), vec3(0.f, offset, 0.f)) });
+				}
+			);
+
+			library->add_template("Loop Cut Control Mesh XZ-Planes", "",
+				{
+					{
+						.name = "Mesh",
+						.allowed_types = { TypeInfo::get<ControlMesh*>() }
+					},
+					{
+						.name = "Start Offset",
+						.allowed_types = { TypeInfo::get<float>() }
+					},
+					{
+						.name = "Offset",
+						.allowed_types = { TypeInfo::get<float>() }
+					},
+					{
+						.name = "Number",
+						.allowed_types = { TypeInfo::get<uint>() },
+						.default_value = "1"
+					}
+				},
+				{
+					{
+						.name = "Mesh",
+						.allowed_types = { TypeInfo::get<ControlMesh>() }
+					}
+				},
+				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+					auto pcontrol_mesh = *(ControlMesh**)inputs[0].data;
+					auto start_offset = *(float*)inputs[1].data;
+					auto offset = *(float*)inputs[2].data;
+					auto number = *(uint*)inputs[3].data;
+					auto& out_control_mesh = *(ControlMesh*)outputs[0].data;
+					if (pcontrol_mesh)
+					{
+						if (number <= 1)
+						{
+							out_control_mesh.vertices = pcontrol_mesh->vertices;
+							out_control_mesh.faces = pcontrol_mesh->faces;
+						}
+						else
+						{
+							std::vector<Plane> planes(number);
+							for (auto i = 0; i < number; i++)
+								planes[i] = Plane(vec3(0.f, 1.f, 0.f), vec3(0.f, start_offset + i * offset, 0.f));
+							std::reverse(planes.begin(), planes.end());
+							pcontrol_mesh->loop_cut(out_control_mesh, planes);
+						}
+					}
+				}
+			);
+
 			library->add_template("Displace Control Mesh", "",
 				{
 					{

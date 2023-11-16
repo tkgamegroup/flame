@@ -375,6 +375,7 @@ void ModelPreviewer::init()
 	{
 		render_task = app.renderer->add_render_task(RenderModeSimple, camera, { image->get_view() },
 			graphics::ImageLayoutShaderReadOnly, false, false);
+		render_task->mode = RenderModeWireframe;
 	}
 
 }
@@ -420,7 +421,7 @@ void ModelPreviewer::destroy()
 	updated_frame = 0;
 }
 
-void ModelPreviewer::update(uint changed_frame, bool show_image)
+bool ModelPreviewer::update(uint changed_frame, bool show_image)
 {
 	if (changed_frame > updated_frame)
 	{
@@ -463,10 +464,18 @@ void ModelPreviewer::update(uint changed_frame, bool show_image)
 	}
 
 	if (!show_image)
-		return;
+		return false;
 
-	ImGui::Image(image, vec2(image->extent));
-	if (ImGui::IsItemHovered)
+	static bool wireframe = true;
+	if (ImGui::Checkbox("Wireframe", &wireframe))
+		render_task->mode = wireframe ? RenderModeWireframe : RenderModeSimple;
+	ImGui::InvisibleButton("##image", vec2(image->extent));
+	auto p0 = ImGui::GetItemRectMin();
+	auto p1 = ImGui::GetItemRectMax();
+	auto dl = ImGui::GetWindowDrawList();
+	dl->AddImage(image, p0, p1);
+	auto operating = ImGui::IsItemActive() || ImGui::IsItemHovered();
+	if (operating)
 	{
 		auto camera_node = camera->node;
 
@@ -502,6 +511,8 @@ void ModelPreviewer::update(uint changed_frame, bool show_image)
 		}
 	}
 	ImGui::Text("Vertex Count: %d, Face Count: %d", (int)vertex_count, (int)face_count);
+
+	return operating;
 }
 
 void App::init()
