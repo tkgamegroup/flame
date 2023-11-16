@@ -24,30 +24,7 @@ namespace flame
 			{
 				auto p0 = element->global_pos0();
 				auto p1 = element->global_pos1();
-				auto b = border * image_scale;
-				if (p1.x - p0.x > b.x + b.z && p1.y - p0.y > b.y + b.w)
-				{
-					auto img_ext = vec2(image->extent) * image_scale;
-					auto iv = image->get_view();
-					// top border
-					canvas->add_image(iv, vec2(p0.x + b.x, p0.y),		vec2(p1.x - b.z, p0.y + b.y),	vec4(b.x / img_ext.x, 0.f, 1.f - b.z / img_ext.x, b.y / img_ext.y), tint_col);
-					// bottom border
-					canvas->add_image(iv, vec2(p0.x + b.x, p1.y - b.w),	vec2(p1.x - b.z, p1.y),			vec4(b.x / img_ext.x, 1.f - b.w / img_ext.y, 1.f - b.w / img_ext.x, 1.f), tint_col);
-					// left border
-					canvas->add_image(iv, vec2(p0.x, p0.y + b.y),		vec2(p0.x + b.x, p1.y - b.w),	vec4(0.f, b.y / img_ext.y, b.x / img_ext.x, 1.f - b.w / img_ext.y), tint_col);
-					// right border
-					canvas->add_image(iv, vec2(p1.x - b.z, p0.y + b.y), vec2(p1.x, p1.y - b.w),			vec4(1.f - b.w / img_ext.x, b.y / img_ext.y, 1.f, 1.f - b.w / img_ext.y), tint_col);
-					// left-top corner
-					canvas->add_image(iv, vec2(p0.x, p0.y),				vec2(p0.x + b.x, p0.y + b.y),	vec4(0.f, 0.f, b.x / img_ext.x, b.y / img_ext.y), tint_col);
-					// right-top corner
-					canvas->add_image(iv, vec2(p1.x - b.z, p0.y),		vec2(p1.x, p0.y + b.y),			vec4(1.f - b.w / img_ext.x, 0.f, 1.f, b.y / img_ext.y), tint_col);
-					// left-bottom corner
-					canvas->add_image(iv, vec2(p0.x, p1.y - b.w),		vec2(p0.x + b.x, p1.y),			vec4(0.f, 1.f - b.w / img_ext.y, b.x / img_ext.x, 1.f), tint_col);
-					// right-bottom corner
-					canvas->add_image(iv, vec2(p1.x - b.z, p1.y - b.w), vec2(p1.x, p1.y),				vec4(1.f - b.w / img_ext.x, 1.f - b.w / img_ext.y, 1.f, 1.f), tint_col);
-					// middle
-					canvas->add_image(iv, vec2(p0.x + b.x, p0.y + b.y), vec2(p1.x - b.z, p1.y - b.w),	vec4(vec2(b.x, b.y) / img_ext, 1.f - vec2(b.z, b.w) / img_ext), tint_col);
-				}
+				canvas->add_image_stretched(image->get_view(), p0, p1, vec4(0.f, 0.f, 1.f, 1.f), border, image_scale, tint_col);
 			}
 		}, "stretched_image"_h);
 	}

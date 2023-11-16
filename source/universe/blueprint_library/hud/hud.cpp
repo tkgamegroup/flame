@@ -58,6 +58,89 @@ namespace flame
 			}
 		);
 
+		library->add_template("Hud With Stretched Image", "",
+			{
+				{
+					.name = "Pos",
+					.allowed_types = { TypeInfo::get<vec2>() }
+				},
+				{
+					.name = "Size",
+					.allowed_types = { TypeInfo::get<vec2>() }
+				},
+				{
+					.name = "Scl",
+					.allowed_types = { TypeInfo::get<vec2>() },
+					.default_value = "1,1"
+				},
+				{
+					.name = "Col",
+					.allowed_types = { TypeInfo::get<cvec4>() },
+					.default_value = "200,200,200,255"
+				},
+				{
+					.name = "Pivot",
+					.allowed_types = { TypeInfo::get<vec2>() }
+				},
+				{
+					.name = "Item Spacing",
+					.allowed_types = { TypeInfo::get<vec2>() },
+					.default_value = "2,2"
+				},
+				{
+					.name = "Image",
+					.allowed_types = { TypeInfo::get<graphics::ImagePtr>(), TypeInfo::get<graphics::ImageAtlasItem>() }
+				},
+				{
+					.name = "UVs",
+					.allowed_types = { TypeInfo::get<vec4>() },
+					.default_value = "0,1,0,1"
+				},
+				{
+					.name = "Border",
+					.allowed_types = { TypeInfo::get<vec4>() },
+					.default_value = "0,0,0,0"
+				},
+				{
+					.name = "Image Scale",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "1"
+				}
+			},
+			{
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				auto pos = *(vec2*)inputs[1].data;
+				auto size = *(vec2*)inputs[2].data;
+				auto scl = *(vec2*)inputs[3].data;
+				auto col = *(cvec4*)inputs[4].data;
+				auto pivot = *(vec2*)inputs[5].data;
+				auto item_spacing = *(vec2*)inputs[6].data;
+
+				sRenderer::instance()->begin_hud(pos, size, scl, col, pivot, item_spacing);
+
+				block.max_execute_times = 1;
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto col = *(cvec4*)inputs[4].data;
+				auto image = *(graphics::ImagePtr*)inputs[7].data;
+				auto uvs = *(vec4*)inputs[8].data;
+				auto border = *(vec4*)inputs[9].data;
+				auto image_scale = *(float*)inputs[10].data;
+
+				auto renderer = sRenderer::instance();
+				auto canvas = renderer->render_tasks.front()->canvas;
+				renderer->end_hud();
+
+				if (image)
+				{
+					auto rect = renderer->get_hud_rect();
+					canvas->add_image_stretched(image->get_view(), rect.a, rect.b, uvs, border, image_scale, col);
+				}
+			}
+		);
+
 		library->add_template("Hud Horizontal", "",
 			{
 			},

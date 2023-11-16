@@ -275,6 +275,7 @@ namespace flame
 		virtual void hud_text(std::wstring_view text, uint font_size = 24, const cvec4& col = cvec4(255)) = 0;
 		virtual void hud_image(const vec2& size, graphics::ImagePtr image, const vec4& uvs = vec4(0.f, 0.f, 1.f, 1.f), const cvec4& col = cvec4(255)) = 0;
 		virtual bool hud_button(std::wstring_view label, uint font_size = 24, bool* p_hovered = nullptr) = 0;
+		virtual Rect get_hud_rect() const = 0;
 
 		// Reflect
 		virtual void send_debug_string(const std::string& str) = 0;

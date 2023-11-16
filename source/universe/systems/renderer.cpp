@@ -3307,6 +3307,11 @@ namespace flame
 		return state == 2;
 	}
 
+	Rect sRendererPrivate::get_hud_rect() const
+	{
+		return Rect(hud_pos, hud_pos + hud_size);
+	}
+
 	void sRendererPrivate::send_debug_string(const std::string& str)
 	{
 		if (str == "toggle_csm_debug")
