@@ -3150,13 +3150,18 @@ namespace flame
 		auto canvas = render_tasks.front()->canvas;
 
 		hud_pos = pos;
+		if (hud_pos.x < 0.f)
+			hud_pos.x += canvas->size.x;
+		if (hud_pos.y < 0.f)
+			hud_pos.y += canvas->size.y;
 		hud_size = size;
 		hud_col = col;
 		hud_pivot = pivot;
 		hud_item_spacing = item_spacing;
-		hud_cursor = pos + hud_item_spacing;
+		hud_cursor = hud_pos + hud_item_spacing;
 		hud_cursor_x0 = hud_cursor.x;
-		hud_max_w = 0.f;
+		hud_line_height = 0.f;
+		hud_max = vec2(0.f);
 
 		hud_verts = canvas->add_rect_filled(pos, pos, col);
 		if (pivot.x != 0.f || pivot.y != 0.f)
@@ -3169,7 +3174,12 @@ namespace flame
 		auto input = sInput::instance();
 
 		if (hud_size.x == 0.f && hud_size.y == 0.f)
-			hud_size = vec2(hud_max_w + hud_item_spacing.x * 2.f, hud_cursor.y - hud_pos.y);
+		{
+			if (hud_max.x > hud_pos.x && hud_max.y > hud_pos.y)
+				hud_size = hud_max - hud_pos;
+			else
+				hud_size = vec2(0.f);
+		}
 		if (hud_pivot.x != 0.f || hud_pivot.y != 0.f)
 		{
 			auto translate = -hud_size * hud_pivot;
@@ -3184,6 +3194,38 @@ namespace flame
 		Rect rect(hud_pos, hud_pos + hud_size);
 		if (rect.contains(input->mpos))
 			input->mouse_used = true;
+	}
+
+	void sRendererPrivate::hud_begin_horizontal()
+	{
+		hud_horizontal = true;
+	}
+
+	void sRendererPrivate::hud_end_horizontal()
+	{
+		hud_horizontal = false;
+		hud_cursor.x = hud_cursor_x0;
+		hud_cursor.y += hud_line_height + hud_item_spacing.y;
+		hud_max = max(hud_max, hud_cursor);
+	}
+
+	Rect sRendererPrivate::hud_add_rect(const vec2& sz)
+	{
+		Rect rect(hud_cursor, hud_cursor + sz);
+		if (hud_horizontal)
+		{
+			hud_cursor.x += sz.x + hud_item_spacing.x;
+			hud_line_height = max(hud_line_height, sz.y);
+			hud_max = max(hud_max, hud_cursor + vec2(0.f, hud_line_height));
+		}
+		else
+		{
+			hud_max.x = max(hud_max.x, hud_cursor.x + sz.x + hud_item_spacing.x);
+			hud_cursor.x = hud_cursor_x0;
+			hud_cursor.y = hud_cursor.y + sz.y + hud_item_spacing.y;
+			hud_max.y = max(hud_max.y, hud_cursor.y);
+		}
+		return rect;
 	}
 
 	static vec2 calc_text_size(graphics::FontAtlasPtr font_atlas, uint font_size, std::wstring_view str)
@@ -3213,38 +3255,32 @@ namespace flame
 		auto input = sInput::instance();
 
 		auto sz = calc_text_size(canvas->default_font_atlas, font_size, text);
-		Rect rect(hud_cursor, hud_cursor + sz);
+		auto rect = hud_add_rect(sz);
 		if (rect.contains(input->mpos))
 			input->mouse_used = true;
-		canvas->add_text(canvas->default_font_atlas, font_size, hud_cursor, text, col, 0.5f, 0.2f);
-		hud_cursor = vec2(hud_cursor_x0, hud_cursor.y + sz.y + hud_item_spacing.y);
-		hud_max_w = max(hud_max_w, sz.x);
+		canvas->add_text(canvas->default_font_atlas, font_size, rect.a, text, col, 0.5f, 0.2f);
 	}
 
-	void sRendererPrivate::hud_image(const vec2& pos, const vec2& size, graphics::ImagePtr image, const vec4& uvs, const cvec4& col)
+	void sRendererPrivate::hud_rect(const vec2& size, const cvec4& col)
 	{
 		auto canvas = render_tasks.front()->canvas;
 		auto input = sInput::instance();
 
-		Rect rect(hud_cursor, hud_cursor + size);
-		if (rect.contains(input->mpos))
-			input->mouse_used = true;
-		canvas->add_image(image->get_view(), rect.a, rect.b, uvs, col);
-		hud_cursor = vec2(hud_cursor_x0, hud_cursor.y + size.y + hud_item_spacing.y);
-		hud_max_w = max(hud_max_w, size.x);
-	}
-
-	void sRendererPrivate::hud_rect(const vec2& pos, const vec2& size, const cvec4& col)
-	{
-		auto canvas = render_tasks.front()->canvas;
-		auto input = sInput::instance();
-
-		Rect rect(hud_cursor, hud_cursor + size);
+		auto rect = hud_add_rect(size);
 		if (rect.contains(input->mpos))
 			input->mouse_used = true;
 		canvas->add_rect_filled(rect.a, rect.b, col);
-		hud_cursor = vec2(hud_cursor_x0, hud_cursor.y + size.y + hud_item_spacing.y);
-		hud_max_w = max(hud_max_w, size.x);
+	}
+
+	void sRendererPrivate::hud_image(const vec2& size, graphics::ImagePtr image, const vec4& uvs, const cvec4& col)
+	{
+		auto canvas = render_tasks.front()->canvas;
+		auto input = sInput::instance();
+
+		auto rect = hud_add_rect(size);
+		if (rect.contains(input->mpos))
+			input->mouse_used = true;
+		canvas->add_image(image->get_view(), rect.a, rect.b, uvs, col);
 	}
 
 	bool sRendererPrivate::hud_button(std::wstring_view label, uint font_size, bool* p_hovered)
@@ -3254,7 +3290,7 @@ namespace flame
 
 		auto sz = calc_text_size(canvas->default_font_atlas, font_size, label);
 		sz += vec2(4.f);
-		Rect rect(hud_cursor, hud_cursor + sz);
+		auto rect = hud_add_rect(sz);
 		auto state = 0;
 		if (rect.contains(input->mpos))
 		{
@@ -3265,9 +3301,7 @@ namespace flame
 			input->mouse_used = true;
 		}
 		canvas->add_rect_filled(rect.a, rect.b, state == 0 ? cvec4(35, 69, 109, 255) : cvec4(66, 150, 250, 255));
-		canvas->add_text(canvas->default_font_atlas, font_size, hud_cursor + vec2(2.f), label, cvec4(255), 0.5f, 0.2f);
-		hud_cursor = vec2(hud_cursor_x0, hud_cursor.y + sz.y + hud_item_spacing.y);
-		hud_max_w = max(hud_max_w, sz.x);
+		canvas->add_text(canvas->default_font_atlas, font_size, rect.a + vec2(2.f), label, cvec4(255), 0.5f, 0.2f);
 		if (p_hovered)
 			*p_hovered = state != 0;
 		return state == 2;

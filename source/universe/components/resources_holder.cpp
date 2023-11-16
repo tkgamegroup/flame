@@ -17,10 +17,23 @@ namespace flame
 		auto ext = path.extension();
 		if (is_image_file(ext))
 		{
-			if (graphics_images.find(name) == graphics_images.end())
+			auto atlas_path = Path::get(path);
+			atlas_path += L".ini";
+			if (std::filesystem::exists(atlas_path))
 			{
-				if (auto img = graphics::Image::get(path); img)
-					graphics_images[name] = img;
+				if (graphics_image_atlases.find(name) == graphics_image_atlases.end())
+				{
+					if (auto atlas = graphics::ImageAtlas::get(path); atlas)
+						graphics_image_atlases[name] = atlas;
+				}
+			}
+			else
+			{
+				if (graphics_images.find(name) == graphics_images.end())
+				{
+					if (auto img = graphics::Image::get(path); img)
+						graphics_images[name] = img;
+				}
 			}
 		}
 		else if (is_audio_file(ext))
@@ -36,6 +49,13 @@ namespace flame
 	graphics::ImagePtr cResourcesHolderPrivate::get_graphics_image(uint name)
 	{
 		if (auto it = graphics_images.find(name); it != graphics_images.end())
+			return it->second;
+		return nullptr;
+	}
+
+	graphics::ImageAtlasPtr cResourcesHolderPrivate::get_graphics_image_atlas(uint name)
+	{
+		if (auto it = graphics_image_atlases.find(name); it != graphics_image_atlases.end())
 			return it->second;
 		return nullptr;
 	}

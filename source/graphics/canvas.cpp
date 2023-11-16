@@ -151,6 +151,11 @@ namespace flame
 			for (auto iv : iv_tars)
 				fb_tars.push_back(Framebuffer::create(rp, iv));
 
+			if (!targets.empty())
+				size = (vec2)targets[0]->image->extent.xy();
+			else
+				size = vec2(0.f);
+
 			reset();
 		}
 

@@ -68,9 +68,15 @@ namespace flame
 			~SamplerPrivate();
 		};
 
+		struct ImageAtlasPrivate : ImageAtlas
+		{
+			~ImageAtlasPrivate();
+		};
+
 		extern std::vector<ImagePtr> images;
 		extern std::vector<std::unique_ptr<ImageT>> loaded_images;
-		extern std::vector<std::unique_ptr<SamplerT>> samplers;
+		extern std::vector<std::unique_ptr<SamplerT>> shared_samplers;
+		extern std::vector<std::unique_ptr<ImageAtlasT>> loaded_image_atlases;
 	}
 }
 

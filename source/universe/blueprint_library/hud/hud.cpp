@@ -58,12 +58,24 @@ namespace flame
 			}
 		);
 
+		library->add_template("Hud Horizontal", "",
+			{
+			},
+			{
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				sRenderer::instance()->hud_begin_horizontal();
+
+				block.max_execute_times = 1;
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				sRenderer::instance()->hud_end_horizontal();
+			}
+		);
+
 		library->add_template("Hud Rect", "",
 			{
-				{
-					.name = "Pos",
-					.allowed_types = { TypeInfo::get<vec2>() }
-				},
 				{
 					.name = "Size",
 					.allowed_types = { TypeInfo::get<vec2>() }
@@ -77,11 +89,10 @@ namespace flame
 			{
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				auto pos = *(vec2*)inputs[0].data;
-				auto size = *(vec2*)inputs[1].data;
-				auto col = *(cvec4*)inputs[2].data;
+				auto size = *(vec2*)inputs[0].data;
+				auto col = *(cvec4*)inputs[1].data;
 
-				sRenderer::instance()->hud_rect(pos, size, col);
+				sRenderer::instance()->hud_rect(size, col);
 			}
 		);
 
@@ -117,17 +128,36 @@ namespace flame
 			{
 				{
 					.name = "Image",
-					.allowed_types = { TypeInfo::get<graphics::ImagePtr>() }
+					.allowed_types = { TypeInfo::get<graphics::ImagePtr>(), TypeInfo::get<graphics::ImageAtlasItem>() }
 				},
 				{
 					.name = "Size",
 					.allowed_types = { TypeInfo::get<vec2>() }
+				},
+				{
+					.name = "UVs",
+					.allowed_types = { TypeInfo::get<vec4>() },
+					.default_value = "0,1,0,1"
+				},
+				{
+					.name = "Col",
+					.allowed_types = { TypeInfo::get<cvec4>() },
+					.default_value = "255,255,255,255"
 				}
 			},
 			{
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-
+				auto in0_t = inputs[0].type;
+				auto size = *(vec2*)inputs[1].data;
+				auto uvs = *(vec4*)inputs[2].data;
+				auto col = *(cvec4*)inputs[3].data;
+				if (in0_t == TypeInfo::get<graphics::ImagePtr>())
+				{
+					auto image = *(graphics::ImagePtr*)inputs[0].data;
+					if (image)
+						sRenderer::instance()->hud_image(size, image, uvs, col);
+				}
 			}
 		);
 

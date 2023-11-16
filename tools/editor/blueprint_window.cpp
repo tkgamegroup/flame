@@ -36,6 +36,7 @@ static BlueprintNodeLibraryPtr navigation_library;
 static BlueprintNodeLibraryPtr input_library;
 static BlueprintNodeLibraryPtr hud_library;
 static BlueprintNodeLibraryPtr audio_library;
+static BlueprintNodeLibraryPtr resource_library;
 
 struct CopiedSlot
 {
@@ -2505,6 +2506,14 @@ void BlueprintView::on_draw()
 						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Resource"))
+					{
+						header = "resource";
+						for (auto& t : resource_library->node_templates)
+							show_node_library_template(t);
+						if (add_node_filter.empty())
+							ImGui::EndMenu();
+					}
 
 					ImGui::EndPopup();
 				}
@@ -2688,6 +2697,7 @@ void BlueprintWindow::init()
 		input_library = BlueprintNodeLibrary::get(L"universe::input");
 		hud_library = BlueprintNodeLibrary::get(L"universe::HUD");
 		audio_library = BlueprintNodeLibrary::get(L"universe::audio");
+		resource_library = BlueprintNodeLibrary::get(L"universe::resource");
 		node_libraries.push_back(standard_library);
 		node_libraries.push_back(extern_library);
 		node_libraries.push_back(noise_library);
@@ -2699,6 +2709,7 @@ void BlueprintWindow::init()
 		node_libraries.push_back(input_library);
 		node_libraries.push_back(hud_library);
 		node_libraries.push_back(audio_library);
+		node_libraries.push_back(resource_library);
 	}
 }
 

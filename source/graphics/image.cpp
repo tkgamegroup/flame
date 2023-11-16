@@ -20,6 +20,7 @@ namespace flame
 		std::vector<ImagePtr> images;
 		std::vector<std::unique_ptr<ImageT>> loaded_images;
 		std::vector<std::unique_ptr<SamplerT>> shared_samplers;
+		std::vector<std::unique_ptr<ImageAtlasT>> loaded_image_atlases;
 
 		ImagePrivate::ImagePrivate()
 		{
@@ -1043,6 +1044,60 @@ namespace flame
 		}Sampler_get;
 		Sampler::Get& Sampler::get = Sampler_get;
 
+		ImageAtlasPrivate::~ImageAtlasPrivate()
+		{
+			Image::release(image);
+		}
+
+		struct ImageAtlasGet : ImageAtlas::Get
+		{
+			ImageAtlasPtr operator()(const std::filesystem::path& _filename) override
+			{
+				auto filename = Path::get(_filename);
+
+				for (auto& a : loaded_image_atlases)
+				{
+					if (a->filename == filename)
+						return a.get();
+				}
+
+				auto atlas_ini_path = filename;
+				atlas_ini_path += L".ini";
+				if (!std::filesystem::exists(filename))
+				{
+					wprintf(L"cannot find image: %s\n", _filename.c_str());
+					return nullptr;
+				}
+				if (!std::filesystem::exists(atlas_ini_path))
+				{
+					wprintf(L"cannot find image atlas ini: %s.ini\n", _filename.c_str());
+					return nullptr;
+				}
+
+				auto img = Image::get(filename);
+				if (!img)
+				{
+					wprintf(L"cannot load image: %s\n", _filename.c_str());
+					return nullptr;
+				}
+
+				auto ret = new ImageAtlasPrivate;
+				ret->image = img;
+				auto ini = parse_ini_file(atlas_ini_path);
+				for (auto& e : ini.get_section_entries("items"))
+				{
+					auto hash = sh(e.key.c_str());
+					ret->items[hash] = s2t<4, float>(e.values[0]);
+				}
+
+				ret->filename = filename;
+				ret->ref = 1;
+				loaded_image_atlases.emplace_back(ret);
+				return ret;
+			}
+		}ImageAtlas_get;
+		ImageAtlas::Get& ImageAtlas::get = ImageAtlas_get;
+
 		struct ImageAtlasGenerate : ImageAtlas::Generate
 		{
 			void operator()(const std::filesystem::path& folder) override
@@ -1080,7 +1135,8 @@ namespace flame
 										auto uv0 = vec2(n->pos.x, n->pos.y);
 										auto uv1 = uv0 + vec2(bmp->extent.x, bmp->extent.y);
 										bmp->copy_to(atlas, bmp->extent, ivec2(0), n->pos);
-										atlas_data << std::format("{}={}\n", it.path().filename().stem().string(), str(vec4(uv0, uv1)));
+										atlas_data << std::format("{}={}\n", it.path().filename().stem().string(), 
+											str(vec4(uv0 / (vec2)size, uv1 / (vec2)size)));
 									}
 									delete bmp;
 								}

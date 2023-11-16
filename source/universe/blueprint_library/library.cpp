@@ -8,6 +8,7 @@ namespace flame
 	void add_input_node_templates(BlueprintNodeLibraryPtr library);
 	void add_hud_node_templates(BlueprintNodeLibraryPtr library);
 	void add_audio_node_templates(BlueprintNodeLibraryPtr library);
+	void add_resource_node_templates(BlueprintNodeLibraryPtr library);
 
 	void init_library()
 	{
@@ -17,6 +18,7 @@ namespace flame
 		auto input_library = BlueprintNodeLibrary::get(L"universe::input");
 		auto hud_library = BlueprintNodeLibrary::get(L"universe::HUD");
 		auto audio_library = BlueprintNodeLibrary::get(L"universe::audio");
+		auto resource_library = BlueprintNodeLibrary::get(L"universe::resource");
 
 		add_entity_node_templates(entity_library);
 		add_navigation_node_templates(navigation_library);
@@ -24,5 +26,6 @@ namespace flame
 		add_input_node_templates(input_library);
 		add_hud_node_templates(hud_library);
 		add_audio_node_templates(audio_library);
+		add_resource_node_templates(resource_library);
 	}
 }

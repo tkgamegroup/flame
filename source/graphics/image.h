@@ -189,10 +189,33 @@ namespace flame
 			FLAME_GRAPHICS_API static Get& get;
 		};
 
+		struct ImageAtlasItem
+		{
+			ImagePtr image;
+			vec4 uvs;
+			vec2 size;
+		};
+
 		struct ImageAtlas
 		{
 			ImagePtr image;
 			std::unordered_map<uint, vec4> items;
+
+			std::filesystem::path filename;
+			uint ref = 0;
+
+			inline ImageAtlasItem get_item(uint name)
+			{
+				ImageAtlasItem ret;
+				ret.image = nullptr;
+				if (auto it = items.find(name); it != items.end())
+				{
+					ret.image = image;
+					ret.uvs = it->second;
+					ret.size = (vec2)((Image*)image)->extent.xy() * (ret.uvs.zw() - ret.uvs.xy());
+				}
+				return ret;
+			}
 
 			struct Generate
 			{
@@ -202,7 +225,8 @@ namespace flame
 
 			struct Get
 			{
-				virtual ImageAtlasPtr operator()(const std::filesystem::path& path) = 0;
+				// should use the .png file
+				virtual ImageAtlasPtr operator()(const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 		};

@@ -46,6 +46,7 @@ namespace flame
 			std::vector<ImageViewPtr> iv_tars;
 			std::vector<FramebufferPtr> fb_tars;
 			bool clear_framebuffer = true;
+			vec2 size;
 
 			FontAtlasPtr default_font_atlas = nullptr;
 
