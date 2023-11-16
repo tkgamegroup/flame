@@ -188,5 +188,23 @@ namespace flame
 			};
 			FLAME_GRAPHICS_API static Get& get;
 		};
+
+		struct ImageAtlas
+		{
+			ImagePtr image;
+			std::unordered_map<uint, vec4> items;
+
+			struct Generate
+			{
+				virtual void operator()(const std::filesystem::path& folder) = 0;
+			};
+			FLAME_GRAPHICS_API static Generate& generate;
+
+			struct Get
+			{
+				virtual ImageAtlasPtr operator()(const std::filesystem::path& path) = 0;
+			};
+			FLAME_GRAPHICS_API static Get& get;
+		};
 	}
 }

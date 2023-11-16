@@ -1042,6 +1042,58 @@ namespace flame
 			}
 		}Sampler_get;
 		Sampler::Get& Sampler::get = Sampler_get;
+
+		struct ImageAtlasGenerate : ImageAtlas::Generate
+		{
+			void operator()(const std::filesystem::path& folder) override
+			{
+				if (std::filesystem::exists(folder))
+				{
+					auto atlas_config_path = folder / L"atlas_config.ini";
+					if (std::filesystem::exists(atlas_config_path))
+					{
+						uvec2 size(1024, 1024);
+						auto atlas_config = parse_ini_file(atlas_config_path);
+						for (auto& e : atlas_config.get_section_entries(""))
+						{
+							if (e.key == "size")
+								size = s2t<2, uint>(e.values[0]);
+						}
+
+						auto atlas_path = folder / L"../" / folder.filename();
+						atlas_path += L".png";
+						auto atlas_data_path = atlas_path;
+						atlas_data_path += L".ini";
+						auto atlas = Bitmap::create(size, 4);
+						std::ofstream atlas_data(atlas_data_path);
+						atlas_data << "[items]\n";
+
+						std::unique_ptr<BinPackNode> bin_pack_root(new BinPackNode(size));
+						for (auto& it : std::filesystem::directory_iterator(folder))
+						{
+							if (is_image_file(it.path().extension()))
+							{
+								if (auto bmp = Bitmap::create(it.path()); bmp)
+								{
+									if (auto n = bin_pack_root->find(ivec2(bmp->extent.x + 1, bmp->extent.y + 1)); n)
+									{
+										auto uv0 = vec2(n->pos.x, n->pos.y);
+										auto uv1 = uv0 + vec2(bmp->extent.x, bmp->extent.y);
+										bmp->copy_to(atlas, bmp->extent, ivec2(0), n->pos);
+										atlas_data << std::format("{}={}\n", it.path().filename().stem().string(), str(vec4(uv0, uv1)));
+									}
+									delete bmp;
+								}
+							}
+						}
+
+						atlas->save(atlas_path);
+						delete atlas;
+					}
+				}
+			}
+		}ImageAtlas_generate;
+		ImageAtlas::Generate& ImageAtlas::generate = ImageAtlas_generate;
 	}
 }
 

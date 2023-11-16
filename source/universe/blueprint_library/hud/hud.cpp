@@ -113,6 +113,24 @@ namespace flame
 			}
 		);
 
+		library->add_template("Hud Image", "",
+			{
+				{
+					.name = "Image",
+					.allowed_types = { TypeInfo::get<graphics::ImagePtr>() }
+				},
+				{
+					.name = "Size",
+					.allowed_types = { TypeInfo::get<vec2>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+
+			}
+		);
+
 		library->add_template("Hud Button", "",
 			{
 				{

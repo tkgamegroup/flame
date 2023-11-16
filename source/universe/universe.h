@@ -68,6 +68,7 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cNavMesh);
 	FLAME_UNIVERSE_TYPE(cAudioSource);
 	FLAME_UNIVERSE_TYPE(cAudioListener);
+	FLAME_UNIVERSE_TYPE(cResourcesHolder);
 	FLAME_UNIVERSE_TYPE(cDirectionalLight);
 	FLAME_UNIVERSE_TYPE(cPointLight);
 	FLAME_UNIVERSE_TYPE(cCamera);

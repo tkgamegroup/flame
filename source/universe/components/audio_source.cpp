@@ -15,15 +15,22 @@ namespace flame
 
 		for (auto& n : buffer_names)
 		{
-			if (!n.first.empty())
+			if (!n.first.empty() && !n.first.native().starts_with(L"0x"))
+			{
 				AssetManagemant::release(Path::get(n.first));
+				auto name_hash = sh(n.second.c_str());
+				if (auto it = sources.find(name_hash); it != sources.end())
+				{
+					audio::Buffer::release(it->second.buf);
+					delete it->second.src;
+					sources.erase(it);
+				}
+			}
 		}
 		for (auto& src : sources)
-		{
-			audio::Buffer::release(src.second.buf);
 			delete src.second.src;
-		}
 		sources.clear();
+
 		buffer_names = names;
 		for (auto& n : buffer_names)
 		{
@@ -35,7 +42,15 @@ namespace flame
 		{
 			if (!n.first.empty())
 			{
-				if (auto buf = audio::Buffer::get(n.first); buf)
+				if (n.first.native().starts_with(L"0x"))
+				{
+					auto buf = (audio::BufferPtr)s2u_hex<uint64>(n.first.string());
+					auto& src = sources[sh(n.second.c_str())];
+					src.buf = buf;
+					src.src = audio::Source::create();
+					src.src->add_buffer(buf);
+				}
+				else if (auto buf = audio::Buffer::get(n.first); buf)
 				{
 					auto& src = sources[sh(n.second.c_str())];
 					src.buf = buf;
@@ -62,7 +77,15 @@ namespace flame
 
 		if (!path.empty())
 		{
-			if (auto buf = audio::Buffer::get(path); buf)
+			if (path.native().starts_with(L"0x"))
+			{
+				auto buf = (audio::BufferPtr)s2u_hex<uint64>(path.string());
+				auto& src = sources[hash];
+				src.buf = buf;
+				src.src = audio::Source::create();
+				src.src->add_buffer(buf);
+			}
+			else if (auto buf = audio::Buffer::get(path); buf)
 			{
 				auto& src = sources[hash];
 				src.buf = buf;
@@ -75,17 +98,23 @@ namespace flame
 
 	cAudioSourcePrivate::~cAudioSourcePrivate()
 	{
+#if USE_AUDIO_MODULE
 		for (auto& n : buffer_names)
 		{
-			if (!n.first.empty())
+			if (!n.first.empty() && !n.first.native().starts_with(L"0x"))
+			{
 				AssetManagemant::release(Path::get(n.first));
+				auto name_hash = sh(n.second.c_str());
+				if (auto it = sources.find(name_hash); it != sources.end())
+				{
+					audio::Buffer::release(it->second.buf);
+					delete it->second.src;
+					sources.erase(it);
+				}
+			}
 		}
-#if USE_AUDIO_MODULE
 		for (auto& src : sources)
-		{
-			audio::Buffer::release(src.second.buf);
 			delete src.second.src;
-		}
 #endif
 	}
 

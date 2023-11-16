@@ -161,7 +161,7 @@ namespace flame
 		void end_hud() override;
 		void hud_rect(const vec2& pos, const vec2& size, const cvec4& col) override;
 		void hud_text(std::wstring_view text, uint font_size, const cvec4& col) override;
-		void hud_image(const vec2& pos, const vec2& size, graphics::ImagePtr image, const cvec4& col) override;
+		void hud_image(const vec2& pos, const vec2& size, graphics::ImagePtr image, const vec4& uvs, const cvec4& col) override;
 		bool hud_button(std::wstring_view label, uint font_size, bool* p_hovered) override;
 
 		void send_debug_string(const std::string& str) override;

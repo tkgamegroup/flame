@@ -3221,9 +3221,17 @@ namespace flame
 		hud_max_w = max(hud_max_w, sz.x);
 	}
 
-	void sRendererPrivate::hud_image(const vec2& pos, const vec2& size, graphics::ImagePtr image, const cvec4& col)
+	void sRendererPrivate::hud_image(const vec2& pos, const vec2& size, graphics::ImagePtr image, const vec4& uvs, const cvec4& col)
 	{
+		auto canvas = render_tasks.front()->canvas;
+		auto input = sInput::instance();
 
+		Rect rect(hud_cursor, hud_cursor + size);
+		if (rect.contains(input->mpos))
+			input->mouse_used = true;
+		canvas->add_image(image->get_view(), rect.a, rect.b, uvs, col);
+		hud_cursor = vec2(hud_cursor_x0, hud_cursor.y + size.y + hud_item_spacing.y);
+		hud_max_w = max(hud_max_w, size.x);
 	}
 
 	void sRendererPrivate::hud_rect(const vec2& pos, const vec2& size, const cvec4& col)

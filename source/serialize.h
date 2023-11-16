@@ -677,6 +677,13 @@ namespace flame
 		return false;
 	}
 
+	inline bool is_audio_file(const std::filesystem::path& ext)
+	{
+		if (ext == L".wav" || ext == L".ogg")
+			return true;
+		return false;
+	}
+
 	inline FileType get_file_type(const std::filesystem::path& ext)
 	{
 		if (is_text_file(ext))

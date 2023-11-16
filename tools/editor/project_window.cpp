@@ -786,6 +786,16 @@ ProjectView::ProjectView(const std::string& name) :
 					}
 				});
 			}
+			if (ImGui::MenuItem("New Atlas"))
+			{
+				auto atlas_path = path / L"atlas_config.ini";
+				if (!std::filesystem::exists(atlas_path))
+				{
+					std::ofstream file(atlas_path);
+					file << "size=1024,1024" << std::endl;
+					file.close();
+				}
+			}
 			if (ImGui::MenuItem("Import Scenes"))
 			{
 				struct ImportSceneDialog : ImGui::Dialog

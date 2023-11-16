@@ -9,6 +9,7 @@
 #include <flame/foundation/bitmap.h>
 #include <flame/foundation/blueprint.h>
 #include <flame/graphics/extension.h>
+#include <flame/graphics/image.h>
 #include <flame/graphics/material.h>
 #include <flame/graphics/model.h>
 #include <flame/graphics/animation.h>
@@ -2775,6 +2776,35 @@ void InspectorView::on_draw()
 			{
 				if (ImGui::Button("Play"))
 					sAudio::instance()->play_once(path);
+			}
+			else if (ext == L".ini")
+			{
+				if (inspected_changed)
+				{
+					auto str = new std::string;
+					*str = get_file_content(path);
+					inspected_obj = str;
+					inspected_obj_deletor = [](void* obj, void* info) {
+						delete (std::string*)obj;
+					};
+				}
+
+				if (inspected_obj)
+				{
+					if (ImGui::InputTextMultiline("##ini", (std::string*)inspected_obj, ImVec2(0, 0)))
+					{
+						auto str = (std::string*)inspected_obj;
+						std::ofstream file(path);
+						file << *str;
+						file.close();
+					}
+
+					if (path.filename().stem() == L"atlas_config")
+					{
+						if (ImGui::Button("Generate"))
+							graphics::ImageAtlas::generate(path.parent_path());
+					}
+				}
 			}
 		}
 		else
