@@ -54,14 +54,13 @@ namespace flame
 			{
 				{
 					.name = "Image",
-					.allowed_types = { TypeInfo::get<graphics::ImagePtr>() }
-				},
-				{
-					.name = "Size",
-					.allowed_types = { TypeInfo::get<vec2>() }
+					.allowed_types = { TypeInfo::get<graphics::ImageDesc>() }
 				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto& image = *(graphics::ImageDesc*)outputs[0].data;
+				if (image.view)
+					return;
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -71,34 +70,17 @@ namespace flame
 						auto name = *(uint*)inputs[1].data;
 						if (name)
 						{
-							auto image = holder->get_graphics_image(name);
-							if (image)
+							auto r = holder->get_graphics_image(name);
+							if (r)
 							{
-								*(graphics::ImagePtr*)outputs[0].data = image;
-								*(vec2*)outputs[1].data = (vec2)image->extent.xy();
-							}
-							else
-							{
-								*(graphics::ImagePtr*)outputs[0].data = nullptr;
-								*(vec2*)outputs[1].data = vec2(0.f);
+								image.view = r->get_view();
+								image.uvs = vec4(0.f, 0.f, 1.f, 1.f);
+								graphics::ImageConfig config;
+								graphics::Image::get_config(r->filename, &config);
+								image.border = config.border;
 							}
 						}
-						else
-						{
-							*(graphics::ImagePtr*)outputs[0].data = nullptr;
-							*(vec2*)outputs[1].data = vec2(0.f);
-						}
 					}
-					else
-					{
-						*(graphics::ImagePtr*)outputs[0].data = nullptr;
-						*(vec2*)outputs[1].data = vec2(0.f);
-					}
-				}
-				else
-				{
-					*(graphics::ImagePtr*)outputs[0].data = nullptr;
-					*(vec2*)outputs[1].data = vec2(0.f);
 				}
 			}
 		);
@@ -121,6 +103,8 @@ namespace flame
 				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				if (*(graphics::ImagePtr*)outputs[0].data)
+					return;
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -160,42 +144,18 @@ namespace flame
 			},
 			{
 				{
-					.name = "Image",
-					.allowed_types = { TypeInfo::get<graphics::ImagePtr>() }
-				},
-				{
-					.name = "UVs",
-					.allowed_types = { TypeInfo::get<vec4>() }
-				},
-				{
-					.name = "Size",
-					.allowed_types = { TypeInfo::get<vec2>() }
+					.name = "Item",
+					.allowed_types = { TypeInfo::get<graphics::ImageDesc>() }
 				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto atlas = *(graphics::ImageAtlasPtr*)inputs[0].data;
+				auto& item = *(graphics::ImageDesc*)outputs[0].data;
 				if (atlas)
 				{
 					auto name = *(uint*)inputs[1].data;
 					if (name)
-					{
-						auto item = atlas->get_item(name);
-						*(graphics::ImagePtr*)outputs[0].data = item.image;
-						*(vec4*)outputs[1].data = item.uvs;
-						*(vec2*)outputs[2].data = item.size;
-					}
-					else
-					{
-						*(graphics::ImagePtr*)outputs[0].data = nullptr;
-						*(vec4*)outputs[1].data = vec4(0.f);
-						*(vec2*)outputs[2].data = vec2(0.f);
-					}
-				}
-				else
-				{
-					*(graphics::ImagePtr*)outputs[0].data = nullptr;
-					*(vec4*)outputs[1].data = vec4(0.f);
-					*(vec2*)outputs[2].data = vec2(0.f);
+						item = atlas->get_item(name);
 				}
 			}
 		);

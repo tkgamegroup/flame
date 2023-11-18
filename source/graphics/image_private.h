@@ -74,7 +74,7 @@ namespace flame
 		};
 
 		extern std::vector<ImagePtr> images;
-		extern std::vector<std::unique_ptr<ImageT>> loaded_images;
+		extern std::vector<std::pair<std::unique_ptr<ImageT>, ImageConfig>> loaded_images;
 		extern std::vector<std::unique_ptr<SamplerT>> shared_samplers;
 		extern std::vector<std::unique_ptr<ImageAtlasT>> loaded_image_atlases;
 	}

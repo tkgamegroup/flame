@@ -1952,16 +1952,19 @@ namespace flame
 							}
 							write_ti(i->type, n_input.append_attribute("type"));
 						}
-						if (auto value_str = i->type->serialize(i->data); value_str != i->default_value)
+						if (i->type->tag != TagU)
 						{
-							if (!n_input)
+							if (auto value_str = i->type->serialize(i->data); value_str != i->default_value)
 							{
-								if (!n_inputs)
-									n_inputs = n_node.append_child("inputs");
-								n_input = n_inputs.append_child("input");
+								if (!n_input)
+								{
+									if (!n_inputs)
+										n_inputs = n_node.append_child("inputs");
+									n_input = n_inputs.append_child("input");
+								}
+								n_input.append_attribute("name").set_value(i->name.c_str());
+								n_input.append_attribute("value").set_value(value_str.c_str());
 							}
-							n_input.append_attribute("name").set_value(i->name.c_str());
-							n_input.append_attribute("value").set_value(value_str.c_str());
 						}
 					}
 				}
@@ -2073,7 +2076,8 @@ namespace flame
 									update_node_output_types(n);
 									clear_invalid_links(g);
 								}
-								i->type->unserialize(n_input.attribute("value").value(), i->data);
+								if (i->type->tag != TagU)
+									i->type->unserialize(n_input.attribute("value").value(), i->data);
 							}
 							else
 								printf("add node: cannot find input: %s\n", name);

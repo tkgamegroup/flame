@@ -18,7 +18,7 @@ namespace flame
 	namespace graphics
 	{
 		std::vector<ImagePtr> images;
-		std::vector<std::unique_ptr<ImageT>> loaded_images;
+		std::vector<std::pair<std::unique_ptr<ImageT>, ImageConfig>> loaded_images;
 		std::vector<std::unique_ptr<SamplerT>> shared_samplers;
 		std::vector<std::unique_ptr<ImageAtlasT>> loaded_image_atlases;
 
@@ -705,6 +705,23 @@ namespace flame
 		}Image_create;
 		Image::Create& Image::create = Image_create;
 
+		bool read_image_config(const std::filesystem::path& image_path, ImageConfig* out)
+		{
+			auto config_path = image_path;
+			config_path += ".ini";
+			if (std::filesystem::exists(config_path))
+			{
+				auto ini = parse_ini_file(config_path);
+				for (auto& e : ini.get_section_entries(""))
+				{
+					if (e.key == "border")
+						out->border = s2t<4, float>(e.values[0]);
+				}
+				return true;
+			}
+			return false;
+		}
+
 		struct ImageGet : Image::Get
 		{
 			ImagePtr operator()(const std::filesystem::path& _filename) override
@@ -714,10 +731,10 @@ namespace flame
 
 				for (auto& i : loaded_images)
 				{
-					if (i->filename == filename)
+					if (i.first->filename == filename)
 					{
-						i->ref++;
-						return i.get();
+						i.first->ref++;
+						return i.first.get();
 					}
 				}
 
@@ -879,13 +896,34 @@ namespace flame
 					}
 				}
 
+				ImageConfig config;
+				read_image_config(filename, &config);
+
 				ret->filename = filename;
 				ret->ref = 1;
-				loaded_images.emplace_back(ret);
+				loaded_images.emplace_back(ret, config);
 				return ret;
 			}
 		}Image_get;
 		Image::Get& Image::get = Image_get;
+
+		struct ImageGetConfig : Image::GetConfig
+		{
+			void operator()(const std::filesystem::path& _filename, ImageConfig* out) override
+			{
+				auto filename = Path::get(_filename);
+
+				for (auto& i : loaded_images)
+				{
+					if (i.first->filename == filename)
+					{
+						*out = i.second;
+						return;
+					}
+				}
+			}
+		}Image_get_config;
+		Image::GetConfig& Image::get_config = Image_get_config;
 
 		struct ImageRelease : Image::Release
 		{
@@ -895,7 +933,7 @@ namespace flame
 				{
 					graphics::Queue::get()->wait_idle();
 					std::erase_if(loaded_images, [&](const auto& i) {
-						return i.get() == image;
+						return i.first.get() == image;
 					});
 				}
 				else
@@ -1084,10 +1122,18 @@ namespace flame
 				auto ret = new ImageAtlasPrivate;
 				ret->image = img;
 				auto ini = parse_ini_file(atlas_ini_path);
-				for (auto& e : ini.get_section_entries("items"))
+				for (auto& s : ini.sections)
 				{
-					auto hash = sh(e.key.c_str());
-					ret->items[hash] = s2t<4, float>(e.values[0]);
+					auto hash = sh(s.name.c_str());
+					ImageAtlas::Item item;
+					for (auto& e : s.entries)
+					{
+						if (e.key == "uvs")
+							item.uvs = s2t<4, float>(e.values[0]);
+						else if (e.key == "border")
+							item.border = s2t<4, float>(e.values[0]);
+					}
+					ret->items[hash] = item;
 				}
 
 				ret->filename = filename;
@@ -1121,7 +1167,6 @@ namespace flame
 						atlas_data_path += L".ini";
 						auto atlas = Bitmap::create(size, 4);
 						std::ofstream atlas_data(atlas_data_path);
-						atlas_data << "[items]\n";
 
 						std::unique_ptr<BinPackNode> bin_pack_root(new BinPackNode(size));
 						for (auto& it : std::filesystem::directory_iterator(folder))
@@ -1130,13 +1175,18 @@ namespace flame
 							{
 								if (auto bmp = Bitmap::create(it.path()); bmp)
 								{
+									ImageConfig config;
+									auto has_config = read_image_config(it.path(), &config);
+
 									if (auto n = bin_pack_root->find(ivec2(bmp->extent.x + 1, bmp->extent.y + 1)); n)
 									{
 										auto uv0 = vec2(n->pos.x, n->pos.y);
 										auto uv1 = uv0 + vec2(bmp->extent.x, bmp->extent.y);
 										bmp->copy_to(atlas, bmp->extent, ivec2(0), n->pos);
-										atlas_data << std::format("{}={}\n", it.path().filename().stem().string(), 
-											str(vec4(uv0 / (vec2)size, uv1 / (vec2)size)));
+										atlas_data << std::format("[{}]\n", it.path().filename().stem().string());
+										atlas_data << std::format("uvs={}\n", str(vec4(uv0 / (vec2)size, uv1 / (vec2)size)));
+										if (has_config)
+											atlas_data << std::format("border={}\n", str(config.border));
 									}
 									delete bmp;
 								}

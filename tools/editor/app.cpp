@@ -1051,7 +1051,7 @@ void App::on_gui()
 			ImGui::OpenInputDialog("Calculate Hash", "string", [](bool ok, const std::string& str) {
 				if (ok)
 				{
-					int hash = sh(str.c_str());
+					uint hash = sh(str.c_str());
 					auto text = std::format("{}: {}", str, hash);
 					ImGui::OpenMessageDialog("String Hash", text);
 				}

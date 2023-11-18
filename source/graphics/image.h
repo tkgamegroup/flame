@@ -86,6 +86,11 @@ namespace flame
 			return 0;
 		}
 
+		struct ImageConfig
+		{
+			vec4 border = vec4(0.f);
+		};
+
 		struct Image
 		{
 			struct Layer
@@ -150,6 +155,12 @@ namespace flame
 			};
 			FLAME_GRAPHICS_API static Get& get;
 
+			struct GetConfig
+			{
+				virtual void operator()(const std::filesystem::path& filename, ImageConfig* out) = 0;
+			};
+			FLAME_GRAPHICS_API static GetConfig& get_config;
+
 			struct Release
 			{
 				virtual void operator()(ImagePtr image) = 0;
@@ -189,30 +200,29 @@ namespace flame
 			FLAME_GRAPHICS_API static Get& get;
 		};
 
-		struct ImageAtlasItem
-		{
-			ImagePtr image;
-			vec4 uvs;
-			vec2 size;
-		};
-
 		struct ImageAtlas
 		{
+			struct Item
+			{
+				vec4 uvs;
+				vec4 border;
+			};
+
 			ImagePtr image;
-			std::unordered_map<uint, vec4> items;
+			std::unordered_map<uint, Item> items;
 
 			std::filesystem::path filename;
 			uint ref = 0;
 
-			inline ImageAtlasItem get_item(uint name)
+			inline ImageDesc get_item(uint name)
 			{
-				ImageAtlasItem ret;
-				ret.image = nullptr;
+				ImageDesc ret;
+				ret.view = nullptr;
 				if (auto it = items.find(name); it != items.end())
 				{
-					ret.image = image;
-					ret.uvs = it->second;
-					ret.size = (vec2)((Image*)image)->extent.xy() * (ret.uvs.zw() - ret.uvs.xy());
+					ret.view = ((Image*)image)->get_view();
+					ret.uvs = it->second.uvs;
+					ret.border = it->second.border;
 				}
 				return ret;
 			}
@@ -229,6 +239,12 @@ namespace flame
 				virtual ImageAtlasPtr operator()(const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
+
+			struct Release
+			{
+				virtual void operator()(ImageAtlasPtr atlas) = 0;
+			};
+			FLAME_GRAPHICS_API static Release& release;
 		};
 	}
 }

@@ -469,5 +469,12 @@ namespace flame
 			vec4 uvs;
 			vec4 col;
 		};
+
+		struct ImageDesc
+		{
+			ImageViewPtr view = nullptr;
+			vec4 uvs;
+			vec4 border;
+		};
 	}
 }

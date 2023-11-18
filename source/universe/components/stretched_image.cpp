@@ -24,7 +24,7 @@ namespace flame
 			{
 				auto p0 = element->global_pos0();
 				auto p1 = element->global_pos1();
-				canvas->add_image_stretched(image->get_view(), p0, p1, vec4(0.f, 0.f, 1.f, 1.f), border, image_scale, tint_col);
+				canvas->add_image_stretched(image->get_view(), p0, p1, vec4(0.f, 0.f, 1.f, 1.f), (vec2)image->extent.xy() * image_scale, border * image_scale, tint_col);
 			}
 		}, "stretched_image"_h);
 	}
@@ -52,6 +52,13 @@ namespace flame
 			}
 			else
 				image = (graphics::ImagePtr)s2u_hex<uint64>(image_name.string());
+
+			if (image)
+			{
+				graphics::ImageConfig config;
+				graphics::Image::get_config(image->filename, &config);
+				border = config.border;
+			}
 		}
 
 		if (image != old_one)
@@ -69,15 +76,6 @@ namespace flame
 		tint_col = col;
 		element->mark_drawing_dirty();
 		data_changed("tint_col"_h);
-	}
-
-	void cStretchedImagePrivate::set_border(const vec4& _border)
-	{
-		if (border == _border)
-			return;
-		border = _border;
-		element->mark_drawing_dirty();
-		data_changed("border"_h);
 	}
 
 	void cStretchedImagePrivate::set_image_scale(float scale)
