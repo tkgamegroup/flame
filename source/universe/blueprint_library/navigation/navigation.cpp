@@ -1,6 +1,7 @@
 #include "../../../foundation/blueprint.h"
 #include "../../../foundation/typeinfo.h"
 #include "../../components/nav_agent_private.h"
+#include "../../components/nav_obstacle_private.h"
 #include "../../systems/scene_private.h"
 
 namespace flame
@@ -49,15 +50,15 @@ namespace flame
 			}
 		);
 
-		library->add_template("Nav Agent Set Target", "",
+		library->add_template("Nav Agent Set Radius", "",
 			{
 				{
 					.name = "Entity",
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				},
 				{
-					.name = "Position",
-					.allowed_types = { TypeInfo::get<vec3>() }
+					.name = "Radius",
+					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
 			{
@@ -68,7 +69,55 @@ namespace flame
 				{
 					auto nav_agent = entity->get_component<cNavAgent>();
 					if (nav_agent)
-						nav_agent->set_target(*(vec3*)inputs[1].data);
+						nav_agent->radius = *(float*)inputs[1].data;
+				}
+			}
+		);
+
+		library->add_template("Nav Agent Set Height", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Height",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto nav_agent = entity->get_component<cNavAgent>();
+					if (nav_agent)
+						nav_agent->height = *(float*)inputs[1].data;
+				}
+			}
+		);
+
+		library->add_template("Nav Agent Set Speed", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Speed",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto nav_agent = entity->get_component<cNavAgent>();
+					if (nav_agent)
+						nav_agent->speed = *(float*)inputs[1].data;
 				}
 			}
 		);
@@ -93,6 +142,78 @@ namespace flame
 					auto nav_agent = entity->get_component<cNavAgent>();
 					if (nav_agent)
 						nav_agent->set_speed_scale(*(float*)inputs[1].data);
+				}
+			}
+		);
+
+		library->add_template("Nav Agent Set Turn Speed", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Speed",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto nav_agent = entity->get_component<cNavAgent>();
+					if (nav_agent)
+						nav_agent->turn_speed = *(float*)inputs[1].data;
+				}
+			}
+		);
+
+		library->add_template("Nav Agent Set Turn Speed Scale", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Scale",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto nav_agent = entity->get_component<cNavAgent>();
+					if (nav_agent)
+						nav_agent->set_turn_speed_scale(*(float*)inputs[1].data);
+				}
+			}
+		);
+
+		library->add_template("Nav Agent Set Target", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Position",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto nav_agent = entity->get_component<cNavAgent>();
+					if (nav_agent)
+						nav_agent->set_target(*(vec3*)inputs[1].data);
 				}
 			}
 		);
@@ -137,6 +258,54 @@ namespace flame
 					auto nav_agent = entity->get_component<cNavAgent>();
 					if (nav_agent)
 						nav_agent->flying = *(bool*)inputs[1].data;
+				}
+			}
+		);
+
+		library->add_template("Nav Obstacle Set Radius", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Radius",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto nav_obstacle = entity->get_component<cNavObstacle>();
+					if (nav_obstacle)
+						nav_obstacle->radius = *(float*)inputs[1].data;
+				}
+			}
+		);
+
+		library->add_template("Nav Obstacle Set Height", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Height",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto nav_obstacle = entity->get_component<cNavObstacle>();
+					if (nav_obstacle)
+						nav_obstacle->height = *(float*)inputs[1].data;
 				}
 			}
 		);

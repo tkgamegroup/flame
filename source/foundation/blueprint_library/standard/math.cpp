@@ -407,7 +407,7 @@ namespace flame
 			TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
 		};
 
-		auto input_type_changed_function = [](TypeInfo** input_types, TypeInfo** output_types) {
+		auto binary_input_type_changed_function = [](TypeInfo** input_types, TypeInfo** output_types) {
 			auto ti0 = (TypeInfo_Data*)input_types[0];
 			auto ti1 = (TypeInfo_Data*)input_types[1];
 			if (ti0->vec_size != ti1->vec_size)
@@ -443,8 +443,11 @@ namespace flame
 			}
 		};
 
-#define BINARY_OPERATION_TEMPLATE(node_name, op)\
-		library->add_template(node_name, #op,\
+#define OP_OPERATOR(a, b, op_name) a op_name b
+#define OP_FUNCTION(a, b, op_name) op_name(a, b)
+
+#define BINARY_OPERATION_TEMPLATE(node_name, op_name, op)\
+		library->add_template(node_name, #op_name,\
 			{\
 				{\
 					.name = "A",\
@@ -473,7 +476,7 @@ namespace flame
 					switch (out_ti->vec_size)\
 					{\
 					case 1:\
-						*(float*)outputs[0].data = in0_ti->as_float(in0_p) op in1_ti->as_float(in1_p);\
+						*(float*)outputs[0].data = op(in0_ti->as_float(in0_p), in1_ti->as_float(in1_p), op_name);\
 						break;\
 					case 2:\
 					{\
@@ -486,7 +489,7 @@ namespace flame
 							b = vec2(in1_ti->as_float(in1_p));\
 						else\
 							in1_ti->as_floats(in1_p, 2, &b[0]);\
-						*(vec2*)outputs[0].data = a op b;\
+						*(vec2*)outputs[0].data = op(a, b, op_name);\
 					}\
 						break;\
 					case 3:\
@@ -500,7 +503,7 @@ namespace flame
 							b = vec3(in1_ti->as_float(in1_p));\
 						else\
 							in1_ti->as_floats(in1_p, 3, &b[0]);\
-						*(vec3*)outputs[0].data = a op b;\
+						*(vec3*)outputs[0].data = op(a, b, op_name);\
 					}\
 						break;\
 					case 4:\
@@ -514,7 +517,7 @@ namespace flame
 							b = vec4(in1_ti->as_float(in1_p));\
 						else\
 							in1_ti->as_floats(in1_p, 4, &b[0]);\
-						*(vec4*)outputs[0].data = a op b;\
+						*(vec4*)outputs[0].data = op(a, b, op_name);\
 					}\
 						break;\
 					}\
@@ -526,7 +529,7 @@ namespace flame
 						switch (out_ti->vec_size)\
 						{\
 						case 1:\
-							*(int*)outputs[0].data = in0_ti->as_int(in0_p) op in1_ti->as_int(in1_p);\
+							*(int*)outputs[0].data = op(in0_ti->as_int(in0_p), in1_ti->as_int(in1_p), op_name);\
 							break;\
 						case 2:\
 						{\
@@ -539,7 +542,7 @@ namespace flame
 								b = ivec2(in1_ti->as_int(in1_p));\
 							else\
 								in1_ti->as_ints(in1_p, 2, &b[0]);\
-							*(ivec2*)outputs[0].data = a op b;\
+							*(ivec2*)outputs[0].data = op(a, b, op_name);\
 						}\
 							break;\
 						case 3:\
@@ -553,7 +556,7 @@ namespace flame
 								b = ivec3(in1_ti->as_int(in1_p));\
 							else\
 								in1_ti->as_ints(in1_p, 3, &b[0]);\
-							*(ivec3*)outputs[0].data = a op b;\
+							*(ivec3*)outputs[0].data = op(a, b, op_name);\
 						}\
 							break;\
 						case 4:\
@@ -567,7 +570,7 @@ namespace flame
 								b = ivec4(in1_ti->as_int(in1_p));\
 							else\
 								in1_ti->as_ints(in1_p, 4, &b[0]);\
-							*(ivec4*)outputs[0].data = a op b;\
+							*(ivec4*)outputs[0].data = op(a, b, op_name);\
 						}\
 							break;\
 						}\
@@ -577,7 +580,7 @@ namespace flame
 						switch (out_ti->vec_size)\
 						{\
 						case 1:\
-							*(int*)outputs[0].data = in0_ti->as_uint(in0_p) op in1_ti->as_uint(in1_p);\
+							*(int*)outputs[0].data = op(in0_ti->as_uint(in0_p), in1_ti->as_uint(in1_p), op_name);\
 							break;\
 						case 2:\
 						{\
@@ -590,7 +593,7 @@ namespace flame
 								b = uvec2(in1_ti->as_uint(in1_p));\
 							else\
 								in1_ti->as_uints(in1_p, 2, &b[0]);\
-							*(uvec2*)outputs[0].data = a op b;\
+							*(uvec2*)outputs[0].data = op(a, b, op_name);\
 						}\
 							break;\
 						case 3:\
@@ -604,7 +607,7 @@ namespace flame
 								b = uvec3(in1_ti->as_uint(in1_p));\
 							else\
 								in1_ti->as_uints(in1_p, 3, &b[0]);\
-							*(uvec3*)outputs[0].data = a op b;\
+							*(uvec3*)outputs[0].data = op(a, b, op_name);\
 						}\
 							break;\
 						case 4:\
@@ -618,7 +621,7 @@ namespace flame
 								b = uvec4(in1_ti->as_uint(in1_p));\
 							else\
 								in1_ti->as_uints(in1_p, 4, &b[0]);\
-							*(uvec4*)outputs[0].data = a op b;\
+							*(uvec4*)outputs[0].data = op(a, b, op_name);\
 						}\
 							break;\
 						}\
@@ -627,15 +630,13 @@ namespace flame
 			},\
 			nullptr,\
 			nullptr,\
-			input_type_changed_function\
+			binary_input_type_changed_function\
 		);
 
-	BINARY_OPERATION_TEMPLATE("Add", +);
-	BINARY_OPERATION_TEMPLATE("Subtract", -);
-	BINARY_OPERATION_TEMPLATE("Multiply", *);
-	BINARY_OPERATION_TEMPLATE("Divide", /);
-
-#undef BINARY_OPERATION_TEMPLATE
+	BINARY_OPERATION_TEMPLATE("Add", +, OP_OPERATOR);
+	BINARY_OPERATION_TEMPLATE("Subtract", -, OP_OPERATOR);
+	BINARY_OPERATION_TEMPLATE("Multiply", *, OP_OPERATOR);
+	BINARY_OPERATION_TEMPLATE("Divide", /, OP_OPERATOR);
 		
 		library->add_template("Integer Divide", "\\",
 			{
@@ -826,24 +827,23 @@ namespace flame
 				}
 			}
 		);
+
+		BINARY_OPERATION_TEMPLATE("Min", min, OP_FUNCTION);
+		BINARY_OPERATION_TEMPLATE("Max", max, OP_FUNCTION);
+
+#undef BINARY_OPERATION_TEMPLATE
 		
 		library->add_template("Floor", "",
 			{
 				{
 					.name = "V",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
+					.allowed_types = generic_types
 				}
 			},
 			{
 				{
 					.name = "Out",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
-										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
-										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
-										}
+					.allowed_types = generic_types
 				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {

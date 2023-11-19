@@ -1397,7 +1397,8 @@ namespace flame
 				auto ob = nav_obstacles[i];
 				if (ob->dt_id != -1)
 					break;
-				if (dt_tile_cache->addObstacle(&ob->node->pos[0], ob->radius, ob->height, (uint*)&ob->dt_id) != DT_SUCCESS)
+				auto pos = ob->node->global_pos();
+				if (dt_tile_cache->addObstacle(&pos[0], ob->radius, ob->height, (uint*)&ob->dt_id) != DT_SUCCESS)
 				{
 					auto n = count - i - 1;
 					if (n > 0)
