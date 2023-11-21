@@ -127,60 +127,130 @@ namespace flame
 			}
 		);
 
-		library->add_template("Array Random Sample", "",
+		library->add_template("Array Get Random Samples", "",
 			{
 				{
 					.name = "Array",
 					.allowed_types = { TypeInfo::get<voidptr>() }
 				},
 				{
-					.name = "Value To Match",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+					.name = "Number",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "1"
+				}
+			},
+			{
+				{
+					.name = "Indices",
+					.allowed_types = { TypeInfo::get<std::vector<uint>>() }
+				},
+				{
+					.name = "ok",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<bool>() },
+					.default_value = "false"
+				}
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				auto array_type = inputs[1].type;
+				if (array_type && is_vector(array_type->tag))
+				{
+					auto parray = (std::vector<char>*)inputs[1].data;
+					auto item_type = array_type->get_wrapped();
+					int size = parray->size() / item_type->size;
+
+					block.max_execute_times = size;
+					block.loop_vector_index = 4;
+					block.block_output_index = 5;
+				}
+				else
+					block.max_execute_times = 0;
+
+				auto& indices = *(std::vector<uint>*)outputs[1].data;
+				indices.clear();
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto& indices = *(std::vector<uint>*)outputs[1].data;
+				auto number = *(uint*)inputs[2].data;
+				if (indices.size() > number)
+				{
+					std::vector<uint> selected;
+					for (auto i = 0; i < number; i++)
+					{
+						auto idx = linearRand(0, (int)indices.size() - 1);
+						selected.push_back(indices[idx]);
+						indices.erase(indices.begin() + idx);
+					}
+					indices = selected;
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				auto ok = *(bool*)outputs[2].data;
+				if (ok)
+				{
+					auto& indices = *(std::vector<uint>*)outputs[1].data;
+					indices.push_back(execution.block->executed_times);
+				}
+				*(bool*)outputs[2].data = false;
+			}
+		);
+
+		library->add_template("Array Random Sample", "",
+			{
+				{
+					.name = "Array",
+					.allowed_types = { TypeInfo::get<voidptr>() }
 				}
 			},
 			{
 				{
 					.name = "Index",
 					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "ok",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<bool>() },
+					.default_value = "false"
+				},
+				{
+					.name = "temp_array",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<std::vector<uint>>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				auto array_type = inputs[0].type;
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				auto array_type = inputs[1].type;
 				if (array_type && is_vector(array_type->tag))
 				{
-					auto parray = (std::vector<char>*)inputs[0].data;
+					auto parray = (std::vector<char>*)inputs[1].data;
 					auto item_type = array_type->get_wrapped();
 					int size = parray->size() / item_type->size;
-					auto pmatch = inputs[1].data;
-					switch (item_type->tag)
-					{
-					case TagD:
-					{
-						auto ti = (TypeInfo_Data*)item_type;
-						if (ti->data_type == DataInt || ti->data_type == DataFloat)
-						{
-							auto& array = *(std::vector<uint>*)parray;
-							std::vector<uint> temp;
-							for (auto i = 0; i < size; i++)
-							{
-								if (memcmp(&array[i], pmatch, sizeof(uint)) == 0)
-									temp.push_back(i);
-							}
-							if (!temp.empty())
-								*(uint*)outputs[0].data = temp[linearRand(0, (int)temp.size() - 1)];
-							else
-								*(uint*)outputs[0].data = 0;
-						}
-						else
-							*(uint*)outputs[0].data = 0;
-					}
-						break;
-					default:
-						*(uint*)outputs[0].data = 0;
-					}
+
+					block.max_execute_times = size;
+					block.loop_vector_index = 5;
+					block.block_output_index = 4;
 				}
 				else
-					*(uint*)outputs[0].data = 0;
+					block.max_execute_times = 0;
+
+				auto& temp_array = *(std::vector<uint>*)outputs[3].data;
+				temp_array.clear();
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto& temp_array = *(std::vector<uint>*)outputs[3].data;
+				*(uint*)outputs[1].data = temp_array[linearRand(0, (int)temp_array.size() - 1)];
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				auto ok = *(bool*)outputs[2].data;
+				if (ok)
+				{
+					auto& temp_array = *(std::vector<uint>*)outputs[3].data;
+					temp_array.push_back(execution.block->executed_times);
+				}
+				*(bool*)outputs[2].data = false;
 			}
 		);
 	}

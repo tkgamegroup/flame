@@ -140,6 +140,24 @@ namespace flame
 			}
 		);
 
+		library->add_template("To Path", "",
+			{
+				{
+					.name = "In",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(std::filesystem::path*)outputs[0].data = *(std::wstring*)inputs[0].data;
+			}
+		);
+
 		library->add_template("String Concatenate", "",
 			{
 				{

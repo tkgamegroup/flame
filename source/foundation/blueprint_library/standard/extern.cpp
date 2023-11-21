@@ -20,7 +20,9 @@ namespace flame
 				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				*(BlueprintInstancePtr*)outputs[0].data = BlueprintInstance::get(*(uint*)inputs[0].data);
+				auto& ret = *(BlueprintInstancePtr*)outputs[0].data;
+				if (!ret)
+					ret = BlueprintInstance::get(*(uint*)inputs[0].data);
 			}
 		);
 
@@ -211,7 +213,29 @@ namespace flame
 				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				*(SheetPtr*)outputs[0].data = Sheet::get(*(uint*)inputs[0].data);
+				auto& ret = *(SheetPtr*)outputs[0].data;
+				if (!ret)
+					ret = Sheet::get(*(uint*)inputs[0].data);
+			}
+		);
+
+		library->add_template("Get Sheet", "",
+			{
+				{
+					.name = "Path",
+					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
+				}
+			},
+			{
+				{
+					.name = "Sheet",
+					.allowed_types = { TypeInfo::get<SheetPtr>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto& ret = *(SheetPtr*)outputs[0].data;
+				if (!ret)
+					ret = Sheet::get(*(std::filesystem::path*)inputs[0].data);
 			}
 		);
 

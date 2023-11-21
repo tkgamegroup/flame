@@ -293,6 +293,38 @@ namespace flame
 			}
 		);
 
+		library->add_template("Foreach File", "",
+			{
+				{
+					.name = "Folder",
+					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
+				}
+			},
+			{
+				{
+					.name = "temp_array",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<std::vector<std::filesystem::path>>() }
+				}
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+				auto& temp_array = *(std::vector<std::filesystem::path>*)outputs[1].data;
+				temp_array.clear();
+				auto& folder = *(std::filesystem::path*)inputs[1].data;
+				if (!folder.empty())
+				{
+					for (auto& it : std::filesystem::directory_iterator(Path::get(folder)))
+					{
+						if (it.is_regular_file())
+							temp_array.push_back(it.path());
+					}
+				}
+				block.loop_vector_index = 3;
+				block.max_execute_times = temp_array.size();
+			}
+		);
+
 #define LOOP_VAR_TEMPLATE(TYPE, DV) \
 		library->add_template("Loop Var " #TYPE, "",\
 			{\

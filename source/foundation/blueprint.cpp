@@ -445,8 +445,9 @@ namespace flame
 		BlueprintVariable variable;
 		std::string location;
 		auto found = false;
-		if (location_name == 0)
+		if (location_name == 0 || location_name == name_hash)
 		{
+			location_name = 0;
 			for (auto& v : variables)
 			{
 				if (v.name_hash == variable_name)
@@ -982,8 +983,9 @@ namespace flame
 
 		std::string location;
 		BlueprintGroupPtr call_group = nullptr;
-		if (location_name == 0)
+		if (location_name == 0 || location_name == name_hash)
 		{
+			location_name = 0;
 			for (auto& g : groups)
 			{
 				if (g->name_hash == group_name)
@@ -1831,13 +1833,17 @@ namespace flame
 					if (n->name_hash == "Call"_h)
 					{
 						auto name = *(uint*)n->inputs[0]->data;
-						for (auto i = 0; i < sorted_groups.size(); i++)
+						auto location = *(uint*)n->inputs[1]->data;
+						if (location == 0)
 						{
-							if (sorted_groups[i].first->name_hash == name)
+							for (auto i = 0; i < sorted_groups.size(); i++)
 							{
-								get_group_rank(i);
-								rank = max(rank, sorted_groups[i].second + 1);
-								break;
+								if (sorted_groups[i].first->name_hash == name)
+								{
+									get_group_rank(i);
+									rank = max(rank, sorted_groups[i].second + 1);
+									break;
+								}
 							}
 						}
 					}

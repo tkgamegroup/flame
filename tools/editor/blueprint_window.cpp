@@ -212,10 +212,13 @@ void BlueprintView::copy_nodes(BlueprintGroupPtr g)
 				if (!i->is_linked())
 				{
 					CopiedSlot s;
-					if ((i->type && i->allowed_types.empty() && i->type != i->allowed_types.front()))
+					if ((i->type && !i->allowed_types.empty() && i->type != i->allowed_types.front()))
 						s.type = i->type;
-					if (auto value_str = i->type->serialize(i->data); value_str != i->default_value)
-						s.value = value_str;
+					if (i->type->tag != TagU)
+					{
+						if (auto value_str = i->type->serialize(i->data); value_str != i->default_value)
+							s.value = value_str;
+					}
 					if (s.type || !s.value.empty())
 						n.input_datas.emplace(i->name_hash, s);
 				}
@@ -311,6 +314,11 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 		{
 			for (auto& src_i : src_n.input_datas)
 			{
+				if (blueprint_is_variable_node(n->name_hash))
+				{
+					if (src_i.first == "Name"_h || src_i.first == "Location"_h)
+						continue;
+				}
 				auto i = n->find_input(src_i.first);
 				if (src_i.second.type && i->type != src_i.second.type)
 					blueprint->set_input_type(i, src_i.second.type);
@@ -959,11 +967,12 @@ void BlueprintView::on_draw()
 				{
 					auto& var = group->inputs[selected_input];
 
+					auto name = var.name;
 					ImGui::SetNextItemWidth(200.f);
-					ImGui::InputText("Name", &var.name);
+					ImGui::InputText("Name", &name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-						blueprint->alter_group_input(group, var.name_hash, var.name, var.type);
+						blueprint->alter_group_input(group, var.name_hash, name, var.type);
 						unsaved = true;
 					}
 					ImGui::SetNextItemWidth(200.f);
@@ -1050,11 +1059,12 @@ void BlueprintView::on_draw()
 				{
 					auto& var = group->outputs[selected_output];
 
+					auto name = var.name;
 					ImGui::SetNextItemWidth(200.f);
-					ImGui::InputText("Name", &var.name);
+					ImGui::InputText("Name", &name);
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
-						blueprint->alter_group_output(group, var.name_hash, var.name, var.type);
+						blueprint->alter_group_output(group, var.name_hash, name, var.type);
 						unsaved = true;
 					}
 					ImGui::SetNextItemWidth(200.f);
