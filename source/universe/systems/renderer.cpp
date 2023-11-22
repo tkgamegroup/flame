@@ -770,7 +770,7 @@ namespace flame
 		buf_particles.create(L"flame\\shaders\\particle.vi", {}, 1024 * 64);
 		buf_primitives.create(L"flame\\shaders\\plain\\plain3d.vi", {}, 1024 * 128);
 
-		mesh_reses.resize(1024);
+		mesh_reses.resize(1024 * 8);
 
 		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dt=false", "dw=false" });
 		pl_line3d_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dt=true", "dw=false" });

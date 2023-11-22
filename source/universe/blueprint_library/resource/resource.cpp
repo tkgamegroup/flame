@@ -49,6 +49,11 @@ namespace flame
 				{
 					.name = "Name_hash",
 					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Static",
+					.allowed_types = { TypeInfo::get<bool>() },
+					.default_value = "true"
 				}
 			},
 			{
@@ -59,8 +64,9 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto& image = *(graphics::ImageDesc*)outputs[0].data;
-				if (image.view)
+				if (image.view && *(bool*)inputs[2].data)
 					return;
+				image.view = nullptr;
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -94,6 +100,11 @@ namespace flame
 				{
 					.name = "Name_hash",
 					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Static",
+					.allowed_types = { TypeInfo::get<bool>() },
+					.default_value = "true"
 				}
 			},
 			{
@@ -103,8 +114,10 @@ namespace flame
 				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				if (*(graphics::ImagePtr*)outputs[0].data)
+				auto& atlas = *(graphics::ImageAtlasPtr*)outputs[0].data;
+				if (atlas && *(bool*)inputs[2].data)
 					return;
+				atlas = nullptr;
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -114,20 +127,11 @@ namespace flame
 						auto name = *(uint*)inputs[1].data;
 						if (name)
 						{
-							auto atlas = holder->get_graphics_image_atlas(name);
-							if (atlas)
-								*(graphics::ImageAtlasPtr*)outputs[0].data = atlas;
-							else
-								*(graphics::ImageAtlasPtr*)outputs[0].data = nullptr;
+							auto r = holder->get_graphics_image_atlas(name);
+							atlas = r;
 						}
-						else
-							*(graphics::ImageAtlasPtr*)outputs[0].data = nullptr;
 					}
-					else
-						*(graphics::ImageAtlasPtr*)outputs[0].data = nullptr;
 				}
-				else
-					*(graphics::ImageAtlasPtr*)outputs[0].data = nullptr;
 			}
 		);
 
