@@ -54,6 +54,8 @@ namespace flame
 		{
 			if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
 				return ImageAspectColor;
+			if (fmt >= Format_Stencil_Begin && fmt <= Format_Stencil_End)
+				return ImageAspectStencil;
 			if (fmt >= Format_DepthStencil_Begin && fmt <= Format_DepthStencil_End)
 				return ImageAspectDepth | ImageAspectStencil;
 			if (fmt >= Format_Depth_Begin && fmt <= Format_Depth_End)

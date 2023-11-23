@@ -40,8 +40,17 @@ namespace flame
 					dst.samples = to_backend(src.sample_count);
 					dst.loadOp = to_backend(src.load_op);
 					dst.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-					dst.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-					dst.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+					if ((src.format >= Format_Stencil_Begin && src.format <= Format_Stencil_End) ||
+						(src.format >= Format_DepthStencil_Begin && src.format <= Format_DepthStencil_End))
+					{
+						dst.stencilLoadOp = to_backend(src.load_op);
+						dst.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+					}
+					else
+					{
+						dst.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+						dst.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+					}
 					dst.initialLayout = to_backend(src.initia_layout, src.format);
 					dst.finalLayout = to_backend(src.final_layout, src.format);
 
@@ -104,24 +113,24 @@ namespace flame
 
 						sp.pResolveAttachments = dst.col_res_refs.data();
 					}
-					if (src.depth_attachment != -1)
+					if (src.depth_stencil_attachment != -1)
 					{
 						auto& r = dst.dep_ref;
 						r = {};
 						r.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
-						r.attachment = src.depth_attachment;
+						r.attachment = src.depth_stencil_attachment;
 						r.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 						sp.pDepthStencilAttachment = &r;
 					}
-					if (src.depth_resolve_attachment != -1)
+					if (src.depth_stencil_resolve_attachment != -1)
 					{
 						auto& r = dst.dep_res_ref;
 						r.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;
-						r.attachment = src.depth_resolve_attachment;
+						r.attachment = src.depth_stencil_resolve_attachment;
 						r.layout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-						ret->attachments[src.depth_resolve_attachment].final_layout = ImageLayoutGeneral;
-						vk_atts[src.depth_resolve_attachment].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+						ret->attachments[src.depth_stencil_resolve_attachment].final_layout = ImageLayoutGeneral;
+						vk_atts[src.depth_stencil_resolve_attachment].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 						auto& s = dst.dep_res_state;
 						s = {};

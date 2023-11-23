@@ -29,7 +29,7 @@ namespace flame
 		mat4 proj_view_mat_inv;
 		Frustum frustum;
 
-		virtual vec2 world_to_screen(const vec3& pos) = 0;
+		virtual vec2 world_to_screen(const vec3& pos, vec3* out_clip_coord = nullptr) = 0;
 
 		struct Create
 		{

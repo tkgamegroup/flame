@@ -9,7 +9,7 @@ renderpass
   {rp}
 cull_mode
   None
-compare_op
+depth_compare_op
   Always
 
 @pll

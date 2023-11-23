@@ -9,6 +9,26 @@ namespace flame
 {
 	namespace graphics
 	{
+#define PRECOMPUTE_CIRCLES_NUMBER 64U
+		static std::vector<vec2> precompute_circles[PRECOMPUTE_CIRCLES_NUMBER];
+
+		const std::vector<vec2>& get_precompute_circle(float r)
+		{
+			auto idx = min((uint)(r / 4.f), PRECOMPUTE_CIRCLES_NUMBER - 1);
+			auto& ret = precompute_circles[idx];
+			if (ret.empty())
+			{
+				ret.resize(idx + 4);
+				auto s = 1.f / (float)ret.size() * 2.f * pi<float>();
+				for (auto i = 0; i < ret.size(); i++)
+				{
+					auto a = i * s;
+					ret[i] = vec2(cos(a), sin(a));
+				}
+			}
+			return ret;
+		}
+
 		CanvasPrivate::CanvasPrivate(WindowPtr _window)
 		{
 			window = _window;
@@ -32,13 +52,14 @@ namespace flame
 				cb->set_viewport_and_scissor(vp);
 				if (clear_framebuffer)
 				{
-					auto cv = vec4(0.4f, 0.4f, 0.58f, 1.f);
-					cb->begin_renderpass(rp, fb_tars[idx], &cv);
+					vec4 cvs[] = { vec4(0.4f, 0.4f, 0.58f, 1.f), vec4(0.f)};
+					cb->begin_renderpass(rp, fb_tars[idx], cvs);
 				}
 				else
 				{
 					cb->image_barrier(iv_tars[idx]->image, {}, ImageLayoutAttachment);
-					cb->begin_renderpass(rp_load, fb_tars[idx]);
+					vec4 cvs[] = { vec4(0.f), vec4(0.f) };
+					cb->begin_renderpass(rp_load, fb_tars[idx], cvs);
 				}
 				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 				cb->bind_index_buffer(buf_idx.buf.get(), IndiceTypeUint);
@@ -48,6 +69,9 @@ namespace flame
 				prm.push_constant(cb);
 				auto last_pl = pl;
 				auto idx_off = 0;
+				auto stencil_state = StencilStateNone;
+				auto curr_pl = pl;
+				auto curr_pl_sdf = pl_sdf;
 				for (auto& cmd : draw_cmds)
 				{
 					switch (cmd.type)
@@ -63,13 +87,34 @@ namespace flame
 							cb->set_scissor(vp);
 						}
 						break;
+					case DrawCmd::SetStencilState:
+						if (cmd.data.stencil_state != stencil_state)
+						{
+							stencil_state = cmd.data.stencil_state;
+							switch (stencil_state)
+							{
+							case StencilStateNone:
+								curr_pl = pl;
+								curr_pl_sdf = pl_sdf;
+								break;
+							case StencilStateWrite:
+								curr_pl = pl_stencil_write;
+								curr_pl_sdf = pl_sdf_stencil_write;
+								break;
+							case StencilStateCompare:
+								curr_pl = pl_stencil_compare;
+								curr_pl_sdf = pl_sdf_stencil_compare;
+								break;
+							}
+						}
+						break;
 					case DrawCmd::Blit:
 						if (cmd.idx_cnt > 0)
 						{
-							if (last_pl != pl)
+							if (last_pl != curr_pl)
 							{
-								cb->bind_pipeline(pl);
-								last_pl = pl;
+								cb->bind_pipeline(curr_pl);
+								last_pl = curr_pl;
 							}
 
 							cb->bind_descriptor_set(0, cmd.ds);
@@ -80,10 +125,10 @@ namespace flame
 					case DrawCmd::DrawSdf:
 						if (cmd.idx_cnt > 0)
 						{
-							if (last_pl != pl_sdf)
+							if (last_pl != curr_pl_sdf)
 							{
-								cb->bind_pipeline(pl_sdf);
-								last_pl = pl_sdf;
+								cb->bind_pipeline(curr_pl_sdf);
+								last_pl = curr_pl_sdf;
 							}
 							prm.pc.mark_dirty_c("data"_h).as<vec4>() = vec4(1.f / cmd.data.sdf.scale / 4.f, cmd.data.sdf.thickness, cmd.data.sdf.border, 0.f);
 							prm.push_constant(cb);
@@ -103,8 +148,38 @@ namespace flame
 
 			create_rp(Format_R8G8B8A8_UNORM);
 
-			pl = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", { "rp=" + str(rp) });
-			pl_sdf = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", { "rp=" + str(rp), "frag:MSDF" });
+			std::string rp_define = "rp=" + str(rp);
+			std::vector<std::string> stencil_write_defines = { "stencil_test=true", "stencil_op=" + TypeInfo::serialize_t(StencilOpReplace), "color_mask=" + TypeInfo::serialize_t(ColorComponentNone), "frag:ALPHA_TEST" };
+			std::vector<std::string> stencil_compare_defines = { "stencil_test=true", "stencil_compare_op=" + TypeInfo::serialize_t(CompareOpEqual), };
+			pl = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", { rp_define });
+			{
+				std::vector<std::string> defines;
+				defines.push_back(rp_define);
+				defines.insert(defines.end(), stencil_write_defines.begin(), stencil_write_defines.end());
+				pl_stencil_write = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", defines);
+			}
+			{
+				std::vector<std::string> defines;
+				defines.push_back(rp_define);
+				defines.insert(defines.end(), stencil_compare_defines.begin(), stencil_compare_defines.end());
+				pl_stencil_compare = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", defines);
+			}
+			std::string sdf_define = "frag:MSDF";
+			pl_sdf = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", { rp_define, sdf_define });
+			{
+				std::vector<std::string> defines;
+				defines.push_back(rp_define);
+				defines.push_back(sdf_define);
+				defines.insert(defines.end(), stencil_write_defines.begin(), stencil_write_defines.end());
+				pl_sdf_stencil_write = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", defines);
+			}
+			{
+				std::vector<std::string> defines;
+				defines.push_back(rp_define);
+				defines.push_back(sdf_define);
+				defines.insert(defines.end(), stencil_compare_defines.begin(), stencil_compare_defines.end());
+				pl_sdf_stencil_compare = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", defines);
+			}
 			prm.init(pl->layout, graphics::PipelineGraphics);
 			buf_vtx.create(sizeof(DrawVert), 360000);
 			buf_idx.create(240000);
@@ -136,10 +211,10 @@ namespace flame
 			std::vector<std::string> defines;
 			defines.push_back("col_fmt=" + TypeInfo::serialize_t(format));
 			defines.push_back("final_layout=ShaderReadOnly");
-			rp = Renderpass::get(L"flame\\shaders\\color.rp", defines);
+			rp = Renderpass::get(L"flame\\shaders\\canvas.rp", defines);
 			defines.push_back("load_op=Load");
 			defines.push_back("initia_layout=Attachment");
-			rp_load = Renderpass::get(L"flame\\shaders\\color.rp", defines);
+			rp_load = Renderpass::get(L"flame\\shaders\\canvas.rp", defines);
 		}
 
 		void CanvasPrivate::set_targets(std::span<ImageViewPtr> targets)
@@ -147,16 +222,25 @@ namespace flame
 			iv_tars.assign(targets.begin(), targets.end());
 			for (auto fb : fb_tars)
 				delete fb;
-			fb_tars.clear();
-			for (auto iv : iv_tars)
-				fb_tars.push_back(Framebuffer::create(rp, iv));
 
-			if (!targets.empty())
-				size = (vec2)targets[0]->image->extent.xy();
-			else
-				size = vec2(0.f);
+			size = targets.empty() ? vec2(0.f) : (vec2)targets[0]->image->extent.xy();
 
 			reset();
+			fb_tars.clear();
+
+			if (size.x <= 0.f && size.y <= 0.f)
+				return;
+
+			if (!stencil_img || (vec2)stencil_img->extent.xy() != size)
+			{
+				stencil_img.reset(Image::create(Format_Stencil8, uvec3((uvec2)size, 1), ImageUsageAttachment));
+				stencil_img->change_layout(ImageLayoutAttachment);
+			}
+			for (auto iv : iv_tars)
+			{
+				ImageViewPtr views[] = { iv, stencil_img->get_view() };
+				fb_tars.push_back(Framebuffer::create(rp, views));
+			}
 		}
 
 		void CanvasPrivate::bind_window_targets()
@@ -419,6 +503,46 @@ namespace flame
 			new_cmd.type = DrawCmd::SetScissor;
 			new_cmd.data.rect = scissor_stack.top();
 		}
+
+		void CanvasPrivate::begin_stencil_write()
+		{
+			assert(stencil_state == StencilStateNone);
+			stencil_state = StencilStateWrite;
+
+			auto& new_cmd = draw_cmds.emplace_back();
+			new_cmd.type = DrawCmd::SetStencilState;
+			new_cmd.data.stencil_state = stencil_state;
+		}
+
+		void CanvasPrivate::end_stencil_write()
+		{
+			assert(stencil_state == StencilStateWrite);
+			stencil_state = StencilStateNone;
+
+			auto& new_cmd = draw_cmds.emplace_back();
+			new_cmd.type = DrawCmd::SetStencilState;
+			new_cmd.data.stencil_state = stencil_state;
+		}
+
+		void CanvasPrivate::begin_stencil_compare()
+		{
+			assert(stencil_state == StencilStateNone);
+			stencil_state = StencilStateCompare;
+
+			auto& new_cmd = draw_cmds.emplace_back();
+			new_cmd.type = DrawCmd::SetStencilState;
+			new_cmd.data.stencil_state = stencil_state;
+		}
+
+		void CanvasPrivate::end_stencil_compare()
+		{
+			assert(stencil_state == StencilStateCompare);
+			stencil_state = StencilStateNone;
+
+			auto& new_cmd = draw_cmds.emplace_back();
+			new_cmd.type = DrawCmd::SetStencilState;
+			new_cmd.data.stencil_state = stencil_state;
+		}
 		
 		Canvas::DrawVert* CanvasPrivate::add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col)
 		{
@@ -429,6 +553,22 @@ namespace flame
 		Canvas::DrawVert* CanvasPrivate::add_rect_filled(const vec2& a, const vec2& b, const cvec4& col)
 		{
 			path_rect(a, b);
+			return fill(col);
+		}
+
+		Canvas::DrawVert* CanvasPrivate::add_circle(const vec2& p, float radius, float thickness, const cvec4& col)
+		{
+			path = get_precompute_circle(radius);
+			for (auto& pt : path)
+				pt = p + pt * radius;
+			return stroke(thickness, col, true);
+		}
+
+		Canvas::DrawVert* CanvasPrivate::add_circle_filled(const vec2& p, float radius, const cvec4& col)
+		{
+			path = get_precompute_circle(radius);
+			for (auto& pt : path)
+				pt = p + pt * radius;
 			return fill(col);
 		}
 

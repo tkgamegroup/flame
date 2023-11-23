@@ -94,6 +94,8 @@ namespace flame
 			Format_BC7_SRGB,
 			Format_RGBA_ETC2,
 
+			Format_Stencil8,
+
 			Format_Depth16,
 			Format_Depth32,
 			Format_Depth24Stencil8,
@@ -102,6 +104,8 @@ namespace flame
 			Format_Color_End = Format_RGBA_ETC2,
 			Format_ColorOneChannel_Begin = Format_R8_UNORM,
 			Format_ColorOneChannel_End = Format_R32_SFLOAT,
+			Format_Stencil_Begin = Format_Stencil8,
+			Format_Stencil_End = Format_Stencil8,
 			Format_DepthStencil_Begin = Format_Depth24Stencil8,
 			Format_DepthStencil_End = Format_Depth24Stencil8,
 			Format_Depth_Begin = Format_Depth16,
@@ -360,6 +364,18 @@ namespace flame
 			CompareOpAlways
 		};
 
+		enum StencilOp
+		{
+			StencilOpKeep,
+			StencilOpZero,
+			StencilOpReplace,
+			StencilOpIncrementAndClamp,
+			StencilOpDecrementAndClamp,
+			StencilOpInvert,
+			StencilOpIncrementAndWrap,
+			StencilOpDecrementAndWrap
+		};
+
 		enum CullMode
 		{
 			CullModeNone,
@@ -412,6 +428,27 @@ namespace flame
 			BlendFactorSrc1Alpha,
 			BlendFactorOneMinusSrc1Alpha
 		};
+
+		enum BlendOp
+		{
+			BlendOpAdd,
+			BlendOpSubtract,
+			BlendOpReverseSubtract,
+			BlendOpMin,
+			BlendOpMax
+		};
+
+		enum ColorComponentFlags
+		{
+			ColorComponentNone = 0,
+			ColorComponentR = 1 << 0,
+			ColorComponentG = 1 << 1,
+			ColorComponentB = 1 << 2,
+			ColorComponentA = 1 << 3,
+			ColorComponentAll = ColorComponentR | ColorComponentG | ColorComponentB | ColorComponentA
+		};
+
+		inline ColorComponentFlags operator| (ColorComponentFlags a, ColorComponentFlags b) { return (ColorComponentFlags)((int)a | (int)b); }
 
 		enum DynamicState
 		{

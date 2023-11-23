@@ -234,8 +234,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto& ret = *(SheetPtr*)outputs[0].data;
-				if (!ret)
-					ret = Sheet::get(*(std::filesystem::path*)inputs[0].data);
+				ret = Sheet::get(*(std::filesystem::path*)inputs[0].data);
 			}
 		);
 

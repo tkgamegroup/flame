@@ -19,6 +19,7 @@ namespace flame
 
 	enum HudStyleVar
 	{
+		HudStyleVarWindowPadding,
 		HudStyleVarItemSpacing,
 		HudStyleVarScaling,
 		HudStyleVarCount
@@ -277,15 +278,20 @@ namespace flame
 		virtual void hud_begin(const vec2& pos, const vec2& size = vec2(0.f) /* 0 size means auto layout */, const cvec4& col = cvec4(0, 0, 0, 255), const vec2& pivot = vec2(0.f),
 			const graphics::ImageDesc& image = {}, float image_scale = 1.f) = 0;
 		virtual void hud_end() = 0;
-		virtual void hud_begin_horizontal() = 0;
-		virtual void hud_end_horizontal() = 0;
-		virtual void hud_rect(const vec2& size, const cvec4& col) = 0;
-		virtual void hud_text(std::wstring_view text, uint font_size = 24, const cvec4& col = cvec4(255)) = 0;
-		virtual void hud_image(const vec2& size, const graphics::ImageDesc& image, const cvec4& col = cvec4(255)) = 0;
-		virtual bool hud_button(std::wstring_view label, uint font_size = 24, bool* p_hovered = nullptr) = 0;
+		virtual void hud_set_cursor(const vec2& pos) = 0;
 		virtual Rect hud_get_rect() const = 0;
 		virtual void hud_push_style(HudStyleVar var, const vec2& value) = 0;
 		virtual void hud_pop_style(HudStyleVar var) = 0;
+		virtual void hud_begin_horizontal() = 0;
+		virtual void hud_end_horizontal() = 0;
+		virtual void hud_begin_stencil_write() = 0;
+		virtual void hud_end_stencil_write() = 0;
+		virtual void hud_begin_stencil_compare() = 0;
+		virtual void hud_end_stencil_compare() = 0;
+		virtual void hud_rect(const vec2& size, const cvec4& col) = 0;
+		virtual void hud_text(std::wstring_view text, uint font_size = 24, const cvec4& col = cvec4(255)) = 0;
+		virtual void hud_image(const vec2& size, const graphics::ImageDesc& image, float image_scale = 1.f, const cvec4& col = cvec4(255)) = 0;
+		virtual bool hud_button(std::wstring_view label, uint font_size = 24, const graphics::ImageDesc& image = {}, float image_scale = 1.f, bool* p_hovered = nullptr) = 0;
 
 		// Reflect
 		virtual void send_debug_string(const std::string& str) = 0;

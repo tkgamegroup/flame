@@ -10,7 +10,7 @@ shaders
   @frag
 cull_mode
   None
-compare_op
+depth_compare_op
   Always
 
 @vert

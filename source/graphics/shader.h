@@ -242,8 +242,11 @@ namespace flame
 			bool enable = false;
 			BlendFactor src_color = BlendFactorZero;
 			BlendFactor dst_color = BlendFactorZero;
+			BlendOp color_op = BlendOpAdd;
 			BlendFactor src_alpha = BlendFactorZero;
 			BlendFactor dst_alpha = BlendFactorZero;
+			BlendOp alpha_op = BlendOpAdd;
+			ColorComponentFlags color_write_mask = ColorComponentAll;
 		};
 
 		struct PipelineInfo
@@ -262,7 +265,10 @@ namespace flame
 			bool alpha_to_coverage = false;
 			bool depth_test = true;
 			bool depth_write = true;
-			CompareOp compare_op = CompareOpLess;
+			CompareOp depth_compare_op = CompareOpLess;
+			bool stencil_test = false;
+			CompareOp stencil_compare_op = CompareOpAlways;
+			StencilOp stencil_op = StencilOpKeep;
 			std::vector<BlendOption> blend_options;
 			std::vector<DynamicState> dynamic_states;
 		};

@@ -13,8 +13,13 @@ namespace flame
 		struct CanvasPrivate : Canvas
 		{
 			GraphicsPipelinePtr pl = nullptr;
+			GraphicsPipelinePtr pl_stencil_write = nullptr;
+			GraphicsPipelinePtr pl_stencil_compare = nullptr;
 			GraphicsPipelinePtr pl_sdf = nullptr;
+			GraphicsPipelinePtr pl_sdf_stencil_write = nullptr;
+			GraphicsPipelinePtr pl_sdf_stencil_compare = nullptr;
 			PipelineResourceManager prm;
+			std::unique_ptr<Image> stencil_img;
 			RenderpassPtr rp = nullptr;
 			RenderpassPtr rp_load = nullptr;
 			VertexBuffer buf_vtx;
@@ -35,6 +40,10 @@ namespace flame
 			uint set_translate(const vec2& translate) override;
 			void push_scissor(const Rect& rect) override;
 			void pop_scissor() override;
+			void begin_stencil_write() override;
+			void end_stencil_write() override;
+			void begin_stencil_compare() override;
+			void end_stencil_compare() override;
 
 			void path_rect(const vec2& a, const vec2& b);
 			DrawVert* stroke_path(DrawCmd& cmd, float thickness, const cvec4& col, bool closed);
@@ -44,6 +53,8 @@ namespace flame
 
 			DrawVert*	add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col) override;
 			DrawVert*	add_rect_filled(const vec2& a, const vec2& b, const cvec4& col) override;
+			DrawVert*	add_circle(const vec2& p, float radius, float thickness, const cvec4& col) override;
+			DrawVert*	add_circle_filled(const vec2& p, float radius, const cvec4& col) override;
 			void		add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness, float border) override;
 			DrawVert*	add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col) override;
 			DrawVert*	add_image_stretched(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const vec2& size, const vec4& border, const cvec4& tint_col) override;

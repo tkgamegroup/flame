@@ -8,10 +8,12 @@ namespace flame
 {
 	std::vector<cCameraPtr> cameras;
 
-	vec2 cCameraPrivate::world_to_screen(const vec3& pos)
+	vec2 cCameraPrivate::world_to_screen(const vec3& pos, vec3* out_clip_coord)
 	{
 		auto p = proj_view_mat * vec4(pos, 1.f);
 		p /= p.w;
+		if (out_clip_coord)
+			*out_clip_coord = p;
 		if (p.z < -1.f || p.z > 1.f)
 			return vec2(-1.f);
 		for (auto& render_task : sRenderer::instance()->render_tasks)

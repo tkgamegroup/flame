@@ -916,16 +916,24 @@ namespace flame
 			std::string ret;
 			if (!p) p = &v;
 			auto vv = *(int*)p;
-			for (auto i = 0; i < ei->items.size(); i++)
+			if (vv == 0)
 			{
-				if ((vv & 1) == 1)
+				auto it = ei->find_item(0);
+				ret = it ? it->name : "";
+			}
+			else
+			{
+				for (auto i = 0; i < ei->items.size(); i++)
 				{
-					if (!ret.empty())
-						ret += '|';
-					auto it = ei->find_item(1 << i);
-					ret += it ? it->name : "";
+					if ((vv & 1) == 1)
+					{
+						if (!ret.empty())
+							ret += '|';
+						auto it = ei->find_item(1 << i);
+						ret += it ? it->name : "";
+					}
+					vv >>= 1;
 				}
-				vv >>= 1;
 			}
 			return ret;
 		}

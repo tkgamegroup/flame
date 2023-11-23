@@ -27,5 +27,5 @@ attachments
 subpasses
   color_attachments
     0
-  depth_attachment
+  depth_stencil_attachment
     1

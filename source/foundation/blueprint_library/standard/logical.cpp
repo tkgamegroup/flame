@@ -161,6 +161,37 @@ namespace flame
 			}
 		);
 
+		library->add_template("In Range", "",
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
+										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
+										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>() }
+				},
+				{
+					.name = "Range",
+					.allowed_types = { TypeInfo::get<vec2>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+				auto range = *(vec2*)inputs[1].data;
+				auto ok = true;
+				vec4 v;
+				in0_ti->as_floats(inputs[0].data, in0_ti->vec_size, &v[0]);
+				for (auto i = 0; i < in0_ti->vec_size; i++)
+					ok = ok && (v[i] >= range.x && v[i] <= range.y);
+				*(bool*)outputs[0].data = ok;
+			}
+		);
+
 		library->add_template("Not", "!",
 			{
 				{

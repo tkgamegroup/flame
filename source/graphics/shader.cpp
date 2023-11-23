@@ -1875,40 +1875,46 @@ namespace flame
 				depth_stencil_state.pNext = nullptr;
 				depth_stencil_state.depthTestEnable = info.depth_test;
 				depth_stencil_state.depthWriteEnable = info.depth_write;
-				depth_stencil_state.depthCompareOp = to_backend(info.compare_op);
+				depth_stencil_state.depthCompareOp = to_backend(info.depth_compare_op);
 				depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
 				depth_stencil_state.minDepthBounds = 0;
 				depth_stencil_state.maxDepthBounds = 0;
-				depth_stencil_state.stencilTestEnable = VK_FALSE;
-				depth_stencil_state.front = {};
-				depth_stencil_state.back = {};
+				depth_stencil_state.stencilTestEnable = info.stencil_test;
+				depth_stencil_state.front.compareOp = to_backend(info.stencil_compare_op);
+				depth_stencil_state.front.passOp = to_backend(info.stencil_op);
+				depth_stencil_state.front.failOp = to_backend(info.stencil_op);
+				depth_stencil_state.front.depthFailOp = to_backend(info.stencil_op);
+				depth_stencil_state.front.compareMask = 0xff;
+				depth_stencil_state.front.writeMask = 0xff;
+				depth_stencil_state.front.reference = 1;
+				depth_stencil_state.back = depth_stencil_state.front;
 
 				vk_blend_attachment_states.resize(info.renderpass->subpasses[info.subpass_index].color_attachments.size());
 				for (auto& a : vk_blend_attachment_states)
 				{
 					a.blendEnable = VK_FALSE;
-					a.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-					a.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-					a.colorBlendOp = VK_BLEND_OP_ADD;
-					a.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-					a.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-					a.alphaBlendOp = VK_BLEND_OP_ADD;
-					a.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+					a.srcColorBlendFactor = to_backend(BlendFactorZero);
+					a.dstColorBlendFactor = to_backend(BlendFactorZero);
+					a.colorBlendOp = to_backend(BlendOpAdd);
+					a.srcAlphaBlendFactor = to_backend(BlendFactorZero);
+					a.dstAlphaBlendFactor = to_backend(BlendFactorZero);
+					a.alphaBlendOp = to_backend(BlendOpAdd);
+					a.colorWriteMask = to_backend_flags<VkColorComponentFlags>(ColorComponentAll);
 				}
 				if (vk_blend_attachment_states.size() >= info.blend_options.size())
 				{
-					for (auto i = 0; i < info.blend_options.size(); i++)
+					for (auto i = 0; i < vk_blend_attachment_states.size(); i++)
 					{
-						auto& src = info.blend_options[i];
+						auto& src = i < info.blend_options.size() ? info.blend_options[i] : BlendOption();
 						auto& dst = vk_blend_attachment_states[i];
 						dst.blendEnable = src.enable;
 						dst.srcColorBlendFactor = to_backend(src.src_color);
 						dst.dstColorBlendFactor = to_backend(src.dst_color);
-						dst.colorBlendOp = VK_BLEND_OP_ADD;
+						dst.colorBlendOp = to_backend(src.color_op);
 						dst.srcAlphaBlendFactor = to_backend(src.src_alpha);
 						dst.dstAlphaBlendFactor = to_backend(src.dst_alpha);
-						dst.alphaBlendOp = VK_BLEND_OP_ADD;
-						dst.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+						dst.alphaBlendOp = to_backend(src.alpha_op);
+						dst.colorWriteMask = to_backend_flags<VkColorComponentFlags>(src.color_write_mask);
 					}
 				}
 

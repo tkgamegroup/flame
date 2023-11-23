@@ -106,6 +106,8 @@ namespace flame
 					return VK_FORMAT_BC7_SRGB_BLOCK;
 				case Format_RGBA_ETC2:
 					return VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK;
+				case Format_Stencil8:
+					return VK_FORMAT_S8_UINT;
 				case Format_Depth16:
 					return VK_FORMAT_D16_UNORM;
 				case Format_Depth32:
@@ -596,6 +598,29 @@ namespace flame
 			}
 		}
 
+		inline VkStencilOp to_backend(StencilOp o)
+		{
+			switch (o)
+			{
+			case StencilOpKeep:
+				return VK_STENCIL_OP_KEEP;
+			case StencilOpZero:
+				return VK_STENCIL_OP_ZERO;
+			case StencilOpReplace:
+				return VK_STENCIL_OP_REPLACE;
+			case StencilOpIncrementAndClamp:
+				return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+			case StencilOpDecrementAndClamp:
+				return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
+			case StencilOpInvert:
+				return VK_STENCIL_OP_INVERT;
+			case StencilOpIncrementAndWrap:
+				return VK_STENCIL_OP_INCREMENT_AND_WRAP;
+			case StencilOpDecrementAndWrap:
+				return VK_STENCIL_OP_DECREMENT_AND_WRAP;
+			}
+		}
+
 		inline VkCullModeFlagBits to_backend(CullMode m)
 		{
 			switch (m)
@@ -654,6 +679,38 @@ namespace flame
 			case BlendFactorOneMinusSrc1Alpha:
 				return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
 			}
+		}
+
+		inline VkBlendOp to_backend(BlendOp o)
+		{
+			switch (o)
+			{
+			case BlendOpAdd:
+				return VK_BLEND_OP_ADD;
+			case BlendOpSubtract:
+				return VK_BLEND_OP_SUBTRACT;
+			case BlendOpReverseSubtract:
+				return VK_BLEND_OP_REVERSE_SUBTRACT;
+			case BlendOpMin:
+				return VK_BLEND_OP_MIN;
+			case BlendOpMax:
+				return VK_BLEND_OP_MAX;
+			}
+		}
+
+		template<>
+		inline VkFlags to_backend_flags<VkColorComponentFlags>(uint c)
+		{
+			VkColorComponentFlags ret = 0;
+			if (c & ColorComponentR)
+				ret |= VK_COLOR_COMPONENT_R_BIT;
+			if (c & ColorComponentG)
+				ret |= VK_COLOR_COMPONENT_G_BIT;
+			if (c & ColorComponentB)
+				ret |= VK_COLOR_COMPONENT_B_BIT;
+			if (c & ColorComponentA)
+				ret |= VK_COLOR_COMPONENT_A_BIT;
+			return ret;
 		}
 
 		inline VkDynamicState to_backend(DynamicState s)

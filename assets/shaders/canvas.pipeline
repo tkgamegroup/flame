@@ -1,3 +1,7 @@
+%stencil_test=false
+%stencil_compare_op=Always
+%stencil_op=Keep
+%color_mask=All
 layout
   @pll
 shaders
@@ -24,6 +28,12 @@ vertex_buffers
       R8G8B8A8_UNORM
 cull_mode
   None
+stencil_test
+  {stencil_test}
+stencil_compare_op
+  {stencil_compare_op}
+stencil_op
+  {stencil_op}
 blend_options
   enable
     true
@@ -35,6 +45,8 @@ blend_options
     Zero
   dst_alpha
     One
+  color_write_mask
+    {color_mask}
 
 @pll
 layout (set = SET, binding = 0) uniform sampler2D image;
@@ -112,6 +124,10 @@ void main()
     o_col = vec4(mix(vec3(0.0), fg.rgb, fg.a), fg.a);
 #else
 	o_col = i_col * texture(image, i_uv);
+#endif
+#ifdef ALPHA_TEST
+    if (o_col.a < 0.5)
+		discard;
 #endif
 }
 @

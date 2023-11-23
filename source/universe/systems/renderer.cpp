@@ -874,8 +874,9 @@ namespace flame
 		}, 0, 0);
 
 		hud_style_vars.resize(HudStyleVarCount);
-		hud_style_vars[HudStyleVarScaling].push(vec2(1.f));
+		hud_style_vars[HudStyleVarWindowPadding].push(vec2(2.f));
 		hud_style_vars[HudStyleVarItemSpacing].push(vec2(2.f));
+		hud_style_vars[HudStyleVarScaling].push(vec2(1.f));
 	}
 
 	sRendererPrivate::~sRendererPrivate()
@@ -3152,20 +3153,21 @@ namespace flame
 	void sRendererPrivate::hud_begin(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, float image_scale)
 	{
 		auto canvas = render_tasks.front()->canvas;
-		auto item_spacing = hud_style_vars[HudStyleVarItemSpacing].top();
+		auto window_padding = hud_style_vars[HudStyleVarWindowPadding].top();
+		auto scaling = hud_style_vars[HudStyleVarScaling].top();
 
 		hud_pos = pos;
 		if (hud_pos.x < 0.f)
 			hud_pos.x += canvas->size.x;
 		if (hud_pos.y < 0.f)
 			hud_pos.y += canvas->size.y;
-		hud_size = size;
+		hud_size = size * scaling;
 		hud_col = col;
 		hud_pivot = pivot;
-		hud_cursor = hud_pos + item_spacing;
+		hud_cursor = hud_pos + window_padding;
 		hud_cursor_x0 = hud_cursor.x;
 		hud_line_height = 0.f;
-		hud_max = vec2(0.f);
+		hud_max = hud_cursor;
 
 		if (!image.view)
 		{
@@ -3176,7 +3178,7 @@ namespace flame
 		{
 			auto size = (vec2)image.view->image->extent.xy() * (image.uvs.zw() - image.uvs.xy()) * image_scale;
 			auto border = image.border * image_scale;
-			hud_bg_verts = canvas->add_image_stretched(image.view, vec2(0.f), vec2(100.f), image.uvs, size, border, col);
+			hud_bg_verts = canvas->add_image_stretched(image.view, vec2(0.f), vec2(border.xy() + border.zw()) + vec2(1.f), image.uvs, size, border, col);
 			hud_bg_vert_count = 9 * 4;
 		}
 		if (pivot.x != 0.f || pivot.y != 0.f)
@@ -3186,12 +3188,17 @@ namespace flame
 	void sRendererPrivate::hud_end()
 	{
 		auto canvas = render_tasks.front()->canvas;
+		auto window_padding = hud_style_vars[HudStyleVarWindowPadding].top();
+		auto item_spacing = hud_style_vars[HudStyleVarItemSpacing].top();
+		auto scaling = hud_style_vars[HudStyleVarScaling].top();
+		window_padding *= scaling;
+		item_spacing *= scaling;
 		auto input = sInput::instance();
 
 		if (hud_size.x == 0.f && hud_size.y == 0.f)
 		{
 			if (hud_max.x > hud_pos.x && hud_max.y > hud_pos.y)
-				hud_size = hud_max - hud_pos;
+				hud_size = hud_max - item_spacing + window_padding - hud_pos;
 			else
 				hud_size = vec2(0.f);
 		}
@@ -3204,13 +3211,88 @@ namespace flame
 		}
 		if (hud_bg_verts)
 		{
-			auto scl = hud_size / 100.f;
-			for (auto i = 0; i < hud_bg_vert_count; i++)
-				hud_bg_verts[i].pos = hud_bg_verts[i].pos * scl + hud_pos;
+			if (hud_bg_vert_count <= 4)
+			{
+				auto scl = hud_size / 100.f;
+				for (auto i = 0; i < hud_bg_vert_count; i++)
+					hud_bg_verts[i].pos = hud_bg_verts[i].pos * scl + hud_pos;
+			}
+			else // is a stretched image
+			{
+				auto sz = hud_size - hud_bg_verts[1].pos;
+				// hud_bg_verts[0] stays the same
+				// hud_bg_verts[1] stays the same
+				hud_bg_verts[2].pos.x += sz.x - 1.f;
+				hud_bg_verts[3].pos.x += sz.x - 1.f;
+
+				hud_bg_verts[4].pos.y += sz.y - 1.f;
+				hud_bg_verts[5].pos.y += sz.y - 1.f;
+				hud_bg_verts[6].pos += sz - 1.f;
+				hud_bg_verts[7].pos += sz - 1.f;
+
+				// hud_bg_verts[8] stays the same
+				hud_bg_verts[9].pos.y += sz.y - 1.f;
+				hud_bg_verts[10].pos.y += sz.y - 1.f;
+				// hud_bg_verts[11] stays the same
+
+				hud_bg_verts[12].pos.x += sz.x - 1.f;
+				hud_bg_verts[13].pos += sz - 1.f;
+				hud_bg_verts[14].pos += sz - 1.f;
+				hud_bg_verts[15].pos.x += sz.x - 1.f;
+
+				// hud_bg_verts[16] stays the same
+				// hud_bg_verts[17] stays the same
+				// hud_bg_verts[18] stays the same
+				// hud_bg_verts[19] stays the same
+
+				hud_bg_verts[20].pos.x += sz.x - 1.f;
+				hud_bg_verts[21].pos.x += sz.x - 1.f;
+				hud_bg_verts[22].pos.x += sz.x - 1.f;
+				hud_bg_verts[23].pos.x += sz.x - 1.f;
+
+				hud_bg_verts[24].pos.y += sz.y - 1.f;
+				hud_bg_verts[25].pos.y += sz.y - 1.f;
+				hud_bg_verts[26].pos.y += sz.y - 1.f;
+				hud_bg_verts[27].pos.y += sz.y - 1.f;
+
+				hud_bg_verts[28].pos += sz - 1.f;
+				hud_bg_verts[29].pos += sz - 1.f;
+				hud_bg_verts[30].pos += sz - 1.f;
+				hud_bg_verts[31].pos += sz - 1.f;
+
+				// hud_bg_verts[32] stays the same
+				hud_bg_verts[33].pos.y += sz.y - 1.f;
+				hud_bg_verts[34].pos += sz - 1.f;
+				hud_bg_verts[35].pos.x += sz.x - 1.f;
+
+				for (auto i = 0; i < hud_bg_vert_count; i++)
+					hud_bg_verts[i].pos += hud_pos;
+			}
 		}
 		Rect rect(hud_pos, hud_pos + hud_size);
 		if (rect.contains(input->mpos))
 			input->mouse_used = true;
+	}
+
+	void sRendererPrivate::hud_set_cursor(const vec2& pos)
+	{
+		hud_cursor = pos;
+		hud_max = max(hud_max, hud_cursor);
+	}
+
+	Rect sRendererPrivate::hud_get_rect() const
+	{
+		return hud_last_rect;
+	}
+
+	void sRendererPrivate::hud_push_style(HudStyleVar var, const vec2& value)
+	{
+		hud_style_vars[var].push(value);
+	}
+
+	void sRendererPrivate::hud_pop_style(HudStyleVar var)
+	{
+		hud_style_vars[var].pop();
 	}
 
 	void sRendererPrivate::hud_begin_horizontal()
@@ -3221,6 +3303,8 @@ namespace flame
 	void sRendererPrivate::hud_end_horizontal()
 	{
 		auto item_spacing = hud_style_vars[HudStyleVarItemSpacing].top();
+		auto scaling = hud_style_vars[HudStyleVarScaling].top();
+		item_spacing *= scaling;
 
 		hud_horizontal = false;
 		hud_cursor.x = hud_cursor_x0;
@@ -3228,9 +3312,36 @@ namespace flame
 		hud_max = max(hud_max, hud_cursor);
 	}
 
-	Rect sRendererPrivate::hud_add_rect(const vec2& sz)
+	void sRendererPrivate::hud_begin_stencil_write()
+	{
+		auto canvas = render_tasks.front()->canvas;
+		canvas->begin_stencil_write();
+	}
+
+	void sRendererPrivate::hud_end_stencil_write()
+	{
+		auto canvas = render_tasks.front()->canvas;
+		canvas->end_stencil_write();
+	}
+
+	void sRendererPrivate::hud_begin_stencil_compare()
+	{
+		auto canvas = render_tasks.front()->canvas;
+		canvas->begin_stencil_compare();
+	}
+
+	void sRendererPrivate::hud_end_stencil_compare()
+	{
+		auto canvas = render_tasks.front()->canvas;
+		canvas->end_stencil_compare();
+	}
+
+	Rect sRendererPrivate::hud_add_rect(const vec2& _sz)
 	{
 		auto item_spacing = hud_style_vars[HudStyleVarItemSpacing].top();
+		auto scaling = hud_style_vars[HudStyleVarScaling].top();
+		auto sz = _sz * scaling;
+		item_spacing *= scaling;
 
 		Rect rect(hud_cursor, hud_cursor + sz);
 		if (hud_horizontal)
@@ -3246,6 +3357,7 @@ namespace flame
 			hud_cursor.y = hud_cursor.y + sz.y + item_spacing.y;
 			hud_max.y = max(hud_max.y, hud_cursor.y);
 		}
+		hud_last_rect = rect;
 		return rect;
 	}
 
@@ -3288,22 +3400,45 @@ namespace flame
 		canvas->add_rect_filled(rect.a, rect.b, col);
 	}
 
-	void sRendererPrivate::hud_image(const vec2& size, const graphics::ImageDesc& image, const cvec4& col)
+	void sRendererPrivate::hud_image(const vec2& _size, const graphics::ImageDesc& image, float image_scale, const cvec4& col)
 	{
+		auto size = _size;
 		auto canvas = render_tasks.front()->canvas;
 		auto input = sInput::instance();
 
-		auto rect = hud_add_rect(size);
-		canvas->add_image(image.view, rect.a, rect.b, image.uvs, col);
+		if (image.border.x > 0.f)
+		{
+			auto img_size = (vec2)image.view->image->extent.xy() * (image.uvs.zw() - image.uvs.xy()) * image_scale;
+			auto border = image.border * image_scale;
+			auto rect = hud_add_rect(size);
+			canvas->add_image_stretched(image.view, rect.a, rect.b, image.uvs, img_size, border, col);
+		}
+		else
+		{
+			if (size.x == 0.f && size.y == 0.f)
+			{
+				auto img_size = (vec2)image.view->image->extent.xy() * (image.uvs.zw() - image.uvs.xy()) * image_scale;
+				size = img_size;
+			}
+			auto rect = hud_add_rect(size);
+			canvas->add_image(image.view, rect.a, rect.b, image.uvs, col);
+		}
 	}
 
-	bool sRendererPrivate::hud_button(std::wstring_view label, uint font_size, bool* p_hovered)
+	bool sRendererPrivate::hud_button(std::wstring_view label, uint font_size, const graphics::ImageDesc& image, float image_scale, bool* p_hovered)
 	{
 		auto canvas = render_tasks.front()->canvas;
 		auto input = sInput::instance();
 
-		auto sz = calc_text_size(canvas->default_font_atlas, font_size, label);
-		sz += vec2(4.f);
+		vec2 sz;
+		if (!label.empty())
+		{
+			sz = calc_text_size(canvas->default_font_atlas, font_size, label);
+			sz += vec2(4.f);
+		}
+		else if (image.view)
+			sz = (vec2)image.view->image->extent.xy() * (image.uvs.zw() - image.uvs.xy()) * image_scale;
+
 		auto rect = hud_add_rect(sz);
 		auto state = 0;
 		if (rect.contains(input->mpos))
@@ -3314,26 +3449,23 @@ namespace flame
 
 			input->mouse_used = true;
 		}
-		canvas->add_rect_filled(rect.a, rect.b, state == 0 ? cvec4(35, 69, 109, 255) : cvec4(66, 150, 250, 255));
+		if (image.view)
+		{
+			if (image.border.x > 0.f)
+			{
+				auto size = (vec2)image.view->image->extent.xy() * (image.uvs.zw() - image.uvs.xy()) * image_scale;
+				auto border = image.border * image_scale;
+				canvas->add_image_stretched(image.view, rect.a, rect.b, image.uvs, size, border, state == 0 ? cvec4(255) : cvec4(200));
+			}
+			else
+				canvas->add_image(image.view, rect.a, rect.b, image.uvs, state == 0 ? cvec4(255) : cvec4(200));
+		}
+		else
+			canvas->add_rect_filled(rect.a, rect.b, state == 0 ? cvec4(35, 69, 109, 255) : cvec4(66, 150, 250, 255));
 		canvas->add_text(canvas->default_font_atlas, font_size, rect.a + vec2(2.f), label, cvec4(255), 0.5f, 0.2f);
 		if (p_hovered)
 			*p_hovered = state != 0;
 		return state == 2;
-	}
-
-	Rect sRendererPrivate::hud_get_rect() const
-	{
-		return Rect(hud_pos, hud_pos + hud_size);
-	}
-
-	void sRendererPrivate::hud_push_style(HudStyleVar var, const vec2& value)
-	{
-		hud_style_vars[var].push(value);
-	}
-
-	void sRendererPrivate::hud_pop_style(HudStyleVar var)
-	{
-		hud_style_vars[var].pop();
 	}
 
 	void sRendererPrivate::send_debug_string(const std::string& str)

@@ -37,9 +37,9 @@ attachments
 subpasses
   color_attachments
     0
-  depth_attachment
+  depth_stencil_attachment
     1
   color_resolve_attachments
     2
-  depth_resolve_attachment
+  depth_stencil_resolve_attachment
     3

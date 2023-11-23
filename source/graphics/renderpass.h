@@ -20,8 +20,8 @@ namespace flame
 		{
 			std::vector<int> color_attachments;
 			std::vector<int> color_resolve_attachments;
-			int depth_attachment = -1;
-			int depth_resolve_attachment = -1;
+			int depth_stencil_attachment = -1;
+			int depth_stencil_resolve_attachment = -1;
 		};
 
 		struct RenderpassInfo

@@ -60,11 +60,13 @@ namespace flame
 		vec2 hud_pos;
 		cvec4 hud_col;
 		bool hud_horizontal = false;
+		bool hud_stencil = false;
 		vec2 hud_pivot;
 		vec2 hud_cursor;
 		float hud_cursor_x0;
 		float hud_line_height;
 		vec2 hud_max;
+		Rect hud_last_rect;
 		graphics::Canvas::DrawVert* hud_bg_verts;
 		uint hud_bg_vert_count;
 		uint hud_translate_cmd_idx;
@@ -162,16 +164,21 @@ namespace flame
 
 		void hud_begin(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, float image_scale) override;
 		void hud_end() override;
-		void hud_begin_horizontal() override;
-		void hud_end_horizontal() override;
-		Rect hud_add_rect(const vec2& sz);
-		void hud_rect(const vec2& size, const cvec4& col) override;
-		void hud_text(std::wstring_view text, uint font_size, const cvec4& col) override;
-		void hud_image(const vec2& size, const graphics::ImageDesc& image, const cvec4& col) override;
-		bool hud_button(std::wstring_view label, uint font_size, bool* p_hovered) override;
+		void hud_set_cursor(const vec2& pos) override;
 		Rect hud_get_rect() const override;
 		void hud_push_style(HudStyleVar var, const vec2& value) override;
 		void hud_pop_style(HudStyleVar var) override;
+		void hud_begin_horizontal() override;
+		void hud_end_horizontal() override;
+		void hud_begin_stencil_write() override;
+		void hud_end_stencil_write() override;
+		void hud_begin_stencil_compare() override;
+		void hud_end_stencil_compare() override;
+		Rect hud_add_rect(const vec2& sz);
+		void hud_rect(const vec2& size, const cvec4& col) override;
+		void hud_text(std::wstring_view text, uint font_size, const cvec4& col) override;
+		void hud_image(const vec2& size, const graphics::ImageDesc& image, float image_scale, const cvec4& col) override;
+		bool hud_button(std::wstring_view label, uint font_size, const graphics::ImageDesc& image, float image_scale, bool* p_hovered) override;
 
 		void send_debug_string(const std::string& str) override;
 	};

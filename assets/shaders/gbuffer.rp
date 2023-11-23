@@ -20,5 +20,5 @@ subpasses
     1
     2
     3
-  depth_attachment
+  depth_stencil_attachment
     4

@@ -237,7 +237,7 @@ namespace flame
 				if (format >= Format_Color_Begin && format <= Format_Color_End)
 					sp.color_attachments.push_back(0);
 				else
-					sp.depth_attachment = 0;
+					sp.depth_stencil_attachment = 0;
 				rp = Renderpass::create(info);
 				dummy_rps.push_back(rp);
 			}
@@ -1125,7 +1125,7 @@ namespace flame
 				for (auto& s : ini.sections)
 				{
 					auto hash = sh(s.name.c_str());
-					ImageAtlas::Item item;
+					ImageAtlas::Item item = { vec4(0.f, 0.f, 1.f, 1.f), vec4(0.f) };
 					for (auto& e : s.entries)
 					{
 						if (e.key == "uvs")
