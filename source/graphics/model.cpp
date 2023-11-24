@@ -801,13 +801,17 @@ namespace flame
 											{
 												if (!std::filesystem::exists(textures_destination))
 													std::filesystem::create_directories(textures_destination);
-												auto dst = fn.filename().stem();
-												dst += L"%s%m";
-												dst += fn.extension();
+												auto dst = fn.filename();
 												dst = textures_destination / dst;
 												if (dst != fn)
 												{
 													std::filesystem::copy_file(fn, dst, std::filesystem::copy_options::overwrite_existing);
+													auto config_path = dst;
+													config_path += L".ini";
+													std::ofstream config(config_path);
+													config << "srgb=true\n";
+													config << "auto_mipmapping=true\n";
+													config.close();
 													fn = dst;
 												}
 											}

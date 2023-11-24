@@ -345,6 +345,28 @@ namespace flame
 			}
 		);
 
+		library->add_template("Find Entity", "",
+			{
+				{
+					.name = "Name",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto name = *(std::string*)inputs[0].data;
+				if (!name.empty())
+					*(EntityPtr*)outputs[0].data = World::instance()->root->find_child_recursively(name);
+				else
+					*(EntityPtr*)outputs[0].data = nullptr;
+			}
+		);
+
 		library->add_template("Get Pos", "",
 			{
 				{
@@ -736,6 +758,28 @@ namespace flame
 					*(BlueprintInstancePtr*)outputs[0].data = nullptr;
 			}
 		);
+
+		library->add_template("Entity Equal", "",
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(bool*)outputs[0].data = *(EntityPtr*)inputs[0].data == *(EntityPtr*)inputs[1].data;
+			}
+		);
 		
 		library->add_template("Loop Var Entity", "",
 			{
@@ -936,7 +980,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Find Nearest Entity", "",
+		library->add_template("Foreach Surrounding Entity", "",
 			{
 				{
 					.name = "Location",
@@ -965,7 +1009,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Entity",
+					.name = "Nearest Entity",
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				},
 				{
@@ -1001,7 +1045,7 @@ namespace flame
 				temp_array.resize(res.size());
 				for (auto i = 0; i < res.size(); i++)
 					temp_array[i] = (nodes_with_distance[i].second);
-				*(EntityPtr*)outputs[1].data = nullptr;
+				*(EntityPtr*)outputs[1].data = temp_array.empty() ? nullptr : temp_array.front();
 				*(bool*)outputs[3].data = false;
 				block.max_execute_times = temp_array.size();
 				block.loop_vector_index = 8;

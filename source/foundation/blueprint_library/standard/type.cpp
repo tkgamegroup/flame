@@ -59,6 +59,45 @@ namespace flame
 			}
 		);
 
+		library->add_template("Array Find", "",
+			{
+				{
+					.name = "Array",
+					.allowed_types = { TypeInfo::get<voidptr>() }
+				},
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<voidptr>() }
+				}
+			},
+			{
+				{
+					.name = "Index",
+					.allowed_types = { TypeInfo::get<int>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto array_type = inputs[0].type;
+				if (array_type && is_vector(array_type->tag))
+				{
+					auto parray = (std::vector<char>*)inputs[0].data;
+					auto item_type = array_type->get_wrapped();
+					int size = parray->size() / item_type->size;
+
+					auto pvalue = *(voidptr*)inputs[1].data;
+					for (auto i = 0; i < size; i++)
+					{
+						if (item_type->compare(parray->data() + i * item_type->size, pvalue))
+						{
+							*(int*)outputs[0].data = i;
+							return;
+						}
+					}
+				}
+				*(int*)outputs[0].data = -1;
+			}
+		);
+
 		library->add_template("Arrary Remove If", "",
 			{
 				{

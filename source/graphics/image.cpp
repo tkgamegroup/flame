@@ -714,6 +714,12 @@ namespace flame
 				auto ini = parse_ini_file(config_path);
 				for (auto& e : ini.get_section_entries(""))
 				{
+					if (e.key == "srgb")
+						TypeInfo::unserialize_t(e.values[0], out->srgb);
+					if (e.key == "auto_mipmapping")
+						TypeInfo::unserialize_t(e.values[0], out->auto_mipmapping);
+					if (e.key == "alpha_test")
+						out->alpha_test = s2t<float>(e.values[0]);
 					if (e.key == "border")
 						out->border = s2t<4, float>(e.values[0]);
 				}
@@ -744,26 +750,10 @@ namespace flame
 					return nullptr;
 				}
 
-				auto srgb = false;
-				if (ext == L".jpg")
-					srgb = true;
-				auto auto_mipmapping = false;
-				float alpha_test = 0.f;
+				ImageConfig config;
+				read_image_config(filename, &config);
+
 				ImageUsageFlags additional_usage = ImageUsageNone;
-				{
-					auto s = filename.filename().stem().string();
-					for (auto t : SUS::to_string_vector(SUS::split(s, '%')))
-					{
-						if (t == "s")
-							srgb = true;
-						else if (t == "m")
-							auto_mipmapping = true;
-						else if (SUS::strip_head_if(t, "at"))
-							alpha_test = s2t<int>(t) / 10.f;
-						else if (SUS::strip_head_if(t, "au"))
-							;
-					}
-				}
 
 				ImagePtr ret = nullptr;
 
@@ -856,11 +846,11 @@ namespace flame
 						return nullptr;
 					}
 
-					if (srgb)			bmp->srgb_to_linear();
+					if (config.srgb)	bmp->srgb_to_linear();
 					if (bmp->chs == 3)	bmp->change_format(4);
 
 					ret = Image::create(get_image_format(bmp->chs, bmp->bpp), uvec3(bmp->extent, 1),
-						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc | additional_usage, auto_mipmapping ? 0 : 1);
+						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc | additional_usage, config.auto_mipmapping ? 0 : 1);
 
 					StagingBuffer sb(bmp->data_size, bmp->data);
 					InstanceCommandBuffer cb;
@@ -868,7 +858,7 @@ namespace flame
 					cpy.img_ext = ret->extent;
 					cb->image_barrier(ret, {}, ImageLayoutTransferDst);
 					cb->copy_buffer_to_image(sb.get(), ret, { &cpy, 1 });
-					if (auto_mipmapping)
+					if (config.auto_mipmapping)
 					{
 						for (auto i = 1U; i < ret->n_levels; i++)
 						{
@@ -888,16 +878,13 @@ namespace flame
 						cb->image_barrier(ret, {}, ImageLayoutShaderReadOnly);
 					cb.excute();
 
-					if (auto_mipmapping && alpha_test > 0.f)
+					if (config.auto_mipmapping && config.alpha_test > 0.f)
 					{
-						auto coverage = get_image_alphatest_coverage(ret, 0, alpha_test, 1.f);
+						auto coverage = get_image_alphatest_coverage(ret, 0, config.alpha_test, 1.f);
 						for (auto i = 1; i < ret->n_levels; i++)
-							scale_image_alphatest_coverage(ret, i, coverage, alpha_test);
+							scale_image_alphatest_coverage(ret, i, coverage, config.alpha_test);
 					}
 				}
-
-				ImageConfig config;
-				read_image_config(filename, &config);
 
 				ret->filename = filename;
 				ret->ref = 1;
@@ -1121,9 +1108,12 @@ namespace flame
 
 				auto ret = new ImageAtlasPrivate;
 				ret->image = img;
-				auto ini = parse_ini_file(atlas_ini_path);
-				for (auto& s : ini.sections)
+				ret->view = img->get_view({ 0, img->n_levels, 0, 1 });
+				auto atlas_ini = parse_ini_file(atlas_ini_path);
+				for (auto& s : atlas_ini.sections)
 				{
+					if (s.name.empty())
+						continue;
 					auto hash = sh(s.name.c_str());
 					ImageAtlas::Item item = { vec4(0.f, 0.f, 1.f, 1.f), vec4(0.f) };
 					for (auto& e : s.entries)
@@ -1161,12 +1151,13 @@ namespace flame
 								size = s2t<2, uint>(e.values[0]);
 						}
 
-						auto atlas_path = folder / L"../" / folder.filename();
+						auto atlas_path = folder / L".." / folder.filename();
 						atlas_path += L".png";
-						auto atlas_data_path = atlas_path;
-						atlas_data_path += L".ini";
+						auto atlas_ini_path = atlas_path;
+						atlas_ini_path += L".ini";
 						auto atlas = Bitmap::create(size, 4);
-						std::ofstream atlas_data(atlas_data_path);
+						std::ofstream atlas_ini(atlas_ini_path);
+						atlas_ini << "auto_mipmapping=true\n";
 
 						std::unique_ptr<BinPackNode> bin_pack_root(new BinPackNode(size));
 						for (auto& it : std::filesystem::directory_iterator(folder))
@@ -1178,15 +1169,16 @@ namespace flame
 									ImageConfig config;
 									auto has_config = read_image_config(it.path(), &config);
 
-									if (auto n = bin_pack_root->find(ivec2(bmp->extent.x + 1, bmp->extent.y + 1)); n)
+									if (auto n = bin_pack_root->find(ivec2(bmp->extent.x + 2, bmp->extent.y + 2)); n)
 									{
-										auto uv0 = vec2(n->pos.x, n->pos.y);
+										auto pos = n->pos + 1; // use a gap of 1, TODO: use a bigger gap to avoid bleeding while using mipmapping (But this will waste more space..)
+										auto uv0 = vec2(pos.x, pos.y);
 										auto uv1 = uv0 + vec2(bmp->extent.x, bmp->extent.y);
-										bmp->copy_to(atlas, bmp->extent, ivec2(0), n->pos);
-										atlas_data << std::format("[{}]\n", it.path().filename().stem().string());
-										atlas_data << std::format("uvs={}\n", str(vec4(uv0 / (vec2)size, uv1 / (vec2)size)));
+										bmp->copy_to(atlas, bmp->extent, ivec2(0), pos);
+										atlas_ini << std::format("[{}]\n", it.path().filename().stem().string());
+										atlas_ini << std::format("uvs={}\n", str(vec4(uv0 / (vec2)size, uv1 / (vec2)size)));
 										if (has_config)
-											atlas_data << std::format("border={}\n", str(config.border));
+											atlas_ini << std::format("border={}\n", str(config.border));
 									}
 									delete bmp;
 								}

@@ -88,6 +88,9 @@ namespace flame
 
 		struct ImageConfig
 		{
+			bool srgb = false;
+			bool auto_mipmapping = false;
+			float alpha_test = 0.f;
 			vec4 border = vec4(0.f);
 		};
 
@@ -209,6 +212,7 @@ namespace flame
 			};
 
 			ImagePtr image;
+			ImageViewPtr view;
 			std::unordered_map<uint, Item> items;
 
 			std::filesystem::path filename;
@@ -220,7 +224,7 @@ namespace flame
 				ret.view = nullptr;
 				if (auto it = items.find(name); it != items.end())
 				{
-					ret.view = ((Image*)image)->get_view();
+					ret.view = view;
 					ret.uvs = it->second.uvs;
 					ret.border = it->second.border;
 				}

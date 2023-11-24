@@ -69,7 +69,7 @@ namespace flame
 		Rect hud_last_rect;
 		graphics::Canvas::DrawVert* hud_bg_verts;
 		uint hud_bg_vert_count;
-		uint hud_translate_cmd_idx;
+		int hud_translate_cmd_idx;
 
 		sRendererPrivate();
 		sRendererPrivate(graphics::WindowPtr w);

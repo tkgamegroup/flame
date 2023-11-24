@@ -143,7 +143,7 @@ namespace flame
 				},
 				{
 					.name = "Name_hash",
-					.allowed_types = { TypeInfo::get<std::string>() }
+					.allowed_types = { TypeInfo::get<std::string>(), TypeInfo::get<uint>() }
 				}
 			},
 			{

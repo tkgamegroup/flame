@@ -3155,18 +3155,22 @@ namespace flame
 		auto canvas = render_tasks.front()->canvas;
 		auto window_padding = hud_style_vars[HudStyleVarWindowPadding].top();
 		auto scaling = hud_style_vars[HudStyleVarScaling].top();
+		auto auto_sizing = size.x == 0.f && size.y == 0.f;
 
 		hud_pos = pos;
 		if (hud_pos.x < 0.f)
 			hud_pos.x += canvas->size.x;
 		if (hud_pos.y < 0.f)
 			hud_pos.y += canvas->size.y;
-		hud_size = size * scaling;
 		hud_col = col;
 		hud_pivot = pivot;
+		hud_line_height = 0.f;
+
+		hud_size = size * scaling;
+		if (!auto_sizing)
+			hud_pos -= hud_size * pivot;
 		hud_cursor = hud_pos + window_padding;
 		hud_cursor_x0 = hud_cursor.x;
-		hud_line_height = 0.f;
 		hud_max = hud_cursor;
 
 		if (!image.view)
@@ -3181,8 +3185,10 @@ namespace flame
 			hud_bg_verts = canvas->add_image_stretched(image.view, vec2(0.f), vec2(border.xy() + border.zw()) + vec2(1.f), image.uvs, size, border, col);
 			hud_bg_vert_count = 9 * 4;
 		}
-		if (pivot.x != 0.f || pivot.y != 0.f)
+		if ((pivot.x != 0.f || pivot.y != 0.f) && auto_sizing)
 			hud_translate_cmd_idx = canvas->set_translate(vec2(0.f));
+		else
+			hud_translate_cmd_idx = -1;
 	}
 
 	void sRendererPrivate::hud_end()
@@ -3202,7 +3208,7 @@ namespace flame
 			else
 				hud_size = vec2(0.f);
 		}
-		if (hud_pivot.x != 0.f || hud_pivot.y != 0.f)
+		if (hud_translate_cmd_idx != -1)
 		{
 			auto translate = -hud_size * hud_pivot;
 			hud_pos += translate;
@@ -3270,7 +3276,7 @@ namespace flame
 			}
 		}
 		Rect rect(hud_pos, hud_pos + hud_size);
-		if (rect.contains(input->mpos))
+		if (hud_col.a > 0 && rect.contains(input->mpos))
 			input->mouse_used = true;
 	}
 

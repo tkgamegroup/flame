@@ -122,6 +122,24 @@ namespace flame
 			}
 		);
 
+		library->add_template("String Hash", "",
+			{
+				{
+					.name = "String",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(uint*)outputs[0].data = sh((*(std::string*)inputs[0].data).c_str());
+			}
+		);
+
 		library->add_template("To WString", "",
 			{
 				{
