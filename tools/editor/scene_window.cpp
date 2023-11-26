@@ -197,6 +197,9 @@ void SceneView::on_draw()
 	ImGui::SameLine();
 	if (ImGui::ToolButton("Navigation", show_navigation))
 		show_navigation = !show_navigation;
+	ImGui::SameLine();
+	if (ImGui::ToolButton("Gizmos", use_gizmos))
+		use_gizmos = !use_gizmos;
 
 	auto last_focused_scene = scene_window.first_view();
 
@@ -395,227 +398,209 @@ void SceneView::on_draw()
 		app.input->offset = p0;
 
 		bool gizmo_using = false;
-#if USE_IM_GUIZMO
-		if (is_in(tool, ToolMove, ToolScale) && app.e_editor && selection.type == Selection::tEntity)
+		if (use_gizmos)
 		{
-			node_targets.clear();
-			element_targets.clear();
-			for (auto e : selection.entities())
+#if USE_IM_GUIZMO
+			if (is_in(tool, ToolMove, ToolScale) && app.e_editor && selection.type == Selection::tEntity)
 			{
-				if (auto node = e->get_component<cNode>(); node)
+				node_targets.clear();
+				element_targets.clear();
+				for (auto e : selection.entities())
 				{
-					auto ok = true;
-					for (auto t : node_targets)
+					if (auto node = e->get_component<cNode>(); node)
 					{
-						if (is_ancestor(t->entity, e))
+						auto ok = true;
+						for (auto t : node_targets)
 						{
-							ok = false;
-							break;
+							if (is_ancestor(t->entity, e))
+							{
+								ok = false;
+								break;
+							}
 						}
+						if (ok)
+							node_targets.push_back(node);
 					}
-					if (ok)
-						node_targets.push_back(node);
-				}
-				if (auto element = e->get_component<cElement>(); element)
-				{
-					auto ok = true;
-					for (auto t : element_targets)
+					if (auto element = e->get_component<cElement>(); element)
 					{
-						if (is_ancestor(t->entity, e))
+						auto ok = true;
+						for (auto t : element_targets)
 						{
-							ok = false;
-							break;
+							if (is_ancestor(t->entity, e))
+							{
+								ok = false;
+								break;
+							}
 						}
+						if (ok)
+							element_targets.push_back(element);
 					}
-					if (ok)
-						element_targets.push_back(element);
 				}
-			}
 
-			static bool last_gizmo_using = false;
-			auto gizmo_manipulate = [this](const mat4& view_mat, const mat4& proj_mat, mat4& mat) {
-				auto op = ImGuizmo::TRANSLATE;
-				auto mode = ImGuizmo::LOCAL;
-				vec3 snap_value; float* p_snap_value = nullptr;
-				switch (tool)
-				{
-				case ToolMove:
-					op = ImGuizmo::TRANSLATE;
-					if (move_snap)
-					{
-						snap_value = vec3(element_targets.empty() ? move_snap_value : move_snap_2d_value);
-						p_snap_value = &snap_value[0];
-					}
-					break;
-				case ToolRotate:
-					op = ImGuizmo::ROTATE;
-					if (rotate_snap)
-					{
-						snap_value = vec3(rotate_snap_value);
-						p_snap_value = &snap_value[0];
-					}
-					break;
-				case ToolScale:
-					op = ImGuizmo::SCALE;
-					if (scale_snap)
-					{
-						snap_value = vec3(scale_snap_value);
-						p_snap_value = &snap_value[0];
-					}
-					break;
-				}
-				switch (tool_mode)
-				{
-				case ToolLocal:
-					mode = ImGuizmo::LOCAL;
-					break;
-				case ToolWorld:
-					mode = ImGuizmo::WORLD;
-					break;
-				}
-				ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
-				return ImGuizmo::Manipulate(&view_mat[0][0], &proj_mat[0][0], op, mode, &mat[0][0], nullptr, p_snap_value);
-			};
-			if (!node_targets.empty() && element_targets.empty())
-			{
-				static std::vector<vec3> before_editing_poses;
-				static std::vector<quat> before_editing_quts;
-				static std::vector<vec3> before_editing_scls;
-				static vec3 center;
-				ImGuizmo::BeginFrame();
-				ImGuizmo::SetRect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
-				auto matp = camera->proj_mat; matp[1][1] *= -1.f;
-				mat4 mat;
-				if (node_targets.size() > 1)
-				{
-					center = vec3(0.f);
-					for (auto t : node_targets)
-						center += t->global_pos();
-					center /= (float)node_targets.size();
-					mat = translate(mat4(1.f), center);
-				}
-				else
-					mat = node_targets[0]->transform;
-				auto changed = gizmo_manipulate(camera->view_mat, matp, mat);
-				gizmo_using = ImGuizmo::IsUsing();
-				if (!last_gizmo_using && gizmo_using)
-				{
-					before_editing_poses.clear();
-					before_editing_quts.clear();
-					before_editing_scls.clear();
+				static bool last_gizmo_using = false;
+				auto gizmo_manipulate = [this](const mat4& view_mat, const mat4& proj_mat, mat4& mat) {
+					auto op = ImGuizmo::TRANSLATE;
+					auto mode = ImGuizmo::LOCAL;
+					vec3 snap_value; float* p_snap_value = nullptr;
 					switch (tool)
 					{
 					case ToolMove:
-						for (auto t : node_targets)
-							before_editing_poses.push_back(t->pos);
+						op = ImGuizmo::TRANSLATE;
+						if (move_snap)
+						{
+							snap_value = vec3(element_targets.empty() ? move_snap_value : move_snap_2d_value);
+							p_snap_value = &snap_value[0];
+						}
 						break;
 					case ToolRotate:
-						for (auto t : node_targets)
-							before_editing_quts.push_back(t->qut);
-						if (node_targets.size() > 1 && tool_pivot == ToolCenter)
+						op = ImGuizmo::ROTATE;
+						if (rotate_snap)
 						{
-							for (auto t : node_targets)
-								before_editing_poses.push_back(t->pos);
+							snap_value = vec3(rotate_snap_value);
+							p_snap_value = &snap_value[0];
 						}
 						break;
 					case ToolScale:
-						for (auto t : node_targets)
-							before_editing_scls.push_back(t->scl);
+						op = ImGuizmo::SCALE;
+						if (scale_snap)
+						{
+							snap_value = vec3(scale_snap_value);
+							p_snap_value = &snap_value[0];
+						}
 						break;
 					}
-				}
-				if (changed)
-				{
-					if (node_targets.size() == 1)
+					switch (tool_mode)
 					{
-						if (auto pnode = node_targets[0]->entity->get_parent_component<cNodeT>(); pnode)
-							mat = inverse(pnode->transform) * mat;
+					case ToolLocal:
+						mode = ImGuizmo::LOCAL;
+						break;
+					case ToolWorld:
+						mode = ImGuizmo::WORLD;
+						break;
 					}
-					vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
-					decompose(mat, scl, qut, pos, skew, perspective);
-					if (tool == ToolMove)
+					ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+					return ImGuizmo::Manipulate(&view_mat[0][0], &proj_mat[0][0], op, mode, &mat[0][0], nullptr, p_snap_value);
+					};
+				if (!node_targets.empty() && element_targets.empty())
+				{
+					static std::vector<vec3> before_editing_poses;
+					static std::vector<quat> before_editing_quts;
+					static std::vector<vec3> before_editing_scls;
+					static vec3 center;
+					ImGuizmo::BeginFrame();
+					ImGuizmo::SetRect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
+					auto matp = camera->proj_mat; matp[1][1] *= -1.f;
+					mat4 mat;
+					if (node_targets.size() > 1)
 					{
-						if (node_targets.size() > 1)
+						center = vec3(0.f);
+						for (auto t : node_targets)
+							center += t->global_pos();
+						center /= (float)node_targets.size();
+						mat = translate(mat4(1.f), center);
+					}
+					else
+						mat = node_targets[0]->transform;
+					auto changed = gizmo_manipulate(camera->view_mat, matp, mat);
+					gizmo_using = ImGuizmo::IsUsing();
+					if (!last_gizmo_using && gizmo_using)
+					{
+						before_editing_poses.clear();
+						before_editing_quts.clear();
+						before_editing_scls.clear();
+						switch (tool)
 						{
-							auto diff = pos - center;
+						case ToolMove:
 							for (auto t : node_targets)
+								before_editing_poses.push_back(t->pos);
+							break;
+						case ToolRotate:
+							for (auto t : node_targets)
+								before_editing_quts.push_back(t->qut);
+							if (node_targets.size() > 1 && tool_pivot == ToolCenter)
 							{
-								t->add_pos(diff);
-								if (auto ins = get_root_prefab_instance(t->entity); ins)
+								for (auto t : node_targets)
+									before_editing_poses.push_back(t->pos);
+							}
+							break;
+						case ToolScale:
+							for (auto t : node_targets)
+								before_editing_scls.push_back(t->scl);
+							break;
+						}
+					}
+					if (changed)
+					{
+						if (node_targets.size() == 1)
+						{
+							if (auto pnode = node_targets[0]->entity->get_parent_component<cNodeT>(); pnode)
+								mat = inverse(pnode->transform) * mat;
+						}
+						vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
+						decompose(mat, scl, qut, pos, skew, perspective);
+						if (tool == ToolMove)
+						{
+							if (node_targets.size() > 1)
+							{
+								auto diff = pos - center;
+								for (auto t : node_targets)
+								{
+									t->add_pos(diff);
+									if (auto ins = get_root_prefab_instance(t->entity); ins)
+										ins->mark_modification(node_targets[0]->entity->file_id.to_string() + "|flame::cNode|pos");
+								}
+							}
+							else
+							{
+								node_targets[0]->set_pos(pos);
+								if (auto ins = get_root_prefab_instance(node_targets[0]->entity); ins)
 									ins->mark_modification(node_targets[0]->entity->file_id.to_string() + "|flame::cNode|pos");
 							}
 						}
-						else
+						if (tool == ToolRotate)
 						{
-							node_targets[0]->set_pos(pos);
-							if (auto ins = get_root_prefab_instance(node_targets[0]->entity); ins)
-								ins->mark_modification(node_targets[0]->entity->file_id.to_string() + "|flame::cNode|pos");
-						}
-					}
-					if (tool == ToolRotate)
-					{
-						if (node_targets.size() > 1)
-						{
-							for (auto t : node_targets)
+							if (node_targets.size() > 1)
 							{
-								t->mul_qut(qut);
-								if (auto ins = get_root_prefab_instance(t->entity); ins)
-									ins->mark_modification(t->entity->file_id.to_string() + "|flame::cNode|qut");
-								if (tool_pivot == ToolCenter)
+								for (auto t : node_targets)
 								{
-									t->set_pos(center + qut * (t->global_pos() - center));
+									t->mul_qut(qut);
 									if (auto ins = get_root_prefab_instance(t->entity); ins)
-										ins->mark_modification(t->entity->file_id.to_string() + "|flame::cNode|pos");
+										ins->mark_modification(t->entity->file_id.to_string() + "|flame::cNode|qut");
+									if (tool_pivot == ToolCenter)
+									{
+										t->set_pos(center + qut * (t->global_pos() - center));
+										if (auto ins = get_root_prefab_instance(t->entity); ins)
+											ins->mark_modification(t->entity->file_id.to_string() + "|flame::cNode|pos");
+									}
 								}
 							}
+							else
+							{
+								node_targets[0]->set_qut(qut);
+								if (auto ins = get_root_prefab_instance(node_targets[0]->entity); ins)
+									ins->mark_modification(node_targets[0]->entity->file_id.to_string() + "|flame::cNode|qut");
+							}
 						}
-						else
+						if (tool == ToolScale)
 						{
-							node_targets[0]->set_qut(qut);
-							if (auto ins = get_root_prefab_instance(node_targets[0]->entity); ins)
-								ins->mark_modification(node_targets[0]->entity->file_id.to_string() + "|flame::cNode|qut");
-						}
-					}
-					if (tool == ToolScale)
-					{
-						if (node_targets.size() > 1)
-						{
+							if (node_targets.size() > 1)
+							{
 
-						}
-						else
-						{
-							node_targets[0]->set_scl(scl);
-							if (auto ins = get_root_prefab_instance(node_targets[0]->entity); ins)
-								ins->mark_modification(node_targets[0]->entity->file_id.to_string() + "|flame::cNode|scl");
+							}
+							else
+							{
+								node_targets[0]->set_scl(scl);
+								if (auto ins = get_root_prefab_instance(node_targets[0]->entity); ins)
+									ins->mark_modification(node_targets[0]->entity->file_id.to_string() + "|flame::cNode|scl");
+							}
 						}
 					}
-				}
-				if (last_gizmo_using && !gizmo_using)
-				{
-					std::vector<GUID> ids;
-					for (auto t : node_targets)
-						ids.push_back(t->entity->instance_id);
-					if (tool == ToolMove)
+					if (last_gizmo_using && !gizmo_using)
 					{
-						std::vector<std::string> old_values(ids.size());
-						std::vector<std::string> new_values(ids.size());
-						for (auto i = 0; i < ids.size(); i++)
-							old_values[i] = str(before_editing_poses[i]);
-						for (auto i = 0; i < ids.size(); i++)
-							new_values[i] = str(node_targets[i]->pos);
-						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, old_values, new_values));
-						app.prefab_unsaved = true;
-					}
-					if (tool == ToolRotate)
-					{
-						std::vector<std::string> old_values(ids.size());
-						std::vector<std::string> new_values(ids.size());
-						for (auto i = 0; i < old_values.size(); i++)
-							old_values[i] = str((vec4&)before_editing_quts[i]);
-						for (auto i = 0; i < ids.size(); i++)
-							new_values[i] = str((vec4&)node_targets[i]->qut);
-						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "qut"_h, old_values, new_values));
-						if (node_targets.size() > 1 && tool_pivot == ToolCenter)
+						std::vector<GUID> ids;
+						for (auto t : node_targets)
+							ids.push_back(t->entity->instance_id);
+						if (tool == ToolMove)
 						{
 							std::vector<std::string> old_values(ids.size());
 							std::vector<std::string> new_values(ids.size());
@@ -624,326 +609,350 @@ void SceneView::on_draw()
 							for (auto i = 0; i < ids.size(); i++)
 								new_values[i] = str(node_targets[i]->pos);
 							add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, old_values, new_values));
+							app.prefab_unsaved = true;
 						}
-						app.prefab_unsaved = true;
-					}
-					if (tool == ToolScale)
-					{
-						std::vector<std::string> old_values(ids.size());
-						std::vector<std::string> new_values(ids.size());
-						for (auto i = 0; i < ids.size(); i++)
-							old_values[i] = str(before_editing_scls[i]);
-						for (auto i = 0; i < ids.size(); i++)
-							new_values[i] = str(node_targets[i]->scl);
-						add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "scl"_h, old_values, new_values));
-						app.prefab_unsaved = true;
-					}
-				}
-				last_gizmo_using = gizmo_using;
-			}
-			else if (node_targets.empty() && !element_targets.empty())
-			{
-				static vec2 center;
-				ImGuizmo::BeginFrame();
-				ImGuizmo::SetRect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
-				static auto matv = mat4(1.f);
-				auto		matp = mat4(1.f);
-				matp[1][1] *= -1.f;
-				matp = translate(matp, vec3(-1.f, -1.f, 0.5f));
-				matp = scale(matp, vec3(2.f / render_target_extent, 1.f));
-				mat4 mat = mat4(1.f);
-				if (element_targets.size() > 1)
-				{
-					if (!last_gizmo_using)
-					{
-						center = vec3(0.f);
-						for (auto t : element_targets)
-							center += t->global_pos0();
-						center /= (float)element_targets.size();
-					}
-					mat = translate(mat, vec3(center, 0.f));
-				}
-				else
-				{
-					vec2 pos;
-					if (app.input->kbtn[Keyboard_Alt])
-						pos = element_targets[0]->global_pos1();
-					else
-						pos = element_targets[0]->global_pos0();
-					mat = translate(mat, vec3(pos, 0.f));
-				}
-
-				auto changed = gizmo_manipulate(matv, matp, mat);
-				if (changed)
-				{
-					auto m3 = mat3(1.f);
-					m3[0] = mat[0]; m3[1] = mat[1];
-					m3[2] = mat[3]; m3[2][2] = 1.f;
-					if (element_targets.size() == 1)
-					{
-						if (auto pelement = element_targets[0]->entity->get_parent_component<cElementT>(); pelement)
-							m3 = inverse(mat3(pelement->transform)) * m3;
-					}
-					vec2 pos; vec2 scl;
-					pos = m3[2];
-					scl.x = length(vec2(m3[0]));
-					scl.y = length(vec2(m3[1]));
-					if (tool == ToolMove)
-					{
-						if (element_targets.size() > 1)
+						if (tool == ToolRotate)
 						{
-							auto diff = pos - element_targets[0]->pos;
-							for (auto t : element_targets)
+							std::vector<std::string> old_values(ids.size());
+							std::vector<std::string> new_values(ids.size());
+							for (auto i = 0; i < old_values.size(); i++)
+								old_values[i] = str((vec4&)before_editing_quts[i]);
+							for (auto i = 0; i < ids.size(); i++)
+								new_values[i] = str((vec4&)node_targets[i]->qut);
+							add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "qut"_h, old_values, new_values));
+							if (node_targets.size() > 1 && tool_pivot == ToolCenter)
 							{
-								t->add_pos(diff);
-								if (auto ins = get_root_prefab_instance(t->entity); ins)
+								std::vector<std::string> old_values(ids.size());
+								std::vector<std::string> new_values(ids.size());
+								for (auto i = 0; i < ids.size(); i++)
+									old_values[i] = str(before_editing_poses[i]);
+								for (auto i = 0; i < ids.size(); i++)
+									new_values[i] = str(node_targets[i]->pos);
+								add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "pos"_h, old_values, new_values));
+							}
+							app.prefab_unsaved = true;
+						}
+						if (tool == ToolScale)
+						{
+							std::vector<std::string> old_values(ids.size());
+							std::vector<std::string> new_values(ids.size());
+							for (auto i = 0; i < ids.size(); i++)
+								old_values[i] = str(before_editing_scls[i]);
+							for (auto i = 0; i < ids.size(); i++)
+								new_values[i] = str(node_targets[i]->scl);
+							add_history(new EntityModifyHistory(ids, "flame::cNode"_h, "scl"_h, old_values, new_values));
+							app.prefab_unsaved = true;
+						}
+					}
+					last_gizmo_using = gizmo_using;
+				}
+				else if (node_targets.empty() && !element_targets.empty())
+				{
+					static vec2 center;
+					ImGuizmo::BeginFrame();
+					ImGuizmo::SetRect(p0.x, p0.y, p1.x - p0.x, p1.y - p0.y);
+					static auto matv = mat4(1.f);
+					auto		matp = mat4(1.f);
+					matp[1][1] *= -1.f;
+					matp = translate(matp, vec3(-1.f, -1.f, 0.5f));
+					matp = scale(matp, vec3(2.f / render_target_extent, 1.f));
+					mat4 mat = mat4(1.f);
+					if (element_targets.size() > 1)
+					{
+						if (!last_gizmo_using)
+						{
+							center = vec3(0.f);
+							for (auto t : element_targets)
+								center += t->global_pos0();
+							center /= (float)element_targets.size();
+						}
+						mat = translate(mat, vec3(center, 0.f));
+					}
+					else
+					{
+						vec2 pos;
+						if (app.input->kbtn[Keyboard_Alt])
+							pos = element_targets[0]->global_pos1();
+						else
+							pos = element_targets[0]->global_pos0();
+						mat = translate(mat, vec3(pos, 0.f));
+					}
+
+					auto changed = gizmo_manipulate(matv, matp, mat);
+					if (changed)
+					{
+						auto m3 = mat3(1.f);
+						m3[0] = mat[0]; m3[1] = mat[1];
+						m3[2] = mat[3]; m3[2][2] = 1.f;
+						if (element_targets.size() == 1)
+						{
+							if (auto pelement = element_targets[0]->entity->get_parent_component<cElementT>(); pelement)
+								m3 = inverse(mat3(pelement->transform)) * m3;
+						}
+						vec2 pos; vec2 scl;
+						pos = m3[2];
+						scl.x = length(vec2(m3[0]));
+						scl.y = length(vec2(m3[1]));
+						if (tool == ToolMove)
+						{
+							if (element_targets.size() > 1)
+							{
+								auto diff = pos - element_targets[0]->pos;
+								for (auto t : element_targets)
+								{
+									t->add_pos(diff);
+									if (auto ins = get_root_prefab_instance(t->entity); ins)
+										ins->mark_modification(element_targets[0]->entity->file_id.to_string() + "|flame::cElement|pos");
+								}
+							}
+							else
+							{
+								if (app.input->kbtn[Keyboard_Alt])
+									element_targets[0]->set_ext(pos - element_targets[0]->pos);
+								else
+									element_targets[0]->set_pos(pos);
+								if (auto ins = get_root_prefab_instance(element_targets[0]->entity); ins)
 									ins->mark_modification(element_targets[0]->entity->file_id.to_string() + "|flame::cElement|pos");
 							}
 						}
-						else
+						if (tool == ToolScale)
 						{
-							if (app.input->kbtn[Keyboard_Alt])
-								element_targets[0]->set_ext(pos - element_targets[0]->pos);
-							else
-								element_targets[0]->set_pos(pos);
-							if (auto ins = get_root_prefab_instance(element_targets[0]->entity); ins)
-								ins->mark_modification(element_targets[0]->entity->file_id.to_string() + "|flame::cElement|pos");
-						}
-					}
-					if (tool == ToolScale)
-					{
-						if (element_targets.size() > 1)
-						{
+							if (element_targets.size() > 1)
+							{
 
-						}
-						else
-						{
-							element_targets[0]->set_scl(scl);
-							if (auto ins = get_root_prefab_instance(element_targets[0]->entity); ins)
-								ins->mark_modification(element_targets[0]->entity->file_id.to_string() + "|flame::cElement|scl");
+							}
+							else
+							{
+								element_targets[0]->set_scl(scl);
+								if (auto ins = get_root_prefab_instance(element_targets[0]->entity); ins)
+									ins->mark_modification(element_targets[0]->entity->file_id.to_string() + "|flame::cElement|scl");
+							}
 						}
 					}
+					gizmo_using = ImGuizmo::IsUsing();
+					last_gizmo_using = gizmo_using;
 				}
-				gizmo_using = ImGuizmo::IsUsing();
-				last_gizmo_using = gizmo_using;
 			}
-		}
 #endif
+		}
 
 		auto& io = ImGui::GetIO();
 		auto& style = ImGui::GetStyle();
 
-		if (ImGui::IsWindowHovered())
+		if (use_gizmos)
 		{
-			auto camera_node = camera->node;
+			if (ImGui::IsWindowHovered())
+			{
+				auto camera_node = camera->node;
 
-			auto get_tar = [&]() {
-				return camera_node->global_pos() - camera_node->z_axis() * camera_zoom;
-			};
+				auto get_tar = [&]() {
+					return camera_node->global_pos() - camera_node->z_axis() * camera_zoom;
+				};
 
-			if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
-			{
-				disp /= vec2(render_tar->extent);
-				if (!io.KeyAlt)
+				if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
 				{
-					if (io.MouseDown[ImGuiMouseButton_Middle])
+					disp /= vec2(render_tar->extent);
+					if (!io.KeyAlt)
 					{
-						camera_node->add_pos((-camera_node->x_axis() * disp.x +
-							camera_node->y_axis() * disp.y) * camera_zoom);
-					}
-					else if (io.MouseDown[ImGuiMouseButton_Right])
-					{
-						disp *= -180.f;
-						disp = radians(disp);
-						auto qut = angleAxis(disp.x, vec3(0.f, 1.f, 0.f)) * camera_node->qut;
-						qut = angleAxis(disp.y, qut * vec3(1.f, 0.f, 0.f)) * qut;
-						camera_node->set_qut(qut);
-					}
-				}
-				else
-				{
-					if (io.MouseDown[ImGuiMouseButton_Left])
-					{
-						disp *= -180.f;
-						disp = radians(disp);
-						auto qut = angleAxis(disp.x, vec3(0.f, 1.f, 0.f)) * camera_node->qut;
-						qut = angleAxis(disp.y, qut * vec3(1.f, 0.f, 0.f)) * qut;
-						camera_node->set_qut(qut);
-						camera_node->set_pos(get_tar() + (qut * vec3(0.f, 0.f, 1.f)) * camera_zoom);
-					}
-				}
-			}
-			{
-				static vec2 last_mpos = vec2(0.f);
-				if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
-					last_mpos = io.MousePos;
-				if (ImGui::IsMouseReleased(ImGuiMouseButton_Middle) && (vec2)io.MousePos == last_mpos)
-					camera_node->set_pos(hovering_pos + camera_node->z_axis() * camera_zoom);
-			}
-			if (auto scroll = io.MouseWheel; scroll != 0.f)
-			{
-				auto tar = get_tar();
-				if (scroll < 0.f)
-					camera_zoom = camera_zoom * 1.1f + 0.5f;
-				else
-					camera_zoom = max(0.f, camera_zoom / 1.1f - 0.5f);
-				camera_node->set_pos(tar + camera_node->z_axis() * camera_zoom);
-			}
-			if (!io.WantCaptureKeyboard)
-			{
-				if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && !io.KeysDown[Keyboard_Shift])
-				{
-					if (io.MouseDown[ImGuiMouseButton_Right])
-					{
-						if (io.KeysDown[Keyboard_W])
+						if (io.MouseDown[ImGuiMouseButton_Middle])
 						{
-							camera_node->add_pos(-camera_node->z_axis() * 0.2f);
-							app.render_frames += 30;
+							camera_node->add_pos((-camera_node->x_axis() * disp.x +
+								camera_node->y_axis() * disp.y) * camera_zoom);
 						}
-						if (io.KeysDown[Keyboard_S])
+						else if (io.MouseDown[ImGuiMouseButton_Right])
 						{
-							camera_node->add_pos(+camera_node->z_axis() * 0.2f);
-							app.render_frames += 30;
-						}
-						if (io.KeysDown[Keyboard_A])
-						{
-							camera_node->add_pos(-camera_node->x_axis() * 0.2f);
-							app.render_frames += 30;
-						}
-						if (io.KeysDown[Keyboard_D])
-						{
-							camera_node->add_pos(+camera_node->x_axis() * 0.2f);
-							app.render_frames += 30;
+							disp *= -180.f;
+							disp = radians(disp);
+							auto qut = angleAxis(disp.x, vec3(0.f, 1.f, 0.f)) * camera_node->qut;
+							qut = angleAxis(disp.y, qut * vec3(1.f, 0.f, 0.f)) * qut;
+							camera_node->set_qut(qut);
 						}
 					}
 					else
 					{
-						if (ImGui::IsKeyPressed(Keyboard_Q))
-							tool = ToolSelect;
-						if (ImGui::IsKeyPressed(Keyboard_W))
-							tool = ToolMove;
-						if (ImGui::IsKeyPressed(Keyboard_E))
-							tool = ToolRotate;
-						if (ImGui::IsKeyPressed(Keyboard_R))
-							tool = ToolScale;
-					}
-					if (ImGui::IsKeyPressed(Keyboard_Del))
-						app.cmd_delete_entities(selection.get_entities());
-				}
-				if (!io.KeysDown[Keyboard_Ctrl] && !ImGui::IsKeyDown(Keyboard_Shift) && io.KeysDown[Keyboard_F])
-					focus_to_selected();
-				if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_D))
-					app.cmd_duplicate_entities(selection.get_entities());
-				if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && io.KeysDown[Keyboard_Shift])
-				{
-					if (io.KeysDown[Keyboard_G])
-						selected_to_focus();
-				}
-				if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
-					app.save_prefab();
-			}
-
-			if (auto hovering_element = sRenderer::instance()->pick_up_2d(app.input->mpos);
-				hovering_element && hovering_element->entity != sScene::instance()->first_element)
-			{
-				hovering_entity = hovering_element->entity;
-				hovering_pos = vec3(app.input->mpos, 0.f);
-			}
-
-			if (!hovering_entity)
-			{
-				auto hovering_node = sRenderer::instance()->pick_up(app.input->mpos, &hovering_pos, [](cNodePtr n, DrawData& draw_data) {
-					if (draw_data.categories & CateMesh)
-					{
-						if (auto mesh = n->entity->get_component<cMesh>(); mesh)
+						if (io.MouseDown[ImGuiMouseButton_Left])
 						{
-							if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
-								draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
+							disp *= -180.f;
+							disp = radians(disp);
+							auto qut = angleAxis(disp.x, vec3(0.f, 1.f, 0.f)) * camera_node->qut;
+							qut = angleAxis(disp.y, qut * vec3(1.f, 0.f, 0.f)) * qut;
+							camera_node->set_qut(qut);
+							camera_node->set_pos(get_tar() + (qut * vec3(0.f, 0.f, 1.f)) * camera_zoom);
 						}
 					}
-					if (draw_data.categories & CateTerrain)
+				}
+				{
+					static vec2 last_mpos = vec2(0.f);
+					if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
+						last_mpos = io.MousePos;
+					if (ImGui::IsMouseReleased(ImGuiMouseButton_Middle) && (vec2)io.MousePos == last_mpos)
+						camera_node->set_pos(hovering_pos + camera_node->z_axis() * camera_zoom);
+				}
+				if (auto scroll = io.MouseWheel; scroll != 0.f)
+				{
+					auto tar = get_tar();
+					if (scroll < 0.f)
+						camera_zoom = camera_zoom * 1.1f + 0.5f;
+					else
+						camera_zoom = max(0.f, camera_zoom / 1.1f - 0.5f);
+					camera_node->set_pos(tar + camera_node->z_axis() * camera_zoom);
+				}
+				if (!io.WantCaptureKeyboard)
+				{
+					if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && !io.KeysDown[Keyboard_Shift])
 					{
-						if (auto terrain = n->entity->get_component<cTerrain>(); terrain)
-							draw_data.terrains.emplace_back(terrain->instance_id, terrain->blocks, terrain->material_res_id);
+						if (io.MouseDown[ImGuiMouseButton_Right])
+						{
+							if (io.KeysDown[Keyboard_W])
+							{
+								camera_node->add_pos(-camera_node->z_axis() * 0.2f);
+								app.render_frames += 30;
+							}
+							if (io.KeysDown[Keyboard_S])
+							{
+								camera_node->add_pos(+camera_node->z_axis() * 0.2f);
+								app.render_frames += 30;
+							}
+							if (io.KeysDown[Keyboard_A])
+							{
+								camera_node->add_pos(-camera_node->x_axis() * 0.2f);
+								app.render_frames += 30;
+							}
+							if (io.KeysDown[Keyboard_D])
+							{
+								camera_node->add_pos(+camera_node->x_axis() * 0.2f);
+								app.render_frames += 30;
+							}
+						}
+						else
+						{
+							if (ImGui::IsKeyPressed(Keyboard_Q))
+								tool = ToolSelect;
+							if (ImGui::IsKeyPressed(Keyboard_W))
+								tool = ToolMove;
+							if (ImGui::IsKeyPressed(Keyboard_E))
+								tool = ToolRotate;
+							if (ImGui::IsKeyPressed(Keyboard_R))
+								tool = ToolScale;
+						}
+						if (ImGui::IsKeyPressed(Keyboard_Del))
+							app.cmd_delete_entities(selection.get_entities());
 					}
-					if (draw_data.categories & CateMarchingCubes)
+					if (!io.KeysDown[Keyboard_Ctrl] && !ImGui::IsKeyDown(Keyboard_Shift) && io.KeysDown[Keyboard_F])
+						focus_to_selected();
+					if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_D))
+						app.cmd_duplicate_entities(selection.get_entities());
+					if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && io.KeysDown[Keyboard_Shift])
 					{
-						if (auto volume = n->entity->get_component<cVolume>(); volume && volume->marching_cubes)
-							draw_data.volumes.emplace_back(volume->instance_id, volume->blocks, volume->material_res_id);
+						if (io.KeysDown[Keyboard_G])
+							selected_to_focus();
 					}
+					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
+						app.save_prefab();
+				}
+
+				if (auto hovering_element = sRenderer::instance()->pick_up_2d(app.input->mpos);
+					hovering_element && hovering_element->entity != sScene::instance()->first_element)
+				{
+					hovering_entity = hovering_element->entity;
+					hovering_pos = vec3(app.input->mpos, 0.f);
+				}
+
+				if (!hovering_entity)
+				{
+					auto hovering_node = sRenderer::instance()->pick_up(app.input->mpos, &hovering_pos, [](cNodePtr n, DrawData& draw_data) {
+						if (draw_data.categories & CateMesh)
+						{
+							if (auto mesh = n->entity->get_component<cMesh>(); mesh)
+							{
+								if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
+									draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
+							}
+						}
+						if (draw_data.categories & CateTerrain)
+						{
+							if (auto terrain = n->entity->get_component<cTerrain>(); terrain)
+								draw_data.terrains.emplace_back(terrain->instance_id, terrain->blocks, terrain->material_res_id);
+						}
+						if (draw_data.categories & CateMarchingCubes)
+						{
+							if (auto volume = n->entity->get_component<cVolume>(); volume && volume->marching_cubes)
+								draw_data.volumes.emplace_back(volume->instance_id, volume->blocks, volume->material_res_id);
+						}
 					});
 
-				if (hovering_node)
-					hovering_entity = hovering_node->entity;
-			}
+					if (hovering_node)
+						hovering_entity = hovering_node->entity;
+				}
 
-			if (!gizmo_using && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
-			{
-				auto get_top_entity = [](EntityPtr e) {
-					if (auto ins = get_root_prefab_instance(e); ins)
-					{
-						if (!selection.selecting(ins->e))
-							return ins->e;
-					}
-					return e;
-				};
-				if (ImGui::IsKeyDown(Keyboard_Ctrl))
+				if (!gizmo_using && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !io.KeyAlt)
 				{
-					if (hovering_entity)
-					{
-						auto e = get_top_entity(hovering_entity);
-						auto entities = selection.get_entities();
-						auto found = false;
-						for (auto it = entities.begin(); it != entities.end();)
+					auto get_top_entity = [](EntityPtr e) {
+						if (auto ins = get_root_prefab_instance(e); ins)
 						{
-							if (*it == e)
-							{
-								found = true;
-								it = entities.erase(it);
-								break;
-							}
-							else
-								it++;
+							if (!selection.selecting(ins->e))
+								return ins->e;
 						}
-						if (!found)
-							entities.push_back(e);
-						selection.select(entities, "scene"_h);
-					}
-				}
-				else if (ImGui::IsKeyDown(Keyboard_Shift))
-				{
-					if (hovering_entity)
+						return e;
+					};
+					if (ImGui::IsKeyDown(Keyboard_Ctrl))
 					{
-						auto e = get_top_entity(hovering_entity);
-						auto entities = selection.get_entities();
-						auto found = false;
-						for (auto e2 : entities)
+						if (hovering_entity)
 						{
-							if (e2 == e)
+							auto e = get_top_entity(hovering_entity);
+							auto entities = selection.get_entities();
+							auto found = false;
+							for (auto it = entities.begin(); it != entities.end();)
 							{
-								found = true;
-								break;
+								if (*it == e)
+								{
+									found = true;
+									it = entities.erase(it);
+									break;
+								}
+								else
+									it++;
 							}
+							if (!found)
+								entities.push_back(e);
+							selection.select(entities, "scene"_h);
 						}
-						if (!found)
-							entities.push_back(e);
-						selection.select(entities, "scene"_h);
 					}
-				}
-				else
-				{
-					if (hovering_entity)
-						selection.select(get_top_entity(hovering_entity), "scene"_h);
+					else if (ImGui::IsKeyDown(Keyboard_Shift))
+					{
+						if (hovering_entity)
+						{
+							auto e = get_top_entity(hovering_entity);
+							auto entities = selection.get_entities();
+							auto found = false;
+							for (auto e2 : entities)
+							{
+								if (e2 == e)
+								{
+									found = true;
+									break;
+								}
+							}
+							if (!found)
+								entities.push_back(e);
+							selection.select(entities, "scene"_h);
+						}
+					}
 					else
-						selection.clear("scene"_h);
+					{
+						if (hovering_entity)
+							selection.select(get_top_entity(hovering_entity), "scene"_h);
+						else
+							selection.clear("scene"_h);
+					}
 				}
-			}
 
-			{
-				auto s = str(hovering_pos);
-				auto sz = ImGui::CalcTextSize(s.c_str(), s.c_str() + s.size());
-				ImGui::GetWindowDrawList()->AddRectFilled(p0, (vec2)p0 + (vec2)sz, ImColor(0.f, 0.f, 0.f, 0.5f));
-				ImGui::GetWindowDrawList()->AddText(p0, ImColor(255.f, 255.f, 255.f), s.c_str(), s.c_str() + s.size());
+				{
+					auto s = str(hovering_pos);
+					auto sz = ImGui::CalcTextSize(s.c_str(), s.c_str() + s.size());
+					ImGui::GetWindowDrawList()->AddRectFilled(p0, (vec2)p0 + (vec2)sz, ImColor(0.f, 0.f, 0.f, 0.5f));
+					ImGui::GetWindowDrawList()->AddText(p0, ImColor(255.f, 255.f, 255.f), s.c_str(), s.c_str() + s.size());
+				}
 			}
 		}
 

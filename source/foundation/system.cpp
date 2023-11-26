@@ -165,6 +165,9 @@ namespace flame
 		if (path.extension() == L".dll")
 			return LoadLibraryW(path.c_str());
 
+		if (get_app_path(true) == path)
+			return GetModuleHandle(nullptr);
+
 		DWORD dw;
 
 		auto ret = LoadLibraryW(path.c_str());

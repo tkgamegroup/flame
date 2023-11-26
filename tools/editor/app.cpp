@@ -2229,7 +2229,7 @@ bool App::cmd_restart_preview()
 	return true;
 }
 
-int main(int argc, char** args)
+int entry(int argc, char** args)
 {
 	srand(time(0));
 
@@ -2249,3 +2249,5 @@ int main(int argc, char** args)
 
 	return 0;
 }
+
+FLAME_EXE_MAIN(entry)
