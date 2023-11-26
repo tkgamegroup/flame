@@ -13,6 +13,7 @@ namespace flame
 			uint name_hash;
 			TypeInfo* type;
 			std::string default_value;
+			float width = 200.f;
 		};
 
 		struct Row
@@ -46,6 +47,13 @@ namespace flame
 		virtual void remove_row(uint idx) = 0;
 
 		virtual void save(const std::filesystem::path& path = L"") = 0;
+
+		struct Create
+		{
+			virtual SheetPtr operator()() = 0;
+		};
+		// Reflect static
+		FLAME_FOUNDATION_API static Create& create;
 
 		struct Get
 		{

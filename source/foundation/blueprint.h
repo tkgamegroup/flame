@@ -72,6 +72,16 @@ namespace flame
 		return false;
 	}
 
+	inline bool blueprint_allow_any_type(const std::vector<TypeInfo*>& allowed_types, const std::vector<TypeInfo*> type_list)
+	{
+		for (auto t : type_list)
+		{
+			if (blueprint_allow_type(allowed_types, t))
+				return true;
+		}
+		return false;
+	}
+
 	inline bool blueprint_is_variable_node(uint name)
 	{
 		return name == "Variable"_h ||
@@ -231,6 +241,16 @@ namespace flame
 			list.push_back((BlueprintNodePtr)_n);
 	}
 
+	struct BlueprintLink
+	{
+		uint				object_id;
+
+		BlueprintSlotPtr	from_slot;
+		BlueprintSlotPtr	to_slot;
+
+		virtual ~BlueprintLink() {}
+	};
+
 	struct BlueprintVariable
 	{
 		std::string name;
@@ -282,6 +302,16 @@ namespace flame
 			return nullptr;
 		}
 
+		inline BlueprintLinkPtr find_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot) const
+		{
+			for (auto& l : links)
+			{
+				if (((BlueprintLink*)l.get())->from_slot == from_slot && ((BlueprintLink*)l.get())->to_slot == to_slot)
+					return (BlueprintLinkPtr)l.get();
+			}
+			return nullptr;
+		}
+
 		vec2	offset;
 		float	scale = 1.f;
 
@@ -290,16 +320,6 @@ namespace flame
 		uint	data_changed_frame = 1;
 
 		virtual ~BlueprintGroup() {}
-	};
-
-	struct BlueprintLink
-	{
-		uint				object_id;
-
-		BlueprintSlotPtr	from_slot;
-		BlueprintSlotPtr	to_slot;
-
-		virtual ~BlueprintLink() {}
 	};
 
 	// Reflect ctor
@@ -371,6 +391,13 @@ namespace flame
 		virtual void					alter_group_output(BlueprintGroupPtr group, uint old_name, const std::string& new_name = "", TypeInfo* new_type = nullptr) = 0;
 
 		virtual void					save(const std::filesystem::path& path = L"") = 0;
+
+		struct Create
+		{
+			virtual BlueprintPtr operator()() = 0;
+		};
+		// Reflect static
+		FLAME_FOUNDATION_API static Create& create;
 
 		struct Get
 		{

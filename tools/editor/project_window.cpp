@@ -439,7 +439,10 @@ ProjectView::ProjectView(const std::string& name) :
 						auto fn = path / str;
 						fn.replace_extension(L".bp");
 						if (!std::filesystem::exists(fn))
-							Blueprint::get(fn);
+						{
+							auto bp = Blueprint::create();
+							bp->save(fn);
+						}
 						else
 							ImGui::OpenMessageDialog("Failed to create Blueprint", "Blueprint already existed");
 					}
@@ -453,7 +456,10 @@ ProjectView::ProjectView(const std::string& name) :
 						auto fn = path / str;
 						fn.replace_extension(L".sht");
 						if (!std::filesystem::exists(fn))
-							Sheet::get(fn);
+						{
+							auto sht = Sheet::create();
+							sht->save(fn);
+						}
 						else
 							ImGui::OpenMessageDialog("Failed to create Sheet", "Sheet already existed");
 					}

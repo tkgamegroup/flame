@@ -52,10 +52,16 @@ namespace flame
 		auto& column = columns[idx];
 		if (column.name != new_name)
 		{
-			columns_map.erase(column.name_hash);
-			column.name = new_name;
-			column.name_hash = sh(new_name.c_str());
-			columns_map[column.name_hash] = idx;
+			auto new_name_hash = sh(new_name.c_str());
+			if (find_column(new_name_hash) != -1)
+				printf("sheet alter column: column with name: %s already exists\n", new_name.c_str());
+			else
+			{
+				columns_map.erase(column.name_hash);
+				column.name = new_name;
+				column.name_hash = new_name_hash;
+				columns_map[column.name_hash] = idx;
+			}
 		}
 		if (column.type != new_type)
 		{
@@ -157,6 +163,7 @@ namespace flame
 			n_column.append_attribute("name").set_value(c.name.c_str());
 			if (!c.default_value.empty())
 				n_column.append_attribute("default_value").set_value(c.default_value.c_str());
+			n_column.append_attribute("width").set_value(c.width);
 		}
 		auto n_rows = doc_root.append_child("rows");
 		for (auto& r : rows)
@@ -170,6 +177,15 @@ namespace flame
 			filename = path;
 		doc.save_file(filename.c_str());
 	}
+
+	struct SheetCreate : Sheet::Create
+	{
+		SheetPtr operator()() override
+		{
+			return new SheetPrivate;
+		}
+	}Sheet_create;
+	Sheet::Create& Sheet::create = Sheet_create;
 
 	struct SheetGet : Sheet::Get
 	{
@@ -188,49 +204,54 @@ namespace flame
 				}
 			}
 
-			auto ret = new SheetPrivate;
-			if (std::filesystem::exists(filename))
+			if (!std::filesystem::exists(filename))
 			{
-				pugi::xml_document doc;
-				pugi::xml_node doc_root;
+				wprintf(L"cannot found sheet: %s", _filename.c_str());
+				return nullptr;
+			}
 
-				if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("sheet"))
-				{
-					wprintf(L"sheet does not exist or wrong format: %s\n", _filename.c_str());
-					return nullptr;
-				}
+			auto ret = new SheetPrivate;
 
-				auto read_ti = [&](pugi::xml_attribute a) {
-					auto sp = SUS::to_string_vector(SUS::split(a.value(), '@'));
-					TypeTag tag;
-					TypeInfo::unserialize_t(sp[0], tag);
-					return TypeInfo::get(tag, sp[1]);
+			pugi::xml_document doc;
+			pugi::xml_node doc_root;
+
+			if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("sheet"))
+			{
+				wprintf(L"sheet does not exist or wrong format: %s\n", _filename.c_str());
+				return nullptr;
+			}
+
+			auto read_ti = [&](pugi::xml_attribute a) {
+				auto sp = SUS::to_string_vector(SUS::split(a.value(), '@'));
+				TypeTag tag;
+				TypeInfo::unserialize_t(sp[0], tag);
+				return TypeInfo::get(tag, sp[1]);
 				};
 
-				if (auto a = doc_root.attribute("name"); a)
-				{
-					ret->name = a.value();
-					ret->name_hash = sh(ret->name.c_str());
-				}
+			if (auto a = doc_root.attribute("name"); a)
+			{
+				ret->name = a.value();
+				ret->name_hash = sh(ret->name.c_str());
+			}
 
-				for (auto n_column : doc_root.child("columns"))
+			for (auto n_column : doc_root.child("columns"))
+			{
+				ret->insert_column(n_column.attribute("name").value(),
+					read_ti(n_column.attribute("type")), -1, n_column.attribute("default_value").value());
+				if (auto a = n_column.attribute("width"); a)
+					ret->columns.back().width = a.as_float();
+			}
+			for (auto n_row : doc_root.child("rows"))
+			{
+				ret->insert_row();
+				auto& row = ret->rows.back();
+				for (auto i = 0; i < ret->columns.size(); i++)
 				{
-					ret->insert_column(n_column.attribute("name").value(), 
-						read_ti(n_column.attribute("type")), -1, n_column.attribute("default_value").value());
-				}
-				for (auto n_row : doc_root.child("rows"))
-				{
-					ret->insert_row();
-					auto& row = ret->rows.back();
-					for (auto i = 0; i < ret->columns.size(); i++)
-					{
-						auto& column = ret->columns[i];
-						column.type->unserialize(n_row.attribute(column.name.c_str()).value(), row.datas[i]);
-					}
+					auto& column = ret->columns[i];
+					column.type->unserialize(n_row.attribute(column.name.c_str()).value(), row.datas[i]);
 				}
 			}
-			else
-				ret->save(filename);
+
 			ret->filename = filename;
 			ret->ref = 1;
 			loaded_sheets.emplace_back(ret);

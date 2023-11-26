@@ -459,7 +459,8 @@ void SheetView::on_draw()
 					for (auto i = 0; i < sheet->columns.size(); i++)
 					{
 						auto& column = sheet->columns[i];
-						ImGui::TableSetupColumn(column.name.c_str(), ImGuiTableColumnFlags_WidthFixed, 200.f);
+						ImGui::TableSetupColumn(column.name.c_str(), ImGuiTableColumnFlags_WidthFixed, column.width);
+						column.width = ImGui::GetColumnWidth();
 					}
 					ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 80.f);
 
@@ -538,7 +539,7 @@ void SheetView::on_draw()
 
 	auto& io = ImGui::GetIO();
 
-	if (ImGui::IsWindowHovered())
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
 	{
 		if (!io.WantCaptureKeyboard)
 		{

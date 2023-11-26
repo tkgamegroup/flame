@@ -67,6 +67,7 @@ namespace flame
 		if (slot->type == new_type)
 			return;
 		auto has_data = slot->data != nullptr;
+		auto prev_value = slot->data ? slot->type->serialize(slot->data) : "";
 		if (slot->data) // is input slot and has data
 		{
 			slot->type->destroy(slot->data);
@@ -77,7 +78,11 @@ namespace flame
 		{
 			slot->type = new_type;
 			if (new_type && has_data) // is input slot and has data
+			{
 				slot->data = new_type->create();
+				if (!prev_value.empty())
+					new_type->unserialize(prev_value, slot->data);
+			}
 		}
 	}
 
@@ -1999,6 +2004,17 @@ namespace flame
 		doc.save_file(filename.c_str());
 	}
 
+	struct BlueprintCreate : Blueprint::Create
+	{
+		BlueprintPtr operator()() override
+		{
+			auto ret = new BlueprintPrivate;
+			ret->add_group("main");
+			return ret;
+		}
+	}Blueprint_create;
+	Blueprint::Create& Blueprint::create = Blueprint_create;
+
 	struct BlueprintGet : Blueprint::Get
 	{
 		BlueprintPtr operator()(const std::filesystem::path& _filename, bool is_static) override
@@ -2014,360 +2030,358 @@ namespace flame
 				}
 			}
 
-			auto ret = new BlueprintPrivate;
-			if (std::filesystem::exists(filename))
+			if (!std::filesystem::exists(filename))
 			{
-				pugi::xml_document doc;
-				pugi::xml_node doc_root;
+				wprintf(L"cannot found blueprint: %s", _filename.c_str());
+				return nullptr;
+			}
 
-				if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("blueprint"))
-				{
-					wprintf(L"blueprint does not exist or wrong format: %s\n", _filename.c_str());
-					return nullptr;
-				}
+			auto ret = new BlueprintPrivate;
+			pugi::xml_document doc;
+			pugi::xml_node doc_root;
 
-				auto read_ti = [&](pugi::xml_attribute a) {
-					auto sp = SUS::to_string_vector(SUS::split(a.value(), '@'));
-					TypeTag tag;
-					TypeInfo::unserialize_t(sp[0], tag);
-					return TypeInfo::get(tag, sp[1]);
-				};
+			if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("blueprint"))
+			{
+				wprintf(L"blueprint does not exist or wrong format: %s\n", _filename.c_str());
+				return nullptr;
+			}
 
-				for (auto n_variable : doc_root.child("variables"))
+			auto read_ti = [&](pugi::xml_attribute a) {
+				auto sp = SUS::to_string_vector(SUS::split(a.value(), '@'));
+				TypeTag tag;
+				TypeInfo::unserialize_t(sp[0], tag);
+				return TypeInfo::get(tag, sp[1]);
+			};
+
+			for (auto n_variable : doc_root.child("variables"))
+			{
+				auto type = read_ti(n_variable.attribute("type"));
+				auto data = ret->add_variable(nullptr, n_variable.attribute("name").value(), type);
+				type->unserialize(n_variable.attribute("value").value(), data);
+			}
+			for (auto n_group : doc_root.child("groups"))
+			{
+				auto g = ret->add_group(n_group.attribute("name").value());
+
+				for (auto n_variable : n_group.child("variables"))
 				{
 					auto type = read_ti(n_variable.attribute("type"));
-					auto data = ret->add_variable(nullptr, n_variable.attribute("name").value(), type);
+					auto data = ret->add_variable(g, n_variable.attribute("name").value(), type);
 					type->unserialize(n_variable.attribute("value").value(), data);
 				}
-				for (auto n_group : doc_root.child("groups"))
+				for (auto n_input : n_group.child("inputs"))
+					ret->add_group_input(g, n_input.attribute("name").value(), read_ti(n_input.attribute("type")));
+				for (auto n_output : n_group.child("outputs"))
+					ret->add_group_output(g, n_output.attribute("name").value(), read_ti(n_output.attribute("type")));
+
+				std::map<uint, BlueprintNodePtr> node_map;
+
+				for (auto n_node : n_group.child("nodes"))
 				{
-					auto g = ret->add_group(n_group.attribute("name").value());
-
-					for (auto n_variable : n_group.child("variables"))
+					std::string name = n_node.attribute("name").value();
+					auto parent_id = n_node.attribute("parent_id").as_uint();
+					BlueprintNodePtr parent = nullptr;
+					if (parent_id != 0)
 					{
-						auto type = read_ti(n_variable.attribute("type"));
-						auto data = ret->add_variable(g, n_variable.attribute("name").value(), type);
-						type->unserialize(n_variable.attribute("value").value(), data);
-					}
-					for (auto n_input : n_group.child("inputs"))
-						ret->add_group_input(g, n_input.attribute("name").value(), read_ti(n_input.attribute("type")));
-					for (auto n_output : n_group.child("outputs"))
-						ret->add_group_output(g, n_output.attribute("name").value(), read_ti(n_output.attribute("type")));
-
-					std::map<uint, BlueprintNodePtr> node_map;
-
-					for (auto n_node : n_group.child("nodes"))
-					{
-						std::string name = n_node.attribute("name").value();
-						auto parent_id = n_node.attribute("parent_id").as_uint();
-						BlueprintNodePtr parent = nullptr;
-						if (parent_id != 0)
+						if (auto it = node_map.find(parent_id); it != node_map.end())
+							parent = it->second;
+						else
 						{
-							if (auto it = node_map.find(parent_id); it != node_map.end())
-								parent = it->second;
-							else
-							{
-								printf("add node: cannot find parent with id %d\n", parent_id);
-								continue;
-							}
+							printf("add node: cannot find parent with id %d\n", parent_id);
+							continue;
 						}
-						auto read_input = [&](BlueprintNodePtr n, pugi::xml_node n_input) {
-							auto name = n_input.attribute("name").value();
-							auto i = n->find_input(sh(name));
-							if (i)
-							{
-								if (auto a_type = n_input.attribute("type"); a_type)
-								{
-									change_slot_type(i, read_ti(a_type));
-									update_node_output_types(n);
-									clear_invalid_links(g);
-								}
-								if (i->type->tag != TagU)
-									i->type->unserialize(n_input.attribute("value").value(), i->data);
-							}
-							else
-								printf("add node: cannot find input: %s\n", name);
-						};
-						if (name == "Block")
+					}
+					auto read_input = [&](BlueprintNodePtr n, pugi::xml_node n_input) {
+						auto name = n_input.attribute("name").value();
+						auto i = n->find_input(sh(name));
+						if (i)
 						{
-							auto n = ret->add_block(g, parent);
+							if (auto a_type = n_input.attribute("type"); a_type)
+							{
+								change_slot_type(i, read_ti(a_type));
+								update_node_output_types(n);
+								clear_invalid_links(g);
+							}
+							if (i->type->tag != TagU)
+								i->type->unserialize(n_input.attribute("value").value(), i->data);
+						}
+						else
+							printf("add node: cannot find input: %s\n", name);
+						};
+					if (name == "Block")
+					{
+						auto n = ret->add_block(g, parent);
+						node_map[n_node.attribute("object_id").as_uint()] = n;
+						n->position = s2t<2, float>(n_node.attribute("position").value());
+					}
+					else if (name == "Input")
+					{
+						if (auto n = g->find_node("Input"_h); n)
+						{
 							node_map[n_node.attribute("object_id").as_uint()] = n;
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
-						else if (name == "Input")
+					}
+					else if (name == "Output")
+					{
+						if (auto n = g->find_node("Output"_h); n)
 						{
-							if (auto n = g->find_node("Input"_h); n)
-							{
-								node_map[n_node.attribute("object_id").as_uint()] = n;
-								n->position = s2t<2, float>(n_node.attribute("position").value());
-							}
+							node_map[n_node.attribute("object_id").as_uint()] = n;
+							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
-						else if (name == "Output")
+					}
+					else if (name == "Variable")
+					{
+						std::vector<pugi::xml_node> other_inputs;
+						uint name = 0;
+						uint location_name = 0;
+						for (auto n_input : n_node.child("inputs"))
 						{
-							if (auto n = g->find_node("Output"_h); n)
-							{
-								node_map[n_node.attribute("object_id").as_uint()] = n;
-								n->position = s2t<2, float>(n_node.attribute("position").value());
-							}
+							std::string n_input_name = n_input.attribute("name").value();
+							if (n_input_name == "Name")
+								name = n_input.attribute("value").as_uint();
+							else if (n_input_name == "Location")
+								location_name = n_input.attribute("value").as_uint();
+							else
+								other_inputs.push_back(n_input);
 						}
-						else if (name == "Variable")
+						auto n = ret->add_variable_node(g, parent, name, "get"_h, location_name);
+						if (n)
 						{
-							std::vector<pugi::xml_node> other_inputs;
-							uint name = 0;
-							uint location_name = 0;
+							node_map[n_node.attribute("object_id").as_uint()] = n;
+							n->position = s2t<2, float>(n_node.attribute("position").value());
+						}
+					}
+					else if (name == "Set Variable")
+					{
+						std::vector<pugi::xml_node> other_inputs;
+						uint name = 0;
+						uint location_name = 0;
+						for (auto n_input : n_node.child("inputs"))
+						{
+							std::string n_input_name = n_input.attribute("name").value();
+							if (n_input_name == "Name")
+								name = n_input.attribute("value").as_uint();
+							else if (n_input_name == "Location")
+								location_name = n_input.attribute("value").as_uint();
+							else
+								other_inputs.push_back(n_input);
+						}
+						auto n = ret->add_variable_node(g, parent, name, "set"_h, location_name);
+						if (n)
+						{
+							for (auto n_input : other_inputs)
+								read_input(n, n_input);
+							node_map[n_node.attribute("object_id").as_uint()] = n;
+							n->position = s2t<2, float>(n_node.attribute("position").value());
+						}
+					}
+					else if (name == "Array Size")
+					{
+						std::vector<pugi::xml_node> other_inputs;
+						uint name = 0;
+						uint location_name = 0;
+						for (auto n_input : n_node.child("inputs"))
+						{
+							std::string n_input_name = n_input.attribute("name").value();
+							if (n_input_name == "Name")
+								name = n_input.attribute("value").as_uint();
+							else if (n_input_name == "Location")
+								location_name = n_input.attribute("value").as_uint();
+							else
+								other_inputs.push_back(n_input);
+						}
+						auto n = ret->add_variable_node(g, parent, name, "array_size"_h, location_name);
+						if (n)
+						{
+							for (auto n_input : other_inputs)
+								read_input(n, n_input);
+							node_map[n_node.attribute("object_id").as_uint()] = n;
+							n->position = s2t<2, float>(n_node.attribute("position").value());
+						}
+					}
+					else if (name == "Array Clear")
+					{
+						std::vector<pugi::xml_node> other_inputs;
+						uint name = 0;
+						uint location_name = 0;
+						for (auto n_input : n_node.child("inputs"))
+						{
+							std::string n_input_name = n_input.attribute("name").value();
+							if (n_input_name == "Name")
+								name = n_input.attribute("value").as_uint();
+							else if (n_input_name == "Location")
+								location_name = n_input.attribute("value").as_uint();
+							else
+								other_inputs.push_back(n_input);
+						}
+						auto n = ret->add_variable_node(g, parent, name, "array_clear"_h, location_name);
+						if (n)
+						{
+							for (auto n_input : other_inputs)
+								read_input(n, n_input);
+							node_map[n_node.attribute("object_id").as_uint()] = n;
+							n->position = s2t<2, float>(n_node.attribute("position").value());
+						}
+					}
+					else if (name == "Array Get Item")
+					{
+						std::vector<pugi::xml_node> other_inputs;
+						uint name = 0;
+						uint location_name = 0;
+						for (auto n_input : n_node.child("inputs"))
+						{
+							std::string n_input_name = n_input.attribute("name").value();
+							if (n_input_name == "Name")
+								name = n_input.attribute("value").as_uint();
+							else if (n_input_name == "Location")
+								location_name = n_input.attribute("value").as_uint();
+							else
+								other_inputs.push_back(n_input);
+						}
+						auto n = ret->add_variable_node(g, parent, name, "array_get_item"_h, location_name);
+						if (n)
+						{
+							for (auto n_input : other_inputs)
+								read_input(n, n_input);
+							node_map[n_node.attribute("object_id").as_uint()] = n;
+							n->position = s2t<2, float>(n_node.attribute("position").value());
+						}
+					}
+					else if (name == "Array Set Item")
+					{
+						std::vector<pugi::xml_node> other_inputs;
+						uint name = 0;
+						uint location_name = 0;
+						for (auto n_input : n_node.child("inputs"))
+						{
+							std::string n_input_name = n_input.attribute("name").value();
+							if (n_input_name == "Name")
+								name = n_input.attribute("value").as_uint();
+							else if (n_input_name == "Location")
+								location_name = n_input.attribute("value").as_uint();
+							else
+								other_inputs.push_back(n_input);
+						}
+						auto n = ret->add_variable_node(g, parent, name, "array_set_item"_h, location_name);
+						if (n)
+						{
+							for (auto n_input : other_inputs)
+								read_input(n, n_input);
+							node_map[n_node.attribute("object_id").as_uint()] = n;
+							n->position = s2t<2, float>(n_node.attribute("position").value());
+						}
+					}
+					else if (name == "Array Add Item")
+					{
+						std::vector<pugi::xml_node> other_inputs;
+						uint name = 0;
+						uint location_name = 0;
+						for (auto n_input : n_node.child("inputs"))
+						{
+							std::string n_input_name = n_input.attribute("name").value();
+							if (n_input_name == "Name")
+								name = n_input.attribute("value").as_uint();
+							else if (n_input_name == "Location")
+								location_name = n_input.attribute("value").as_uint();
+							else
+								other_inputs.push_back(n_input);
+						}
+						auto n = ret->add_variable_node(g, parent, name, "array_add_item"_h, location_name);
+						if (n)
+						{
+							for (auto n_input : other_inputs)
+								read_input(n, n_input);
+							node_map[n_node.attribute("object_id").as_uint()] = n;
+							n->position = s2t<2, float>(n_node.attribute("position").value());
+						}
+					}
+					else if (name == "Call")
+					{
+						std::vector<pugi::xml_node> other_inputs;
+						uint name = 0;
+						uint location_name = 0;
+						for (auto n_input : n_node.child("inputs"))
+						{
+							std::string n_input_name = n_input.attribute("name").value();
+							if (n_input_name == "Name")
+								name = n_input.attribute("value").as_uint();
+							else if (n_input_name == "Location")
+								location_name = n_input.attribute("value").as_uint();
+							else
+								other_inputs.push_back(n_input);
+						}
+						auto n = ret->add_call_node(g, parent, name, location_name);
+						if (n)
+						{
+							for (auto n_input : other_inputs)
+								read_input(n, n_input);
+							node_map[n_node.attribute("object_id").as_uint()] = n;
+							n->position = s2t<2, float>(n_node.attribute("position").value());
+						}
+					}
+					else
+					{
+						auto n = ret->add_node(g, parent, sh(name.c_str()));
+						if (n)
+						{
 							for (auto n_input : n_node.child("inputs"))
-							{
-								std::string n_input_name = n_input.attribute("name").value();
-								if (n_input_name == "Name")
-									name = n_input.attribute("value").as_uint();
-								else if (n_input_name == "Location")
-									location_name = n_input.attribute("value").as_uint();
-								else
-									other_inputs.push_back(n_input);
-							}
-							auto n = ret->add_variable_node(g, parent, name, "get"_h, location_name);
-							if (n)
-							{
-								node_map[n_node.attribute("object_id").as_uint()] = n;
-								n->position = s2t<2, float>(n_node.attribute("position").value());
-							}
-						}
-						else if (name == "Set Variable")
-						{
-							std::vector<pugi::xml_node> other_inputs;
-							uint name = 0;
-							uint location_name = 0;
-							for (auto n_input : n_node.child("inputs"))
-							{
-								std::string n_input_name = n_input.attribute("name").value();
-								if (n_input_name == "Name")
-									name = n_input.attribute("value").as_uint();
-								else if (n_input_name == "Location")
-									location_name = n_input.attribute("value").as_uint();
-								else
-									other_inputs.push_back(n_input);
-							}
-							auto n = ret->add_variable_node(g, parent, name, "set"_h, location_name);
-							if (n)
-							{
-								for (auto n_input : other_inputs)
-									read_input(n, n_input);
-								node_map[n_node.attribute("object_id").as_uint()] = n;
-								n->position = s2t<2, float>(n_node.attribute("position").value());
-							}
-						}
-						else if (name == "Array Size")
-						{
-							std::vector<pugi::xml_node> other_inputs;
-							uint name = 0;
-							uint location_name = 0;
-							for (auto n_input : n_node.child("inputs"))
-							{
-								std::string n_input_name = n_input.attribute("name").value();
-								if (n_input_name == "Name")
-									name = n_input.attribute("value").as_uint();
-								else if (n_input_name == "Location")
-									location_name = n_input.attribute("value").as_uint();
-								else
-									other_inputs.push_back(n_input);
-							}
-							auto n = ret->add_variable_node(g, parent, name, "array_size"_h, location_name);
-							if (n)
-							{
-								for (auto n_input : other_inputs)
-									read_input(n, n_input);
-								node_map[n_node.attribute("object_id").as_uint()] = n;
-								n->position = s2t<2, float>(n_node.attribute("position").value());
-							}
-						}
-						else if (name == "Array Clear")
-						{
-							std::vector<pugi::xml_node> other_inputs;
-							uint name = 0;
-							uint location_name = 0;
-							for (auto n_input : n_node.child("inputs"))
-							{
-								std::string n_input_name = n_input.attribute("name").value();
-								if (n_input_name == "Name")
-									name = n_input.attribute("value").as_uint();
-								else if (n_input_name == "Location")
-									location_name = n_input.attribute("value").as_uint();
-								else
-									other_inputs.push_back(n_input);
-							}
-							auto n = ret->add_variable_node(g, parent, name, "array_clear"_h, location_name);
-							if (n)
-							{
-								for (auto n_input : other_inputs)
-									read_input(n, n_input);
-								node_map[n_node.attribute("object_id").as_uint()] = n;
-								n->position = s2t<2, float>(n_node.attribute("position").value());
-							}
-						}
-						else if (name == "Array Get Item")
-						{
-							std::vector<pugi::xml_node> other_inputs;
-							uint name = 0;
-							uint location_name = 0;
-							for (auto n_input : n_node.child("inputs"))
-							{
-								std::string n_input_name = n_input.attribute("name").value();
-								if (n_input_name == "Name")
-									name = n_input.attribute("value").as_uint();
-								else if (n_input_name == "Location")
-									location_name = n_input.attribute("value").as_uint();
-								else
-									other_inputs.push_back(n_input);
-							}
-							auto n = ret->add_variable_node(g, parent, name, "array_get_item"_h, location_name);
-							if (n)
-							{
-								for (auto n_input : other_inputs)
-									read_input(n, n_input);
-								node_map[n_node.attribute("object_id").as_uint()] = n;
-								n->position = s2t<2, float>(n_node.attribute("position").value());
-							}
-						}
-						else if (name == "Array Set Item")
-						{
-							std::vector<pugi::xml_node> other_inputs;
-							uint name = 0;
-							uint location_name = 0;
-							for (auto n_input : n_node.child("inputs"))
-							{
-								std::string n_input_name = n_input.attribute("name").value();
-								if (n_input_name == "Name")
-									name = n_input.attribute("value").as_uint();
-								else if (n_input_name == "Location")
-									location_name = n_input.attribute("value").as_uint();
-								else
-									other_inputs.push_back(n_input);
-							}
-							auto n = ret->add_variable_node(g, parent, name, "array_set_item"_h, location_name);
-							if (n)
-							{
-								for (auto n_input : other_inputs)
-									read_input(n, n_input);
-								node_map[n_node.attribute("object_id").as_uint()] = n;
-								n->position = s2t<2, float>(n_node.attribute("position").value());
-							}
-						}
-						else if (name == "Array Add Item")
-						{
-							std::vector<pugi::xml_node> other_inputs;
-							uint name = 0;
-							uint location_name = 0;
-							for (auto n_input : n_node.child("inputs"))
-							{
-								std::string n_input_name = n_input.attribute("name").value();
-								if (n_input_name == "Name")
-									name = n_input.attribute("value").as_uint();
-								else if (n_input_name == "Location")
-									location_name = n_input.attribute("value").as_uint();
-								else
-									other_inputs.push_back(n_input);
-							}
-							auto n = ret->add_variable_node(g, parent, name, "array_add_item"_h, location_name);
-							if (n)
-							{
-								for (auto n_input : other_inputs)
-									read_input(n, n_input);
-								node_map[n_node.attribute("object_id").as_uint()] = n;
-								n->position = s2t<2, float>(n_node.attribute("position").value());
-							}
-						}
-						else if (name == "Call")
-						{
-							std::vector<pugi::xml_node> other_inputs;
-							uint name = 0;
-							uint location_name = 0;
-							for (auto n_input : n_node.child("inputs"))
-							{
-								std::string n_input_name = n_input.attribute("name").value();
-								if (n_input_name == "Name")
-									name = n_input.attribute("value").as_uint();
-								else if (n_input_name == "Location")
-									location_name = n_input.attribute("value").as_uint();
-								else
-									other_inputs.push_back(n_input);
-							}
-							auto n = ret->add_call_node(g, parent, name, location_name);
-							if (n)
-							{
-								for (auto n_input : other_inputs)
-									read_input(n, n_input);
-								node_map[n_node.attribute("object_id").as_uint()] = n;
-								n->position = s2t<2, float>(n_node.attribute("position").value());
-							}
+								read_input(n, n_input);
+							node_map[n_node.attribute("object_id").as_uint()] = n;
+							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
 						else
-						{
-							auto n = ret->add_node(g, parent, sh(name.c_str()));
-							if (n)
-							{
-								for (auto n_input : n_node.child("inputs"))
-									read_input(n, n_input);
-								node_map[n_node.attribute("object_id").as_uint()] = n;
-								n->position = s2t<2, float>(n_node.attribute("position").value());
-							}
-							else
-								printf("cannot find node template: %s\n", name.c_str());
-						}
-					}
-					for (auto n_link : n_group.child("links"))
-					{
-						BlueprintNodePtr from_node, to_node;
-						BlueprintSlotPtr from_slot, to_slot;
-						if (auto id = n_link.attribute("from_node").as_uint(); id)
-						{
-							if (auto it = node_map.find(id); it != node_map.end())
-								from_node = it->second;
-							else
-							{
-								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-								printf("link: cannot find node: %u\n", id);
-								continue;
-							}
-						}
-						if (auto id = n_link.attribute("to_node").as_uint(); id)
-						{
-							if (auto it = node_map.find(id); it != node_map.end())
-								to_node = it->second;
-							else
-							{
-								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-								printf("link: cannot find node: %u\n", id);
-								continue;
-							}
-						}
-						if (auto name = n_link.attribute("from_slot").as_uint(); name)
-						{
-							from_slot = from_node->find_output(name);
-							if (!from_slot)
-							{
-								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-								printf("link: cannot find output: %u in node: %s\n", name, from_node->name.c_str());
-								continue;
-							}
-						}
-						if (auto name = n_link.attribute("to_slot").as_uint(); name)
-						{
-							to_slot = to_node->find_input(name);
-							if (!to_slot)
-							{
-								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-								printf("link: cannot find input: %u in node: %s\n", name, to_node->name.c_str());
-								continue;
-							}
-						}
-						ret->add_link(from_slot, to_slot);
+							printf("cannot find node template: %s\n", name.c_str());
 					}
 				}
-			}
-			else
-			{
-				ret->add_group("main");
-				ret->save(filename);
+				for (auto n_link : n_group.child("links"))
+				{
+					BlueprintNodePtr from_node, to_node;
+					BlueprintSlotPtr from_slot, to_slot;
+					if (auto id = n_link.attribute("from_node").as_uint(); id)
+					{
+						if (auto it = node_map.find(id); it != node_map.end())
+							from_node = it->second;
+						else
+						{
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+							printf("link: cannot find node: %u\n", id);
+							continue;
+						}
+					}
+					if (auto id = n_link.attribute("to_node").as_uint(); id)
+					{
+						if (auto it = node_map.find(id); it != node_map.end())
+							to_node = it->second;
+						else
+						{
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+							printf("link: cannot find node: %u\n", id);
+							continue;
+						}
+					}
+					if (auto name = n_link.attribute("from_slot").as_uint(); name)
+					{
+						from_slot = from_node->find_output(name);
+						if (!from_slot)
+						{
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+							printf("link: cannot find output: %u in node: %s\n", name, from_node->name.c_str());
+							continue;
+						}
+					}
+					if (auto name = n_link.attribute("to_slot").as_uint(); name)
+					{
+						to_slot = to_node->find_input(name);
+						if (!to_slot)
+						{
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+							printf("link: cannot find input: %u in node: %s\n", name, to_node->name.c_str());
+							continue;
+						}
+					}
+					ret->add_link(from_slot, to_slot);
+				}
 			}
 
 			ret->filename = filename;

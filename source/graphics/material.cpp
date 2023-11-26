@@ -379,6 +379,9 @@ namespace flame
 						case "Divide"_h:
 							function_str += std::format("\tv_{} = {} / {};\n", ori->outputs[0]->object_id, get_input(0), get_input(1));
 							break;
+						case "Normalize"_h:
+							function_str += std::format("\tv_{} = normalize({});\n", ori->outputs[0]->object_id, get_input(0));
+							break;
 						case "HSV Color"_h:
 							function_str += std::format("\tv_{} = hsvColor({}, {}, {}, {});\n", ori->outputs[0]->object_id, get_input(0), get_input(1), get_input(2), get_input(3));
 							break;
@@ -450,6 +453,8 @@ namespace flame
 							function_str += "\to_gbufferD = vec4(o_emissive, 0.0);\n";
 							function_str += "\t#endif\n";
 							break;
+						default:
+							assert(0);
 						}
 					}
 					for (auto& c : n.children)
