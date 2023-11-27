@@ -3,7 +3,6 @@
 #include "../../entity_private.h"
 #include "../../world_private.h"
 #include "../../components/node_private.h"
-#include "../../components/camera_private.h"
 #include "../../components/mesh_private.h"
 #include "../../components/nav_agent_private.h"
 #include "../../components/bp_instance_private.h"
@@ -486,31 +485,6 @@ namespace flame
 			}
 		);
 
-		library->add_template("World To Screen", "",
-			{
-				{
-					.name = "In",
-					.allowed_types = { TypeInfo::get<vec3>() }
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<vec2>() }
-				},
-				{
-					.name = "Clip Coord",
-					.allowed_types = { TypeInfo::get<vec3>() }
-				}
-			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				auto world_pos = *(vec3*)inputs[0].data;
-				vec3 clip_coord;
-				*(vec2*)outputs[0].data = sRenderer::instance()->render_tasks.front()->camera->world_to_screen(world_pos, &clip_coord);
-				*(vec3*)outputs[1].data = clip_coord;
-			}
-		);
-
 		library->add_template("Spawn Cube", "",
 			{
 				{
@@ -968,15 +942,15 @@ namespace flame
 				}
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto& temp_array = *(std::vector<EntityPtr>*)outputs[1].data;
 				temp_array.clear();
 				World::instance()->root->forward_traversal([&](EntityPtr e) {
 					temp_array.push_back(e);
 				});
 
-				block.max_execute_times = temp_array.size();
-				block.loop_vector_index = 2;
+				execution.block->max_execute_times = temp_array.size();
+				execution.block->loop_vector_index = 2;
 			}
 		);
 
@@ -1025,7 +999,7 @@ namespace flame
 				}
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto location = *(vec3*)inputs[1].data;
 				auto radius = *(float*)inputs[2].data;
 				auto any_filter = *(uint*)inputs[3].data;
@@ -1047,9 +1021,9 @@ namespace flame
 					temp_array[i] = (nodes_with_distance[i].second);
 				*(EntityPtr*)outputs[1].data = temp_array.empty() ? nullptr : temp_array.front();
 				*(bool*)outputs[3].data = false;
-				block.max_execute_times = temp_array.size();
-				block.loop_vector_index = 8;
-				block.block_output_index = 9;
+				execution.block->max_execute_times = temp_array.size();
+				execution.block->loop_vector_index = 8;
+				execution.block->block_output_index = 9;
 			},
 			nullptr,
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
@@ -1058,8 +1032,7 @@ namespace flame
 				{
 					auto& temp_array = *(std::vector<EntityPtr>*)outputs[2].data;
 					*(EntityPtr*)outputs[1].data = temp_array[execution.block->executed_times];
-					execution.block->child_index = 99999;
-					execution.block->max_execute_times = 0;
+					execution.block->_break();
 				}
 			}
 		);

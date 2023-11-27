@@ -3,6 +3,7 @@
 namespace flame
 {
 	void add_entity_node_templates(BlueprintNodeLibraryPtr library);
+	void add_camera_node_templates(BlueprintNodeLibraryPtr library);
 	void add_navigation_node_templates(BlueprintNodeLibraryPtr library);
 	void add_procedural_node_templates(BlueprintNodeLibraryPtr library);
 	void add_input_node_templates(BlueprintNodeLibraryPtr library);
@@ -13,6 +14,7 @@ namespace flame
 	void init_library()
 	{
 		auto entity_library = BlueprintNodeLibrary::get(L"universe::entity");
+		auto camera_library = BlueprintNodeLibrary::get(L"universe::camera");
 		auto navigation_library = BlueprintNodeLibrary::get(L"universe::navigation");
 		auto procedural_library = BlueprintNodeLibrary::get(L"universe::procedural");
 		auto input_library = BlueprintNodeLibrary::get(L"universe::input");
@@ -21,6 +23,7 @@ namespace flame
 		auto resource_library = BlueprintNodeLibrary::get(L"universe::resource");
 
 		add_entity_node_templates(entity_library);
+		add_camera_node_templates(camera_library);
 		add_navigation_node_templates(navigation_library);
 		add_procedural_node_templates(procedural_library);
 		add_input_node_templates(input_library);

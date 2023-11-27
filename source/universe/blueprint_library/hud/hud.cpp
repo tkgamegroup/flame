@@ -75,7 +75,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto pos = *(vec2*)inputs[1].data;
 				auto size = *(vec2*)inputs[2].data;
 				auto col = *(cvec4*)inputs[3].data;
@@ -85,7 +85,7 @@ namespace flame
 
 				sRenderer::instance()->hud_begin(pos, size, col, pivot, image, image_scale);
 
-				block.max_execute_times = 1;
+				execution.block->max_execute_times = 1;
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				sRenderer::instance()->hud_end();
@@ -98,10 +98,10 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				sRenderer::instance()->hud_begin_horizontal();
 
-				block.max_execute_times = 1;
+				execution.block->max_execute_times = 1;
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				sRenderer::instance()->hud_end_horizontal();
@@ -114,10 +114,10 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				sRenderer::instance()->hud_begin_stencil_write();
 
-				block.max_execute_times = 1;
+				execution.block->max_execute_times = 1;
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				sRenderer::instance()->hud_end_stencil_write();
@@ -130,10 +130,10 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				sRenderer::instance()->hud_begin_stencil_compare();
 
-				block.max_execute_times = 1;
+				execution.block->max_execute_times = 1;
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				sRenderer::instance()->hud_end_stencil_compare();
@@ -151,10 +151,10 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				sRenderer::instance()->hud_push_style(HudStyleVarWindowPadding, *(vec2*)inputs[1].data);
 
-				block.max_execute_times = 1;
+				execution.block->max_execute_times = 1;
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				sRenderer::instance()->hud_pop_style(HudStyleVarWindowPadding);
@@ -172,10 +172,10 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				sRenderer::instance()->hud_push_style(HudStyleVarItemSpacing, *(vec2*)inputs[1].data);
 
-				block.max_execute_times = 1;
+				execution.block->max_execute_times = 1;
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				sRenderer::instance()->hud_pop_style(HudStyleVarItemSpacing);
@@ -193,10 +193,10 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				sRenderer::instance()->hud_push_style(HudStyleVarScaling, *(vec2*)inputs[1].data);
 
-				block.max_execute_times = 1;
+				execution.block->max_execute_times = 1;
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				sRenderer::instance()->hud_pop_style(HudStyleVarScaling);
@@ -314,7 +314,7 @@ namespace flame
 				}
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto& label = *(std::wstring*)inputs[1].data;
 				auto font_size = *(uint*)inputs[2].data;
 				auto& image = *(graphics::ImageDesc*)inputs[3].data;
@@ -324,7 +324,7 @@ namespace flame
 
 				(*(BlueprintSignal*)outputs[1].data).v = hovered ? 1 : 0;
 
-				block.max_execute_times =  clicked ? 1 : 0;
+				execution.block->max_execute_times =  clicked ? 1 : 0;
 			}
 		);
 

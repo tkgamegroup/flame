@@ -1,4 +1,4 @@
-#include "../../foundation/blueprint.h"
+
 #include "../entity_private.h"
 #include "bp_instance_private.h"
 #include "../blueprint_library/library.h"
@@ -42,27 +42,63 @@ namespace flame
 		}
 	}
 
+	static bool run_coroutine(BlueprintInstanceGroup* g)
+	{
+		while (true)
+		{
+			if (g->wait_time > 0.f)
+			{
+				g->wait_time -= delta_time;
+				if (g->wait_time <= 0.f)
+					g->wait_time = 0.f;
+				return true;
+			}
+			if (!g->instance->step(g))
+				return false;
+		}
+		return false;
+	}
+
 	void cBpInstancePrivate::start()
 	{
 		if (bp_ins)
 		{
-			if (auto g = bp_ins->get_group("start"_h))
+			if (auto g = bp_ins->get_group("start"_h); g)
 			{
-				bp_ins->prepare_executing(g);
-				bp_ins->run(g);
+				if (g->executiona_type == BlueprintExecutionCoroutine)
+				{
+					bp_ins->prepare_executing(g);
+					if (run_coroutine(g))
+						co_routines.push_back(g);
+				}
+				else
+				{
+					bp_ins->prepare_executing(g);
+					bp_ins->run(g);
+				}
+			}
+			if (auto g = bp_ins->get_group("update"_h); g)
+			{
+				assert(g->executiona_type == BlueprintExecutionFunction);
+				update_group = g;
 			}
 		}
 	}
 
 	void cBpInstancePrivate::update()
 	{
-		if (bp_ins)
+		if (update_group)
 		{
-			if (auto g = bp_ins->get_group("update"_h); g)
-			{
-				bp_ins->prepare_executing(g);
-				bp_ins->run(g);
-			}
+			bp_ins->prepare_executing(update_group);
+			bp_ins->run(update_group);
+		}
+		for (auto it = co_routines.begin(); it != co_routines.end();)
+		{
+			auto g = *it;
+			if (!run_coroutine(g))
+				it = co_routines.erase(it);
+			else
+				it++;
 		}
 	}
 

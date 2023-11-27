@@ -23,6 +23,12 @@ namespace flame
 		return (BlueprintSlotFlags)((uint)a & (uint)b);
 	}
 
+	enum BlueprintExecutionType
+	{
+		BlueprintExecutionFunction,
+		BlueprintExecutionCoroutine
+	};
+
 	enum BlueprintBreakpointOption
 	{
 		BlueprintBreakpointNormal,
@@ -134,7 +140,7 @@ namespace flame
 
 	typedef void(*BlueprintNodeFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
 	typedef void(*BlueprintNodeLoopFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution);
-	typedef void(*BlueprintNodeBeginBlockFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block);
+	typedef void(*BlueprintNodeBeginBlockFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution);
 	typedef void(*BlueprintNodeEndBlockFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
 	typedef void(*BlueprintNodeConstructor)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
 	typedef void(*BlueprintNodeDestructor)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
@@ -500,6 +506,12 @@ namespace flame
 		uint	max_execute_times = 0;
 		int		loop_vector_index = -1; // in block node's inputs or outputs, index < inputs.size() means input, otherwise output
 		int		block_output_index = -1; // in block node's inputs or outputs, index < inputs.size() means input, otherwise output
+
+		inline void _break()
+		{
+			child_index = 99999;
+			max_execute_times = 0;
+		}
 	};
 
 	struct BlueprintInstanceGroup
@@ -518,15 +530,17 @@ namespace flame
 		std::map<uint, Data>							slot_datas; // key: slot id
 		BlueprintInstanceNode							root_node;
 		std::map<uint, BlueprintInstanceNode*>			node_map;
-		BlueprintInstanceNode* input_node = nullptr;
-		BlueprintInstanceNode* output_node = nullptr;
+		BlueprintInstanceNode*							input_node = nullptr;
+		BlueprintInstanceNode*							output_node = nullptr;
 		std::unordered_map<uint, BlueprintAttribute>	variables; // key: variable name hash
+		BlueprintExecutionType							executiona_type;
 
 		std::list<BlueprintExecutingBlock>				executing_stack;
 
 		uint											variable_updated_frame = 0;
 		uint											structure_updated_frame = 0;
 		uint											data_updated_frame = 0;
+		float											wait_time = 0.f;
 
 		template<class T>
 		inline T get_variable(uint name)
@@ -569,8 +583,8 @@ namespace flame
 		BlueprintPtr blueprint;
 		bool is_static = false;
 
-		std::unordered_map<uint, BlueprintAttribute>	variables; // key: variable name hash
-		std::unordered_map<uint, BlueprintInstanceGroup>					groups; // key: group name hash
+		std::unordered_map<uint, BlueprintAttribute>		variables; // key: variable name hash
+		std::unordered_map<uint, BlueprintInstanceGroup>	groups; // key: group name hash
 
 		uint variable_updated_frame = 0;
 		uint built_frame = 0;

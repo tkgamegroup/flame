@@ -27,6 +27,10 @@ static ImColor color_from_type(TypeInfo* type)
 		auto ti = (TypeInfo_Data*)type;
 		switch (ti->data_type)
 		{
+		case DataBool:
+			h = 300.f;
+			s = 0.5f;
+			break;
 		case DataFloat:
 			h = 120.f;
 			s = 0.5f + ti->vec_size * 0.1f;
@@ -43,6 +47,14 @@ static ImColor color_from_type(TypeInfo* type)
 				s = 0.5f + ti->vec_size * 0.1f;
 			}
 			break;
+		}
+	}
+	else
+	{
+		if (type == TypeInfo::get<EntityPtr>())
+		{
+			h = 240.f;
+			s = 0.5f;
 		}
 	}
 	auto color = rgbColor(vec3(h, s, v));
@@ -63,6 +75,7 @@ static BlueprintNodeLibraryPtr noise_library;
 static BlueprintNodeLibraryPtr texture_library;
 static BlueprintNodeLibraryPtr geometry_library;
 static BlueprintNodeLibraryPtr entity_library;
+static BlueprintNodeLibraryPtr camera_library;
 static BlueprintNodeLibraryPtr procedural_library;
 static BlueprintNodeLibraryPtr navigation_library;
 static BlueprintNodeLibraryPtr input_library;
@@ -2650,6 +2663,14 @@ void BlueprintView::on_draw()
 						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Camera"))
+					{
+						header = "Camera";
+						for (auto& t : camera_library->node_templates)
+							show_node_library_template(t);
+						if (add_node_filter.empty())
+							ImGui::EndMenu();
+					}
 					if (!add_node_filter.empty() || ImGui::BeginMenu("Navigation"))
 					{
 						header = "Navigation";
@@ -2876,6 +2897,7 @@ void BlueprintWindow::init()
 		texture_library = BlueprintNodeLibrary::get(L"graphics::texture");
 		geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
 		entity_library = BlueprintNodeLibrary::get(L"universe::entity");
+		camera_library = BlueprintNodeLibrary::get(L"universe::camera");
 		navigation_library = BlueprintNodeLibrary::get(L"universe::navigation");
 		procedural_library = BlueprintNodeLibrary::get(L"universe::procedural");
 		input_library = BlueprintNodeLibrary::get(L"universe::input");
@@ -2888,6 +2910,7 @@ void BlueprintWindow::init()
 		node_libraries.push_back(texture_library);
 		node_libraries.push_back(geometry_library);
 		node_libraries.push_back(entity_library);
+		node_libraries.push_back(camera_library);
 		node_libraries.push_back(navigation_library);
 		node_libraries.push_back(procedural_library);
 		node_libraries.push_back(input_library);

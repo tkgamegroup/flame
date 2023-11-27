@@ -119,7 +119,7 @@ namespace flame
 				}
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto array_type = inputs[1].type;
 				if (array_type && is_vector(array_type->tag))
 				{
@@ -127,12 +127,12 @@ namespace flame
 					auto item_type = array_type->get_wrapped();
 					int size = parray->size() / item_type->size;
 
-					block.max_execute_times = size;
-					block.loop_vector_index = 1;
-					block.block_output_index = 3;
+					execution.block->max_execute_times = size;
+					execution.block->loop_vector_index = 1;
+					execution.block->block_output_index = 3;
 				}
 				else
-					block.max_execute_times = 0;
+					execution.block->max_execute_times = 0;
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto& to_remove_list = *(std::vector<int>*)outputs[2].data;
@@ -191,7 +191,7 @@ namespace flame
 				}
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto array_type = inputs[1].type;
 				if (array_type && is_vector(array_type->tag))
 				{
@@ -199,12 +199,12 @@ namespace flame
 					auto item_type = array_type->get_wrapped();
 					int size = parray->size() / item_type->size;
 
-					block.max_execute_times = size;
-					block.loop_vector_index = 4;
-					block.block_output_index = 5;
+					execution.block->max_execute_times = size;
+					execution.block->loop_vector_index = 4;
+					execution.block->block_output_index = 5;
 				}
 				else
-					block.max_execute_times = 0;
+					execution.block->max_execute_times = 0;
 
 				auto& indices = *(std::vector<uint>*)outputs[1].data;
 				indices.clear();
@@ -260,7 +260,7 @@ namespace flame
 				}
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto array_type = inputs[1].type;
 				if (array_type && is_vector(array_type->tag))
 				{
@@ -268,12 +268,12 @@ namespace flame
 					auto item_type = array_type->get_wrapped();
 					int size = parray->size() / item_type->size;
 
-					block.max_execute_times = size;
-					block.loop_vector_index = 5;
-					block.block_output_index = 4;
+					execution.block->max_execute_times = size;
+					execution.block->loop_vector_index = 5;
+					execution.block->block_output_index = 4;
 				}
 				else
-					block.max_execute_times = 0;
+					execution.block->max_execute_times = 0;
 
 				auto& temp_array = *(std::vector<uint>*)outputs[3].data;
 				temp_array.clear();

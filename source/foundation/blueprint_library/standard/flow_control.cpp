@@ -66,13 +66,13 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				bool ok;
 				if (inputs[1].type == TypeInfo::get<bool>())
 					ok = *(bool*)inputs[1].data;
 				else
 					ok = (*(voidptr*)inputs[1].data) != nullptr;
-				block.max_execute_times = ok ? 1 : 0;
+				execution.block->max_execute_times = ok ? 1 : 0;
 			}
 		);
 
@@ -86,13 +86,13 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				bool ok;
 				if (inputs[1].type == TypeInfo::get<bool>())
 					ok = *(bool*)inputs[1].data;
 				else
 					ok = (*(voidptr*)inputs[1].data) != nullptr;
-				block.max_execute_times = ok ? 0 : 1;
+				execution.block->max_execute_times = ok ? 0 : 1;
 			}
 		);
 
@@ -110,13 +110,13 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
 				auto in0_p = (char*)inputs[1].data;
 				auto in1_p = (char*)inputs[2].data;
 				auto ok = in0_ti->as_float(in0_p) < in1_ti->as_float(in1_p);
-				block.max_execute_times = ok ? 1 : 0;
+				execution.block->max_execute_times = ok ? 1 : 0;
 			}
 		);
 
@@ -134,13 +134,13 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
 				auto in0_p = (char*)inputs[1].data;
 				auto in1_p = (char*)inputs[2].data;
 				auto ok = in0_ti->as_float(in0_p) > in1_ti->as_float(in1_p);
-				block.max_execute_times = ok ? 1 : 0;
+				execution.block->max_execute_times = ok ? 1 : 0;
 			}
 		);
 
@@ -158,13 +158,13 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
 				auto in0_p = (char*)inputs[1].data;
 				auto in1_p = (char*)inputs[2].data;
 				auto ok = in0_ti->as_float(in0_p) == in1_ti->as_float(in1_p);
-				block.max_execute_times = ok ? 1 : 0;
+				execution.block->max_execute_times = ok ? 1 : 0;
 			}
 		);
 
@@ -182,13 +182,13 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
 				auto in0_p = (char*)inputs[1].data;
 				auto in1_p = (char*)inputs[2].data;
 				auto ok = in0_ti->as_float(in0_p) != in1_ti->as_float(in1_p);
-				block.max_execute_times = ok ? 1 : 0;
+				execution.block->max_execute_times = ok ? 1 : 0;
 			}
 		);
 
@@ -206,13 +206,13 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
 				auto in0_p = (char*)inputs[1].data;
 				auto in1_p = (char*)inputs[2].data;
 				auto ok = in0_ti->as_float(in0_p) <= in1_ti->as_float(in1_p);
-				block.max_execute_times = ok ? 1 : 0;
+				execution.block->max_execute_times = ok ? 1 : 0;
 			}
 		);
 
@@ -230,13 +230,13 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
 				auto in0_p = (char*)inputs[1].data;
 				auto in1_p = (char*)inputs[2].data;
 				auto ok = in0_ti->as_float(in0_p) >= in1_ti->as_float(in1_p);
-				block.max_execute_times = ok ? 1 : 0;
+				execution.block->max_execute_times = ok ? 1 : 0;
 			}
 		);
 
@@ -251,8 +251,8 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
-				block.max_execute_times = *(uint*)inputs[1].data;
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				execution.block->max_execute_times = *(uint*)inputs[1].data;
 			}
 		);
 
@@ -280,16 +280,16 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto vec_type = inputs[1].type;
 				auto vec = (std::vector<char>*)inputs[1].data;
 				if (vec && is_vector(vec_type->tag))
 				{
-					block.loop_vector_index = 1;
-					block.max_execute_times = vec->size() / vec_type->get_wrapped()->size;
+					execution.block->loop_vector_index = 1;
+					execution.block->max_execute_times = vec->size() / vec_type->get_wrapped()->size;
 				}
 				else
-					block.max_execute_times = 0;
+					execution.block->max_execute_times = 0;
 			}
 		);
 
@@ -308,7 +308,7 @@ namespace flame
 				}
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto& temp_array = *(std::vector<std::filesystem::path>*)outputs[1].data;
 				temp_array.clear();
 				auto& folder = *(std::filesystem::path*)inputs[1].data;
@@ -320,8 +320,8 @@ namespace flame
 							temp_array.push_back(it.path());
 					}
 				}
-				block.loop_vector_index = 3;
-				block.max_execute_times = temp_array.size();
+				execution.block->loop_vector_index = 3;
+				execution.block->max_execute_times = temp_array.size();
 			}
 		);
 
@@ -492,8 +492,7 @@ namespace flame
 					auto block = execution.block;
 					while (block != stop_block)
 					{
-						block->child_index = 99999;
-						block->max_execute_times = 0;
+						block->_break();
 						block = block->parent;
 					}
 				}
@@ -510,15 +509,15 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto semaphore = (bool*)inputs[1].data;
 				if (*semaphore)
 				{
 					*semaphore = false;
-					block.max_execute_times = 1;
+					execution.block->max_execute_times = 1;
 				}
 				else
-					block.max_execute_times = 0;
+					execution.block->max_execute_times = 0;
 			}
 		);
 
@@ -701,7 +700,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutingBlock& block) {
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto& time = *(float*)inputs[1].data;
 				auto interval = *(float*)inputs[2].data;
 
@@ -709,10 +708,24 @@ namespace flame
 				if (time >= interval)
 				{
 					*(float*)inputs[1].data = 0.f;
-					block.max_execute_times = 1;
+					execution.block->max_execute_times = 1;
 				}
 				else
-					block.max_execute_times = 0;
+					execution.block->max_execute_times = 0;
+			}
+		);
+
+		library->add_template("Co Wait", "",
+			{
+				{
+					.name = "Time",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				execution.group->wait_time = *(float*)inputs[0].data;
 			}
 		);
 	}

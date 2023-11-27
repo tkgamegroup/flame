@@ -2609,6 +2609,8 @@ namespace flame
 		}
 
 		auto create_group_structure = [&](BlueprintGroupPtr src_g, BlueprintInstanceGroup& g, std::map<uint, BlueprintInstanceGroup::Data>& slots_data) {
+			g.executiona_type = BlueprintExecutionFunction;
+
 			// create data for group variables
 			if (src_g->variable_changed_frame > g.variable_updated_frame)
 			{
@@ -2640,6 +2642,8 @@ namespace flame
 					auto& c = rest_nodes.emplace_back();
 					c.original = n;
 					c.object_id = n->object_id;
+					if (n->name_hash == "Co Wait"_h)
+						g.executiona_type = BlueprintExecutionCoroutine;
 					create_node(n, c);
 				}
 				std::function<void(BlueprintInstanceNode&)> process_node;
@@ -3224,6 +3228,8 @@ namespace flame
 		if (built_frame < blueprint->dirty_frame)
 			build();
 
+		group->wait_time = 0.f;
+
 		if (!group->executing_stack.empty())
 		{
 			if (group->executing_stack.front().node->object_id == group->root_node.object_id)
@@ -3306,7 +3312,12 @@ namespace flame
 					BlueprintExecutingBlock new_block;
 					new_block.max_execute_times = 1;
 					if (node->begin_block_function)
-						node->begin_block_function(current_node.inputs.data(), current_node.outputs.data(), new_block);
+					{
+						BlueprintExecutionData execution_data;
+						execution_data.group = group;
+						execution_data.block = &new_block;
+						node->begin_block_function(current_node.inputs.data(), current_node.outputs.data(), execution_data);
+					}
 					if (new_block.max_execute_times > 0)
 					{
 						new_block.parent = &current_block;
@@ -3342,7 +3353,7 @@ namespace flame
 			current_block.executed_times++;
 			if (group->executing_stack.size() > 1 && // not the root block
 				current_block.executed_times < current_block.max_execute_times &&
-				!current_block.node->children.empty())
+				!current_block.node->children.empty()) // loop
 			{
 				current_block.child_index = 0;
 				break;
