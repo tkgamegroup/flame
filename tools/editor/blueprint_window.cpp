@@ -2258,7 +2258,7 @@ void BlueprintView::on_draw()
 									ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
 									if (new_node_link_slot)
-										blueprint->add_link(n->outputs.front().get(), new_node_link_slot);
+										blueprint->add_link(n->find_output(slot_name), new_node_link_slot);
 
 									unsaved = true;
 								});
@@ -2274,7 +2274,7 @@ void BlueprintView::on_draw()
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
 										if (new_node_link_slot)
-											blueprint->add_link(n->outputs.front().get(), new_node_link_slot);
+											blueprint->add_link(n->find_output(slot_name), new_node_link_slot);
 
 										unsaved = true;
 									});
