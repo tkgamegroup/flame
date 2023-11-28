@@ -673,9 +673,49 @@ void BlueprintView::on_draw()
 			ImGui::TableSetColumnIndex(0);
 			ImGui::BeginChild("side_panel", ImVec2(0, -2));
 
-			auto manipulate_value = [](TypeInfo* type, void* data) {
+			auto manipulate_value = [](TypeInfo* type, void* data, uint name = 0, uint* popup_name = nullptr) {
 				auto changed = false;
-				if (type->tag == TagD)
+				switch (type->tag)
+				{
+				case TagE:
+				{
+					auto ti = (TypeInfo_Enum*)type;
+					auto ei = ti->ei;
+					if (!ei->is_flags)
+					{
+						auto value = *(int*)data;
+						auto curr_item = ei->find_item(value);
+
+						ImGui::SetNextItemWidth(100.f);
+						if (popup_name)
+						{
+							if (ImGui::Button(curr_item ? curr_item->name.c_str() : "-"))
+								*popup_name = name;
+						}
+						else
+						{
+							if (ImGui::BeginCombo("", curr_item ? curr_item->name.c_str() : "-"))
+							{
+								for (auto& ii : ei->items)
+								{
+									if (ImGui::Selectable(ii.name.c_str()))
+									{
+										if (value != ii.value)
+										{
+											value = ii.value;
+											changed = true;
+										}
+									}
+								}
+								ImGui::EndCombo();
+							}
+							if (changed)
+								*(int*)data = value;
+						}
+					}
+				}
+					break;
+				case TagD:
 				{
 					auto ti = (TypeInfo_Data*)type;
 					switch (ti->data_type)
@@ -763,6 +803,8 @@ void BlueprintView::on_draw()
 					}
 						break;
 					}
+				}
+					break;
 				}
 				return changed;
 			};
@@ -1303,6 +1345,8 @@ void BlueprintView::on_draw()
 					}
 					ImGui::TextUnformatted(display_name.c_str());
 					ImGui::BeginGroup();
+					static uint combo_popup_name = 0;
+					static BlueprintNodePtr combo_popup_node = nullptr;
 					for (auto i = 0; i < n->inputs.size(); i++)
 					{
 						auto input = n->inputs[i].get();
@@ -1449,7 +1493,7 @@ void BlueprintView::on_draw()
 									blueprint->set_input_type(slot0, type1);
 									type1->unserialize(value1, slot0->data);
 								}
-							};
+								};
 							if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Z))
 							{
 								if (i > 0)
@@ -1471,23 +1515,31 @@ void BlueprintView::on_draw()
 								}
 							}
 						}
+
 						if (!input->is_linked())
 						{
 							if (debugging_group)
 								ImGui::BeginDisabled();
 							ImGui::PushID(input);
-							if (manipulate_value(input->type, input->data))
+							auto no_combo_popup = combo_popup_name == 0;
+							if (manipulate_value(input->type, input->data, input->name_hash, &combo_popup_name))
 							{
 								input->data_changed_frame = frame;
 								group->data_changed_frame = frame;
 								blueprint->dirty_frame = frame;
 								unsaved = true;
 							}
+							if (combo_popup_name && no_combo_popup)
+							{
+								combo_popup_node = n.get();
+								ax::NodeEditor::Suspend();
+								ImGui::OpenPopup("combo"_h);
+								ax::NodeEditor::Resume();
+							}
 							ImGui::PopID();
 							if (debugging_group)
 								ImGui::EndDisabled();
 						}
-
 					}
 					ImGui::EndGroup();
 					ImGui::SameLine(0.f, n->is_block ? 40.f : 16.f);
@@ -1584,7 +1636,7 @@ void BlueprintView::on_draw()
 
 							preview->model_previewer.update(instance_node->updated_frame);
 						}
-							break;                                                            
+							break;
 						}
 					}
 
@@ -1616,6 +1668,45 @@ void BlueprintView::on_draw()
 							dl->AddLine(c->position, vec2((p0 + p1) * 0.5f), col);
 					}
 					ax::NodeEditor::EndNode();
+
+					if (combo_popup_name)
+					{
+						if (auto input = combo_popup_node->find_input(combo_popup_name); input)
+						{
+							if (input->type->tag == TagE)
+							{
+								auto ti = (TypeInfo_Enum*)input->type;
+								auto ei = ti->ei;
+								if (!ei->is_flags)
+								{
+									auto value = *(int*)input->data;
+									ax::NodeEditor::Suspend();
+									if (ImGui::BeginPopupEx("combo"_h, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings))
+									{
+										for (auto& ii : ei->items)
+										{
+											if (ImGui::Selectable(ii.name.c_str()))
+											{
+												if (value != ii.value)
+												{
+													*(int*)input->data = ii.value;
+
+													input->data_changed_frame = frame;
+													group->data_changed_frame = frame;
+													blueprint->dirty_frame = frame;
+													unsaved = true;
+												}
+											}
+										}
+										ImGui::EndPopup();
+									}
+									else
+										combo_popup_name = 0;
+									ax::NodeEditor::Resume();
+								}
+							}
+						}
+					}
 
 					ax::NodeEditor::PopStyleColor(2);
 				}
@@ -2258,7 +2349,7 @@ void BlueprintView::on_draw()
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
 										if (new_node_link_slot)
-											blueprint->add_link(new_node_link_slot, n->inputs.front().get());
+											blueprint->add_link(new_node_link_slot, n->find_input(slot_name));
 
 										unsaved = true;
 									});

@@ -22,6 +22,11 @@ namespace flame
 
 		library->add_template("Mouse Pressed", "",
 			{
+				{
+					.name = "Button",
+					.allowed_types = { TypeInfo::get<MouseButton>() },
+					.default_value = "Left"
+				}
 			},
 			{
 				{
@@ -30,7 +35,64 @@ namespace flame
 				}
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				*(bool*)outputs[0].data = sInput::instance()->mpressed(Mouse_Left);
+				*(bool*)outputs[0].data = sInput::instance()->mpressed(*(MouseButton*)inputs[0].data);
+			}
+		);
+
+		library->add_template("Mouse Pressing", "",
+			{
+				{
+					.name = "Button",
+					.allowed_types = { TypeInfo::get<MouseButton>() },
+					.default_value = "Left"
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(bool*)outputs[0].data = sInput::instance()->mbtn[*(MouseButton*)inputs[0].data];
+			}
+		);
+
+		library->add_template("Key Pressed", "",
+			{
+				{
+					.name = "Key",
+					.allowed_types = { TypeInfo::get<KeyboardKey>() },
+					.default_value = "A"
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(bool*)outputs[0].data = sInput::instance()->kpressed(*(KeyboardKey*)inputs[0].data);
+			}
+		);
+
+		library->add_template("Key Pressing", "",
+			{
+				{
+					.name = "Key",
+					.allowed_types = { TypeInfo::get<KeyboardKey>() },
+					.default_value = "A"
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(bool*)outputs[0].data = sInput::instance()->kbtn[*(KeyboardKey*)inputs[0].data];
 			}
 		);
 	}

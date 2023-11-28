@@ -2080,6 +2080,7 @@ namespace flame
 				{
 					std::string name = n_node.attribute("name").value();
 					auto parent_id = n_node.attribute("parent_id").as_uint();
+					auto object_id = n_node.attribute("object_id").as_uint();
 					BlueprintNodePtr parent = nullptr;
 					if (parent_id != 0)
 					{
@@ -2111,14 +2112,14 @@ namespace flame
 					if (name == "Block")
 					{
 						auto n = ret->add_block(g, parent);
-						node_map[n_node.attribute("object_id").as_uint()] = n;
+						node_map[object_id] = n;
 						n->position = s2t<2, float>(n_node.attribute("position").value());
 					}
 					else if (name == "Input")
 					{
 						if (auto n = g->find_node("Input"_h); n)
 						{
-							node_map[n_node.attribute("object_id").as_uint()] = n;
+							node_map[object_id] = n;
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
 					}
@@ -2126,7 +2127,7 @@ namespace flame
 					{
 						if (auto n = g->find_node("Output"_h); n)
 						{
-							node_map[n_node.attribute("object_id").as_uint()] = n;
+							node_map[object_id] = n;
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
 					}
@@ -2148,9 +2149,11 @@ namespace flame
 						auto n = ret->add_variable_node(g, parent, name, "get"_h, location_name);
 						if (n)
 						{
-							node_map[n_node.attribute("object_id").as_uint()] = n;
+							node_map[object_id] = n;
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
+						else
+							printf("node with id %u cannot not be added\n", object_id);
 					}
 					else if (name == "Set Variable")
 					{
@@ -2172,9 +2175,11 @@ namespace flame
 						{
 							for (auto n_input : other_inputs)
 								read_input(n, n_input);
-							node_map[n_node.attribute("object_id").as_uint()] = n;
+							node_map[object_id] = n;
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
+						else
+							printf("node with id %u cannot not be added\n", object_id);
 					}
 					else if (name == "Array Size")
 					{
@@ -2196,9 +2201,11 @@ namespace flame
 						{
 							for (auto n_input : other_inputs)
 								read_input(n, n_input);
-							node_map[n_node.attribute("object_id").as_uint()] = n;
+							node_map[object_id] = n;
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
+						else
+							printf("node with id %u cannot not be added\n", object_id);
 					}
 					else if (name == "Array Clear")
 					{
@@ -2220,9 +2227,11 @@ namespace flame
 						{
 							for (auto n_input : other_inputs)
 								read_input(n, n_input);
-							node_map[n_node.attribute("object_id").as_uint()] = n;
+							node_map[object_id] = n;
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
+						else
+							printf("node with id %u cannot not be added\n", object_id);
 					}
 					else if (name == "Array Get Item")
 					{
@@ -2244,9 +2253,11 @@ namespace flame
 						{
 							for (auto n_input : other_inputs)
 								read_input(n, n_input);
-							node_map[n_node.attribute("object_id").as_uint()] = n;
+							node_map[object_id] = n;
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
+						else
+							printf("node with id %u cannot not be added\n", object_id);
 					}
 					else if (name == "Array Set Item")
 					{
@@ -2268,9 +2279,11 @@ namespace flame
 						{
 							for (auto n_input : other_inputs)
 								read_input(n, n_input);
-							node_map[n_node.attribute("object_id").as_uint()] = n;
+							node_map[object_id] = n;
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
+						else
+							printf("node with id %u cannot not be added\n", object_id);
 					}
 					else if (name == "Array Add Item")
 					{
@@ -2292,9 +2305,11 @@ namespace flame
 						{
 							for (auto n_input : other_inputs)
 								read_input(n, n_input);
-							node_map[n_node.attribute("object_id").as_uint()] = n;
+							node_map[object_id] = n;
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
+						else
+							printf("node with id %u cannot not be added\n", object_id);
 					}
 					else if (name == "Call")
 					{
@@ -2316,9 +2331,11 @@ namespace flame
 						{
 							for (auto n_input : other_inputs)
 								read_input(n, n_input);
-							node_map[n_node.attribute("object_id").as_uint()] = n;
+							node_map[object_id] = n;
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
+						else
+							printf("node with id %u cannot not be added\n", object_id);
 					}
 					else
 					{
@@ -2327,7 +2344,7 @@ namespace flame
 						{
 							for (auto n_input : n_node.child("inputs"))
 								read_input(n, n_input);
-							node_map[n_node.attribute("object_id").as_uint()] = n;
+							node_map[object_id] = n;
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
 						else

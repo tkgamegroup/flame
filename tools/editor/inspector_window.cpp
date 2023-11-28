@@ -388,9 +388,9 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		int value = *(int*)data;
 		if (!ei->is_flags)
 		{
-			value = clamp(value, 0, (int)ei->items.size() - 1);
+			auto curr_item = ei->find_item(value);
 			ImGui::SetNextItemWidth(-FLT_MIN);
-			if (ImGui::BeginCombo("", same[0] ? ei->items[value].name.c_str() : "-"))
+			if (ImGui::BeginCombo("", same[0] && curr_item ? curr_item->name.c_str() : "-"))
 			{
 				for (auto& ii : ei->items)
 				{
