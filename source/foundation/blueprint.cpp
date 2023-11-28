@@ -2088,6 +2088,7 @@ namespace flame
 							parent = it->second;
 						else
 						{
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("add node: cannot find parent with id %d\n", parent_id);
 							continue;
 						}
@@ -2107,7 +2108,10 @@ namespace flame
 								i->type->unserialize(n_input.attribute("value").value(), i->data);
 						}
 						else
+						{
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("add node: cannot find input: %s\n", name);
+						}
 						};
 					if (name == "Block")
 					{
@@ -2153,7 +2157,10 @@ namespace flame
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
 						else
+						{
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("node with id %u cannot not be added\n", object_id);
+						}
 					}
 					else if (name == "Set Variable")
 					{
@@ -2179,7 +2186,10 @@ namespace flame
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
 						else
+						{
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("node with id %u cannot not be added\n", object_id);
+						}
 					}
 					else if (name == "Array Size")
 					{
@@ -2205,7 +2215,10 @@ namespace flame
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
 						else
+						{
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("node with id %u cannot not be added\n", object_id);
+						}
 					}
 					else if (name == "Array Clear")
 					{
@@ -2231,7 +2244,10 @@ namespace flame
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
 						else
+						{
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("node with id %u cannot not be added\n", object_id);
+						}
 					}
 					else if (name == "Array Get Item")
 					{
@@ -2257,7 +2273,10 @@ namespace flame
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
 						else
+						{
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("node with id %u cannot not be added\n", object_id);
+						}
 					}
 					else if (name == "Array Set Item")
 					{
@@ -2283,7 +2302,10 @@ namespace flame
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
 						else
+						{
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("node with id %u cannot not be added\n", object_id);
+						}
 					}
 					else if (name == "Array Add Item")
 					{
@@ -2309,7 +2331,10 @@ namespace flame
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
 						else
+						{
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("node with id %u cannot not be added\n", object_id);
+						}
 					}
 					else if (name == "Call")
 					{
@@ -2335,7 +2360,10 @@ namespace flame
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
 						else
+						{
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("node with id %u cannot not be added\n", object_id);
+						}
 					}
 					else
 					{
@@ -2348,7 +2376,10 @@ namespace flame
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
 						else
-							printf("cannot find node template: %s\n", name.c_str());
+						{
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+							printf("cannot find node template: %s, id: %u\n", name.c_str(), object_id);
+						}
 					}
 				}
 				for (auto n_link : n_group.child("links"))
