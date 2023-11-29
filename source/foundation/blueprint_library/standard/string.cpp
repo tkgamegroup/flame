@@ -2,6 +2,38 @@
 #include "../../typeinfo_private.h"
 #include "../../blueprint_private.h"
 
+#include <format>
+
+template <>
+struct std::formatter<flame::BlueprintAttribute, char>
+{
+	constexpr auto parse(std::format_parse_context& ctx) const
+	{
+		return ctx.begin();
+	}
+
+	auto format(flame::BlueprintAttribute arg, std::format_context& ctx) const
+	{
+		auto str = arg.type->serialize(arg.data);
+		return std::copy(str.begin(), str.end(), ctx.out());
+	}
+};
+
+template <>
+struct std::formatter<flame::BlueprintAttribute, wchar_t>
+{
+	constexpr auto parse(std::wformat_parse_context& ctx) const
+	{
+		return ctx.begin();
+	}
+
+	auto format(flame::BlueprintAttribute arg, std::wformat_context& ctx) const
+	{
+		auto str = flame::s2w(arg.type->serialize(arg.data));
+		return std::copy(str.begin(), str.end(), ctx.out());
+	}
+};
+
 namespace flame
 {
 	void add_string_node_templates(BlueprintNodeLibraryPtr library)
@@ -218,7 +250,7 @@ namespace flame
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				*(std::wstring*)outputs[0].data = *(std::wstring*)inputs[0].data + *(std::wstring*)inputs[1].data;
 			}
-		);
+		); 
 
 		library->add_template("Format1", "",
 			{
@@ -239,10 +271,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::string*)inputs[0].data;
-				auto arg1 = inputs[1].data;
-				char buf[256];
-				sprintf_s(buf, fmt.c_str(), *(int*)arg1);
-				*(std::string*)outputs[0].data = buf;
+				*(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1]));
 			}
 		);
 
@@ -269,11 +298,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::string*)inputs[0].data;
-				auto arg1 = inputs[1].data;
-				auto arg2 = inputs[2].data;
-				char buf[256];
-				sprintf_s(buf, fmt.c_str(), *(int*)arg1, *(int*)arg2);
-				*(std::string*)outputs[0].data = buf;
+				*(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2]));
 			}
 		);
 
@@ -304,12 +329,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::string*)inputs[0].data;
-				auto arg1 = inputs[1].data;
-				auto arg2 = inputs[2].data;
-				auto arg3 = inputs[3].data;
-				char buf[256];
-				sprintf_s(buf, fmt.c_str(), *(int*)arg1, *(int*)arg2, *(int*)arg3);
-				*(std::string*)outputs[0].data = buf;
+				*(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3]));
 			}
 		);
 
@@ -344,13 +364,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::string*)inputs[0].data;
-				auto arg1 = inputs[1].data;
-				auto arg2 = inputs[2].data;
-				auto arg3 = inputs[3].data;
-				auto arg4 = inputs[4].data;
-				char buf[256];
-				sprintf_s(buf, fmt.c_str(), *(int*)arg1, *(int*)arg2, *(int*)arg3, *(int*)arg4);
-				*(std::string*)outputs[0].data = buf;
+				*(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4]));
 			}
 		);
 
@@ -373,10 +387,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::wstring*)inputs[0].data;
-				auto arg1 = inputs[1].data;
-				wchar_t buf[256];
-				swprintf_s(buf, fmt.c_str(), *(int*)arg1);
-				*(std::wstring*)outputs[0].data = buf;
+				*(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1]));
 			}
 		);
 
@@ -403,11 +414,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::wstring*)inputs[0].data;
-				auto arg1 = inputs[1].data;
-				auto arg2 = inputs[2].data;
-				wchar_t buf[256];
-				swprintf_s(buf, fmt.c_str(), *(int*)arg1, *(int*)arg2);
-				*(std::wstring*)outputs[0].data = buf;
+				*(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2]));
 			}
 		);
 
@@ -438,12 +445,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::wstring*)inputs[0].data;
-				auto arg1 = inputs[1].data;
-				auto arg2 = inputs[2].data;
-				auto arg3 = inputs[3].data;
-				wchar_t buf[256];
-				swprintf_s(buf, fmt.c_str(), *(int*)arg1, *(int*)arg2, *(int*)arg3);
-				*(std::wstring*)outputs[0].data = buf;
+				*(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3]));
 			}
 		);
 
@@ -478,13 +480,7 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::wstring*)inputs[0].data;
-				auto arg1 = inputs[1].data;
-				auto arg2 = inputs[2].data;
-				auto arg3 = inputs[3].data;
-				auto arg4 = inputs[4].data;
-				wchar_t buf[256];
-				swprintf_s(buf, fmt.c_str(), *(int*)arg1, *(int*)arg2, *(int*)arg3, *(int*)arg4);
-				*(std::wstring*)outputs[0].data = buf;
+				*(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4]));
 			}
 		);
 
