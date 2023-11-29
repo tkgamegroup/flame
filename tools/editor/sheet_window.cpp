@@ -460,7 +460,6 @@ void SheetView::on_draw()
 					{
 						auto& column = sheet->columns[i];
 						ImGui::TableSetupColumn(column.name.c_str(), ImGuiTableColumnFlags_WidthFixed, column.width);
-						column.width = ImGui::GetColumnWidth();
 					}
 					ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 80.f);
 
@@ -470,6 +469,7 @@ void SheetView::on_draw()
 						auto& column = sheet->columns[i];
 						ImGui::TableSetColumnIndex(i);
 						ImGui::TableHeader(column.name.c_str());
+						column.width = ImGui::GetContentRegionAvail().x;
 					}
 
 					for (auto i = 0; i < sheet->rows.size(); i++)

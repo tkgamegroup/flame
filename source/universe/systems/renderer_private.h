@@ -170,6 +170,7 @@ namespace flame
 		void hud_pop_style(HudStyleVar var) override;
 		void hud_begin_horizontal() override;
 		void hud_end_horizontal() override;
+		void hud_new_line() override;
 		void hud_begin_stencil_write() override;
 		void hud_end_stencil_write() override;
 		void hud_begin_stencil_compare() override;

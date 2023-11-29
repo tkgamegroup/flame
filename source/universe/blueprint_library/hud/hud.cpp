@@ -108,6 +108,16 @@ namespace flame
 			}
 		);
 
+		library->add_template("Hud New Line", "",
+			{
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				sRenderer::instance()->hud_new_line();
+			}
+		);
+
 		library->add_template("Hud Stencil Write", "",
 			{
 			},

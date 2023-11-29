@@ -284,6 +284,7 @@ namespace flame
 		virtual void hud_pop_style(HudStyleVar var) = 0;
 		virtual void hud_begin_horizontal() = 0;
 		virtual void hud_end_horizontal() = 0;
+		virtual void hud_new_line() = 0;
 		virtual void hud_begin_stencil_write() = 0;
 		virtual void hud_end_stencil_write() = 0;
 		virtual void hud_begin_stencil_compare() = 0;
