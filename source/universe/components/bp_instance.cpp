@@ -59,6 +59,17 @@ namespace flame
 		return false;
 	}
 
+	void cBpInstancePrivate::start_coroutine(BlueprintInstanceGroup* group, float delay)
+	{
+		assert(group->instance == bp_ins);
+		assert(group->executiona_type == BlueprintExecutionCoroutine);
+
+		bp_ins->prepare_executing(group);
+		group->wait_time = delay;
+		if (run_coroutine(group))
+			co_routines.push_back(group);
+	}
+
 	void cBpInstancePrivate::start()
 	{
 		if (bp_ins)
@@ -66,11 +77,7 @@ namespace flame
 			if (auto g = bp_ins->get_group("start"_h); g)
 			{
 				if (g->executiona_type == BlueprintExecutionCoroutine)
-				{
-					bp_ins->prepare_executing(g);
-					if (run_coroutine(g))
-						co_routines.push_back(g);
-				}
+					start_coroutine(g);
 				else
 				{
 					bp_ins->prepare_executing(g);

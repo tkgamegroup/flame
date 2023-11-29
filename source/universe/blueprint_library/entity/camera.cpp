@@ -86,5 +86,40 @@ namespace flame
 					*(vec3*)outputs[0].data = vec3(0.f);
 			}
 		);
+
+		library->add_template("Camera Smooth Moving", "",
+			{
+				{
+					.name = "Camera",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Target",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "current_velocity",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<vec3>() },
+					.default_value = "0,0,0"
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto camera = *(EntityPtr*)inputs[0].data;
+				auto target = *(vec3*)inputs[1].data;
+				auto& current_velocity = *(vec3*)inputs[2].data;
+				if (camera)
+				{
+					auto c_camera = camera->get_component<cCamera>();
+					if (c_camera)
+					{
+						auto node = camera->get_component<cNode>();
+						node->set_pos(smooth_damp(node->pos, target, current_velocity, 0.3f, 100.f, delta_time));
+					}
+				}
+			}
+		);
 	}
 }

@@ -1303,6 +1303,8 @@ void BlueprintView::on_draw()
 
 				auto executing_node = debugging_group ? debugging_group->executing_node() : nullptr;
 
+				static uint combo_popup_name = 0;
+				static BlueprintNodePtr combo_popup_node = nullptr;
 				for (auto& n : group->nodes)
 				{
 					if (n == group->nodes.front()) // skip root block
@@ -1345,8 +1347,6 @@ void BlueprintView::on_draw()
 					}
 					ImGui::TextUnformatted(display_name.c_str());
 					ImGui::BeginGroup();
-					static uint combo_popup_name = 0;
-					static BlueprintNodePtr combo_popup_node = nullptr;
 					for (auto i = 0; i < n->inputs.size(); i++)
 					{
 						auto input = n->inputs[i].get();
@@ -1669,46 +1669,45 @@ void BlueprintView::on_draw()
 					}
 					ax::NodeEditor::EndNode();
 
-					if (combo_popup_name)
+					ax::NodeEditor::PopStyleColor(2);
+				}
+				if (combo_popup_name)
+				{
+					if (auto input = combo_popup_node->find_input(combo_popup_name); input)
 					{
-						if (auto input = combo_popup_node->find_input(combo_popup_name); input)
+						if (input->type->tag == TagE)
 						{
-							if (input->type->tag == TagE)
+							auto ti = (TypeInfo_Enum*)input->type;
+							auto ei = ti->ei;
+							if (!ei->is_flags)
 							{
-								auto ti = (TypeInfo_Enum*)input->type;
-								auto ei = ti->ei;
-								if (!ei->is_flags)
+								auto value = *(int*)input->data;
+								ax::NodeEditor::Suspend();
+								if (ImGui::BeginPopupEx("combo"_h, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings))
 								{
-									auto value = *(int*)input->data;
-									ax::NodeEditor::Suspend();
-									if (ImGui::BeginPopupEx("combo"_h, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings))
+									for (auto& ii : ei->items)
 									{
-										for (auto& ii : ei->items)
+										if (ImGui::Selectable(ii.name.c_str()))
 										{
-											if (ImGui::Selectable(ii.name.c_str()))
+											if (value != ii.value)
 											{
-												if (value != ii.value)
-												{
-													*(int*)input->data = ii.value;
+												*(int*)input->data = ii.value;
 
-													input->data_changed_frame = frame;
-													group->data_changed_frame = frame;
-													blueprint->dirty_frame = frame;
-													unsaved = true;
-												}
+												input->data_changed_frame = frame;
+												group->data_changed_frame = frame;
+												blueprint->dirty_frame = frame;
+												unsaved = true;
 											}
 										}
-										ImGui::EndPopup();
 									}
-									else
-										combo_popup_name = 0;
-									ax::NodeEditor::Resume();
+									ImGui::EndPopup();
 								}
+								else
+									combo_popup_name = 0;
+								ax::NodeEditor::Resume();
 							}
 						}
 					}
-
-					ax::NodeEditor::PopStyleColor(2);
 				}
 
 				for (auto& l : group->links)

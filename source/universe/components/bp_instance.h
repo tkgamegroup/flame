@@ -12,6 +12,9 @@ namespace flame
 		// Reflect
 		virtual void set_bp_name(const std::filesystem::path& bp_name) = 0;
 
+		// Reflect
+		virtual void start_coroutine(BlueprintInstanceGroup* group, float delay = 0.f) = 0;
+
 		BlueprintPtr bp = nullptr;
 		BlueprintInstancePtr bp_ins = nullptr;
 
