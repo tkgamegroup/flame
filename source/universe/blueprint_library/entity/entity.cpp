@@ -437,6 +437,102 @@ namespace flame
 			}
 		);
 
+		library->add_template("Get Eul", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+				{
+					.name = "Eul",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto node = entity->get_component<cNode>();
+					*(vec3*)outputs[0].data = node ? node->get_eul() : vec3(0.f);
+				}
+				else
+					*(vec3*)outputs[0].data = vec3(0.f);
+			}
+		);
+
+		library->add_template("Set Eul", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Eul",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto node = entity->get_component<cNode>();
+					node->set_eul(*(vec3*)inputs[1].data);
+				}
+			}
+		);
+
+		library->add_template("Get Scl", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+				{
+					.name = "Scl",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto node = entity->get_component<cNode>();
+					*(vec3*)outputs[0].data = node ? node->scl : vec3(0.f);
+				}
+				else
+					*(vec3*)outputs[0].data = vec3(0.f);
+			}
+		);
+
+		library->add_template("Set Scl", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Scl",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto node = entity->get_component<cNode>();
+					node->set_scl(*(vec3*)inputs[1].data);
+				}
+			}
+		);
+
 		library->add_template("Look At", "",
 			{
 				{
@@ -730,6 +826,37 @@ namespace flame
 				}
 				else
 					*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+			}
+		);
+
+		library->add_template("Start Coroutine", "",
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Delay",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto name = *(uint*)inputs[1].data;
+					if (auto ins = entity->get_component<cBpInstance>(); ins)
+					{
+						if (auto g = ins->bp_ins->get_group(name); g)
+							ins->start_coroutine(g, *(float*)inputs[2].data);
+					}
+				}
 			}
 		);
 

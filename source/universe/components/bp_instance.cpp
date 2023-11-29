@@ -46,11 +46,16 @@ namespace flame
 	{
 		while (true)
 		{
-			if (g->wait_time > 0.f)
+			if (g->wait_time != 0.f)
 			{
-				g->wait_time -= delta_time;
-				if (g->wait_time <= 0.f)
+				if (g->wait_time == -1.f)
 					g->wait_time = 0.f;
+				else
+				{
+					g->wait_time -= delta_time;
+					if (g->wait_time <= 0.f)
+						g->wait_time = 0.f;
+				}
 				return true;
 			}
 			if (!g->instance->step(g))

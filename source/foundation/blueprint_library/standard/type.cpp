@@ -200,7 +200,7 @@ namespace flame
 					int size = parray->size() / item_type->size;
 
 					execution.block->max_execute_times = size;
-					execution.block->loop_vector_index = 4;
+					execution.block->loop_vector_index = 1;
 					execution.block->block_output_index = 5;
 				}
 				else

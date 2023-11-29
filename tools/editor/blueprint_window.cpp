@@ -1305,9 +1305,10 @@ void BlueprintView::on_draw()
 
 				static uint combo_popup_name = 0;
 				static BlueprintNodePtr combo_popup_node = nullptr;
-				for (auto& n : group->nodes)
+				for (auto& nn : group->nodes)
 				{
-					if (n == group->nodes.front()) // skip root block
+					auto n = nn.get();
+					if (n == group->nodes.front().get()) // skip root block
 						continue;
 
 					auto instance_node = instance_group.node_map[n->object_id];
@@ -1315,21 +1316,21 @@ void BlueprintView::on_draw()
 					auto display_name = n->display_name.empty() ? n->name : n->display_name;
 					auto bg_color = ax::NodeEditor::GetStyle().Colors[ax::NodeEditor::StyleColor_NodeBg];
 					auto border_color = color_from_depth(n->depth);
-					if (blueprint_window.debugger->has_break_node(n.get()))
+					if (blueprint_window.debugger->has_break_node(n))
 					{
-						if (executing_node && executing_node->original == n.get())
+						if (executing_node && executing_node->original == n)
 							bg_color = ImColor(204, 116, 45, 200);
 						else
 							bg_color = ImColor(197, 81, 89, 200);
 					}
-					else if (executing_node && executing_node->original == n.get())
+					else if (executing_node && executing_node->original == n)
 						bg_color = ImColor(211, 151, 0, 200);
 					ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_NodeBg, bg_color);
 					ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_NodeBorder, border_color);
 
-					ax::NodeEditor::BeginNode((uint64)n.get());
+					ax::NodeEditor::BeginNode((uint64)n);
 
-					if (executing_node && executing_node->original == n.get())
+					if (executing_node && executing_node->original == n)
 					{
 						vec2 pos = ImGui::GetCursorPos();
 						pos.x -= 20.f;
@@ -1531,7 +1532,7 @@ void BlueprintView::on_draw()
 							}
 							if (combo_popup_name && no_combo_popup)
 							{
-								combo_popup_node = n.get();
+								combo_popup_node = n;
 								ax::NodeEditor::Suspend();
 								ImGui::OpenPopup("combo"_h);
 								ax::NodeEditor::Resume();
@@ -1586,7 +1587,7 @@ void BlueprintView::on_draw()
 										if (ti->data_type == DataFloat || ti->data_type == DataInt)
 										{
 											auto new_node = blueprint->add_node(group, n->parent, "Decompose"_h);
-											new_node->position = n->position + vec2(ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)n.get()).x + 16.f, 0.f);
+											new_node->position = n->position + vec2(ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)n).x + 16.f, 0.f);
 											blueprint->add_link(output, new_node->find_input("V"_h));
 										}
 									}
@@ -1599,11 +1600,11 @@ void BlueprintView::on_draw()
 					if (n->preview_provider)
 					{
 						BpNodePreview* preview = nullptr;
-						if (auto it = previews.find(n.get()); it != previews.end())
+						if (auto it = previews.find(n); it != previews.end())
 							preview = &it->second;
 						else
 						{
-							preview = &previews.emplace(n.get(), BpNodePreview()).first->second;
+							preview = &previews.emplace(n, BpNodePreview()).first->second;
 							preview->model_previewer.init();
 						}
 
@@ -1649,7 +1650,7 @@ void BlueprintView::on_draw()
 							if (n->is_block)
 							{
 								auto offset = new_pos - n->position;
-								set_offset_recurisely(n.get(), offset);
+								set_offset_recurisely(n, offset);
 							}
 						}
 						n->position = new_pos;
