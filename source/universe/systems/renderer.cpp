@@ -3291,6 +3291,13 @@ namespace flame
 		return hud_last_rect;
 	}
 
+	vec2 sRendererPrivate::hud_screen_size() const
+	{
+		auto canvas = render_tasks.front()->canvas;
+
+		return canvas->size;
+	}
+
 	void sRendererPrivate::hud_push_style(HudStyleVar var, const vec2& value)
 	{
 		hud_style_vars[var].push(value);

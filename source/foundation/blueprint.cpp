@@ -2690,7 +2690,7 @@ namespace flame
 					auto& c = rest_nodes.emplace_back();
 					c.original = n;
 					c.object_id = n->object_id;
-					if (n->name_hash == "Co Wait"_h)
+					if (n->name.starts_with("Co "))
 						g.executiona_type = BlueprintExecutionCoroutine;
 					create_node(n, c);
 				}

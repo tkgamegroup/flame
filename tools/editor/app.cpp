@@ -1042,6 +1042,12 @@ void App::on_gui()
 			render_task->mode = RenderModeIBLValue;
 		if (ImGui::MenuItem("Fog Value", nullptr, render_task->mode == RenderModeFogValue))
 			render_task->mode = RenderModeFogValue;
+		if (ImGui::BeginMenu("Post-Processing"))
+		{
+			if (ImGui::MenuItem("Enable", nullptr, renderer->post_processing_enable))
+				renderer->post_processing_enable = !renderer->post_processing_enable;
+			ImGui::EndMenu();
+		}
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("Debug"))

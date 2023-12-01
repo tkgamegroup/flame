@@ -43,6 +43,20 @@ namespace flame
 			}
 		);
 
+		library->add_template("Hud Screen Size", "",
+			{
+			},
+			{
+				{
+					.name = "Size",
+					.allowed_types = { TypeInfo::get<vec2>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(vec2*)outputs[0].data = sRenderer::instance()->hud_screen_size();
+			}
+		);
+
 		library->add_template("Hud", "",
 			{
 				{

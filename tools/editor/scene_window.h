@@ -33,7 +33,7 @@ enum ToolMode
 
 struct SceneView : View
 {
-	std::unique_ptr<graphics::Image> render_tar;
+	std::unique_ptr<graphics::Image> render_target;
 
 	bool show_outline = true;
 	bool show_AABB = false;

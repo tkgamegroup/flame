@@ -210,7 +210,6 @@ namespace flame
 		{
 			std::vector<std::string> defines;
 			defines.push_back("col_fmt=" + TypeInfo::serialize_t(format));
-			defines.push_back("final_layout=ShaderReadOnly");
 			rp = Renderpass::get(L"flame\\shaders\\canvas.rp", defines);
 			defines.push_back("load_op=Load");
 			defines.push_back("initia_layout=Attachment");

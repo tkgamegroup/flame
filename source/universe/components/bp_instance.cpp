@@ -69,10 +69,25 @@ namespace flame
 		assert(group->instance == bp_ins);
 		assert(group->executiona_type == BlueprintExecutionCoroutine);
 
+		for (auto g : coroutines)
+		{
+			if (g == group)
+			{
+				printf("start_coroutine: coroutine already existed in list\n");
+				return;
+			}
+		}
+
+		if (executing_coroutines)
+		{
+			peeding_add_coroutines.push_back(group);
+			return;
+		}
+
 		bp_ins->prepare_executing(group);
 		group->wait_time = delay;
 		if (run_coroutine(group))
-			co_routines.push_back(group);
+			coroutines.push_back(group);
 	}
 
 	void cBpInstancePrivate::start()
@@ -104,14 +119,20 @@ namespace flame
 			bp_ins->prepare_executing(update_group);
 			bp_ins->run(update_group);
 		}
-		for (auto it = co_routines.begin(); it != co_routines.end();)
+
+		executing_coroutines = true;
+		for (auto it = coroutines.begin(); it != coroutines.end();)
 		{
 			auto g = *it;
 			if (!run_coroutine(g))
-				it = co_routines.erase(it);
+				it = coroutines.erase(it);
 			else
 				it++;
 		}
+		executing_coroutines = false;
+
+		for (auto g : peeding_add_coroutines)
+			start_coroutine(g);
 	}
 
 	struct cBpInstanceCreate : cBpInstance::Create

@@ -166,6 +166,7 @@ namespace flame
 		void hud_end() override;
 		void hud_set_cursor(const vec2& pos) override;
 		Rect hud_get_rect() const override;
+		vec2 hud_screen_size() const override;
 		void hud_push_style(HudStyleVar var, const vec2& value) override;
 		void hud_pop_style(HudStyleVar var) override;
 		void hud_begin_horizontal() override;

@@ -687,25 +687,26 @@ namespace flame
 		library->add_template("Timer", "",
 			{
 				{
-					.name = "Time",
-					.flags = BlueprintSlotFlagHideInUI,
-					.allowed_types = { TypeInfo::get<float>() }
-				},
-				{
 					.name = "Interval",
 					.allowed_types = { TypeInfo::get<float>() },
 					.default_value = "1"
+				},
+				{
+					.name = "t",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "0"
 				}
 			},
 			{
 			},
 			true,
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto& time = *(float*)inputs[1].data;
-				auto interval = *(float*)inputs[2].data;
+				auto interval = *(float*)inputs[1].data;
+				auto& t = *(float*)inputs[2].data;
 
-				time += delta_time;
-				if (time >= interval)
+				t += delta_time;
+				if (t >= interval)
 				{
 					*(float*)inputs[1].data = 0.f;
 					execution.block->max_execute_times = 1;
@@ -726,6 +727,42 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				execution.group->wait_time = *(float*)inputs[0].data;
+			}
+		);
+
+		library->add_template("Co Loop", "",
+			{
+				{
+					.name = "Time",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "1"
+				},
+				{
+					.name = "t",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "0"
+				}
+			},
+			{
+			},
+			true,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				execution.block->max_execute_times = std::numeric_limits<int>::max();
+			},
+			nullptr,
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				auto time = *(float*)inputs[1].data;
+				auto& t = *(float*)inputs[2].data;
+
+				t += delta_time;
+				if (t < time)
+					execution.group->wait_time = -1;
+				else
+				{
+					t = 0.f;
+					execution.block->_break();
+				}
 			}
 		);
 	}

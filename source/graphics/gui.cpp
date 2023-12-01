@@ -484,6 +484,17 @@ namespace flame
 					imgui_buf_idx.reset();
 				}
 
+				for (int n = 0; n < draw_data->CmdListsCount; n++)
+				{
+					const auto cmd_list = draw_data->CmdLists[n];
+					for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+					{
+						const auto pcmd = &cmd_list->CmdBuffer[cmd_i];
+						if (auto tex = (ImagePtr)pcmd->TextureId; tex)
+							cb->image_barrier(tex, { 0, tex->n_levels, 0, tex->n_layers }, graphics::ImageLayoutShaderReadOnly);
+					}
+				}
+
 				if (clear_fb)
 					cb->begin_renderpass(imgui_rp, curr_fb, &clear_col);
 				else
@@ -515,10 +526,10 @@ namespace flame
 				ImGui::ImageViewArguments last_view_args;
 				for (int n = 0; n < draw_data->CmdListsCount; n++)
 				{
-					const ImDrawList* cmd_list = draw_data->CmdLists[n];
+					const auto cmd_list = draw_data->CmdLists[n];
 					for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
 					{
-						const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
+						const auto pcmd = &cmd_list->CmdBuffer[cmd_i];
 
 						ImVec2 clip_min((pcmd->ClipRect.x - clip_off.x) * clip_scale.x, (pcmd->ClipRect.y - clip_off.y) * clip_scale.y);
 						ImVec2 clip_max((pcmd->ClipRect.z - clip_off.x) * clip_scale.x, (pcmd->ClipRect.w - clip_off.y) * clip_scale.y);
@@ -531,8 +542,6 @@ namespace flame
 							continue;
 
 						ImGui::ImageViewArguments view_args;
-						if (pcmd->UserCallbackData)
-							int cut = 1;
 						memcpy(&view_args, &pcmd->UserCallbackData, sizeof(view_args));
 						if (last_tex != pcmd->TextureId || last_view_args != view_args)
 						{
@@ -565,7 +574,6 @@ namespace flame
 									break;
 								}
 
-								cb->image_barrier(tex, { view_args.level, 1, view_args.layer, 1 }, graphics::ImageLayoutShaderReadOnly);
 								cb->bind_descriptor_set(0, tex->get_shader_read_src(view_args.level, view_args.layer, sampler, swizzle));
 								
 								if (!(view_args.range_min == 0 && (view_args.range_max == 0 || view_args.range_max == 15360)))

@@ -361,7 +361,10 @@ void SheetView::on_draw()
 							ImGui::PushID(i);
 							if (i > 0)
 								ImGui::SameLine();
-							ImGui::DragScalar("", ImGuiDataType_S32, &((int*)data)[i]);
+							if (ti->is_signed)
+								ImGui::DragScalar("", ImGuiDataType_S32, &((int*)data)[i]);
+							else
+								ImGui::DragScalar("", ImGuiDataType_U32, &((uint*)data)[i]);
 							changed |= ImGui::IsItemDeactivatedAfterEdit();
 							ImGui::PopID();
 							ImGui::PopItemWidth();

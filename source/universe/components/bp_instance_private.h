@@ -9,7 +9,9 @@ namespace flame
 	struct cBpInstancePrivate : cBpInstance
 	{
 		BlueprintInstanceGroup* update_group = nullptr;
-		std::vector<BlueprintInstanceGroup*> co_routines;
+		std::vector<BlueprintInstanceGroup*> coroutines;
+		bool executing_coroutines = false;
+		std::vector<BlueprintInstanceGroup*> peeding_add_coroutines;
 
 		~cBpInstancePrivate();
 

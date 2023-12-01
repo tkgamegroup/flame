@@ -280,6 +280,7 @@ namespace flame
 		virtual void hud_end() = 0;
 		virtual void hud_set_cursor(const vec2& pos) = 0;
 		virtual Rect hud_get_rect() const = 0;
+		virtual vec2 hud_screen_size() const = 0;
 		virtual void hud_push_style(HudStyleVar var, const vec2& value) = 0;
 		virtual void hud_pop_style(HudStyleVar var) = 0;
 		virtual void hud_begin_horizontal() = 0;

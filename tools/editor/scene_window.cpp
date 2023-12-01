@@ -367,21 +367,22 @@ void SceneView::on_draw()
 	auto render_target_extent = vec2(ImGui::GetContentRegionAvail());
 	if (scene_window.fixed_render_target_size)
 		render_target_extent = vec2(1280, 720);
-	if (!render_tar || vec2(render_tar->extent) != render_target_extent)
+	if (!render_target || vec2(render_target->extent) != render_target_extent)
 	{
 		add_event([this, render_target_extent]() {
 			graphics::Queue::get()->wait_idle();
 			if (render_target_extent.x > 1 && render_target_extent.y > 1)
 			{
-				render_tar.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(render_target_extent, 1),
+				render_target.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(render_target_extent, 1),
 					graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-				render_tar->change_layout(graphics::ImageLayoutShaderReadOnly);
-				auto iv = render_tar->get_view();
+				render_target->filename = L"#scene_render_target";
+				render_target->change_layout(graphics::ImageLayoutShaderReadOnly);
+				auto iv = render_target->get_view();
 				app.renderer->render_tasks.front()->set_targets({ iv });
 			}
 			else
 			{
-				render_tar.reset();
+				render_target.reset();
 				app.renderer->render_tasks.front()->set_targets({});
 			}
 			return false;
@@ -390,9 +391,9 @@ void SceneView::on_draw()
 
 	hovering_entity = nullptr;
 
-	if (render_tar)
+	if (render_target)
 	{
-		ImGui::Image(render_tar.get(), render_target_extent);
+		ImGui::Image(render_target.get(), render_target_extent);
 		auto p0 = ImGui::GetItemRectMin();
 		auto p1 = ImGui::GetItemRectMax();
 		app.input->offset = p0;
@@ -751,7 +752,7 @@ void SceneView::on_draw()
 
 				if (auto disp = (vec2)io.MouseDelta; disp.x != 0.f || disp.y != 0.f)
 				{
-					disp /= vec2(render_tar->extent);
+					disp /= vec2(render_target->extent);
 					if (!io.KeyAlt)
 					{
 						if (io.MouseDown[ImGuiMouseButton_Middle])
