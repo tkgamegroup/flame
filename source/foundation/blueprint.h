@@ -278,6 +278,8 @@ namespace flame
 		std::vector<std::unique_ptr<BlueprintNodeT>>			nodes;
 		std::vector<std::unique_ptr<BlueprintLinkT>>			links;
 
+		std::string 											trigger_message;
+
 		inline BlueprintVariable* find_variable(uint name) const
 		{
 			for (auto& v : variables)
@@ -490,6 +492,7 @@ namespace flame
 	{
 		uint									object_id;
 		BlueprintNodePtr						original;
+		BlueprintNodeDestructor					destructor;
 		std::vector<BlueprintAttribute>			inputs;
 		std::vector<BlueprintAttribute>			outputs;
 		std::vector<BlueprintInstanceNode>		children;
@@ -527,13 +530,14 @@ namespace flame
 		BlueprintGroupPtr		original;
 		uint					name;
 
+		BlueprintExecutionType							execution_type;
+		uint											trigger_message = 0;	
 		std::map<uint, Data>							slot_datas; // key: slot id
 		BlueprintInstanceNode							root_node;
 		std::map<uint, BlueprintInstanceNode*>			node_map;
 		BlueprintInstanceNode*							input_node = nullptr;
 		BlueprintInstanceNode*							output_node = nullptr;
 		std::unordered_map<uint, BlueprintAttribute>	variables; // key: variable name hash
-		BlueprintExecutionType							executiona_type;
 
 		std::list<BlueprintExecutingBlock>				executing_stack;
 
@@ -606,7 +610,7 @@ namespace flame
 
 		virtual ~BlueprintInstance() {}
 
-		inline BlueprintInstanceGroup* get_group(uint name) const
+		inline BlueprintInstanceGroup* find_group(uint name) const
 		{
 			auto it = groups.find(name);
 			if (it == groups.end())
@@ -620,6 +624,9 @@ namespace flame
 		virtual BlueprintInstanceNode* step(BlueprintInstanceGroup* group) = 0; // return: next node
 		virtual void stop(BlueprintInstanceGroup* group) = 0;
 		virtual void call(uint group_name, void** inputs, void** outputs) = 0;
+		virtual void register_group(BlueprintInstanceGroup* group) = 0;
+		virtual void unregister_group(BlueprintInstanceGroup* group) = 0;
+		virtual void broadcast(uint message) = 0;
 
 		struct Create
 		{

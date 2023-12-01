@@ -93,7 +93,12 @@ namespace flame
 		BlueprintInstanceNode* step(BlueprintInstanceGroup* group) override;
 		void stop(BlueprintInstanceGroup* group) override;
 		void call(uint group_name, void** inputs, void** outputs) override;
+		void register_group(BlueprintInstanceGroup* group) override;
+		void unregister_group(BlueprintInstanceGroup* group) override;
+		void broadcast(uint message) override;
 	};
+
+	extern std::map<uint, std::vector<BlueprintInstanceGroup*>> message_receivers;
 
 	struct BlueprintDebuggerPrivate : BlueprintDebugger
 	{

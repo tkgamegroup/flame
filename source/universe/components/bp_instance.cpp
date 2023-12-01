@@ -7,8 +7,18 @@ namespace flame
 {
 	cBpInstancePrivate::~cBpInstancePrivate()
 	{
-		if (bp_ins && !bp_ins->is_static)
-			delete bp_ins;
+		if (bp_ins)
+		{
+			// dont use static blueprints in two or more objects
+			for (auto& kv : bp_ins->groups)
+			{
+				if (kv.second.trigger_message)
+					bp_ins->unregister_group(&kv.second);
+			}
+
+			if (!bp_ins->is_static)
+				delete bp_ins;
+		}
 		if (bp)
 			Blueprint::release(bp);
 	}
@@ -21,8 +31,16 @@ namespace flame
 
 		if (bp_ins)
 		{
+			// dont use static blueprints in two or more objects
+			for (auto& kv : bp_ins->groups)
+			{
+				if (kv.second.trigger_message)
+					bp_ins->unregister_group(&kv.second);
+			}
+
 			if (!bp_ins->is_static)
 				delete bp_ins;
+
 			bp_ins = nullptr;
 		}
 		if (bp)
@@ -67,7 +85,7 @@ namespace flame
 	void cBpInstancePrivate::start_coroutine(BlueprintInstanceGroup* group, float delay)
 	{
 		assert(group->instance == bp_ins);
-		assert(group->executiona_type == BlueprintExecutionCoroutine);
+		assert(group->execution_type == BlueprintExecutionCoroutine);
 
 		for (auto g : coroutines)
 		{
@@ -94,9 +112,16 @@ namespace flame
 	{
 		if (bp_ins)
 		{
-			if (auto g = bp_ins->get_group("start"_h); g)
+			// dont use static blueprints in two or more objects
+			for (auto& kv : bp_ins->groups)
 			{
-				if (g->executiona_type == BlueprintExecutionCoroutine)
+				if (kv.second.trigger_message)
+					bp_ins->register_group(&kv.second);
+			}
+
+			if (auto g = bp_ins->find_group("start"_h); g)
+			{
+				if (g->execution_type == BlueprintExecutionCoroutine)
 					start_coroutine(g);
 				else
 				{
@@ -104,9 +129,9 @@ namespace flame
 					bp_ins->run(g);
 				}
 			}
-			if (auto g = bp_ins->get_group("update"_h); g)
+			if (auto g = bp_ins->find_group("update"_h); g)
 			{
-				assert(g->executiona_type == BlueprintExecutionFunction);
+				assert(g->execution_type == BlueprintExecutionFunction);
 				update_group = g;
 			}
 		}

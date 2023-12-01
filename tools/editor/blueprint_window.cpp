@@ -458,7 +458,7 @@ void BlueprintView::run_blueprint(BlueprintInstanceGroup* debugging_group)
 {
 	if (!debugging_group)
 	{
-		auto g = blueprint_instance->get_group(group_name_hash);
+		auto g = blueprint_instance->find_group(group_name_hash);
 		blueprint_instance->prepare_executing(g);
 		blueprint_instance->run(g);
 	}
@@ -473,7 +473,7 @@ void BlueprintView::step_blueprint(BlueprintInstanceGroup* debugging_group)
 {
 	if (!debugging_group)
 	{
-		auto g = blueprint_instance->get_group(group_name_hash);
+		auto g = blueprint_instance->find_group(group_name_hash);
 		blueprint_instance->prepare_executing(g);
 		blueprint_window.debugger->debugging = g;
 	}
@@ -655,6 +655,18 @@ void BlueprintView::on_draw()
 			group = blueprint->add_group(name);
 			group_name = group->name;
 			group_name_hash = group->name_hash;
+			unsaved = true;
+
+			if (blueprint_instance->built_frame < blueprint->dirty_frame)
+				blueprint_instance->build();
+		}
+
+		ImGui::SameLine(0.f, 50);
+		ImGui::SetNextItemWidth(100.f);
+		if (ImGui::InputText("Trigger Message", &group->trigger_message))
+		{
+			group->structure_changed_frame = frame;
+			blueprint->dirty_frame = frame;
 			unsaved = true;
 
 			if (blueprint_instance->built_frame < blueprint->dirty_frame)
@@ -1476,7 +1488,8 @@ void BlueprintView::on_draw()
 
 								if (link_output0)
 								{
-									blueprint->remove_link(group->find_link(link_output0, slot0));
+									if (auto l = group->find_link(link_output0, slot0); l)
+										blueprint->remove_link(l);
 									blueprint->add_link(link_output0, slot1);
 								}
 								else
@@ -1486,7 +1499,8 @@ void BlueprintView::on_draw()
 								}
 								if (link_output1)
 								{
-									blueprint->remove_link(group->find_link(link_output1, slot1));
+									if (auto l = group->find_link(link_output1, slot1); l)
+										blueprint->remove_link(l);
 									blueprint->add_link(link_output1, slot0);
 								}
 								else

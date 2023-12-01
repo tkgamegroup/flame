@@ -853,7 +853,7 @@ namespace flame
 					auto name = *(uint*)inputs[1].data;
 					if (auto ins = entity->get_component<cBpInstance>(); ins)
 					{
-						if (auto g = ins->bp_ins->get_group(name); g)
+						if (auto g = ins->bp_ins->find_group(name); g)
 							ins->start_coroutine(g, *(float*)inputs[2].data);
 					}
 				}

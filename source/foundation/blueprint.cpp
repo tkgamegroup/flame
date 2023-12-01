@@ -10,6 +10,8 @@ namespace flame
 	std::map<uint, std::pair<BlueprintPtr, BlueprintInstancePtr>>	named_blueprints;
 	std::vector<std::unique_ptr<BlueprintNodeLibraryT>>				loaded_libraries;
 
+	std::map<uint, std::vector<BlueprintInstanceGroup*>>			message_receivers;
+
 	struct PointerAndUint
 	{
 		void* p;
@@ -1099,7 +1101,7 @@ namespace flame
 			{
 				if (auto ins = (BlueprintInstancePtr)pau.p; ins)
 				{
-					if (auto g = ins->get_group(pau.u); g)
+					if (auto g = ins->find_group(pau.u); g)
 					{
 						std::vector<voidptr> input_args;
 						std::vector<voidptr> output_args;
@@ -1866,6 +1868,8 @@ namespace flame
 			auto n_group = n_groups.append_child("group");
 			n_group.append_attribute("object_id").set_value(g.first->object_id);
 			n_group.append_attribute("name").set_value(g.first->name.c_str());
+			if (!g.first->trigger_message.empty())
+				n_group.append_attribute("trigger_message").set_value(g.first->trigger_message.c_str());
 			if (!g.first->variables.empty())
 			{
 				auto n_variables = n_group.append_child("variables");
@@ -2062,6 +2066,9 @@ namespace flame
 			for (auto n_group : doc_root.child("groups"))
 			{
 				auto g = ret->add_group(n_group.attribute("name").value());
+
+				if (auto a = n_group.attribute("trigger_message"); a)
+					g->trigger_message = a.value();
 
 				for (auto n_variable : n_group.child("variables"))
 				{
@@ -2592,10 +2599,20 @@ namespace flame
 
 	static void destroy_instance_group(BlueprintInstanceGroup& g)
 	{
+		if (g.trigger_message)
+		{
+			if (auto it = message_receivers.find(g.trigger_message); it != message_receivers.end())
+			{
+				std::erase_if(it->second, [&](const auto& i) {
+					return i == &g;
+				});
+			}
+		}
+
 		std::function<void(BlueprintInstanceNode&)> destroy_node;
 		destroy_node = [&](BlueprintInstanceNode& n) {
-			if (n.original && n.original->destructor)
-				n.original->destructor(n.inputs.data(), n.outputs.data());
+			if (n.destructor)
+				n.destructor(n.inputs.data(), n.outputs.data());
 			for (auto& c : n.children)
 				destroy_node(c);
 		};
@@ -2657,7 +2674,16 @@ namespace flame
 		}
 
 		auto create_group_structure = [&](BlueprintGroupPtr src_g, BlueprintInstanceGroup& g, std::map<uint, BlueprintInstanceGroup::Data>& slots_data) {
-			g.executiona_type = BlueprintExecutionFunction;
+			g.execution_type = BlueprintExecutionFunction;
+			g.trigger_message = src_g->trigger_message.empty() ? 0 : sh(src_g->trigger_message.c_str());
+			// we dont register the group here, maybe some 'static' blueprints need this functionality in later development
+			//if (g.trigger_message)
+			//{
+			//	if (auto it = message_receivers.find(g.trigger_message); it != message_receivers.end())
+			//		it->second.push_back(&g);
+			//	else
+			//		message_receivers[g.trigger_message] = { &g };
+			//}
 
 			// create data for group variables
 			if (src_g->variable_changed_frame > g.variable_updated_frame)
@@ -2689,9 +2715,10 @@ namespace flame
 				{
 					auto& c = rest_nodes.emplace_back();
 					c.original = n;
+					c.destructor = n->destructor;
 					c.object_id = n->object_id;
 					if (n->name.starts_with("Co "))
-						g.executiona_type = BlueprintExecutionCoroutine;
+						g.execution_type = BlueprintExecutionCoroutine;
 					create_node(n, c);
 				}
 				std::function<void(BlueprintInstanceNode&)> process_node;
@@ -3425,7 +3452,7 @@ namespace flame
 
 	void BlueprintInstancePrivate::call(uint group_name, void** inputs, void** outputs)
 	{
-		auto g = get_group(group_name);
+		auto g = find_group(group_name);
 		if (!g)
 		{
 			printf("blueprint call: cannot find group: %d\n", group_name);
@@ -3450,6 +3477,46 @@ namespace flame
 			{
 				auto& slot = obj->inputs[i];
 				slot.type->copy(outputs[i], slot.data);
+			}
+		}
+	}
+
+	void BlueprintInstancePrivate::register_group(BlueprintInstanceGroup* group)
+	{
+		assert(group->instance == this);
+
+		if (group->trigger_message)
+		{
+			if (auto it = message_receivers.find(group->trigger_message); it != message_receivers.end())
+				it->second.push_back(group);
+			else
+				message_receivers[group->trigger_message] = { group };
+		}
+	}
+
+	void BlueprintInstancePrivate::unregister_group(BlueprintInstanceGroup* group)
+	{
+		assert(group->instance == this);
+
+		if (group->trigger_message)
+		{
+			if (auto it = message_receivers.find(group->trigger_message); it != message_receivers.end())
+			{
+				std::erase_if(it->second, [&](const auto& i) {
+					return i == group;
+				});
+			}
+		}
+	}
+
+	void BlueprintInstancePrivate::broadcast(uint message)
+	{
+		if (auto it = message_receivers.find(message); it != message_receivers.end())
+		{
+			for (auto g : it->second)
+			{
+				g->instance->prepare_executing(g);
+				g->instance->run(g);
 			}
 		}
 	}

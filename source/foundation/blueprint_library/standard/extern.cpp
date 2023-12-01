@@ -593,5 +593,26 @@ namespace flame
 				*(float*)outputs[0].data = delta_time;
 			}
 		);
+
+		library->add_template("Broadcast", "",
+			{
+				{
+					.name = "Instance",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				},
+				{
+					.name = "Message_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto instance = *(BlueprintInstancePtr*)inputs[0].data;
+				auto message = *(uint*)inputs[1].data;
+				if (instance)
+					instance->broadcast(message);
+			}
+		);
 	}
 }
