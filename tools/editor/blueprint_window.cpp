@@ -79,6 +79,7 @@ static BlueprintNodeLibraryPtr camera_library;
 static BlueprintNodeLibraryPtr procedural_library;
 static BlueprintNodeLibraryPtr navigation_library;
 static BlueprintNodeLibraryPtr input_library;
+static BlueprintNodeLibraryPtr primitive_library;
 static BlueprintNodeLibraryPtr hud_library;
 static BlueprintNodeLibraryPtr audio_library;
 static BlueprintNodeLibraryPtr resource_library;
@@ -2800,6 +2801,14 @@ void BlueprintView::on_draw()
 						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
+					if (!add_node_filter.empty() || ImGui::BeginMenu("primitive"))
+					{
+						header = "primitive";
+						for (auto& t : primitive_library->node_templates)
+							show_node_library_template(t);
+						if (add_node_filter.empty())
+							ImGui::EndMenu();
+					}
 					if (!add_node_filter.empty() || ImGui::BeginMenu("HUD"))
 					{
 						header = "HUD";
@@ -3006,6 +3015,7 @@ void BlueprintWindow::init()
 		navigation_library = BlueprintNodeLibrary::get(L"universe::navigation");
 		procedural_library = BlueprintNodeLibrary::get(L"universe::procedural");
 		input_library = BlueprintNodeLibrary::get(L"universe::input");
+		primitive_library = BlueprintNodeLibrary::get(L"universe::primitive");
 		hud_library = BlueprintNodeLibrary::get(L"universe::HUD");
 		audio_library = BlueprintNodeLibrary::get(L"universe::audio");
 		resource_library = BlueprintNodeLibrary::get(L"universe::resource");
@@ -3019,6 +3029,7 @@ void BlueprintWindow::init()
 		node_libraries.push_back(navigation_library);
 		node_libraries.push_back(procedural_library);
 		node_libraries.push_back(input_library);
+		node_libraries.push_back(primitive_library);
 		node_libraries.push_back(hud_library);
 		node_libraries.push_back(audio_library);
 		node_libraries.push_back(resource_library);

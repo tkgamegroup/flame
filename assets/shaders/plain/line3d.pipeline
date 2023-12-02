@@ -20,3 +20,14 @@ depth_test
   {dt}
 depth_write
   {dw}
+blend_options
+  enable
+    true
+  src_color
+    SrcAlpha
+  dst_color
+    OneMinusSrcAlpha
+  src_alpha
+    Zero
+  dst_alpha
+    One
