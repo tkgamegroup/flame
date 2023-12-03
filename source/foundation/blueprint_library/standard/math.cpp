@@ -897,6 +897,42 @@ namespace flame
 			nullptr
 		);
 
+		library->add_template("Length", "",
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(float*)outputs[0].data = length(*(vec3*)inputs[0].data);
+			}
+		);
+
+		library->add_template("Normalize", "",
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				*(vec3*)outputs[0].data = normalize(*(vec3*)inputs[0].data);
+			}
+		);
+
 		library->add_template("Distance", "",
 			{
 				{
@@ -919,21 +955,45 @@ namespace flame
 			}
 		);
 
-		library->add_template("Normalize", "",
+		library->add_template("Bezier", "",
+			{
+				{
+					.name = "Ctl0",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Ctl1",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Ctl2",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Ctl3",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "T",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
 			{
 				{
 					.name = "V",
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<vec3>() }
-				}
-			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
-				*(vec3*)outputs[0].data = normalize(*(vec3*)inputs[0].data);
+				auto t = *(float*)inputs[4].data;
+				auto p0 = *(vec3*)inputs[0].data;
+				auto p1 = *(vec3*)inputs[1].data;
+				auto p2 = *(vec3*)inputs[2].data;
+				auto p3 = *(vec3*)inputs[3].data;
+				auto it = 1.f - t;
+				auto it2 = it * it;
+				auto t2 = t * t;
+				*(vec3*)outputs[0].data = p0 * it2 * it + p1 * 3.f * it2 * t + p2 * 3.f * it * t2 + p3 * t2 * t;
 			}
 		);
 

@@ -34,7 +34,8 @@ namespace flame
 					return nullptr;
 				}
 
-				auto ext = filename.extension();
+				auto ext = filename.extension().wstring();
+				SUW::to_lower(ext);
 				if (ext == L".wav")
 				{
 					enum FILE_TYPE
