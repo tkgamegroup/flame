@@ -35,115 +35,7 @@ namespace flame
 
 			auto gui_idx = window->renderers.find("gui"_h);
 			window->renderers.add([this](int idx, CommandBufferPtr cb) {
-				if (idx < 0 || iv_tars.empty())
-				{
-					reset();
-					return;
-				}
-
-				buf_vtx.upload(cb);
-				buf_vtx.reset();
-				buf_idx.upload(cb);
-				buf_idx.reset();
-
-				cb->begin_debug_label("Canvas");
-				idx = fb_tars.size() > 1 ? idx : 0;
-				auto vp = Rect(vec2(0.f), iv_tars.front()->image->extent.xy());
-				cb->set_viewport_and_scissor(vp);
-				if (clear_framebuffer)
-				{
-					vec4 cvs[] = { vec4(0.4f, 0.4f, 0.58f, 1.f), vec4(0.f)};
-					cb->begin_renderpass(rp, fb_tars[idx], cvs);
-				}
-				else
-				{
-					cb->image_barrier(iv_tars[idx]->image, {}, ImageLayoutAttachment);
-					vec4 cvs[] = { vec4(0.f), vec4(0.f) };
-					cb->begin_renderpass(rp_load, fb_tars[idx], cvs);
-				}
-				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-				cb->bind_index_buffer(buf_idx.buf.get(), IndiceTypeUint);
-				cb->bind_pipeline(pl);
-				prm.pc.mark_dirty_c("translate"_h).as<vec2>() = vec2(0.f);
-				prm.pc.mark_dirty_c("scale"_h).as<vec2>() = 2.f / vp.b;
-				prm.push_constant(cb);
-				auto last_pl = pl;
-				auto idx_off = 0;
-				auto stencil_state = StencilStateNone;
-				auto curr_pl = pl;
-				auto curr_pl_sdf = pl_sdf;
-				for (auto& cmd : draw_cmds)
-				{
-					switch (cmd.type)
-					{
-					case DrawCmd::SetTranslate:
-						prm.pc.mark_dirty_c("translate"_h).as<vec2>() = cmd.data.translate;
-						prm.push_constant(cb);
-						break;
-					case DrawCmd::SetScissor:
-						if (!(cmd.data.rect == vp))
-						{
-							vp = cmd.data.rect;
-							cb->set_scissor(vp);
-						}
-						break;
-					case DrawCmd::SetStencilState:
-						if (cmd.data.stencil_state != stencil_state)
-						{
-							stencil_state = cmd.data.stencil_state;
-							switch (stencil_state)
-							{
-							case StencilStateNone:
-								curr_pl = pl;
-								curr_pl_sdf = pl_sdf;
-								break;
-							case StencilStateWrite:
-								curr_pl = pl_stencil_write;
-								curr_pl_sdf = pl_sdf_stencil_write;
-								break;
-							case StencilStateCompare:
-								curr_pl = pl_stencil_compare;
-								curr_pl_sdf = pl_sdf_stencil_compare;
-								break;
-							}
-						}
-						break;
-					case DrawCmd::Blit:
-						if (cmd.idx_cnt > 0)
-						{
-							if (last_pl != curr_pl)
-							{
-								cb->bind_pipeline(curr_pl);
-								last_pl = curr_pl;
-							}
-
-							cb->bind_descriptor_set(0, cmd.ds);
-							cb->draw_indexed(cmd.idx_cnt, idx_off, 0, 1, 0);
-							idx_off += cmd.idx_cnt;
-						}
-						break;
-					case DrawCmd::DrawSdf:
-						if (cmd.idx_cnt > 0)
-						{
-							if (last_pl != curr_pl_sdf)
-							{
-								cb->bind_pipeline(curr_pl_sdf);
-								last_pl = curr_pl_sdf;
-							}
-							prm.pc.mark_dirty_c("data"_h).as<vec4>() = vec4(1.f / cmd.data.sdf.scale / 4.f, cmd.data.sdf.thickness, cmd.data.sdf.border, 0.f);
-							prm.push_constant(cb);
-
-							cb->bind_descriptor_set(0, cmd.ds);
-							cb->draw_indexed(cmd.idx_cnt, idx_off, 0, 1, 0);
-							idx_off += cmd.idx_cnt;
-						}
-						break;
-					}
-				}
-				cb->end_renderpass();
-				cb->end_debug_label();
-
-				reset();
+				render(idx, cb);
 			}, "Canvas"_h, gui_idx != -1 ? gui_idx : -1);
 
 			create_rp(Format_R8G8B8A8_UNORM);
@@ -268,6 +160,8 @@ namespace flame
 				push_scissor(Rect(vec2(0.f), iv_tars.front()->image->extent.xy()));
 			draw_cmds.clear();
 			draw_cmds.emplace_back().ds = main_ds.get();
+			buf_vtx.reset();
+			buf_idx.reset();
 		}
 
 		CanvasPrivate::DrawCmd& CanvasPrivate::get_blit_cmd(DescriptorSetPtr ds)
@@ -673,6 +567,119 @@ namespace flame
 				vtx.uv = uvs.zy;
 			}
 			return verts;
+		}
+
+		void CanvasPrivate::render(int idx, CommandBufferPtr cb)
+		{
+			if (idx < 0 || iv_tars.empty())
+			{
+				reset();
+				return;
+			}
+
+			buf_vtx.upload(cb);
+			buf_vtx.reset();
+			buf_idx.upload(cb);
+			buf_idx.reset();
+
+			cb->begin_debug_label("Canvas");
+			idx = fb_tars.size() > 1 ? idx : 0;
+			auto vp = Rect(vec2(0.f), iv_tars.front()->image->extent.xy());
+			cb->set_viewport_and_scissor(vp);
+			if (clear_framebuffer)
+			{
+				vec4 cvs[] = { vec4(0.4f, 0.4f, 0.58f, 1.f), vec4(0.f) };
+				cb->begin_renderpass(rp, fb_tars[idx], cvs);
+			}
+			else
+			{
+				cb->image_barrier(iv_tars[idx]->image, {}, ImageLayoutAttachment);
+				vec4 cvs[] = { vec4(0.f), vec4(0.f) };
+				cb->begin_renderpass(rp_load, fb_tars[idx], cvs);
+			}
+			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+			cb->bind_index_buffer(buf_idx.buf.get(), IndiceTypeUint);
+			cb->bind_pipeline(pl);
+			prm.pc.mark_dirty_c("translate"_h).as<vec2>() = vec2(0.f);
+			prm.pc.mark_dirty_c("scale"_h).as<vec2>() = 2.f / vp.b;
+			prm.push_constant(cb);
+			auto last_pl = pl;
+			auto idx_off = 0;
+			auto stencil_state = StencilStateNone;
+			auto curr_pl = pl;
+			auto curr_pl_sdf = pl_sdf;
+			for (auto& cmd : draw_cmds)
+			{
+				switch (cmd.type)
+				{
+				case DrawCmd::SetTranslate:
+					prm.pc.mark_dirty_c("translate"_h).as<vec2>() = cmd.data.translate;
+					prm.push_constant(cb);
+					break;
+				case DrawCmd::SetScissor:
+					if (!(cmd.data.rect == vp))
+					{
+						vp = cmd.data.rect;
+						cb->set_scissor(vp);
+					}
+					break;
+				case DrawCmd::SetStencilState:
+					if (cmd.data.stencil_state != stencil_state)
+					{
+						stencil_state = cmd.data.stencil_state;
+						switch (stencil_state)
+						{
+						case StencilStateNone:
+							curr_pl = pl;
+							curr_pl_sdf = pl_sdf;
+							break;
+						case StencilStateWrite:
+							curr_pl = pl_stencil_write;
+							curr_pl_sdf = pl_sdf_stencil_write;
+							break;
+						case StencilStateCompare:
+							curr_pl = pl_stencil_compare;
+							curr_pl_sdf = pl_sdf_stencil_compare;
+							break;
+						}
+					}
+					break;
+				case DrawCmd::Blit:
+					if (cmd.idx_cnt > 0)
+					{
+						if (last_pl != curr_pl)
+						{
+							cb->bind_pipeline(curr_pl);
+							last_pl = curr_pl;
+						}
+
+						cb->bind_descriptor_set(0, cmd.ds);
+						cb->draw_indexed(cmd.idx_cnt, idx_off, 0, 1, 0);
+						idx_off += cmd.idx_cnt;
+					}
+					break;
+				case DrawCmd::DrawSdf:
+					if (cmd.idx_cnt > 0)
+					{
+						if (last_pl != curr_pl_sdf)
+						{
+							cb->bind_pipeline(curr_pl_sdf);
+							last_pl = curr_pl_sdf;
+						}
+						prm.pc.mark_dirty_c("data"_h).as<vec4>() = vec4(1.f / cmd.data.sdf.scale / 4.f, cmd.data.sdf.thickness, cmd.data.sdf.border, 0.f);
+						prm.push_constant(cb);
+
+						cb->bind_descriptor_set(0, cmd.ds);
+						cb->draw_indexed(cmd.idx_cnt, idx_off, 0, 1, 0);
+						idx_off += cmd.idx_cnt;
+					}
+					break;
+				}
+			}
+			cb->end_renderpass();
+			cb->end_debug_label();
+
+			reset();
 		}
 
 		struct CanvasCreate : Canvas::Create

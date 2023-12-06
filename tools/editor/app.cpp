@@ -1038,16 +1038,6 @@ void App::on_gui()
 			render_task->mode = RenderModeCameraLight;
 		if (ImGui::MenuItem("Wireframe", nullptr, render_task->mode == RenderModeWireframe))
 			render_task->mode = RenderModeWireframe;
-		if (ImGui::MenuItem("IBL Value", nullptr, render_task->mode == RenderModeIBLValue))
-			render_task->mode = RenderModeIBLValue;
-		if (ImGui::MenuItem("Fog Value", nullptr, render_task->mode == RenderModeFogValue))
-			render_task->mode = RenderModeFogValue;
-		if (ImGui::BeginMenu("Post-Processing"))
-		{
-			if (ImGui::MenuItem("Enable", nullptr, renderer->post_processing_enable))
-				renderer->post_processing_enable = !renderer->post_processing_enable;
-			ImGui::EndMenu();
-		}
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("Debug"))

@@ -12,9 +12,18 @@ namespace flame
 		RenderModeSimple, // forward shading, no shadows, no post-processing
 		RenderModeShaded,
 		RenderModeCameraLight,
-		RenderModeWireframe, // forward shading, wireframe, no shadows, no post-processing
-		RenderModeIBLValue, // obsoleted
-		RenderModeFogValue // obsoleted
+		RenderModeWireframe // forward shading, wireframe, no shadows, no post-processing
+	};
+
+	enum FogType
+	{
+		FogNone,
+		FogLinear,
+		FogExp,
+		FogExp2,
+		FogHeightLinear,
+		FogHeightExp,
+		FogHeightExp2
 	};
 
 	enum HudStyleVar
@@ -97,83 +106,107 @@ namespace flame
 		// Reflect
 		virtual void set_sky_maps(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map) = 0;
 		// Reflect
-		float sky_intensity = 0.f;
+		float sky_intensity = 1.f;
 		// Reflect
 		virtual void set_sky_intensity(float v) = 0;
 		// Reflect
-		vec3 fog_color = vec3(0.f);
+		FogType fog_type = FogLinear;
+		// Reflect
+		virtual void set_fog_type(FogType type) = 0;
+		// Reflect
+		float fog_density = 1.f;
+		// Reflect
+		virtual void set_fog_density(float v) = 0;
+		// Reflect
+		float fog_start = 10.f;
+		// Reflect
+		virtual void set_fog_start(float v) = 0;
+		// Reflect
+		float fog_end = 1000.f;
+		// Reflect
+		virtual void set_fog_end(float v) = 0;
+		// Reflect
+		float fog_base_height = 0.f;
+		// Reflect
+		virtual void set_fog_base_height(float v) = 0;
+		// Reflect
+		float fog_max_height = 10.f;
+		// Reflect
+		virtual void set_fog_max_height(float v) = 0;
+		// Reflect
+		vec3 fog_color = vec3(1.f);
 		// Reflect
 		virtual void set_fog_color(const vec3& color) = 0;
 		// Reflect
-		float shadow_distance = 0.f;
+		float shadow_distance = 100.f;
 		// Reflect
 		virtual void set_shadow_distance(float d) = 0;
 		// Reflect
-		uint csm_levels = 0;
+		uint csm_levels = 2;
 		// Reflect
 		virtual void set_csm_levels(uint lv) = 0;
 		// Reflect
-		float esm_factor = 0.f;
+		float esm_factor = 30.f;
 		// Reflect
 		virtual void set_esm_factor(float f) = 0;
 		// Reflect
-		float shadow_bleeding_reduction = 0.f;
+		float shadow_bleeding_reduction = 0.95f;
 		// Reflect
 		virtual void set_shadow_bleeding_reduction(float f) = 0;
 		// Reflect
-		float shadow_darkening = 0.f;
+		float shadow_darkening = 0.1f;
 		// Reflect
 		virtual void set_shadow_darkening(float f) = 0;
 		// Reflect
-		bool post_processing_enable = false;
+		bool post_processing_enable = true;
 		// Reflect
 		virtual void set_post_processing_enable(bool v) = 0;
 		// Reflect
-		bool ssao_enable = false;
+		bool ssao_enable = true;
 		// Reflect
 		virtual void set_ssao_enable(bool v) = 0;
 		// Reflect
-		float ssao_radius = 0.f;
+		float ssao_radius = 0.5f;
 		// Reflect
 		virtual void set_ssao_radius(float v) = 0;
 		// Reflect
-		float ssao_bias = 0.f;
+		float ssao_bias = 0.025f;
 		// Reflect
 		virtual void set_ssao_bias(float v) = 0;
 		// Reflect
-		float white_point = 0.f;
+		float white_point = 4.f;
 		// Reflect
 		virtual void set_white_point(float v) = 0;
 		// Reflect
-		bool bloom_enable = false;
+		bool bloom_enable = true;
 		// Reflect
 		virtual void set_bloom_enable(bool v) = 0;
 		// Reflect
-		bool ssr_enable = false;
+		bool ssr_enable = true;
 		// Reflect
 		virtual void set_ssr_enable(bool v) = 0;
 		// Reflect
-		float ssr_thickness = 0.f;
+		float ssr_thickness = 0.5f;
 		// Reflect
 		virtual void set_ssr_thickness(float v) = 0;
 		// Reflect
-		float ssr_max_distance = 0.f;
+		float ssr_max_distance = 8.f;
 		// Reflect
 		virtual void set_ssr_max_distance(float v) = 0;
 		// Reflect
-		uint ssr_max_steps = 0;
+		uint ssr_max_steps = 64;
 		// Reflect
 		virtual void set_ssr_max_steps(uint v) = 0;
 		// Reflect
-		uint ssr_binary_search_steps = 0;
+		uint ssr_binary_search_steps = 5;
 		// Reflect
 		virtual void set_ssr_binary_search_steps(uint v) = 0;
 		// Reflect
-		bool tone_mapping_enable = false;
+		bool tone_mapping_enable = true;
 		// Reflect
 		virtual void set_tone_mapping_enable(bool v) = 0;
 		// Reflect
-		float gamma = 0.f;
+		float gamma = 1.5f;
 		// Reflect
 		virtual void set_gamma(float v) = 0;
 

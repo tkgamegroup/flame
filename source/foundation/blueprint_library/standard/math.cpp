@@ -837,6 +837,31 @@ namespace flame
 			{
 				{
 					.name = "V",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto out_ti = (TypeInfo_Data*)outputs[0].type;
+				for (auto i = 0; i < out_ti->vec_size; i++)
+					*(float*)outputs[0].data = floor(*(float*)inputs[0].data);
+			},
+			nullptr,
+			nullptr,
+			[](TypeInfo** input_types, TypeInfo** output_types) {
+				*output_types = input_types[0];
+			}
+		);
+
+		library->add_template("Ceil", "",
+			{
+				{
+					.name = "V",
 					.allowed_types = generic_types
 				}
 			},
@@ -848,22 +873,8 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
-				switch (out_ti->data_type)
-				{
-				case DataFloat:
-					for (auto i = 0; i < out_ti->vec_size; i++)
-						*(float*)outputs[0].data = floor(*(float*)inputs[0].data);
-					break;
-				case DataInt:
-					for (auto i = 0; i < out_ti->vec_size; i++)
-					{
-						if (out_ti->is_signed)
-							*(int*)outputs[0].data = floor(*(int*)inputs[0].data);
-						else
-							*(uint*)outputs[0].data = floor(*(uint*)inputs[0].data);
-					}
-					break;
-				}
+				for (auto i = 0; i < out_ti->vec_size; i++)
+					*(float*)outputs[0].data = ceil(*(float*)inputs[0].data);
 			},
 			nullptr,
 			nullptr,
@@ -895,6 +906,56 @@ namespace flame
 			nullptr,
 			nullptr,
 			nullptr
+		);
+
+		library->add_template("Sign", "",
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto out_ti = (TypeInfo_Data*)outputs[0].type;
+				for (auto i = 0; i < out_ti->vec_size; i++)
+					*(float*)outputs[0].data = sign(*(float*)inputs[0].data);
+			},
+			nullptr,
+			nullptr,
+			[](TypeInfo** input_types, TypeInfo** output_types) {
+				*output_types = input_types[0];
+			}
+		);
+
+		library->add_template("Abs", "",
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>() }
+				}
+			},
+			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				auto out_ti = (TypeInfo_Data*)outputs[0].type;
+				for (auto i = 0; i < out_ti->vec_size; i++)
+					*(float*)outputs[0].data = floor(*(float*)inputs[0].data);
+			},
+			nullptr,
+			nullptr,
+			[](TypeInfo** input_types, TypeInfo** output_types) {
+				*output_types = input_types[0];
+			}
 		);
 
 		library->add_template("Length", "",

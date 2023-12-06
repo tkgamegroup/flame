@@ -34,6 +34,12 @@ layout (set = SET, binding = 0) buffer readonly Lighting
 	float esm_factor;
 	float shadow_bleeding_reduction;
 	float shadow_darkening;
+	int fog_type;
+	float fog_density;
+	float fog_start;
+	float fog_end;
+	float fog_base_height;
+	float fog_max_height;
 	vec3 fog_color;
 	uint ssr_enable;
 	float ssr_thickness;

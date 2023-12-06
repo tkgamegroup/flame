@@ -1,6 +1,14 @@
 // PBR Reference:
 // https://www.shadertoy.com/view/ld3SRr
 
+#define FOG_NONE 0
+#define FOG_LINEAR 1
+#define FOG_EXP 2
+#define FOG_EXP2 3
+#define FOG_HEIGHT_LINEAR 4
+#define FOG_HEIGHT_EXP 5
+#define FOG_HEIGHT_EXP2 6
+
 float distribution_term(vec3 N, vec3 H, float roughness)
 {
 	float NdotH = dot(N, H);
@@ -248,9 +256,44 @@ vec3 get_env(vec3 N, vec3 V, vec3 world_pos, float metallic, vec3 albedo, vec3 f
 	return diffuse + specular;
 }
 
-vec3 get_fog(vec3 color, float dist)
+vec3 get_fog(vec3 color, float dist, float h)
 {
-	return mix(color, lighting.fog_color * lighting.sky_intensity, smoothstep(0.0, camera.zFar, dist));
+	float f = 1.0;
+	if (lighting.fog_type == FOG_LINEAR)
+		f = map_01(dist, lighting.fog_start, lighting.fog_end);
+	else if (lighting.fog_type == FOG_EXP)
+	{
+		f = map_01(dist, lighting.fog_start, lighting.fog_end);
+		f = 1.0 - exp(-f);
+	}
+	else if (lighting.fog_type == FOG_EXP2)
+	{
+		f = map_01(dist, lighting.fog_start, lighting.fog_end);
+		f = 1.0 - exp(-(f * f));
+	}
+	else if (lighting.fog_type == FOG_HEIGHT_LINEAR)
+	{
+		f = map_01(dist, lighting.fog_start, lighting.fog_end);
+		float fd = 1.0 - map_01(h, lighting.fog_base_height, lighting.fog_max_height);
+		f = max(f, fd);
+	}
+	else if (lighting.fog_type == FOG_HEIGHT_EXP)
+	{
+		f = map_01(dist, lighting.fog_start, lighting.fog_end);
+		f = 1.0 - exp(-f);
+		float fd = map_01(h, lighting.fog_base_height, lighting.fog_max_height);
+		fd = exp(-fd);
+		f = max(f, fd);
+	}
+	else if (lighting.fog_type == FOG_HEIGHT_EXP2)
+	{
+		f = map_01(dist, lighting.fog_start, lighting.fog_end);
+		f = 1.0 - exp(-(f * f));
+		float fd = map_01(h, lighting.fog_base_height, lighting.fog_max_height);
+		fd = exp(-(fd * fd));
+		f = max(f, fd);
+	}
+	return mix(color, lighting.fog_color * lighting.sky_intensity, f * lighting.fog_density);
 }
 
 vec3 shading(vec3 world_pos, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness, float ao, vec3 emissive, bool receive_ssr)
@@ -263,7 +306,7 @@ vec3 shading(vec3 world_pos, vec3 N, float metallic, vec3 albedo, vec3 f0, float
 
 	ret += get_lighting(world_pos, distv, N, V, metallic, albedo, f0, roughness);
 	ret += get_env(N, V, world_pos, metallic, albedo, f0, roughness, receive_ssr);
-	ret = get_fog(ret, distv);
+	ret = get_fog(ret, distv, world_pos.y);
 #ifdef POST_SHADING_CODE
 	#include POST_SHADING_CODE
 #endif

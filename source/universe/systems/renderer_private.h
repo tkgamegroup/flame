@@ -88,6 +88,12 @@ namespace flame
 		float sky_rad_levels = 1.f;
 		void set_sky_maps(graphics::ImageViewPtr sky_map, graphics::ImageViewPtr sky_irr_map, graphics::ImageViewPtr sky_rad_map) override;
 		void set_sky_intensity(float v) override;
+		void set_fog_type(FogType type) override;
+		void set_fog_density(float v) override;
+		void set_fog_start(float v) override;
+		void set_fog_end(float v) override;
+		void set_fog_base_height(float v) override;
+		void set_fog_max_height(float v) override;
 		void set_fog_color(const vec3& color) override;
 		void set_shadow_distance(float d) override;
 		void set_csm_levels(uint lv) override;

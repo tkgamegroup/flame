@@ -570,6 +570,21 @@ void BlueprintView::on_draw()
 				}
 				return ret;
 			}
+			else if (arg.type->tag == TagU)
+			{
+				auto ui = ((TypeInfo_Udt*)arg.type)->ui;
+				if (ui)
+				{
+					std::string ret;
+					ret += '\n';
+					for (auto& vi : ui->variables)
+					{
+						ret += std::format(".{}={}", vi.name, vi.type->serialize((char*)arg.data + vi.offset));
+						ret += '\n';
+					}
+					return ret;
+				}
+			}
 			else if (is_vector(arg.type->tag))
 			{
 				auto item_type = arg.type->get_wrapped();

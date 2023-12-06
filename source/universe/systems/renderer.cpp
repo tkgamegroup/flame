@@ -351,24 +351,6 @@ namespace flame
 		case "NO_SKY"_h:
 			defines.push_back("frag:NO_SKY");
 			break;
-		case "ALBEDO_DATA"_h:
-			defines.push_back("frag:ALBEDO_DATA");
-			break;
-		case "NORMAL_DATA"_h:
-			defines.push_back("frag:NORMAL_DATA");
-			break;
-		case "METALLIC_DATA"_h:
-			defines.push_back("frag:METALLIC_DATA");
-			break;
-		case "ROUGHNESS_DATA"_h:
-			defines.push_back("frag:ROUGHNESS_DATA");
-			break;
-		case "IBL_VALUE"_h:
-			defines.push_back("frag:IBL_VALUE");
-			break;
-		case "FOG_VALUE"_h:
-			defines.push_back("frag:FOG_VALUE");
-			break;
 		}
 		combine_global_defines(defines);
 		std::sort(defines.begin(), defines.end());
@@ -712,6 +694,25 @@ namespace flame
 		auto dsl_lighting = graphics::DescriptorSetLayout::get(L"flame\\shaders\\lighting.dsl");
 		ds_lighting.reset(graphics::DescriptorSet::create(nullptr, dsl_lighting));
 		buf_lighting.create(graphics::BufferUsageStorage, dsl_lighting->get_buf_ui("Lighting"_h));
+		buf_lighting.child("sky_intensity"_h).as<float>() = sky_intensity;
+		buf_lighting.child("fog_type"_h).as<int>() = (int)fog_type;
+		buf_lighting.child("fog_density"_h).as<float>() = fog_density;
+		buf_lighting.child("fog_start"_h).as<float>() = fog_start;
+		buf_lighting.child("fog_end"_h).as<float>() = fog_end;
+		buf_lighting.child("fog_base_height"_h).as<float>() = fog_base_height;
+		buf_lighting.child("fog_max_height"_h).as<float>() = fog_max_height;
+		buf_lighting.child("fog_color"_h).as<vec3>() = fog_color;
+		buf_lighting.child("csm_levels"_h).as<uint>() = csm_levels;
+		buf_lighting.child("esm_factor"_h).as<float>() = esm_factor;
+		buf_lighting.child("shadow_bleeding_reduction"_h).as<float>() = shadow_bleeding_reduction;
+		buf_lighting.child("shadow_darkening"_h).as<float>() = shadow_darkening;
+		buf_lighting.child("ssr_enable"_h).as<int>() = ssr_enable ? 1U : 0U;
+		buf_lighting.child("ssr_thickness"_h).as<float>() = ssr_thickness;
+		buf_lighting.child("ssr_max_distance"_h).as<float>() = ssr_max_distance;
+		buf_lighting.child("ssr_max_steps"_h).as<uint>() = ssr_max_steps;
+		buf_lighting.child("ssr_binary_search_steps"_h).as<uint>() = ssr_binary_search_steps;
+		buf_lighting.mark_dirty();
+		buf_lighting.upload(cb.get());
 		dir_lights.init(buf_lighting.child_type<TI_A>("dir_lights"_h)->extent);
 		pt_lights.init(buf_lighting.child_type<TI_A>("pt_lights"_h)->extent);
 		img_shadow_depth.reset(graphics::Image::create(dep_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment));
@@ -846,27 +847,6 @@ namespace flame
 				graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressRepeat), -1);
 		}
 
-		set_sky_intensity(1.f);
-		set_fog_color(vec3(1.f));
-		set_shadow_distance(100.f);
-		set_csm_levels(2);
-		set_esm_factor(30.f);
-		set_shadow_bleeding_reduction(0.95f);
-		set_shadow_darkening(0.575f);
-		set_post_processing_enable(true);
-		set_ssao_enable(true);
-		set_ssao_radius(0.5f);
-		set_ssao_bias(0.025f);
-		set_white_point(4.f);
-		set_bloom_enable(true);
-		set_ssr_enable(true);
-		set_ssr_thickness(0.4f);
-		set_ssr_max_distance(8.f);
-		set_ssr_max_steps(64);
-		set_ssr_binary_search_steps(5);
-		set_tone_mapping_enable(true);
-		set_gamma(1.5f);
-
 		cb.excute();
 		
 		w->renderers.add([this](int img_idx, graphics::CommandBufferPtr cb) {
@@ -959,6 +939,67 @@ namespace flame
 			return;
 		sky_intensity = v;
 		buf_lighting.mark_dirty_c("sky_intensity"_h).as<float>() = sky_intensity;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_fog_type(FogType type)
+	{
+		if (fog_type == type)
+			return;
+		fog_type = type;
+		buf_lighting.mark_dirty_c("fog_type"_h).as<int>() = (int)fog_type;
+
+		dirty = true;
+	
+	}
+
+	void sRendererPrivate::set_fog_density(float v)
+	{
+		if (fog_density == v)
+			return;
+		fog_density = v;
+		buf_lighting.mark_dirty_c("fog_density"_h).as<float>() = fog_density;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_fog_start(float v)
+	{
+		if (fog_start == v)
+			return;
+		fog_start = v;
+		buf_lighting.mark_dirty_c("fog_start"_h).as<float>() = fog_start;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_fog_end(float v)
+	{
+		if (fog_end == v)
+			return;
+		fog_end = v;
+		buf_lighting.mark_dirty_c("fog_end"_h).as<float>() = fog_end;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_fog_base_height(float v)
+	{
+		if (fog_base_height == v)
+			return;
+		fog_base_height = v;
+		buf_lighting.mark_dirty_c("fog_base_height"_h).as<float>() = fog_base_height;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_fog_max_height(float v)
+	{
+		if (fog_max_height == v)
+			return;
+		fog_max_height = v;
+		buf_lighting.mark_dirty_c("fog_max_height"_h).as<float>() = fog_max_height;
 
 		dirty = true;
 	}
@@ -2364,13 +2405,6 @@ namespace flame
 					cb->image_barrier(img_last_dst, {}, graphics::ImageLayoutShaderReadOnly);
 					cb->image_barrier(img_last_dep, {}, graphics::ImageLayoutShaderReadOnly);
 
-					auto pl_mod = 0;
-					switch (mode)
-					{
-					case RenderModeIBLValue: pl_mod = "IBL_VALUE"_h; break;
-					case RenderModeFogValue: pl_mod = "FOG_VALUE"_h; break;
-					}
-
 					cb->image_barrier(render_task->img_gbufferA.get(), {}, graphics::ImageLayoutShaderReadOnly);
 					cb->image_barrier(render_task->img_gbufferB.get(), {}, graphics::ImageLayoutShaderReadOnly);
 					cb->image_barrier(render_task->img_gbufferC.get(), {}, graphics::ImageLayoutShaderReadOnly);
@@ -2378,7 +2412,7 @@ namespace flame
 					cb->image_barrier(img_dep, {}, graphics::ImageLayoutShaderReadOnly);
 					cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 					render_task->prm_deferred.bind_dss(cb);
-					cb->bind_pipeline(get_deferred_pipeline(pl_mod));
+					cb->bind_pipeline(get_deferred_pipeline());
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 				}

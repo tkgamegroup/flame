@@ -24,6 +24,7 @@
 #include <flame/universe/components/volume.h>
 #include <flame/universe/components/particle_system.h>
 #include <flame/universe/components/bp_instance.h>
+#include <flame/universe/components/world_settings.h>
 #include <flame/universe/systems/audio.h>
 
 struct StagingVector
@@ -93,6 +94,7 @@ struct EditingObjects
 		GeneralNone = -1,
 		GeneralAsset,
 		GeneralEntity,
+		GeneralSystem,
 		GeneralPrefab
 	};
 
@@ -2154,12 +2156,12 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 			{
 				if (cc.components.size() == 1)
 				{
-					auto comp_bp_ins = (cBpInstancePtr)cc.components[0];
-					if (auto bp_ins = comp_bp_ins->bp_ins; bp_ins)
+					auto comp = (cBpInstancePtr)cc.components[0];
+					if (auto bp_ins = comp->bp_ins; bp_ins)
 					{
 						if (ImGui::TreeNode("Bp Variables:"))
 						{
-							for (auto& v : comp_bp_ins->bp->variables)
+							for (auto& v : comp->bp->variables)
 							{
 								if (ImGui::TreeNode(v.name.c_str()))
 								{
@@ -2174,6 +2176,34 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 							ImGui::TreePop();
 						}
 					}
+				}
+			}
+			else if (ui.name_hash == "flame::cWorldSettings"_h)
+			{
+				if (cc.components.size() == 1)
+				{
+					auto comp = (cWorldSettingsPtr)cc.components[0];
+					for (auto& s : World::instance()->systems)
+					{
+						auto ui = find_udt(s->type_hash);
+						if (ImGui::TreeNode(ui->name.c_str()))
+						{
+							if (ImGui::BeginTableEx("inspector", "inspector"_h, 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
+							{
+								ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100);
+								ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0);
+
+								editing_objects.push(EditingObjects());
+								manipulate_udt(*ui, (voidptr*)&s, 1).first;
+								editing_objects.pop();
+
+								ImGui::EndTable();
+							}
+							ImGui::TreePop();
+						}
+					}
+					if (ImGui::Button("Save"))
+						comp->save();
 				}
 			}
 		}

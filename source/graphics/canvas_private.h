@@ -59,6 +59,8 @@ namespace flame
 			DrawVert*	add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col) override;
 			DrawVert*	add_image_stretched(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const vec2& size, const vec4& border, const cvec4& tint_col) override;
 			DrawVert*	add_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle) override;
+
+			void render(int idx, CommandBufferPtr cb);
 		};
 	}
 }

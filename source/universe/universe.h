@@ -72,7 +72,7 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cDirectionalLight);
 	FLAME_UNIVERSE_TYPE(cPointLight);
 	FLAME_UNIVERSE_TYPE(cCamera);
-	FLAME_UNIVERSE_TYPE(cRendererSettings);
+	FLAME_UNIVERSE_TYPE(cWorldSettings);
 
 	FLAME_UNIVERSE_TYPE(sInput);
 	FLAME_UNIVERSE_TYPE(sScene);
