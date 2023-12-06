@@ -10,8 +10,6 @@ namespace flame
 		if (filename == path)
 			return;
 		filename = path;
-
-		save();
 	}
 
 	void cWorldSettingsPrivate::save()
@@ -25,7 +23,7 @@ namespace flame
 		{
 			auto ui = find_udt(s->type_hash);
 			auto n = doc_root.append_child("system");
-			n.attribute("name").set_value(ui->name.c_str());
+			n.append_attribute("name").set_value(ui->name.c_str());
 			serialize_xml(*ui, s.get(), n);
 		}
 
