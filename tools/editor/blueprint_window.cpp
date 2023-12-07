@@ -619,6 +619,7 @@ void BlueprintView::on_draw()
 					group = g.get();
 					group_name = group->name;
 					group_name_hash = group->name_hash;
+					ax_node_editor->ClearSelection();
 				}
 			}
 			ImGui::EndCombo();
@@ -630,6 +631,7 @@ void BlueprintView::on_draw()
 		{
 			blueprint->alter_group(group_name_hash, group_name);
 			group_name_hash = group->name_hash;
+			ax_node_editor->ClearSelection();
 			unsaved = true;
 
 			if (blueprint_instance->built_frame < blueprint->dirty_frame)
@@ -651,6 +653,7 @@ void BlueprintView::on_draw()
 				group_name = "";
 				group_name_hash = 0;
 			}
+			ax_node_editor->ClearSelection();
 			unsaved = true;
 
 			if (blueprint_instance->built_frame < blueprint->dirty_frame)
@@ -671,6 +674,7 @@ void BlueprintView::on_draw()
 			group = blueprint->add_group(name);
 			group_name = group->name;
 			group_name_hash = group->name_hash;
+			ax_node_editor->ClearSelection();
 			unsaved = true;
 
 			if (blueprint_instance->built_frame < blueprint->dirty_frame)

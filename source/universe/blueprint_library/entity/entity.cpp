@@ -518,7 +518,7 @@ namespace flame
 				},
 				{
 					.name = "Scl",
-					.allowed_types = { TypeInfo::get<vec3>() }
+					.allowed_types = { TypeInfo::get<vec3>(), TypeInfo::get<float>() }
 				}
 			},
 			{
@@ -528,7 +528,10 @@ namespace flame
 				if (entity)
 				{
 					auto node = entity->get_component<cNode>();
-					node->set_scl(*(vec3*)inputs[1].data);
+					if (inputs[1].type == TypeInfo::get<float>())
+						node->set_scl(vec3(*(float*)inputs[1].data));
+					else
+						node->set_scl(*(vec3*)inputs[1].data);
 				}
 			}
 		);
