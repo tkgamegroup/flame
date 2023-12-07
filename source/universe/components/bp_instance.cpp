@@ -1,7 +1,6 @@
-
 #include "../entity_private.h"
 #include "bp_instance_private.h"
-#include "../blueprint_library/library.h"
+#include "../systems/renderer_private.h"
 
 namespace flame
 {
@@ -15,6 +14,9 @@ namespace flame
 				if (kv.second.trigger_message)
 					bp_ins->unregister_group(&kv.second);
 			}
+
+			if (on_gui_group)
+				sRenderer::instance()->hud_callbacks.remove((uint)this);
 
 			if (!bp_ins->is_static)
 				delete bp_ins;
@@ -133,6 +135,15 @@ namespace flame
 			{
 				assert(g->execution_type == BlueprintExecutionFunction);
 				update_group = g;
+			}
+			if (auto g = bp_ins->find_group("on_gui"_h); g)
+			{
+				assert(g->execution_type == BlueprintExecutionFunction);
+				on_gui_group = g;
+				sRenderer::instance()->hud_callbacks.add([this]() {
+					bp_ins->prepare_executing(on_gui_group);
+					bp_ins->run(on_gui_group);
+				}, (uint)this);
 			}
 		}
 	}

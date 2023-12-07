@@ -302,7 +302,7 @@ namespace flame
 			std::vector<EntityPtr> ret;
 			forward_traversal([&](EntityPtr e) {
 				ret.push_back(e);
-				});
+			});
 			return ret;
 		}
 

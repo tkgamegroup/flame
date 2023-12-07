@@ -47,11 +47,11 @@ namespace flame
 		virtual void on_child_added(EntityPtr e) {}
 		// Reflect
 		virtual void on_child_removed(EntityPtr e) {}
-
 		// Reflect
 		virtual void start() {}
 		// Reflect
 		virtual void update() {}
+
 		virtual void send_message(uint hash, void* data, uint size) {}
 	};
 }

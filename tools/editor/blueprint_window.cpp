@@ -1693,10 +1693,6 @@ void BlueprintView::on_draw()
 						auto p0 = ImGui::GetItemRectMin();
 						auto p1 = ImGui::GetItemRectMax();
 						dl->AddRectFilled(p0, p1, col);
-						col.Value.w = 0.3f;
-
-						for (auto c : n->children)
-							dl->AddLine(c->position, vec2((p0 + p1) * 0.5f), col);
 					}
 					ax::NodeEditor::EndNode();
 
@@ -1743,6 +1739,18 @@ void BlueprintView::on_draw()
 
 				for (auto& l : group->links)
 					ax::NodeEditor::Link((uint64)l.get(), (uint64)l->from_slot, (uint64)l->to_slot);
+
+				for (auto n : get_selected_nodes())
+				{
+					if (n->depth > 1)
+					{
+						auto col = color_from_depth(n->depth);
+						auto& parent_rect = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n->parent)->m_Bounds;
+						col.Value.w = 0.3f;
+
+						dl->AddLine(n->position, vec2((parent_rect.Min.x + parent_rect.Max.x) * 0.5f, parent_rect.Max.y), col);
+					}
+				}
 
 				auto mouse_pos = ImGui::GetMousePos();
 				static vec2				open_popup_pos;

@@ -2580,6 +2580,15 @@ void InspectorView::on_draw()
 				if (inspected_obj)
 				{
 					auto model = (graphics::ModelPtr)inspected_obj;
+					auto total_vertex_count = 0;
+					auto total_index_count = 0;
+					for (auto& mesh : model->meshes)
+					{
+						total_vertex_count += mesh.positions.size();
+						total_index_count += mesh.indices.size();
+					}
+					ImGui::Text("Total Vertex Count: %d", total_vertex_count);
+					ImGui::Text("Total Index Count: %d", total_index_count);
 					auto i = 0;
 					for (auto& mesh : model->meshes)
 					{

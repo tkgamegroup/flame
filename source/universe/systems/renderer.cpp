@@ -1960,6 +1960,8 @@ namespace flame
 			return;
 		}
 
+		hud_callbacks.call();
+
 		auto first = true;
 		for (auto& render_task : render_tasks)
 		{
