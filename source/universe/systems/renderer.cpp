@@ -67,6 +67,7 @@ namespace flame
 	graphics::RenderpassPtr rp_fwd = nullptr;
 	graphics::RenderpassPtr rp_fwd_clear = nullptr;
 	graphics::RenderpassPtr rp_gbuf = nullptr;
+	graphics::RenderpassPtr rp_dst = nullptr;
 	graphics::RenderpassPtr rp_dep = nullptr;
 	graphics::RenderpassPtr rp_col_dep = nullptr;
 	graphics::RenderpassPtr rp_esm = nullptr;
@@ -93,6 +94,7 @@ namespace flame
 	graphics::PipelineLayoutPtr pll_deferred = nullptr;
 	// Generic Pipelines
 	graphics::GraphicsPipelinePtr pl_blit = nullptr;
+	graphics::GraphicsPipelinePtr pl_blit_blend = nullptr;
 	graphics::GraphicsPipelinePtr pl_blit_dep = nullptr;
 	graphics::GraphicsPipelinePtr pl_add = nullptr;
 	graphics::GraphicsPipelinePtr pl_blend = nullptr;
@@ -118,11 +120,18 @@ namespace flame
 	// Deferred Shading Pipelines With Different Modifiers
 	std::unordered_map<uint, graphics::GraphicsPipelinePtr> pls_deferred;
 	// Post-Processing Pipelines
+	graphics::GraphicsPipelinePtr				pl_down_sample;
+	graphics::GraphicsPipelinePtr				pl_up_sample;
+	graphics::GraphicsPipelinePtr				pl_down_sample_depth;
+	graphics::GraphicsPipelinePtr				pl_up_sample_depth;
+	graphics::PipelineResourceManager			prm_box;
+	graphics::GraphicsPipelinePtr				pl_outline_pp;
+	graphics::PipelineResourceManager			prm_outline_pp;
+	std::vector<
+	 std::unique_ptr<graphics::DescriptorSet>>	dss_outline_pp;
 	graphics::ComputePipelinePtr				pl_luma_hist;
 	graphics::ComputePipelinePtr				pl_luma_avg;
 	graphics::GraphicsPipelinePtr				pl_bloom_bright;
-	graphics::GraphicsPipelinePtr				pl_bloom_down_sample;
-	graphics::GraphicsPipelinePtr				pl_bloom_up_sample;
 	graphics::PipelineResourceManager			prm_bloom;
 	graphics::GraphicsPipelinePtr				pl_blur_h;
 	graphics::GraphicsPipelinePtr				pl_blur_v;
@@ -495,7 +504,7 @@ namespace flame
 		img_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
 		img_dst->filename = L"#img_dst";
 		graphics_device->set_object_debug_name(img_dst.get(), "Dst");
-		img_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+		img_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 0));
 		img_dep->filename = L"#img_dep";
 		graphics_device->set_object_debug_name(img_dep.get(), "Dep");
 
@@ -518,7 +527,7 @@ namespace flame
 			img_gbufferA.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
 			img_gbufferA->filename = L"#img_gbufferA";
 			graphics_device->set_object_debug_name(img_gbufferA.get(), "GBufferA");
-			img_gbufferB.reset(graphics::Image::create(graphics::Format_A2R10G10B10_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+			img_gbufferB.reset(graphics::Image::create(graphics::Format_A2R10G10B10_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 0));
 			img_gbufferB->filename = L"#img_gbufferB";
 			graphics_device->set_object_debug_name(img_gbufferB.get(), "GBufferB");
 			img_gbufferC.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
@@ -557,6 +566,18 @@ namespace flame
 			ds_deferred->set_image("img_gbufferC"_h, 0, img_gbufferC->get_view(), nullptr);
 			ds_deferred->set_image("img_gbufferD"_h, 0, img_gbufferD->get_view(), nullptr);
 			ds_deferred->update();
+		}
+
+		if (mode != RenderModeSimple)
+		{
+			dss_outline_pp.resize(img_dep->n_levels);
+			for (auto i = 0; i < img_dep->n_levels; i++)
+			{
+				dss_outline_pp[i].reset(graphics::DescriptorSet::create(nullptr, prm_outline_pp.pll->dsls.back()));
+				dss_outline_pp[i]->set_image("img_depth"_h, 0, img_dep->get_view({ (uint)i }), nullptr);
+				dss_outline_pp[i]->set_image("img_normal"_h, 0, img_gbufferB->get_view({ (uint)i }), nullptr);
+				dss_outline_pp[i]->update();
+			}
 		}
 
 		if (mode != RenderModeSimple)
@@ -624,6 +645,8 @@ namespace flame
 			  "load_op=" + TypeInfo::serialize_t(graphics::AttachmentLoadClear) });
 		rp_gbuf = graphics::Renderpass::get(L"flame\\shaders\\gbuffer.rp",
 			{ "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
+		rp_dst = graphics::Renderpass::get(L"flame\\shaders\\color.rp",
+			{ "col_fmt=" + TypeInfo::serialize_t(col_fmt) });
 		rp_dep = graphics::Renderpass::get(L"flame\\shaders\\depth.rp",
 			{ "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
 		rp_col_dep = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
@@ -784,6 +807,7 @@ namespace flame
 		pll_gbuf = graphics::PipelineLayout::get(L"flame\\shaders\\gbuffer.pll");
 
 		pl_blit = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", {});
+		pl_blit_blend = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", { "be=true", "sbc=SrcAlpha", "dbc=OneMinusSrcAlpha" });
 		pl_blit_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", { "rp=" + str(rp_dep), "frag:DEPTH" });
 		pl_add = graphics::GraphicsPipeline::get(L"flame\\shaders\\add.pipeline", {});
 		pl_blend = graphics::GraphicsPipeline::get(L"flame\\shaders\\blend.pipeline", {});
@@ -805,9 +829,16 @@ namespace flame
 
 		get_deferred_pipeline();
 
+		pl_down_sample = graphics::GraphicsPipeline::get(L"flame\\shaders\\box.pipeline", {});
+		pl_up_sample = graphics::GraphicsPipeline::get(L"flame\\shaders\\box.pipeline", { "be=true", "sbc=One", "dbc=One" });
+		pl_down_sample_depth = graphics::GraphicsPipeline::get(L"flame\\shaders\\box.pipeline", { "rp=" + str(rp_dep), "frag:DEPTH" });
+		pl_up_sample_depth = graphics::GraphicsPipeline::get(L"flame\\shaders\\box.pipeline", { "rp=" + str(rp_dep), "be=true", "sbc=One", "dbc=One", "frag:DEPTH" });
+		prm_box.init(pl_down_sample->layout, graphics::PipelineGraphics);
+
+		pl_outline_pp = graphics::GraphicsPipeline::get(L"flame\\shaders\\outline_pp.pipeline", { "rp=" + str(rp_dst) });
+		prm_outline_pp.init(pl_outline_pp->layout, graphics::PipelineGraphics);
+
 		pl_bloom_bright = graphics::GraphicsPipeline::get(L"flame\\shaders\\bloom.pipeline", { "frag:BRIGHT_PASS" });
-		pl_bloom_down_sample = graphics::GraphicsPipeline::get(L"flame\\shaders\\bloom.pipeline", { "frag:BOX_PASS" });
-		pl_bloom_up_sample = graphics::GraphicsPipeline::get(L"flame\\shaders\\bloom.pipeline", { "be=true", "bc=One", "frag:BOX_PASS" });
 		prm_bloom.init(pl_bloom_bright->layout, graphics::PipelineGraphics);
 
 		pl_blur_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\blur.pipeline", { "frag:HORIZONTAL" });
@@ -1068,6 +1099,51 @@ namespace flame
 		if (post_processing_enable == v)
 			return;
 		post_processing_enable = v;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_outline_pp_enable(bool v)
+	{
+		if (outline_pp_enable == v)
+			return;
+		outline_pp_enable = v;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_outline_pp_width(uint v)
+	{
+		if (outline_pp_width == v)
+			return;
+		outline_pp_width = v;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_outline_pp_depth_scale(float v)
+	{
+		if (outline_pp_depth_scale == v)
+			return;
+		outline_pp_depth_scale = v;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_outline_pp_normal_scale(float v)
+	{
+		if (outline_pp_normal_scale == v)
+			return;
+		outline_pp_normal_scale = v;
+
+		dirty = true;
+	}
+
+	void sRendererPrivate::set_outline_pp_color(const vec3& col)
+	{
+		if (outline_pp_color == col)
+			return;
+		outline_pp_color = col;
 
 		dirty = true;
 	}
@@ -2617,8 +2693,68 @@ namespace flame
 			{
 				cb->begin_debug_label("Post Processing");
 
+				cb->begin_debug_label("Outline PP");
+				if (outline_pp_enable)
+				{
+					auto n_levels = min((uint)std::bit_width(outline_pp_width), img_dep->n_levels);
+					if (n_levels > 0)
+					{
+						auto img_normal = render_task->img_gbufferB.get();
+
+						for (auto i = 1; i < n_levels; i++)
+						{
+							cb->image_barrier(img_dep, { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+							cb->set_viewport(Rect(vec2(0.f), vec2(img_dep->levels[i].extent)));
+							cb->begin_renderpass(nullptr, img_dep->get_shader_write_dst(i));
+							cb->bind_pipeline(pl_down_sample_depth);
+							cb->bind_descriptor_set(0, img_dep->get_shader_read_src(i - 1));
+							prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_dep->levels[i - 1].extent);
+							prm_box.push_constant(cb);
+							cb->draw(3, 1, 0, 0);
+							cb->end_renderpass();
+
+							cb->image_barrier(img_normal, { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+							cb->set_viewport(Rect(vec2(0.f), vec2(img_normal->levels[i].extent)));
+							cb->begin_renderpass(nullptr, img_normal->get_shader_write_dst(i));
+							cb->bind_pipeline(pl_down_sample);
+							cb->bind_descriptor_set(0, img_normal->get_shader_read_src(i - 1));
+							prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_normal->levels[i - 1].extent);
+							prm_box.push_constant(cb);
+							cb->draw(3, 1, 0, 0);
+							cb->end_renderpass();
+						}
+
+						cb->image_barrier(img_dep, { n_levels - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+						cb->image_barrier(img_normal, { n_levels - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+
+						cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(n_levels - 1));
+						cb->bind_pipeline(pl_outline_pp);
+						prm_outline_pp.set_ds(""_h, dss_outline_pp[n_levels - 1].get());
+						prm_outline_pp.bind_dss(cb);
+						prm_outline_pp.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_dep->levels[n_levels - 1].extent);
+						prm_outline_pp.pc.mark_dirty_c("near"_h).as<float>() = camera->zNear;
+						prm_outline_pp.pc.mark_dirty_c("far"_h).as<float>() = camera->zFar;
+						prm_outline_pp.pc.mark_dirty_c("depth_scale"_h).as<float>() = outline_pp_depth_scale;
+						prm_outline_pp.pc.mark_dirty_c("normal_scale"_h).as<float>() = outline_pp_normal_scale;
+						prm_outline_pp.pc.mark_dirty_c("color"_h).as<vec3>() = outline_pp_color;
+						prm_outline_pp.push_constant(cb);
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+
+						cb->set_viewport(Rect(vec2(0), ext));
+						cb->image_barrier(img_back0, { n_levels - 1 }, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
+						cb->bind_pipeline(pl_blit_blend);
+						cb->bind_descriptor_set(0, img_back0->get_shader_read_src(n_levels - 1));
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+					}
+				}
+				cb->end_debug_label();
+
 				if (ssao_enable)
 				{
+					// TODO
 				}
 
 				cb->begin_debug_label("Bloom");
@@ -2638,10 +2774,10 @@ namespace flame
 						cb->image_barrier(img_back0, { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
 						cb->set_viewport(Rect(vec2(0.f), vec2(img_back0->levels[i].extent)));
 						cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(i));
-						cb->bind_pipeline(pl_bloom_down_sample);
+						cb->bind_pipeline(pl_down_sample);
 						cb->bind_descriptor_set(0, img_back0->get_shader_read_src(i - 1));
-						prm_bloom.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_back0->levels[i - 1].extent);
-						prm_bloom.push_constant(cb);
+						prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_back0->levels[i - 1].extent);
+						prm_box.push_constant(cb);
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 					}
@@ -2650,10 +2786,10 @@ namespace flame
 						cb->image_barrier(img_back0, { (uint)i, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
 						cb->set_viewport(Rect(vec2(0.f), vec2(img_back0->levels[i - 1].extent)));
 						cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(i - 1));
-						cb->bind_pipeline(pl_bloom_up_sample);
+						cb->bind_pipeline(pl_up_sample);
 						cb->bind_descriptor_set(0, img_back0->get_shader_read_src(i));
-						prm_bloom.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_back0->levels[i].extent);
-						prm_bloom.push_constant(cb);
+						prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_back0->levels[i].extent);
+						prm_box.push_constant(cb);
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 					}
@@ -2661,10 +2797,10 @@ namespace flame
 					cb->set_viewport(Rect(vec2(0), ext));
 					cb->image_barrier(img_back0, { 1U }, graphics::ImageLayoutShaderReadOnly);
 					cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
-					cb->bind_pipeline(pl_bloom_up_sample);
+					cb->bind_pipeline(pl_up_sample);
 					cb->bind_descriptor_set(0, img_back0->get_shader_read_src(1));
-					prm_bloom.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_back0->levels[1].extent);
-					prm_bloom.push_constant(cb);
+					prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_back0->levels[1].extent);
+					prm_box.push_constant(cb);
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 				}
@@ -2689,10 +2825,10 @@ namespace flame
 								cb->image_barrier(img_back0, { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
 								cb->set_viewport(Rect(vec2(0.f), vec2(img_back0->levels[i].extent)));
 								cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(i, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
-								cb->bind_pipeline(pl_bloom_down_sample);
+								cb->bind_pipeline(pl_down_sample);
 								cb->bind_descriptor_set(0, img_back0->get_shader_read_src(i - 1));
-								prm_bloom.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_back0->levels[i - 1].extent);
-								prm_bloom.push_constant(cb);
+								prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_back0->levels[i - 1].extent);
+								prm_box.push_constant(cb);
 								cb->draw(3, 1, 0, 0);
 								cb->end_renderpass();
 							}
@@ -2701,10 +2837,10 @@ namespace flame
 								cb->image_barrier(img_back0, { (uint)i, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
 								cb->set_viewport(Rect(vec2(0.f), vec2(img_back0->levels[i - 1].extent)));
 								cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(i - 1, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
-								cb->bind_pipeline(pl_bloom_up_sample);
+								cb->bind_pipeline(pl_up_sample);
 								cb->bind_descriptor_set(0, img_back0->get_shader_read_src(i));
-								prm_bloom.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_back0->levels[i].extent);
-								prm_bloom.push_constant(cb);
+								prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_back0->levels[i].extent);
+								prm_box.push_constant(cb);
 								cb->draw(3, 1, 0, 0);
 								cb->end_renderpass();
 							}

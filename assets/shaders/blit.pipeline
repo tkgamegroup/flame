@@ -1,4 +1,8 @@
 %rp=color.rp
+%be=false
+%sbc=Zero
+%dbc=Zero
+%cop=Add
 layout
   @pll
 shaders
@@ -11,6 +15,19 @@ cull_mode
   None
 depth_compare_op
   Always
+blend_options
+  enable
+    {be}
+  src_color
+    {sbc}
+  dst_color
+    {dbc}
+  src_alpha
+    Zero
+  dst_alpha
+    Zero
+  color_op
+    {cop}
 
 @pll
 layout (set = SET, binding = 0) uniform sampler2D img_src;

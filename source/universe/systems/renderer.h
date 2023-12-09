@@ -162,6 +162,26 @@ namespace flame
 		// Reflect
 		virtual void set_post_processing_enable(bool v) = 0;
 		// Reflect
+		bool outline_pp_enable = false; // post-processing outline
+		// Reflect
+		virtual void set_outline_pp_enable(bool v) = 0;
+		// Reflect
+		uint outline_pp_width = 1;
+		// Reflect
+		virtual void set_outline_pp_width(uint v) = 0;
+		// Reflect
+		float outline_pp_depth_scale = 1.f;
+		// Reflect
+		virtual void set_outline_pp_depth_scale(float v) = 0;
+		// Reflect
+		float outline_pp_normal_scale = 1.f;
+		// Reflect
+		virtual void set_outline_pp_normal_scale(float v) = 0;
+		// Reflect
+		vec3 outline_pp_color = vec3(1.f);
+		// Reflect
+		virtual void set_outline_pp_color(const vec3& col) = 0;
+		// Reflect
 		bool ssao_enable = true;
 		// Reflect
 		virtual void set_ssao_enable(bool v) = 0;

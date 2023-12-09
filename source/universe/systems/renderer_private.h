@@ -101,6 +101,11 @@ namespace flame
 		void set_shadow_bleeding_reduction(float f) override;
 		void set_shadow_darkening(float f) override;
 		void set_post_processing_enable(bool v) override;
+		void set_outline_pp_enable(bool v) override;
+		void set_outline_pp_width(uint v) override;
+		void set_outline_pp_depth_scale(float v) override;
+		void set_outline_pp_normal_scale(float v) override;
+		void set_outline_pp_color(const vec3& col) override;
 		void set_ssao_enable(bool v) override;
 		void set_ssao_radius(float v) override;
 		void set_ssao_bias(float v) override;

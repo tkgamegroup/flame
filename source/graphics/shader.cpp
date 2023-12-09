@@ -478,6 +478,7 @@ namespace flame
 							if (!header_path.is_absolute())
 							{
 								header_path = path.parent_path() / header_path;
+								assert(std::filesystem::exists(header_path));
 								header_path = std::filesystem::canonical(header_path);
 							}
 							header_path.make_preferred();

@@ -1,0 +1,90 @@
+%rp=color.rp
+layout
+  @pll
+shaders
+  fullscreen.vert
+ ---
+  @frag
+renderpass
+  {rp}
+  
+@pll
+layout (set = SET, binding = 0) uniform sampler2D img_depth;
+layout (set = SET, binding = 1) uniform sampler2D img_normal;
+
+layout(push_constant) uniform PushConstant
+{
+	vec2 pxsz;
+    float near;
+    float far;
+    float depth_scale;
+    float normal_scale;
+    vec3 color;
+}pc;
+@
+
+@frag
+#include "math.glsl"
+
+layout (location = 0) in vec2 i_uv;
+
+layout (location = 0) out vec4 o_color;
+
+// https://www.shadertoy.com/view/wtSfR3
+
+float depthChecker(vec3 s012, vec3 s345, vec3 s678) 
+{
+    return abs(s012.x - s678.z) +
+           abs(s012.z - s678.x) +
+           abs(s345.x - s345.z) +
+           abs(s012.y - s678.y);
+}
+
+float normalChecker(vec3 s0, vec3 s1, vec3 s2,
+                    vec3 s3, vec3 s4, vec3 s5,
+                    vec3 s6, vec3 s7, vec3 s8) {
+    return max(0., 1. - dot(s0, s8)) +
+           max(0., 1. - dot(s2, s6)) +
+           max(0., 1. - dot(s3, s5)) +
+           max(0., 1. - dot(s1, s7));
+}
+
+float edgeChecker(vec2 uv) 
+{
+    vec3 e = vec3(1, 0, -1);
+    vec2 ps = pc.pxsz;
+
+    float ds0 = linear_depth(pc.near, pc.far, texture(img_depth, uv + e.zx * ps).r * 2.0 - 1.0);
+    float ds1 = linear_depth(pc.near, pc.far, texture(img_depth, uv + e.yx * ps).r * 2.0 - 1.0);
+    float ds2 = linear_depth(pc.near, pc.far, texture(img_depth, uv + e.xx * ps).r * 2.0 - 1.0);
+    float ds3 = linear_depth(pc.near, pc.far, texture(img_depth, uv + e.zy * ps).r * 2.0 - 1.0);
+    float ds4 = linear_depth(pc.near, pc.far, texture(img_depth, uv + e.yy * ps).r * 2.0 - 1.0);
+    float ds5 = linear_depth(pc.near, pc.far, texture(img_depth, uv + e.xy * ps).r * 2.0 - 1.0);
+    float ds6 = linear_depth(pc.near, pc.far, texture(img_depth, uv + e.zz * ps).r * 2.0 - 1.0);
+    float ds7 = linear_depth(pc.near, pc.far, texture(img_depth, uv + e.yz * ps).r * 2.0 - 1.0);
+    float ds8 = linear_depth(pc.near, pc.far, texture(img_depth, uv + e.xz * ps).r * 2.0 - 1.0);
+
+    vec3 ns0 = texture(img_normal, uv + e.zx * ps).rgb * 2.0 - 1.0;
+    vec3 ns1 = texture(img_normal, uv + e.yx * ps).rgb * 2.0 - 1.0;
+    vec3 ns2 = texture(img_normal, uv + e.xx * ps).rgb * 2.0 - 1.0;
+    vec3 ns3 = texture(img_normal, uv + e.zy * ps).rgb * 2.0 - 1.0;
+    vec3 ns4 = texture(img_normal, uv + e.yy * ps).rgb * 2.0 - 1.0;
+    vec3 ns5 = texture(img_normal, uv + e.xy * ps).rgb * 2.0 - 1.0;
+    vec3 ns6 = texture(img_normal, uv + e.zz * ps).rgb * 2.0 - 1.0;
+    vec3 ns7 = texture(img_normal, uv + e.yz * ps).rgb * 2.0 - 1.0;
+    vec3 ns8 = texture(img_normal, uv + e.xz * ps).rgb * 2.0 - 1.0;
+
+
+    return min(1.0, depthChecker(vec3(ds0, ds1, ds2), 
+                        vec3(ds3, ds4, ds5),
+                        vec3(ds6, ds7, ds8)) * pc.depth_scale +
+           normalChecker(ns0, ns1, ns2,
+                         ns3, ns4, ns5,
+                         ns6, ns7, ns8) * pc.normal_scale);
+}
+
+void main()
+{
+	o_color = vec4(pc.color, edgeChecker(i_uv));
+}
+@
