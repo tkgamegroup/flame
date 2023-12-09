@@ -146,12 +146,14 @@ namespace flame
 	graphics::PipelineResourceManager			prm_fxaa;
 	/****************************************/
 
-	std::filesystem::path post_shading_code_file = L"";
-
 	int camera_light_id = -1;
 	int white_tex_id = -1;
 	int black_tex_id = -1;
 	int rand_tex_id = -1;
+
+	uint cel_shading_levels = 0;
+
+	std::filesystem::path post_shading_code_file = L"";
 
 	struct MeshBatcher
 	{
@@ -222,6 +224,8 @@ namespace flame
 			if (!tex_reses[i].name.empty())
 				defines.push_back(std::format("frag:{}_MAP_ID={}", tex_reses[i].name, i));
 		}
+		if (cel_shading_levels > 0)
+			defines.push_back("frag:CEL_SHADING");
 		if (!post_shading_code_file.empty())
 		{
 			if (auto path = Path::get(post_shading_code_file); !path.empty())
@@ -970,6 +974,23 @@ namespace flame
 			return;
 		sky_intensity = v;
 		buf_lighting.mark_dirty_c("sky_intensity"_h).as<float>() = sky_intensity;
+
+		dirty = true;
+	}
+
+	uint sRendererPrivate::get_cel_shading_levels() const
+	{
+		return cel_shading_levels;
+	}
+
+	void sRendererPrivate::set_cel_shading_levels(uint v)
+	{
+		if (cel_shading_levels == v)
+			return;
+		if (cel_shading_levels == 0 || v == 0)
+			mark_clear_pipelines = true;
+		cel_shading_levels = v;
+		buf_lighting.mark_dirty_c("cel_shading_levels"_h).as<uint>() = cel_shading_levels;
 
 		dirty = true;
 	}

@@ -30,6 +30,7 @@ layout (set = SET, binding = 0) buffer readonly Lighting
 {
 	float sky_intensity;
 	float sky_rad_levels;
+	uint cel_shading_levels;
 	uint csm_levels;
 	float esm_factor;
 	float shadow_bleeding_reduction;

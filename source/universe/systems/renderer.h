@@ -110,6 +110,10 @@ namespace flame
 		// Reflect
 		virtual void set_sky_intensity(float v) = 0;
 		// Reflect
+		virtual uint get_cel_shading_levels() const = 0;
+		// Reflect
+		virtual void set_cel_shading_levels(uint v) = 0;
+		// Reflect
 		FogType fog_type = FogLinear;
 		// Reflect
 		virtual void set_fog_type(FogType type) = 0;

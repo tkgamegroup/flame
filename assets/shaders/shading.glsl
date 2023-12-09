@@ -52,8 +52,12 @@ vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 light_color, float metallic, vec3 albedo,
 		
 	vec3 diffuse = albedo * radiance / PI * (1.0 - F) * (1.0 - metallic);
 	vec3 specular = D * F * G / (4.0 * NdotV * NdotL + 0.0001) * radiance;
-				   
-	return diffuse + specular;
+	
+	vec3 ret = diffuse + specular;
+	#ifdef CEL_SHADING
+		ret = floor(ret * lighting.cel_shading_levels) / lighting.cel_shading_levels;
+	#endif
+	return ret;
 }
 
 vec3 get_lighting(vec3 world_pos, float distv, vec3 N, vec3 V, float metallic, vec3 albedo, vec3 f0, float roughness)
