@@ -113,11 +113,19 @@ layout(location = 3) in flat uint i_matid;
 
 layout(location = 0) out vec4 o_color;
 
+#ifdef MAT_CODE
+// MATERIAL CODE BEGIN:
+
+#include MAT_CODE
+
+// MATERIAL CODE END:
+#endif
+
 void main()
 {
 #ifdef MAT_CODE
 	MaterialInfo material = material.infos[i_matid];
-	#include MAT_CODE
+	material_main(material, vec4(1.0));
 #else
 	o_color = i_col;
 #endif

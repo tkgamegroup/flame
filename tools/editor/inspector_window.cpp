@@ -270,7 +270,10 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 
 		auto inner_spaceing = ImGui::GetStyle().ItemInnerSpacing.x;
 		ImGui::BeginGroup();
-		ImGui::PushMultiItemsWidths(n, ImGui::GetContentRegionAvail().x);
+		if (n > 1)
+			ImGui::PushMultiItemsWidths(n, ImGui::GetContentRegionAvail().x);
+		else
+			ImGui::SetNextItemWidth(-FLT_MIN);
 		for (int i = 0; i < n; i++)
 		{
 			ImGui::PushID(i);
@@ -287,7 +290,8 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 				same[i] = 1;
 			ret |= changed;
 			ImGui::PopID();
-			ImGui::PopItemWidth();
+			if (n > 1)
+				ImGui::PopItemWidth();
 		}
 		ImGui::EndGroup();
 		return ret;
@@ -298,7 +302,10 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 
 		auto inner_spaceing = ImGui::GetStyle().ItemInnerSpacing.x;
 		ImGui::BeginGroup();
-		ImGui::PushMultiItemsWidths(n, ImGui::GetContentRegionAvail().x);
+		if (n > 1)
+			ImGui::PushMultiItemsWidths(n, ImGui::GetContentRegionAvail().x);
+		else
+			ImGui::SetNextItemWidth(-FLT_MIN);
 		for (int i = 0; i < n; i++)
 		{
 			ImGui::PushID(i);
@@ -326,7 +333,8 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					ret = 2;
 			}
 			ImGui::PopID();
-			ImGui::PopItemWidth();
+			if (n > 1)
+				ImGui::PopItemWidth();
 		}
 		ImGui::EndGroup();
 		return ret;

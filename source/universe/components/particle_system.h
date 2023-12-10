@@ -23,6 +23,10 @@ namespace flame
 		cNodePtr node = nullptr;
 
 		// Reflect
+		std::filesystem::path material_name;
+		// Reflect
+		virtual void set_material_name(const std::filesystem::path& material_name) = 0;
+		// Reflect
 		uvec2 texture_tiles = uvec2(1U);
 		// Reflect
 		ivec2 texture_tiles_range = ivec2(0, -1);
@@ -52,11 +56,6 @@ namespace flame
 		float emitt_angle = 45.f;
 		// Reflect hash=Billboard|HorizontalBillboard|VerticalBillboard
 		uint render_type = "Billboard"_h;
-
-		// Reflect
-		std::filesystem::path material_name;
-		// Reflect
-		virtual void set_material_name(const std::filesystem::path& material_name) = 0;
 
 		graphics::MaterialPtr material = nullptr;
 		int material_res_id = -1;
