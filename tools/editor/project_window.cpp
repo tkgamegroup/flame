@@ -390,12 +390,24 @@ ProjectView::ProjectView(const std::string& name) :
 			{
 				if (ImGui::MenuItem("Create Material Use This Image"))
 				{
+					std::filesystem::path dst_dir;
+					if (path.parent_path().stem() == L"textures")
+						dst_dir += L"../materials";
+					else
+						dst_dir = path.parent_path();
+					if (!std::filesystem::exists(dst_dir))
+						std::filesystem::create_directories(dst_dir);
+
 					for (auto& p : paths)
 					{
 						if (is_image_file(p.extension()))
 						{
 							auto material = graphics::Material::create();
-
+							material->textures.resize(1);
+							material->textures[0].filename = Path::reverse(p);
+							material->color_map = 0;
+							auto fn = dst_dir / (p.stem().wstring() + L".fmat");
+							material->save(fn);
 							delete material;
 						}
 					}

@@ -247,10 +247,12 @@ namespace flame
 					BufferCopy cpy;
 					cpy.src_off = cpy.dst_off = r.first;
 					cpy.size = r.second;
-					copies.push_back(cpy);
+					if (cpy.size > 0)
+						copies.push_back(cpy);
 				}
 				dirty_regions.clear();
-				cb->copy_buffer(stag.get(), buf.get(), copies);
+				if (!copies.empty())
+					cb->copy_buffer(stag.get(), buf.get(), copies);
 				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(usage), PipelineStageTransfer, u2s(usage));
 			}
 
@@ -367,10 +369,12 @@ namespace flame
 					BufferCopy cpy;
 					cpy.src_off = cpy.dst_off = r.first;
 					cpy.size = r.second;
-					copies.push_back(cpy);
+					if (cpy.size > 0)
+						copies.push_back(cpy);
 				}
 				dirty_regions.clear();
-				cb->copy_buffer(stag.get(), buf.get(), copies);
+				if (!copies.empty())
+					cb->copy_buffer(stag.get(), buf.get(), copies);
 				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageVertex), PipelineStageTransfer, u2s(BufferUsageVertex));
 			}
 		};
@@ -439,10 +443,12 @@ namespace flame
 					BufferCopy cpy;
 					cpy.src_off = cpy.dst_off = r.first;
 					cpy.size = r.second;
-					copies.push_back(cpy);
+					if (cpy.size > 0)
+						copies.push_back(cpy);
 				}
 				dirty_regions.clear();
-				cb->copy_buffer(stag.get(), buf.get(), copies);
+				if (!copies.empty())
+					cb->copy_buffer(stag.get(), buf.get(), copies);
 				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageIndex), PipelineStageTransfer, u2s(BufferUsageIndex));
 			}
 		};

@@ -37,6 +37,10 @@ namespace flame
 		// Reflect
 		vec2 particle_size = vec2(1.f);
 		// Reflect
+		float particle_rotation_start = 0.f;
+		// Reflect
+		float particle_rotation_end = 360.f;
+		// Reflect
 		cvec4 particle_col = cvec4(255);
 		// Reflect hash=Sphere|Pie|Cone
 		uint emitt_type = "Sphere"_h;
@@ -49,11 +53,19 @@ namespace flame
 		// Reflect
 		vec3 emitt_rotation = vec3(0.f);
 		// Reflect
-		float emitt_offset = 0.f;
+		float emitt_offset_start = 0.f;
+		// Reflect
+		float emitt_offset_end = 0.f;
+		// Reflect
+		float emitt_bitangent_offset_start = 0.f;
+		// Reflect
+		float emitt_bitangent_offset_end = 0.f;
 		// Reflect
 		virtual void set_emitt_rotation(const vec3& r) = 0;
 		// Reflect
-		float emitt_angle = 45.f;
+		float emitt_angle_start = -45.f;
+		// Reflect
+		float emitt_angle_end = 45.f;
 		// Reflect hash=Billboard|HorizontalBillboard|VerticalBillboard
 		uint render_type = "Billboard"_h;
 

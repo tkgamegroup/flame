@@ -272,8 +272,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		ImGui::BeginGroup();
 		if (n > 1)
 			ImGui::PushMultiItemsWidths(n, ImGui::GetContentRegionAvail().x);
-		else
-			ImGui::SetNextItemWidth(-FLT_MIN);
 		for (int i = 0; i < n; i++)
 		{
 			ImGui::PushID(i);
@@ -304,8 +302,6 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		ImGui::BeginGroup();
 		if (n > 1)
 			ImGui::PushMultiItemsWidths(n, ImGui::GetContentRegionAvail().x);
-		else
-			ImGui::SetNextItemWidth(-FLT_MIN);
 		for (int i = 0; i < n; i++)
 		{
 			ImGui::PushID(i);

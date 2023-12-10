@@ -193,16 +193,18 @@ namespace flame
 			{
 			case "Sphere"_h:
 				pt.vel = particle_speed > 0.f ? sphericalRand(particle_speed) : vec3(0.f);
-				if (emitt_offset > 0.f)
-					pt.pos = normalize(pt.vel) * emitt_offset;
+				if (auto off = linearRand(emitt_offset_start, emitt_offset_end); off > 0.f)
+					pt.pos += normalize(pt.vel) * off;
 				break;
 			case "Pie"_h:
-				pt.vel = particle_speed > 0.f ? emitt_rotation_mat * dir_xz(linearRand(-emitt_angle, +emitt_angle)) * particle_speed : vec3(0.f);
-				if (emitt_offset > 0.f)
-					pt.pos = normalize(pt.vel) * emitt_offset;
+				pt.vel = particle_speed > 0.f ? emitt_rotation_mat * dir_xz(linearRand(emitt_angle_start, emitt_angle_end)) * particle_speed : vec3(0.f);
+				if (auto off = linearRand(emitt_offset_start, emitt_offset_end); off != 0.f)
+					pt.pos += normalize(pt.vel) * off;
+				if (auto off = linearRand(emitt_bitangent_offset_start, emitt_bitangent_offset_end); off != 0.f)
+					pt.pos += emitt_rotation_mat[2] * off;
 				break;
 			}
-			pt.rot = linearRand(0.f, 360.f);
+			pt.rot = radians(linearRand(particle_rotation_start, particle_rotation_end));
 			pt.col = particle_col;
 			pt.time_max = particle_life_time;
 			pt.time = pt.time_max;
