@@ -1995,6 +1995,7 @@ void BlueprintView::on_draw()
 											blueprint->remove_node(src_n);
 											context_node = nullptr;
 
+											ax_node_editor->ClearSelection();
 											unsaved = true;
 										}
 									}
@@ -2022,6 +2023,9 @@ void BlueprintView::on_draw()
 
 							blueprint->remove_node(src_n);
 							context_node = nullptr;
+
+							ax_node_editor->ClearSelection();
+							unsaved = true;
 						}
 					}
 					if (context_node && context_node->name_hash == "Set Variable"_h)
@@ -2043,6 +2047,9 @@ void BlueprintView::on_draw()
 
 							blueprint->remove_node(src_n);
 							context_node = nullptr;
+
+							ax_node_editor->ClearSelection();
+							unsaved = true;
 						}
 					}
 					if (context_node && context_node->name.starts_with("Format"))

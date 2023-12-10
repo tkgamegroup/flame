@@ -229,7 +229,7 @@ namespace flame
 						stems.push_back(stem);
 					}
 					return n->find_node(stems, 0);
-				};
+					};
 				if (folder_tree->path == L"*")
 				{
 					for (auto& c : folder_tree->children)
@@ -303,10 +303,10 @@ namespace flame
 								}
 								std::sort(dirs.begin(), dirs.end(), [](const auto& a, const auto& b) {
 									return a->path < b->path;
-								});
+									});
 								std::sort(files.begin(), files.end(), [](const auto& a, const auto& b) {
 									return a->path < b->path;
-								});
+									});
 								for (auto i : dirs)
 								{
 									if (item_created_callback)
@@ -410,6 +410,7 @@ namespace flame
 					ImGui::TableSetColumnIndex(0);
 					if (folder_tree)
 					{
+						ImGui::BeginChild("cw_folders", ImVec2(0, -2), true, ImGuiWindowFlags_HorizontalScrollbar);
 						std::function<void(FolderTreeNode*)> draw_node;
 						draw_node = [&](FolderTreeNode* node) {
 							auto flags = opened_folder == node ? ImGuiTreeNodeFlags_Selected : 0;
@@ -437,7 +438,7 @@ namespace flame
 									draw_node(c.get());
 								ImGui::TreePop();
 							}
-						};
+							};
 						if (folder_tree->path == L"*")
 						{
 							for (auto& c : folder_tree->children)
@@ -445,6 +446,7 @@ namespace flame
 						}
 						else
 							draw_node(folder_tree.get());
+						ImGui::EndChild();
 					}
 
 					ImGui::TableSetColumnIndex(1);
@@ -531,6 +533,7 @@ namespace flame
 					{
 						if (ImGui::BeginTable("contents", clamp(uint(content_size.x / (Item::size + padding.x * 2 + style.ItemSpacing.x)), 1U, 64U), ImGuiTableFlags_ScrollY, content_size))
 						{
+							auto context_menu_opened = false;
 							auto dl = ImGui::GetWindowDrawList();
 							for (auto i = 0; i < items.size(); i++)
 							{
@@ -625,6 +628,7 @@ namespace flame
 									if (ImGui::BeginPopupContextItem())
 									{
 										item_context_menu_callback(item->path);
+										context_menu_opened = true;
 										ImGui::EndPopup();
 									}
 								}
@@ -649,9 +653,9 @@ namespace flame
 								}
 							}
 
-							if (opened_folder && folder_context_menu_callback)
+							if (!context_menu_opened && opened_folder && folder_context_menu_callback)
 							{
-								if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverExistingPopup))
+								if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight))
 								{
 									folder_context_menu_callback(opened_folder->path);
 									ImGui::EndPopup();
@@ -664,6 +668,7 @@ namespace flame
 					else
 					{
 						ImGui::BeginChild("contents", content_size);
+						auto context_menu_opened = false;
 
 						auto icon_size = line_height + padding.y * 2;
 						auto dl = ImGui::GetWindowDrawList();
@@ -748,6 +753,7 @@ namespace flame
 								if (ImGui::BeginPopupContextItem())
 								{
 									item_context_menu_callback(item->path);
+									context_menu_opened = true;
 									ImGui::EndPopup();
 								}
 							}
@@ -770,14 +776,16 @@ namespace flame
 										rename_path = L"";
 									}
 								}
-								ImGui::PopItemWidth(); 
+								ImGui::PopItemWidth();
 								ImGui::PopStyleVar(2);
 							}
+
+							ImGui::Dummy(vec2(1.f, 0.f));
 						}
 
-						if (opened_folder && folder_context_menu_callback)
+						if (!context_menu_opened && opened_folder && folder_context_menu_callback)
 						{
-							if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverExistingPopup))
+							if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight))
 							{
 								folder_context_menu_callback(opened_folder->path);
 								ImGui::EndPopup();

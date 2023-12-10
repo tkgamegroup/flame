@@ -17,6 +17,7 @@
 #include <flame/universe/timeline.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
+#include <flame/universe/components/mesh.h>
 
 static graphics::ImagePtr icon_prefab;
 static graphics::ImagePtr icon_material;
@@ -230,7 +231,7 @@ ProjectView::ProjectView(const std::string& name) :
 		auto paths = selection.get_paths();
 		if (std::find(paths.begin(), paths.end(), path) == paths.end())
 		{
-			if (ImGui::IsKeyDown(Keyboard_Shift))
+			if (ImGui::IsKeyDown(Keyboard_Shift) || ImGui::IsKeyDown(Keyboard_Ctrl))
 			{
 				paths.push_back(path);
 				selection.select(paths, "project"_h);
@@ -383,6 +384,58 @@ ProjectView::ProjectView(const std::string& name) :
 		}
 		if (ImGui::MenuItem("Refresh"))
 			update_thumbnail(path);
+		if (ImGui::BeginMenu("Tools"))
+		{
+			if (is_image_file(ext))
+			{
+				if (ImGui::MenuItem("Create Material Use This Image"))
+				{
+					for (auto& p : paths)
+					{
+						if (is_image_file(p.extension()))
+						{
+							auto material = graphics::Material::create();
+
+							delete material;
+						}
+					}
+				}
+			}
+			else if (ext == L".fmat")
+			{
+				if (ImGui::MenuItem("Assign This Material To All Selected Prefabs"))
+				{
+					for (auto& p : paths)
+					{
+						if (p.extension() == L".prefab")
+						{
+							auto e = Entity::create();
+							e->load(p);
+							e->forward_traversal([&](EntityPtr e) {
+								if (auto mesh = e->get_component<cMesh>(); mesh)
+									mesh->material_name = Path::reverse(path);
+							});
+							e->save(p);
+							delete e;
+						}
+					}
+				}
+			}
+			else if (ext == L".fmod")
+			{
+				if (ImGui::MenuItem("Merge Meshes"))
+				{
+					for (auto& p : paths)
+					{
+						if (p.extension() == L".fmod")
+						{
+
+						}
+					}
+				}
+			}
+			ImGui::EndMenu();
+		}
 
 		explorer.selected_paths = selection.get_paths();
 	};
@@ -802,7 +855,7 @@ ProjectView::ProjectView(const std::string& name) :
 					file.close();
 				}
 			}
-			if (ImGui::MenuItem("Import Scenes"))
+			if (ImGui::MenuItem("Import Scene"))
 			{
 				struct ImportSceneDialog : ImGui::Dialog
 				{
@@ -827,7 +880,8 @@ ProjectView::ProjectView(const std::string& name) :
 						if (ImGui::Begin(title.c_str(), &open, ImGuiWindowFlags_NoSavedSettings))
 						{
 							auto s = source_path.string();
-							ImGui::InputText("Source Path (file or directory)", s.data(), ImGuiInputTextFlags_ReadOnly);
+							if (ImGui::InputText("Source Path (file or directory)", &s))
+								source_path = s;
 							ImGui::SameLine();
 							if (ImGui::Button("..."))
 							{

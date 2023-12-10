@@ -269,7 +269,7 @@ namespace flame
 					int size = parray->size() / item_type->size;
 
 					execution.block->max_execute_times = size;
-					execution.block->loop_vector_index = 5;
+					execution.block->loop_vector_index = 1;
 					execution.block->block_output_index = 4;
 				}
 				else
@@ -283,13 +283,13 @@ namespace flame
 				*(uint*)outputs[1].data = temp_array[linearRand(0, (int)temp_array.size() - 1)];
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto ok = *(bool*)outputs[2].data;
+				auto& ok = *(bool*)outputs[2].data;
 				if (ok)
 				{
 					auto& temp_array = *(std::vector<uint>*)outputs[3].data;
 					temp_array.push_back(execution.block->executed_times);
 				}
-				*(bool*)outputs[2].data = false;
+				ok = false;
 			}
 		);
 	}

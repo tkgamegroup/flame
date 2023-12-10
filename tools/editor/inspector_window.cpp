@@ -305,7 +305,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			if (i > 0)
 				ImGui::SameLine(0.f, inner_spaceing);
 			float speed = 0.05f;
-			float min = FLT_MIN, max = FLT_MAX;
+			float min = -99999.f, max = +99999.f;
 			switch (edit_range)
 			{
 			case EditRangeZeroOne: min = 0.f; max = 1.f; speed = 0.005f; break;

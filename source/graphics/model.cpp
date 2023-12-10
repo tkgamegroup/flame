@@ -446,13 +446,13 @@ namespace flame
 					ret = str(i);
 				else
 				{
-					for (auto& ch : ret)
-					{
-						if (ch == ' ' || ch == ':' || ch == '|')
-							ch = '_';
-					}
+					SUS::replace_char(ret, ' ', '_');
+					SUS::replace_char(ret, ':', '_');
+					SUS::replace_char(ret, '|', '_');
+					SUS::replace_char(ret, '#', '_');
 				}
-				ret = ret + '.' + ext;
+				if (!ext.empty())
+					ret = ret + '.' + ext;
 				return ret;
 			};
 
@@ -947,6 +947,8 @@ namespace flame
 									auto sub_mesh_idx = 0;
 									if (element_mat && mat_mapping_mode == FbxGeometryElement::eByPolygon)
 										sub_mesh_idx = mat_index_array.GetAt(i);
+									if (sub_mesh_idx <= 0)
+										sub_mesh_idx = 0;
 
 									if (base_mesh_idx + sub_mesh_idx + 1 > model->meshes.size())
 										model->meshes.resize(base_mesh_idx + sub_mesh_idx + 1);
@@ -974,14 +976,14 @@ namespace flame
 														auto src = uv_direct_array.GetAt(control_point_idx);
 														m.uvs.push_back(vec2(src[0], 1.f - src[1]));
 													}
-													break;
+														break;
 													case FbxGeometryElement::eIndexToDirect:
 													{
 														auto idx = uv_index_array.GetAt(control_point_idx);
 														auto src = uv_direct_array.GetAt(idx);
 														m.uvs.push_back(vec2(src[0], 1.f - src[1]));
 													}
-													break;
+														break;
 													}
 													break;
 												case FbxGeometryElement::eByPolygonVertex:
@@ -992,14 +994,14 @@ namespace flame
 														auto src = uv_direct_array.GetAt(vertex_count);
 														m.uvs.push_back(vec2(src[0], 1.f - src[1]));
 													}
-													break;
+														break;
 													case FbxGeometryElement::eIndexToDirect:
 													{
 														auto idx = uv_index_array.GetAt(vertex_count);
 														auto src = uv_direct_array.GetAt(idx);
 														m.uvs.push_back(vec2(src[0], 1.f - src[1]));
 													}
-													break;
+														break;
 													}
 													break;
 												}
@@ -1017,14 +1019,14 @@ namespace flame
 														auto src = normal_direct_array.GetAt(control_point_idx);
 														m.normals.push_back(vec3(src[0], src[1], src[2]));
 													}
-													break;
+														break;
 													case FbxGeometryElement::eIndexToDirect:
 													{
 														auto idx = normal_index_array.GetAt(control_point_idx);
 														auto src = normal_direct_array.GetAt(idx);
 														m.normals.push_back(vec3(src[0], src[1], src[2]));
 													}
-													break;
+														break;
 													}
 													break;
 												case FbxGeometryElement::eByPolygonVertex:
@@ -1035,14 +1037,14 @@ namespace flame
 														auto src = normal_direct_array.GetAt(vertex_count);
 														m.normals.push_back(vec3(src[0], src[1], src[2]));
 													}
-													break;
+														break;
 													case FbxGeometryElement::eIndexToDirect:
 													{
 														auto idx = normal_index_array.GetAt(vertex_count);
 														auto src = normal_direct_array.GetAt(idx);
 														m.normals.push_back(vec3(src[0], src[1], src[2]));
 													}
-													break;
+														break;
 													}
 													break;
 												}
@@ -1060,14 +1062,14 @@ namespace flame
 														auto src = tangent_direct_array.GetAt(control_point_idx);
 														m.tangents.push_back(vec3(src[0], src[1], src[2]));
 													}
-													break;
+														break;
 													case FbxGeometryElement::eIndexToDirect:
 													{
 														auto idx = tangent_index_array.GetAt(control_point_idx);
 														auto src = tangent_direct_array.GetAt(idx);
 														m.tangents.push_back(vec3(src[0], src[1], src[2]));
 													}
-													break;
+														break;
 													}
 													break;
 												case FbxGeometryElement::eByPolygonVertex:
@@ -1078,14 +1080,14 @@ namespace flame
 														auto src = tangent_direct_array.GetAt(vertex_count);
 														m.tangents.push_back(vec3(src[0], src[1], src[2]));
 													}
-													break;
+														break;
 													case FbxGeometryElement::eIndexToDirect:
 													{
 														auto idx = tangent_index_array.GetAt(vertex_count);
 														auto src = tangent_direct_array.GetAt(idx);
 														m.tangents.push_back(vec3(src[0], src[1], src[2]));
 													}
-													break;
+														break;
 													}
 													break;
 												}
@@ -1103,14 +1105,14 @@ namespace flame
 														auto src = color_direct_array.GetAt(control_point_idx);
 														m.colors.push_back(cvec4(src[0] * 255.f, src[1] * 255.f, src[2] * 255.f, src[3] * 255.f));
 													}
-													break;
+														break;
 													case FbxGeometryElement::eIndexToDirect:
 													{
 														auto idx = color_index_array.GetAt(control_point_idx);
 														auto src = color_direct_array.GetAt(idx);
 														m.colors.push_back(cvec4(src[0] * 255.f, src[1] * 255.f, src[2] * 255.f, src[3] * 255.f));
 													}
-													break;
+														break;
 													}
 													break;
 												case FbxGeometryElement::eByPolygonVertex:
@@ -1121,14 +1123,14 @@ namespace flame
 														auto src = color_direct_array.GetAt(vertex_count);
 														m.colors.push_back(cvec4(src[0] * 255.f, src[1] * 255.f, src[2] * 255.f, src[3] * 255.f));
 													}
-													break;
+														break;
 													case FbxGeometryElement::eIndexToDirect:
 													{
 														auto idx = color_index_array.GetAt(vertex_count);
 														auto src = color_direct_array.GetAt(idx);
 														m.colors.push_back(cvec4(src[0] * 255.f, src[1] * 255.f, src[2] * 255.f, src[3] * 255.f));
 													}
-													break;
+														break;
 													}
 													break;
 												}
@@ -1172,7 +1174,14 @@ namespace flame
 									if (auto fbx_mat = src->GetMaterial(0); fbx_mat)
 									{
 										if (auto mat = (MaterialPtr)fbx_mat->GetUserDataPtr(); mat)
-											material_name = "materials\\" + mat->filename.filename().string();
+										{
+											material_name = mat->filename.filename().string();
+											material_name = format_res_name(material_name, "", 0);
+											if (auto fn = materials_destination / material_name; std::filesystem::exists(fn))
+												material_name = "materials\\" + material_name;
+											else
+												material_name = "default";
+										}
 									}
 									n_mesh.append_attribute("material_name").set_value(material_name.c_str());
 								}
@@ -1194,7 +1203,14 @@ namespace flame
 										if (auto fbx_mat = src->GetMaterial(i); fbx_mat)
 										{
 											if (auto mat = (MaterialPtr)fbx_mat->GetUserDataPtr(); mat)
-												material_name = "materials\\" + mat->filename.filename().string();
+											{
+												material_name = mat->filename.filename().string();
+												material_name = format_res_name(material_name, "", i);
+												if (auto fn = materials_destination / material_name; std::filesystem::exists(fn))
+													material_name = "materials\\" + material_name;
+												else
+													material_name = "default";
+											}
 										}
 										n_mesh.append_attribute("material_name").set_value(material_name.c_str());
 									}
@@ -1307,6 +1323,10 @@ namespace flame
 					auto material = new MaterialT;
 					auto map_id = 0;
 
+					aiColor3D ai_color;
+					ai_mat->Get(AI_MATKEY_COLOR_DIFFUSE, ai_color);
+					material->color = vec4(ai_color.r, ai_color.g, ai_color.b, 1.f);
+
 					{
 						ai_name.Clear();
 						ai_mat->GetTexture(aiTextureType_DIFFUSE, 0, &ai_name);
@@ -1333,6 +1353,8 @@ namespace flame
 						}
 					}
 
+					if (!std::filesystem::exists(materials_destination))
+						std::filesystem::create_directories(materials_destination);
 					auto material_name = format_res_name(ai_mat->GetName().C_Str(), "fmat", i);
 					auto fn = materials_destination / material_name;
 					material->save(fn);
@@ -1493,7 +1515,7 @@ namespace flame
 							auto mesh_idx = src->mMeshes[0];
 							auto mesh = scene->mMeshes[mesh_idx];
 							n_mesh.append_attribute("mesh_name").set_value(("models\\" + model_name + "#mesh" + str(mesh_idx)).c_str());
-							n_mesh.append_attribute("material_name").set_value(("materials\\" + std::filesystem::path(material_names[mesh->mMaterialIndex]).string()).c_str());
+							n_mesh.append_attribute("material_name").set_value(("materials\\" + material_names[mesh->mMaterialIndex]).c_str());
 							if (name == "mesh_collider")
 							{
 								auto n_rigid = n_components.append_child("item");

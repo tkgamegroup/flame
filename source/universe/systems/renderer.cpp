@@ -828,7 +828,7 @@ namespace flame
 		for (auto& s : dir_shadows)
 		{
 			for (auto i = 0; i < DirShadowMaxLevels; i++)
-				s.batcher[i].buf_idr.create(min(2048U, mesh_instances.capacity));
+				s.batcher[i].buf_idr.create(min(8192U, mesh_instances.capacity));
 		}
 
 		get_deferred_pipeline();
