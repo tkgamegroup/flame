@@ -8,9 +8,6 @@ namespace flame
 	struct cElement : Component
 	{
 		// Reflect
-		StaticState static_state = NotStatic;
-
-		// Reflect
 		vec2 pos = vec2(0.f);
 		// Reflect
 		virtual void set_pos(const vec2& pos) = 0;

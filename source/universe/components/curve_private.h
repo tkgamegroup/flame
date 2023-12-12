@@ -6,7 +6,7 @@ namespace flame
 {
 	struct cCurvePrivate : cCurve
 	{
-		Curve curve;
+		Curve<3> curve;
 		AABB bounds;
 
 		~cCurvePrivate();

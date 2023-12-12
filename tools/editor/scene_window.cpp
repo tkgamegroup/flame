@@ -967,12 +967,12 @@ void SceneView::on_draw()
 				if (auto mesh = e->get_component<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
 				{
 					ObjectDrawData d("mesh"_h, mesh->mesh_res_id, mesh->instance_id);
-					sRenderer::instance()->draw_outlines({ d }, col, 1, "MAX"_h);
+					sRenderer::instance()->draw_outlines({ d }, col, 1, OutlineMax);
 				}
 				if (auto terrain = e->get_component<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
 				{
 					ObjectDrawData d("terrain"_h, 0, terrain->instance_id);
-					sRenderer::instance()->draw_outlines({ d }, col, 1, "MAX"_h);
+					sRenderer::instance()->draw_outlines({ d }, col, 1, OutlineMax);
 				}
 				if (auto armature = e->get_component<cArmature>(); armature && armature->model)
 				{
@@ -982,7 +982,7 @@ void SceneView::on_draw()
 						if (auto mesh = c->get_component<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
 							ds.emplace_back("mesh"_h, mesh->mesh_res_id, mesh->instance_id);
 					}
-					sRenderer::instance()->draw_outlines(ds, col, 1, "MAX"_h);
+					sRenderer::instance()->draw_outlines(ds, col, 1, OutlineMax);
 				}
 			};
 			bool already_outline_hovering = false;
@@ -1004,7 +1004,7 @@ void SceneView::on_draw()
 					{
 						auto points = node->bounds.get_points();
 						auto line_pts = Frustum::points_to_lines(points.data());
-						sRenderer::instance()->draw_primitives("LineList"_h, line_pts.data(), line_pts.size(), cvec4(255, 127, 127, 255));
+						sRenderer::instance()->draw_primitives(PrimitiveLineList, line_pts.data(), line_pts.size(), cvec4(255, 127, 127, 255));
 					}
 				}
 			};
@@ -1042,11 +1042,11 @@ void SceneView::on_draw()
 					{
 						vec3 line_pts[2];
 						line_pts[0] = node->global_pos(); line_pts[1] = node->global_pos() + node->x_axis();
-						sRenderer::instance()->draw_primitives("LineList"_h, line_pts, 2, cvec4(255, 0, 0, 255));
+						sRenderer::instance()->draw_primitives(PrimitiveLineList, line_pts, 2, cvec4(255, 0, 0, 255));
 						line_pts[0] = node->global_pos(); line_pts[1] = node->global_pos() + node->y_axis();
-						sRenderer::instance()->draw_primitives("LineList"_h, line_pts, 2, cvec4(0, 255, 0, 255));
+						sRenderer::instance()->draw_primitives(PrimitiveLineList, line_pts, 2, cvec4(0, 255, 0, 255));
 						line_pts[0] = node->global_pos(); line_pts[1] = node->global_pos() + node->z_axis();
-						sRenderer::instance()->draw_primitives("LineList"_h, line_pts, 2, cvec4(0, 0, 255, 255));
+						sRenderer::instance()->draw_primitives(PrimitiveLineList, line_pts, 2, cvec4(0, 0, 255, 255));
 					}
 				}
 			}
@@ -1068,7 +1068,7 @@ void SceneView::on_draw()
 							if (nn)
 							{
 								line_pts[1] = nn->global_pos();
-								sRenderer::instance()->draw_primitives("LineList"_h, line_pts, 2, cvec4(255));
+								sRenderer::instance()->draw_primitives(PrimitiveLineList, line_pts, 2, cvec4(255));
 								draw_node(nn);
 							}
 						}
@@ -1094,27 +1094,27 @@ void SceneView::on_draw()
 						pts[i * 2 + 0] = center + vec3(r * circle_pts[i + 0], 0.f).xzy();
 						pts[i * 2 + 1] = center + vec3(r * circle_pts[i + 1], 0.f).xzy();
 					}
-					sRenderer::instance()->draw_primitives("LineList"_h, pts.data(), (uint)pts.size(), cvec4(127, 0, 255, 255));
+					sRenderer::instance()->draw_primitives(PrimitiveLineList, pts.data(), (uint)pts.size(), cvec4(127, 0, 255, 255));
 					center.y += h;
 					for (auto i = 0; i < n; i++)
 					{
 						pts[i * 2 + 0] = center + vec3(r * circle_pts[i + 0], 0.f).xzy();
 						pts[i * 2 + 1] = center + vec3(r * circle_pts[i + 1], 0.f).xzy();
 					}
-					sRenderer::instance()->draw_primitives("LineList"_h, pts.data(), (uint)pts.size(), cvec4(127, 0, 255, 255));
+					sRenderer::instance()->draw_primitives(PrimitiveLineList, pts.data(), (uint)pts.size(), cvec4(127, 0, 255, 255));
 					center = p;
 					pts[0] = center + r * vec3(+1.f, 0.f, 0.f);
 					pts[1] = pts[0] + vec3(0.f, h, 0.f);
-					sRenderer::instance()->draw_primitives("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
+					sRenderer::instance()->draw_primitives(PrimitiveLineList, pts.data(), 2, cvec4(127, 0, 255, 255));
 					pts[0] = center + r * vec3(-1.f, 0.f, 0.f);
 					pts[1] = pts[0] + vec3(0.f, h, 0.f);
-					sRenderer::instance()->draw_primitives("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
+					sRenderer::instance()->draw_primitives(PrimitiveLineList, pts.data(), 2, cvec4(127, 0, 255, 255));
 					pts[0] = center + r * vec3(0.f, 0.f, +1.f);
 					pts[1] = pts[0] + vec3(0.f, h, 0.f);
-					sRenderer::instance()->draw_primitives("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
+					sRenderer::instance()->draw_primitives(PrimitiveLineList, pts.data(), 2, cvec4(127, 0, 255, 255));
 					pts[0] = center + r * vec3(0.f, 0.f, -1.f);
 					pts[1] = pts[0] + vec3(0.f, h, 0.f);
-					sRenderer::instance()->draw_primitives("LineList"_h, pts.data(), 2, cvec4(127, 0, 255, 255));
+					sRenderer::instance()->draw_primitives(PrimitiveLineList, pts.data(), 2, cvec4(127, 0, 255, 255));
 				};
 				if (auto agent = e->get_component<cNavAgent>(); agent)
 					draw_cylinder(agent->node->global_pos(), agent->radius, agent->height);

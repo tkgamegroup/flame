@@ -80,19 +80,13 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(sRenderer);
 	FLAME_UNIVERSE_TYPE(sAudio);
 
-	enum StaticState
-	{
-		NotStatic,
-		StaticButDirty,
-		Static
-	};
-
 	enum TagFlags
 	{
 		TagNone = 0,
 		TagGeneral = 1 << 0,
 		TagNotSerialized = 1 << 1,
-		TagUser = 1 << 2
+		TagNotPickable = 1 << 2,
+		TagUser = 1 << 3
 	};
 
 	inline TagFlags operator| (TagFlags a, TagFlags b) { return (TagFlags)((int)a | (int)b); }

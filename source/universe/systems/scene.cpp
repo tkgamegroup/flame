@@ -94,40 +94,30 @@ namespace flame
 		if (!e->global_enable)
 			return;
 
-		auto is_static = false;
 		if (auto node = e->get_component<cNodeT>(); node)
 		{
-			is_static = node->static_state == Static;
-			if (!is_static)
+			if (mark_dirty)
+				node->mark_transform_dirty();
+			if (node->update_transform())
 			{
-				if (node->static_state == StaticButDirty)
-					node->static_state = Static;
-				if (mark_dirty)
-					node->mark_transform_dirty();
-				if (node->update_transform())
+				if (node->measurers)
 				{
-					if (node->measurers)
-					{
-						node->bounds.reset();
-						node->measurers.call<AABB&>(node->bounds);
-					}
-					else if (node->drawers)
-						node->bounds = AABB(AABB(vec3(0.f), 10000.f).get_points(node->transform));
-					if (node->octnode)
-						node->octnode->remove(node);
-					if (!node->bounds.invalid())
-						octree->add(node);
-
-					mark_dirty = true;
+					node->bounds.reset();
+					node->measurers.call<AABB&>(node->bounds);
 				}
+				else if (node->drawers)
+					node->bounds = AABB(AABB(vec3(0.f), 10000.f).get_points(node->transform));
+				if (node->octnode)
+					node->octnode->remove(node);
+				if (!node->bounds.invalid())
+					octree->add(node);
+
+				mark_dirty = true;
 			}
 		}
 
-		if (!is_static)
-		{
-			for (auto& c : e->children)
-				update_node_transform(octree, c.get(), mark_dirty);
-		}
+		for (auto& c : e->children)
+			update_node_transform(octree, c.get(), mark_dirty);
 	}
 
 	static void update_alignment(cElementPtr element, const vec2& parent_ext, const vec4& padding)
@@ -172,41 +162,30 @@ namespace flame
 		if (!e->global_enable)
 			return;
 
-		auto is_static = false;
 		if (auto element = e->get_component<cElementT>(); element)
 		{
-			is_static = element->static_state == Static;
-			if (!is_static)
+			if (mark_dirty)
+				element->mark_transform_dirty();
+
+			if (element->transform_dirty)
 			{
-				if (element->static_state == StaticButDirty)
-					element->static_state = Static;
-
-				if (mark_dirty)
-					element->mark_transform_dirty();
-
-				if (element->transform_dirty)
+				if (playout)
 				{
-					if (playout)
-					{
-						if (element->horizontal_alignment == ElementAlignNone || element->vertical_alignment == ElementAlignNone)
-							playout->update_layout();
-					}
-
-					if (auto pelement = element->entity->get_parent_component<cElementT>(); pelement)
-						update_alignment(element, pelement->ext, playout ? playout->padding : vec4(0.f));
+					if (element->horizontal_alignment == ElementAlignNone || element->vertical_alignment == ElementAlignNone)
+						playout->update_layout();
 				}
 
-				if (element->update_transform())
-					mark_dirty = true;
+				if (auto pelement = element->entity->get_parent_component<cElementT>(); pelement)
+					update_alignment(element, pelement->ext, playout ? playout->padding : vec4(0.f));
 			}
+
+			if (element->update_transform())
+				mark_dirty = true;
 		}
 
-		if (!is_static)
-		{
-			auto layout = e->get_component<cLayoutT>();
-			for (auto& c : e->children)
-				update_element_transform(layout, c.get(), mark_dirty);
-		}
+		auto layout = e->get_component<cLayoutT>();
+		for (auto& c : e->children)
+			update_element_transform(layout, c.get(), mark_dirty);
 	}
 
 	namespace navmesh_gen_detail
@@ -1321,7 +1300,7 @@ namespace flame
 		{
 			auto points = navmesh_get_mesh();
 			if (!points.empty())
-				renderer->draw_primitives("TriangleList"_h, points.data(), points.size(), cvec4(0, 127, 255, 127), false);
+				renderer->draw_primitives(PrimitiveTriangleList, points.data(), points.size(), cvec4(0, 127, 255, 127), false);
 		}
 	}
 

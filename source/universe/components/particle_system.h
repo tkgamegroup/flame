@@ -4,16 +4,30 @@
 
 namespace flame
 {
+	enum ParticleEmittType
+	{
+		ParticleEmittSphere,
+		ParticleEmittPie,
+		ParticleEmittCone
+	};
+
+	enum ParticleRenderType
+	{
+		ParticleBillboard,
+		ParticleHorizontalBillboard,
+		ParticleVerticalBillboard
+	};
+
 	struct Particle
 	{
 		vec3 pos;
 		vec2 size;
 		vec3 vel;
-		float rot;
+		float ang;
 		uvec4 col;
-		float time_max;
+		float life_time;
 		float time;
-		float rnd;
+		uint id;
 	};
 
 	// Reflect ctor
@@ -23,57 +37,80 @@ namespace flame
 		cNodePtr node = nullptr;
 
 		// Reflect
-		std::filesystem::path material_name;
+		float particle_life_time_min = 5.f;
 		// Reflect
-		virtual void set_material_name(const std::filesystem::path& material_name) = 0;
+		float particle_life_time_max = 5.f;
 		// Reflect
-		uvec2 texture_tiles = uvec2(1U);
+		float particle_speed_min = 5.f;
 		// Reflect
-		ivec2 texture_tiles_range = ivec2(0, -1);
-		// Reflect
-		float particle_life_time = 5.f;
-		// Reflect
-		float particle_speed = 5.f;
+		float particle_speed_max = 5.f;
 		// Reflect
 		vec2 particle_size = vec2(1.f);
 		// Reflect
-		float particle_rotation_start = 0.f;
+		float particle_angle_min = 0.f;
 		// Reflect
-		float particle_rotation_end = 360.f;
+		float particle_angle_max = 360.f;
 		// Reflect
-		cvec4 particle_col = cvec4(255);
-		// Reflect hash=Sphere|Pie|Cone
-		uint emitt_type = "Sphere"_h;
+		cvec4 particle_color = cvec4(255);
 		// Reflect
-		float emitt_duration = 0.f; // <0 to disable emittion
+		ParticleEmittType emitt_type = ParticleEmittSphere;
 		// Reflect
-		uint emitt_num = 10; // per second
+		float emitt_duration = 0.f; // <0 to disable emittion and reset timer
+		// Reflect
+		float emitt_num = 10.f; // per second
 		// Reflect
 		uint emitt_start_num = 0;
 		// Reflect
 		vec3 emitt_rotation = vec3(0.f);
 		// Reflect
-		float emitt_offset_start = 0.f;
+		float emitt_offset_min = 0.f;
 		// Reflect
-		float emitt_offset_end = 0.f;
+		float emitt_offset_max = 0.f;
 		// Reflect
-		float emitt_bitangent_offset_start = 0.f;
+		float emitt_bitangent_offset_min = 0.f;
 		// Reflect
-		float emitt_bitangent_offset_end = 0.f;
+		float emitt_bitangent_offset_max = 0.f;
 		// Reflect
 		virtual void set_emitt_rotation(const vec3& r) = 0;
 		// Reflect
-		float emitt_angle_start = -45.f;
+		float emitt_angle_min = -45.f;
 		// Reflect
-		float emitt_angle_end = 45.f;
-		// Reflect hash=Billboard|HorizontalBillboard|VerticalBillboard
-		uint render_type = "Billboard"_h;
+		float emitt_angle_max = 45.f;
+		// Reflect
+		ParticleRenderType render_type = ParticleBillboard;
+		// Reflect
+		std::filesystem::path material_name;
+		// Reflect
+		virtual void set_material_name(const std::filesystem::path& material_name) = 0;
+		// Reflect
+		bool enable_trail = false;
+		// Reflect
+		float trail_emitt_tick = 1.f;
+		// Reflect
+		float trail_life_time_min = 5.f;
+		// Reflect
+		float trail_life_time_max = 5.f;
+		// Reflect
+		vec2 trail_size = vec2(1.f);
+		// Reflect
+		cvec4 trail_color = cvec4(255);
+		// Reflect
+		ParticleRenderType trail_render_type = ParticleBillboard;
+		// Reflect
+		std::filesystem::path trail_material_name;
+		// Reflect
+		virtual void set_trail_material_name(const std::filesystem::path& material_name) = 0;
 
 		graphics::MaterialPtr material = nullptr;
+		graphics::MaterialPtr trail_material = nullptr;
 		int material_res_id = -1;
+		int trail_material_res_id = -1;
 
+		virtual void reset() = 0;
 		virtual std::vector<Particle> get_particles() = 0;
 		virtual void set_particles(const std::vector<Particle>& pts) = 0;
+		virtual std::vector<Particle> get_trail(uint id) = 0;
+		virtual void set_trail(uint id, const std::vector<Particle>& vts) = 0;
 
 		struct Create
 		{

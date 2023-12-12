@@ -26,6 +26,19 @@ namespace flame
 		FogHeightExp2
 	};
 
+	enum PrimitiveType
+	{
+		PrimitiveLineList,
+		PrimitiveLineStrip,
+		PrimitiveTriangleList
+	};
+
+	enum OutlineMode
+	{
+		OutlineMax,
+		OutlineBox
+	};
+
 	enum HudStyleVar
 	{
 		HudStyleVarWindowPadding,
@@ -315,10 +328,9 @@ namespace flame
 		virtual void set_volume_instance(uint id, const mat4& mat, const vec3& extent, const uvec3& blocks, graphics::ImageViewPtr data_map) = 0;
 
 		// Reflect
-		virtual void draw_outlines(const std::vector<ObjectDrawData>& draw_datas, const cvec4& color, uint width, uint mode = "MAX"_h/*or BOX*/) = 0;
+		virtual void draw_outlines(const std::vector<ObjectDrawData>& draw_datas, const cvec4& color, uint width, OutlineMode mode = OutlineMax) = 0;
 		// Reflect
-		// type: "LineList"_h, "LineStrip"_h, "TriangleList"_h
-		virtual void draw_primitives(uint type, const vec3* points, uint count, const cvec4& color, bool depth_test = false) = 0;
+		virtual void draw_primitives(PrimitiveType type, const vec3* points, uint count, const cvec4& color, bool depth_test = false) = 0;
 
 		// Reflect
 		virtual void render(int tar_idx, graphics::CommandBufferPtr cb) = 0;

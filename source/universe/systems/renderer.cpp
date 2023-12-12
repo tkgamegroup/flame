@@ -199,12 +199,12 @@ namespace flame
 		std::vector<ObjectDrawData> draws;
 		cvec4 color;
 		uint width;
-		uint mode;
+		OutlineMode mode;
 	};
 
 	struct PrimitivesDraw
 	{
-		uint type;
+		PrimitiveType type;
 		uint vtx_cnt;
 		cvec4 color;
 		bool depth_test;
@@ -1966,7 +1966,7 @@ namespace flame
 		ds_instance->update();
 	}
 
-	void sRendererPrivate::draw_outlines(const std::vector<ObjectDrawData>& draw_datas, const cvec4& color, uint width, uint mode)
+	void sRendererPrivate::draw_outlines(const std::vector<ObjectDrawData>& draw_datas, const cvec4& color, uint width, OutlineMode mode)
 	{
 		auto& od = outline_groups.emplace_back();
 		od.draws = draw_datas;
@@ -1975,7 +1975,7 @@ namespace flame
 		od.mode = mode;
 	}
 
-	void sRendererPrivate::draw_primitives(uint type, const vec3* points, uint count, const cvec4& color, bool depth_test)
+	void sRendererPrivate::draw_primitives(PrimitiveType type, const vec3* points, uint count, const cvec4& color, bool depth_test)
 	{
 		auto& pd = primitives_draws.emplace_back();
 		pd.type = type;
@@ -2253,7 +2253,7 @@ namespace flame
 							if (csm_debug_flag)
 							{
 								auto pts = Frustum::points_to_lines(frustum_slice.data());
-								draw_primitives("LineList"_h, pts.data(), pts.size(), cvec4(156, 127, 0, 255), false);
+								draw_primitives(PrimitiveLineList, pts.data(), pts.size(), cvec4(156, 127, 0, 255), false);
 							}
 							auto b = AABB(frustum_slice, inverse(s.rot));
 							auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
@@ -2328,15 +2328,15 @@ namespace flame
 							{
 								auto frustum_points = Frustum::get_points(inverse(proj_view));
 								auto lines_points = Frustum::points_to_lines(frustum_points.data());
-								draw_primitives("LineList"_h, lines_points.data(), lines_points.size(), cvec4(255, 127, 0, 255), false);
+								draw_primitives(PrimitiveLineList, lines_points.data(), lines_points.size(), cvec4(255, 127, 0, 255), false);
 								auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
 								vec3 pts[2];
 								pts[0] = c; pts[1] = c + s.rot[0] * hf_xlen;
-								draw_primitives("LineList"_h, pts, 2, cvec4(255, 0, 0, 255), false);
+								draw_primitives(PrimitiveLineList, pts, 2, cvec4(255, 0, 0, 255), false);
 								pts[0] = c; pts[1] = c + s.rot[1] * hf_ylen;
-								draw_primitives("LineList"_h, pts, 2, cvec4(0, 255, 0, 255), false);
+								draw_primitives(PrimitiveLineList, pts, 2, cvec4(0, 255, 0, 255), false);
 								pts[0] = c; pts[1] = c + s.rot[2] * hf_zlen;
-								draw_primitives("LineList"_h, pts, 2, cvec4(0, 0, 255, 255), false);
+								draw_primitives(PrimitiveLineList, pts, 2, cvec4(0, 0, 255, 255), false);
 							}
 						}
 
@@ -2831,7 +2831,7 @@ namespace flame
 				{
 					for (auto& od : outline_groups)
 					{
-						if (od.mode != "BOX"_h)
+						if (od.mode != OutlineBox)
 							continue;
 						auto n_levels = min((uint)std::bit_width(od.width), img_back0->n_levels);
 						if (n_levels > 0)
@@ -2955,7 +2955,7 @@ namespace flame
 				{
 					for (auto& od : outline_groups)
 					{
-						if (od.mode != "MAX"_h)
+						if (od.mode != OutlineMax)
 							continue;
 						cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
 						for (auto& d : od.draws)
@@ -3023,13 +3023,13 @@ namespace flame
 							prm_plain.push_constant(cb);
 							switch (d.type)
 							{
-							case "LineList"_h:
+							case PrimitiveLineList:
 								cb->bind_pipeline(d.depth_test ? pl_line3d_dep : pl_line3d);
 								break;
-							case "LineStrip"_h:
+							case PrimitiveLineStrip:
 								cb->bind_pipeline(d.depth_test ? pl_line_strip3d_dep : pl_line_strip3d);
 								break;
-							case "TriangleList"_h:
+							case PrimitiveTriangleList:
 								cb->bind_pipeline(d.depth_test ? pl_triangle3d_dep : pl_triangle3d);
 								break;
 							}
@@ -3117,6 +3117,9 @@ namespace flame
 			sScene::instance()->octree->get_within_frustum(camera->frustum, camera_culled_nodes);
 			for (auto& n : camera_culled_nodes)
 			{
+				if (n.first->tag & TagNotPickable)
+					continue;
+
 				if (draw_callback)
 					draw_callback(n.second, draw_data);
 				else

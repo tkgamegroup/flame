@@ -92,6 +92,7 @@ namespace flame
 			bool auto_mipmapping = false;
 			float alpha_test = 0.f;
 			vec4 border = vec4(0.f);
+			uvec2 sheet_size = uvec2(1);
 		};
 
 		struct Image

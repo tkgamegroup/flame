@@ -34,7 +34,7 @@ void tile_map_editing()
 		pts[2] = c + vec3(+0.5f, 0.f, +0.5f);
 		pts[3] = c + vec3(-0.5f, 0.f, +0.5f);
 		pts[4] = c + vec3(-0.5f, 0.f, -0.5f);
-		sRenderer::instance()->draw_primitives("LineStrip"_h, pts, 5, cvec4(255, 128, 255, 255));
+		sRenderer::instance()->draw_primitives(PrimitiveLineStrip, pts, 5, cvec4(255, 128, 255, 255));
 
 		switch (fv->tool)
 		{

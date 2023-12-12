@@ -930,7 +930,7 @@ void App::on_gui()
 								points.push_back(start + vec3(1, 0, 0));
 								points.push_back(start - vec3(0, 0, 1));
 								points.push_back(start + vec3(0, 0, 1));
-								sRenderer::instance()->draw_primitives("LineList"_h, points.data(), points.size(), cvec4(0, 255, 0, 255));
+								sRenderer::instance()->draw_primitives(PrimitiveLineList, points.data(), points.size(), cvec4(0, 255, 0, 255));
 							}
 							{
 								std::vector<vec3> points;
@@ -938,10 +938,10 @@ void App::on_gui()
 								points.push_back(end + vec3(1, 0, 0));
 								points.push_back(end - vec3(0, 0, 1));
 								points.push_back(end + vec3(0, 0, 1));
-								sRenderer::instance()->draw_primitives("LineList"_h, points.data(), points.size(), cvec4(0, 0, 255, 255));
+								sRenderer::instance()->draw_primitives(PrimitiveLineList, points.data(), points.size(), cvec4(0, 0, 255, 255));
 							}
 							if (!points.empty())
-								sRenderer::instance()->draw_primitives("LineList"_h, points.data(), points.size(), cvec4(255, 0, 0, 255));
+								sRenderer::instance()->draw_primitives(PrimitiveLineList, points.data(), points.size(), cvec4(255, 0, 0, 255));
 
 							ImGui::End();
 						}

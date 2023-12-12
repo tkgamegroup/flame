@@ -644,20 +644,33 @@ namespace flame
 		return object_bounds.center() + camera_rotation[2] * l;
 	}
 
+	template <uint N>
 	struct Curve
 	{
 		float segment_length = 1.f; // how many segments per unit
 		float curvedness = 0.5f;	// how much do the curve along the normals
-		std::vector<vec3> ctrl_points;
-		std::vector<vec3> vertices;
+		std::vector<vec<N, float>> ctrl_points;
+		std::vector<vec<N, float>> vertices;
+
+		inline vec<N, float> interpolate(const vec<N, float>& p0, const vec<N, float>& p1, const vec<N, float>& p2, const vec<N, float>& p3, float u)
+		{
+			auto c0 = p1;
+			auto c1 = -curvedness * p0 + curvedness * p2;
+			auto c2 = 2.f * curvedness * p0 + (curvedness - 3.f) * p1 + (3.f - 2.f * curvedness) * p2 + -curvedness * p3;
+			auto c3 = -curvedness * p0 + (2.f - curvedness) * p1 + (curvedness - 2.f) * p2 + curvedness * p3;
+			return c0 + c1 * u + c2 * u * u + c3 * u * u * u;
+		}
 
 		inline void update()
 		{
 			vertices.clear();
 			if (ctrl_points.size() < 2)
+			{
+				vertices = ctrl_points;
 				return;
+			}
 
-			std::vector<vec3> _ctrl_points;
+			std::vector<vec<N, float>> _ctrl_points;
 			_ctrl_points.push_back(2.f * ctrl_points[0] - ctrl_points[1]);
 			_ctrl_points.insert(_ctrl_points.end(), ctrl_points.begin(), ctrl_points.end());
 			_ctrl_points.push_back(2.f * ctrl_points.rbegin()[0] - ctrl_points.rbegin()[1]);

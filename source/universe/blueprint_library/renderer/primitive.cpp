@@ -32,7 +32,7 @@ namespace flame
 				vec3 pts[2];
 				pts[0] = *(vec3*)inputs[0].data;
 				pts[1] = *(vec3*)inputs[1].data;
-				sRenderer::instance()->draw_primitives("LineList"_h, pts, 2, *(cvec4*)inputs[2].data, *(bool*)inputs[3].data);
+				sRenderer::instance()->draw_primitives(PrimitiveLineList, pts, 2, *(cvec4*)inputs[2].data, *(bool*)inputs[3].data);
 			}
 		);
 	}

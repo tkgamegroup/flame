@@ -12,6 +12,7 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/material.h>
 #include <flame/graphics/model.h>
+#include <flame/graphics/model.h>
 #include <flame/graphics/animation.h>
 #include <flame/graphics/shader.h>
 #include <flame/graphics/debug.h>
@@ -2125,35 +2126,44 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 			{
 				if (cc.components.size() == 1)
 				{
-					auto armature = (cArmaturePtr)cc.components[0];
+					auto comp = (cArmaturePtr)cc.components[0];
 					if (ImGui::Button("Reset"))
-						armature->reset();
-					if (!armature->animation_names.empty())
+						comp->reset();
+					if (!comp->animation_names.empty())
 					{
 						static int idx = 0;
-						idx = clamp(idx, 0, (int)armature->animation_names.size());
-						if (ImGui::BeginCombo("animations", armature->animation_names[idx].second.c_str()))
+						idx = clamp(idx, 0, (int)comp->animation_names.size());
+						if (ImGui::BeginCombo("animations", comp->animation_names[idx].second.c_str()))
 						{
-							for (auto i = 0; i < armature->animation_names.size(); i++)
+							for (auto i = 0; i < comp->animation_names.size(); i++)
 							{
-								auto& name = armature->animation_names[i].second;
+								auto& name = comp->animation_names[i].second;
 								if (ImGui::Selectable(name.c_str()))
 								{
 									idx = i;
-									armature->play(sh(name.c_str()));
+									comp->play(sh(name.c_str()));
 								}
 							}
 							ImGui::EndCombo();
 						}
 					}
-					if (armature->playing_name != 0)
+					if (comp->playing_name != 0)
 					{
 						ImGui::SameLine();
 						if (ImGui::Button("Stop"))
-							armature->stop();
-						ImGui::InputFloat("Time", &armature->playing_time, 0.f, 0.f, "%.3f", ImGuiInputTextFlags_ReadOnly);
+							comp->stop();
+						ImGui::InputFloat("Time", &comp->playing_time, 0.f, 0.f, "%.3f", ImGuiInputTextFlags_ReadOnly);
 					}
-					ImGui::DragFloat("Speed", &armature->playing_speed, 0.01f);
+					ImGui::DragFloat("Speed", &comp->playing_speed, 0.01f);
+				}
+			}
+			else if (ui.name_hash == "flame::cParticleSystem"_h)
+			{
+				if (cc.components.size() == 1)
+				{
+					auto comp = (cParticleSystemPtr)cc.components[0];
+					if (ImGui::Button("Reset"))
+						comp->reset();
 				}
 			}
 			else if (ui.name_hash == "flame::cBpInstance"_h)
