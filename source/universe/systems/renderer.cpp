@@ -2522,7 +2522,7 @@ namespace flame
 			// forward pass
 			cb->begin_debug_label("Forward Shading");
 			{
-				if (mode != RenderModeSimple && mode != RenderModeWireframe)
+				if (mode == RenderModeShaded || mode == RenderModeCameraLight)
 				{
 					cb->image_barrier(img_dst, {}, graphics::ImageLayoutShaderReadOnly);
 					cb->begin_renderpass(nullptr, img_dst_ms->get_shader_write_dst());
@@ -2537,10 +2537,7 @@ namespace flame
 					cb->bind_descriptor_set(0, img_dep->get_shader_read_src(0, 0, sp_nearest));
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
-				}
 
-				if (mode != RenderModeSimple && mode != RenderModeWireframe)
-				{
 					for (auto& b : transparent_batcher.batches)
 						b.second.draw_indices.clear();
 					draw_data.reset(PassForward, CateMesh | CateGrassField | CateParticle);
@@ -2550,10 +2547,7 @@ namespace flame
 							n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
 					}
 					transparent_batcher.collect(mode, draw_data, cb);
-				}
 
-				if (mode != RenderModeSimple && mode != RenderModeWireframe)
-				{
 					for (auto& p : draw_data.particles)
 					{
 						auto off = buf_particles.add(nullptr, p.ptcs.size());
@@ -2571,10 +2565,7 @@ namespace flame
 					}
 					buf_particles.upload(cb);
 					buf_particles.reset();
-				}
 
-				if (mode != RenderModeSimple && mode != RenderModeWireframe)
-				{
 					cb->image_barrier(img_dst, {}, graphics::ImageLayoutAttachment);
 					cb->image_barrier(img_dep, {}, graphics::ImageLayoutAttachment);
 					cb->begin_renderpass(nullptr, fb_fwd);
@@ -2588,6 +2579,79 @@ namespace flame
 						prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (t.mat_id << 16) + t.ins_id;
 						prm_fwd.push_constant(cb);
 						cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
+					}
+
+					if (post_processing_enable && outline_pp_enable)
+					{
+						cb->end_renderpass();
+
+						cb->begin_debug_label("Outline PP");
+						auto n_levels = min((uint)std::bit_width(outline_pp_width), img_dep->n_levels);
+						if (n_levels > 0)
+						{
+							auto img_normal = render_task->img_gbufferB.get();
+
+							for (auto i = 1; i < n_levels; i++)
+							{
+								cb->image_barrier(img_dep, { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+								cb->set_viewport(Rect(vec2(0.f), vec2(img_dep->levels[i].extent)));
+								cb->begin_renderpass(nullptr, img_dep->get_shader_write_dst(i));
+								cb->bind_pipeline(pl_down_sample_depth);
+								cb->bind_descriptor_set(0, img_dep->get_shader_read_src(i - 1));
+								prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_dep->levels[i - 1].extent);
+								prm_box.push_constant(cb);
+								cb->draw(3, 1, 0, 0);
+								cb->end_renderpass();
+
+								cb->image_barrier(img_normal, { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+								cb->set_viewport(Rect(vec2(0.f), vec2(img_normal->levels[i].extent)));
+								cb->begin_renderpass(nullptr, img_normal->get_shader_write_dst(i));
+								cb->bind_pipeline(pl_down_sample);
+								cb->bind_descriptor_set(0, img_normal->get_shader_read_src(i - 1));
+								prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_normal->levels[i - 1].extent);
+								prm_box.push_constant(cb);
+								cb->draw(3, 1, 0, 0);
+								cb->end_renderpass();
+							}
+
+							cb->image_barrier(img_dep, { n_levels - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+							cb->image_barrier(img_normal, { n_levels - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+
+							cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(n_levels - 1));
+							cb->bind_pipeline(pl_outline_pp);
+							prm_outline_pp.set_ds(""_h, dss_outline_pp[n_levels - 1].get());
+							prm_outline_pp.bind_dss(cb);
+							prm_outline_pp.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_dep->levels[n_levels - 1].extent);
+							prm_outline_pp.pc.mark_dirty_c("near"_h).as<float>() = camera->zNear;
+							prm_outline_pp.pc.mark_dirty_c("far"_h).as<float>() = camera->zFar;
+							prm_outline_pp.pc.mark_dirty_c("depth_scale"_h).as<float>() = outline_pp_depth_scale;
+							prm_outline_pp.pc.mark_dirty_c("normal_scale"_h).as<float>() = outline_pp_normal_scale;
+							prm_outline_pp.pc.mark_dirty_c("color"_h).as<vec3>() = outline_pp_color;
+							prm_outline_pp.push_constant(cb);
+							cb->draw(3, 1, 0, 0);
+							cb->end_renderpass();
+
+							cb->set_viewport(Rect(vec2(0), ext));
+							cb->image_barrier(img_back0, { n_levels - 1 }, graphics::ImageLayoutShaderReadOnly);
+							cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
+							cb->bind_pipeline(pl_blit_blend);
+							cb->bind_descriptor_set(0, img_back0->get_shader_read_src(n_levels - 1));
+							cb->draw(3, 1, 0, 0);
+							cb->end_renderpass();
+						}
+						cb->end_debug_label();
+
+						cb->image_barrier(img_dst, {}, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, img_dst_ms->get_shader_write_dst());
+						cb->bind_pipeline(pl_blit);
+						cb->bind_descriptor_set(0, img_dst->get_shader_read_src(0, 0, sp_nearest));
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+
+						cb->image_barrier(img_dst, {}, graphics::ImageLayoutAttachment);
+						cb->image_barrier(img_dep, {}, graphics::ImageLayoutAttachment);
+						cb->begin_renderpass(nullptr, fb_fwd);
+						prm_fwd.bind_dss(cb);
 					}
 
 					{
@@ -2605,7 +2669,7 @@ namespace flame
 				}
 				else
 				{
-					draw_data.reset(PassPickUp, CateMesh);
+					draw_data.reset(PassPickUp, CateMesh); // use pick up to grap all meshes
 					for (auto& n : camera_culled_nodes)
 					{
 						if (n.second->entity->layer & camera->layer)
@@ -2714,69 +2778,12 @@ namespace flame
 			{
 				cb->begin_debug_label("Post Processing");
 
-				cb->begin_debug_label("Outline PP");
-				if (outline_pp_enable)
-				{
-					auto n_levels = min((uint)std::bit_width(outline_pp_width), img_dep->n_levels);
-					if (n_levels > 0)
-					{
-						auto img_normal = render_task->img_gbufferB.get();
-
-						for (auto i = 1; i < n_levels; i++)
-						{
-							cb->image_barrier(img_dep, { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
-							cb->set_viewport(Rect(vec2(0.f), vec2(img_dep->levels[i].extent)));
-							cb->begin_renderpass(nullptr, img_dep->get_shader_write_dst(i));
-							cb->bind_pipeline(pl_down_sample_depth);
-							cb->bind_descriptor_set(0, img_dep->get_shader_read_src(i - 1));
-							prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_dep->levels[i - 1].extent);
-							prm_box.push_constant(cb);
-							cb->draw(3, 1, 0, 0);
-							cb->end_renderpass();
-
-							cb->image_barrier(img_normal, { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
-							cb->set_viewport(Rect(vec2(0.f), vec2(img_normal->levels[i].extent)));
-							cb->begin_renderpass(nullptr, img_normal->get_shader_write_dst(i));
-							cb->bind_pipeline(pl_down_sample);
-							cb->bind_descriptor_set(0, img_normal->get_shader_read_src(i - 1));
-							prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_normal->levels[i - 1].extent);
-							prm_box.push_constant(cb);
-							cb->draw(3, 1, 0, 0);
-							cb->end_renderpass();
-						}
-
-						cb->image_barrier(img_dep, { n_levels - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
-						cb->image_barrier(img_normal, { n_levels - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
-
-						cb->begin_renderpass(nullptr, img_back0->get_shader_write_dst(n_levels - 1));
-						cb->bind_pipeline(pl_outline_pp);
-						prm_outline_pp.set_ds(""_h, dss_outline_pp[n_levels - 1].get());
-						prm_outline_pp.bind_dss(cb);
-						prm_outline_pp.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_dep->levels[n_levels - 1].extent);
-						prm_outline_pp.pc.mark_dirty_c("near"_h).as<float>() = camera->zNear;
-						prm_outline_pp.pc.mark_dirty_c("far"_h).as<float>() = camera->zFar;
-						prm_outline_pp.pc.mark_dirty_c("depth_scale"_h).as<float>() = outline_pp_depth_scale;
-						prm_outline_pp.pc.mark_dirty_c("normal_scale"_h).as<float>() = outline_pp_normal_scale;
-						prm_outline_pp.pc.mark_dirty_c("color"_h).as<vec3>() = outline_pp_color;
-						prm_outline_pp.push_constant(cb);
-						cb->draw(3, 1, 0, 0);
-						cb->end_renderpass();
-
-						cb->set_viewport(Rect(vec2(0), ext));
-						cb->image_barrier(img_back0, { n_levels - 1 }, graphics::ImageLayoutShaderReadOnly);
-						cb->begin_renderpass(nullptr, img_dst->get_shader_write_dst());
-						cb->bind_pipeline(pl_blit_blend);
-						cb->bind_descriptor_set(0, img_back0->get_shader_read_src(n_levels - 1));
-						cb->draw(3, 1, 0, 0);
-						cb->end_renderpass();
-					}
-				}
-				cb->end_debug_label();
-
+				cb->begin_debug_label("SSAO");
 				if (ssao_enable)
 				{
 					// TODO
 				}
+				cb->end_debug_label();
 
 				cb->begin_debug_label("Bloom");
 				if (bloom_enable)
