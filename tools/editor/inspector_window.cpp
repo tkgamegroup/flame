@@ -882,6 +882,154 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 			}
 		}
 			break;
+		default:
+			if (ti->name == "flame::Curve2")
+			{
+				if (context_show_name)
+				{
+					ImGui::TableNextRow();
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(get_display_name(name).c_str());
+					ImGui::TableNextColumn();
+				}
+
+				if (num == 1 && ImGui::TreeNode(""))
+				{
+					auto& curve = *(Curve<2>*)data;
+
+					ImGui::Text("Points: %d", (int)curve.ctrl_points.size());
+					ImGui::SameLine();
+					if (ImGui::SmallButton("Clear"))
+					{
+						curve.ctrl_points.clear();
+						curve.update();
+						changed = true;
+					}
+
+					static float scaling = 100.f;
+					static vec2 scrolling = vec2(0.f);
+					const float horizontal_scaling_mutipler = 4.f;
+					ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+					ImGui::BeginChild("curve", ImVec2(0, 150), true, ImGuiWindowFlags_NoScrollbar);
+					auto dl = ImGui::GetWindowDrawList();
+					vec2 wnd_pos = ImGui::GetWindowPos();
+					vec2 wnd_sz = ImGui::GetWindowSize();
+					auto p = wnd_pos + vec2(0.f, wnd_sz.y);
+
+					{
+						auto i0 = -scrolling.x * 2.f / scaling / horizontal_scaling_mutipler;
+						i0 = i0 > 0.f ? ceil(i0) : floor(i0);
+						auto n_lines = int(wnd_sz.x * 2.f / scaling / horizontal_scaling_mutipler) + 2;
+						for (auto i = 0; i < n_lines; i++)
+						{
+							auto pos = p + vec2((i0 + i) * scaling * horizontal_scaling_mutipler / 2.f + scrolling.x, 0.f);
+							dl->AddLine(pos, pos + vec2(0.f, -wnd_sz.y), ImColor(0.2f, 0.2f, 0.2f));
+							dl->AddText(pos + vec2(3.f, -18.f), ImColor(0.2f, 0.2f, 0.2f), str((i0 + i) * 0.5f).c_str());
+						}
+					}
+					{
+						auto i0 = scrolling.y * 2.f / scaling;
+						i0 = i0 > 0.f ? ceil(i0) : floor(i0);
+						auto n_lines = int(wnd_sz.y * 2.f / scaling) + 2;
+						for (auto i = 0; i < n_lines; i++)
+						{
+							auto pos = p + vec2(0.f, -(i0 + i) * scaling / 2.f + scrolling.y);
+							dl->AddLine(pos, pos + vec2(wnd_sz.x, 0.f), ImColor(0.2f, 0.2f, 0.2f));
+							dl->AddText(pos + vec2(3.f, -18.f), ImColor(0.2f, 0.2f, 0.2f), str((i0 + i) * 0.5f).c_str());
+						}
+					}
+
+					for (auto i = 0; i < curve.ctrl_points.size(); i++)
+					{
+						auto pt = curve.ctrl_points[i];
+						auto pos = vec2(p + vec2(pt.x * scaling * horizontal_scaling_mutipler, -pt.y * scaling) + scrolling);
+						ImGui::SetCursorScreenPos(pos - vec2(3.f));
+						ImGui::PushID(i);
+						ImGui::InvisibleButton("", vec2(6.f));
+						if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+							ImGui::SetTooltip("%f, %f", pt.x, pt.y);
+						if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+						{
+							auto delta = ImGui::GetIO().MouseDelta;
+							curve.ctrl_points[i] += vec2(delta.x, -delta.y) / scaling;
+							changed = true;
+						}
+						ImGui::PopID();
+						dl->AddCircleFilled(pos, 3.f, ImColor(1.f, 1.f, 1.f));
+					}
+
+					if (ImGui::IsKeyPressed(Keyboard_X))
+					{
+						for (auto it = curve.ctrl_points.begin(); it != curve.ctrl_points.end();)
+						{
+							auto pt = *it;
+							auto pos = vec2(p + vec2(pt.x * scaling * horizontal_scaling_mutipler, -pt.y * scaling) + scrolling);
+							if (ImGui::IsMouseHoveringRect(pos - vec2(3.f), pos + vec2(3.f)))
+							{
+								it = curve.ctrl_points.erase(it);
+								changed = true;
+							}
+							else
+								it++;
+						}
+					}
+
+					if (changed)
+					{
+						std::sort(curve.ctrl_points.begin(), curve.ctrl_points.end(),
+							[](const auto& a, const auto& b) { return a.x < b.x; });
+					}
+
+					for (auto i = 0; i < (int)curve.vertices.size() - 1; i++)
+					{
+						auto pos1 = curve.vertices[i]; pos1.y *= -1.f;
+						pos1 = vec2(p + vec2(pos1.x * scaling * horizontal_scaling_mutipler, pos1.y * scaling) + scrolling);
+						auto pos2 = curve.vertices[i + 1]; pos2.y *= -1.f;
+						pos2 = vec2(p + vec2(pos2.x * scaling * horizontal_scaling_mutipler, pos2.y * scaling) + scrolling);
+						dl->AddLine(pos1, pos2, ImColor(1.f, 1.f, 0.f));
+					}
+
+					if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
+					{
+						ImGui::SetCursorScreenPos(wnd_pos);
+						ImGui::InvisibleButton("", wnd_sz);
+						ImGui::SetItemUsingMouseWheel();
+
+						if (ImGui::IsKeyPressed(Keyboard_A))
+						{
+							vec2 mpos = ImGui::GetMousePos();
+							vec2 pos = vec2(mpos.x - p.x - scrolling.x, p.y - mpos.y + scrolling.y);
+							pos.x /= scaling * horizontal_scaling_mutipler;
+							pos.y /= scaling;
+							curve.ctrl_points.insert(
+								std::upper_bound(curve.ctrl_points.begin(), curve.ctrl_points.end(), pos.x,
+									[](float v, const auto& i) { return v < i.x; }), pos);
+							changed = true;
+						}
+						if (ImGui::IsMouseDragging(ImGuiMouseButton_Middle))
+						{
+							auto delta = ImGui::GetIO().MouseDelta;
+							scrolling += vec2(delta.x, delta.y);
+						}
+						if (auto v = ImGui::GetIO().MouseWheel; v != 0.f)
+						{
+							auto mpos = ImGui::GetMousePos();
+							scaling *= 1.f + v * 0.1f;
+						}
+					}
+
+					ImGui::EndChild();
+					ImGui::PopStyleVar();
+
+					if (changed)
+					{
+						curve.segment_length = 4.f / scaling;
+						curve.update();
+					}
+
+					ImGui::TreePop();
+				}
+			}
 		}
 	}
 		break;

@@ -237,14 +237,18 @@ namespace flame
 	thread_local mat3 TypeInfo_mat3::v;
 	thread_local mat4 TypeInfo_mat4::v;
 	thread_local quat TypeInfo_quat::v;
-	thread_local std::string TypeInfo_string::v;
-	thread_local std::wstring TypeInfo_wstring::v;
-	thread_local std::filesystem::path TypeInfo_path::v;
 	thread_local Rect TypeInfo_Rect::v;
 	thread_local AABB TypeInfo_AABB::v;
 	thread_local Plane TypeInfo_Plane::v;
 	thread_local Frustum TypeInfo_Frustum::v;
+	thread_local Curve<1> TypeInfo_Curve1::v;
+	thread_local Curve<2> TypeInfo_Curve2::v;
+	thread_local Curve<3> TypeInfo_Curve3::v;
+	thread_local Curve<4> TypeInfo_Curve4::v;
 	thread_local GUID TypeInfo_GUID::v;
+	thread_local std::string TypeInfo_string::v;
+	thread_local std::wstring TypeInfo_wstring::v;
+	thread_local std::filesystem::path TypeInfo_path::v;
 
 	void init_typeinfo()
 	{
@@ -309,6 +313,10 @@ namespace flame
 		add_basic_type(new TypeInfo_AABB);
 		add_basic_type(new TypeInfo_Plane);
 		add_basic_type(new TypeInfo_Frustum);
+		add_basic_type(new TypeInfo_Curve1);
+		add_basic_type(new TypeInfo_Curve2);
+		add_basic_type(new TypeInfo_Curve3);
+		add_basic_type(new TypeInfo_Curve4);
 		add_basic_type(new TypeInfo_GUID);
 	}
 

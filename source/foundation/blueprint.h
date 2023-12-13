@@ -177,35 +177,67 @@ namespace flame
 
 		virtual ~BlueprintNode() {}
 
-		inline int find_input_i(uint name) const
+		inline int find_input_i(std::string_view name) const
 		{
 			for (auto i = 0; i < inputs.size(); i++)
 			{
-				if (((BlueprintSlot*)inputs[i].get())->name_hash == name)
+				if (((BlueprintSlot*)inputs[i].get())->name == name)
 					return i;
 			}
 			return -1;
 		}
 
-		inline BlueprintSlotPtr find_input(uint name) const
+		inline int find_input_i(uint name_hash) const
+		{
+			for (auto i = 0; i < inputs.size(); i++)
+			{
+				if (((BlueprintSlot*)inputs[i].get())->name_hash == name_hash)
+					return i;
+			}
+			return -1;
+		}
+
+		inline BlueprintSlotPtr find_input(std::string_view name) const
 		{
 			auto idx = find_input_i(name);
 			return idx != -1 ? (BlueprintSlotPtr)inputs[idx].get() : nullptr;
 		}
 
-		inline int find_output_i(uint name) const
+		inline BlueprintSlotPtr find_input(uint name_hash) const
+		{
+			auto idx = find_input_i(name_hash);
+			return idx != -1 ? (BlueprintSlotPtr)inputs[idx].get() : nullptr;
+		}
+
+		inline int find_output_i(std::string_view name) const
 		{
 			for (auto i = 0; i < outputs.size(); i++)
 			{
-				if (((BlueprintSlot*)outputs[i].get())->name_hash == name)
+				if (((BlueprintSlot*)outputs[i].get())->name == name)
 					return i;
 			}
 			return -1;
 		}
 
-		inline BlueprintSlotPtr find_output(uint name) const
+		inline int find_output_i(uint name_hash) const
+		{
+			for (auto i = 0; i < outputs.size(); i++)
+			{
+				if (((BlueprintSlot*)outputs[i].get())->name_hash == name_hash)
+					return i;
+			}
+			return -1;
+		}
+
+		inline BlueprintSlotPtr find_output(std::string_view name) const
 		{
 			auto idx = find_output_i(name);
+			return idx != -1 ? (BlueprintSlotPtr)outputs[idx].get() : nullptr;
+		}
+
+		inline BlueprintSlotPtr find_output(uint name_hash) const
+		{
+			auto idx = find_output_i(name_hash);
 			return idx != -1 ? (BlueprintSlotPtr)outputs[idx].get() : nullptr;
 		}
 

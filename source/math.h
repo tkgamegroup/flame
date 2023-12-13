@@ -62,6 +62,26 @@ namespace flame
 		void* p;
 	};
 
+	inline float map_01(float x, float v0, float v1)
+	{
+		return (x - v0) / (v1 - v0);
+	}
+
+	inline vec2 map_01(vec2 x, float v0, float v1)
+	{
+		return vec2(map_01(x.x, v0, v1), map_01(x.y, v0, v1));
+	}
+
+	inline vec3 map_01(vec3 x, float v0, float v1)
+	{
+		return vec3(map_01(x.x, v0, v1), map_01(x.y, v0, v1), map_01(x.z, v0, v1));
+	}
+
+	inline vec4 map_01(vec4 x, float v0, float v1)
+	{
+		return vec4(map_01(x.x, v0, v1), map_01(x.y, v0, v1), map_01(x.z, v0, v1), map_01(x.w, v0, v1));
+	}
+
 	inline int log2i(int v)
 	{
 		int ret = 0;
@@ -652,7 +672,7 @@ namespace flame
 		std::vector<vec<N, float>> ctrl_points;
 		std::vector<vec<N, float>> vertices;
 
-		inline vec<N, float> interpolate(const vec<N, float>& p0, const vec<N, float>& p1, const vec<N, float>& p2, const vec<N, float>& p3, float u)
+		inline static vec<N, float> interpolate(const vec<N, float>& p0, const vec<N, float>& p1, const vec<N, float>& p2, const vec<N, float>& p3, float u, float curvedness)
 		{
 			auto c0 = p1;
 			auto c1 = -curvedness * p0 + curvedness * p2;
@@ -730,7 +750,7 @@ namespace flame
 	};
 
 	using basic_math_types = type_list<ivec2, ivec3, ivec4, uvec2, uvec3, uvec4, cvec2, cvec3, cvec4, vec2, vec3, vec4, mat2, mat3, mat4, quat, 
-		Rect, AABB, Plane, Frustum>;
+		Rect, AABB, Plane, Frustum, Curve<1>, Curve<2>, Curve<3>, Curve<4>>;
 
 	template<typename T>
 	concept basic_math_type = is_one_of_t<T>(basic_math_types());

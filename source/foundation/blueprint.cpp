@@ -2102,7 +2102,7 @@ namespace flame
 					}
 					auto read_input = [&](BlueprintNodePtr n, pugi::xml_node n_input) {
 						auto name = n_input.attribute("name").value();
-						auto i = n->find_input(sh(name));
+						auto i = n->find_input(name);
 						if (i)
 						{
 							if (auto a_type = n_input.attribute("type"); a_type)

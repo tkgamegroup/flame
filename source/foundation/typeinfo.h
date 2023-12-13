@@ -223,6 +223,14 @@ namespace flame
 				ret = "glm::mat4" + ret;
 			else if (SUS::strip_head_if(ret, "glm::qua<float,0>"))
 				ret = "glm::quat" + ret;
+			else if (name == "flame::Curve<1>")
+				ret = "flame::Curve1";
+			else if (name == "flame::Curve<2>")
+				ret = "flame::Curve2";
+			else if (name == "flame::Curve<3>")
+				ret = "flame::Curve3";
+			else if (name == "flame::Curve<4>")
+				ret = "flame::Curve4";
 			else if (SUS::strip_head_if(ret, "std::basic_string<char,std::char_traits<char>,std::allocator<char>>"))
 				ret = "std::string" + ret;
 			else if (SUS::strip_head_if(ret, "std::basic_string<wchar_t,std::char_traits<wchar_t>,std::allocator<wchar_t>>"))
@@ -2656,6 +2664,232 @@ namespace flame
 			assert(fi->check(TypeInfo::void_type, { TypeInfo::get<Frustum*>() }));
 			if (!src) src = &v;
 			fi->call<void, const Frustum&>(obj, *(Frustum*)src);
+		}
+	};
+
+	struct TypeInfo_Curve1 : TypeInfo_Data
+	{
+		thread_local static Curve<1> v;
+
+		TypeInfo_Curve1() :
+			TypeInfo_Data("flame::Curve1", sizeof(Curve<1>))
+		{
+		}
+
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return new Curve<1>;
+			new(p) Curve<1>;
+			return p;
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			((Curve<1>*)p)->~Curve<1>();
+			if (free_memory)
+				free(p);
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			*(Curve<1>*)dst = *(src ? (Curve<1>*)src : &v);
+		}
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			std::string ret;
+			auto& pts = (*(Curve<1>*)p).ctrl_points;
+			for (auto& pt : pts)
+			{
+				if (!ret.empty())
+					ret += ',';
+				ret += '(' + str(pt) + ')';
+			}
+			return ret;
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			auto& pts = (*(Curve<1>*)p).ctrl_points;
+			for (auto t : SUS::split_parentheses(str, '(', ')', ','))
+			{
+				if (t.empty())
+					continue;
+				pts.push_back(s2t<1, float>(std::string(t)));
+			}
+		}
+		void* get_v() const override
+		{
+			return &v;
+		}
+	};
+
+	struct TypeInfo_Curve2 : TypeInfo_Data
+	{
+		thread_local static Curve<2> v;
+
+		TypeInfo_Curve2() :
+			TypeInfo_Data("flame::Curve2", sizeof(Curve<2>))
+		{
+		}
+
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return new Curve<2>;
+			new(p) Curve<2>;
+			return p;
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			((Curve<2>*)p)->~Curve<2>();
+			if (free_memory)
+				free(p);
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			*(Curve<2>*)dst = *(src ? (Curve<2>*)src : &v);
+		}
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			std::string ret;
+			auto& pts = (*(Curve<2>*)p).ctrl_points;
+			for (auto& pt : pts)
+			{
+				if (!ret.empty())
+					ret += ',';
+				ret += '(' + str(pt) + ')';
+			}
+			return ret;
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			auto& pts = (*(Curve<2>*)p).ctrl_points;
+			for (auto t : SUS::split_parentheses(str, '(', ')', ','))
+			{
+				auto str = std::string(t);
+				SUS::strip_head_tail_if(str, "(", ")");
+				if (str.empty())
+					continue;
+				pts.push_back(s2t<2, float>(str));
+			}
+		}
+		void* get_v() const override
+		{
+			return &v;
+		}
+	};
+
+	struct TypeInfo_Curve3 : TypeInfo_Data
+	{
+		thread_local static Curve<3> v;
+
+		TypeInfo_Curve3() :
+			TypeInfo_Data("flame::Curve3", sizeof(Curve<3>))
+		{
+		}
+
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return new Curve<3>;
+			new(p) Curve<3>;
+			return p;
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			((Curve<3>*)p)->~Curve<3>();
+			if (free_memory)
+				free(p);
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			*(Curve<3>*)dst = *(src ? (Curve<3>*)src : &v);
+		}
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			std::string ret;
+			auto& pts = (*(Curve<3>*)p).ctrl_points;
+			for (auto& pt : pts)
+			{
+				if (!ret.empty())
+					ret += ',';
+				ret += '(' + str(pt) + ')';
+			}
+			return ret;
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			auto& pts = (*(Curve<3>*)p).ctrl_points;
+			for (auto t : SUS::split_parentheses(str, '(', ')', ','))
+			{
+				if (t.empty())
+					continue;
+				pts.push_back(s2t<3, float>(std::string(t)));
+			}
+		}
+		void* get_v() const override
+		{
+			return &v;
+		}
+	};
+
+	struct TypeInfo_Curve4 : TypeInfo_Data
+	{
+		thread_local static Curve<4> v;
+
+		TypeInfo_Curve4() :
+			TypeInfo_Data("flame::Curve4", sizeof(Curve<4>))
+		{
+		}
+
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return new Curve<4>;
+			new(p) Curve<4>;
+			return p;
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			((Curve<4>*)p)->~Curve<4>();
+			if (free_memory)
+				free(p);
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			*(Curve<4>*)dst = *(src ? (Curve<4>*)src : &v);
+		}
+		std::string serialize(const void* p) const override
+		{
+			if (!p) p = &v;
+			std::string ret;
+			auto& pts = (*(Curve<4>*)p).ctrl_points;
+			for (auto& pt : pts)
+			{
+				if (!ret.empty())
+					ret += ',';
+				ret += '(' + str(pt) + ')';
+			}
+			return ret;
+		}
+		void unserialize(const std::string& str, void* p) const override
+		{
+			if (!p) p = &v;
+			auto& pts = (*(Curve<4>*)p).ctrl_points;
+			for (auto t : SUS::split_parentheses(str, '(', ')', ','))
+			{
+				if (t.empty())
+					continue;
+				pts.push_back(s2t<4, float>(std::string(t)));
+			}
+		}
+		void* get_v() const override
+		{
+			return &v;
 		}
 	};
 

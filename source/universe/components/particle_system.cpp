@@ -135,9 +135,27 @@ namespace flame
 		data_changed("trail_material_name"_h);
 	}
 
+	static float interpolate(const std::vector<vec2>& ctrl_pts, float t, float curvedness)
+	{
+		if (ctrl_pts.size() == 1)
+			return ctrl_pts[0].y;
+		auto it = std::upper_bound(ctrl_pts.begin(), ctrl_pts.end(), t,
+			[](float v, const auto& i) { return v < i.x; });
+		if (it == ctrl_pts.begin())
+			return it->y;
+		if (it == ctrl_pts.end())
+			return ctrl_pts.back().y;
+
+		auto p0 = (it - 1) == ctrl_pts.begin() ? (2.f * ctrl_pts[0] - ctrl_pts[1]) : *(it - 2);
+		auto p1 = *(it - 1);
+		auto p2 = *it;
+		auto p3 = (it + 1) == ctrl_pts.end() ? (2.f * ctrl_pts.rbegin()[0] - ctrl_pts.rbegin()[1]) : *(it + 1);
+		return Curve<2>::interpolate(p0, p1, p2, p3, map_01(t, p1.x, p2.x), curvedness).y;
+	}
+
 	static void render_particle(const Particle& src, ParticleDrawData::Ptc& dst, ParticleRenderType render_type, const mat4& mat, const mat3& camera_rot, const uvec2& texture_sheet_size)
 	{
-		dst.time = src.life_time - src.time;
+		dst.time = src.lifetime - src.time;
 		dst.pos = mat * vec4(src.pos, 1.f);
 		switch (render_type)
 		{
@@ -184,7 +202,7 @@ namespace flame
 		if (texture_sheet_size != uvec2(1))
 		{
 			auto n = texture_sheet_size.x * texture_sheet_size.y;
-			int i = (dst.time / src.life_time) * n;
+			int i = (dst.time / src.lifetime) * n;
 			auto x = i % texture_sheet_size.x;
 			auto y = i / texture_sheet_size.y;
 			dst.uv = vec4(float(x) / texture_sheet_size.x, float(y) / texture_sheet_size.y, float(x + 1) / texture_sheet_size.x, float(y + 1) / texture_sheet_size.y);
@@ -298,8 +316,8 @@ namespace flame
 			}
 			pt.ang = radians(linearRand(particle_angle_min, particle_angle_max));
 			pt.col = particle_color;
-			pt.life_time = linearRand(particle_life_time_min, particle_life_time_max);
-			pt.time = pt.life_time;
+			pt.lifetime = linearRand(particle_life_time_min, particle_life_time_max);
+			pt.time = pt.lifetime;
 			pt.id = next_particle_id++;
 		}
 
@@ -311,6 +329,25 @@ namespace flame
 			{
 				it->pos += it->vel * delta_time;
 				it->time -= delta_time;
+				auto t = (it->lifetime - it->time) / it->lifetime;
+				if (particle_scale_over_lifetime)
+				{
+					auto& ctrl_pts = particle_scale_curve.ctrl_points;
+					if (!ctrl_pts.empty())
+						it->size = particle_size * interpolate(ctrl_pts, t, particle_scale_curve.curvedness);
+				}
+				if (particle_alpha_over_lifetime)
+				{
+					auto& ctrl_pts = particle_alpha_curve.ctrl_points;
+					if (!ctrl_pts.empty())
+						it->col.a = clamp(interpolate(ctrl_pts, t, particle_alpha_curve.curvedness), 0.f, 1.f) * 255.f;
+				}
+				if (particle_brightness_over_lifetime)
+				{
+					auto& ctrl_pts = particle_brightness_curve.ctrl_points;
+					if (!ctrl_pts.empty())
+						it->col.rgb = vec3(particle_color.rgb()) * clamp(interpolate(ctrl_pts, t, particle_brightness_curve.curvedness), 0.f, 1.f);
+				}
 				it++;
 			}
 		}
@@ -326,8 +363,8 @@ namespace flame
 			{
 				Particle vt;
 				vt.pos = pt.pos;
-				vt.life_time = linearRand(trail_life_time_min, trail_life_time_max);
-				vt.time = vt.life_time;
+				vt.lifetime = linearRand(trail_life_time_min, trail_life_time_max);
+				vt.time = vt.lifetime;
 				trails[pt.id].push_back(vt);
 			}
 		}

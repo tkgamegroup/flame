@@ -25,7 +25,7 @@ namespace flame
 		vec3 vel;
 		float ang;
 		uvec4 col;
-		float life_time;
+		float lifetime;
 		float time;
 		uint id;
 	};
@@ -47,11 +47,23 @@ namespace flame
 		// Reflect
 		vec2 particle_size = vec2(1.f);
 		// Reflect
+		bool particle_scale_over_lifetime = false;
+		// Reflect
+		Curve<2> particle_scale_curve;
+		// Reflect
 		float particle_angle_min = 0.f;
 		// Reflect
 		float particle_angle_max = 360.f;
 		// Reflect
 		cvec4 particle_color = cvec4(255);
+		// Reflect
+		bool particle_alpha_over_lifetime = false;
+		// Reflect
+		Curve<2> particle_alpha_curve;
+		// Reflect
+		bool particle_brightness_over_lifetime = false;
+		// Reflect
+		Curve<2> particle_brightness_curve;
 		// Reflect
 		ParticleEmittType emitt_type = ParticleEmittSphere;
 		// Reflect
