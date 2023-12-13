@@ -38,8 +38,18 @@ namespace flame
 		graphics::PipelineResourceManager			prm_gbuf;
 		graphics::PipelineResourceManager			prm_deferred;
 		std::unique_ptr<graphics::DescriptorSet>	ds_deferred;
+		graphics::PipelineResourceManager			prm_outline_pp;
+		std::vector<std::unique_ptr<graphics::DescriptorSet>>	
+													dss_outline_pp;
+		graphics::PipelineResourceManager			prm_box;
+		graphics::PipelineResourceManager			prm_bloom;
+		graphics::PipelineResourceManager			prm_blur;
+		std::unique_ptr<graphics::DescriptorSet>	ds_dof;
+		graphics::PipelineResourceManager			prm_dof;
 		std::unique_ptr<graphics::DescriptorSet>	ds_luma;
 		graphics::PipelineResourceManager			prm_luma;
+		graphics::PipelineResourceManager			prm_tone;
+		graphics::PipelineResourceManager			prm_fxaa;
 
 		std::unique_ptr<graphics::Image>			img_pickup;
 		std::unique_ptr<graphics::Image>			img_dep_pickup;
@@ -113,6 +123,9 @@ namespace flame
 		void set_ssao_bias(float v) override;
 		void set_white_point(float v) override;
 		void set_bloom_enable(bool v) override;
+		void set_dof_enable(bool v) override;
+		void set_dof_focus_point(float v) override;
+		void set_dof_focus_scale(float v) override;
 		void set_ssr_enable(bool v) override;
 		void set_ssr_thickness(float v) override;
 		void set_ssr_max_distance(float v) override;

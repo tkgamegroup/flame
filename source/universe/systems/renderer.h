@@ -219,6 +219,18 @@ namespace flame
 		// Reflect
 		virtual void set_bloom_enable(bool v) = 0;
 		// Reflect
+		bool dof_enable = false;
+		// Reflect
+		virtual void set_dof_enable(bool v) = 0;
+		// Reflect
+		float dof_focus_point = 50.f;
+		// Reflect
+		virtual void set_dof_focus_point(float v) = 0;
+		// Reflect
+		float dof_focus_scale = 20.f;
+		// Reflect
+		virtual void set_dof_focus_scale(float v) = 0;
+		// Reflect
 		bool ssr_enable = true;
 		// Reflect
 		virtual void set_ssr_enable(bool v) = 0;
