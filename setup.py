@@ -260,6 +260,7 @@ if op != 4:
 		print("====\n")
 			
 	# (Optional)
+	'''
 	if op != 3:
 		print("== library PhysX ==")
 		ok = True
@@ -274,6 +275,7 @@ if op != 4:
 			else:
 				print("%s exists, skip download" % str(lib_dir))
 		print("====\n")
+	'''
 			
 	# (Optional)
 	if op != 3:
