@@ -74,8 +74,8 @@ if op != 4:
 	print("== library nlohmann json ==")
 	ok = True
 	address = "https://github.com/nlohmann/json.git"
+	lib_dir = parent_directory / "njson"
 	if not lib_dir.exists():
-		lib_dir = parent_directory / "njson"
 		if op == 2:
 			print("Download nlohmann json from %s into %s ? y/n" % (address, str(lib_dir)))
 			ok = input() == "y"

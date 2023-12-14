@@ -1007,6 +1007,8 @@ void App::on_gui()
 			cmake_project();
 		if (ImGui::MenuItem("Build (Ctrl+B)"))
 			build_project();
+		if (ImGui::MenuItem("Package Game"))
+			;
 		if (ImGui::MenuItem("Clean"))
 		{
 			if (!project_path.empty())
@@ -1395,7 +1397,7 @@ void App::open_project(const std::filesystem::path& path)
 }
 
 void App::cmake_project()
-{
+{ 
 	auto build_path = project_path;
 	build_path /= L"build";
 	shell_exec(L"cmake", std::format(L"-S \"{}\" -B \"{}\"", project_path.wstring(), build_path.wstring()), true);
