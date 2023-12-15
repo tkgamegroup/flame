@@ -234,7 +234,7 @@ namespace flame
 			{
 				defines.push_back("rp=" + str(rp_esm));
 				defines.push_back("pll=" + str(pll_fwd));
-				defines.push_back("cull_mode=" + TypeInfo::serialize_t(graphics::CullModeFront));
+				//defines.push_back("cull_mode=" + TypeInfo::serialize_t(graphics::CullModeFront));
 			}
 			else if (modifier2 == "FORCE_FORWARD"_h)
 			{
@@ -2136,7 +2136,6 @@ namespace flame
 				buf_camera.upload(cb);
 
 				buf_material.upload(cb);
-				buf_instance.upload(cb);
 
 				if (mode == RenderModeShaded)
 				{
@@ -2387,6 +2386,8 @@ namespace flame
 					}
 				}
 
+				buf_instance.upload(cb);
+
 				auto set_blur_args = [&](const vec2 img_size) {
 					t->prm_blur.pc.child("off"_h).as<int>() = -3;
 					t->prm_blur.pc.child("len"_h).as<int>() = 7;
@@ -2467,6 +2468,8 @@ namespace flame
 
 				cb->end_debug_label();
 			}
+			else
+				buf_instance.upload(cb);
 
 			cb->set_viewport_and_scissor(Rect(vec2(0), ext));
 
