@@ -1,7 +1,7 @@
 # Flame Game Engine
 An ECS 3D-Game-Engine.
 
-# Requirements:
+# With The Greate Help Of:
 
 - VulkanSDK https://vulkan.lunarg.com/sdk/home#windows
 
@@ -21,8 +21,6 @@ An ECS 3D-Game-Engine.
 
 - GLI https://github.com/g-truc/gli
 
-    (should use my forked version: https://github.com/tkgamegroup/gli)
-
 - NVTT https://developer.nvidia.com/gpu-accelerated-texture-compression
 
 - SPIRV-Cross https://github.com/KhronosGroup/SPIRV-Cross
@@ -37,17 +35,15 @@ An ECS 3D-Game-Engine.
 
 - recastnavigation https://github.com/recastnavigation/recastnavigation
 
-    (should use my forked version: https://github.com/tkgamegroup/recastnavigation)
-
 - Font-Awesome https://github.com/FortAwesome/Font-Awesome
 
 - ImGui https://github.com/ocornut/imgui
 
 - ImGuizmo https://github.com/CedricGuillemet/ImGuizmo
 
-- FortuneAlgorithm https://github.com/pvigier/FortuneAlgorithm
+- Imgui-node-editor https://github.com/thedmd/imgui-node-editor
 
-    (should use my forked version: https://github.com/tkgamegroup/FortuneAlgorithm)
+- FortuneAlgorithm https://github.com/pvigier/FortuneAlgorithm
 
 - OpenAL
 
@@ -55,9 +51,14 @@ An ECS 3D-Game-Engine.
 
 # Build:
 
-- run setup.py as administrator or db-click run_setup_as_admin.bat (PS: you need py3 not py2 in the environment!)
+*now we only support windows*
+*you need python3, cmake and visualstudio*
+*most of the libraries should use my forked versions*
+*libraries can be downloaded and built using the setup.py script*
 
-- cmake
+- run setup.py as administrator or db-click run_setup_as_admin.bat
+
+- cmake flame
 
 - build
 
