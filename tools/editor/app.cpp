@@ -1820,23 +1820,25 @@ void App::open_file_in_vs(const std::filesystem::path& path)
 
 void App::vs_automate(const std::vector<std::wstring>& cl)
 {
-	std::filesystem::path automation_path = getenv("FLAME_PATH");
-	automation_path /= L"bin/debug/vs_automation.exe";
-	std::wstring cl_str;
-	if (cl[0] == L"attach_debugger" || cl[0] == L"detach_debugger")
+	if (auto flame_path = getenv("FLAME_PATH"); flame_path)
 	{
-		if (!preferences.use_flame_debugger)
+		auto automation_path = std::filesystem::path(flame_path) / L"bin/debug/vs_automation.exe";
+		std::wstring cl_str;
+		if (cl[0] == L"attach_debugger" || cl[0] == L"detach_debugger")
+		{
+			if (!preferences.use_flame_debugger)
+				cl_str = L"-p " + project_path.filename().wstring();
+			cl_str += L" -c " + cl[0];
+			cl_str += L" " + wstr(getpid());
+		}
+		else if (cl[0] == L"open_file")
+		{
 			cl_str = L"-p " + project_path.filename().wstring();
-		cl_str += L" -c " + cl[0];
-		cl_str += L" " + wstr(getpid());
+			cl_str += L" -c open_file " + cl[1];
+		}
+		wprintf(L"vs automate: %s\n", cl_str.c_str());
+		shell_exec(automation_path, cl_str, true);
 	}
-	else if (cl[0] == L"open_file")
-	{
-		cl_str = L"-p " + project_path.filename().wstring();
-		cl_str += L" -c open_file " + cl[1];
-	}
-	wprintf(L"vs automate: %s\n", cl_str.c_str());
-	shell_exec(automation_path, cl_str, true);
 }
 
 bool App::cmd_undo()

@@ -499,12 +499,17 @@ namespace flame
 		{
 			printf("foundation init\n");
 
-			auto p = getenv("FLAME_PATH");
-			assert(p);
-			std::filesystem::path engine_path = p;
-			engine_path.make_preferred();
-			engine_path /= L"assets";
-			Path::set_root(L"flame", engine_path);
+			if (std::filesystem::exists(L"flame"))
+				Path::set_root(L"flame", std::filesystem::canonical(L"flame"));
+			else
+			{
+				auto flame_path = getenv("FLAME_PATH");
+				assert(flame_path);
+				std::filesystem::path engine_path = flame_path;
+				engine_path.make_preferred();
+				engine_path /= L"assets";
+				Path::set_root(L"flame", engine_path);
+			}
 
 			add_event([]() {
 				init_typeinfo();
