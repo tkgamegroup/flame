@@ -61,9 +61,28 @@ namespace flame
 		void set_targets(const std::vector<graphics::ImageViewPtr>& targets) override;
 	};
 
+	struct OutlineDrawGroup
+	{
+		std::vector<ObjectDrawData> draws;
+		cvec4 color;
+		uint width;
+		OutlineMode mode;
+	};
+
+	struct PrimitivesDraw
+	{
+		PrimitiveType type;
+		uint vtx_cnt;
+		cvec4 color;
+		bool depth_test;
+	};
+
 	struct sRendererPrivate : sRenderer
 	{
 		bool mark_clear_pipelines = false;
+
+		std::vector<OutlineDrawGroup> outline_groups;
+		std::vector<PrimitivesDraw> primitives_draws;
 
 		std::vector<std::stack<vec2>> hud_style_vars;
 		vec2 hud_size;

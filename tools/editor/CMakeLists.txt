@@ -1,4 +1,4 @@
-if(USE_UNIVERSE_MODULE)
+if(USE_UNIVERSE_MODULE AND USE_IMGUI AND USE_IM_GUIZMO AND USE_IMGUI_NODE_EDITOR)
 	generate_config()
 	file(GLOB_RECURSE source_files "*.h" "*.c*")
 

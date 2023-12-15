@@ -1,17 +1,18 @@
 %rp=../color_depth.rp
+%dc=false
 %pt=TriangleList
 %dt=true
 %dw=true
 layout
   plain.pll
 shaders
-  filename
-    plain3d.vert
+  plain3d.vert
  ---
-  filename
-    plain.frag
+  plain.frag
 renderpass
   {rp}
+depth_clamp
+  {dc}
 primitive_topology
   {pt}
 cull_mode

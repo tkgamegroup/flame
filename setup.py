@@ -50,6 +50,7 @@ if op != 4:
 			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
 	else:
 		print("%s exists, skip download" % str(lib_dir))
+	print("====\n")
 
 	ok = True
 	bud_dir = lib_dir / "build"
@@ -188,6 +189,7 @@ if op != 4:
 			os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
 	else:
 		print("%s exists, skip download" % str(lib_dir))
+	print("====\n")
 			
 	ok = True
 	bud_dir = lib_dir / "build"
@@ -374,6 +376,7 @@ if op != 4:
 				os.system("git clone --depth 1 %s %s && echo ok" % (address, str(lib_dir)))
 		else:
 			print("%s exists, skip download" % str(lib_dir))
+		print("====\n")
 			
 	# (Optional)
 	if op != 3:

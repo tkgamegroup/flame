@@ -168,6 +168,10 @@ void SceneView::on_draw()
 		camera_node->set_pos(vec3(0.f));
 		camera_node->set_qut(quat(1.f, 0.f, 0.f, 0.f));
 	}
+	static float camera_flying_speed = 0.2;
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50.f);
+	ImGui::DragFloat("##camera_flying_speed", &camera_flying_speed, 0.01f, 0.f, 100.f);
 
 	ImGui::SameLine();
 	if (ImGui::ToolButton("Outline", show_outline))
@@ -806,22 +810,22 @@ void SceneView::on_draw()
 						{
 							if (io.KeysDown[Keyboard_W])
 							{
-								camera_node->add_pos(-camera_node->z_axis() * 0.2f);
+								camera_node->add_pos(-camera_node->z_axis() * camera_flying_speed);
 								app.render_frames += 30;
 							}
 							if (io.KeysDown[Keyboard_S])
 							{
-								camera_node->add_pos(+camera_node->z_axis() * 0.2f);
+								camera_node->add_pos(+camera_node->z_axis() * camera_flying_speed);
 								app.render_frames += 30;
 							}
 							if (io.KeysDown[Keyboard_A])
 							{
-								camera_node->add_pos(-camera_node->x_axis() * 0.2f);
+								camera_node->add_pos(-camera_node->x_axis() * camera_flying_speed);
 								app.render_frames += 30;
 							}
 							if (io.KeysDown[Keyboard_D])
 							{
-								camera_node->add_pos(+camera_node->x_axis() * 0.2f);
+								camera_node->add_pos(+camera_node->x_axis() * camera_flying_speed);
 								app.render_frames += 30;
 							}
 						}

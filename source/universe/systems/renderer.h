@@ -28,9 +28,12 @@ namespace flame
 
 	enum PrimitiveType
 	{
+		PrimitivePointList,
 		PrimitiveLineList,
 		PrimitiveLineStrip,
-		PrimitiveTriangleList
+		PrimitiveTriangleList,
+		PrimitiveTriangleStrip,
+		PrimitiveQuadList
 	};
 
 	enum OutlineMode

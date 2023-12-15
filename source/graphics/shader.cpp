@@ -1842,7 +1842,7 @@ namespace flame
 				raster_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 				raster_state.pNext = nullptr;
 				raster_state.flags = 0;
-				raster_state.depthClampEnable = VK_FALSE;
+				raster_state.depthClampEnable = info.depth_clamp;
 				raster_state.rasterizerDiscardEnable = info.rasterizer_discard;
 				raster_state.polygonMode = to_backend(info.polygon_mode);
 				raster_state.cullMode = to_backend(info.cull_mode);

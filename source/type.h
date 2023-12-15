@@ -39,6 +39,12 @@ namespace flame
 	template<typename...>
 	struct type_list {};
 
+	template <typename T, std::size_t N>
+	constexpr std::size_t countof(T const (&)[N])
+	{
+		return N;
+	}
+
 	template<typename U, typename T, typename... Args>
 	consteval bool is_one_of_t(type_list<T, Args...>)
 	{

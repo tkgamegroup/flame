@@ -3,11 +3,9 @@
 layout
   plain.pll
 shaders
-  filename
-    plain2d.vert
+  plain2d.vert
  ---
-  filename
-    plain.frag
+  plain.frag
 renderpass
   {rp}
 primitive_topology

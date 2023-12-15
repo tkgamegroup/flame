@@ -112,11 +112,11 @@ namespace flame
 	graphics::GraphicsPipelinePtr pl_terrain_transform_feedback = nullptr;
 	graphics::GraphicsPipelinePtr pl_MC_transform_feedback = nullptr;
 	graphics::GraphicsPipelinePtr pl_line3d = nullptr;
-	graphics::GraphicsPipelinePtr pl_line3d_dep = nullptr;
+	graphics::GraphicsPipelinePtr pl_line3d_dt = nullptr;
 	graphics::GraphicsPipelinePtr pl_line_strip3d = nullptr;
-	graphics::GraphicsPipelinePtr pl_line_strip3d_dep = nullptr;
+	graphics::GraphicsPipelinePtr pl_line_strip3d_dt = nullptr;
 	graphics::GraphicsPipelinePtr pl_triangle3d = nullptr;
-	graphics::GraphicsPipelinePtr pl_triangle3d_dep = nullptr;
+	graphics::GraphicsPipelinePtr pl_triangle3d_dt = nullptr;
 	// Deferred Shading Pipelines With Different Modifiers
 	std::unordered_map<uint, graphics::GraphicsPipelinePtr> pls_deferred;
 	// Post-Processing Pipelines
@@ -187,25 +187,15 @@ namespace flame
 	DirShadow dir_shadows[DirShadowMaxCount];
 	PointShadow pt_shadows[PtShadowMaxCount];
 
-	struct OutlineDrawGroup
-	{
-		std::vector<ObjectDrawData> draws;
-		cvec4 color;
-		uint width;
-		OutlineMode mode;
-	};
-
-	struct PrimitivesDraw
+	bool csm_debug_capture_flag = false;
+	struct Primitives
 	{
 		PrimitiveType type;
-		uint vtx_cnt;
+		std::vector<vec3> points;
 		cvec4 color;
-		bool depth_test;
+		float depth_test;
 	};
-
-	std::vector<OutlineDrawGroup> outline_groups;
-	std::vector<PrimitivesDraw> primitives_draws;
-	bool csm_debug_flag = false;
+	std::vector<Primitives> csm_debug_draws;
 
 	void combine_global_defines(std::vector<std::string>& defines)
 	{
@@ -798,12 +788,12 @@ namespace flame
 
 		mesh_reses.resize(1024 * 8);
 
-		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dt=false", "dw=false" });
-		pl_line3d_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dt=true", "dw=false" });
-		pl_line_strip3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "pt=LineStrip", "dt=false", "dw=false" });
-		pl_line_strip3d_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "pt=LineStrip", "dt=true", "dw=false" });
-		pl_triangle3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", { "dt=false", "dw=false" });
-		pl_triangle3d_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", { "dt=true", "dw=false" });
+		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dc=true", "dt=false", "dw=false" });
+		pl_line3d_dt = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dt=true", "dw=false" });
+		pl_line_strip3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dc=true", "pt=LineStrip", "dt=false", "dw=false" });
+		pl_line_strip3d_dt = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "pt=LineStrip", "dt=true", "dw=false" });
+		pl_triangle3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", { "dc=true", "dt=false", "dw=false" });
+		pl_triangle3d_dt = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", { "dt=true", "dw=false" });
 
 		pll_fwd = graphics::PipelineLayout::get(L"flame\\shaders\\forward.pll");
 		pll_gbuf = graphics::PipelineLayout::get(L"flame\\shaders\\gbuffer.pll");
@@ -2245,8 +2235,8 @@ namespace flame
 						{
 							auto n = lv / (float)csm_levels;
 							auto f = (lv + 1) / (float)csm_levels;
-							n = mix(zn, zf, n * n * shadow_distance / zf);
-							f = mix(zn, zf, f * f * shadow_distance / zf);
+							n = clamp(n * n * shadow_distance, zn, zf);
+							f = clamp(f * f * shadow_distance, zn, zf);
 							splits[lv] = f;
 
 							{
@@ -2258,10 +2248,16 @@ namespace flame
 								f = p.z / p.w;
 							}
 							auto frustum_slice = Frustum::get_points(camera->proj_view_mat_inv, n, f);
-							if (csm_debug_flag)
+							if (csm_debug_capture_flag)
 							{
 								auto pts = Frustum::points_to_lines(frustum_slice.data());
-								draw_primitives(PrimitiveLineList, pts.data(), pts.size(), cvec4(156, 127, 0, 255), false);
+								{
+									auto& prims = csm_debug_draws.emplace_back();
+									prims.type = PrimitiveLineList;
+									prims.points = pts;
+									prims.color = cvec4(0, 127, 255, 255);
+									prims.depth_test = false;
+								}
 							}
 							auto b = AABB(frustum_slice, inverse(s.rot));
 							auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
@@ -2280,8 +2276,8 @@ namespace flame
 							for (auto& n : s.culled_nodes)
 								n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
 
-							auto z_min = -hf_zlen;
-							auto z_max = +hf_zlen;
+							auto z_min = 0.f;
+							auto z_max = 0.f;
 							auto n_mesh_draws = 0;
 							auto n_terrain_draws = 0;
 							auto n_MC_draws = 0;
@@ -2292,10 +2288,12 @@ namespace flame
 								n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
 								if (draw_data.meshes.size() > n_mesh_draws)
 								{
-									auto r = n.second->bounds.radius();
-									auto d = dot(n.second->global_pos() - c, s.rot[2]);
-									z_min = min(d - r, z_min);
-									z_max = max(d + r, z_max);
+									for (auto& p : n.second->bounds.get_points())
+									{
+										auto d = dot(p - c, s.rot[2]);
+										z_min = min(d, z_min);
+										z_max = max(d, z_max);
+									}
 
 									n_mesh_draws = draw_data.meshes.size();
 								}
@@ -2332,24 +2330,55 @@ namespace flame
 							proj_view = proj * view;
 							mats[lv] = proj_view;
 							s.frustum = Frustum(inverse(proj_view));
-							if (csm_debug_flag)
+							if (csm_debug_capture_flag)
 							{
 								auto frustum_points = Frustum::get_points(inverse(proj_view));
 								auto lines_points = Frustum::points_to_lines(frustum_points.data());
-								draw_primitives(PrimitiveLineList, lines_points.data(), lines_points.size(), cvec4(255, 127, 0, 255), false);
+								{
+									auto& prims = csm_debug_draws.emplace_back();
+									prims.type = PrimitiveLineList;
+									prims.points = std::move(lines_points);
+									prims.color = cvec4(255, 127, 0, 255);
+									prims.depth_test = false;
+								}
 								auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
 								vec3 pts[2];
 								pts[0] = c; pts[1] = c + s.rot[0] * hf_xlen;
-								draw_primitives(PrimitiveLineList, pts, 2, cvec4(255, 0, 0, 255), false);
+								{
+									auto& prims = csm_debug_draws.emplace_back();
+									prims.type = PrimitiveLineList;
+									prims.points = { pts[0], pts[1] };
+									prims.color = cvec4(255, 0, 0, 255);
+									prims.depth_test = false;
+								}
 								pts[0] = c; pts[1] = c + s.rot[1] * hf_ylen;
-								draw_primitives(PrimitiveLineList, pts, 2, cvec4(0, 255, 0, 255), false);
-								pts[0] = c; pts[1] = c + s.rot[2] * hf_zlen;
-								draw_primitives(PrimitiveLineList, pts, 2, cvec4(0, 0, 255, 255), false);
+								{
+									auto& prims = csm_debug_draws.emplace_back();
+									prims.type = PrimitiveLineList;
+									prims.points = { pts[0], pts[1] };
+									prims.color = cvec4(0, 255, 0, 255);
+									prims.depth_test = false;
+								}
+								pts[0] = c; pts[1] = c + s.rot[2] * (z_max - z_min) * 0.5f;
+								{
+									auto& prims = csm_debug_draws.emplace_back();
+									prims.type = PrimitiveLineList;
+									prims.points = { pts[0], pts[1] };
+									prims.color = cvec4(0, 0, 255, 255);
+									prims.depth_test = false;
+								}
 							}
 						}
 
 						shadow.child("splits"_h).as<vec4>() = splits;
 						shadow.child("far"_h).as<float>() = shadow_distance;
+					}
+
+					csm_debug_capture_flag = false;
+					if (!csm_debug_draws.empty())
+					{
+						for (auto& d : csm_debug_draws)
+							draw_primitives(d.type, d.points.data(), d.points.size(), d.color, d.depth_test);
 					}
 
 					for (auto i = 0; i < n_pt_shadows; i++)
@@ -3071,13 +3100,13 @@ namespace flame
 							switch (d.type)
 							{
 							case PrimitiveLineList:
-								cb->bind_pipeline(d.depth_test ? pl_line3d_dep : pl_line3d);
+								cb->bind_pipeline(d.depth_test ? pl_line3d_dt : pl_line3d);
 								break;
 							case PrimitiveLineStrip:
-								cb->bind_pipeline(d.depth_test ? pl_line_strip3d_dep : pl_line_strip3d);
+								cb->bind_pipeline(d.depth_test ? pl_line_strip3d_dt : pl_line_strip3d);
 								break;
 							case PrimitiveTriangleList:
-								cb->bind_pipeline(d.depth_test ? pl_triangle3d_dep : pl_triangle3d);
+								cb->bind_pipeline(d.depth_test ? pl_triangle3d_dt : pl_triangle3d);
 								break;
 							}
 							cb->draw(d.vtx_cnt, 1, vtx_off, 0);
@@ -3738,8 +3767,13 @@ namespace flame
 
 	void sRendererPrivate::send_debug_string(const std::string& str)
 	{
-		if (str == "toggle_csm_debug")
-			csm_debug_flag = !csm_debug_flag;
+		if (str == "csm_debug_capture")
+			csm_debug_capture_flag = !csm_debug_capture_flag;
+		else if (str == "clear_csm_debug")
+		{
+			csm_debug_capture_flag = false;
+			csm_debug_draws.clear();
+		}
 	}
 
 	static sRendererPtr _instance = nullptr;
