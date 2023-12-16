@@ -63,3 +63,4 @@ An ECS 3D-Game-Engine.
 - build it in visualstudio
 
 *if you want to build the release version, build in RelWithDebInfo, because DebugInfo is always needed*
+*currently only 'editor' project is maintaining*
