@@ -248,7 +248,7 @@ if op != 4:
 				ok = input() == "y"
 			if ok:
 				bud_dir.mkdir()
-				os.system("cmake -S \"%s\" -B \"%s\"" % (lib_dir, bud_dir))
+				os.system("cmake -S \"%s\" -B \"%s\" -DASSIMP_WARNINGS_AS_ERRORS=OFF" % (lib_dir, bud_dir))
 				os.system("xcopy %s %s" % (lib_dir / "build/include/assimp/config.h", lib_dir / "include/assimp/config.h"))
 				os.chdir("%s/MSBuild/Current/Bin" % str(vs_path));
 				files = glob.glob("%s/*.sln" % str(bud_dir))
