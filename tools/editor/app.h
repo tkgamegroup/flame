@@ -202,6 +202,7 @@ struct App : UniverseApplication
 	void open_project(const std::filesystem::path& path);
 	void cmake_project();
 	void build_project();
+	void package_project();
 	void close_project();
 	void new_prefab(const std::filesystem::path& path, uint type = "empty"_h);
 	void open_prefab(const std::filesystem::path& path);

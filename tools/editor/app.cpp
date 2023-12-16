@@ -1008,7 +1008,7 @@ void App::on_gui()
 		if (ImGui::MenuItem("Build (Ctrl+B)"))
 			build_project();
 		if (ImGui::MenuItem("Package Game"))
-			;
+			package_project();
 		if (ImGui::MenuItem("Clean"))
 		{
 			if (!project_path.empty())
@@ -1397,7 +1397,21 @@ void App::open_project(const std::filesystem::path& path)
 }
 
 void App::cmake_project()
-{ 
+{
+	if (project_path.empty())
+		return;
+	if (e_playing)
+	{
+		printf("Cannot CMake project while playing\n");
+		open_message_dialog("CMake Project", "Cannot CMake project while playing");
+		return;
+	}
+
+	auto template_file = get_file_content(L"bp_project_cmake_template.txt");
+	std::ofstream cmake_file(project_path / L"CMakeLists.txt");
+	cmake_file << template_file;
+	cmake_file.close();
+
 	auto build_path = project_path;
 	build_path /= L"build";
 	shell_exec(L"cmake", std::format(L"-S \"{}\" -B \"{}\"", project_path.wstring(), build_path.wstring()), true);
@@ -1414,39 +1428,101 @@ void App::build_project()
 		return;
 	}
 
-	auto old_prefab_path = prefab_path;
-	if (!old_prefab_path.empty())
-		close_prefab();
+	if (/*is_cpp_project*/false)
+	{
+		auto old_prefab_path = prefab_path;
+		if (!old_prefab_path.empty())
+			close_prefab();
 
-	add_event([this, old_prefab_path]() {
-		unload_project_cpp();
+		add_event([this, old_prefab_path]() {
+			unload_project_cpp();
 
-		focus_window(get_console_window());
+			focus_window(get_console_window());
 
+			cmake_project();
+
+			auto cpp_project_path = project_path / L"build\\cpp.vcxproj";
+			if (std::filesystem::exists(cpp_project_path))
+			{
+				vs_automate({ L"detach_debugger" });
+				auto vs_path = get_special_path("Visual Studio Installation Location");
+				auto msbuild_path = vs_path / L"Msbuild\\Current\\Bin\\MSBuild.exe";
+				auto cwd = std::filesystem::current_path();
+				std::filesystem::current_path(cpp_project_path.parent_path());
+				printf("\n");
+				auto cl = std::format(L"\"{}\" {}", msbuild_path.wstring(), cpp_project_path.filename().wstring());
+				_wsystem(cl.c_str());
+				std::filesystem::current_path(cwd);
+				vs_automate({ L"attach_debugger" });
+			}
+
+			load_project_cpp();
+
+			if (!old_prefab_path.empty())
+				open_prefab(old_prefab_path);
+
+			return false;
+		});
+	}
+	else
+	{
 		cmake_project();
 
-		auto cpp_project_path = project_path / L"build\\cpp.vcxproj";
-		if (std::filesystem::exists(cpp_project_path))
+		auto template_file = get_file_content(L"bp_app_cpp_template.txt");
+		std::ofstream cpp_file(project_path / L"app.cpp");
+		cpp_file << template_file;
+		cpp_file.close();
+
+		auto vc_project_path = project_path / L"build\\PROJECT_NAME.vcxproj";
+		if (std::filesystem::exists(vc_project_path))
 		{
-			vs_automate({ L"detach_debugger" });
 			auto vs_path = get_special_path("Visual Studio Installation Location");
 			auto msbuild_path = vs_path / L"Msbuild\\Current\\Bin\\MSBuild.exe";
 			auto cwd = std::filesystem::current_path();
-			std::filesystem::current_path(cpp_project_path.parent_path());
+			std::filesystem::current_path(vc_project_path.parent_path());
 			printf("\n");
-			auto cl = std::format(L"\"{}\" {}", msbuild_path.wstring(), cpp_project_path.filename().wstring());
+			auto cl = std::format(L"\"{}\" {}", msbuild_path.wstring(), vc_project_path.filename().wstring());
 			_wsystem(cl.c_str());
 			std::filesystem::current_path(cwd);
-			vs_automate({ L"attach_debugger" });
 		}
-		 
-		load_project_cpp();
+	}
+}
 
-		if (!old_prefab_path.empty())
-			open_prefab(old_prefab_path);
+void App::package_project()
+{
+	if (project_path.empty())
+		return;
+	if (e_playing)
+	{
+		printf("Cannot package project while playing\n");
+		open_message_dialog("Package Project", "Cannot package project while playing");
+		return;
+	}
 
-		return false;
-	});
+	build_project();
+
+	auto package_path = project_path / L"out";
+	if (!std::filesystem::exists(package_path))
+		std::filesystem::create_directories(package_path);
+	std::filesystem::remove_all(package_path);
+	std::filesystem::create_directories(project_path / L"out/flame");
+	std::filesystem::create_directories(project_path / L"out/assets");
+
+	for (auto& it : std::filesystem::directory_iterator(project_path / L"bin/debug"))
+	{
+		if (it.is_regular_file())
+		{
+			auto ext = it.path().extension();
+			if (ext == L".dll" || ext == L".exe" || ext == L".pdb" || ext == L".typeinfo")
+				std::filesystem::copy_file(it.path(), package_path / it.path().filename());
+		}
+	}
+	if (auto flame_path = getenv("FLAME_PATH"); flame_path)
+	{
+		auto flame_assets_path = std::filesystem::path(flame_path) / L"assets";
+		std::filesystem::copy(flame_assets_path, project_path / L"out/flame", std::filesystem::copy_options::recursive);
+	}
+	std::filesystem::copy(project_path / L"assets", project_path / L"out/assets", std::filesystem::copy_options::recursive);
 }
 
 void App::close_project()

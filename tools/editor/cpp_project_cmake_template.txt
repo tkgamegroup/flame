@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16.4)
+cmake_minimum_required(VERSION 3.25.0)
 set(flame_path "$ENV{FLAME_PATH}")
 include("${flame_path}/utils.cmake")
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -49,6 +49,7 @@ add_custom_command(TARGET cpp POST_BUILD COMMAND "${flame_path}/bin/debug/typein
 file(TO_NATIVE_PATH "${CMAKE_SOURCE_DIR}" current_path)
 add_custom_target(copy_binaries 
 	COMMAND xcopy "${flame_path}\\bin\\debug\\*.dll"				"${current_path}\\bin\\debug"			/Y /D	
+	COMMAND xcopy "${flame_path}\\bin\\debug\\*.pdb"				"${current_path}\\bin\\debug"			/Y /D	
 	COMMAND xcopy "${flame_path}\\bin\\debug\\*.typeinfo"			"${current_path}\\bin\\debug"			/Y /D
 	COMMAND xcopy "${flame_path}\\bin\\relwithdebinfo\\*.dll"		"${current_path}\\bin\\relwithdebinfo"	/Y /D	
 	COMMAND xcopy "${flame_path}\\bin\\relwithdebinfo\\*.typeinfo"	"${current_path}\\bin\\relwithdebinfo"	/Y /D)
