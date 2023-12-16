@@ -159,7 +159,10 @@ namespace flame
 				auto instance = *(BlueprintInstancePtr*)inputs[0].data;
 				auto name = *(uint*)inputs[1].data;
 				if (instance)
-					instance->call(name, nullptr, nullptr);
+				{
+					if (auto g = instance->find_group(name); g)
+						instance->call(g, nullptr, nullptr);
+				}
 			}
 		);
 
@@ -186,9 +189,12 @@ namespace flame
 				auto name = *(uint*)inputs[1].data;\
 				if (instance)\
 				{\
-					std::vector<voidptr> input_args;\
-					input_args.push_back(inputs[2].data);\
-					instance->call(name, input_args.data(), nullptr);\
+					if (auto g = instance->find_group(name); g)\
+					{\
+						std::vector<voidptr> input_args; \
+						input_args.push_back(inputs[2].data); \
+						instance->call(g, input_args.data(), nullptr); \
+					}\
 				}\
 			}\
 		);

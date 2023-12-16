@@ -8,8 +8,8 @@ namespace flame
 {
 	struct cBpInstancePrivate : cBpInstance
 	{
-		BlueprintInstanceGroup* update_group = nullptr;
-		BlueprintInstanceGroup* on_gui_group = nullptr;
+		BlueprintInstanceGroup* update_cb = nullptr;
+		BlueprintInstanceGroup* on_gui_cb = nullptr;
 
 		std::vector<BlueprintInstanceGroup*> coroutines;
 		bool executing_coroutines = false;

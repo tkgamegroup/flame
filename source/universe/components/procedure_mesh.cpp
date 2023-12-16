@@ -32,7 +32,8 @@ namespace flame
 
 				graphics::ControlMesh* pcontrol_mesh = nullptr;
 				outputs.push_back(&pcontrol_mesh);
-				ins->call("main"_h, nullptr, outputs.data());
+				if (auto g = ins->find_group("main"_h); g)
+					ins->call(g, nullptr, outputs.data());
 
 				if (pcontrol_mesh)
 				{

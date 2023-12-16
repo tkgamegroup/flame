@@ -579,11 +579,11 @@ namespace flame
 		float											wait_time = 0.f;
 
 		template<class T>
-		inline T get_variable(uint name)
+		inline T get_variable(uint name, T dv = T(0))
 		{
 			if (auto it = variables.find(name); it != variables.end())
 				return *(T*)it->second.data;
-			return T(0);
+			return dv;
 		}
 
 		template<class T>
@@ -655,7 +655,7 @@ namespace flame
 		virtual void run(BlueprintInstanceGroup* group) = 0;
 		virtual BlueprintInstanceNode* step(BlueprintInstanceGroup* group) = 0; // return: next node
 		virtual void stop(BlueprintInstanceGroup* group) = 0;
-		virtual void call(uint group_name, void** inputs, void** outputs) = 0;
+		virtual void call(BlueprintInstanceGroup* group, void** inputs, void** outputs) = 0;
 		virtual void register_group(BlueprintInstanceGroup* group) = 0;
 		virtual void unregister_group(BlueprintInstanceGroup* group) = 0;
 		virtual void broadcast(uint message) = 0;

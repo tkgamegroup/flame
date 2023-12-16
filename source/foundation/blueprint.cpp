@@ -1117,7 +1117,8 @@ namespace flame
 							for (auto i = 0; i < n; i++)
 								output_args.push_back(outputs[i].data);
 						}
-						ins->call(pau.u, input_args.data(), output_args.data());
+						if (auto tg = ins->find_group(pau.u); tg)
+							ins->call(tg, input_args.data(), output_args.data());
 					}
 				}
 			}
@@ -3443,6 +3444,8 @@ namespace flame
 
 	void BlueprintInstancePrivate::stop(BlueprintInstanceGroup* group)
 	{
+		assert(group->instance == this);
+
 		auto debugger = BlueprintDebugger::current();
 		if (debugger && debugger->debugging)
 			return;
@@ -3450,16 +3453,11 @@ namespace flame
 		group->executing_stack.clear();
 	}
 
-	void BlueprintInstancePrivate::call(uint group_name, void** inputs, void** outputs)
+	void BlueprintInstancePrivate::call(BlueprintInstanceGroup* group, void** inputs, void** outputs)
 	{
-		auto g = find_group(group_name);
-		if (!g)
-		{
-			printf("blueprint call: cannot find group: %d\n", group_name);
-			return;
-		}
+		assert(group->instance == this);
 
-		if (auto obj = g->input_node; obj)
+		if (auto obj = group->input_node; obj)
 		{
 			for (auto i = 0; i < obj->outputs.size(); i++)
 			{
@@ -3468,10 +3466,10 @@ namespace flame
 			}
 		}
 
-		prepare_executing(g);
-		run(g);
+		prepare_executing(group);
+		run(group);
 
-		if (auto obj = g->output_node; obj)
+		if (auto obj = group->output_node; obj)
 		{
 			for (auto i = 0; i < obj->inputs.size(); i++)
 			{

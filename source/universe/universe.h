@@ -66,6 +66,7 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cNavAgent);
 	FLAME_UNIVERSE_TYPE(cNavObstacle);
 	FLAME_UNIVERSE_TYPE(cNavMesh);
+	FLAME_UNIVERSE_TYPE(cCollider);
 	FLAME_UNIVERSE_TYPE(cAudioSource);
 	FLAME_UNIVERSE_TYPE(cAudioListener);
 	FLAME_UNIVERSE_TYPE(cResourcesHolder);

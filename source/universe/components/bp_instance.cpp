@@ -15,7 +15,7 @@ namespace flame
 					bp_ins->unregister_group(&kv.second);
 			}
 
-			if (on_gui_group)
+			if (on_gui_cb)
 				sRenderer::instance()->hud_callbacks.remove((uint)this);
 
 			if (!bp_ins->is_static)
@@ -134,15 +134,15 @@ namespace flame
 			if (auto g = bp_ins->find_group("update"_h); g)
 			{
 				assert(g->execution_type == BlueprintExecutionFunction);
-				update_group = g;
+				update_cb = g;
 			}
 			if (auto g = bp_ins->find_group("on_gui"_h); g)
 			{
 				assert(g->execution_type == BlueprintExecutionFunction);
-				on_gui_group = g;
+				on_gui_cb = g;
 				sRenderer::instance()->hud_callbacks.add([this]() {
-					bp_ins->prepare_executing(on_gui_group);
-					bp_ins->run(on_gui_group);
+					bp_ins->prepare_executing(on_gui_cb);
+					bp_ins->run(on_gui_cb);
 				}, (uint)this);
 			}
 		}
@@ -150,10 +150,10 @@ namespace flame
 
 	void cBpInstancePrivate::update()
 	{
-		if (update_group)
+		if (update_cb)
 		{
-			bp_ins->prepare_executing(update_group);
-			bp_ins->run(update_group);
+			bp_ins->prepare_executing(update_cb);
+			bp_ins->run(update_cb);
 		}
 
 		executing_coroutines = true;

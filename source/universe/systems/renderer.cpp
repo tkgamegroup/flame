@@ -2234,8 +2234,8 @@ namespace flame
 						{
 							auto n = lv / (float)csm_levels;
 							auto f = (lv + 1) / (float)csm_levels;
-							n = clamp(n * n * shadow_distance, zn, zf);
-							f = clamp(f * f * shadow_distance, zn, zf);
+							n = mix(zn, shadow_distance, n * n);
+							f = mix(zn, shadow_distance, f * f);
 							splits[lv] = f;
 
 							{
