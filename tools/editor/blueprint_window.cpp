@@ -1415,7 +1415,7 @@ void BlueprintView::on_draw()
 
 							if (!input->is_linked())
 							{
-								if (ImGui::IsKeyPressed(Keyboard_F))
+								if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_F))
 								{
 									if (input->type->tag == TagD)
 									{
@@ -1431,7 +1431,7 @@ void BlueprintView::on_draw()
 											blueprint->set_input_type(input, type);
 									}
 								}
-								if (ImGui::IsKeyPressed(Keyboard_I))
+								if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_I))
 								{
 									if (input->type->tag == TagD)
 									{
@@ -1447,7 +1447,7 @@ void BlueprintView::on_draw()
 											blueprint->set_input_type(input, type);
 									}
 								}
-								if (ImGui::IsKeyPressed(Keyboard_U))
+								if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_U))
 								{
 									if (input->type->tag == TagD)
 									{
@@ -1463,7 +1463,7 @@ void BlueprintView::on_draw()
 											blueprint->set_input_type(input, type);
 									}
 								}
-								if (ImGui::IsKeyPressed(Keyboard_D))
+								if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_D))
 								{
 									if (input->type->tag == TagD)
 									{
@@ -1529,7 +1529,7 @@ void BlueprintView::on_draw()
 									type1->unserialize(value1, slot0->data);
 								}
 								};
-							if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Z))
+							if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Z))
 							{
 								if (i > 0)
 								{
@@ -1539,7 +1539,7 @@ void BlueprintView::on_draw()
 										swap_inputs(input, prev_input);
 								}
 							}
-							if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_X))
+							if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_X))
 							{
 								if (i < n->inputs.size() - 1)
 								{
@@ -1613,7 +1613,7 @@ void BlueprintView::on_draw()
 
 							if (!output->is_linked())
 							{
-								if (ImGui::IsKeyPressed(Keyboard_D))
+								if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_D))
 								{
 									auto ti = (TypeInfo_Data*)output->type;
 									if (ti->vec_size > 1)
@@ -1679,7 +1679,7 @@ void BlueprintView::on_draw()
 					vec2 new_pos = ax_node->m_Bounds.Min;
 					if (n->position != new_pos)
 					{
-						if (!ImGui::IsKeyDown(Keyboard_Alt))
+						if (!ImGui::IsKeyDown((ImGuiKey)Keyboard_Alt))
 						{
 							if (n->is_block)
 							{
@@ -2885,11 +2885,11 @@ void BlueprintView::on_draw()
 				{
 					if (!io.WantCaptureKeyboard)
 					{
-						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_C))
+						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_C))
 							copy_nodes(group);
-						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_V))
+						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_V))
 							paste_nodes(group, mouse_pos);
-						if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Left))
+						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Left))
 						{
 							auto nodes = get_selected_nodes();
 							for (auto n : nodes)
@@ -2902,7 +2902,7 @@ void BlueprintView::on_draw()
 								}
 							}
 						}
-						if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Right))
+						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Right))
 						{
 							auto nodes = get_selected_nodes();
 							for (auto n : nodes)
@@ -2915,7 +2915,7 @@ void BlueprintView::on_draw()
 								}
 							}
 						}
-						if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Up))
+						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Up))
 						{
 							auto nodes = get_selected_nodes();
 							for (auto n : nodes)
@@ -2928,7 +2928,7 @@ void BlueprintView::on_draw()
 								}
 							}
 						}
-						if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_Down))
+						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Down))
 						{
 							auto nodes = get_selected_nodes();
 							for (auto n : nodes)
@@ -2941,35 +2941,35 @@ void BlueprintView::on_draw()
 								}
 							}
 						}
-						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Left))
+						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Left))
 						{
 							auto nodes = get_selected_nodes();
 							for (auto n : nodes)
 								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(-10.f, 0.f));
 						}
-						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Right))
+						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Right))
 						{
 							auto nodes = get_selected_nodes();
 							for (auto n : nodes)
 								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(+10.f, 0.f));
 						}
-						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Up))
+						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Up))
 						{
 							auto nodes = get_selected_nodes();
 							for (auto n : nodes)
 								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(0.f, -10.f));
 						}
-						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Down))
+						if (ImGui::IsKeyDown((ImGuiKey)(ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Down))
 						{
 							auto nodes = get_selected_nodes();
 							for (auto n : nodes)
 								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(0.f, +10.f));
 						}
-						if (ImGui::IsKeyPressed(Keyboard_P))
+						if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_P))
 							set_parent_to_hovered_node();
-						if (ImGui::IsKeyPressed(Keyboard_F10))
+						if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_F10))
 							step_blueprint(debugging_group);
-						if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
+						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_S))
 							save_blueprint();
 					}
 				}
@@ -3001,7 +3001,7 @@ void BlueprintView::on_draw()
 
 void BlueprintView::on_global_shortcuts()
 {
-	if (ImGui::IsKeyPressed(Keyboard_F9))
+	if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_F9))
 	{
 		if (f9_bound_breakpoint)
 		{

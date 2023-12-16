@@ -469,11 +469,11 @@ void HierarchyView::on_draw()
 	}
 
 	ImGui::SetCursorPos(content_pos);
-	ImGui::InvisibleButton("##background", ImGui::GetContentRegionAvail());
+	ImGui::InvisibleButton("##background", max(vec2(1.f), (vec2)ImGui::GetContentRegionAvail()));
 	if (select_entity)
 	{
 		released_after_select = false;
-		if (ImGui::IsKeyDown(Keyboard_Ctrl))
+		if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl))
 		{
 			auto entities = selection.get_entities();
 			auto found = false;
@@ -492,7 +492,7 @@ void HierarchyView::on_draw()
 				entities.push_back(select_entity);
 			selection.select(entities, "hierarchy"_h);
 		}
-		else if (ImGui::IsKeyDown(Keyboard_Shift))
+		else if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift))
 		{
 			auto entities = selection.get_entities();
 			if (entities.empty())
@@ -518,7 +518,7 @@ void HierarchyView::on_draw()
 					auto window = ImGui::GetCurrentWindow();
 					if (!e->children.empty())
 					{
-						auto id = window->GetIDNoKeepAlive(("###" + str((uint64)e)).c_str());
+						auto id = window->GetID(("###" + str((uint64)e)).c_str());
 						if (ImGui::TreeNodeBehaviorIsOpen(id))
 						{
 							ImGui::PushOverrideID(id);
@@ -549,11 +549,11 @@ void HierarchyView::on_draw()
 	{
 		if (!io.WantCaptureKeyboard)
 		{
-			if (ImGui::IsKeyPressed(Keyboard_Del))
+			if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_Del))
 				app.cmd_delete_entities(selection.get_entities());
-			if (ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_D))
+			if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_D))
 				app.cmd_duplicate_entities(selection.get_entities());
-			if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
+			if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_S))
 				app.save_prefab();
 		}
 	}

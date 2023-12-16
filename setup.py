@@ -412,6 +412,162 @@ if op != 4:
 		else:
 			print("%s exists, skip build" % str(bud_dir))
 		print("====\n")
+
+cmake_cl = "cmake -B build "
+
+path = thirdparty_directory / "glm"
+if path.exists():
+	cmake_cl += "-DGLM_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "pugixml/src"
+if path.exists():
+	cmake_cl += "-DPUGIXML_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "pugixml/build/debug/pugixml.lib"
+if path.exists():
+	cmake_cl += "-DPUGIXML_DEBUG_LIB=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "pugixml/build/release/pugixml.lib"
+if path.exists():
+	cmake_cl += "-DPUGIXML_RELEASE_LIB=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "njson/include"
+if path.exists():
+	cmake_cl += "-DNJSON_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "cppcodec"
+if path.exists():
+	cmake_cl += "-DCPPCODEC_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "stb"
+if path.exists():
+	cmake_cl += "-DSTB_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "msdfgen"
+if path.exists():
+	cmake_cl += "-DMSDFGEN_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "msdfgen/build/debug/msdfgen-core.lib"
+if path.exists():
+	cmake_cl += "-DMSDFGEN_LIB_PATH=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "sha1"
+if path.exists():
+	cmake_cl += "-DSHA1_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "gli"
+if path.exists():
+	cmake_cl += "-DGLI_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "exprtk"
+if path.exists():
+	cmake_cl += "-DEXPRTK_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "SPIRV-Cross"
+if path.exists():
+	cmake_cl += "-DSPIRV_CROSS_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "SPIRV-Cross/build/debug"
+if path.exists():
+	cmake_cl += "-DSPIRV_CROSS_DEBUG_LIBS_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "SPIRV-Cross/build/release"
+if path.exists():
+	cmake_cl += "-DSPIRV_CROSS_RELEASE_LIBS_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "assimp/include"
+if path.exists():
+	cmake_cl += "-DASSIMP_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "assimp/build/lib/Debug/assimp-vc143-mtd.lib"
+if path.exists():
+	cmake_cl += "-DASSIMP_LIB_PATH=\"%s\" " % str(path)
+else:
+	path = thirdparty_directory / "assimp/build/lib/Debug/assimp-vc142-mtd.lib"
+	if path.exists():
+		cmake_cl += "-DASSIMP_LIB_PATH=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "assimp/build/bin/Debug/assimp-vc143-mtd.dll"
+if path.exists():
+	cmake_cl += "-DASSIMP_DLL_PATH=\"%s\" " % str(path)
+else:
+	path = thirdparty_directory / "assimp/build/bin/Debug/assimp-vc142-mtd.dll"
+	if path.exists():
+		cmake_cl += "-DASSIMP_DLL_PATH=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "PhysX"
+if path.exists():
+	cmake_cl += "-DPHYSX_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "recastnavigation/Detour/Include"
+if path.exists():
+	cmake_cl += "-DDETOUR_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "recastnavigation/build/Detour/Debug/Detour-d.lib"
+if path.exists():
+	cmake_cl += "-DDETOUR_DEBUG_LIB_PATH=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "recastnavigation/build/Detour/Release/Detour.lib"
+if path.exists():
+	cmake_cl += "-DDETOUR_RELEASE_LIB_PATH=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "recastnavigation/DetourCrowd/Include"
+if path.exists():
+	cmake_cl += "-DDETOUR_CROWD_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "recastnavigation/build/DetourCrowd/Debug/DetourCrowd-d.lib"
+if path.exists():
+	cmake_cl += "-DDETOUR_CROWD_DEBUG_LIB_PATH=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "recastnavigation/build/DetourCrowd/Release/DetourCrowd.lib"
+if path.exists():
+	cmake_cl += "-DDETOUR_CROWD_RELEASE_LIB_PATH=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "recastnavigation/DetourTileCache/Include"
+if path.exists():
+	cmake_cl += "-DDETOUR_TILE_CACHE_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "recastnavigation/build/DetourTileCache/Debug/DetourTileCache-d.lib"
+if path.exists():
+	cmake_cl += "-DDETOUR_TILE_CACHE_DEBUG_LIB_PATH=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "recastnavigation/build/DetourTileCache/Release/DetourTileCache.lib"
+if path.exists():
+	cmake_cl += "-DDETOUR_TILE_CACHE_RELEASE_LIB_PATH=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "recastnavigation/Recast/Include"
+if path.exists():
+	cmake_cl += "-DRECAST_INCLUDE_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "recastnavigation/build/Recast/Debug/Recast-d.lib"
+if path.exists():
+	cmake_cl += "-DRECAST_DEBUG_LIB_PATH=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "recastnavigation/build/Recast/Release/Recast.lib"
+if path.exists():
+	cmake_cl += "-DRECAST_RELEASE_LIB_PATH=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "Font-Awesome"
+if path.exists():
+	cmake_cl += "-DFONT_AWESOME_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "imgui"
+if path.exists():
+	cmake_cl += "-DIMGUI_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "ImGuizmo"
+if path.exists():
+	cmake_cl += "-DIM_GUIZMO_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "imgui-node-editor"
+if path.exists():
+	cmake_cl += "-DIMGUI_NODE_EDITOR_DIR=\"%s\" " % str(path)
+	
+path = thirdparty_directory / "FortuneAlgorithm"
+if path.exists():
+	cmake_cl += "-DFORTUNE_ALGORITHM_DIR=\"%s\" " % str(path)
+	
+os.system(cmake_cl)
 	
 print("\nSet environment variable of Flame Engine:")
 os.system("setx FLAME_PATH \"%s\"" % str(current_directory))

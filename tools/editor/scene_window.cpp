@@ -831,28 +831,28 @@ void SceneView::on_draw()
 						}
 						else
 						{
-							if (ImGui::IsKeyPressed(Keyboard_Q))
+							if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_Q))
 								tool = ToolSelect;
-							if (ImGui::IsKeyPressed(Keyboard_W))
+							if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_W))
 								tool = ToolMove;
-							if (ImGui::IsKeyPressed(Keyboard_E))
+							if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_E))
 								tool = ToolRotate;
-							if (ImGui::IsKeyPressed(Keyboard_R))
+							if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_R))
 								tool = ToolScale;
 						}
-						if (ImGui::IsKeyPressed(Keyboard_Del))
+						if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_Del))
 							app.cmd_delete_entities(selection.get_entities());
 					}
-					if (!io.KeysDown[Keyboard_Ctrl] && !ImGui::IsKeyDown(Keyboard_Shift) && io.KeysDown[Keyboard_F])
+					if (!io.KeysDown[Keyboard_Ctrl] && !ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && io.KeysDown[Keyboard_F])
 						focus_to_selected();
-					if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && ImGui::IsKeyDown(Keyboard_Shift) && ImGui::IsKeyPressed(Keyboard_D))
+					if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_D))
 						app.cmd_duplicate_entities(selection.get_entities());
 					if (!io.KeysDown[Keyboard_Ctrl] && !io.KeysDown[Keyboard_Alt] && io.KeysDown[Keyboard_Shift])
 					{
 						if (io.KeysDown[Keyboard_G])
 							selected_to_focus();
 					}
-					if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
+					if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_S))
 						app.save_prefab();
 				}
 
@@ -900,7 +900,7 @@ void SceneView::on_draw()
 						}
 						return e;
 					};
-					if (ImGui::IsKeyDown(Keyboard_Ctrl))
+					if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl))
 					{
 						if (hovering_entity)
 						{
@@ -923,7 +923,7 @@ void SceneView::on_draw()
 							selection.select(entities, "scene"_h);
 						}
 					}
-					else if (ImGui::IsKeyDown(Keyboard_Shift))
+					else if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift))
 					{
 						if (hovering_entity)
 						{

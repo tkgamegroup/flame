@@ -546,7 +546,7 @@ void SheetView::on_draw()
 	{
 		if (!io.WantCaptureKeyboard)
 		{
-			if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
+			if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_S))
 				save_sheet();
 		}
 	}

@@ -958,7 +958,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 						dl->AddCircleFilled(pos, 3.f, ImColor(1.f, 1.f, 1.f));
 					}
 
-					if (ImGui::IsKeyPressed(Keyboard_X))
+					if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_X))
 					{
 						for (auto it = curve.ctrl_points.begin(); it != curve.ctrl_points.end();)
 						{
@@ -995,7 +995,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 						ImGui::InvisibleButton("", wnd_sz);
 						ImGui::SetItemUsingMouseWheel();
 
-						if (ImGui::IsKeyPressed(Keyboard_A))
+						if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_A))
 						{
 							vec2 mpos = ImGui::GetMousePos();
 							vec2 pos = vec2(mpos.x - p.x - scrolling.x, p.y - mpos.y + scrolling.y);
@@ -2582,7 +2582,7 @@ void InspectorView::on_draw()
 		{
 			if (!io.WantCaptureKeyboard)
 			{
-				if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_S))
+				if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_S))
 					app.save_prefab();
 			}
 		}

@@ -644,7 +644,7 @@ namespace flame
 									{
 										if (ImGui::IsItemDeactivated() || (!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))
 										{
-											if (!ImGui::IsKeyPressed(Keyboard_Esc))
+											if (!ImGui::IsKeyPressed((ImGuiKey)Keyboard_Esc))
 												rename_callback(rename_path, rename_string);
 											rename_path = L"";
 										}
@@ -771,7 +771,7 @@ namespace flame
 								{
 									if (ImGui::IsItemDeactivated() || (!ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)))
 									{
-										if (!ImGui::IsKeyPressed(Keyboard_Esc))
+										if (!ImGui::IsKeyPressed((ImGuiKey)Keyboard_Esc))
 											rename_callback(rename_path, rename_string);
 										rename_path = L"";
 									}

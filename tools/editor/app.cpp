@@ -910,7 +910,7 @@ void App::on_gui()
 							ImGui::TextUnformatted(("    " + str(start)).c_str());
 							ImGui::RadioButton("End", &v, 1);
 							ImGui::TextUnformatted(("    " + str(end)).c_str());
-							if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsKeyDown(Keyboard_Ctrl))
+							if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl))
 							{
 								if (auto fv = scene_window.first_view(); fv)
 								{
@@ -1116,7 +1116,7 @@ void App::on_gui()
 	auto& io = ImGui::GetIO();
 	if (!io.WantCaptureKeyboard)
 	{
-		if (ImGui::IsKeyPressed(Keyboard_F5))
+		if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_F5))
 		{
 			if (!e_playing)
 				cmd_play();
@@ -1128,18 +1128,18 @@ void App::on_gui()
 					cmd_stop_preview();
 			}
 		}
-		if (ImGui::IsKeyPressed(Keyboard_F6))
+		if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_F6))
 		{
 			if (!e_preview)
 				cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : e_prefab);
 			else
 				cmd_restart_preview();
 		}
-		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_B))
+		if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)(ImGuiKey)Keyboard_B))
 			build_project();
-		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Z))
+		if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)(ImGuiKey)Keyboard_Z))
 			cmd_undo();
-		if (ImGui::IsKeyDown(Keyboard_Ctrl) && ImGui::IsKeyPressed(Keyboard_Y))
+		if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)(ImGuiKey)Keyboard_Y))
 			cmd_redo();
 		for (auto w : windows)
 		{

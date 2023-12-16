@@ -136,7 +136,7 @@ void App::init()
 					auto& file = item->file();
 					ImGui::Text("%s %d %dx%d", file.path_u8.c_str(), (uint)file.size, item->image->size.x, item->image->size.y);
 
-					if (ImGui::IsKeyPressed(Keyboard_Del) || ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
+					if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_Del) || ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
 						peeding_delete_idx = hovered_idx;
 				}
 			}
@@ -155,7 +155,7 @@ void App::init()
 			auto draw_list = ImGui::GetWindowDrawList();
 			draw_list->AddImage(item->image, showing_item_off, showing_item_off + (vec2)item->image->size * showing_item_scl);
 			
-			if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) || ImGui::IsKeyPressed(Keyboard_Esc))
+			if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) || ImGui::IsKeyPressed((ImGuiKey)Keyboard_Esc))
 				showing_item_idx = -1;
 			else
 			{
@@ -174,7 +174,7 @@ void App::init()
 						showing_item_scl = max(0.1f, showing_item_scl / 1.05f - 0.05f);
 					showing_item_off += p * (scl1 - showing_item_scl);
 				}
-				if (ImGui::IsKeyPressed(Keyboard_Left))
+				if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_Left))
 				{
 					if (showing_item_idx > 0)
 					{
@@ -182,7 +182,7 @@ void App::init()
 						reset_showing_item();
 					}
 				}
-				if (ImGui::IsKeyPressed(Keyboard_Right))
+				if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_Right))
 				{
 					if (showing_item_idx < show_items.size() - 1)
 					{

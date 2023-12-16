@@ -165,17 +165,17 @@ void SearchView::on_draw()
 
 	if (!blueprint_results.empty())
 	{
-		ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+		ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 		if (ImGui::TreeNode("Blueprints"))
 		{
 			for (auto& bpr : blueprint_results)
 			{
-				ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+				ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 				if (ImGui::TreeNode(bpr.path_str.c_str()))
 				{
 					for (auto& gr : bpr.group_results)
 					{
-						ImGui::SetNextTreeNodeOpen(true, ImGuiCond_FirstUseEver);
+						ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 						if (ImGui::TreeNode(gr.name.c_str()))
 						{
 							for (auto& r : gr.node_results)

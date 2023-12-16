@@ -45,7 +45,7 @@ An ECS 3D-Game-Engine.
 
 - FortuneAlgorithm https://github.com/pvigier/FortuneAlgorithm
 
-- OpenAL
+- OpenAL https://www.openal.org/
 
 *Most of the requirements can be downloaded and built using the setup.py script*
 
@@ -58,8 +58,8 @@ An ECS 3D-Game-Engine.
 
 - run setup.py as administrator or db-click run_setup_as_admin.bat
 
-- cmake flame
+- cmake flame, configure extra libraries, such as FBX SDK, OpenAL
 
-- build
+- build it in visualstudio
 
 *if you want to build the release version, build in RelWithDebInfo, because DebugInfo is always needed*

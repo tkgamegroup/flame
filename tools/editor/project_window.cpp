@@ -144,7 +144,7 @@ ProjectView::ProjectView(const std::string& name) :
 			selection.clear("project"_h);
 			return;
 		}
-		if (ImGui::IsKeyDown(Keyboard_Ctrl))
+		if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl))
 		{
 			auto paths = selection.get_paths();
 			auto found = false;
@@ -231,7 +231,7 @@ ProjectView::ProjectView(const std::string& name) :
 		auto paths = selection.get_paths();
 		if (std::find(paths.begin(), paths.end(), path) == paths.end())
 		{
-			if (ImGui::IsKeyDown(Keyboard_Shift) || ImGui::IsKeyDown(Keyboard_Ctrl))
+			if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) || ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl))
 			{
 				paths.push_back(path);
 				selection.select(paths, "project"_h);

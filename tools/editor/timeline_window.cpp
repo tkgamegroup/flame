@@ -135,7 +135,7 @@ void TimelineView::on_draw()
 		app.set_timeline_host(nullptr);
 	ImVec2 timeline_p0;
 	ImVec2 timeline_p1;
-	ImGui::InvisibleButton("##timeline", ImVec2(ImGui::GetContentRegionAvailWidth(), bar_height));
+	ImGui::InvisibleButton("##timeline", ImVec2(ImGui::GetContentRegionAvail().x, bar_height));
 	{
 		timeline_p0 = ImGui::GetItemRectMin();
 		timeline_p1 = ImGui::GetItemRectMax();
@@ -281,7 +281,7 @@ void TimelineView::on_draw()
 	{
 		if (!io.WantCaptureKeyboard)
 		{
-			if (ImGui::IsKeyPressed(Keyboard_Del))
+			if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_Del))
 			{
 				for (auto it = selected_keyframes.rbegin(); it != selected_keyframes.rend(); it++)
 				{
