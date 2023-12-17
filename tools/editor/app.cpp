@@ -23,7 +23,7 @@
 #include <flame/universe/components/mesh.h>
 #include <flame/universe/components/directional_light.h>
 #include <flame/universe/systems/renderer.h>
-#include <flame/universe/graveyard.h>
+#include <flame/universe/systems/graveyard.h>
 
 std::vector<Window*> windows;
 
