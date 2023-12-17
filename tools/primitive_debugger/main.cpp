@@ -41,7 +41,7 @@ struct App : GraphicsApplication
 				if (ImGui::Selectable(points[i].second.empty() ? str(points[i].first).c_str() : points[i].second.c_str(), 
 					std::find(selected_points.begin(), selected_points.end(), i) != selected_points.end()))
 				{
-					if (ImGui::IsKeyDown(Keyboard_Ctrl))
+					if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl))
 					{
 						auto found = false;
 						for (auto it = selected_points.begin(); it != selected_points.end();)
@@ -58,7 +58,7 @@ struct App : GraphicsApplication
 						if (!found)
 							selected_points.push_back(i);
 					}
-					else if (ImGui::IsKeyDown(Keyboard_Shift))
+					else if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift))
 					{
 						auto found = false;
 						for (auto i2 : selected_points)

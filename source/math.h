@@ -620,6 +620,20 @@ namespace flame
 			return ret;
 		}
 
+		static std::vector<vec3> points_to_quads(const vec3* points)
+		{
+			std::vector<vec3> ret;
+			ret.resize(24);
+			auto p = ret.data();
+			*p++ = points[0]; *p++ = points[1]; *p++ = points[2]; *p++ = points[3];
+			*p++ = points[5]; *p++ = points[4]; *p++ = points[7]; *p++ = points[6];
+			*p++ = points[4]; *p++ = points[0]; *p++ = points[3]; *p++ = points[7];
+			*p++ = points[1]; *p++ = points[5]; *p++ = points[6]; *p++ = points[2];
+			*p++ = points[3]; *p++ = points[2]; *p++ = points[6]; *p++ = points[7];
+			*p++ = points[4]; *p++ = points[5]; *p++ = points[1]; *p++ = points[0];
+			return ret;
+		}
+
 		Frustum(const vec3* points)
 		{
 			set(points);

@@ -127,13 +127,13 @@ float ud_round_box(vec3 p, vec3 b, float r)
 float op_smooth_union( float d1, float d2, float k )
 {
     float h = max(k-abs(d1-d2),0.0);
-    return min(d1, d2) - h*h*0.25/k;
+    return min(d1, d2) - h * h * 0.25 / k;
 }
 
 float op_smooth_subtraction( float d1, float d2, float k )
 {
     float h = max(k-abs(-d1-d2),0.0);
-    return max(-d1, d2) + h*h*0.25/k;
+    return max(-d1, d2) + h * h * 0.25 / k;
 }
 
 float interpolate(float v, float a, float b, float t)
@@ -208,16 +208,16 @@ vec3 xyz2rgb(vec3 _xyz)
 
 vec3 xyz2Yxy(vec3 _xyz)
 {
-	float inv = 1.0/dot(_xyz, vec3(1.0, 1.0, 1.0) );
-	return vec3(_xyz.y, _xyz.x*inv, _xyz.y*inv);
+	float inv = 1.0 / max(0.0001, dot(_xyz, vec3(1.0, 1.0, 1.0)));
+	return vec3(_xyz.y, _xyz.x * inv, _xyz.y * inv);
 }
 
 vec3 Yxy2xyz(vec3 _Yxy)
 {
 	vec3 xyz;
-	xyz.x = _Yxy.x*_Yxy.y/_Yxy.z;
+	xyz.x = _Yxy.x*_Yxy.y / max(0.0001, _Yxy.z);
 	xyz.y = _Yxy.x;
-	xyz.z = _Yxy.x*(1.0 - _Yxy.y - _Yxy.z)/_Yxy.z;
+	xyz.z = _Yxy.x*(1.0 - _Yxy.y - _Yxy.z) / max(0.0001, _Yxy.z);
 	return xyz;
 }
 

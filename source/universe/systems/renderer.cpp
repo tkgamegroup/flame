@@ -111,6 +111,8 @@ namespace flame
 	graphics::GraphicsPipelinePtr pl_MC_pickup = nullptr;
 	graphics::GraphicsPipelinePtr pl_terrain_transform_feedback = nullptr;
 	graphics::GraphicsPipelinePtr pl_MC_transform_feedback = nullptr;
+	graphics::GraphicsPipelinePtr pl_point3d = nullptr;
+	graphics::GraphicsPipelinePtr pl_point3d_dt = nullptr;
 	graphics::GraphicsPipelinePtr pl_line3d = nullptr;
 	graphics::GraphicsPipelinePtr pl_line3d_dt = nullptr;
 	graphics::GraphicsPipelinePtr pl_line_strip3d = nullptr;
@@ -783,11 +785,13 @@ namespace flame
 		buf_idx.create(1024 * 256 * 6);
 		buf_vtx_arm.create(L"flame\\shaders\\mesh\\mesh.vi", { "ARMATURE" }, 1024 * 128 * 4);
 		buf_idx_arm.create(1024 * 128 * 6);
-		buf_particles.create(L"flame\\shaders\\particle.vi", {}, 1024 * 64);
-		buf_primitives.create(L"flame\\shaders\\plain\\plain3d.vi", {}, 1024 * 128);
+		buf_particles.create(L"flame\\shaders\\particle.vi", {}, 1024 * 128);
+		buf_primitives.create(L"flame\\shaders\\plain\\plain3d.vi", {}, 1024 * 256);
 
 		mesh_reses.resize(1024 * 8);
 
+		pl_point3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\point3d.pipeline", { "dc=true", "dt=false", "dw=false" });
+		pl_point3d_dt = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\point3d.pipeline", { "dt=true", "dw=false" });
 		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dc=true", "dt=false", "dw=false" });
 		pl_line3d_dt = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dt=true", "dw=false" });
 		pl_line_strip3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dc=true", "pt=LineStrip", "dt=false", "dw=false" });
@@ -1989,12 +1993,31 @@ namespace flame
 	{
 		auto& pd = primitives_draws.emplace_back();
 		pd.type = type;
-		pd.vtx_cnt = count;
 		pd.color = color;
 		pd.depth_test = depth_test;
-		auto off = buf_primitives.add(nullptr, count);
-		for (auto i = 0; i < count; i++)
-			buf_primitives.item(off + i).child("i_pos"_h).as<vec3>() = points[i];
+		if (type == PrimitiveQuadList)
+		{
+			pd.type = PrimitiveTriangleList;
+			auto quad_num = count / 4;
+			pd.vtx_cnt = quad_num * 6;
+			auto off = buf_primitives.add(nullptr, pd.vtx_cnt);
+			for (auto i = 0; i < quad_num; i++)
+			{
+				buf_primitives.item(off + i * 6 + 0).child("i_pos"_h).as<vec3>() = points[i * 4 + 0];
+				buf_primitives.item(off + i * 6 + 1).child("i_pos"_h).as<vec3>() = points[i * 4 + 1];
+				buf_primitives.item(off + i * 6 + 2).child("i_pos"_h).as<vec3>() = points[i * 4 + 2];
+				buf_primitives.item(off + i * 6 + 3).child("i_pos"_h).as<vec3>() = points[i * 4 + 0];
+				buf_primitives.item(off + i * 6 + 4).child("i_pos"_h).as<vec3>() = points[i * 4 + 2];
+				buf_primitives.item(off + i * 6 + 5).child("i_pos"_h).as<vec3>() = points[i * 4 + 3];
+			}
+		}
+		else
+		{
+			pd.vtx_cnt = count;
+			auto off = buf_primitives.add(nullptr, pd.vtx_cnt);
+			for (auto i = 0; i < pd.vtx_cnt; i++)
+				buf_primitives.item(off + i).child("i_pos"_h).as<vec3>() = points[i];
+		}
 	}
 
 	static std::vector<std::vector<float>> gauss_blur_weights;
@@ -2249,12 +2272,18 @@ namespace flame
 							auto frustum_slice = Frustum::get_points(camera->proj_view_mat_inv, n, f);
 							if (csm_debug_capture_flag)
 							{
-								auto pts = Frustum::points_to_lines(frustum_slice.data());
+								{
+									auto& prims = csm_debug_draws.emplace_back();
+									prims.type = PrimitiveQuadList;
+									prims.points = Frustum::points_to_quads(frustum_slice.data());
+									prims.color = cvec4(0, 127, 255, 190);
+									prims.depth_test = false;
+								}
 								{
 									auto& prims = csm_debug_draws.emplace_back();
 									prims.type = PrimitiveLineList;
-									prims.points = pts;
-									prims.color = cvec4(0, 127, 255, 255);
+									prims.points = Frustum::points_to_lines(frustum_slice.data());
+									prims.color = cvec4(255, 255, 255, 255);
 									prims.depth_test = false;
 								}
 							}
@@ -2332,12 +2361,19 @@ namespace flame
 							if (csm_debug_capture_flag)
 							{
 								auto frustum_points = Frustum::get_points(inverse(proj_view));
-								auto lines_points = Frustum::points_to_lines(frustum_points.data());
+								{
+									Primitives prims;
+									prims.type = PrimitiveQuadList;
+									prims.points = Frustum::points_to_quads(frustum_points.data());
+									prims.color = cvec4(255, 127, 0, 190);
+									prims.depth_test = false;
+									csm_debug_draws.emplace(csm_debug_draws.begin(), prims);
+								}
 								{
 									auto& prims = csm_debug_draws.emplace_back();
 									prims.type = PrimitiveLineList;
-									prims.points = std::move(lines_points);
-									prims.color = cvec4(255, 127, 0, 255);
+									prims.points = Frustum::points_to_lines(frustum_points.data());
+									prims.color = cvec4(255, 255, 255, 255);
 									prims.depth_test = false;
 								}
 								auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
@@ -2374,11 +2410,6 @@ namespace flame
 					}
 
 					csm_debug_capture_flag = false;
-					if (!csm_debug_draws.empty())
-					{
-						for (auto& d : csm_debug_draws)
-							draw_primitives(d.type, d.points.data(), d.points.size(), d.color, d.depth_test);
-					}
 
 					for (auto i = 0; i < n_pt_shadows; i++)
 					{
@@ -3084,6 +3115,12 @@ namespace flame
 			{
 				cb->begin_debug_label("Primitives");
 				{
+					if (!csm_debug_draws.empty())
+					{
+						for (auto& d : csm_debug_draws)
+							draw_primitives(d.type, d.points.data(), d.points.size(), d.color, d.depth_test);
+					}
+
 					buf_primitives.upload(cb);
 					buf_primitives.reset();
 					cb->image_barrier(t->img_dep.get(), {}, graphics::ImageLayoutAttachment);
@@ -3102,6 +3139,9 @@ namespace flame
 							prm_plain.push_constant(cb);
 							switch (d.type)
 							{
+							case PrimitivePointList:
+								cb->bind_pipeline(d.depth_test ? pl_point3d_dt : pl_point3d);
+								break;
 							case PrimitiveLineList:
 								cb->bind_pipeline(d.depth_test ? pl_line3d_dt : pl_line3d);
 								break;

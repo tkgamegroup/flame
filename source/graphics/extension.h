@@ -351,6 +351,8 @@ namespace flame
 					}
 					dirty_regions.emplace_back(data_off, data_size);
 				}
+				else
+					printf("Vertex buffer add: exceeded capacity\n");
 				return off;
 			}
 

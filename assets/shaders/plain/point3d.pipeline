@@ -1,0 +1,34 @@
+%rp=../color.rp
+%dc=false
+%pt=PointList
+%dt=true
+%dw=true
+layout
+  plain.pll
+shaders
+  plain3d.vert
+ ---
+  plain.frag
+renderpass
+  {rp}
+depth_clamp
+  {dc}
+primitive_topology
+  {pt}
+cull_mode
+  None
+depth_test
+  {dt}
+depth_write
+  {dw}
+blend_options
+  enable
+    true
+  src_color
+    SrcAlpha
+  dst_color
+    OneMinusSrcAlpha
+  src_alpha
+    Zero
+  dst_alpha
+    One
