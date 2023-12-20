@@ -51,16 +51,17 @@ An ECS 3D-Game-Engine.
 
 # Build:
 
-*now we only support windows*
-*you need python3, cmake and visualstudio*
-*most of the libraries should use my forked versions*
-*libraries can be downloaded and built using the setup.py script*
+*Now we only support windows*
+*You need python3, cmake and visualstudio*
+*Make sure you check C++ ATL (x86 & x64) in c++ destop development in visualstudio's Tools and Features*
+*Most of the libraries should use my forked versions*
+*Libraries can be downloaded and built using the setup.py script*
 
-- run setup.py as administrator or db-click run_setup_as_admin.bat
+- Run setup.py as administrator or db-click run_setup_as_admin.bat
 
-- cmake flame, configure extra libraries, such as FBX SDK, OpenAL
+- Cmake flame, configure extra libraries, such as FBX SDK, OpenAL
 
-- build it in visualstudio
+- Build it in visualstudio
 
-*if you want to build the release version, build in RelWithDebInfo, because DebugInfo is always needed*
-*currently only 'editor' project is maintaining*
+*If you want to build the release version, build in RelWithDebInfo, because DebugInfo is always needed*
+*Currently only 'editor' project is maintaining*
