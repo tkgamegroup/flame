@@ -53,7 +53,7 @@ An ECS 3D-Game-Engine.
 
 *Now we only support windows*
 *You need python3, cmake and visualstudio*
-*Make sure you check C++ ATL (x86 & x64) in c++ destop development in visualstudio's Tools and Features*
+*Make sure you check C++ ATL (x86 & x64) in C++ destop development tab and check C++ ATL (x86 & x64) for lastest v143 in individual components tab in visualstudio's Tools and Features*
 *Most of the libraries should use my forked versions*
 *Libraries can be downloaded and built using the setup.py script*
 

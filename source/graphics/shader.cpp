@@ -590,7 +590,8 @@ namespace flame
 
 					auto& b = bindings[binding];
 					b.type = type;
-					b.count = max(1U, spv_compiler.get_type(r.type_id).array[0]);
+					auto& spv_type = spv_compiler.get_type(r.type_id);
+					b.count = spv_type.array.empty() ? 1 : spv_type.array[0];
 					if (is_one_of(type, { DescriptorUniformBuffer, DescriptorStorageBuffer }))
 						b.name = spv_compiler.get_name(r.base_type_id);
 					else
