@@ -49,11 +49,6 @@ namespace flame
 				{
 					.name = "Name_hash",
 					.allowed_types = { TypeInfo::get<std::string>() }
-				},
-				{
-					.name = "Static",
-					.allowed_types = { TypeInfo::get<bool>() },
-					.default_value = "true"
 				}
 			},
 			{
@@ -64,20 +59,14 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto& image = *(graphics::ImageDesc*)outputs[0].data;
-				if (image.view && *(bool*)inputs[2].data)
-					return;
 				image.view = nullptr;
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto holder = entity->get_component<cResourcesHolder>();
-					if (holder)
+					if (auto holder = entity->get_component<cResourcesHolder>(); holder)
 					{
-						auto name = *(uint*)inputs[1].data;
-						if (name)
+						if (auto name = *(uint*)inputs[1].data; name)
 						{
-							auto r = holder->get_graphics_image(name);
-							if (r)
+							if (auto r = holder->get_graphics_image(name); r)
 							{
 								image.view = r->get_view();
 								image.uvs = vec4(0.f, 0.f, 1.f, 1.f);
@@ -100,11 +89,6 @@ namespace flame
 				{
 					.name = "Name_hash",
 					.allowed_types = { TypeInfo::get<std::string>() }
-				},
-				{
-					.name = "Static",
-					.allowed_types = { TypeInfo::get<bool>() },
-					.default_value = "true"
 				}
 			},
 			{
@@ -115,17 +99,12 @@ namespace flame
 			},
 			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
 				auto& atlas = *(graphics::ImageAtlasPtr*)outputs[0].data;
-				if (atlas && *(bool*)inputs[2].data)
-					return;
 				atlas = nullptr;
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto holder = entity->get_component<cResourcesHolder>();
-					if (holder)
+					if (auto holder = entity->get_component<cResourcesHolder>(); holder)
 					{
-						auto name = *(uint*)inputs[1].data;
-						if (name)
+						if (auto name = *(uint*)inputs[1].data; name)
 						{
 							auto r = holder->get_graphics_image_atlas(name);
 							atlas = r;

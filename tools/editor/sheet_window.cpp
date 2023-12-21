@@ -46,7 +46,6 @@ void SheetView::save_sheet()
 				sheet->name = sheet->filename.filename().stem().string();
 				sheet->name_hash = sh(sheet->name.c_str());
 			}
-			app.rebuild_typeinfo();
 		}
 		sheet->save();
 
@@ -186,7 +185,8 @@ void SheetView::on_draw()
 									auto new_name_hash = sh(new_names[i].c_str());
 									sheet->alter_column(i, new_names[i], new_types[i]);
 
-									app.update_sheet_references(sheet, old_name_hash, sheet->name_hash, new_name_hash);
+									if (sheet->is_static)
+										app.change_bp_references(old_name_hash, sheet->name_hash, new_name_hash, sheet->name_hash);
 
 									changed = true;
 								}

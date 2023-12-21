@@ -8,8 +8,12 @@ namespace flame
 	{
 		for (auto& kv : graphics_images)
 			graphics::Image::release(kv.second);
+		for (auto& kv : graphics_image_atlases)
+			graphics::ImageAtlas::release(kv.second);
+#if USE_AUDIO_MODULE
 		for (auto& kv : audio_buffers)
 			audio::Buffer::release(kv.second);
+#endif
 	}
 
 	void cResourcesHolderPrivate::hold(const std::filesystem::path& path, uint name)
@@ -60,12 +64,14 @@ namespace flame
 		return nullptr;
 	}
 
+#if USE_AUDIO_MODULE
 	audio::BufferPtr cResourcesHolderPrivate::get_audio_buffer(uint name)
 	{
 		if (auto it = audio_buffers.find(name); it != audio_buffers.end())
 			return it->second;
 		return nullptr;
 	}
+#endif
 
 	struct cResourcesHolderCreate : cResourcesHolder::Create
 	{

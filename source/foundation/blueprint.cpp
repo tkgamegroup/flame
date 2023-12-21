@@ -160,6 +160,244 @@ namespace flame
 			v.type->destroy(v.data);
 	}
 
+	void BlueprintPrivate::add_enum(const std::string& name, const std::vector<BlueprintEnumItem>& items)
+	{
+		for (auto& e : enums)
+		{
+			if (e.name == name)
+			{
+				printf("blueprint add_enum: %s enum already existed\n", name.c_str());
+				return;
+			}
+		}
+
+		auto name_hash = sh(name.c_str());
+
+		auto& e = enums.emplace_back();
+		e.name = name;
+		e.name_hash = sh(name.c_str());
+		e.items = items;
+
+		if (auto ei = find_enum(name_hash, tidb); ei)
+		{
+			// extent the cpp enum
+			for (auto& i : items)
+			{
+				if (auto ii = (EnumItemInfo*)ei->find_item(i.name_hash); ii)
+					assert(0); // cpp enum already has this item
+				else
+					ei->items.push_back({ ei, i.name, i.name_hash, i.value });
+			}
+		}
+		else
+		{
+			auto& new_ei = tidb.enums[name_hash];
+			new_ei.db = &tidb;
+			new_ei.name = name;
+			new_ei.name_hash = name_hash;
+			new_ei.is_flags = name.ends_with("Flags");
+			new_ei.items.resize(items.size());
+			for (auto i = 0; i < items.size(); i++)
+			{
+				auto& src = items[i];
+				auto& dst = new_ei.items[i];
+				dst.ei = &new_ei;
+				dst.name = src.name;
+				dst.name_hash = src.name_hash;
+				dst.value = src.value;
+			}
+			new_ei.library = nullptr;
+		}
+	}
+
+	void BlueprintPrivate::remove_enum(uint name)
+	{
+		for (auto it = enums.begin(); it != enums.end(); it++)
+		{
+			if (it->name_hash == name)
+			{
+				for (auto it2 = tidb.enums.begin(); it2 != tidb.enums.end(); it2++)
+				{
+					if (it2->second.name_hash == name)
+					{
+						auto& ei = it2->second;
+						if (ei.library == nullptr) // not from cpp
+							tidb.enums.erase(it2); // just remove it
+						else
+						{
+							// filter out the items from bp
+							for (auto& i : it->items)
+							{
+								for (auto it3 = ei.items.begin(); it3 != ei.items.end(); it3++)
+								{
+									if (it3->name_hash == i.name_hash)
+									{
+										ei.items.erase(it3);
+										break;
+									}
+								}
+							}
+						}
+						break;
+					}
+				}
+
+				enums.erase(it);
+				return;
+			}
+		}
+	}
+
+	void BlueprintPrivate::alter_enum(uint old_name, const std::string& new_name, const std::vector<BlueprintEnumItem>& new_items)
+	{
+		for (auto& e : enums)
+		{
+			if (e.name_hash == old_name)
+			{
+				auto new_name_hash = sh(new_name.c_str());
+
+				if (auto ei = find_enum(old_name); ei)
+				{
+					ei->name = new_name;
+					ei->name_hash = new_name_hash;
+					ei->is_flags = new_name.ends_with("Flags");
+
+					// filter out the items from bp
+					for (auto& i : e.items)
+					{
+						for (auto it = ei->items.begin(); it != ei->items.end(); it++)
+						{
+							if (it->name_hash == i.name_hash)
+							{
+								ei->items.erase(it);
+								break;
+							}
+						}
+					}
+					// extent the cpp enum
+					for (auto& i : new_items)
+					{
+						if (auto ii = (EnumItemInfo*)ei->find_item(i.name_hash); ii)
+							assert(0); // cpp enum already has this item
+						else
+							ei->items.push_back({ ei, i.name, i.name_hash, i.value });
+					}
+				}
+
+				e.name = new_name;
+				e.name_hash = new_name_hash;
+				e.items = new_items;
+			}
+		}
+	}
+
+	void BlueprintPrivate::add_struct(const std::string& name, const std::vector<BlueprintStructVariable>& variables)
+	{
+		for (auto& s : structs)
+		{
+			if (s.name == name)
+			{
+				printf("blueprint add_struct: %s struct already existed\n", name.c_str());
+				return;
+			}
+		}
+
+		auto name_hash = sh(name.c_str());
+
+		if (find_udt(name_hash, tidb))
+		{
+			printf("blueprint add_struct: %s struct already existed\n", name.c_str());
+			return;
+		}
+
+		auto& s = structs.emplace_back();
+		s.name = name;
+		s.name_hash = sh(name.c_str());
+		s.variables = variables;
+
+		auto& new_ui = tidb.udts[name_hash];
+		new_ui.db = &tidb;
+		new_ui.name = name;
+		new_ui.name_hash = name_hash;
+		new_ui.size = 0;
+		new_ui.pod = true;
+		new_ui.variables.resize(variables.size());
+		for (auto i = 0; i < variables.size(); i++)
+		{
+			auto& src = variables[i];
+			auto& dst = new_ui.variables[i];
+			dst.ui = &new_ui;
+			dst.name = src.name;
+			dst.name_hash = src.name_hash;
+			dst.type = src.type;
+			dst.offset = new_ui.size;
+			new_ui.size += dst.type->size;
+			dst.default_value = src.default_value;
+			new_ui.variables_map[dst.name_hash] = i;
+			if (!dst.type->pod)
+				new_ui.pod = false;
+		}
+		new_ui.library = nullptr;
+	}
+
+	void BlueprintPrivate::remove_struct(uint name)
+	{
+		for (auto it = structs.begin(); it != structs.end(); it++)
+		{
+			if (it->name_hash == name)
+			{
+				for (auto it2 = tidb.udts.begin(); it2 != tidb.udts.end(); it2++)
+				{
+					if (it2->second.name_hash == name)
+					{
+						auto& ui = it2->second;
+						if (ui.library == nullptr) // not from cpp
+							tidb.udts.erase(it2); // just remove it
+					}
+				}
+
+				structs.erase(it);
+				return;
+			}
+		}
+	}
+
+	void BlueprintPrivate::alter_struct(uint old_name, const std::string& new_name, const std::vector<BlueprintStructVariable>& new_variables)
+	{
+		for (auto& s : structs)
+		{
+			if (s.name_hash == old_name)
+			{
+				if (auto ui = find_udt(old_name); ui)
+				{
+					if (ui->library == nullptr)  // not from cpp
+					{
+						ui->variables.clear();
+						ui->variables_map.clear();
+						ui->size = 0;
+						ui->pod = true;
+						ui->variables.resize(new_variables.size());
+						for (auto i = 0; i < new_variables.size(); i++)
+						{
+							auto& src = new_variables[i];
+							auto& dst = ui->variables[i];
+							dst.ui = ui;
+							dst.name = src.name;
+							dst.name_hash = src.name_hash;
+							dst.type = src.type;
+							dst.offset = ui->size;
+							ui->size += dst.type->size;
+							dst.default_value = src.default_value;
+							ui->variables_map[dst.name_hash] = i;
+							if (!dst.type->pod)
+								ui->pod = false;
+						}
+					}
+				}
+			}
+		}
+	}
+
 	void* BlueprintPrivate::add_variable(BlueprintGroupPtr group, const std::string& name, TypeInfo* type)
 	{
 		assert(!group || group->blueprint == this);
@@ -278,26 +516,7 @@ namespace flame
 					}
 				}
 				if (changed)
-				{
-					auto process_group = [&](BlueprintGroupPtr group) {
-						for (auto& n : group->nodes)
-						{
-							if (blueprint_is_variable_node(n->name_hash))
-							{
-								if (*(uint*)n->inputs[0]->data == old_name &&
-									*(uint*)n->inputs[1]->data == 0)
-									update_variable_node(n.get(), it->name_hash);
-							}
-						}
-					};
-					if (group)
-						process_group(group);
-					else
-					{
-						for (auto& g : groups)
-							process_group(g.get());
-					}
-				}
+					change_references(group, old_name, 0, it->name_hash, 0);
 
 				auto frame = frames;
 				if (group)
@@ -478,59 +697,49 @@ namespace flame
 			}
 			if (!found)
 			{
-				printf("blueprint add_variable_node: cannot find variable %d\n", variable_name);
+				printf("blueprint add_variable_node: cannot find variable %u\n", variable_name);
 				return nullptr;
 			}
 		}
 		else
 		{
-			auto sht = Sheet::get(location_name);
-			if (sht)
+			if (auto bp = Blueprint::get(location_name); bp)
 			{
-				auto idx = sht->find_column(variable_name);
-				if (idx == -1)
+				for (auto& v : bp->variables)
 				{
-					printf("blueprint add_variable_node: cannot find variable %d in sheet '%s'\n", variable_name, sht->name.c_str());
-					return nullptr;
-				}
-				if (sht->rows.empty())
-				{
-					printf("blueprint add_variable_node: there is no rows in sheet '%s'\n", sht->name.c_str());
-					return nullptr;
+					if (v.name_hash == variable_name)
+					{
+						location = bp->name + '.';
+						variable = v;
+						found = true;
+						break;
+					}
 				}
 
-				auto& col = sht->columns[idx];
-				auto& row = sht->rows[0];
-				location = sht->name + '.';
-				variable.name = col.name;
-				variable.name_hash = col.name_hash;
-				variable.type = col.type;
+				if (!found)
+				{
+					printf("blueprint add_variable_node: cannot find variable %u in blueprint '%s'\n", variable_name, bp->name.c_str());
+					return nullptr;
+				}
 			}
 			else
 			{
-				auto bp = Blueprint::get(location_name);
-				if (bp)
+				if (auto ei = find_enum(location_name); ei)
 				{
-					for (auto& v : bp->variables)
+					auto ii = ei->find_item(variable_name);
+					if (!ii)
 					{
-						if (v.name_hash == variable_name)
-						{
-							location = bp->name + '.';
-							variable = v;
-							found = true;
-							break;
-						}
-					}
-
-					if (!found)
-					{
-						printf("blueprint add_variable_node: cannot find variable %d in blueprint '%s'\n", variable_name, bp->name.c_str());
+						printf("blueprint add_variable_node: cannot find item %u in enum '%s'\n", variable_name, ei->name.c_str());
 						return nullptr;
 					}
+
+					variable.name = ii->name;
+					variable.name_hash = ii->name_hash;
+					variable.type = TypeInfo::get<int>();
 				}
 				else
 				{
-					printf("blueprint add_variable_node: cannot find sheet or blueprint: %d\n", location_name);
+					printf("blueprint add_variable_node: cannot find location %u\n", location_name);
 					return nullptr;
 				}
 			}
@@ -1305,117 +1514,132 @@ namespace flame
 		dirty_frame = frame;
 	}
 
-	BlueprintNodePtr BlueprintPrivate::update_variable_node(BlueprintNodePtr node, uint new_name)
+	bool BlueprintPrivate::change_references(BlueprintGroupPtr group, uint old_name, uint old_location, uint new_name, uint new_location)
 	{
-		auto group = node->group;
-		auto parent = node->parent;
-		assert(group->blueprint == this);
+		auto changed = false;
+		auto process_group = [&](BlueprintGroupPtr g) {
+			for (auto& n : g->nodes)
+			{
+				if (blueprint_is_variable_node(n->name_hash))
+				{
+					if ((old_name  == 0 || *(uint*)n->inputs[0]->data == old_name) &&
+						*(uint*)n->inputs[1]->data == old_location)
+					{
 
-		if (!blueprint_is_variable_node(node->name_hash))
-		{
-			printf("blueprint update_variable_node: node is not variable node\n");
-			return nullptr;
-		}
+						struct StagingValue
+						{
+							uint name;
+							TypeInfo* old_type;
+							std::string value;
+						};
 
-		struct StagingValue
-		{
-			uint name;
-			TypeInfo* old_type;
-			std::string value;
+						std::vector<StagingValue> staging_values;
+						for (auto i = 2; i < n->inputs.size(); i++)
+						{
+							auto& input = n->inputs[i];
+							if (input->linked_slots.empty())
+							{
+								if (auto value_str = input->type->serialize(input->data); value_str != input->default_value)
+								{
+									auto& v = staging_values.emplace_back();
+									v.name = input->name_hash;
+									v.old_type = input->type;
+									v.value = value_str;
+								}
+							}
+						}
+
+						std::vector<BlueprintLinkPtr> relevant_links;
+						for (auto& src_l : g->links)
+						{
+							if (n.get() == src_l->from_slot->node || n.get() == src_l->to_slot->node)
+								relevant_links.push_back(src_l.get());
+						}
+						std::sort(relevant_links.begin(), relevant_links.end(), [](const auto a, const auto b) {
+							return a->from_slot->node->degree < b->from_slot->node->degree;
+						});
+
+						struct StagingLink
+						{
+							uint from_node;
+							uint from_slot;
+							uint to_node;
+							uint to_slot;
+						};
+						std::vector<StagingLink> staging_links;
+						for (auto src_l : relevant_links)
+						{
+							auto& l = staging_links.emplace_back();
+							l.from_node = src_l->from_slot->node->object_id;
+							l.from_slot = src_l->from_slot->name_hash;
+							l.to_node = src_l->to_slot->node->object_id;
+							l.to_slot = src_l->to_slot->name_hash;
+						}
+
+						auto old_id = n->object_id;
+						auto type = blueprint_variable_name_to_type(n->name_hash);
+						auto name = new_name ? new_name : *(uint*)n->inputs[0]->data;
+						auto parent = n->parent;
+						auto position = n->position;
+						remove_node(n.get(), false);
+						if (auto new_n = add_variable_node(g, parent, name, type, new_location); new_n)
+						{
+							new_n->position = position;
+
+							for (auto& src_v : staging_values)
+							{
+								if (auto input = new_n->find_input(src_v.name); input && input->type == src_v.old_type)
+									input->type->unserialize(src_v.value, input->data);
+							}
+
+							for (auto& src_l : staging_links)
+							{
+								BlueprintNodePtr from_node = nullptr;
+								BlueprintNodePtr to_node = nullptr;
+								if (src_l.from_node == old_id)
+								{
+									from_node = new_n;
+									if (src_l.from_slot == old_name)
+										src_l.from_slot = new_name;
+								}
+								else
+									from_node = g->find_node_by_id(src_l.from_node);
+								assert(from_node);
+								if (src_l.to_node == old_id)
+								{
+									to_node = new_n;
+									if (src_l.to_slot == old_name)
+										src_l.to_slot = new_name;
+								}
+								else
+									to_node = g->find_node_by_id(src_l.to_node);
+								assert(to_node);
+
+								auto from_slot = from_node->find_output(src_l.from_slot);
+								auto to_slot = to_node->find_input(src_l.to_slot);
+								if (from_slot && to_slot)
+									add_link(from_slot, to_slot);
+							}
+						}
+						else
+							printf("blueprint change_references: cannot add new node\n");
+
+						changed = true;
+					}
+				}
+			}
 		};
-
-		std::vector<StagingValue> staging_values;
-		for (auto i = 2; i < node->inputs.size(); i++)
+		if (group)
 		{
-			auto& input = node->inputs[i];
-			if (input->linked_slots.empty())
-			{
-				if (auto value_str = input->type->serialize(input->data); value_str != input->default_value)
-				{
-					auto& v = staging_values.emplace_back();
-					v.name = input->name_hash;
-					v.old_type = input->type;
-					v.value = value_str;
-				}
-			}
-		}
-
-		std::vector<BlueprintLinkPtr> relevant_links;
-		for (auto& src_l : group->links)
-		{
-			if (node == src_l->from_slot->node || node == src_l->to_slot->node)
-				relevant_links.push_back(src_l.get());
-		}
-		std::sort(relevant_links.begin(), relevant_links.end(), [](const auto a, const auto b) {
-			return a->from_slot->node->degree < b->from_slot->node->degree;
-		});
-		struct StagingLink
-		{
-			uint from_node;
-			uint from_slot;
-			uint to_node;
-			uint to_slot;
-		};
-		std::vector<StagingLink> staging_links;
-		for (auto src_l : relevant_links)
-		{
-			auto& l = staging_links.emplace_back();
-			l.from_node = src_l->from_slot->node->object_id;
-			l.from_slot = src_l->from_slot->name_hash;
-			l.to_node = src_l->to_slot->node->object_id;
-			l.to_slot = src_l->to_slot->name_hash;
-		}
-
-		auto old_id = node->object_id;
-		auto type = blueprint_variable_name_to_type(node->name_hash);
-		auto variable_name = *(uint*)node->inputs[0]->data;
-		auto location_name = *(uint*)node->inputs[1]->data;
-		auto position = node->position;
-		remove_node(node, false);
-		auto new_n = add_variable_node(group, parent, new_name, type, location_name);
-		if (new_n)
-		{
-			new_n->position = position;
-
-			for (auto& src_v : staging_values)
-			{
-				if (auto input = new_n->find_input(src_v.name); input && input->type == src_v.old_type)
-					input->type->unserialize(src_v.value, input->data);
-			}
-
-			for (auto& src_l : staging_links)
-			{
-				BlueprintNodePtr from_node = nullptr;
-				BlueprintNodePtr to_node = nullptr;
-				if (src_l.from_node == old_id)
-				{
-					from_node = new_n;
-					if (src_l.from_slot == variable_name)
-						src_l.from_slot = new_name;
-				}
-				else
-					from_node = group->find_node_by_id(src_l.from_node);
-				assert(from_node);
-				if (src_l.to_node == old_id)
-				{
-					to_node = new_n;
-					if (src_l.to_slot == variable_name)
-						src_l.to_slot = new_name;
-				}
-				else
-					to_node = group->find_node_by_id(src_l.to_node);
-				assert(to_node);
-
-				auto from_slot = from_node->find_output(src_l.from_slot);
-				auto to_slot = to_node->find_input(src_l.to_slot);
-				if (from_slot && to_slot)
-					add_link(from_slot, to_slot);
-			}
+			assert(group->blueprint == this);
+			process_group(group);
 		}
 		else
-			printf("blueprint update_variable_node: cannot add new node\n");
-
-		return new_n;
+		{
+			for (auto& g : groups)
+				process_group(g.get());
+		}
+		return changed;
 	}
 
 	BlueprintLinkPtr BlueprintPrivate::add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot)
@@ -1427,18 +1651,18 @@ namespace flame
 
 		if (from_slot->node == to_slot->node)
 		{
-			printf("blueprint add_link: cannot link because from_slot and to_slot are from the same node\n");
+			printf("blueprint add_link: cannot link because from_slot(%s) and to_slot(%s) are from the same node\n", from_slot->name.c_str(), to_slot->name.c_str());
 			return nullptr;
 		}
 		if (!from_slot->node->parent->contains(to_slot->node))
 		{
-			printf("blueprint add_link: cannot link because to_slot's node should comes from from_slot's node's parent\n");
+			printf("blueprint add_link: cannot link because to_slot(%s)'s node should comes from from_slot(%s)'s node's parent\n", to_slot->name.c_str(), from_slot->name.c_str());
 			return nullptr;
 		}
 
 		if (!blueprint_allow_type(to_slot->allowed_types, from_slot->type))
 		{
-			printf("blueprint add_link: cannot link because type is not allowed\n");
+			printf("blueprint add_link: cannot link because from_slot(%s)'s type is not allowed to to_slot(%s)\n", from_slot->name.c_str(), to_slot->name.c_str());
 			return nullptr;
 		}
 
@@ -1815,6 +2039,67 @@ namespace flame
 		};
 
 		auto doc_root = doc.append_child("blueprint");
+		std::vector<BlueprintPtr> dependencies;
+		for (auto& g : groups)
+		{
+			for (auto& n : g->nodes)
+			{
+				if (blueprint_is_variable_node(n->name_hash))
+				{
+					auto name = *(uint*)n->inputs[0]->data;
+					auto location = *(uint*)n->inputs[1]->data;
+					if (location != 0)
+					{
+						auto bp = Blueprint::get(location);
+						if (bp)
+						{
+							if (std::find(dependencies.begin(), dependencies.end(), bp) == dependencies.end())
+								dependencies.push_back(bp);
+						}
+					}
+				}
+			}
+		}
+		if (!dependencies.empty())
+		{
+			auto n_dependencies = doc_root.append_child("dependencies");
+			for (auto bp : dependencies)
+			{
+				auto n_dependency = n_dependencies.append_child("dependency");
+				n_dependency.append_attribute("v").set_value(bp->filename.string().c_str());
+			}
+		}
+		if (!enums.empty())
+		{
+			auto n_enums = doc_root.append_child("enums");
+			for (auto& e : enums)
+			{
+				auto n_enum = n_enums.append_child("enum");
+				n_enum.append_attribute("name").set_value(e.name.c_str());
+				for (auto& i : e.items)
+				{
+					auto n_item = n_enum.append_child("item");
+					n_item.append_attribute("name").set_value(i.name.c_str());
+					n_item.append_attribute("value").set_value(i.value);
+				}
+			}
+		}
+		if (!structs.empty())
+		{
+			auto n_structs = doc_root.append_child("structs");
+			for (auto& s : structs)
+			{
+				auto n_struct = n_structs.append_child("struct");
+				n_struct.append_attribute("name").set_value(s.name.c_str());
+				for (auto& v : s.variables)
+				{
+					auto n_variable = n_struct.append_child("variable");
+					n_variable.append_attribute("name").set_value(v.name.c_str());
+					write_ti(v.type, n_variable.append_attribute("type"));
+					n_variable.append_attribute("default_value").set_value(v.default_value.c_str());
+				}
+			}
+		}
 		if (!variables.empty())
 		{
 			auto n_variables = doc_root.append_child("variables");
@@ -2040,8 +2325,6 @@ namespace flame
 				wprintf(L"cannot found blueprint: %s", _filename.c_str());
 				return nullptr;
 			}
-
-			auto ret = new BlueprintPrivate;
 			pugi::xml_document doc;
 			pugi::xml_node doc_root;
 
@@ -2051,6 +2334,15 @@ namespace flame
 				return nullptr;
 			}
 
+			for (auto n_dependency : doc_root.child("dependencies"))
+			{
+				std::filesystem::path path(n_dependency.attribute("v").value());
+				if (std::filesystem::exists(path))
+					Blueprint::get(path, true);
+			}
+
+			auto ret = new BlueprintPrivate;
+
 			auto read_ti = [&](pugi::xml_attribute a) {
 				auto sp = SUS::to_string_vector(SUS::split(a.value(), '@'));
 				TypeTag tag;
@@ -2058,6 +2350,31 @@ namespace flame
 				return TypeInfo::get(tag, sp[1]);
 			};
 
+			for (auto n_enum : doc_root.child("enums"))
+			{
+				std::vector<BlueprintEnumItem> items;
+				for (auto n_item : n_enum.child("items"))
+				{
+					auto& i = items.emplace_back();
+					i.name = n_item.attribute("name").value();
+					i.name_hash = sh(i.name.c_str());
+					i.value = n_item.attribute("value").as_int();
+				}
+				ret->add_enum(n_enum.attribute("name").value(), items);
+			}
+			for (auto n_struct : doc_root.child("structs"))
+			{
+				std::vector<BlueprintStructVariable> variables;
+				for (auto n_variable : n_struct.child("variables"))
+				{
+					auto& v = variables.emplace_back();
+					v.name = n_variable.attribute("name").value();
+					v.name_hash = sh(v.name.c_str());
+					v.type = read_ti(n_variable.attribute("type"));
+					v.default_value = n_variable.attribute("default_value").value();
+				}
+				ret->add_struct(n_struct.attribute("name").value(), variables);
+			}
 			for (auto n_variable : doc_root.child("variables"))
 			{
 				auto type = read_ti(n_variable.attribute("type"));
@@ -2436,7 +2753,10 @@ namespace flame
 							continue;
 						}
 					}
-					ret->add_link(from_slot, to_slot);
+					if (!ret->add_link(from_slot, to_slot))
+					{
+						printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+					}
 				}
 			}
 
@@ -2872,21 +3192,9 @@ namespace flame
 					}
 					else
 					{
-						auto sht = Sheet::get(location_name);
-						if (sht)
+						auto bp_ins = BlueprintInstance::get(location_name);
+						if (bp_ins)
 						{
-							auto idx = sht->find_column(name);
-							assert(idx != -1);
-							assert(!sht->rows.empty());
-
-							auto& col = sht->columns[idx];
-							auto& row = sht->rows[0];
-							return { col.type, row.datas[idx] };
-						}
-						else
-						{
-							auto bp_ins = BlueprintInstance::get(location_name);
-							assert(bp_ins);
 							if (bp_ins->built_frame < bp_ins->blueprint->dirty_frame)
 								bp_ins->build();
 
@@ -2894,6 +3202,15 @@ namespace flame
 							assert(it != bp_ins->variables.end());
 							return { it->second.type, it->second.data };
 						}
+						else if (auto ei = find_enum(location_name); ei)
+						{
+							auto ii = ei->find_item(name);
+							assert(ii);
+
+							return { TypeInfo::get<int>(), (void*)&ii->value };
+						}
+						else
+							assert(0);
 					}
 				};
 				auto find_group = [&](uint name, uint location_name = 0)->BlueprintInstanceGroup* {

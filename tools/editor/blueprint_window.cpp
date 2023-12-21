@@ -716,7 +716,7 @@ void BlueprintView::on_draw()
 					if (!ei->is_flags)
 					{
 						auto value = *(int*)data;
-						auto curr_item = ei->find_item(value);
+						auto curr_item = ei->find_item_by_value(value);
 
 						ImGui::SetNextItemWidth(100.f);
 						if (popup_name)
@@ -841,6 +841,365 @@ void BlueprintView::on_draw()
 				return changed;
 			};
 
+			if (ImGui::CollapsingHeader("Bp Enums:"))
+			{
+				ImGui::PushID("bp_enums");
+				static int selected_enum = -1;
+				if (ImGui::BeginListBox("##enums"))
+				{
+					for (auto i = 0; i < blueprint->enums.size(); i++)
+					{
+						if (ImGui::Selectable(blueprint->enums[i].name.c_str(), selected_enum == i))
+							selected_enum = i;
+					}
+					ImGui::EndListBox();
+				}
+				selected_enum = min(selected_enum, (int)blueprint->enums.size() - 1);
+
+				if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
+				{
+					auto name = get_unique_name("new_enum", [&](const std::string& name) {
+						for (auto& v : blueprint->enums)
+						{
+							if (v.name == name)
+								return true;
+						}
+						return false;
+					});
+					blueprint->add_enum(name, {});
+					selected_enum = blueprint->enums.size() - 1;
+					unsaved = true;
+				}
+				ImGui::SameLine();
+				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
+				{
+					if (selected_enum != -1)
+					{
+						blueprint->remove_enum(blueprint->enums[selected_enum].name_hash);
+						if (blueprint->enums.empty())
+							selected_enum = -1;
+						unsaved = true;
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
+				{
+					if (selected_enum > 0)
+					{
+						std::swap(blueprint->enums[selected_enum], blueprint->enums[selected_enum - 1]);
+						selected_enum--;
+						unsaved = true;
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
+				{
+					if (selected_enum != -1 && selected_enum < blueprint->enums.size() - 1)
+					{
+						std::swap(blueprint->enums[selected_enum], blueprint->enums[selected_enum + 1]);
+						selected_enum++;
+						unsaved = true;
+					}
+				}
+
+				if (selected_enum != -1)
+				{
+					auto& e = blueprint->enums[selected_enum];
+					auto items = e.items;
+
+					auto name = e.name;
+					auto old_name_hash = e.name_hash;
+					ImGui::InputText("Enum Name", &name);
+					if (ImGui::IsItemDeactivatedAfterEdit())
+					{
+						blueprint->alter_enum(e.name_hash, name, e.items);
+						if (blueprint->is_static)
+							app.change_bp_references(0, old_name_hash, 0, sh(name.c_str()));
+						unsaved = true;
+					}
+
+					ImGui::PushID("bp_enum_items");
+
+					static int selected_enum_item = -1;
+					if (ImGui::BeginListBox("##enum_items"))
+					{
+						for (auto i = 0; i < e.items.size(); i++)
+						{
+							if (ImGui::Selectable(e.items[i].name.c_str(), selected_enum_item == i))
+								selected_enum_item = i;
+						}
+						ImGui::EndListBox();
+					}
+					selected_enum_item = min(selected_enum_item, (int)e.items.size() - 1);
+
+					if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
+					{
+						auto name = get_unique_name("new_item", [&](const std::string& name) {
+							for (auto& v : e.items)
+							{
+								if (v.name == name)
+									return true;
+							}
+							return false;
+						});
+						items.push_back({ name, sh(name.c_str()), 0});
+						blueprint->alter_enum(e.name_hash, e.name, items);
+						selected_enum_item = items.size() - 1;
+						unsaved = true;
+					}
+					ImGui::SameLine();
+					if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
+					{
+						if (selected_enum_item != -1)
+						{
+							auto old_item_hash = items[selected_enum_item].name_hash;
+							items.erase(items.begin() + selected_enum_item);
+							blueprint->alter_enum(e.name_hash, e.name, items);
+							if (blueprint->is_static)
+								app.change_bp_references(old_item_hash, e.name_hash, 0, e.name_hash);
+							if (items.empty())
+								selected_enum_item = -1;
+							unsaved = true;
+						}
+					}
+					ImGui::SameLine();
+					if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
+					{
+						if (selected_enum_item > 0)
+						{
+							std::swap(items[selected_enum_item], items[selected_enum_item - 1]);
+							e.items = items;
+							selected_enum_item--;
+							unsaved = true;
+						}
+					}
+					ImGui::SameLine();
+					if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
+					{
+						if (selected_enum_item != -1 && selected_enum_item < items.size() - 1)
+						{
+							std::swap(items[selected_enum_item], items[selected_enum_item + 1]);
+							e.items = items;
+							selected_enum_item++;
+							unsaved = true;
+						}
+					}
+
+					if (selected_enum_item != -1)
+					{
+						auto& item = items[selected_enum_item];
+						auto old_item_hash = item.name_hash;
+
+						auto name = item.name;
+						ImGui::InputText("Item Name", &name);
+						if (ImGui::IsItemDeactivatedAfterEdit())
+						{
+							item.name = name;
+							blueprint->alter_enum(item.name_hash, e.name, items);
+							if (blueprint->is_static)
+								app.change_bp_references(old_item_hash, e.name_hash, sh(name.c_str()), e.name_hash);
+							unsaved = true;
+						}
+						ImGui::InputInt("Item Value", &item.value);
+						if (ImGui::IsItemDeactivatedAfterEdit())
+						{
+							blueprint->alter_enum(item.name_hash, e.name, items);
+							if (blueprint->is_static)
+								app.change_bp_references(old_item_hash, e.name_hash, sh(name.c_str()), e.name_hash);
+							unsaved = true;
+						}
+					}
+
+					ImGui::PopID();
+				}
+
+				ImGui::PopID();
+
+				if (blueprint_instance->built_frame < blueprint->dirty_frame)
+					blueprint_instance->build();
+			}
+			if (ImGui::CollapsingHeader("Bp Structs:"))
+			{
+				ImGui::PushID("bp_structs");
+				static int selected_struct = -1;
+				if (ImGui::BeginListBox("##structs"))
+				{
+					for (auto i = 0; i < blueprint->structs.size(); i++)
+					{
+						if (ImGui::Selectable(blueprint->structs[i].name.c_str(), selected_struct == i))
+							selected_struct = i;
+					}
+					ImGui::EndListBox();
+				}
+				selected_struct = min(selected_struct, (int)blueprint->structs.size() - 1);
+
+				if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
+				{
+					auto name = get_unique_name("new_struct", [&](const std::string& name) {
+						for (auto& v : blueprint->structs)
+						{
+							if (v.name == name)
+								return true;
+						}
+						return false;
+					});
+					blueprint->add_struct(name, {});
+					selected_struct = blueprint->structs.size() - 1;
+					unsaved = true;
+				}
+				ImGui::SameLine();
+				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
+				{
+					if (selected_struct != -1)
+					{
+						blueprint->remove_struct(blueprint->structs[selected_struct].name_hash);
+						if (blueprint->structs.empty())
+							selected_struct = -1;
+						unsaved = true;
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
+				{
+					if (selected_struct > 0)
+					{
+						std::swap(blueprint->structs[selected_struct], blueprint->structs[selected_struct - 1]);
+						selected_struct--;
+						unsaved = true;
+					}
+				}
+				ImGui::SameLine();
+				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
+				{
+					if (selected_struct != -1 && selected_struct < blueprint->structs.size() - 1)
+					{
+						std::swap(blueprint->structs[selected_struct], blueprint->structs[selected_struct + 1]);
+						selected_struct++;
+						unsaved = true;
+					}
+				}
+
+				if (selected_struct != -1)
+				{
+					auto& s = blueprint->structs[selected_struct];
+					auto variables = s.variables;
+
+					auto name = s.name;
+					auto old_name_hash = s.name_hash;
+					ImGui::InputText("Struct Name", &name);
+					if (ImGui::IsItemDeactivatedAfterEdit())
+					{
+						blueprint->alter_struct(s.name_hash, name, s.variables);
+						if (blueprint->is_static)
+							app.change_bp_references(0, old_name_hash, 0, sh(name.c_str()));
+						unsaved = true;
+					}
+
+					ImGui::PushID("bp_struct_variables");
+
+					static int selected_struct_variable = -1;
+					if (ImGui::BeginListBox("##struct_variables"))
+					{
+						for (auto i = 0; i < s.variables.size(); i++)
+						{
+							if (ImGui::Selectable(s.variables[i].name.c_str(), selected_struct_variable == i))
+								selected_struct_variable = i;
+						}
+						ImGui::EndListBox();
+					}
+					selected_struct_variable = min(selected_struct_variable, (int)s.variables.size() - 1);
+
+					if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
+					{
+						auto name = get_unique_name("new_variable", [&](const std::string& name) {
+							for (auto& v : s.variables)
+							{
+								if (v.name == name)
+									return true;
+							}
+							return false;
+						});
+						variables.push_back({ name, sh(name.c_str()), 0 });
+						blueprint->alter_struct(s.name_hash, s.name, variables);
+						selected_struct_variable = variables.size() - 1;
+						unsaved = true;
+					}
+					ImGui::SameLine();
+					if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
+					{
+						if (selected_struct_variable != -1)
+						{
+							auto old_item_hash = variables[selected_struct_variable].name_hash;
+							variables.erase(variables.begin() + selected_struct_variable);
+							blueprint->alter_struct(s.name_hash, s.name, variables);
+							if (blueprint->is_static)
+								app.change_bp_references(old_item_hash, s.name_hash, 0, s.name_hash);
+							if (variables.empty())
+								selected_struct_variable = -1;
+							unsaved = true;
+						}
+					}
+					ImGui::SameLine();
+					if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
+					{
+						if (selected_struct_variable > 0)
+						{
+							std::swap(variables[selected_struct_variable], variables[selected_struct_variable - 1]);
+							s.variables = variables;
+							selected_struct_variable--;
+							unsaved = true;
+						}
+					}
+					ImGui::SameLine();
+					if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
+					{
+						if (selected_struct_variable != -1 && selected_struct_variable < variables.size() - 1)
+						{
+							std::swap(variables[selected_struct_variable], variables[selected_struct_variable + 1]);
+							s.variables = variables;
+							selected_struct_variable++;
+							unsaved = true;
+						}
+					}
+
+					if (selected_struct_variable != -1)
+					{
+						auto& variable = variables[selected_struct_variable];
+						auto old_variable_hash = variable.name_hash;
+
+						auto name = variable.name;
+						ImGui::InputText("Variable Name", &name);
+						if (ImGui::IsItemDeactivatedAfterEdit())
+						{
+							variable.name = name;
+							blueprint->alter_struct(variable.name_hash, s.name, variables);
+							if (blueprint->is_static)
+								app.change_bp_references(old_variable_hash, s.name_hash, sh(name.c_str()), s.name_hash);
+							unsaved = true;
+						}
+						if (ImGui::BeginCombo("Variable Type", ti_str(variable.type).c_str()))
+						{
+							if (auto type = show_types_menu(); type)
+							{
+								variable.type = type;
+								blueprint->alter_struct(variable.name_hash, s.name, variables);
+								if (blueprint->is_static)
+									app.change_bp_references(old_variable_hash, s.name_hash, sh(name.c_str()), s.name_hash);
+								unsaved = true;
+							}
+
+							ImGui::EndCombo();
+						}
+					}
+
+					ImGui::PopID();
+				}
+
+				ImGui::PopID();
+
+				if (blueprint_instance->built_frame < blueprint->dirty_frame)
+					blueprint_instance->build();
+			}
 			if (ImGui::CollapsingHeader("Bp Variables:"))
 			{
 				ImGui::PushID("bp_variables");
@@ -912,7 +1271,8 @@ void BlueprintView::on_draw()
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
 						blueprint->alter_variable(nullptr, var.name_hash, name, var.type);
-						app.update_blueprint_references(blueprint, old_name_hash, blueprint->name_hash, sh(name.c_str()));
+						if (blueprint->is_static)
+							app.change_bp_references(old_name_hash, blueprint->name_hash, sh(name.c_str()), blueprint->name_hash);
 						unsaved = true;
 					}
 					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
@@ -920,7 +1280,8 @@ void BlueprintView::on_draw()
 						if (auto type = show_types_menu(); type)
 						{
 							blueprint->alter_variable(nullptr, var.name_hash, "", type);
-							app.update_blueprint_references(blueprint, old_name_hash, blueprint->name_hash, old_name_hash);
+							if (blueprint->is_static)
+								app.change_bp_references(old_name_hash, blueprint->name_hash, old_name_hash, blueprint->name_hash);
 							unsaved = true;
 						}
 
@@ -1260,28 +1621,21 @@ void BlueprintView::on_draw()
 						}
 						else
 						{
-							auto sht = Sheet::get(location);
-							if (sht)
+							auto bp = Blueprint::get(location);
+							if (bp)
 							{
-								auto idx = sht->find_column(name);
-								if (idx != -1 && !sht->rows.empty())
+								if (auto var = bp->find_variable(name); var)
 								{
-									auto& column = sht->columns[idx];
-									ImGui::Text("Variable: %s", column.name.c_str());
-									ImGui::Text("From Sheet: %s", sht->name.c_str());
+									ImGui::Text("Variable: %s", var->name.c_str());
+									ImGui::Text("From Blueprint: %s", bp->name.c_str());
 								}
 							}
-							else
+							else if (auto ei = find_enum(location); ei)
 							{
-								auto bp = Blueprint::get(location);
-								if (bp)
+								if (auto ii = ei->find_item(name); ii)
 								{
-									auto var = bp->find_variable(name);
-									if (var)
-									{
-										ImGui::Text("Variable: %s", var->name.c_str());
-										ImGui::Text("From Blueprint: %s", bp->name.c_str());
-									}
+									ImGui::Text("Enum Value: %s %d", ii->name.c_str(), ii->value);
+									ImGui::Text("From Enum: %s", ei->name.c_str());
 								}
 							}
 						}
@@ -2422,23 +2776,6 @@ void BlueprintView::on_draw()
 						for (auto& v : group->variables)
 							show_variable(v.name, v.name_hash, v.type, 0);
 
-						if (!add_node_filter.empty() || ImGui::BeginMenu("Sheets"))
-						{
-							for (auto sht : app.project_static_sheets)
-							{
-								if (!add_node_filter.empty() || ImGui::BeginMenu(sht->name.c_str()))
-								{
-									header = "Sheet: " + sht->name;
-									for (auto& col : sht->columns)
-										show_variable(sht->name + '.' + col.name, col.name_hash, col.type, sht->name_hash);
-									if (add_node_filter.empty())
-										ImGui::EndMenu();
-								}
-							}
-							if (add_node_filter.empty())
-								ImGui::EndMenu();
-						}
-
 						if (!add_node_filter.empty() || ImGui::BeginMenu("Other Blueprints"))
 						{
 							for (auto bp : app.project_static_blueprints)
@@ -2454,6 +2791,24 @@ void BlueprintView::on_draw()
 										ImGui::EndMenu();
 								}
 							}
+							if (add_node_filter.empty())
+								ImGui::EndMenu();
+						}
+
+						if (!add_node_filter.empty() || ImGui::BeginMenu("Enums"))
+						{
+							for (auto& ei : tidb.enums)
+							{
+								if (!add_node_filter.empty() || ImGui::BeginMenu(ei.second.name.c_str()))
+								{
+									header = "Enum: " + ei.second.name;
+									for (auto& ii : ei.second.items)
+										show_variable(ei.second.name + '.' + ii.name, ii.name_hash, TypeInfo::get<int>(), ei.second.name_hash);
+									if (add_node_filter.empty())
+										ImGui::EndMenu();
+								}
+							}
+
 							if (add_node_filter.empty())
 								ImGui::EndMenu();
 						}

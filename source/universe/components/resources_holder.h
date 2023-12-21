@@ -10,7 +10,9 @@ namespace flame
 		virtual void hold(const std::filesystem::path& path, uint name) = 0;
 		virtual graphics::ImagePtr get_graphics_image(uint name) = 0;
 		virtual graphics::ImageAtlasPtr get_graphics_image_atlas(uint name) = 0;
+#if USE_AUDIO_MODULE
 		virtual audio::BufferPtr get_audio_buffer(uint name) = 0;
+#endif
 
 		struct Create
 		{

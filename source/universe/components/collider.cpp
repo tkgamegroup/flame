@@ -32,16 +32,25 @@ namespace flame
 				auto r = 0.f;
 				if (auto cbp = i.first->get_component<cBpInstanceT>(); cbp && cbp->bp_ins)
 					r = cbp->bp_ins->get_variable<float>("radius"_h);
-				if (distance(i.second->global_pos(), pos) < r)
+				if (distance(i.second->global_pos(), pos) < r + radius)
 				{
 					if (on_enter_cb)
 					{
 						voidptr inputs[1];
-						inputs[0] = i.first;
+						inputs[0] = &i.first;
 						bp_comp->bp_ins->call(on_enter_cb, inputs, nullptr);
 					}
 				}
 			}
 		}
 	}
+
+	struct cColliderCreate : cCollider::Create
+	{
+		cColliderPtr operator()(EntityPtr e) override
+		{
+			return new cColliderPrivate;
+		}
+	}cCollider_create;
+	cCollider::Create& cCollider::create = cCollider_create;
 }

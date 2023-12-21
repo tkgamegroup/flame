@@ -1083,7 +1083,10 @@ namespace flame
 				for (auto& a : loaded_image_atlases)
 				{
 					if (a->filename == filename)
+					{
+						a->ref++;
 						return a.get();
+					}
 				}
 
 				auto atlas_ini_path = filename;
@@ -1133,6 +1136,22 @@ namespace flame
 			}
 		}ImageAtlas_get;
 		ImageAtlas::Get& ImageAtlas::get = ImageAtlas_get;
+
+		struct ImageAtlasRelease : ImageAtlas::Release
+		{
+			void operator()(ImageAtlasPtr atlas) override
+			{
+				if (atlas->ref == 1)
+				{
+					std::erase_if(loaded_image_atlases, [&](const auto& i) {
+						return i.get() == atlas;
+					});
+				}
+				else
+					atlas->ref--;
+			}
+		}ImageAtlas_release;
+		ImageAtlas::Release& ImageAtlas::release = ImageAtlas_release;
 
 		struct ImageAtlasGenerate : ImageAtlas::Generate
 		{

@@ -21,14 +21,15 @@ namespace flame
 			std::vector<void*> datas;
 		};
 
-		std::vector<Column> columns;
-		std::vector<Row> rows;
-		std::unordered_map<uint, uint> columns_map;
+		std::vector<Column>				columns;
+		std::vector<Row>				rows;
+		std::unordered_map<uint, uint>	columns_map;
 
-		std::filesystem::path filename;
-		std::string name;
-		uint name_hash;
-		uint ref = 0;
+		std::filesystem::path			filename;
+		std::string						name;
+		uint							name_hash;
+		bool							is_static = false;
+		uint							ref = 0;
 
 		inline int find_column(uint name) const
 		{
@@ -57,7 +58,7 @@ namespace flame
 
 		struct Get
 		{
-			virtual SheetPtr operator()(const std::filesystem::path& filename) = 0;
+			virtual SheetPtr operator()(const std::filesystem::path& filename, bool is_static = false) = 0;
 			virtual SheetPtr operator()(uint name) = 0;
 		};
 		// Reflect static

@@ -189,7 +189,7 @@ namespace flame
 
 	struct SheetGet : Sheet::Get
 	{
-		SheetPtr operator()(const std::filesystem::path& _filename) override
+		SheetPtr operator()(const std::filesystem::path& _filename, bool is_static) override
 		{
 			auto filename = Path::get(_filename);
 			if (filename.empty())
@@ -206,7 +206,7 @@ namespace flame
 
 			if (!std::filesystem::exists(filename))
 			{
-				wprintf(L"cannot found sheet: %s", _filename.c_str());
+				wprintf(L"cannot found sheet: %s\n", _filename.c_str());
 				return nullptr;
 			}
 
@@ -226,7 +226,7 @@ namespace flame
 				TypeTag tag;
 				TypeInfo::unserialize_t(sp[0], tag);
 				return TypeInfo::get(tag, sp[1]);
-				};
+			};
 
 			if (auto a = doc_root.attribute("name"); a)
 			{
@@ -254,8 +254,13 @@ namespace flame
 
 			ret->filename = filename;
 			ret->ref = 1;
+			if (is_static)
+			{
+				ret->is_static = true;
+				assert(named_sheets.find(ret->name_hash) == named_sheets.end());
+				named_sheets[ret->name_hash] = ret;
+			}
 			loaded_sheets.emplace_back(ret);
-			named_sheets[ret->name_hash] = ret;
 			return ret;
 		}
 

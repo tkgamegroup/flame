@@ -43,8 +43,8 @@ namespace flame
 
 	struct BlueprintAttribute
 	{
-		TypeInfo* type;
-		void* data;
+		TypeInfo*	type;
+		void*		data;
 	};
 
 	struct BlueprintSlotDesc
@@ -54,6 +54,35 @@ namespace flame
 		BlueprintSlotFlags		flags = BlueprintSlotFlagNone;
 		std::vector<TypeInfo*>	allowed_types;
 		std::string				default_value;
+	};
+
+	struct BlueprintEnumItem
+	{
+		std::string	name;
+		uint		name_hash;
+		int			value;
+	};
+
+	struct BlueprintEnum
+	{
+		std::string						name;
+		uint							name_hash;
+		std::vector<BlueprintEnumItem>	items;
+	};
+
+	struct BlueprintStructVariable
+	{
+		std::string name;
+		uint		name_hash;
+		TypeInfo*	type;
+		std::string default_value;
+	};
+
+	struct BlueprintStruct
+	{
+		std::string								name;
+		uint									name_hash;
+		std::vector<BlueprintStructVariable>	variables;
 	};
 
 	struct BlueprintExecutionData;
@@ -67,6 +96,8 @@ namespace flame
 			if (t == type)
 				return true;
 			if (t == TypeInfo::get<voidptr>())
+				return true;
+			if (t == TypeInfo::get<uint>() && type == TypeInfo::get<int>())
 				return true;
 			if (t->tag == TagPU && type->tag == TagU)
 			{
@@ -293,8 +324,22 @@ namespace flame
 	{
 		std::string name;
 		uint		name_hash = 0;
-		TypeInfo* type = nullptr;
-		void* data = nullptr;
+		TypeInfo*	type = nullptr;
+		void*		data = nullptr;
+	};
+
+	struct BlueprintInvalidNode
+	{
+		std::string name;
+		std::vector<std::string> inputs;
+		std::vector<std::string> outputs;
+		vec2 position;
+	};
+
+	struct BlueprintInvalidLink
+	{
+		voidptr from_slot;
+		voidptr to_slot;
 	};
 
 	struct BlueprintGroup
@@ -309,6 +354,9 @@ namespace flame
 		std::vector<BlueprintVariable>							outputs;
 		std::vector<std::unique_ptr<BlueprintNodeT>>			nodes;
 		std::vector<std::unique_ptr<BlueprintLinkT>>			links;
+
+		std::vector<BlueprintInvalidNode> 						invalid_nodes;
+		std::vector<BlueprintInvalidLink>						invalid_links;
 
 		std::string 											trigger_message;
 
@@ -365,9 +413,10 @@ namespace flame
 	// Reflect ctor
 	struct Blueprint
 	{
-		std::vector<BlueprintVariable>					variables;
+		std::vector<BlueprintEnum>						enums;
+		std::vector<BlueprintStruct>					structs;
 
-		// Reflect
+		std::vector<BlueprintVariable>					variables;
 		std::vector<std::unique_ptr<BlueprintGroupT>>	groups;
 
 		uint											variable_changed_frame = 1;
@@ -401,6 +450,13 @@ namespace flame
 
 		virtual ~Blueprint() {}
 
+		virtual void					add_enum(const std::string& name, const std::vector<BlueprintEnumItem>& items) = 0;
+		virtual void					remove_enum(uint name) = 0;
+		virtual void					alter_enum(uint old_name, const std::string& new_name, const std::vector<BlueprintEnumItem>& new_items) = 0;
+		virtual void					add_struct(const std::string& name, const std::vector<BlueprintStructVariable>& variables) = 0;
+		virtual void					remove_struct(uint name) = 0;
+		virtual void					alter_struct(uint old_name, const std::string& new_name, const std::vector<BlueprintStructVariable>& new_variables) = 0;
+
 		virtual void*					add_variable(BlueprintGroupPtr group /* or null for blueprint variable */, const std::string& name, TypeInfo* type) = 0; // return: the data of the variable
 		virtual void					remove_variable(BlueprintGroupPtr group /* or null for blueprint variable */, uint name) = 0;
 		virtual void					alter_variable(BlueprintGroupPtr group /* or null for blueprint variable */, uint old_name, const std::string& new_name = "", TypeInfo* new_type = nullptr) = 0;
@@ -412,12 +468,12 @@ namespace flame
 			bool is_block = false, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr) = 0;
 		virtual BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint name_hash) = 0;
 		virtual BlueprintNodePtr		add_block(BlueprintGroupPtr group, BlueprintNodePtr parent) = 0;
-		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type = "get"_h, uint location_name = 0 /* from a sheet or a static bp */) = 0;
+		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type = "get"_h, uint location_name = 0 /* a static bp or enum */) = 0;
 		virtual BlueprintNodePtr		add_call_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint group_name, uint location_name = 0 /* from other static bp */) = 0; // add a node that will call another group
 		virtual void					remove_node(BlueprintNodePtr node, bool recursively = true) = 0;
 		virtual void					set_nodes_parent(const std::vector<BlueprintNodePtr> nodes, BlueprintNodePtr new_parent) = 0;
 		virtual void					set_input_type(BlueprintSlotPtr slot, TypeInfo* type) = 0;
-		virtual BlueprintNodePtr		update_variable_node(BlueprintNodePtr node, uint new_name) = 0;
+		virtual bool					change_references(BlueprintGroupPtr group, uint old_name, uint old_location, uint new_name, uint new_location) = 0;
 		virtual BlueprintLinkPtr		add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot) = 0;
 		virtual void					remove_link(BlueprintLinkPtr link) = 0;
 		virtual BlueprintGroupPtr		add_group(const std::string& name) = 0;
@@ -679,6 +735,16 @@ namespace flame
 	{
 		BlueprintInstanceGroup* group;
 		BlueprintExecutingBlock* block;
+	};
+
+	struct BlueprintInstanceHolder
+	{
+		BlueprintInstancePtr ptr = nullptr;
+
+		~BlueprintInstanceHolder()
+		{
+			delete ptr;
+		}
 	};
 
 	struct BlueprintDebugger

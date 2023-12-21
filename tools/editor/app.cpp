@@ -1330,7 +1330,7 @@ void App::open_project(const std::filesystem::path& path)
 				auto ext = it.path().extension();
 				if (ext == L".sht")
 				{
-					auto sht = Sheet::get(it.path());
+					auto sht = Sheet::get(it.path(), true);
 					project_static_sheets.push_back(sht);
 				}
 				else if (ext == L".bp")
@@ -1340,7 +1340,6 @@ void App::open_project(const std::filesystem::path& path)
 				}
 			}
 		}
-		rebuild_typeinfo();
 	}
 
 	switch (project_settings.build_after_open)
@@ -1634,43 +1633,10 @@ void App::unload_project_cpp()
 	}
 }
 
-void App::rebuild_typeinfo()
-{
-	auto ei_tag = find_enum("flame::TagFlags"_h);
-	auto& tag_items = ei_tag->items;
-	for (int i = tag_items.size() - 1; i >= 0; i--)
-	{
-		if (tag_items[i].name == "User")
-			break;
-		tag_items.pop_back();
-	}
-	for (auto sht : project_static_sheets)
-	{
-		if (!sht->rows.empty())
-		{
-			auto& row = sht->rows[0];
-			for (auto i = 0; i < sht->columns.size(); i++)
-			{
-				auto& col = sht->columns[i];
-				auto name = col.name;
-				if ((col.type == TypeInfo::get<int>() || col.type == TypeInfo::get<uint>()) && 
-					SUS::strip_head_if(name, "Tag"))
-				{
-					auto& item = tag_items.emplace_back();
-					item.ei = ei_tag;
-					item.name = name;
-					item.name_hash = sh(name.c_str());
-					item.value = *(int*)row.datas[i];
-				}
-			}
-		}
-	}
-}
-
-static void update_references(void* location, uint variable_name, uint location_name, uint new_name)
+void App::change_bp_references(uint old_name, uint old_location, uint new_name, uint new_location)
 {
 	auto assets_path = app.project_path / L"assets";
-	for (auto it : std::filesystem::recursive_directory_iterator(assets_path))
+	for (auto& it : std::filesystem::recursive_directory_iterator(assets_path))
 	{
 		if (it.is_regular_file())
 		{
@@ -1679,28 +1645,9 @@ static void update_references(void* location, uint variable_name, uint location_
 			{
 				if (auto bp = Blueprint::get(it.path()); bp)
 				{
-					if (bp != location)
+					if (bp->name_hash != old_location)
 					{
-						auto changed = false;
-						for (auto& g : bp->groups)
-						{
-							std::vector<BlueprintNodePtr> to_update_nodes;
-							for (auto& n : g->nodes)
-							{
-								if (blueprint_is_variable_node(n->name_hash))
-								{
-									if (*(uint*)n->inputs[0]->data == variable_name &&
-										*(uint*)n->inputs[1]->data == location_name)
-									{
-										to_update_nodes.push_back(n.get());
-										changed = true;
-									}
-								}
-							}
-							for (auto n : to_update_nodes)
-								bp->update_variable_node(n, new_name);
-						}
-						if (changed)
+						if (bp->change_references(nullptr, old_name, old_location, new_name, new_location))
 						{
 							auto is_editing = false;
 							for (auto& v : blueprint_window.views)
@@ -1721,18 +1668,6 @@ static void update_references(void* location, uint variable_name, uint location_
 			}
 		}
 	}
-}
-
-void App::update_sheet_references(SheetPtr sheet, uint variable_name, uint location_name, uint new_name)
-{
-	if (std::find(project_static_sheets.begin(), project_static_sheets.end(), sheet) != project_static_sheets.end())
-		update_references(sheet, variable_name, location_name, new_name);
-}
-
-void App::update_blueprint_references(BlueprintPtr blueprint, uint variable_name, uint location_name, uint new_name)
-{
-	if (std::find(project_static_blueprints.begin(), project_static_blueprints.end(), blueprint) != project_static_blueprints.end())
-		update_references(blueprint, variable_name, location_name, new_name);
 }
 
 void App::open_timeline(const std::filesystem::path& path)

@@ -33,6 +33,13 @@ namespace flame
 		BlueprintPrivate();
 		~BlueprintPrivate();
 
+		void					add_enum(const std::string& name, const std::vector<BlueprintEnumItem>& items) override;
+		void					remove_enum(uint name) override;
+		void					alter_enum(uint old_name, const std::string& new_name, const std::vector<BlueprintEnumItem>& new_items) override;
+		void					add_struct(const std::string& name, const std::vector<BlueprintStructVariable>& variables) override;
+		void					remove_struct(uint name) override;
+		void					alter_struct(uint old_name, const std::string& new_name, const std::vector<BlueprintStructVariable>& new_variables) override;
+
 		void*					add_variable(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;
 		void					remove_variable(BlueprintGroupPtr group, uint name) override;
 		void					alter_variable(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* new_type) override;
@@ -49,7 +56,7 @@ namespace flame
 		void					remove_node(BlueprintNodePtr node, bool recursively) override;
 		void					set_nodes_parent(const std::vector<BlueprintNodePtr> nodes, BlueprintNodePtr new_parent) override;
 		void					set_input_type(BlueprintSlotPtr slot, TypeInfo* type) override;
-		BlueprintNodePtr		update_variable_node(BlueprintNodePtr node, uint new_name) override;
+		bool					change_references(BlueprintGroupPtr group, uint old_name, uint old_location, uint new_name, uint new_location) override;
 		BlueprintLinkPtr		add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot) override;
 		void					remove_link(BlueprintLinkPtr link) override;
 		BlueprintGroupPtr		add_group(const std::string& name) override;

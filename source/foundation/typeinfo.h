@@ -501,6 +501,16 @@ namespace flame
 		void* library = nullptr;
 		std::filesystem::path source_file;
 
+		inline const EnumItemInfo* find_item(uint name_hash) const
+		{
+			for (auto& i : items)
+			{
+				if (i.name_hash == name_hash)
+					return &i;
+			}
+			return nullptr;
+		}
+
 		inline const EnumItemInfo* find_item(std::string_view name) const
 		{
 			for (auto& i : items)
@@ -511,7 +521,7 @@ namespace flame
 			return nullptr;
 		}
 
-		inline const EnumItemInfo* find_item(int value) const
+		inline const EnumItemInfo* find_item_by_value(int value) const
 		{
 			for (auto& i : items)
 			{
@@ -902,7 +912,7 @@ namespace flame
 		std::string serialize(const void* p) const override
 		{
 			if (!p) p = &v;
-			auto it = ei->find_item(*(int*)p);
+			auto it = ei->find_item_by_value(*(int*)p);
 			return it ? it->name : "";
 		}
 		void unserialize(const std::string& str, void* p) const override
@@ -926,7 +936,7 @@ namespace flame
 			auto vv = *(int*)p;
 			if (vv == 0)
 			{
-				auto it = ei->find_item(0);
+				auto it = ei->find_item_by_value(0);
 				ret = it ? it->name : "";
 			}
 			else
@@ -937,7 +947,7 @@ namespace flame
 					{
 						if (!ret.empty())
 							ret += '|';
-						auto it = ei->find_item(1 << i);
+						auto it = ei->find_item_by_value(1 << i);
 						ret += it ? it->name : "";
 					}
 					vv >>= 1;
