@@ -2076,9 +2076,10 @@ namespace flame
 			{
 				auto n_enum = n_enums.append_child("enum");
 				n_enum.append_attribute("name").set_value(e.name.c_str());
+				auto n_items = n_enum.append_child("items");
 				for (auto& i : e.items)
 				{
-					auto n_item = n_enum.append_child("item");
+					auto n_item = n_items.append_child("item");
 					n_item.append_attribute("name").set_value(i.name.c_str());
 					n_item.append_attribute("value").set_value(i.value);
 				}
@@ -2091,9 +2092,10 @@ namespace flame
 			{
 				auto n_struct = n_structs.append_child("struct");
 				n_struct.append_attribute("name").set_value(s.name.c_str());
+				auto n_variables = n_struct.append_child("items");
 				for (auto& v : s.variables)
 				{
-					auto n_variable = n_struct.append_child("variable");
+					auto n_variable = n_variables.append_child("variable");
 					n_variable.append_attribute("name").set_value(v.name.c_str());
 					write_ti(v.type, n_variable.append_attribute("type"));
 					n_variable.append_attribute("default_value").set_value(v.default_value.c_str());
