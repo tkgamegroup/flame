@@ -37,7 +37,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto nodes = *(std::vector<EntityPtr>*)inputs[0].data;
 				auto agent_radius = *(float*)inputs[1].data;
 				auto agent_height = *(float*)inputs[2].data;
@@ -63,7 +63,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -87,7 +87,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -111,7 +111,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -135,7 +135,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -159,7 +159,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -183,7 +183,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -207,7 +207,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -227,7 +227,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -251,7 +251,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -275,7 +275,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -299,7 +299,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{

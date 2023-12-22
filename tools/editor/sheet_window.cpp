@@ -186,7 +186,7 @@ void SheetView::on_draw()
 									sheet->alter_column(i, new_names[i], new_types[i]);
 
 									if (sheet->is_static)
-										app.change_bp_references(old_name_hash, sheet->name_hash, new_name_hash, sheet->name_hash);
+										app.change_bp_references(old_name_hash, sheet->name_hash, 0, new_name_hash, sheet->name_hash, 0);
 
 									changed = true;
 								}

@@ -22,7 +22,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in0_p = (char*)inputs[0].data;
@@ -48,7 +48,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in0_p = (char*)inputs[0].data;
@@ -74,7 +74,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in0_p = (char*)inputs[0].data;
@@ -100,7 +100,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in0_p = (char*)inputs[0].data;
@@ -126,7 +126,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in0_p = (char*)inputs[0].data;
@@ -152,7 +152,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in0_p = (char*)inputs[0].data;
@@ -180,7 +180,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto range = *(vec2*)inputs[1].data;
 				auto ok = true;
@@ -205,7 +205,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(bool*)outputs[0].data = !(*(bool*)inputs[0].data);
 			}
 		);
@@ -227,7 +227,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				bool b1;
 				if (inputs[0].type == TypeInfo::get<bool>())
 					b1 = *(bool*)inputs[0].data;
@@ -260,7 +260,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				bool b1;
 				if (inputs[0].type == TypeInfo::get<bool>())
 					b1 = *(bool*)inputs[0].data;
@@ -297,7 +297,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				bool b;
 				if (inputs[0].type == TypeInfo::get<bool>())
 					b = *(bool*)inputs[0].data;
@@ -337,7 +337,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				uint b1 = *(uint*)inputs[0].data;
 				uint b2 = *(uint*)inputs[1].data;
 				*(uint*)outputs[0].data = b1 & b2;
@@ -361,7 +361,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				uint b1 = *(uint*)inputs[0].data;
 				uint b2 = *(uint*)inputs[1].data;
 				*(uint*)outputs[0].data = b1 | b2;
@@ -385,7 +385,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				uint b1 = *(uint*)inputs[0].data;
 				uint b2 = *(uint*)inputs[1].data;
 				*(uint*)outputs[0].data = b1 ^ b2;
@@ -405,7 +405,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				uint b1 = *(uint*)inputs[0].data;
 				*(uint*)outputs[0].data = ~b1;
 			}

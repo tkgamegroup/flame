@@ -23,7 +23,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{

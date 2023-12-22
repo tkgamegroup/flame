@@ -324,7 +324,7 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 				name = s2t<uint>(it->second.value);
 			if (auto it = src_n.input_datas.find("Location"_h); it != src_n.input_datas.end())
 				location = s2t<uint>(it->second.value);
-			n = blueprint->add_variable_node(g, parent, name, blueprint_variable_name_to_type(src_n.name), location);
+			n = blueprint->add_variable_node(g, parent, name, src_n.name, location);
 		}
 		else if (src_n.name == "Call"_h)
 		{
@@ -914,7 +914,7 @@ void BlueprintView::on_draw()
 					{
 						blueprint->alter_enum(e.name_hash, name, e.items);
 						if (blueprint->is_static)
-							app.change_bp_references(0, old_name_hash, 0, sh(name.c_str()));
+							app.change_bp_references(0, old_name_hash, 0, 0, sh(name.c_str()), 0);
 						unsaved = true;
 					}
 
@@ -956,7 +956,7 @@ void BlueprintView::on_draw()
 							items.erase(items.begin() + selected_enum_item);
 							blueprint->alter_enum(e.name_hash, e.name, items);
 							if (blueprint->is_static)
-								app.change_bp_references(old_item_hash, e.name_hash, 0, e.name_hash);
+								app.change_bp_references(old_item_hash, e.name_hash, 0, 0, e.name_hash, 0);
 							if (items.empty())
 								selected_enum_item = -1;
 							unsaved = true;
@@ -995,17 +995,17 @@ void BlueprintView::on_draw()
 						if (ImGui::IsItemDeactivatedAfterEdit())
 						{
 							item.name = name;
-							blueprint->alter_enum(item.name_hash, e.name, items);
+							blueprint->alter_enum(e.name_hash, e.name, items);
 							if (blueprint->is_static)
-								app.change_bp_references(old_item_hash, e.name_hash, sh(name.c_str()), e.name_hash);
+								app.change_bp_references(old_item_hash, e.name_hash, 0, sh(name.c_str()), e.name_hash, 0);
 							unsaved = true;
 						}
 						ImGui::InputInt("Item Value", &item.value);
 						if (ImGui::IsItemDeactivatedAfterEdit())
 						{
-							blueprint->alter_enum(item.name_hash, e.name, items);
+							blueprint->alter_enum(e.name_hash, e.name, items);
 							if (blueprint->is_static)
-								app.change_bp_references(old_item_hash, e.name_hash, sh(name.c_str()), e.name_hash);
+								app.change_bp_references(old_item_hash, e.name_hash, 0, sh(name.c_str()), e.name_hash, 0);
 							unsaved = true;
 						}
 					}
@@ -1091,7 +1091,7 @@ void BlueprintView::on_draw()
 					{
 						blueprint->alter_struct(s.name_hash, name, s.variables);
 						if (blueprint->is_static)
-							app.change_bp_references(0, old_name_hash, 0, sh(name.c_str()));
+							app.change_bp_references(0, old_name_hash, 0, 0, sh(name.c_str()), 0);
 						unsaved = true;
 					}
 
@@ -1119,7 +1119,7 @@ void BlueprintView::on_draw()
 							}
 							return false;
 						});
-						variables.push_back({ name, sh(name.c_str()), 0 });
+						variables.push_back({ name, sh(name.c_str()), TypeInfo::get<float>() });
 						blueprint->alter_struct(s.name_hash, s.name, variables);
 						selected_struct_variable = variables.size() - 1;
 						unsaved = true;
@@ -1133,7 +1133,7 @@ void BlueprintView::on_draw()
 							variables.erase(variables.begin() + selected_struct_variable);
 							blueprint->alter_struct(s.name_hash, s.name, variables);
 							if (blueprint->is_static)
-								app.change_bp_references(old_item_hash, s.name_hash, 0, s.name_hash);
+								app.change_bp_references(old_item_hash, s.name_hash, 0, 0, s.name_hash, 0);
 							if (variables.empty())
 								selected_struct_variable = -1;
 							unsaved = true;
@@ -1172,9 +1172,9 @@ void BlueprintView::on_draw()
 						if (ImGui::IsItemDeactivatedAfterEdit())
 						{
 							variable.name = name;
-							blueprint->alter_struct(variable.name_hash, s.name, variables);
+							blueprint->alter_struct(s.name_hash, s.name, variables);
 							if (blueprint->is_static)
-								app.change_bp_references(old_variable_hash, s.name_hash, sh(name.c_str()), s.name_hash);
+								app.change_bp_references(old_variable_hash, s.name_hash, 0, sh(name.c_str()), s.name_hash, 0);
 							unsaved = true;
 						}
 						if (ImGui::BeginCombo("Variable Type", ti_str(variable.type).c_str()))
@@ -1182,9 +1182,9 @@ void BlueprintView::on_draw()
 							if (auto type = show_types_menu(); type)
 							{
 								variable.type = type;
-								blueprint->alter_struct(variable.name_hash, s.name, variables);
+								blueprint->alter_struct(s.name_hash, s.name, variables);
 								if (blueprint->is_static)
-									app.change_bp_references(old_variable_hash, s.name_hash, sh(name.c_str()), s.name_hash);
+									app.change_bp_references(old_variable_hash, s.name_hash, 0, sh(name.c_str()), s.name_hash, 0);
 								unsaved = true;
 							}
 
@@ -1272,7 +1272,7 @@ void BlueprintView::on_draw()
 					{
 						blueprint->alter_variable(nullptr, var.name_hash, name, var.type);
 						if (blueprint->is_static)
-							app.change_bp_references(old_name_hash, blueprint->name_hash, sh(name.c_str()), blueprint->name_hash);
+							app.change_bp_references(old_name_hash, blueprint->name_hash, 0, sh(name.c_str()), blueprint->name_hash, 0);
 						unsaved = true;
 					}
 					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
@@ -1281,7 +1281,7 @@ void BlueprintView::on_draw()
 						{
 							blueprint->alter_variable(nullptr, var.name_hash, "", type);
 							if (blueprint->is_static)
-								app.change_bp_references(old_name_hash, blueprint->name_hash, old_name_hash, blueprint->name_hash);
+								app.change_bp_references(old_name_hash, blueprint->name_hash, 0, old_name_hash, blueprint->name_hash, 0);
 							unsaved = true;
 						}
 
@@ -1997,7 +1997,7 @@ void BlueprintView::on_draw()
 						}
 
 						BlueprintNodePreview data;
-						n->preview_provider(instance_node->inputs.data(), instance_node->outputs.data(), &data);
+						n->preview_provider(instance_node->inputs.size(), instance_node->inputs.data(), instance_node->outputs.size(), instance_node->outputs.data(), &data);
 						switch (data.type)
 						{
 						case "image"_h:
@@ -2371,7 +2371,7 @@ void BlueprintView::on_draw()
 							if (auto i = src_n->find_input("Location"_h); i)
 								location = *(uint*)i->data;
 
-							auto n = blueprint->add_variable_node(group, src_n->parent, name, "set"_h, location);
+							auto n = blueprint->add_variable_node(group, src_n->parent, name, "Variable"_h, location);
 							n->position = src_n->position;
 							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -2395,7 +2395,7 @@ void BlueprintView::on_draw()
 							if (auto i = src_n->find_input("Location"_h); i)
 								location = *(uint*)i->data;
 
-							auto n = blueprint->add_variable_node(group, src_n->parent, name, "get"_h, location);
+							auto n = blueprint->add_variable_node(group, src_n->parent, name, "Set Variable"_h, location);
 							n->position = src_n->position;
 							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -2656,7 +2656,7 @@ void BlueprintView::on_draw()
 							if (show_node_template(name, {}, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {type}} }, slot_name))
 							{
 								actions.emplace_back("Get", [&, slot_name]() {
-									auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "get"_h, location_name);
+									auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Variable"_h, location_name);
 									n->position = open_popup_pos;
 									ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -2667,12 +2667,17 @@ void BlueprintView::on_draw()
 								});
 							}
 
+							if (type->tag == TagU)
+							{
+								// TODO
+							}
+
 							if (is_vector(type->tag))
 							{
 								if (show_node_template(name, {}, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {TypeInfo::get<uint>()}} }, slot_name))
 								{
 									actions.emplace_back("Size", [&, slot_name]() {
-										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "array_size"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Array Size"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -2687,7 +2692,7 @@ void BlueprintView::on_draw()
 									{ BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {type->get_wrapped()}} }, slot_name))
 								{
 									actions.emplace_back("Get Item", [&, slot_name]() {
-										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "array_get_item"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Array Get Item"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -2708,7 +2713,7 @@ void BlueprintView::on_draw()
 									{}, slot_name))
 								{
 									actions.emplace_back("Set Item", [&, slot_name]() {
-										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "array_set_item"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Array Set Item"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -2721,7 +2726,7 @@ void BlueprintView::on_draw()
 								if (show_node_template(name, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type->get_wrapped()}} }, {}, slot_name))
 								{
 									actions.emplace_back("Add Item", [&, slot_name]() {
-										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "array_add_item"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Array Add Item"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -2731,10 +2736,94 @@ void BlueprintView::on_draw()
 										unsaved = true;
 									});
 								}
+								if (type->tag == TagVU)
+								{
+									auto ui = type->get_wrapped()->retrive_ui();
+
+									for (auto& vi : ui->variables)
+									{
+										if (show_node_template(name,
+											{ BlueprintSlotDesc{.name = "Index", .name_hash = "Index"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {TypeInfo::get<uint>()}} },
+											{ BlueprintSlotDesc{.name = vi.name, .name_hash = vi.name_hash, .flags = BlueprintSlotFlagOutput, .allowed_types = {vi.type}} }, slot_name))
+										{
+											actions.emplace_back("Get Item " + vi.name, [&, slot_name]() {
+												auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Array Get Item Attribute"_h, location_name, vi.name_hash);
+												n->position = open_popup_pos;
+												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+												if (new_node_link_slot)
+												{
+													if (new_node_link_slot->flags & BlueprintSlotFlagOutput)
+														blueprint->add_link(new_node_link_slot, n->find_input(slot_name));
+													else
+														blueprint->add_link(n->find_output(slot_name), new_node_link_slot);
+												}
+
+												unsaved = true;
+											});
+										}
+
+										if (show_node_template(name,
+											{ BlueprintSlotDesc{.name = "Index", .name_hash = "Index"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {TypeInfo::get<uint>()}},
+											  BlueprintSlotDesc{.name = vi.name, .name_hash = vi.name_hash, .flags = BlueprintSlotFlagInput, .allowed_types = {vi.type}} },
+											{}, slot_name))
+										{
+											actions.emplace_back("Set Item " + vi.name, [&, slot_name]() {
+												auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Array Set Item Attribute"_h, location_name, vi.name_hash);
+												n->position = open_popup_pos;
+												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+												if (new_node_link_slot)
+													blueprint->add_link(new_node_link_slot, n->find_input(slot_name));
+
+												unsaved = true;
+											});
+										}
+									}
+
+									{
+										std::vector<BlueprintSlotDesc> outputs;
+										for (auto& vi : ui->variables)
+											outputs.push_back(BlueprintSlotDesc{ .name = vi.name, .name_hash = vi.name_hash, .flags = BlueprintSlotFlagOutput, .allowed_types = {vi.type} });
+										if (show_node_template(name, { BlueprintSlotDesc{.name = "Index", .name_hash = "Index"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {TypeInfo::get<uint>()}} }, 
+											outputs, slot_name))
+										{
+											actions.emplace_back("Get Item Attributes", [&, slot_name]() {
+												auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Array Get Item Attributes"_h, location_name);
+												n->position = open_popup_pos;
+												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+												if (new_node_link_slot)
+													blueprint->add_link(new_node_link_slot, n->find_input(slot_name));
+
+												unsaved = true;
+											});
+										}
+									}
+
+									{
+										std::vector<BlueprintSlotDesc> inputs;
+										for (auto& vi : ui->variables)
+											inputs.push_back(BlueprintSlotDesc{ .name = vi.name, .name_hash = vi.name_hash, .flags = BlueprintSlotFlagInput, .allowed_types = {vi.type} });
+										if (show_node_template(name, inputs, {}, slot_name))
+										{
+											actions.emplace_back("Emplace Item", [&, slot_name]() {
+												auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Array Emplace Item"_h, location_name);
+												n->position = open_popup_pos;
+												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+												if (new_node_link_slot)
+													blueprint->add_link(new_node_link_slot, n->find_input(slot_name));
+
+												unsaved = true;
+											});
+										}
+									}
+								}
 								if (show_node_template(name, {}, {}, slot_name))
 								{
 									actions.emplace_back("Clear", [&, slot_name]() {
-										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "array_clear"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Array Clear"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -2747,7 +2836,7 @@ void BlueprintView::on_draw()
 								if (show_node_template(name, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type}} }, {}, slot_name))
 								{
 									actions.emplace_back("Set", [&, slot_name]() {
-										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "set"_h, location_name);
+										auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Set Variable"_h, location_name);
 										n->position = open_popup_pos;
 										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 

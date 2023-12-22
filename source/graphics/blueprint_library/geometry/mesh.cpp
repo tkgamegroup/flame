@@ -31,7 +31,7 @@ namespace flame
 						.allowed_types = { TypeInfo::get<ControlMesh>() }
 					}
 				},
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 					auto extent = *(vec3*)inputs[0].data;
 					auto& out_control_mesh = *(ControlMesh*)outputs[0].data;
 					out_control_mesh.init_as_cube(extent);
@@ -68,7 +68,7 @@ namespace flame
 						.allowed_types = { TypeInfo::get<ControlMesh>() }
 					}
 				},
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 					auto radius = *(float*)inputs[0].data;
 					auto depth = *(float*)inputs[1].data;
 					auto vertices = *(uint*)inputs[2].data;
@@ -91,7 +91,7 @@ namespace flame
 						.allowed_types = { TypeInfo::get<Mesh>() }
 					}
 				},
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 					auto pcontrol_mesh = *(ControlMesh**)inputs[0].data;
 					auto& mesh = *(Mesh*)outputs[0].data;
 					if (pcontrol_mesh)
@@ -104,7 +104,7 @@ namespace flame
 				nullptr,
 				nullptr,
 				nullptr,
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintNodePreview* preview) {
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintNodePreview* preview) {
 					auto& mesh = *(Mesh*)outputs[0].data;
 					preview->type = "mesh"_h;
 					preview->data = &mesh;
@@ -125,7 +125,7 @@ namespace flame
 						.allowed_types = { TypeInfo::get<Mesh>() }
 					}
 				},
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 					auto extent = *(vec3*)inputs[0].data;
 					auto& mesh = *(Mesh*)outputs[0].data;
 					mesh.reset();
@@ -135,7 +135,7 @@ namespace flame
 				nullptr,
 				nullptr,
 				nullptr,
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintNodePreview* preview) {
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintNodePreview* preview) {
 					auto& mesh = *(Mesh*)outputs[0].data;
 					preview->type = "mesh"_h;
 					preview->data = &mesh;
@@ -159,7 +159,7 @@ namespace flame
 						.allowed_types = { TypeInfo::get<ControlMesh>() }
 					}
 				},
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 					auto pcontrol_mesh = *(ControlMesh**)inputs[0].data;
 					auto offset = *(vec3*)inputs[1].data;
 					auto& out_control_mesh = *(ControlMesh*)outputs[0].data;
@@ -191,7 +191,7 @@ namespace flame
 						.allowed_types = { TypeInfo::get<ControlMesh>() }
 					}
 				},
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 					auto pcontrol_mesh = *(ControlMesh**)inputs[0].data;
 					auto scale = inputs[1].type == TypeInfo::get<float>() ? vec3(*(float*)inputs[1].data) : *(vec3*)inputs[1].data;
 					auto& out_control_mesh = *(ControlMesh*)outputs[0].data;
@@ -223,7 +223,7 @@ namespace flame
 						.allowed_types = { TypeInfo::get<ControlMesh>() }
 					}
 				},
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 					auto pcontrol_mesh = *(ControlMesh**)inputs[0].data;
 					auto rotation = *(vec3*)inputs[1].data;
 					auto& out_control_mesh = *(ControlMesh*)outputs[0].data;
@@ -259,7 +259,7 @@ namespace flame
 						.allowed_types = { TypeInfo::get<ControlMesh>() }
 					}
 				},
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 					auto pcontrol_mesh = *(ControlMesh**)inputs[0].data;
 					auto levels = *(uint*)inputs[1].data;
 					auto& out_control_mesh = *(ControlMesh*)outputs[0].data;
@@ -303,7 +303,7 @@ namespace flame
 						.allowed_types = { TypeInfo::get<ControlMesh>() }
 					}
 				},
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 					auto pcontrol_mesh = *(ControlMesh**)inputs[0].data;
 					auto offset = *(float*)inputs[1].data;
 					auto& out_control_mesh = *(ControlMesh*)outputs[0].data;
@@ -338,7 +338,7 @@ namespace flame
 						.allowed_types = { TypeInfo::get<ControlMesh>() }
 					}
 				},
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 					auto pcontrol_mesh = *(ControlMesh**)inputs[0].data;
 					auto start_offset = *(float*)inputs[1].data;
 					auto offset = *(float*)inputs[2].data;
@@ -390,7 +390,7 @@ namespace flame
 						.allowed_types = { TypeInfo::get<ControlMesh>() }
 					}
 				},
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 					auto pcontrol_mesh = *(ControlMesh**)inputs[0].data;
 					auto ptexture = *(Texture**)inputs[1].data;
 					auto strength = *(float*)inputs[2].data;

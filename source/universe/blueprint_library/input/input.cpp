@@ -15,7 +15,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec2>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(vec2*)outputs[0].data = sInput::instance()->mpos;
 			}
 		);
@@ -34,7 +34,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(bool*)outputs[0].data = sInput::instance()->mpressed(*(MouseButton*)inputs[0].data);
 			}
 		);
@@ -53,7 +53,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(bool*)outputs[0].data = sInput::instance()->mbtn[*(MouseButton*)inputs[0].data];
 			}
 		);
@@ -72,7 +72,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(bool*)outputs[0].data = sInput::instance()->kpressed(*(KeyboardKey*)inputs[0].data);
 			}
 		);
@@ -91,7 +91,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(bool*)outputs[0].data = sInput::instance()->kbtn[*(KeyboardKey*)inputs[0].data];
 			}
 		);

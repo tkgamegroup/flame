@@ -22,7 +22,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				(*(BlueprintSignal*)outputs[0].data).v = (*(uint*)inputs[0].data == 1 || *(uint*)inputs[1].data == 1)
 					? 1 : 0;
 			}
@@ -45,7 +45,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				bool ok;
 				if (inputs[0].type == TypeInfo::get<bool>())
 					ok = *(bool*)inputs[0].data;
@@ -66,7 +66,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				bool ok;
 				if (inputs[1].type == TypeInfo::get<bool>())
 					ok = *(bool*)inputs[1].data;
@@ -86,7 +86,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				bool ok;
 				if (inputs[1].type == TypeInfo::get<bool>())
 					ok = *(bool*)inputs[1].data;
@@ -110,7 +110,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
 				auto in0_p = (char*)inputs[1].data;
@@ -134,7 +134,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
 				auto in0_p = (char*)inputs[1].data;
@@ -158,7 +158,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
 				auto in0_p = (char*)inputs[1].data;
@@ -182,7 +182,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
 				auto in0_p = (char*)inputs[1].data;
@@ -206,7 +206,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
 				auto in0_p = (char*)inputs[1].data;
@@ -230,7 +230,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
 				auto in0_p = (char*)inputs[1].data;
@@ -251,7 +251,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				execution.block->max_execute_times = *(uint*)inputs[1].data;
 			}
 		);
@@ -265,7 +265,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				*(uint*)outputs[0].data = execution.block->executed_times;
 			}
 		);
@@ -280,7 +280,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto vec_type = inputs[1].type;
 				auto vec = (std::vector<char>*)inputs[1].data;
 				if (vec && is_vector(vec_type->tag))
@@ -308,7 +308,7 @@ namespace flame
 				}
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto& temp_array = *(std::vector<std::filesystem::path>*)outputs[1].data;
 				temp_array.clear();
 				auto& folder = *(std::filesystem::path*)inputs[1].data;
@@ -335,7 +335,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<TYPE>() }\
 				}\
 			},\
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {\
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {\
 				auto block_node = execution.block->node;\
 				auto vec_idx = execution.block->loop_vector_index;\
 				if (vec_idx != -1)\
@@ -410,7 +410,7 @@ namespace flame
 			},\
 			{\
 			},\
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {\
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {\
 				auto levels = *(uint*)inputs[1].data - 1;\
 				auto target_block = execution.block;\
 				while (levels && target_block)\
@@ -479,7 +479,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto levels = *(uint*)inputs[0].data;
 				auto stop_block = execution.block;
 				while (levels && stop_block)
@@ -509,7 +509,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto semaphore = (bool*)inputs[1].data;
 				if (*semaphore)
 				{
@@ -546,7 +546,7 @@ namespace flame
 			library->add_template(std::format("Branch {}", N), "",\
 				inputs,\
 				outputs,\
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {\
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
 					for (auto i = 0; i < N + 1; i++) \
 						(*(BlueprintSignal*)outputs[i].data).v = 0;\
 					for (auto i = 0; i < N; i++) \
@@ -601,7 +601,7 @@ namespace flame
 			library->add_template(std::format("Select Branch {}", N), "",\
 				inputs,\
 				outputs,\
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {\
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
 					auto v = *(uint*)inputs[0].data;\
 					for (auto i = 0; i < N + 1; i++) \
 						(*(BlueprintSignal*)outputs[i].data).v = 0;\
@@ -657,7 +657,7 @@ namespace flame
 			library->add_template(std::format("Ramp Branch {}", N), "",\
 				inputs,\
 				outputs,\
-				[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {\
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
 					auto v = *(float*)inputs[0].data;\
 					for (auto i = 0; i < N + 1; i++) \
 						(*(BlueprintSignal*)outputs[i].data).v = 0;\
@@ -701,7 +701,7 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto interval = *(float*)inputs[1].data;
 				auto& t = *(float*)inputs[2].data;
 
@@ -725,7 +725,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				execution.group->wait_time = *(float*)inputs[0].data;
 			}
 		);
@@ -747,11 +747,11 @@ namespace flame
 			{
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				execution.block->max_execute_times = std::numeric_limits<int>::max();
 			},
 			nullptr,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto time = *(float*)inputs[1].data;
 				auto& t = *(float*)inputs[2].data;
 

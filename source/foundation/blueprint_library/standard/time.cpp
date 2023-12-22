@@ -13,7 +13,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(float*)outputs[0].data = delta_time;
 			}
 		);
@@ -27,7 +27,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(float*)outputs[0].data = total_time;
 			}
 		);

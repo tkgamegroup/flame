@@ -53,7 +53,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				if (inputs[0].type == TypeInfo::get<std::string>())
 					*(uint*)outputs[0].data = (*(std::string*)inputs[0].data).size();
 				else if (inputs[0].type == TypeInfo::get<std::wstring>())
@@ -80,7 +80,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				if (inputs[0].type == TypeInfo::get<std::string>())
 					*(bool*)outputs[0].data = (*(std::string*)inputs[0].data).empty();
 				else if (inputs[0].type == TypeInfo::get<std::wstring>())
@@ -109,7 +109,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(bool*)outputs[0].data = *(std::string*)inputs[0].data == *(std::string*)inputs[1].data;
 			}
 		);
@@ -130,7 +130,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto in_ti = (TypeInfo_Data*)inputs[0].type;
 				*(std::string*)outputs[0].data = in_ti->serialize(inputs[0].data);
 			}
@@ -149,7 +149,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<int>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(int*)outputs[0].data = s2t<int>(*(std::string*)inputs[0].data);
 			}
 		);
@@ -167,7 +167,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(uint*)outputs[0].data = sh((*(std::string*)inputs[0].data).c_str());
 			}
 		);
@@ -185,7 +185,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::wstring>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(std::wstring*)outputs[0].data = s2w(*(std::string*)inputs[0].data);
 			}
 		);
@@ -203,7 +203,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(std::filesystem::path*)outputs[0].data = *(std::wstring*)inputs[0].data;
 			}
 		);
@@ -225,7 +225,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(std::string*)outputs[0].data = *(std::string*)inputs[0].data + *(std::string*)inputs[1].data;
 			}
 		);
@@ -247,7 +247,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::wstring>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(std::wstring*)outputs[0].data = *(std::wstring*)inputs[0].data + *(std::wstring*)inputs[1].data;
 			}
 		); 
@@ -269,7 +269,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::string*)inputs[0].data;
 				*(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1]));
 			}
@@ -296,7 +296,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::string*)inputs[0].data;
 				*(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2]));
 			}
@@ -327,7 +327,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::string*)inputs[0].data;
 				*(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3]));
 			}
@@ -362,7 +362,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::string*)inputs[0].data;
 				*(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4]));
 			}
@@ -385,7 +385,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::wstring>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::wstring*)inputs[0].data;
 				*(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1]));
 			}
@@ -412,7 +412,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::wstring>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::wstring*)inputs[0].data;
 				*(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2]));
 			}
@@ -443,7 +443,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::wstring>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::wstring*)inputs[0].data;
 				*(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3]));
 			}
@@ -478,7 +478,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::wstring>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& fmt = *(std::wstring*)inputs[0].data;
 				*(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4]));
 			}
@@ -493,7 +493,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& string = *(std::string*)inputs[0].data;
 				if (!string.empty())
 					printf("%s\n", string.c_str());

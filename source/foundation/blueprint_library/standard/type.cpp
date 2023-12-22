@@ -18,7 +18,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(float*)outputs[0].data = inputs[0].type->as_float(inputs[0].data);
 			}
 		);
@@ -36,7 +36,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<int>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(int*)outputs[0].data = inputs[0].type->as_int(inputs[0].data);
 			}
 		);
@@ -54,7 +54,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(uint*)outputs[0].data = inputs[0].type->as_uint(inputs[0].data);
 			}
 		);
@@ -76,7 +76,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<int>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto array_type = inputs[0].type;
 				if (array_type && is_vector(array_type->tag))
 				{
@@ -119,7 +119,7 @@ namespace flame
 				}
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto array_type = inputs[1].type;
 				if (array_type && is_vector(array_type->tag))
 				{
@@ -134,7 +134,7 @@ namespace flame
 				else
 					execution.block->max_execute_times = 0;
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& to_remove_list = *(std::vector<int>*)outputs[2].data;
 				if (!to_remove_list.empty())
 				{
@@ -155,7 +155,7 @@ namespace flame
 					to_remove_list.clear();
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto ok = *(bool*)outputs[1].data;
 				if (ok)
 				{
@@ -191,7 +191,7 @@ namespace flame
 				}
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto array_type = inputs[1].type;
 				if (array_type && is_vector(array_type->tag))
 				{
@@ -209,7 +209,7 @@ namespace flame
 				auto& indices = *(std::vector<uint>*)outputs[1].data;
 				indices.clear();
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& indices = *(std::vector<uint>*)outputs[1].data;
 				auto number = *(uint*)inputs[2].data;
 				if (indices.size() > number)
@@ -224,7 +224,7 @@ namespace flame
 					indices = selected;
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto ok = *(bool*)outputs[2].data;
 				if (ok)
 				{
@@ -260,7 +260,7 @@ namespace flame
 				}
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto array_type = inputs[1].type;
 				if (array_type && is_vector(array_type->tag))
 				{
@@ -278,11 +278,11 @@ namespace flame
 				auto& temp_array = *(std::vector<uint>*)outputs[3].data;
 				temp_array.clear();
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& temp_array = *(std::vector<uint>*)outputs[3].data;
 				*(uint*)outputs[1].data = temp_array[linearRand(0, (int)temp_array.size() - 1)];
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto& ok = *(bool*)outputs[2].data;
 				if (ok)
 				{

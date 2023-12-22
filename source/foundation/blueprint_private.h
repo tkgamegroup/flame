@@ -51,12 +51,12 @@ namespace flame
 			bool is_block = false, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr) override;
 		BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint name_hash) override;
 		BlueprintNodePtr		add_block(BlueprintGroupPtr group, BlueprintNodePtr parent) override;
-		BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type, uint location_name) override;
+		BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type, uint location_name, uint attribute_name) override;
 		BlueprintNodePtr		add_call_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint group_name, uint location_name) override;
 		void					remove_node(BlueprintNodePtr node, bool recursively) override;
 		void					set_nodes_parent(const std::vector<BlueprintNodePtr> nodes, BlueprintNodePtr new_parent) override;
 		void					set_input_type(BlueprintSlotPtr slot, TypeInfo* type) override;
-		bool					change_references(BlueprintGroupPtr group, uint old_name, uint old_location, uint new_name, uint new_location) override;
+		bool					change_references(BlueprintGroupPtr group, uint old_name, uint old_location, uint old_attribute, uint new_name, uint new_location, uint new_attribute) override;
 		BlueprintLinkPtr		add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot) override;
 		void					remove_link(BlueprintLinkPtr link) override;
 		BlueprintGroupPtr		add_group(const std::string& name) override;

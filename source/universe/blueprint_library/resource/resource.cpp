@@ -24,7 +24,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -57,7 +57,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<graphics::ImageDesc>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& image = *(graphics::ImageDesc*)outputs[0].data;
 				image.view = nullptr;
 				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
@@ -97,7 +97,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<graphics::ImageAtlasPtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& atlas = *(graphics::ImageAtlasPtr*)outputs[0].data;
 				atlas = nullptr;
 				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
@@ -131,7 +131,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<graphics::ImageDesc>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto atlas = *(graphics::ImageAtlasPtr*)inputs[0].data;
 				auto& item = *(graphics::ImageDesc*)outputs[0].data;
 				if (atlas)

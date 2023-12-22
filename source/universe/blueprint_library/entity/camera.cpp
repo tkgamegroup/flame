@@ -25,7 +25,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto world_pos = *(vec3*)inputs[0].data;
 				vec3 clip_coord;
 				*(vec2*)outputs[0].data = sRenderer::instance()->render_tasks.front()->camera->world_to_screen(world_pos, &clip_coord);
@@ -54,7 +54,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto camera = *(EntityPtr*)inputs[0].data;
 				auto target = *(EntityPtr*)inputs[1].data;
 				if (camera && target)
@@ -106,7 +106,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto camera = *(EntityPtr*)inputs[0].data;
 				auto target = *(vec3*)inputs[1].data;
 				auto& current_velocity = *(vec3*)inputs[2].data;

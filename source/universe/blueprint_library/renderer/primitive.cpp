@@ -28,7 +28,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				vec3 pts[2];
 				pts[0] = *(vec3*)inputs[0].data;
 				pts[1] = *(vec3*)inputs[1].data;

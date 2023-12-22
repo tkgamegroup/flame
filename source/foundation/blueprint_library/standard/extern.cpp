@@ -19,7 +19,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& ret = *(BlueprintInstancePtr*)outputs[0].data;
 				if (!ret)
 					ret = BlueprintInstance::get(*(uint*)inputs[0].data);
@@ -44,7 +44,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<TYPE>() }\
 				}\
 			},\
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {\
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
 				auto instance = *(BlueprintInstancePtr*)inputs[0].data;\
 				auto name = *(uint*)inputs[1].data;\
 				if (instance)\
@@ -105,7 +105,7 @@ namespace flame
 			},\
 			{\
 			},\
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {\
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
 				auto instance = *(BlueprintInstancePtr*)inputs[0].data;\
 				auto name = *(uint*)inputs[1].data;\
 				if (instance)\
@@ -155,7 +155,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto instance = *(BlueprintInstancePtr*)inputs[0].data;
 				auto name = *(uint*)inputs[1].data;
 				if (instance)
@@ -184,7 +184,7 @@ namespace flame
 			},\
 			{\
 			},\
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {\
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
 				auto instance = *(BlueprintInstancePtr*)inputs[0].data;\
 				auto name = *(uint*)inputs[1].data;\
 				if (instance)\
@@ -218,7 +218,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<SheetPtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& ret = *(SheetPtr*)outputs[0].data;
 				if (!ret)
 					ret = Sheet::get(*(uint*)inputs[0].data);
@@ -238,7 +238,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<SheetPtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& ret = *(SheetPtr*)outputs[0].data;
 				ret = Sheet::get(*(std::filesystem::path*)inputs[0].data);
 			}
@@ -257,7 +257,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto sht = *(SheetPtr*)inputs[0].data;
 				*(uint*)outputs[0].data = sht ? sht->columns.size() : 0;
 			}
@@ -280,7 +280,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto sht = *(SheetPtr*)inputs[0].data;
 				auto index = *(uint*)inputs[1].data;
 				if (sht)
@@ -312,7 +312,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto sht = *(SheetPtr*)inputs[0].data;
 				if (sht)
 				{
@@ -341,7 +341,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto sht = *(SheetPtr*)inputs[0].data;
 				*(uint*)outputs[0].data = sht ? sht->rows.size() : 0;
 			}
@@ -369,7 +369,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<int>() }\
 				}\
 			},\
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {\
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
 				auto sht = *(SheetPtr*)inputs[0].data;\
 				if (sht)\
 				{\
@@ -433,7 +433,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<TYPE>() }\
 				}\
 			},\
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {\
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
 				auto sht = *(SheetPtr*)inputs[0].data;\
 				auto name = *(uint*)inputs[1].data;\
 				if (sht)\
@@ -504,7 +504,7 @@ namespace flame
 			},\
 			{\
 			},\
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {\
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
 				auto sht = *(SheetPtr*)inputs[0].data;\
 				auto name = *(uint*)inputs[1].data;\
 				if (sht)\
@@ -562,7 +562,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto sht = *(SheetPtr*)inputs[0].data;
 				auto row_idx = *(uint*)inputs[1].data;
 				auto ins = *(BlueprintInstancePtr*)inputs[2].data;
@@ -599,7 +599,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto instance = *(BlueprintInstancePtr*)inputs[0].data;
 				auto message = *(uint*)inputs[1].data;
 				if (instance)

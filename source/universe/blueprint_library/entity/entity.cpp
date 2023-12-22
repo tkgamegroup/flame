@@ -29,7 +29,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				*(std::string*)outputs[0].data = entity ? entity->name : "";
 			}
@@ -48,7 +48,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 					entity->name = *(std::string*)inputs[1].data;
@@ -68,7 +68,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				*(uint*)outputs[0].data = entity ? entity->tag : 0;
 			}
@@ -87,7 +87,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 					entity->tag = (TagFlags)*(uint*)inputs[1].data;
@@ -107,7 +107,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 					entity->tag = (TagFlags)(entity->tag | *(uint*)inputs[1].data);
@@ -127,7 +127,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 					entity->tag = (TagFlags)(entity->tag & ~*(uint*)inputs[1].data);
@@ -151,7 +151,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 					*(bool*)outputs[0].data = (entity->tag & (*(uint*)inputs[1].data)) != 0;
@@ -173,7 +173,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 					entity->set_enable(*(bool*)inputs[1].data);
@@ -193,7 +193,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto e = Entity::create();
 				*(EntityPtr*)outputs[0].data = e;
 				auto parent = *(EntityPtr*)inputs[0].data;
@@ -218,7 +218,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -248,7 +248,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 					*(EntityPtr*)outputs[0].data = entity->parent;
@@ -274,7 +274,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto parent = *(EntityPtr*)inputs[0].data;
 				if (parent)
 				{
@@ -307,7 +307,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto parent = *(EntityPtr*)inputs[0].data;
 				if (parent)
 				{
@@ -336,7 +336,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<Component*>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				auto hash = *(uint*)inputs[1].data;
 				if (entity && hash)
@@ -357,7 +357,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto name = *(std::string*)inputs[0].data;
 				if (!name.empty())
 					*(EntityPtr*)outputs[0].data = World::instance()->root->find_child_recursively(name);
@@ -379,7 +379,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -404,7 +404,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -427,7 +427,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -450,7 +450,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -475,7 +475,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -498,7 +498,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -523,7 +523,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -549,7 +549,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				auto target = *(EntityPtr*)inputs[1].data;
 				if (entity && target)
@@ -573,7 +573,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -601,7 +601,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				EntityPtr e = nullptr;
 
 				if (auto parent = *(EntityPtr*)inputs[0].data; parent)
@@ -639,7 +639,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				EntityPtr e = nullptr;
 
 				if (auto parent = *(EntityPtr*)inputs[1].data; parent)
@@ -685,7 +685,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				EntityPtr e = nullptr;
 
 				auto& path = *(std::filesystem::path*)inputs[0].data;
@@ -762,7 +762,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -812,7 +812,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -853,7 +853,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -896,7 +896,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -927,7 +927,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(bool*)outputs[0].data = *(EntityPtr*)inputs[0].data == *(EntityPtr*)inputs[1].data;
 			}
 		);
@@ -941,7 +941,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto block_node = execution.block->node;
 				auto vec_idx = execution.block->loop_vector_index;
 				if (vec_idx != -1)
@@ -996,7 +996,7 @@ namespace flame
 			.allowed_types = { TypeInfo::get<EntityPtr>() }
 		}
 		}, 
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 			auto instance = *(BlueprintInstancePtr*)inputs[0].data; 
 			auto name = *(uint*)inputs[1].data; 
 			if (instance)
@@ -1034,7 +1034,7 @@ namespace flame
 		}, 
 		{
 		}, 
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 			auto instance = *(BlueprintInstancePtr*)inputs[0].data; 
 			auto name = *(uint*)inputs[1].data; 
 			if (instance)
@@ -1082,7 +1082,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto location = *(vec3*)inputs[0].data;
 				auto radius = *(float*)inputs[1].data;
 				auto any_filter = *(uint*)inputs[2].data;
@@ -1119,7 +1119,7 @@ namespace flame
 				}
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto& temp_array = *(std::vector<EntityPtr>*)outputs[1].data;
 				temp_array.clear();
 				World::instance()->root->forward_traversal([&](EntityPtr e) {
@@ -1176,7 +1176,7 @@ namespace flame
 				}
 			},
 			true,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto location = *(vec3*)inputs[1].data;
 				auto radius = *(float*)inputs[2].data;
 				auto any_filter = *(uint*)inputs[3].data;
@@ -1203,7 +1203,7 @@ namespace flame
 				execution.block->block_output_index = 9;
 			},
 			nullptr,
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto ok = *(bool*)outputs[3].data;
 				if (ok)
 				{
@@ -1236,7 +1236,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto input = sInput::instance();
 				if (input->mouse_used)
 				{
@@ -1286,7 +1286,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -1306,7 +1306,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -1326,7 +1326,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -1346,7 +1346,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -1366,7 +1366,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -1386,7 +1386,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -1406,7 +1406,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
@@ -1426,7 +1426,7 @@ namespace flame
 			},
 			{
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{

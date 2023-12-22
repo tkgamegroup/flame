@@ -18,7 +18,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				switch (out_ti->data_type)
 				{
@@ -57,7 +57,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec2>(), TypeInfo::get<ivec2>(), TypeInfo::get<uvec2>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
@@ -131,7 +131,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec3>(), TypeInfo::get<ivec3>(), TypeInfo::get<uvec3>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
@@ -214,7 +214,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec4>(), TypeInfo::get<ivec4>(), TypeInfo::get<uvec4>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
@@ -306,7 +306,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto vec_size = in0_ti->vec_size;
 				switch (in0_ti->data_type)
@@ -375,7 +375,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<cvec4>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto h = *(float*)inputs[0].data;
 				auto s = *(float*)inputs[1].data;
 				auto v = *(float*)inputs[2].data;
@@ -397,7 +397,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec4>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(vec4*)outputs[0].data = vec4(*(cvec4*)inputs[0].data) / 255.f;
 			}
 		);
@@ -464,7 +464,7 @@ namespace flame
 					.allowed_types = generic_types\
 				}\
 			},\
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {\
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;\
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;\
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;\
@@ -667,7 +667,7 @@ namespace flame
 										}
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
@@ -846,7 +846,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				for (auto i = 0; i < out_ti->vec_size; i++)
 					*(float*)outputs[0].data = floor(*(float*)inputs[0].data);
@@ -871,7 +871,7 @@ namespace flame
 					.allowed_types = generic_types
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				for (auto i = 0; i < out_ti->vec_size; i++)
 					*(float*)outputs[0].data = ceil(*(float*)inputs[0].data);
@@ -900,7 +900,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(float*)outputs[0].data = pow(*(float*)inputs[0].data, *(float*)inputs[1].data);
 			},
 			nullptr,
@@ -921,7 +921,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				for (auto i = 0; i < out_ti->vec_size; i++)
 					*(float*)outputs[0].data = sign(*(float*)inputs[0].data);
@@ -946,7 +946,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto out_ti = (TypeInfo_Data*)outputs[0].type;
 				for (auto i = 0; i < out_ti->vec_size; i++)
 					*(float*)outputs[0].data = floor(*(float*)inputs[0].data);
@@ -971,7 +971,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(float*)outputs[0].data = length(*(vec3*)inputs[0].data);
 			}
 		);
@@ -989,7 +989,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(vec3*)outputs[0].data = normalize(*(vec3*)inputs[0].data);
 			}
 		);
@@ -1011,7 +1011,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(float*)outputs[0].data = distance(*(vec3*)inputs[0].data, *(vec3*)inputs[1].data);
 			}
 		);
@@ -1045,7 +1045,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto t = *(float*)inputs[4].data;
 				auto p0 = *(vec3*)inputs[0].data;
 				auto p1 = *(vec3*)inputs[1].data;
@@ -1081,7 +1081,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(float*)outputs[0].data = linearRand(*(float*)inputs[1].data, *(float*)inputs[2].data);
 			},
 			nullptr,
@@ -1110,7 +1110,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<int>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(int*)outputs[0].data = linearRand(*(int*)inputs[1].data, *(int*)inputs[2].data);
 			},
 			nullptr,
@@ -1137,7 +1137,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto radius = *(float*)inputs[0].data;
 				auto angle = *(float*)inputs[1].data;
 				auto rad = radians(angle);
@@ -1171,7 +1171,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},
-			[](BlueprintAttribute* inputs, BlueprintAttribute* outputs) {
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto min_radius = *(float*)inputs[1].data;
 				auto max_radius = *(float*)inputs[2].data;
 				auto rn = circularRand(max_radius - min_radius);

@@ -123,26 +123,18 @@ namespace flame
 	{
 		return name == "Variable"_h ||
 			name == "Set Variable"_h ||
+			name == "Get Attribute"_h ||
+			name == "Get Attributes"_h ||
+			name == "Set Attribute"_h ||
 			name == "Array Size"_h ||
 			name == "Array Clear"_h ||
 			name == "Array Get Item"_h ||
 			name == "Array Set Item"_h ||
-			name == "Array Add Item"_h;
-	}
-
-	inline uint blueprint_variable_name_to_type(uint name)
-	{
-		switch (name)
-		{
-		case "Variable"_h: return "get"_h;
-		case "Set Variable"_h: return "set"_h;
-		case "Array Size"_h: return "array_size"_h;
-		case "Array Clear"_h: return "array_clear"_h;
-		case "Array Get Item"_h: return "array_get_item"_h;
-		case "Array Set Item"_h: return "array_set_item"_h;
-		case "Array Add Item"_h: return "array_add_item"_h;
-		}
-		return 0;
+			name == "Array Get Item Attribute"_h ||
+			name == "Array Get Item Attributes"_h ||
+			name == "Array Set Item Attribute"_h ||
+			name == "Array Add Item"_h ||
+			name == "Array Emplace Item"_h;
 	}
 
 	struct BlueprintSlot
@@ -169,14 +161,14 @@ namespace flame
 		void* data;
 	};
 
-	typedef void(*BlueprintNodeFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
-	typedef void(*BlueprintNodeLoopFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution);
-	typedef void(*BlueprintNodeBeginBlockFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintExecutionData& execution);
-	typedef void(*BlueprintNodeEndBlockFunction)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
-	typedef void(*BlueprintNodeConstructor)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
-	typedef void(*BlueprintNodeDestructor)(BlueprintAttribute* inputs, BlueprintAttribute* outputs);
+	typedef void(*BlueprintNodeFunction)(uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs);
+	typedef void(*BlueprintNodeLoopFunction)(uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution);
+	typedef void(*BlueprintNodeBeginBlockFunction)(uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution);
+	typedef void(*BlueprintNodeEndBlockFunction)(uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs);
+	typedef void(*BlueprintNodeConstructor)(uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs);
+	typedef void(*BlueprintNodeDestructor)(uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs);
 	typedef void(*BlueprintNodeInputTypeChangedCallback)(TypeInfo** input_types, TypeInfo** output_types);
-	typedef void(*BlueprintNodePreviewProvider)(BlueprintAttribute* inputs, BlueprintAttribute* outputs, BlueprintNodePreview* preview);
+	typedef void(*BlueprintNodePreviewProvider)(uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintNodePreview* preview);
 
 	struct BlueprintNode
 	{
@@ -468,12 +460,12 @@ namespace flame
 			bool is_block = false, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr) = 0;
 		virtual BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint name_hash) = 0;
 		virtual BlueprintNodePtr		add_block(BlueprintGroupPtr group, BlueprintNodePtr parent) = 0;
-		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type = "get"_h, uint location_name = 0 /* a static bp or enum */) = 0;
+		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type = "Variable"_h, uint location_name = 0 /* a static bp or enum */, uint attribute_name = 0) = 0;
 		virtual BlueprintNodePtr		add_call_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint group_name, uint location_name = 0 /* from other static bp */) = 0; // add a node that will call another group
 		virtual void					remove_node(BlueprintNodePtr node, bool recursively = true) = 0;
 		virtual void					set_nodes_parent(const std::vector<BlueprintNodePtr> nodes, BlueprintNodePtr new_parent) = 0;
 		virtual void					set_input_type(BlueprintSlotPtr slot, TypeInfo* type) = 0;
-		virtual bool					change_references(BlueprintGroupPtr group, uint old_name, uint old_location, uint new_name, uint new_location) = 0;
+		virtual bool					change_references(BlueprintGroupPtr group, uint old_name, uint old_location, uint old_attribute, uint new_name, uint new_location, uint new_attribute) = 0;
 		virtual BlueprintLinkPtr		add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot) = 0;
 		virtual void					remove_link(BlueprintLinkPtr link) = 0;
 		virtual BlueprintGroupPtr		add_group(const std::string& name) = 0;
