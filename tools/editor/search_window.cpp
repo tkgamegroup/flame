@@ -15,6 +15,24 @@ SearchView::SearchView() :
 SearchView::SearchView(const std::string& name) :
 	View(&search_window, name)
 {
+#if USE_IMGUI_NODE_EDITOR
+	ax::NodeEditor::Config ax_config;
+	ax_config.UserPointer = this;
+	ax_config.SettingsFile = "";
+	ax_config.NavigateButtonIndex = 2;
+	ax_editor_find = (ax::NodeEditor::Detail::EditorContext*)ax::NodeEditor::CreateEditor(&ax_config);
+	ax_editor_replace = (ax::NodeEditor::Detail::EditorContext*)ax::NodeEditor::CreateEditor(&ax_config);
+#endif
+}
+
+SearchView::~SearchView()
+{
+#if USE_IMGUI_NODE_EDITOR
+	if (ax_editor_find)
+		ax::NodeEditor::DestroyEditor((ax::NodeEditor::EditorContext*)ax_editor_find);
+	if (ax_editor_replace)
+		ax::NodeEditor::DestroyEditor((ax::NodeEditor::EditorContext*)ax_editor_replace);
+#endif
 }
 
 void SearchView::on_draw()
@@ -24,144 +42,175 @@ void SearchView::on_draw()
 	ImGui::Begin(name.c_str(), &opened);
 	imgui_window = ImGui::GetCurrentWindow();
 
-	if (ImGui::ToolButton("Blueprint", search_in_blueprints))
-		search_in_blueprints = !search_in_blueprints;
-	ImGui::SameLine();
-	if (ImGui::ToolButton("Sheet", search_in_sheets))
-		search_in_sheets = !search_in_sheets;
-	ImGui::SameLine();
-	if (ImGui::ToolButton("Names", search_in_names))
-		search_in_names = !search_in_names;
-	ImGui::SameLine();
-	if (ImGui::ToolButton("Values", search_in_values))
-		search_in_values = !search_in_values;
-	ImGui::SameLine();
-	if (ImGui::ToolButton("Case", match_case))
-		match_case = !match_case;
-	ImGui::SameLine();
-	if (ImGui::ToolButton("Whole Word", match_whole_word))
-		match_whole_word = !match_whole_word;
-
-	auto do_find = false;
-	if (ImGui::InputText("##find", &find_str, ImGuiInputTextFlags_EnterReturnsTrue))
-		do_find = true;
-	ImGui::SameLine();
-	if (ImGui::Button("Find"))
-		do_find = true;
-	if (do_find && !find_str.empty())
+	ImGui::BeginTabBar("##tabs");
+	if (ImGui::BeginTabItem("Text"))
 	{
-		blueprint_results.clear();
-		sheet_results.clear();
+		if (ImGui::ToolButton("Blueprint", search_in_blueprints))
+			search_in_blueprints = !search_in_blueprints;
+		ImGui::SameLine();
+		if (ImGui::ToolButton("Sheet", search_in_sheets))
+			search_in_sheets = !search_in_sheets;
+		ImGui::SameLine();
+		if (ImGui::ToolButton("Names", search_in_names))
+			search_in_names = !search_in_names;
+		ImGui::SameLine();
+		if (ImGui::ToolButton("Values", search_in_values))
+			search_in_values = !search_in_values;
+		ImGui::SameLine();
+		if (ImGui::ToolButton("Case", match_case))
+			match_case = !match_case;
+		ImGui::SameLine();
+		if (ImGui::ToolButton("Whole Word", match_whole_word))
+			match_whole_word = !match_whole_word;
 
-		auto assets_path = app.project_path / L"assets";
-		for (auto it : std::filesystem::recursive_directory_iterator(assets_path))
+		auto do_find = false;
+		if (ImGui::InputText("##find", &find_str, ImGuiInputTextFlags_EnterReturnsTrue))
+			do_find = true;
+		ImGui::SameLine();
+		if (ImGui::Button("Find"))
+			do_find = true;
+		if (do_find && !find_str.empty())
 		{
-			if (it.is_regular_file())
+			blueprint_results.clear();
+			sheet_results.clear();
+
+			auto assets_path = app.project_path / L"assets";
+			for (auto it : std::filesystem::recursive_directory_iterator(assets_path))
 			{
-				auto ext = it.path().extension();
-				if (search_in_blueprints && ext == L".bp")
+				if (it.is_regular_file())
 				{
-					if (auto bp = Blueprint::get(it.path()); bp)
+					auto ext = it.path().extension();
+					if (search_in_blueprints && ext == L".bp")
 					{
-						auto blueprint_result_idx = -1;
-						for (auto& g : bp->groups)
+						if (auto bp = Blueprint::get(it.path()); bp)
 						{
-							auto group_result_idx = -1;
-							for (auto& n : g->nodes)
+							auto blueprint_result_idx = -1;
+							for (auto& g : bp->groups)
 							{
-								auto name = !n->display_name.empty() ? n->display_name : n->name;
-								auto ok = false;
-								if (search_in_names)
+								auto group_result_idx = -1;
+								for (auto& n : g->nodes)
 								{
-									if (match_whole_word)
+									auto name = !n->display_name.empty() ? n->display_name : n->name;
+									auto ok = false;
+									if (search_in_names)
 									{
-										if (match_case)
-											ok = name == find_str;
-										else
-											ok = SUS::match_case_insensitive(name, find_str);
-									}
-									else
-									{
-										if (match_case)
-											ok = name.find(find_str) != std::string::npos;
-										else
-											ok = SUS::find_case_insensitive(name, find_str);
-									}
-								}
-								if (!ok)
-								{
-									if (search_in_values)
-									{
-										for (auto& i : n->inputs)
+										if (match_whole_word)
 										{
-											if (!i->is_linked() && i->data)
+											if (match_case)
+												ok = name == find_str;
+											else
+												ok = SUS::match_case_insensitive(name, find_str);
+										}
+										else
+										{
+											if (match_case)
+												ok = name.find(find_str) != std::string::npos;
+											else
+												ok = SUS::find_case_insensitive(name, find_str);
+										}
+									}
+									if (!ok)
+									{
+										if (search_in_values)
+										{
+											for (auto& i : n->inputs)
 											{
-												auto value_str = i->type->serialize(i->data);
-												if (match_whole_word)
+												if (!i->is_linked() && i->data)
 												{
-													if (match_case)
-														ok = value_str == find_str;
+													auto value_str = i->type->serialize(i->data);
+													if (match_whole_word)
+													{
+														if (match_case)
+															ok = value_str == find_str;
+														else
+															ok = SUS::match_case_insensitive(value_str, find_str);
+													}
 													else
-														ok = SUS::match_case_insensitive(value_str, find_str);
+													{
+														if (match_case)
+															ok = value_str.find(find_str) != std::string::npos;
+														else
+															ok = SUS::find_case_insensitive(value_str, find_str);
+													}
+													if (ok)
+														break;
 												}
-												else
-												{
-													if (match_case)
-														ok = value_str.find(find_str) != std::string::npos;
-													else
-														ok = SUS::find_case_insensitive(value_str, find_str);
-												}
-												if (ok)
-													break;
 											}
 										}
 									}
-								}
-								if (ok)
-								{
-									if (blueprint_result_idx == -1)
+									if (ok)
 									{
-										blueprint_result_idx = blueprint_results.size();
-										auto& r = blueprint_results.emplace_back();
-										r.path = Path::reverse(it.path());
-										r.path_str = r.path.string();
-									}
-									if (group_result_idx == -1)
-									{
-										auto& bpr = blueprint_results[blueprint_result_idx];
-										group_result_idx = bpr.group_results.size();
-										auto& gr = bpr.group_results.emplace_back();
-										gr.name = g->name;
-										gr.name_hash = g->name_hash;
-									}
+										if (blueprint_result_idx == -1)
+										{
+											blueprint_result_idx = blueprint_results.size();
+											auto& r = blueprint_results.emplace_back();
+											r.path = Path::reverse(it.path());
+											r.path_str = r.path.string();
+										}
+										if (group_result_idx == -1)
+										{
+											auto& bpr = blueprint_results[blueprint_result_idx];
+											group_result_idx = bpr.group_results.size();
+											auto& gr = bpr.group_results.emplace_back();
+											gr.name = g->name;
+											gr.name_hash = g->name_hash;
+										}
 
-									auto& gr = blueprint_results[blueprint_result_idx].group_results[group_result_idx];
-									auto& nr = gr.node_results.emplace_back();
-									nr.name = !n->display_name.empty() ? n->display_name : n->name;
-									nr.id = n->object_id;
+										auto& gr = blueprint_results[blueprint_result_idx].group_results[group_result_idx];
+										auto& nr = gr.node_results.emplace_back();
+										nr.name = !n->display_name.empty() ? n->display_name : n->name;
+										nr.id = n->object_id;
+									}
 								}
+
 							}
+							Blueprint::release(bp);
+						}
+					}
+					if (search_in_sheets && ext == L".sht")
+					{
+						if (auto sht = Sheet::get(it.path()); sht)
+						{
 
 						}
-						Blueprint::release(bp);
-					}
-				}
-				if (search_in_sheets && ext == L".sht")
-				{
-					if (auto sht = Sheet::get(it.path()); sht)
-					{
-
 					}
 				}
 			}
 		}
+
+		ImGui::EndTabItem();
 	}
-	ImGui::SameLine();
-	if (ImGui::Button("Clear"))
+	if (ImGui::BeginTabItem("Replace Text"))
 	{
-		blueprint_results.clear();
-		sheet_results.clear();
+		ImGui::EndTabItem();
 	}
+	if (ImGui::BeginTabItem("Parttern"))
+	{
+		if (ImGui::Button("Find"))
+		{
+
+		}
+
+		ax::NodeEditor::SetCurrentEditor((ax::NodeEditor::EditorContext*)ax_editor_find);
+		ImGui::BeginChild("ax_editor_find", ImVec2(0, -2));
+		ax::NodeEditor::Begin("node_editor_find");
+
+		ax::NodeEditor::End();
+		ImGui::EndChild();
+		ax::NodeEditor::SetCurrentEditor(nullptr);
+
+		ImGui::EndTabItem();
+	}
+	if (ImGui::BeginTabItem("Replace Parttern"))
+	{
+		ax::NodeEditor::SetCurrentEditor((ax::NodeEditor::EditorContext*)ax_editor_find);
+
+		ax::NodeEditor::SetCurrentEditor((ax::NodeEditor::EditorContext*)ax_editor_replace);
+
+		ax::NodeEditor::SetCurrentEditor(nullptr);
+		ImGui::EndTabItem();
+	}
+	ImGui::EndTabBar();
 
 	if (!blueprint_results.empty())
 	{
@@ -195,7 +244,7 @@ void SearchView::on_draw()
 												{
 													add_event([n, bv]() {
 														bv->navigate_to_node(n);
-														return false; 
+														return false;
 													}, 0.f, 3U); // tricky: we need to wait for the blueprint to be rendered
 													app.render_frames += 5; // tricky: we need these frames to wait
 												}
@@ -212,6 +261,14 @@ void SearchView::on_draw()
 				}
 			}
 			ImGui::TreePop();
+		}
+	}
+	if (!blueprint_results.empty() || !sheet_results.empty())
+	{
+		if (ImGui::Button("Clear"))
+		{
+			blueprint_results.clear();
+			sheet_results.clear();
 		}
 	}
 

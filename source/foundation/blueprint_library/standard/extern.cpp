@@ -545,6 +545,128 @@ namespace flame
 
 #undef SET_SHT_TEMPLATE
 
+		library->add_template("Add Child Blueprint", "",
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				},
+				{
+					.name = "Host_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Path",
+					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
+				}
+			},
+			{
+				{
+					.name = "Instance",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto parent = *(BlueprintInstancePtr*)inputs[0].data;
+				if (parent)
+				{
+					auto host = *(uint*)inputs[1].data;
+					if (host != 0)
+					{
+						if (auto arg = parent->get_variable(host); arg.data && arg.type->tag == TagVU)
+						{
+							auto ti = (TypeInfo_VectorOfUdt*)arg.type;
+							if (ti->get_wrapped() == TypeInfo::get<BlueprintInstanceHolder>())
+							{
+								auto& path = *(std::filesystem::path*)inputs[1].data;
+								if (!path.empty())
+								{
+									path = Path::get(path);
+									if (std::filesystem::exists(path))
+									{
+										auto bp = Blueprint::get(path);
+										if (bp)
+										{
+											auto ins = BlueprintInstance::create(bp);
+											auto& array = *(std::vector<BlueprintInstancePtr>*)arg.data;
+											BlueprintInstanceHolder holder;
+											holder.ptr = ins;
+											array.push_back(ins);
+											Blueprint::release(bp);
+										}
+										else
+											*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+									}
+									else
+										*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+								}
+								else
+									*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+							}
+							else
+								*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+						}
+						else
+							*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+					}
+					else
+						*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+				}
+				else
+					*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+			}
+		);
+
+		library->add_template("Remove Child Blueprint", "",
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				},
+				{
+					.name = "Host_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Instance",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto parent = *(BlueprintInstancePtr*)inputs[0].data;
+				if (parent)
+				{
+					auto host = *(uint*)inputs[1].data;
+					if (host != 0)
+					{
+						if (auto arg = parent->get_variable(host); arg.data && arg.type->tag == TagVU)
+						{
+							auto ti = (TypeInfo_VectorOfUdt*)arg.type;
+							if (ti->get_wrapped() == TypeInfo::get<BlueprintInstanceHolder>())
+							{
+								auto ins = *(BlueprintInstancePtr*)inputs[2].data;
+								if (ins)
+								{
+									auto& array = *(std::vector<BlueprintInstancePtr>*)arg.data;
+									for (auto it = array.begin(); it != array.end(); it++)
+									{
+										if (*it == ins)
+										{
+											((BlueprintInstanceHolder&)(*it)).~BlueprintInstanceHolder();
+											array.erase(it);
+											break;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		);
+
 		library->add_template("Assign Sheet Row To Blueprint Instance", "",
 			{
 				{

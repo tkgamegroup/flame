@@ -10,7 +10,7 @@
 struct BlueprintView : View
 {
 #if USE_IMGUI_NODE_EDITOR
-	ax::NodeEditor::Detail::EditorContext* ax_node_editor = nullptr;
+	ax::NodeEditor::Detail::EditorContext* ax_editor = nullptr;
 #endif
 	std::filesystem::path blueprint_path;
 	BlueprintPtr blueprint = nullptr;

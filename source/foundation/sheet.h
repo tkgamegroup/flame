@@ -4,7 +4,6 @@
 
 namespace flame
 {
-	// Reflect ctor
 	struct Sheet
 	{
 		struct Column
@@ -53,7 +52,6 @@ namespace flame
 		{
 			virtual SheetPtr operator()() = 0;
 		};
-		// Reflect static
 		FLAME_FOUNDATION_API static Create& create;
 
 		struct Get
@@ -61,14 +59,12 @@ namespace flame
 			virtual SheetPtr operator()(const std::filesystem::path& filename, bool is_static = false) = 0;
 			virtual SheetPtr operator()(uint name) = 0;
 		};
-		// Reflect static
 		FLAME_FOUNDATION_API static Get& get;
 
 		struct Release
 		{
 			virtual void operator()(SheetPtr sheet) = 0;
 		};
-		// Reflect static
 		FLAME_FOUNDATION_API static Release& release;
 	};
 }

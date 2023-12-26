@@ -187,6 +187,29 @@ namespace flame
 			return nullptr;
 		}
 
+		inline bool has_child(EntityPtr e) const
+		{
+			for (auto& cc : children)
+			{
+				if (cc.get() == e)
+					return true;
+			}
+			return false;
+		}
+
+		inline bool has_child_recursively(EntityPtr e) const
+		{
+			for (auto& cc : children)
+			{
+				auto c = (Entity*)cc.get();
+				if (cc.get() == e)
+					return true;
+				if (c->has_child_recursively(e))
+					return true;
+			}
+			return false;
+		}
+
 		inline int find_component_i(uint hash) const
 		{
 			for (auto i = 0; i < components.size(); i++)

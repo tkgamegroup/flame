@@ -123,6 +123,10 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_sym)
 	}
 	case SymTagBaseType:
 		return TypeInfo::get(TagD, base_type_name(s_sym));
+	case SymTagFunctionType:
+	{
+		return TypeInfo::get(TagPD, "void", db);
+	}
 	case SymTagPointerType:
 	{
 		TypeInfo* ret = nullptr;
@@ -140,6 +144,9 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_sym)
 			break;
 		case SymTagPointerType:
 			ret = TypeInfo::get(TagPD, "pointer", db);
+			break;
+		case SymTagFunctionType:
+			ret = TypeInfo::get(TagPD, "void", db);
 			break;
 		case SymTagUDT:
 		{
@@ -674,6 +681,8 @@ process:
 									{
 										if (t == "ctor")
 											r.children.emplace_back().first = "ctor";
+										if (t == "dtor")
+											r.children.emplace_back().first = "dtor";
 										else if (t == "any")
 											r.children_type = Rule::Any;
 									}

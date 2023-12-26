@@ -97,7 +97,8 @@ namespace flame
 				return true;
 			if (t == TypeInfo::get<voidptr>())
 				return true;
-			if (t == TypeInfo::get<uint>() && type == TypeInfo::get<int>())
+			if (t == TypeInfo::get<uint>() && type == TypeInfo::get<int>() ||
+				t == TypeInfo::get<int>() && type == TypeInfo::get<uint>())
 				return true;
 			if (t->tag == TagPU && type->tag == TagU)
 			{
@@ -402,7 +403,6 @@ namespace flame
 		virtual ~BlueprintGroup() {}
 	};
 
-	// Reflect ctor
 	struct Blueprint
 	{
 		std::vector<BlueprintEnum>						enums;
@@ -484,7 +484,6 @@ namespace flame
 		{
 			virtual BlueprintPtr operator()() = 0;
 		};
-		// Reflect static
 		FLAME_FOUNDATION_API static Create& create;
 
 		struct Get
@@ -492,14 +491,12 @@ namespace flame
 			virtual BlueprintPtr operator()(const std::filesystem::path& filename, bool is_static = false) = 0;
 			virtual BlueprintPtr operator()(uint name) = 0;
 		};
-		// Reflect static
 		FLAME_FOUNDATION_API static Get& get;
 
 		struct Release
 		{
 			virtual void operator()(BlueprintPtr blueprint) = 0;
 		};
-		// Reflect static
 		FLAME_FOUNDATION_API static Release& release;
 	};
 
@@ -546,6 +543,7 @@ namespace flame
 		uint						ref = 0;
 
 		virtual ~BlueprintNodeLibrary() {}
+
 		virtual void add_template(const std::string& name, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs = {}, const std::vector<BlueprintSlotDesc>& outputs = {},
 			BlueprintNodeFunction function = nullptr, BlueprintNodeConstructor constructor = nullptr, BlueprintNodeDestructor destructor = nullptr,
@@ -564,7 +562,6 @@ namespace flame
 		{
 			virtual BlueprintNodeLibraryPtr operator()(const std::filesystem::path& filename /* L"standard" for standard */) = 0;
 		};
-		// Reflect static
 		FLAME_FOUNDATION_API static Get& get;
 	};
 
@@ -626,8 +623,15 @@ namespace flame
 		uint											data_updated_frame = 0;
 		float											wait_time = 0.f;
 
+		inline BlueprintAttribute get_variable(uint name)
+		{
+			if (auto it = variables.find(name); it != variables.end())
+				return it->second;
+			return BlueprintAttribute{ nullptr, nullptr };
+		}
+
 		template<class T>
-		inline T get_variable(uint name, T dv = T(0))
+		inline T get_variable_as(uint name, T dv = T(0))
 		{
 			if (auto it = variables.find(name); it != variables.end())
 				return *(T*)it->second.data;
@@ -635,20 +639,20 @@ namespace flame
 		}
 
 		template<class T>
-		inline T get_variable_i(uint idx)
+		inline T get_ith_variable_as(uint idx)
 		{
 			*(T*)variables[idx].data;
 		}
 
 		template<class T>
-		inline void set_variable(uint name, T v)
+		inline void set_variable_as(uint name, T v)
 		{
 			if (auto it = variables.find(name); it != variables.end())
 				*(T*)it->second.data = v;
 		}
 
 		template<class T>
-		inline void set_variable_i(uint idx, T v)
+		inline void set_ith_variable_as(uint idx, T v)
 		{
 			*(T*)variables[idx].data = v;
 		}
@@ -673,8 +677,15 @@ namespace flame
 		uint variable_updated_frame = 0;
 		uint built_frame = 0;
 
+		inline BlueprintAttribute get_variable(uint name)
+		{
+			if (auto it = variables.find(name); it != variables.end())
+				return it->second;
+			return BlueprintAttribute{ nullptr, nullptr };
+		}
+
 		template<class T>
-		inline T get_variable(uint name)
+		inline T get_variable_as(uint name)
 		{
 			if (auto it = variables.find(name); it != variables.end())
 				return *(T*)it->second.data;
@@ -682,7 +693,7 @@ namespace flame
 		}
 
 		template<class T>
-		inline void set_variable(uint name, T v)
+		inline void set_variable_as(uint name, T v)
 		{
 			if (auto it = variables.find(name); it != variables.end())
 				*(T*)it->second.data = v;
@@ -712,14 +723,12 @@ namespace flame
 		{
 			virtual BlueprintInstancePtr operator()(BlueprintPtr blueprint) = 0;
 		};
-		// Reflect static
 		FLAME_FOUNDATION_API static Create& create;
 
 		struct Get
 		{
 			virtual BlueprintInstancePtr operator()(uint name) = 0;
 		};
-		// Reflect static
 		FLAME_FOUNDATION_API static Get& get;
 	};
 
@@ -729,6 +738,7 @@ namespace flame
 		BlueprintExecutingBlock* block;
 	};
 
+	// Reflect ctor dtor
 	struct BlueprintInstanceHolder
 	{
 		BlueprintInstancePtr ptr = nullptr;
@@ -769,21 +779,18 @@ namespace flame
 		{
 			virtual BlueprintDebuggerPtr operator()() = 0;
 		};
-		// Reflect static
 		FLAME_FOUNDATION_API static Create& create;
 
 		struct Current
 		{
 			virtual BlueprintDebuggerPtr operator()() = 0;
 		};
-		// Reflect static
 		FLAME_FOUNDATION_API static Current& current;
 
 		struct SetCurrent
 		{
 			virtual BlueprintDebuggerPtr operator()(BlueprintDebuggerPtr debugger) = 0;
 		};
-		// Reflect static
 		FLAME_FOUNDATION_API static SetCurrent& set_current;
 	};
 }

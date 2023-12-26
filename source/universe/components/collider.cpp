@@ -14,7 +14,7 @@ namespace flame
 		{
 			auto ins = bp_comp->bp_ins;
 			if (radius == -1.f)
-				radius = ins->get_variable<float>("radius"_h) + radius_add;
+				radius = ins->get_variable_as<float>("radius"_h) + radius_add;
 			on_enter_cb = ins->find_group("on_enter"_h);
 			on_exit_cb = ins->find_group("on_exit"_h);
 		}
@@ -31,7 +31,7 @@ namespace flame
 			{
 				auto r = 0.f;
 				if (auto cbp = i.first->get_component<cBpInstanceT>(); cbp && cbp->bp_ins)
-					r = cbp->bp_ins->get_variable<float>("radius"_h);
+					r = cbp->bp_ins->get_variable_as<float>("radius"_h);
 				if (distance(i.second->global_pos(), pos) < r + radius)
 				{
 					if (on_enter_cb)

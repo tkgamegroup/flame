@@ -181,11 +181,11 @@ BlueprintView::BlueprintView(const std::string& name) :
 	}
 
 #if USE_IMGUI_NODE_EDITOR
-	ax::NodeEditor::Config ax_node_editor_config;
-	ax_node_editor_config.UserPointer = this;
-	ax_node_editor_config.SettingsFile = "";
-	ax_node_editor_config.NavigateButtonIndex = 2;
-	ax_node_editor_config.SaveNodeSettings = [](ax::NodeEditor::NodeId node_id, const char* data, size_t size, ax::NodeEditor::SaveReasonFlags reason, void* user_data) {
+	ax::NodeEditor::Config ax_config;
+	ax_config.UserPointer = this;
+	ax_config.SettingsFile = "";
+	ax_config.NavigateButtonIndex = 2;
+	ax_config.SaveNodeSettings = [](ax::NodeEditor::NodeId node_id, const char* data, size_t size, ax::NodeEditor::SaveReasonFlags reason, void* user_data) {
 		auto& view = *(BlueprintView*)user_data;
 		if (frames == view.load_frame)
 			return true;
@@ -207,7 +207,7 @@ BlueprintView::BlueprintView(const std::string& name) :
 		view.unsaved = true;
 		return true;
 	};
-	ax_node_editor = (ax::NodeEditor::Detail::EditorContext*)ax::NodeEditor::CreateEditor(&ax_node_editor_config);
+	ax_editor = (ax::NodeEditor::Detail::EditorContext*)ax::NodeEditor::CreateEditor(&ax_config);
 #endif
 }
 
@@ -233,8 +233,10 @@ BlueprintView::~BlueprintView()
 	}
 	if (blueprint_instance)
 		delete blueprint_instance;
-	if (ax_node_editor)
-		ax::NodeEditor::DestroyEditor((ax::NodeEditor::EditorContext*)ax_node_editor);
+#if USE_IMGUI_NODE_EDITOR
+	if (ax_editor)
+		ax::NodeEditor::DestroyEditor((ax::NodeEditor::EditorContext*)ax_editor);
+#endif
 }
 
 void BlueprintView::copy_nodes(BlueprintGroupPtr g)
@@ -430,9 +432,9 @@ void BlueprintView::navigate_to_node(BlueprintNodePtr n)
 		return;
 	}
 
-	auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
+	auto ax_node = ax_editor->FindNode((ax::NodeEditor::NodeId)n);
 	if (ax_node)
-		ax_node_editor->NavigateTo(ax_node->GetBounds(), true, 0.f);
+		ax_editor->NavigateTo(ax_node->GetBounds(), true, 0.f);
 }
 
 static BlueprintInstanceNode* step(BlueprintInstanceGroup* debugging_group)
@@ -486,8 +488,8 @@ void BlueprintView::step_blueprint(BlueprintInstanceGroup* debugging_group)
 
 		if (next_node)
 		{
-			auto ax_node = ax_node_editor->GetNode((ax::NodeEditor::NodeId)next_node->original);
-			ax_node_editor->NavigateTo(ax_node->GetBounds(), false, 0.f);
+			auto ax_node = ax_editor->GetNode((ax::NodeEditor::NodeId)next_node->original);
+			ax_editor->NavigateTo(ax_node->GetBounds(), false, 0.f);
 		}
 	}
 }
@@ -529,7 +531,7 @@ void BlueprintView::on_draw()
 	}
 	imgui_window = ImGui::GetCurrentWindow();
 
-	ax::NodeEditor::SetCurrentEditor((ax::NodeEditor::EditorContext*)ax_node_editor);
+	ax::NodeEditor::SetCurrentEditor((ax::NodeEditor::EditorContext*)ax_editor);
 
 	auto frame = frames;
 	if (!blueprint)
@@ -563,9 +565,14 @@ void BlueprintView::on_draw()
 					auto entity = *(EntityPtr*)arg.data;
 					if (entity && entity != INVALID_POINTER && entity != (EntityPtr)0xCDCDCDCDCDCDCDCD)
 					{
-						auto node = entity->get_component<cNode>();
-						ret += std::format("\nName: {}\nPos: {}\nParent: {}\n", entity->name,
-							node ? str(node->global_pos()) : "N\\A", entity->parent ? entity->parent->name : "[None]");
+						if (World::instance()->root->has_child_recursively(entity))
+						{
+							auto node = entity->get_component<cNode>();
+							ret += std::format("\nName: {}\nPos: {}\nParent: {}\n", entity->name,
+								node ? str(node->global_pos()) : "N\\A", entity->parent ? entity->parent->name : "[None]");
+						}
+						else
+							ret += "\nInvalid Entitiy\n";
 					}
 				}
 				return ret;
@@ -619,7 +626,7 @@ void BlueprintView::on_draw()
 					group = g.get();
 					group_name = group->name;
 					group_name_hash = group->name_hash;
-					ax_node_editor->ClearSelection();
+					ax_editor->ClearSelection();
 				}
 			}
 			ImGui::EndCombo();
@@ -631,7 +638,7 @@ void BlueprintView::on_draw()
 		{
 			blueprint->alter_group(group_name_hash, group_name);
 			group_name_hash = group->name_hash;
-			ax_node_editor->ClearSelection();
+			ax_editor->ClearSelection();
 			unsaved = true;
 
 			if (blueprint_instance->built_frame < blueprint->dirty_frame)
@@ -653,7 +660,7 @@ void BlueprintView::on_draw()
 				group_name = "";
 				group_name_hash = 0;
 			}
-			ax_node_editor->ClearSelection();
+			ax_editor->ClearSelection();
 			unsaved = true;
 
 			if (blueprint_instance->built_frame < blueprint->dirty_frame)
@@ -674,7 +681,7 @@ void BlueprintView::on_draw()
 			group = blueprint->add_group(name);
 			group_name = group->name;
 			group_name_hash = group->name_hash;
-			ax_node_editor->ClearSelection();
+			ax_editor->ClearSelection();
 			unsaved = true;
 
 			if (blueprint_instance->built_frame < blueprint->dirty_frame)
@@ -2029,7 +2036,7 @@ void BlueprintView::on_draw()
 						}
 					}
 
-					auto ax_node = ax_node_editor->GetNodeBuilder().m_CurrentNode;
+					auto ax_node = ax_editor->GetNodeBuilder().m_CurrentNode;
 					vec2 new_pos = ax_node->m_Bounds.Min;
 					if (n->position != new_pos)
 					{
@@ -2103,7 +2110,7 @@ void BlueprintView::on_draw()
 					if (n->depth > 1)
 					{
 						auto col = color_from_depth(n->depth);
-						auto& parent_rect = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n->parent)->m_Bounds;
+						auto& parent_rect = ax_editor->FindNode((ax::NodeEditor::NodeId)n->parent)->m_Bounds;
 						col.Value.w = 0.3f;
 
 						dl->AddLine(n->position, vec2((parent_rect.Min.x + parent_rect.Max.x) * 0.5f, parent_rect.Max.y), col);
@@ -2139,32 +2146,29 @@ void BlueprintView::on_draw()
 								{
 									if (to_slot->allowed_types.size() == 1 && to_slot->allowed_types.front() != from_slot->type)
 									{
-										if (from_slot->type == TypeInfo::get<float>() ||
-											from_slot->type == TypeInfo::get<int>() ||
-											from_slot->type == TypeInfo::get<uint>())
+										auto from_type = from_slot->type;
+										auto to_type = to_slot->allowed_types.front();
+										if ((from_type == TypeInfo::get<float>() &&
+											(to_type == TypeInfo::get<int>() || to_type == TypeInfo::get<uint>())) ||
+											((from_type == TypeInfo::get<int>() || from_type == TypeInfo::get<uint>()) &&
+											(to_type == TypeInfo::get<float>())))
 										{
-											auto to_type = to_slot->allowed_types.front();
-											if (to_type == TypeInfo::get<float>() ||
-												to_type == TypeInfo::get<int>() ||
-												to_type == TypeInfo::get<uint>())
+											if (ax::NodeEditor::AcceptNewItem())
 											{
-												if (ax::NodeEditor::AcceptNewItem())
+												BlueprintNodeLibrary::NodeTemplate* t = nullptr;
+												if (to_type == TypeInfo::get<float>())
+													t = standard_library->find_node_template("To Float"_h);
+												else if (to_type == TypeInfo::get<int>())
+													t = standard_library->find_node_template("To Int"_h);
+												else if (to_type == TypeInfo::get<uint>())
+													t = standard_library->find_node_template("To Uint"_h);
+												if (t)
 												{
-													BlueprintNodeLibrary::NodeTemplate* t = nullptr;
-													if (to_type == TypeInfo::get<float>())
-														t = standard_library->find_node_template("To Float"_h);
-													else if (to_type == TypeInfo::get<int>())
-														t = standard_library->find_node_template("To Int"_h);
-													else if (to_type == TypeInfo::get<uint>())
-														t = standard_library->find_node_template("To Uint"_h);
-													if (t)
-													{
-														auto convert_node = t->create_node(blueprint, group, to_slot->node->parent);
-														convert_node->position = to_slot->node->position + vec2(-96.f, 0.f);
-														blueprint->add_link(from_slot, convert_node->find_input("V"_h));
-														blueprint->add_link(convert_node->find_output("V"_h), to_slot);
-														unsaved = true;
-													}
+													auto convert_node = t->create_node(blueprint, group, to_slot->node->parent);
+													convert_node->position = to_slot->node->position + vec2(-96.f, 0.f);
+													blueprint->add_link(from_slot, convert_node->find_input("V"_h));
+													blueprint->add_link(convert_node->find_output("V"_h), to_slot);
+													unsaved = true;
 												}
 											}
 										}
@@ -2349,7 +2353,7 @@ void BlueprintView::on_draw()
 											blueprint->remove_node(src_n);
 											context_node = nullptr;
 
-											ax_node_editor->ClearSelection();
+											ax_editor->ClearSelection();
 											unsaved = true;
 										}
 									}
@@ -2378,7 +2382,7 @@ void BlueprintView::on_draw()
 							blueprint->remove_node(src_n);
 							context_node = nullptr;
 
-							ax_node_editor->ClearSelection();
+							ax_editor->ClearSelection();
 							unsaved = true;
 						}
 					}
@@ -2402,7 +2406,7 @@ void BlueprintView::on_draw()
 							blueprint->remove_node(src_n);
 							context_node = nullptr;
 
-							ax_node_editor->ClearSelection();
+							ax_editor->ClearSelection();
 							unsaved = true;
 						}
 					}
@@ -3340,7 +3344,7 @@ void BlueprintView::on_draw()
 							{
 								if (n->is_block)
 								{
-									auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
+									auto ax_node = ax_editor->FindNode((ax::NodeEditor::NodeId)n);
 									ax_node->m_GroupBounds.Max.x -= 10.f;
 									ax_node->m_Bounds.Max.x -= 10.f;
 								}
@@ -3353,7 +3357,7 @@ void BlueprintView::on_draw()
 							{
 								if (n->is_block)
 								{
-									auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
+									auto ax_node = ax_editor->FindNode((ax::NodeEditor::NodeId)n);
 									ax_node->m_GroupBounds.Max.x += 10.f;
 									ax_node->m_Bounds.Max.x += 10.f;
 								}
@@ -3366,7 +3370,7 @@ void BlueprintView::on_draw()
 							{
 								if (n->is_block)
 								{
-									auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
+									auto ax_node = ax_editor->FindNode((ax::NodeEditor::NodeId)n);
 									ax_node->m_GroupBounds.Max.y -= 10.f;
 									ax_node->m_Bounds.Max.y -= 10.f;
 								}
@@ -3379,7 +3383,7 @@ void BlueprintView::on_draw()
 							{
 								if (n->is_block)
 								{
-									auto ax_node = ax_node_editor->FindNode((ax::NodeEditor::NodeId)n);
+									auto ax_node = ax_editor->FindNode((ax::NodeEditor::NodeId)n);
 									ax_node->m_GroupBounds.Max.y += 10.f;
 									ax_node->m_Bounds.Max.y += 10.f;
 								}
@@ -3469,8 +3473,8 @@ BlueprintWindow::BlueprintWindow() :
 				auto view = (BlueprintView*)v.get();
 				if (blueprint == view->blueprint)
 				{
-					auto ax_node = view->ax_node_editor->GetNode((ax::NodeEditor::NodeId)node);
-					view->ax_node_editor->NavigateTo(ax_node->GetBounds(), false, 0.f);
+					auto ax_node = view->ax_editor->GetNode((ax::NodeEditor::NodeId)node);
+					view->ax_editor->NavigateTo(ax_node->GetBounds(), false, 0.f);
 					break;
 				}
 			}

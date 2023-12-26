@@ -58,7 +58,7 @@ namespace flame
 				bp_ins = BlueprintInstance::get(bp->name_hash);
 			else
 				bp_ins = BlueprintInstance::create(bp);
-			bp_ins->set_variable("self"_h, entity);
+			bp_ins->set_variable_as("self"_h, entity);
 		}
 	}
 
