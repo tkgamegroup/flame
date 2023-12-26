@@ -61,7 +61,7 @@ static ImColor color_from_type(TypeInfo* type)
 	return ImColor(color.r, color.g, color.b);
 }
 
-void set_offset_recurisely(BlueprintNodePtr n, const vec2& offset) 
+static void set_offset_recurisely(BlueprintNodePtr n, const vec2& offset)
 {
 	n->position += offset;
 	ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
@@ -153,6 +153,31 @@ static std::vector<BlueprintLinkPtr> get_selected_links()
 		}
 	}
 	return links;
+}
+
+static BlueprintNodePtr add_variable_node_unifily(BlueprintGroupPtr g, uint var_name, uint var_location)
+{
+	for (auto& n : g->nodes)
+	{
+		if (n->depth == 1 && n->name_hash == "Variable"_h)
+		{
+			auto node_var_name = *(uint*)n->inputs[0]->data;
+			auto node_var_location = *(uint*)n->inputs[1]->data;
+			if (var_name == node_var_name && var_location == node_var_location)
+				return n.get();
+		}
+	}
+	auto y = 0.f;
+	for (auto& n : g->nodes)
+	{
+		if (n->depth == 1 && n->name_hash == "Variable"_h)
+			y += 100.f;
+	}
+	auto new_n = g->blueprint->add_variable_node(g, g->nodes.front().get(), var_name, "Variable"_h, var_location);
+	new_n->position = vec2(0.f, y);
+	ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)new_n, new_n->position);
+	return new_n;
+
 }
 
 static BlueprintNodePtr				f9_bound_breakpoint = nullptr;
@@ -1967,6 +1992,7 @@ void BlueprintView::on_draw()
 									ImGui::SameLine();
 									if (ImGui::SmallButton(graphics::font_icon_str("xmark"_h).c_str()))
 									{
+										ax::NodeEditor::ClearSelection();
 										blueprint->remove_link(group->find_link(from_slot, input));
 										unsaved = true;
 									}
@@ -2415,54 +2441,6 @@ void BlueprintView::on_draw()
 							}
 						}
 					};
-					if (context_node && context_node->name_hash == "Variable"_h)
-					{
-						if (ImGui::Selectable("Change To Set"))
-						{
-							auto src_n = context_node;
-
-							uint name = 0;
-							uint location = 0;
-							if (auto i = src_n->find_input("Name"_h); i)
-								name = *(uint*)i->data;
-							if (auto i = src_n->find_input("Location"_h); i)
-								location = *(uint*)i->data;
-
-							auto n = blueprint->add_variable_node(group, src_n->parent, name, "Variable"_h, location);
-							n->position = src_n->position;
-							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
-
-							blueprint->remove_node(src_n);
-							context_node = nullptr;
-
-							ax_editor->ClearSelection();
-							unsaved = true;
-						}
-					}
-					if (context_node && context_node->name_hash == "Set Variable"_h)
-					{
-						if (ImGui::Selectable("Change To Get"))
-						{
-							auto src_n = context_node;
-
-							uint name = 0;
-							uint location = 0;
-							if (auto i = src_n->find_input("Name"_h); i)
-								name = *(uint*)i->data;
-							if (auto i = src_n->find_input("Location"_h); i)
-								location = *(uint*)i->data;
-
-							auto n = blueprint->add_variable_node(group, src_n->parent, name, "Set Variable"_h, location);
-							n->position = src_n->position;
-							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
-
-							blueprint->remove_node(src_n);
-							context_node = nullptr;
-
-							ax_editor->ClearSelection();
-							unsaved = true;
-						}
-					}
 					if (context_node && context_node->name.starts_with("Format"))
 					{
 						if (ImGui::BeginMenu("Change To.."))
@@ -2713,9 +2691,15 @@ void BlueprintView::on_draw()
 							if (show_node_template(name, {}, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = {type}} }, slot_name))
 							{
 								actions.emplace_back("Get", [&, slot_name]() {
-									auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Variable"_h, location_name);
-									n->position = open_popup_pos;
-									ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+									BlueprintNodePtr n;
+									if (hide_var_links)
+										n = add_variable_node_unifily(group, name_hash, location_name);
+									else
+									{
+										n = blueprint->add_variable_node(group, new_node_block, name_hash, "Variable"_h, location_name);
+										n->position = open_popup_pos;
+										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+									}
 
 									if (new_node_link_slot)
 										blueprint->add_link(n->find_output(slot_name), new_node_link_slot);

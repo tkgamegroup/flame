@@ -1989,23 +1989,14 @@ namespace flame
 		dirty_frame = frame;
 	}
 
-	static uint desc_from_variable_node(BlueprintNodePtr n, uint* out_name, uint* out_location, uint* out_attribute, uint node_type = 0)
+	static uint get_variable_node_desc(BlueprintNodePtr nn, uint* out_name, uint* out_location, uint* out_attribute, uint node_type = 0)
 	{
+		auto n = (BlueprintNode*)nn;
 		if (n)
 			node_type = n->name_hash;
 		switch (node_type)
 		{
 		case "Variable"_h:
-			if (n)
-			{
-				if (out_name)
-					*out_name = *(uint*)n->inputs[0]->data;
-				if (out_location)
-					*out_location = *(uint*)n->inputs[1]->data;
-				if (out_attribute)
-					*out_attribute = 0;
-			}
-			return 2;
 		case "Set Variable"_h:
 			if (n)
 			{
@@ -2018,16 +2009,6 @@ namespace flame
 			}
 			return 2;
 		case "Get Attribute"_h:
-			if (n)
-			{
-				if (out_name)
-					*out_name = *(uint*)n->inputs[0]->data;
-				if (out_location)
-					*out_location = *(uint*)n->inputs[1]->data;
-				if (out_attribute)
-					*out_attribute = *(uint*)n->inputs[2]->data;
-			}
-			return 3;
 		case "Set Attribute"_h:
 			if (n)
 			{
@@ -2040,16 +2021,6 @@ namespace flame
 			}
 			return 3;
 		case "Array Size"_h:
-			if (n)
-			{
-				if (out_name)
-					*out_name = *(uint*)n->inputs[0]->data;
-				if (out_location)
-					*out_location = *(uint*)n->inputs[1]->data;
-				if (out_attribute)
-					*out_attribute = 0;
-			}
-			return 2;
 		case "Array Clear"_h:
 			if (n)
 			{
@@ -2062,16 +2033,6 @@ namespace flame
 			}
 			return 2;
 		case "Array Get Item"_h:
-			if (n)
-			{
-				if (out_name)
-					*out_name = *(uint*)n->inputs[0]->data;
-				if (out_location)
-					*out_location = *(uint*)n->inputs[1]->data;
-				if (out_attribute)
-					*out_attribute = 0;
-			}
-			return 2;
 		case "Array Set Item"_h:
 			if (n)
 			{
@@ -2084,16 +2045,6 @@ namespace flame
 			}
 			return 2;
 		case "Array Get Item Attribute"_h:
-			if (n)
-			{
-				if (out_name)
-					*out_name = *(uint*)n->inputs[0]->data;
-				if (out_location)
-					*out_location = *(uint*)n->inputs[1]->data;
-				if (out_attribute)
-					*out_attribute = *(uint*)n->inputs[2]->data;
-			}
-			return 3;
 		case "Array Set Item Attribute"_h:
 			if (n)
 			{
@@ -2106,16 +2057,6 @@ namespace flame
 			}
 			return 3;
 		case "Array Add Item"_h:
-			if (n)
-			{
-				if (out_name)
-					*out_name = *(uint*)n->inputs[0]->data;
-				if (out_location)
-					*out_location = *(uint*)n->inputs[1]->data;
-				if (out_attribute)
-					*out_attribute = 0;
-			}
-			return 2;
 		case "Array Emplace Item"_h:
 			if (n)
 			{
@@ -2172,7 +2113,7 @@ namespace flame
 						*(uint*)n->inputs[1]->data == old_location)
 					{
 						uint var_name, var_location, var_attribute;
-						auto desc_n = desc_from_variable_node(n, &var_name, &var_location, &var_attribute);
+						auto desc_n = get_variable_node_desc(n, &var_name, &var_location, &var_attribute);
 
 						struct StagingValue
 						{
@@ -3190,7 +3131,7 @@ namespace flame
 					else if (blueprint_is_variable_node(name_hash))
 					{
 						std::vector<pugi::xml_node> other_inputs;
-						auto desc_n = desc_from_variable_node(nullptr, nullptr, nullptr, nullptr, name_hash);
+						auto desc_n = get_variable_node_desc(nullptr, nullptr, nullptr, nullptr, name_hash);
 						uint name = 0;
 						uint location_name = 0;
 						uint attribute_name = 0;
@@ -3801,7 +3742,7 @@ namespace flame
 				if (n)
 				{
 					uint var_name, var_location, var_attribute;
-					desc_from_variable_node(n, &var_name, &var_location, &var_attribute);
+					get_variable_node_desc(n, &var_name, &var_location, &var_attribute);
 
 					if (n->name_hash == "Variable"_h)
 					{
