@@ -21,6 +21,7 @@ struct BlueprintView : View
 	BlueprintGroupPtr last_group = nullptr;
 	uint last_block = 0;
 	bool show_misc = false;
+	bool hide_var_links = true;
 	bool unsaved = false;
 
 	BlueprintView();

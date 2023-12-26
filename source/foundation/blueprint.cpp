@@ -136,6 +136,11 @@ namespace flame
 		return !linked_slots.empty();
 	}
 
+	uint BlueprintSlotPrivate::get_linked_count() const
+	{
+		return linked_slots.size();
+	}
+
 	BlueprintSlotPtr BlueprintSlotPrivate::get_linked(uint idx) const
 	{
 		if (idx < linked_slots.size())
@@ -2166,9 +2171,7 @@ namespace flame
 					if ((old_name  == 0 || *(uint*)n->inputs[0]->data == old_name) &&
 						*(uint*)n->inputs[1]->data == old_location)
 					{
-						uint var_name;
-						uint var_location;
-						uint var_attribute;
+						uint var_name, var_location, var_attribute;
 						auto desc_n = desc_from_variable_node(n, &var_name, &var_location, &var_attribute);
 
 						struct StagingValue
@@ -3797,9 +3800,7 @@ namespace flame
 				auto n = node.original;
 				if (n)
 				{
-					uint var_name;
-					uint var_location;
-					uint var_attribute;
+					uint var_name, var_location, var_attribute;
 					desc_from_variable_node(n, &var_name, &var_location, &var_attribute);
 
 					if (n->name_hash == "Variable"_h)

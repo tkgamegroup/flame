@@ -8,6 +8,7 @@ namespace flame
 		
 		~BlueprintSlotPrivate();
 		bool is_linked() const override;
+		uint get_linked_count() const override;
 		BlueprintSlotPtr get_linked(uint idx) const override;
 	};
 

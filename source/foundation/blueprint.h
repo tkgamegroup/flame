@@ -152,6 +152,7 @@ namespace flame
 		uint					data_changed_frame = 0;
 
 		virtual bool is_linked() const = 0;
+		virtual uint get_linked_count() const = 0;
 		virtual BlueprintSlotPtr get_linked(uint idx) const = 0;
 	};
 

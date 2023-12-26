@@ -555,6 +555,9 @@ void BlueprintView::on_draw()
 		ImGui::SameLine();
 		if (ImGui::Button("Zoom To Selection"))
 			ax::NodeEditor::NavigateToSelection(true, 0.f);
+		ImGui::SameLine();
+		if (ImGui::ToolButton("Hide Variable Links"))
+			hide_var_links = !hide_var_links;
 
 		auto get_value_str = [](const BlueprintAttribute& arg)->std::string {
 			if (arg.type->tag == TagD || is_pointer(arg.type->tag))
@@ -1703,6 +1706,11 @@ void BlueprintView::on_draw()
 					auto n = nn.get();
 					if (n == group->nodes.front().get()) // skip root block
 						continue;
+					if (hide_var_links)
+					{
+						if (n->name_hash == "Variable"_h)
+							continue;
+					}
 
 					auto instance_node = instance_group.node_map[n->object_id];
 
@@ -1889,7 +1897,7 @@ void BlueprintView::on_draw()
 									blueprint->set_input_type(slot0, type1);
 									type1->unserialize(value1, slot0->data);
 								}
-								};
+							};
 							if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Z))
 							{
 								if (i > 0)
@@ -1897,7 +1905,10 @@ void BlueprintView::on_draw()
 									auto prev_input = n->inputs[i - 1].get();
 									if (blueprint_allow_type(input->allowed_types, prev_input->type) &&
 										blueprint_allow_type(prev_input->allowed_types, input->type))
+									{
 										swap_inputs(input, prev_input);
+										unsaved = true;
+									}
 								}
 							}
 							if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_X))
@@ -1907,7 +1918,10 @@ void BlueprintView::on_draw()
 									auto next_input = n->inputs[i + 1].get();
 									if (blueprint_allow_type(input->allowed_types, next_input->type) &&
 										blueprint_allow_type(next_input->allowed_types, input->type))
+									{
 										swap_inputs(input, next_input);
+										unsaved = true;
+									}
 								}
 							}
 						}
@@ -1935,6 +1949,31 @@ void BlueprintView::on_draw()
 							ImGui::PopID();
 							if (debugging_group)
 								ImGui::EndDisabled();
+						}
+						else
+						{
+							if (hide_var_links)
+							{
+								auto from_slot = input->get_linked(0);
+								if (from_slot->node->name_hash == "Variable"_h)
+								{
+									ImGui::PushID(input->object_id);
+									ImGui::Indent();
+									auto name = from_slot->node->display_name;
+									ImGui::SetNextItemWidth(50.f);
+									ImGui::InputText("", &name, ImGuiInputTextFlags_ReadOnly);
+									if (ImGui::IsItemHovered())
+										tooltip = std::format("Variable: {} ({})", name, ti_str(from_slot->type));
+									ImGui::SameLine();
+									if (ImGui::SmallButton(graphics::font_icon_str("xmark"_h).c_str()))
+									{
+										blueprint->remove_link(group->find_link(from_slot, input));
+										unsaved = true;
+									}
+									ImGui::Unindent();
+									ImGui::PopID();
+								}
+							}
 						}
 					}
 					ImGui::EndGroup();
@@ -2103,17 +2142,31 @@ void BlueprintView::on_draw()
 				}
 
 				for (auto& l : group->links)
+				{
+					if (hide_var_links)
+					{
+						if (l->from_slot->node->name_hash == "Variable"_h)
+							continue;
+					}
 					ax::NodeEditor::Link((uint64)l.get(), (uint64)l->from_slot, (uint64)l->to_slot);
+				}
 
 				for (auto n : get_selected_nodes())
 				{
 					if (n->depth > 1)
 					{
 						auto col = color_from_depth(n->depth);
-						auto& parent_rect = ax_editor->FindNode((ax::NodeEditor::NodeId)n->parent)->m_Bounds;
 						col.Value.w = 0.3f;
 
+						auto& parent_rect = ax_editor->FindNode((ax::NodeEditor::NodeId)n->parent)->m_Bounds;
 						dl->AddLine(n->position, vec2((parent_rect.Min.x + parent_rect.Max.x) * 0.5f, parent_rect.Max.y), col);
+
+						if (!n->children.empty())
+						{
+							auto& self_rect = ax_editor->FindNode((ax::NodeEditor::NodeId)n)->m_Bounds;
+							for (auto c : n->children)
+								dl->AddLine(c->position, vec2((self_rect.Min.x + self_rect.Max.x) * 0.5f, self_rect.Min.y), col);
+						}
 					}
 				}
 

@@ -956,7 +956,101 @@ void App::on_gui()
 
 			ImGui::EndMenu();
 		}
-		ImGui::Separator();
+		if (ImGui::BeginMenu("Blueprint"))
+		{
+			if (ImGui::MenuItem("Unify Variable Nodes"))
+			{
+				for (auto& it : std::filesystem::recursive_directory_iterator(Path::get(L"assets")))
+				{
+					if (it.is_regular_file())
+					{
+						auto ext = it.path().extension();
+						if (ext == L".bp")
+						{
+							auto changed = false;
+							auto bp = Blueprint::get(it.path());
+							for (auto& g : bp->groups)
+							{
+								union Key
+								{
+									uint64 u64;
+									uint32 u32[2];
+								};
+								std::map<uint64, std::vector<BlueprintNodePtr>> var_nodes;
+
+								for (auto& n : g->nodes)
+								{
+									if (n->name_hash == "Variable"_h)
+									{
+										Key key;
+										uint var_name, var_location;
+										key.u32[0] = *(uint*)n->inputs[0]->data;
+										key.u32[1] = *(uint*)n->inputs[1]->data;
+										var_nodes[key.u64].push_back(n.get());
+									}
+								}
+
+								auto y = 0.f;
+								for (auto& kv : var_nodes)
+								{
+									Key key;
+									key.u64 = kv.first;
+
+									if (kv.second.front()->depth > 1)
+									{
+										// insert a new top node
+										auto new_n = bp->add_variable_node(g.get(), g->nodes.front().get(), key.u32[0], "Variable"_h, key.u32[1]);
+										kv.second.insert(kv.second.begin(), new_n);
+										changed = true;
+									}
+									if (kv.second.front()->position != vec2(0.f, y))
+									{
+										kv.second.front()->position = vec2(0.f, y);
+										changed = true;
+									}
+									if (kv.second.size() > 1)
+									{
+										auto from_slot = kv.second.front()->outputs[0].get();
+
+										for (auto i = 1; i < kv.second.size(); i++)
+										{
+											std::vector<BlueprintSlotPtr> staging_outputs;
+											auto n = kv.second[i];
+											auto output = n->outputs[0].get();
+											staging_outputs.resize(output->get_linked_count());
+											for (auto j = 0; j < staging_outputs.size(); j++)
+												staging_outputs[j] = output->get_linked(j);
+											bp->remove_node(n);
+											for (auto& s : staging_outputs)
+												bp->add_link(from_slot, s);
+										}
+										changed = true;
+									}
+									y += 100.f;
+								}
+							}
+							if (changed)
+							{
+								auto is_editing = false;
+								for (auto& v : blueprint_window.views)
+								{
+									auto bv = (BlueprintView*)v.get();
+									if (bv->blueprint == bp)
+									{
+										bv->unsaved = true;
+										is_editing = true;
+									}
+								}
+								if (!is_editing)
+									bp->save();
+							}
+							Blueprint::release(bp);
+						}
+					}
+				}
+			}
+			ImGui::EndMenu();
+		}
 		if (ImGui::MenuItem("Preferences"))
 		{
 			struct PreferencesDialog
@@ -982,7 +1076,7 @@ void App::on_gui()
 					ImGui::End();
 				}
 				return preferences_dialog.open;
-				});
+			});
 		}
 		ImGui::EndMenu();
 	}
@@ -1323,7 +1417,7 @@ void App::open_project(const std::filesystem::path& path)
 	project_static_path.make_preferred();
 	if (std::filesystem::exists(project_static_path))
 	{
-		for (auto it : std::filesystem::recursive_directory_iterator(project_static_path))
+		for (auto& it : std::filesystem::recursive_directory_iterator(project_static_path))
 		{
 			if (it.is_regular_file())
 			{
