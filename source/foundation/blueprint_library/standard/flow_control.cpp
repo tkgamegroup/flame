@@ -5,7 +5,7 @@ namespace flame
 {
 	void add_flow_control_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Join Flow", "",
+		library->add_template("Join Flow", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -28,7 +28,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("If", "",
+		library->add_template("If", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Condition",
@@ -56,7 +56,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("If True", "",
+		library->add_template("If True", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Condition",
@@ -76,7 +76,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("If False", "",
+		library->add_template("If False", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Condition",
@@ -96,7 +96,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("If Less", "",
+		library->add_template("If Less", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -120,7 +120,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("If Greater", "",
+		library->add_template("If Greater", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -144,7 +144,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("If Equal", "",
+		library->add_template("If Equal", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -168,7 +168,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("If Not Equal", "",
+		library->add_template("If Not Equal", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -192,7 +192,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("If Less Or Equal", "",
+		library->add_template("If Less Or Equal", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -216,7 +216,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("If Greater Or Equal", "",
+		library->add_template("If Greater Or Equal", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -240,7 +240,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Loop", "",
+		library->add_template("Loop", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Times",
@@ -256,7 +256,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Loop Index", "",
+		library->add_template("Loop Index", "", BlueprintNodeFlagNone,
 			{
 			},
 			{
@@ -270,7 +270,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Foreach", "",
+		library->add_template("Foreach", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Vector",
@@ -293,7 +293,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Foreach File", "",
+		library->add_template("Foreach File", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Folder",
@@ -326,7 +326,7 @@ namespace flame
 		);
 
 #define LOOP_VAR_TEMPLATE(TYPE, DV) \
-		library->add_template("Loop Var " #TYPE, "",\
+		library->add_template("Loop Var " #TYPE, "", BlueprintNodeFlagNone,\
 			{\
 			},\
 			{\
@@ -396,7 +396,7 @@ namespace flame
 #undef LOOP_VAR_TEMPLATE
 
 #define RETURN_TEMPLATE(TYPE) \
-		library->add_template("Return " #TYPE, "",\
+		library->add_template("Return " #TYPE, "", BlueprintNodeFlagNone,\
 			{\
 				{\
 					.name = "V",\
@@ -465,7 +465,7 @@ namespace flame
 
 #undef RETURN_TEMPLATE
 
-		library->add_template("Break", "",
+		library->add_template("Break", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Levels",
@@ -499,7 +499,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Semaphore", "",
+		library->add_template("Semaphore", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Semaphore",
@@ -543,7 +543,7 @@ namespace flame
 				.name = "Else Branch",\
 				.allowed_types = { TypeInfo::get<BlueprintSignal>() }\
 			});\
-			library->add_template(std::format("Branch {}", N), "",\
+			library->add_template(std::format("Branch {}", N), "", BlueprintNodeFlagNone,\
 				inputs,\
 				outputs,\
 				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
@@ -598,7 +598,7 @@ namespace flame
 				.name = "Else Branch",\
 				.allowed_types = { TypeInfo::get<BlueprintSignal>() }\
 			});\
-			library->add_template(std::format("Select Branch {}", N), "",\
+			library->add_template(std::format("Select Branch {}", N), "", BlueprintNodeFlagNone,\
 				inputs,\
 				outputs,\
 				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
@@ -654,7 +654,7 @@ namespace flame
 				.name = "Else Branch",\
 				.allowed_types = { TypeInfo::get<BlueprintSignal>() }\
 			});\
-			library->add_template(std::format("Ramp Branch {}", N), "",\
+			library->add_template(std::format("Ramp Branch {}", N), "", BlueprintNodeFlagNone,\
 				inputs,\
 				outputs,\
 				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
@@ -684,7 +684,7 @@ namespace flame
 
 #undef RAMP_BRANCH_TEMPLATE
 
-		library->add_template("Timer", "",
+		library->add_template("Timer", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Interval",
@@ -716,7 +716,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Co Wait", "",
+		library->add_template("Co Wait", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Time",
@@ -730,7 +730,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Co Loop", "",
+		library->add_template("Co Loop", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Time",

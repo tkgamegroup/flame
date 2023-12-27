@@ -10,7 +10,7 @@ namespace flame
 {
 	void add_procedural_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Instance Control Mesh", "",
+		library->add_template("Instance Control Mesh", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",

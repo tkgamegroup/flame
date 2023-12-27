@@ -5,7 +5,7 @@ namespace flame
 {
 	void add_math_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Scalar", "",
+		library->add_template("Scalar", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -35,12 +35,17 @@ namespace flame
 			},
 			nullptr,
 			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				*output_types = input_types[0];
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeInputTypesChanged)
+				{
+					info.output_types[0] = info.input_types[0];
+					return true;
+				}
+				return false;
 			}
 		);
 
-		library->add_template("Vec2", "",
+		library->add_template("Vec2", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "X",
@@ -91,26 +96,31 @@ namespace flame
 			},
 			nullptr,
 			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				auto ti0 = (TypeInfo_Data*)input_types[0];
-				auto ti1 = (TypeInfo_Data*)input_types[1];
-				auto data_type = DataFloat;
-				auto is_signed = ti0->is_signed || ti1->is_signed;
-				if (ti0->data_type == DataInt && ti1->data_type == DataInt)
-					data_type = DataInt;
-				switch (data_type)
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeInputTypesChanged)
 				{
-				case DataFloat:
-					*output_types = TypeInfo::get<vec2>();
-					break;
-				case DataInt:
-					*output_types = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>();
-					break;
+					auto ti0 = (TypeInfo_Data*)info.input_types[0];
+					auto ti1 = (TypeInfo_Data*)info.input_types[1];
+					auto data_type = DataFloat;
+					auto is_signed = ti0->is_signed || ti1->is_signed;
+					if (ti0->data_type == DataInt && ti1->data_type == DataInt)
+						data_type = DataInt;
+					switch (data_type)
+					{
+					case DataFloat:
+						info.output_types[0] = TypeInfo::get<vec2>();
+						break;
+					case DataInt:
+						info.output_types[0] = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>();
+						break;
+					}
+					return true;
 				}
+				return false;
 			}
 		);
 		
-		library->add_template("Vec3", "",
+		library->add_template("Vec3", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "X",
@@ -169,27 +179,32 @@ namespace flame
 			},
 			nullptr,
 			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				auto ti0 = (TypeInfo_Data*)input_types[0];
-				auto ti1 = (TypeInfo_Data*)input_types[1];
-				auto ti2 = (TypeInfo_Data*)input_types[2];
-				auto data_type = DataFloat;
-				auto is_signed = ti0->is_signed || ti1->is_signed || ti2->is_signed;
-				if (ti0->data_type == DataInt && ti1->data_type == DataInt && ti2->data_type == DataInt)
-					data_type = DataInt;
-				switch (data_type)
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeInputTypesChanged)
 				{
-				case DataFloat:
-					*output_types = TypeInfo::get<vec3>();
-					break;
-				case DataInt:
-					*output_types = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>();
-					break;
+					auto ti0 = (TypeInfo_Data*)info.input_types[0];
+					auto ti1 = (TypeInfo_Data*)info.input_types[1];
+					auto ti2 = (TypeInfo_Data*)info.input_types[2];
+					auto data_type = DataFloat;
+					auto is_signed = ti0->is_signed || ti1->is_signed || ti2->is_signed;
+					if (ti0->data_type == DataInt && ti1->data_type == DataInt && ti2->data_type == DataInt)
+						data_type = DataInt;
+					switch (data_type)
+					{
+					case DataFloat:
+						info.output_types[0] = TypeInfo::get<vec3>();
+						break;
+					case DataInt:
+						info.output_types[0] = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>();
+						break;
+					}
+					return true;
 				}
+				return false;
 			}
 		);
 		
-		library->add_template("Vec4", "",
+		library->add_template("Vec4", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "X",
@@ -257,28 +272,33 @@ namespace flame
 			},
 			nullptr,
 			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				auto ti0 = (TypeInfo_Data*)input_types[0];
-				auto ti1 = (TypeInfo_Data*)input_types[1];
-				auto ti2 = (TypeInfo_Data*)input_types[2];
-				auto ti3 = (TypeInfo_Data*)input_types[3];
-				auto data_type = DataFloat;
-				auto is_signed = ti0->is_signed || ti1->is_signed || ti2->is_signed || ti3->is_signed;
-				if (ti0->data_type == DataInt && ti1->data_type == DataInt && ti2->data_type == DataInt && ti3->data_type == DataInt)
-					data_type = DataInt;
-				switch (data_type)
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeInputTypesChanged)
 				{
-				case DataFloat:
-					*output_types = TypeInfo::get<vec4>();
-					break;
-				case DataInt:
-					*output_types = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>();
-					break;
+					auto ti0 = (TypeInfo_Data*)info.input_types[0];
+					auto ti1 = (TypeInfo_Data*)info.input_types[1];
+					auto ti2 = (TypeInfo_Data*)info.input_types[2];
+					auto ti3 = (TypeInfo_Data*)info.input_types[3];
+					auto data_type = DataFloat;
+					auto is_signed = ti0->is_signed || ti1->is_signed || ti2->is_signed || ti3->is_signed;
+					if (ti0->data_type == DataInt && ti1->data_type == DataInt && ti2->data_type == DataInt && ti3->data_type == DataInt)
+						data_type = DataInt;
+					switch (data_type)
+					{
+					case DataFloat:
+						info.output_types[0] = TypeInfo::get<vec4>();
+						break;
+					case DataInt:
+						info.output_types[0] = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>();
+						break;
+					}
+					return true;
 				}
+				return false;
 			}
 		);
 		
-		library->add_template("Decompose", "",
+		library->add_template("Decompose", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -331,23 +351,28 @@ namespace flame
 			},
 			nullptr,
 			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				auto ti = (TypeInfo_Data*)input_types[0];
-				switch (ti->data_type)
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeInputTypesChanged)
 				{
-				case DataFloat:
-					for (auto i = 0; i < 4; i++)
-						output_types[i] = i < ti->vec_size ? TypeInfo::get<float>() : nullptr;
-					break;
-				case DataInt:
-					for (auto i = 0; i < 4; i++)
-						output_types[i] = i < ti->vec_size ? (ti->is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>()) : nullptr;
-					break;
+					auto ti = (TypeInfo_Data*)info.input_types[0];
+					switch (ti->data_type)
+					{
+					case DataFloat:
+						for (auto i = 0; i < 4; i++)
+							info.output_types[i] = i < ti->vec_size ? TypeInfo::get<float>() : nullptr;
+						break;
+					case DataInt:
+						for (auto i = 0; i < 4; i++)
+							info.output_types[i] = i < ti->vec_size ? (ti->is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>()) : nullptr;
+						break;
+					}
+					return true;
 				}
+				return false;
 			}
 		);
 
-		library->add_template("HSV Color", "",
+		library->add_template("HSV Color", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "H",
@@ -384,7 +409,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Color To Vec4", "",
+		library->add_template("Color To Vec4", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -407,47 +432,54 @@ namespace flame
 			TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
 		};
 
-		auto binary_input_type_changed_function = [](TypeInfo** input_types, TypeInfo** output_types) {
-			auto ti0 = (TypeInfo_Data*)input_types[0];
-			auto ti1 = (TypeInfo_Data*)input_types[1];
-			if (ti0->vec_size != ti1->vec_size)
+		auto binary_input_types_changed_function = [](BlueprintNodeStructureChangeInfo& info) {
+			if (info.reason == BlueprintNodeInputTypesChanged)
 			{
-				if (ti0->vec_size != 1 && ti1->vec_size != 1)
+				auto ti0 = (TypeInfo_Data*)info.input_types[0];
+				auto ti1 = (TypeInfo_Data*)info.input_types[1];
+				if (ti0->vec_size != ti1->vec_size)
 				{
-					*output_types = nullptr;
-					return;
+					if (ti0->vec_size != 1 && ti1->vec_size != 1)
+					{
+						info.output_types[0] = nullptr;
+						return true;
+					}
 				}
+
+				auto vec_size = max(ti0->vec_size, ti1->vec_size);
+				if (ti0->data_type == DataInt && ti1->data_type == DataInt)
+				{
+					auto is_signed = ti0->is_signed || ti1->is_signed;
+					switch (vec_size)
+					{
+					case 1: info.output_types[0] = is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>(); break;
+					case 2: info.output_types[0] = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>(); break;
+					case 3: info.output_types[0] = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>(); break;
+					case 4: info.output_types[0] = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>(); break;
+					}
+				}
+				else
+				{
+					switch (vec_size)
+					{
+					case 1: info.output_types[0] = TypeInfo::get<float>(); break;
+					case 2: info.output_types[0] = TypeInfo::get<vec2>(); break;
+					case 3: info.output_types[0] = TypeInfo::get<vec3>(); break;
+					case 4: info.output_types[0] = TypeInfo::get<vec4>(); break;
+					}
+				}
+
+				return true;
 			}
 
-			auto vec_size = max(ti0->vec_size, ti1->vec_size);
-			if (ti0->data_type == DataInt && ti1->data_type == DataInt)
-			{
-				auto is_signed = ti0->is_signed || ti1->is_signed;
-				switch (vec_size)
-				{
-				case 1: *output_types = is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>(); break;
-				case 2: *output_types = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>(); break;
-				case 3: *output_types = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>(); break;
-				case 4: *output_types = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>(); break;
-				}
-			}
-			else
-			{
-				switch (vec_size)
-				{
-				case 1: *output_types = TypeInfo::get<float>(); break;
-				case 2: *output_types = TypeInfo::get<vec2>(); break;
-				case 3: *output_types = TypeInfo::get<vec3>(); break;
-				case 4: *output_types = TypeInfo::get<vec4>(); break;
-				}
-			}
+			return false;
 		};
 
 #define OP_OPERATOR(a, b, op_name) a op_name b
 #define OP_FUNCTION(a, b, op_name) op_name(a, b)
 
 #define BINARY_OPERATION_TEMPLATE(node_name, op_name, op)\
-		library->add_template(node_name, #op_name,\
+		library->add_template(node_name, #op_name, BlueprintNodeFlagNone,\
 			{\
 				{\
 					.name = "A",\
@@ -630,7 +662,7 @@ namespace flame
 			},\
 			nullptr,\
 			nullptr,\
-			binary_input_type_changed_function\
+			binary_input_types_changed_function\
 		);
 
 	BINARY_OPERATION_TEMPLATE("Add", +, OP_OPERATOR);
@@ -638,7 +670,7 @@ namespace flame
 	BINARY_OPERATION_TEMPLATE("Multiply", *, OP_OPERATOR);
 	BINARY_OPERATION_TEMPLATE("Divide", /, OP_OPERATOR);
 		
-		library->add_template("Integer Divide", "\\",
+		library->add_template("Integer Divide", "\\", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -799,32 +831,38 @@ namespace flame
 			},
 			nullptr,
 			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				auto ti0 = (TypeInfo_Data*)input_types[0];
-				auto ti1 = (TypeInfo_Data*)input_types[1];
-				if (ti0->data_type != DataInt || ti1->data_type != DataInt)
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeInputTypesChanged)
 				{
-					output_types[0] = output_types[1] = nullptr;
-					return;
-				}
-				if (ti0->vec_size != ti1->vec_size)
-				{
-					if (ti1->vec_size != 1)
+					auto ti0 = (TypeInfo_Data*)info.input_types[0];
+					auto ti1 = (TypeInfo_Data*)info.input_types[1];
+					if (ti0->data_type != DataInt || ti1->data_type != DataInt)
 					{
-						output_types[0] = output_types[1] = nullptr;
-						return;
+						info.output_types[0] = info.output_types[1] = nullptr;
+						return true;
 					}
-				}
+					if (ti0->vec_size != ti1->vec_size)
+					{
+						if (ti1->vec_size != 1)
+						{
+							info.output_types[0] = info.output_types[1] = nullptr;
+							return true;
+						}
+					}
 
-				auto vec_size = max(ti0->vec_size, ti1->vec_size);
-				auto is_signed = ti0->is_signed || ti1->is_signed;
-				switch (vec_size)
-				{
-				case 1: output_types[0] = output_types[1] = is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>(); break;
-				case 2: output_types[0] = output_types[1] = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>(); break;
-				case 3: output_types[0] = output_types[1] = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>(); break;
-				case 4: output_types[0] = output_types[1] = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>(); break;
+					auto vec_size = max(ti0->vec_size, ti1->vec_size);
+					auto is_signed = ti0->is_signed || ti1->is_signed;
+					switch (vec_size)
+					{
+					case 1: info.output_types[0] = info.output_types[1] = is_signed ? TypeInfo::get<int>() : TypeInfo::get<uint>(); break;
+					case 2: info.output_types[0] = info.output_types[1] = is_signed ? TypeInfo::get<ivec2>() : TypeInfo::get<uvec2>(); break;
+					case 3: info.output_types[0] = info.output_types[1] = is_signed ? TypeInfo::get<ivec3>() : TypeInfo::get<uvec3>(); break;
+					case 4: info.output_types[0] = info.output_types[1] = is_signed ? TypeInfo::get<ivec4>() : TypeInfo::get<uvec4>(); break;
+					}
+
+					return true;
 				}
+				return false;
 			}
 		);
 
@@ -833,7 +871,7 @@ namespace flame
 
 #undef BINARY_OPERATION_TEMPLATE
 		
-		library->add_template("Floor", "",
+		library->add_template("Floor", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -853,12 +891,17 @@ namespace flame
 			},
 			nullptr,
 			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				*output_types = input_types[0];
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeInputTypesChanged)
+				{
+					info.output_types[0] = info.input_types[0];
+					return true;
+				}
+				return false;
 			}
 		);
 
-		library->add_template("Ceil", "",
+		library->add_template("Ceil", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -878,12 +921,17 @@ namespace flame
 			},
 			nullptr,
 			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				*output_types = input_types[0];
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeInputTypesChanged)
+				{
+					info.output_types[0] = info.input_types[0];
+					return true;
+				}
+				return false;
 			}
 		);
 
-		library->add_template("Pow", "",
+		library->add_template("Pow", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -908,7 +956,7 @@ namespace flame
 			nullptr
 		);
 
-		library->add_template("Sign", "",
+		library->add_template("Sign", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -928,12 +976,17 @@ namespace flame
 			},
 			nullptr,
 			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				*output_types = input_types[0];
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeInputTypesChanged)
+				{
+					info.output_types[0] = info.input_types[0];
+					return true;
+				}
+				return false;
 			}
 		);
 
-		library->add_template("Abs", "",
+		library->add_template("Abs", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -953,12 +1006,17 @@ namespace flame
 			},
 			nullptr,
 			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				*output_types = input_types[0];
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeInputTypesChanged)
+				{
+					info.output_types[0] = info.input_types[0];
+					return true;
+				}
+				return false;
 			}
 		);
 
-		library->add_template("Length", "",
+		library->add_template("Length", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -976,7 +1034,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Normalize", "",
+		library->add_template("Normalize", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -994,7 +1052,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Distance", "",
+		library->add_template("Distance", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -1016,7 +1074,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Bezier", "",
+		library->add_template("Bezier", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Ctl0",
@@ -1058,7 +1116,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Random", "",
+		library->add_template("Random", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Seed",
@@ -1089,7 +1147,7 @@ namespace flame
 			nullptr
 		);
 
-		library->add_template("RandomInt", "",
+		library->add_template("RandomInt", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Seed",
@@ -1118,7 +1176,7 @@ namespace flame
 			nullptr
 		);
 
-		library->add_template("Circle Position", "",
+		library->add_template("Circle Position", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Radius",
@@ -1148,7 +1206,7 @@ namespace flame
 			nullptr
 		);
 
-		library->add_template("Circle Random", "",
+		library->add_template("Circle Random", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Seed",

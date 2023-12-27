@@ -38,7 +38,7 @@ namespace flame
 {
 	void add_string_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("String Length", "",
+		library->add_template("String Length", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "String",
@@ -65,7 +65,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("String Empty", "",
+		library->add_template("String Empty", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "String",
@@ -92,7 +92,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("String Equal", "",
+		library->add_template("String Equal", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -114,7 +114,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("To String", "",
+		library->add_template("To String", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -136,7 +136,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("String To Int", "",
+		library->add_template("String To Int", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "String",
@@ -154,7 +154,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("String Hash", "",
+		library->add_template("String Hash", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "String",
@@ -172,7 +172,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("To WString", "",
+		library->add_template("To WString", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "In",
@@ -190,7 +190,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("To Path", "",
+		library->add_template("To Path", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "In",
@@ -208,7 +208,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("String Concatenate", "",
+		library->add_template("String Concatenate", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -230,7 +230,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("WString Concatenate", "",
+		library->add_template("WString Concatenate", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -250,9 +250,80 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(std::wstring*)outputs[0].data = *(std::wstring*)inputs[0].data + *(std::wstring*)inputs[1].data;
 			}
-		); 
+		);
 
-		library->add_template("Format1", "",
+		library->add_template("Format", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Fmt",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Arg1",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto& fmt = *(std::string*)inputs[0].data;
+				switch (inputs_count)
+				{
+				case 2: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1])); break;
+				case 3: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2])); break;
+				case 4: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3])); break;
+				case 5: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4])); break;
+				case 6: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5])); break;
+				case 7: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6])); break;
+				case 8: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7])); break;
+				case 9: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8])); break;
+				case 10: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9])); break;
+				case 11: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10])); break;
+				case 12: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10], inputs[11])); break;
+				case 13: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10], inputs[11], inputs[12])); break;
+				case 14: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10], inputs[11], inputs[12], inputs[13])); break;
+				case 15: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10], inputs[11], inputs[12], inputs[13], inputs[14])); break;
+				case 16: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10], inputs[11], inputs[12], inputs[13], inputs[14], inputs[15])); break;
+				case 17: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10], inputs[11], inputs[12], inputs[13], inputs[14], inputs[15], inputs[16])); break;
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto n = s2t<uint>(info.template_string);
+					if (n == 0)
+						return false;
+
+					n = min(n, 16U);
+					info.new_inputs.resize(n + 1);
+					info.new_inputs[0] = { 
+						.name = "Fmt",
+						.allowed_types = { TypeInfo::get<std::string>() } 
+					};
+					for (uint i = 1; i <= n; ++i)
+					{
+						info.new_inputs[i] = {
+							.name = "Arg" + str(i),
+							.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+						};
+					}
+					info.new_outputs.resize(1);
+					info.new_outputs[0] = {
+						.name = "Out",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+				}
+				return true;
+			}
+		);
+
+		library->add_template("Format1", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Fmt",
@@ -275,7 +346,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Format2", "",
+		library->add_template("Format2", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Fmt",
@@ -302,7 +373,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Format3", "",
+		library->add_template("Format3", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Fmt",
@@ -333,7 +404,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Format4", "",
+		library->add_template("Format4", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Fmt",
@@ -368,7 +439,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("WFormat1", "",
+		library->add_template("WFormat1", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Fmt",
@@ -391,7 +462,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("WFormat2", "",
+		library->add_template("WFormat2", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Fmt",
@@ -418,7 +489,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("WFormat3", "",
+		library->add_template("WFormat3", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Fmt",
@@ -449,7 +520,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("WFormat4", "",
+		library->add_template("WFormat4", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Fmt",
@@ -484,7 +555,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Print", "",
+		library->add_template("Print", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "String",

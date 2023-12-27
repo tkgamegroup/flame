@@ -8,7 +8,7 @@ namespace flame
 {
 	void add_hud_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Hud Set Cursor", "",
+		library->add_template("Hud Set Cursor", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Pos",
@@ -23,7 +23,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Get Rect", "",
+		library->add_template("Hud Get Rect", "", BlueprintNodeFlagNone,
 			{
 			},
 			{
@@ -43,7 +43,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Screen Size", "",
+		library->add_template("Hud Screen Size", "", BlueprintNodeFlagNone,
 			{
 			},
 			{
@@ -57,7 +57,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud", "",
+		library->add_template("Hud", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Pos",
@@ -106,7 +106,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Horizontal", "",
+		library->add_template("Hud Horizontal", "", BlueprintNodeFlagNone,
 			{
 			},
 			{
@@ -122,7 +122,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud New Line", "",
+		library->add_template("Hud New Line", "", BlueprintNodeFlagNone,
 			{
 			},
 			{
@@ -132,7 +132,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Stencil Write", "",
+		library->add_template("Hud Stencil Write", "", BlueprintNodeFlagNone,
 			{
 			},
 			{
@@ -148,7 +148,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Stencil Compare", "",
+		library->add_template("Hud Stencil Compare", "", BlueprintNodeFlagNone,
 			{
 			},
 			{
@@ -164,7 +164,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Window Padding", "",
+		library->add_template("Hud Window Padding", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Padding",
@@ -185,7 +185,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Item Spacing", "",
+		library->add_template("Hud Item Spacing", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Spacing",
@@ -206,7 +206,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Scaling", "",
+		library->add_template("Hud Scaling", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Scaling",
@@ -227,7 +227,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Rect", "",
+		library->add_template("Hud Rect", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Size",
@@ -249,7 +249,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Text", "",
+		library->add_template("Hud Text", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Text",
@@ -277,7 +277,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Image", "",
+		library->add_template("Hud Image", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Size",
@@ -310,7 +310,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Button", "",
+		library->add_template("Hud Button", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Label",
@@ -352,7 +352,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Add Floating Text", "",
+		library->add_template("Add Floating Text", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Text",

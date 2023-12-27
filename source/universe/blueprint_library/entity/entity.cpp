@@ -16,7 +16,7 @@ namespace flame
 {
 	void add_entity_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Get Name", "",
+		library->add_template("Get Name", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -35,7 +35,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set Name", "",
+		library->add_template("Set Name", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -55,7 +55,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Get Tag", "",
+		library->add_template("Get Tag", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -74,7 +74,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set Tag", "",
+		library->add_template("Set Tag", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -94,7 +94,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Add Tag", "",
+		library->add_template("Add Tag", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -114,7 +114,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Remove Tag", "",
+		library->add_template("Remove Tag", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -134,7 +134,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Check Tag", "",
+		library->add_template("Check Tag", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -160,7 +160,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set Enable", "",
+		library->add_template("Set Enable", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -180,7 +180,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Create Entity", "",
+		library->add_template("Create Entity", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Parent",
@@ -204,7 +204,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Remove Entity", "",
+		library->add_template("Remove Entity", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -235,7 +235,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Get Parent", "",
+		library->add_template("Get Parent", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -257,7 +257,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Get Child", "",
+		library->add_template("Get Child", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Parent",
@@ -289,7 +289,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Add Child", "",
+		library->add_template("Add Child", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Parent",
@@ -319,7 +319,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Add Component", "",
+		library->add_template("Add Component", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -344,7 +344,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Find Entity", "",
+		library->add_template("Find Entity", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Name",
@@ -366,7 +366,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Get Pos", "",
+		library->add_template("Get Pos", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -391,7 +391,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set Pos", "",
+		library->add_template("Set Pos", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -414,7 +414,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Add Pos", "",
+		library->add_template("Add Pos", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -437,7 +437,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Get Eul", "",
+		library->add_template("Get Eul", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -462,7 +462,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set Eul", "",
+		library->add_template("Set Eul", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -485,7 +485,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Get Scl", "",
+		library->add_template("Get Scl", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -510,7 +510,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set Scl", "",
+		library->add_template("Set Scl", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -536,7 +536,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Look At", "",
+		library->add_template("Look At", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -564,7 +564,7 @@ namespace flame
 		);
 
 
-		library->add_template("Update Transform", "",
+		library->add_template("Update Transform", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -584,7 +584,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Spawn Cube", "",
+		library->add_template("Spawn Cube", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Parent",
@@ -622,7 +622,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Spawn Sphere", "",
+		library->add_template("Spawn Sphere", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Parent",
@@ -660,7 +660,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Spawn Prefab", "",
+		library->add_template("Spawn Prefab", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Path",
@@ -745,7 +745,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Add Blueprint", "",
+		library->add_template("Add Blueprint", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -795,7 +795,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Get Blueprint Instance", "",
+		library->add_template("Get Blueprint Instance", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -832,7 +832,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Select Blueprint Instance2", "",
+		library->add_template("Select Blueprint Instance2", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -879,7 +879,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Start Coroutine", "",
+		library->add_template("Start Coroutine", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -910,7 +910,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Entity Equal", "",
+		library->add_template("Entity Equal", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -932,7 +932,7 @@ namespace flame
 			}
 		);
 		
-		library->add_template("Loop Var Entity", "",
+		library->add_template("Loop Var Entity", "", BlueprintNodeFlagNone,
 			{
 			},
 			{
@@ -979,7 +979,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Get BP Entity", "", 
+		library->add_template("Get BP Entity", "", BlueprintNodeFlagNone, 
 		{
 		{
 			.name = "Instance", 
@@ -1017,7 +1017,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set BP Entity", "", 
+		library->add_template("Set BP Entity", "", BlueprintNodeFlagNone, 
 		{
 		{
 			.name = "Instance", 
@@ -1049,7 +1049,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Get Nearest Entity", "",
+		library->add_template("Get Nearest Entity", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Location",
@@ -1108,7 +1108,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("For Each Entity", "",
+		library->add_template("For Each Entity", "", BlueprintNodeFlagNone,
 			{
 			},
 			{
@@ -1131,7 +1131,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Foreach Surrounding Entity", "",
+		library->add_template("Foreach Surrounding Entity", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Location",
@@ -1214,7 +1214,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Get Mouse Hovering", "",
+		library->add_template("Get Mouse Hovering", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Tag",
@@ -1272,7 +1272,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set Object Color", "",
+		library->add_template("Set Object Color", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -1297,7 +1297,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set Default Material", "",
+		library->add_template("Set Default Material", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -1317,7 +1317,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set Default Red Material", "",
+		library->add_template("Set Default Red Material", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -1337,7 +1337,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set Default Green Material", "",
+		library->add_template("Set Default Green Material", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -1357,7 +1357,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set Default Blue Material", "",
+		library->add_template("Set Default Blue Material", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -1377,7 +1377,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set Default Yellow Material", "",
+		library->add_template("Set Default Yellow Material", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -1397,7 +1397,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set Default Purple Material", "",
+		library->add_template("Set Default Purple Material", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -1417,7 +1417,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set Default Cyan Material", "",
+		library->add_template("Set Default Cyan Material", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",

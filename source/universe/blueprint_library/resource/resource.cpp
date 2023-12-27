@@ -7,7 +7,7 @@ namespace flame
 {
 	void add_resource_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Hold Resource", "",
+		library->add_template("Hold Resource", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -40,7 +40,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Get Image Resource", "",
+		library->add_template("Get Image Resource", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -80,7 +80,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Get Image Atlas Resource", "",
+		library->add_template("Get Image Atlas Resource", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -114,7 +114,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Image Atlas Item", "",
+		library->add_template("Image Atlas Item", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Atlas",

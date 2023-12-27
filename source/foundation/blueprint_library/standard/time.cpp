@@ -4,7 +4,7 @@ namespace flame
 {
 	void add_time_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Delta Time", "",
+		library->add_template("Delta Time", "", BlueprintNodeFlagNone,
 			{
 			},
 			{
@@ -18,7 +18,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Total Time", "",
+		library->add_template("Total Time", "", BlueprintNodeFlagNone,
 			{
 			},
 			{

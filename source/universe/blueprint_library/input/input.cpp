@@ -6,7 +6,7 @@ namespace flame
 {
 	void add_input_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Mouse Pos", "",
+		library->add_template("Mouse Pos", "", BlueprintNodeFlagNone,
 			{
 			},
 			{
@@ -20,7 +20,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Mouse Pressed", "",
+		library->add_template("Mouse Pressed", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Button",
@@ -39,7 +39,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Mouse Pressing", "",
+		library->add_template("Mouse Pressing", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Button",
@@ -58,7 +58,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Key Pressed", "",
+		library->add_template("Key Pressed", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Key",
@@ -77,7 +77,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Key Pressing", "",
+		library->add_template("Key Pressing", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Key",

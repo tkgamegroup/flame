@@ -8,7 +8,7 @@ namespace flame
 {
 	void add_camera_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("World To Screen", "",
+		library->add_template("World To Screen", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "In",
@@ -33,7 +33,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Fit Camera", "",
+		library->add_template("Fit Camera", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Camera",
@@ -87,7 +87,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Camera Smooth Moving", "",
+		library->add_template("Camera Smooth Moving", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Camera",

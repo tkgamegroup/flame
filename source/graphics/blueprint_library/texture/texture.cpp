@@ -14,7 +14,7 @@ namespace flame
 	{
 		void add_texture_node_templates(BlueprintNodeLibraryPtr library)
 		{
-			library->add_template("New Texture", "",
+			library->add_template("New Texture", "", BlueprintNodeFlagNone,
 				{
 					{
 						.name = "Format",
@@ -78,7 +78,7 @@ namespace flame
 					preview->data = texture.image;
 				}
 			);
-			library->add_template("Voronoi Texture", "",
+			library->add_template("Voronoi Texture", "", BlueprintNodeFlagNone,
 				{
 					{
 						.name = "Scale",

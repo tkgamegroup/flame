@@ -552,11 +552,18 @@ namespace flame
 		printf("blueprint alter_variable: variable not found\n");
 	}
 
-	BlueprintNodePtr BlueprintPrivate::add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, const std::string& name, const std::string& display_name,
+	static BlueprintSlotPtr create_slot(BlueprintNodePtr n, const BlueprintSlotDesc& desc)
+	{
+		auto s = new BlueprintSlotPrivate;
+
+		return s;
+	}
+
+	BlueprintNodePtr BlueprintPrivate::add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, const std::string& name, BlueprintNodeFlags flags, const std::string& display_name,
 		const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
 		BlueprintNodeFunction function, BlueprintNodeLoopFunction loop_function,
 		BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
-		BlueprintNodeInputTypeChangedCallback input_type_changed_callback, BlueprintNodePreviewProvider preview_provider, 
+		BlueprintNodeChangeStructureCallback change_structure_callback, BlueprintNodePreviewProvider preview_provider, 
 		bool is_block, BlueprintNodeBeginBlockFunction begin_block_function, BlueprintNodeEndBlockFunction end_block_function)
 	{
 		assert(group && group->blueprint == this);
@@ -570,6 +577,7 @@ namespace flame
 		ret->object_id = next_object_id++;
 		ret->name = name;
 		ret->name_hash = sh(name.c_str());
+		ret->flags = flags;
 		ret->display_name = display_name;
 		if (is_block)
 		{
@@ -631,7 +639,7 @@ namespace flame
 		ret->destructor = destructor;
 		ret->function = function;
 		ret->loop_function = loop_function;
-		ret->input_type_changed_callback = input_type_changed_callback;
+		ret->change_structure_callback = change_structure_callback;
 		ret->preview_provider = preview_provider;
 		ret->is_block = is_block;
 		ret->begin_block_function = begin_block_function;
@@ -659,8 +667,8 @@ namespace flame
 			{
 				if (t.name_hash == name_hash)
 				{
-					auto n = add_node(g, parent, t.name, t.display_name, t.inputs, t.outputs,
-						t.function, t.loop_function, t.constructor, t.destructor, t.input_type_changed_callback, t.preview_provider,
+					auto n = add_node(g, parent, t.name, t.flags, t.display_name, t.inputs, t.outputs,
+						t.function, t.loop_function, t.constructor, t.destructor, t.change_structure_callback, t.preview_provider,
 						t.is_block, t.begin_block_function, t.end_block_function);
 					return n;
 				}
@@ -671,7 +679,7 @@ namespace flame
 
 	BlueprintNodePtr BlueprintPrivate::add_block(BlueprintGroupPtr group, BlueprintNodePtr parent)
 	{
-		return add_node(group, parent, "Block", "", {}, {}, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, true);
+		return add_node(group, parent, "Block", BlueprintNodeFlagNone, "", {}, {}, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, true);
 	}
 
 	BlueprintNodePtr BlueprintPrivate::add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type, uint location_name, uint attribute_name)
@@ -1933,23 +1941,26 @@ namespace flame
 			auto n = input_changed_nodes.front();
 			input_changed_nodes.pop_front();
 
-			if (n->input_type_changed_callback)
+			if (n->change_structure_callback)
 			{
-				std::vector<TypeInfo*> input_types(n->inputs.size());
-				std::vector<TypeInfo*> output_types(n->outputs.size());
-				for (auto i = 0; i < input_types.size(); i++)
-					input_types[i] = n->inputs[i]->type;
-				for (auto i = 0; i < output_types.size(); i++)
-					output_types[i] = n->outputs[i]->type;
+				BlueprintNodeStructureChangeInfo info;
+				info.reason = BlueprintNodeInputTypesChanged;
+				info.input_types.resize(n->inputs.size());
+				info.output_types.resize(n->outputs.size());
+				for (auto i = 0; i < info.input_types.size(); i++)
+					info.input_types[i] = n->inputs[i]->type;
+				for (auto i = 0; i < info.output_types.size(); i++)
+					info.output_types[i] = n->outputs[i]->type;
 
-				n->input_type_changed_callback(input_types.data(), output_types.data());
+				auto ok = n->change_structure_callback(info);
+				assert(ok);
 
-				for (auto i = 0; i < output_types.size(); i++)
+				for (auto i = 0; i < info.output_types.size(); i++)
 				{
 					auto slot = n->outputs[i].get();
-					if (slot->type != output_types[i])
+					if (slot->type != info.output_types[i])
 					{
-						change_slot_type(slot, blueprint_allow_type(slot->allowed_types, output_types[i]) ? output_types[i] : nullptr);
+						change_slot_type(slot, blueprint_allow_type(slot->allowed_types, info.output_types[i]) ? info.output_types[i] : nullptr);
 
 						for (auto& l : n->group->links)
 						{
@@ -1967,21 +1978,72 @@ namespace flame
 			}
 		}
 	}
-
-	void BlueprintPrivate::set_input_type(BlueprintSlotPtr slot, TypeInfo* type)
+	bool BlueprintPrivate::change_node_structure(BlueprintNodePtr node, const std::string& new_template_string, const std::vector<TypeInfo*>& new_input_types)
 	{
-		auto group = slot->node->group;
-		assert(group && group->blueprint == this);
-		assert(slot->flags & BlueprintSlotFlagInput);
+		auto group = node->group;
+		assert(group->blueprint == this);
 
-		if (!blueprint_allow_type(slot->allowed_types, type))
+		if (!new_template_string.empty())
 		{
-			printf("blueprint set_input_type: type not allowed\n");
-			return;
+			if (!node->change_structure_callback)
+			{
+				printf("blueprint change_node_structure: node must have 'change_structure_callback'\n");
+				return false;
+			}
+
+			BlueprintNodeStructureChangeInfo info;
+			info.reason = BlueprintNodeTemplateChanged;
+			info.template_string = new_template_string;
+			if (!node->change_structure_callback(info))
+			{
+				printf("blueprint change_node_structure: change_structure_callback failed\n");
+				return false;
+			}
+
+			std::map<uint, std::pair<std::string, BlueprintSlotPtr>> staging_inputs;
+			std::map<uint, std::vector<BlueprintSlotPtr>> staging_outputs;
+			for (auto& input : node->inputs)
+			{
+				auto& s = staging_inputs[input->name_hash];
+				auto value_str = input->type->serialize(input->data); 
+				s.first = value_str != input->default_value ? value_str : "";
+				s.second = !input->linked_slots.empty() ? input->linked_slots.front() : nullptr;
+			}
+			for (auto& output : node->outputs)
+				staging_outputs[output->name_hash] = output->linked_slots;
+
 		}
 
-		change_slot_type(slot, type);
-		update_node_output_types(slot->node);
+		if (!new_input_types.empty())
+		{
+			if (new_input_types.size() != node->inputs.size())
+			{
+				printf("blueprint change_node_structure: new input types must as much as node's inputs\n");
+				return false;
+			}
+
+			auto ok = true;
+			for (auto i = 0; i < node->inputs.size(); i++)
+			{
+				auto input = node->inputs[i].get();
+				if (!blueprint_allow_type(input->allowed_types, new_input_types[i]))
+				{
+					ok = false;
+					break;
+				}
+			}
+
+			if (!ok)
+			{
+				printf("blueprint change_node_structure: new input types must be allowed\n");
+				return false;
+			}
+
+			for (auto i = 0; i < node->inputs.size(); i++)
+				change_slot_type(node->inputs[i].get(), new_input_types[i]);
+			update_node_output_types(node);
+		}
+
 		clear_invalid_links(group);
 
 		auto frame = frames;
@@ -2475,7 +2537,7 @@ namespace flame
 			o.name_hash = i.name_hash;
 			o.allowed_types = { i.type };
 		}
-		n = g->blueprint->add_node(g, nullptr, "Input", "", {}, outputs, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+		n = g->blueprint->add_node(g, nullptr, "Input", BlueprintNodeFlagNone, "", {}, outputs, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
 		n->position = old_position;
 		for (auto& l : old_links)
 		{
@@ -2599,7 +2661,7 @@ namespace flame
 			i.name_hash = o.name_hash;
 			i.allowed_types = { o.type };
 		}
-		n = g->blueprint->add_node(g, nullptr, "Output", "", inputs, {}, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+		n = g->blueprint->add_node(g, nullptr, "Output", BlueprintNodeFlagNone, "", inputs, {}, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
 		n->position = old_position;
 		for (auto& l : old_links)
 		{
@@ -2901,7 +2963,10 @@ namespace flame
 				n_node.append_attribute("object_id").set_value(n->object_id);
 				if (n->parent->parent)
 					n_node.append_attribute("parent_id").set_value(n->parent->object_id);
-				n_node.append_attribute("name").set_value(n->name.c_str());
+				auto node_name = n->name;
+				if (!n->template_string.empty())
+					node_name += '#' + n->template_string;
+				n_node.append_attribute("name").set_value(node_name.c_str());
 				n_node.append_attribute("position").set_value(str(n->position).c_str());
 
 				pugi::xml_node n_inputs;
@@ -3070,8 +3135,11 @@ namespace flame
 
 				for (auto n_node : n_group.child("nodes"))
 				{
-					std::string name = n_node.attribute("name").value();
-					auto name_hash = sh(name.c_str());
+					std::string node_name = n_node.attribute("name").value();
+					auto sp = SUS::to_string_vector(SUS::split(node_name, '#'));
+					node_name =				sp[0];
+					auto node_template =	sp.size() > 1 ? sp[1] : "";
+					auto node_name_hash = sh(node_name.c_str());
 					auto parent_id = n_node.attribute("parent_id").as_uint();
 					auto object_id = n_node.attribute("object_id").as_uint();
 					BlueprintNodePtr parent = nullptr;
@@ -3105,14 +3173,14 @@ namespace flame
 							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("add node: cannot find input: %s\n", name);
 						}
-						};
-					if (name == "Block")
+					};
+					if (node_name == "Block")
 					{
 						auto n = ret->add_block(g, parent);
 						node_map[object_id] = n;
 						n->position = s2t<2, float>(n_node.attribute("position").value());
 					}
-					else if (name == "Input")
+					else if (node_name == "Input")
 					{
 						if (auto n = g->find_node("Input"_h); n)
 						{
@@ -3120,7 +3188,7 @@ namespace flame
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
 					}
-					else if (name == "Output")
+					else if (node_name == "Output")
 					{
 						if (auto n = g->find_node("Output"_h); n)
 						{
@@ -3128,13 +3196,11 @@ namespace flame
 							n->position = s2t<2, float>(n_node.attribute("position").value());
 						}
 					}
-					else if (blueprint_is_variable_node(name_hash))
+					else if (blueprint_is_variable_node(node_name_hash))
 					{
 						std::vector<pugi::xml_node> other_inputs;
-						auto desc_n = get_variable_node_desc(nullptr, nullptr, nullptr, nullptr, name_hash);
-						uint name = 0;
-						uint location_name = 0;
-						uint attribute_name = 0;
+						auto desc_n = get_variable_node_desc(nullptr, nullptr, nullptr, nullptr, node_name_hash);
+						uint var_name = 0, var_location = 0, var_attribute = 0;
 						auto idx = 0;
 						for (auto n_input : n_node.child("inputs"))
 						{
@@ -3142,11 +3208,11 @@ namespace flame
 							{
 								std::string n_input_name = n_input.attribute("name").value();
 								if (n_input_name == "Name")
-									name = n_input.attribute("value").as_uint();
+									var_name = n_input.attribute("value").as_uint();
 								else if (n_input_name == "Location")
-									location_name = n_input.attribute("value").as_uint();
+									var_location = n_input.attribute("value").as_uint();
 								else if (n_input_name == "Attribute")
-									attribute_name = n_input.attribute("value").as_uint();
+									var_attribute = n_input.attribute("value").as_uint();
 								else
 									other_inputs.push_back(n_input);
 							}
@@ -3154,8 +3220,7 @@ namespace flame
 								other_inputs.push_back(n_input);
 							idx++;
 						}
-						auto n = ret->add_variable_node(g, parent, name, name_hash, location_name, attribute_name);
-						if (n)
+						if (auto n = ret->add_variable_node(g, parent, var_name, node_name_hash, var_location, var_attribute); n)
 						{
 							for (auto n_input : other_inputs)
 								read_input(n, n_input);
@@ -3168,7 +3233,7 @@ namespace flame
 							printf("node with id %u cannot not be added\n", object_id);
 						}
 					}
-					else if (name == "Call")
+					else if (node_name == "Call")
 					{
 						std::vector<pugi::xml_node> other_inputs;
 						uint name = 0;
@@ -3199,9 +3264,17 @@ namespace flame
 					}
 					else
 					{
-						auto n = ret->add_node(g, parent, sh(name.c_str()));
-						if (n)
+						if (auto n = ret->add_node(g, parent, sh(node_name.c_str())); n)
 						{
+							if (!node_template.empty())
+							{
+								assert(n->change_structure_callback);
+								if (!ret->change_node_structure(n, node_template, {}))
+								{
+									printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+									printf("cannot apply template(%s) to node: %s, id: %u\n", node_template.c_str(), node_name.c_str(), object_id);
+								}
+							}
 							for (auto n_input : n_node.child("inputs"))
 								read_input(n, n_input);
 							node_map[object_id] = n;
@@ -3210,7 +3283,7 @@ namespace flame
 						else
 						{
 							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-							printf("cannot find node template: %s, id: %u\n", name.c_str(), object_id);
+							printf("cannot find node template: %s, id: %u\n", node_name.c_str(), object_id);
 						}
 					}
 				}
@@ -3309,15 +3382,16 @@ namespace flame
 	}Blueprint_release;
 	Blueprint::Release& Blueprint::release = Blueprint_release;
 
-	void BlueprintNodeLibraryPrivate::add_template(const std::string& name, const std::string& display_name,
+	void BlueprintNodeLibraryPrivate::add_template(const std::string& name, const std::string& display_name, BlueprintNodeFlags flags,
 		const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
 		BlueprintNodeFunction function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
-		BlueprintNodeInputTypeChangedCallback input_type_changed_callback, BlueprintNodePreviewProvider preview_provider)
+		BlueprintNodeChangeStructureCallback change_structure_callback, BlueprintNodePreviewProvider preview_provider)
 	{
 		auto& t = node_templates.emplace_back();
 		t.library = this;
 		t.name = name;
 		t.name_hash = sh(name.c_str());
+		t.flags = flags;
 		t.display_name = display_name;
 		t.inputs = inputs;
 		for (auto& i : t.inputs)
@@ -3329,22 +3403,23 @@ namespace flame
 		t.loop_function = nullptr;
 		t.constructor = constructor;
 		t.destructor = destructor;
-		t.input_type_changed_callback = input_type_changed_callback;
+		t.change_structure_callback = change_structure_callback;
 		t.preview_provider = preview_provider;
 		t.is_block = false;
 		t.begin_block_function = nullptr;
 		t.end_block_function = nullptr;
 	}
 
-	void BlueprintNodeLibraryPrivate::add_template(const std::string& name, const std::string& display_name,
+	void BlueprintNodeLibraryPrivate::add_template(const std::string& name, const std::string& display_name, BlueprintNodeFlags flags,
 		const std::vector<BlueprintSlotDesc>& inputs , const std::vector<BlueprintSlotDesc>& outputs,
 		BlueprintNodeLoopFunction loop_function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
-		BlueprintNodeInputTypeChangedCallback input_type_changed_callback, BlueprintNodePreviewProvider preview_provider)
+		BlueprintNodeChangeStructureCallback change_structure_callback, BlueprintNodePreviewProvider preview_provider)
 	{
 		auto& t = node_templates.emplace_back();
 		t.library = this;
 		t.name = name;
 		t.name_hash = sh(name.c_str());
+		t.flags = flags;
 		t.display_name = display_name;
 		t.inputs = inputs;
 		for (auto& i : t.inputs)
@@ -3356,23 +3431,24 @@ namespace flame
 		t.loop_function = loop_function;
 		t.constructor = constructor;
 		t.destructor = destructor;
-		t.input_type_changed_callback = input_type_changed_callback;
+		t.change_structure_callback = change_structure_callback;
 		t.preview_provider = preview_provider;
 		t.is_block = false;
 		t.begin_block_function = nullptr;
 		t.end_block_function = nullptr;
 	}
 
-	void BlueprintNodeLibraryPrivate::add_template(const std::string& name, const std::string& display_name,
+	void BlueprintNodeLibraryPrivate::add_template(const std::string& name, const std::string& display_name, BlueprintNodeFlags flags,
 		const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,
 		bool is_block, BlueprintNodeBeginBlockFunction begin_block_function, BlueprintNodeEndBlockFunction end_block_function, 
 		BlueprintNodeLoopFunction loop_function, BlueprintNodeConstructor constructor, BlueprintNodeDestructor destructor,
-		BlueprintNodeInputTypeChangedCallback input_type_changed_callback, BlueprintNodePreviewProvider preview_provider)
+		BlueprintNodeChangeStructureCallback change_structure_callback, BlueprintNodePreviewProvider preview_provider)
 	{
 		auto& t = node_templates.emplace_back();
 		t.library = this;
 		t.name = name;
 		t.name_hash = sh(name.c_str());
+		t.flags = flags;
 		t.display_name = display_name;
 		t.inputs = inputs;
 		for (auto& i : t.inputs)
@@ -3384,7 +3460,7 @@ namespace flame
 		t.loop_function = nullptr;
 		t.constructor = constructor;
 		t.destructor = destructor;
-		t.input_type_changed_callback = input_type_changed_callback;
+		t.change_structure_callback = change_structure_callback;
 		t.preview_provider = preview_provider;
 		t.is_block = is_block;
 		t.begin_block_function = begin_block_function;

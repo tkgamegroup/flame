@@ -6,7 +6,7 @@ namespace flame
 {
 	void add_extern_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Get Static Blueprint Instance", "",
+		library->add_template("Get Static Blueprint Instance", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Name_hash",
@@ -27,7 +27,7 @@ namespace flame
 		);
 
 #define GET_BP_TEMPLATE(TYPE, DV) \
-		library->add_template("Get BP " #TYPE, "", \
+		library->add_template("Get BP " #TYPE, "", BlueprintNodeFlagNone,\
 			{\
 				{\
 					.name = "Instance",\
@@ -88,7 +88,7 @@ namespace flame
 #undef GET_BP_TEMPLATE
 
 #define SET_BP_TEMPLATE(TYPE) \
-		library->add_template("Set BP " #TYPE, "", \
+		library->add_template("Set BP " #TYPE, "", BlueprintNodeFlagNone,\
 			{\
 				{\
 					.name = "Instance",\
@@ -142,7 +142,7 @@ namespace flame
 
 #undef SET_BP_TEMPLATE
 
-		library->add_template("Call BP void_void", "", 
+		library->add_template("Call BP void_void", "", BlueprintNodeFlagNone, 
 			{
 				{
 					.name = "Instance",
@@ -167,7 +167,7 @@ namespace flame
 		);
 
 #define CALL_BP_TEMPLATE_void_T(TYPE) \
-		library->add_template("Call BP void_" #TYPE, "", \
+		library->add_template("Call BP void_" #TYPE, "", BlueprintNodeFlagNone,\
 			{\
 				{\
 					.name = "Instance",\
@@ -205,7 +205,7 @@ namespace flame
 
 #undef CALL_BP_TEMPLATE_void_T
 
-		library->add_template("Get Static Sheet", "",
+		library->add_template("Get Static Sheet", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Name_hash",
@@ -225,7 +225,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Get Sheet", "",
+		library->add_template("Get Sheet", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Path",
@@ -244,7 +244,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Sheet Columns Count", "",
+		library->add_template("Sheet Columns Count", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Sheet",
@@ -263,7 +263,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Sheet Get Column Name", "",
+		library->add_template("Sheet Get Column Name", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Sheet",
@@ -295,7 +295,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Sheet Insert Column", "",
+		library->add_template("Sheet Insert Column", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Sheet",
@@ -328,7 +328,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Sheet Rows Count", "",
+		library->add_template("Sheet Rows Count", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Sheet",
@@ -348,7 +348,7 @@ namespace flame
 		);
 
 #define FIND_ITEM_IN_SHEET_TEMPLATE(TYPE) \
-		library->add_template("Find " #TYPE " Item In Sheet", "",\
+		library->add_template("Find " #TYPE " Item In Sheet", "", BlueprintNodeFlagNone,\
 			{\
 				{\
 					.name = "Sheet",\
@@ -412,7 +412,7 @@ namespace flame
 #undef FIND_ITEM_IN_SHEET_TEMPLATE
 
 #define GET_SHT_TEMPLATE(TYPE, DV) \
-		library->add_template("Get SHT " #TYPE, "", \
+		library->add_template("Get SHT " #TYPE, "", BlueprintNodeFlagNone,\
 			{\
 				{\
 					.name = "Sheet",\
@@ -483,7 +483,7 @@ namespace flame
 #undef GET_SHT_TEMPLATE
 
 #define SET_SHT_TEMPLATE(TYPE) \
-		library->add_template("Set SHT " #TYPE, "", \
+		library->add_template("Set SHT " #TYPE, "", BlueprintNodeFlagNone,\
 			{\
 				{\
 					.name = "Sheet",\
@@ -545,7 +545,7 @@ namespace flame
 
 #undef SET_SHT_TEMPLATE
 
-		library->add_template("Add Child Blueprint", "",
+		library->add_template("Add Child Blueprint", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Parent",
@@ -617,7 +617,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Remove Child Blueprint", "",
+		library->add_template("Remove Child Blueprint", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Parent",
@@ -667,7 +667,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Assign Sheet Row To Blueprint Instance", "",
+		library->add_template("Assign Sheet Row To Blueprint Instance", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Sheet",
@@ -708,7 +708,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Broadcast", "",
+		library->add_template("Broadcast", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Instance",

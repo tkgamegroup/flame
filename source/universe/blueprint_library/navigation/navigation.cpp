@@ -8,7 +8,7 @@ namespace flame
 {
 	void add_navigation_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Generate Navmesh", "",
+		library->add_template("Generate Navmesh", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Nodes",
@@ -50,7 +50,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Nav Agent Set Radius", "",
+		library->add_template("Nav Agent Set Radius", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -74,7 +74,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Nav Agent Set Height", "",
+		library->add_template("Nav Agent Set Height", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -98,7 +98,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Nav Agent Set Speed", "",
+		library->add_template("Nav Agent Set Speed", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -122,7 +122,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Nav Agent Set Speed Scale", "",
+		library->add_template("Nav Agent Set Speed Scale", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -146,7 +146,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Nav Agent Set Turn Speed", "",
+		library->add_template("Nav Agent Set Turn Speed", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -170,7 +170,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Nav Agent Set Turn Speed Scale", "",
+		library->add_template("Nav Agent Set Turn Speed Scale", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -194,7 +194,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Nav Agent Set Target", "",
+		library->add_template("Nav Agent Set Target", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -218,7 +218,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Nav Agent Stop", "",
+		library->add_template("Nav Agent Stop", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -238,7 +238,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Nav Agent Set Flying", "",
+		library->add_template("Nav Agent Set Flying", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -262,7 +262,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Nav Obstacle Set Radius", "",
+		library->add_template("Nav Obstacle Set Radius", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -286,7 +286,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Nav Obstacle Set Height", "",
+		library->add_template("Nav Obstacle Set Height", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",

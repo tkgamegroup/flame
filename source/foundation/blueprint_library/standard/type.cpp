@@ -5,7 +5,7 @@ namespace flame
 {
 	void add_type_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("To Float", "",
+		library->add_template("To Float", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -23,7 +23,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("To Int", "",
+		library->add_template("To Int", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -41,7 +41,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("To Uint", "",
+		library->add_template("To Uint", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -59,7 +59,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Array Find", "",
+		library->add_template("Array Find", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Array",
@@ -98,7 +98,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Arrary Remove If", "",
+		library->add_template("Arrary Remove If", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Array",
@@ -166,7 +166,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Array Get Random Samples", "",
+		library->add_template("Array Get Random Samples", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Array",
@@ -235,7 +235,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Array Random Sample", "",
+		library->add_template("Array Random Sample", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Array",

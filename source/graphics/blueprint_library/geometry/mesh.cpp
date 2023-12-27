@@ -12,7 +12,7 @@ namespace flame
 	{
 		void add_mesh_node_templates(BlueprintNodeLibraryPtr library)
 		{
-			library->add_template("Control Mesh: Cube", "",
+			library->add_template("Control Mesh: Cube", "", BlueprintNodeFlagNone,
 				{
 					{
 						.name = "Extent",
@@ -39,7 +39,7 @@ namespace flame
 				}
 			);
 
-			library->add_template("Control Mesh: Cone", "",
+			library->add_template("Control Mesh: Cone", "", BlueprintNodeFlagNone,
 				{
 					{
 						.name = "Radius",
@@ -78,7 +78,7 @@ namespace flame
 				}
 			);
 
-			library->add_template("Convert To Mesh", "",
+			library->add_template("Convert To Mesh", "", BlueprintNodeFlagNone,
 				{
 					{
 						.name = "Control Mesh",
@@ -111,7 +111,7 @@ namespace flame
 				}
 			);
 
-			library->add_template("Cube Mesh", "",
+			library->add_template("Cube Mesh", "", BlueprintNodeFlagNone,
 				{
 					{
 						.name = "Extent",
@@ -142,7 +142,7 @@ namespace flame
 				}
 			);
 
-			library->add_template("Offset Control Mesh", "",
+			library->add_template("Offset Control Mesh", "", BlueprintNodeFlagNone,
 				{
 					{
 						.name = "Mesh",
@@ -174,7 +174,7 @@ namespace flame
 				}
 			);
 
-			library->add_template("Scale Control Mesh", "",
+			library->add_template("Scale Control Mesh", "", BlueprintNodeFlagNone,
 				{
 					{
 						.name = "Mesh",
@@ -206,7 +206,7 @@ namespace flame
 				}
 			);
 
-			library->add_template("Rotate Control Mesh", "",
+			library->add_template("Rotate Control Mesh", "", BlueprintNodeFlagNone,
 				{
 					{
 						.name = "Mesh",
@@ -241,7 +241,7 @@ namespace flame
 				}
 			);
 
-			library->add_template("Subdivide Control Mesh", "",
+			library->add_template("Subdivide Control Mesh", "", BlueprintNodeFlagNone,
 				{
 					{
 						.name = "Mesh",
@@ -286,7 +286,7 @@ namespace flame
 				}
 			);
 
-			library->add_template("Loop Cut Control Mesh XZ-Plane", "",
+			library->add_template("Loop Cut Control Mesh XZ-Plane", "", BlueprintNodeFlagNone,
 				{
 					{
 						.name = "Mesh",
@@ -312,7 +312,7 @@ namespace flame
 				}
 			);
 
-			library->add_template("Loop Cut Control Mesh XZ-Planes", "",
+			library->add_template("Loop Cut Control Mesh XZ-Planes", "", BlueprintNodeFlagNone,
 				{
 					{
 						.name = "Mesh",
@@ -363,7 +363,7 @@ namespace flame
 				}
 			);
 
-			library->add_template("Displace Control Mesh", "",
+			library->add_template("Displace Control Mesh", "", BlueprintNodeFlagNone,
 				{
 					{
 						.name = "Mesh",

@@ -8,7 +8,7 @@ namespace flame
 	{
 		void add_noise_node_templates(BlueprintNodeLibraryPtr library)
 		{
-			library->add_template("Perlin", "",
+			library->add_template("Perlin", "", BlueprintNodeFlagNone,
 				{
 					{
 						.name = "UV",

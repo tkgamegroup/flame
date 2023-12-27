@@ -6,7 +6,7 @@ namespace flame
 {
 	void add_audio_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Audio Source Add Buffer", "",
+		library->add_template("Audio Source Add Buffer", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -39,7 +39,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Audio Source Play", "",
+		library->add_template("Audio Source Play", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",

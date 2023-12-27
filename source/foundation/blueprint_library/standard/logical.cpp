@@ -5,7 +5,7 @@ namespace flame
 {
 	void add_logical_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Less", "<",
+		library->add_template("Less", "<", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -31,7 +31,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Greater", ">",
+		library->add_template("Greater", ">", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -57,7 +57,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Equal", "==",
+		library->add_template("Equal", "==", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -83,7 +83,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Not Equal", "!=",
+		library->add_template("Not Equal", "!=", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -109,7 +109,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Less Or Equal", "<=",
+		library->add_template("Less Or Equal", "<=", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -135,7 +135,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Greater Or Equal", ">=",
+		library->add_template("Greater Or Equal", ">=", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -161,7 +161,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("In Range", "",
+		library->add_template("In Range", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -192,7 +192,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Not", "!",
+		library->add_template("Not", "!", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "In",
@@ -210,7 +210,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("And", "&&",
+		library->add_template("And", "&&", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -243,7 +243,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Or", "||",
+		library->add_template("Or", "||", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -276,7 +276,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Conditional Operator", "?:",
+		library->add_template("Conditional Operator", "?:", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Condition",
@@ -315,12 +315,17 @@ namespace flame
 			},
 			nullptr,
 			nullptr,
-			[](TypeInfo** input_types, TypeInfo** output_types) {
-				*output_types = input_types[1];
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeInputTypesChanged)
+				{
+					info.output_types = { info.input_types[1] };
+					return true;
+				}
+				return false;
 			}
 		);
 
-		library->add_template("Bit And", "&",
+		library->add_template("Bit And", "&", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -344,7 +349,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Bit Or", "|",
+		library->add_template("Bit Or", "|", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -368,7 +373,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Bit Xor", "^",
+		library->add_template("Bit Xor", "^", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "A",
@@ -392,7 +397,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Bit Not", "~",
+		library->add_template("Bit Not", "~", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "In",

@@ -155,6 +155,17 @@ static std::vector<BlueprintLinkPtr> get_selected_links()
 	return links;
 }
 
+static void set_input_type(BlueprintSlotPtr slot, TypeInfo* type)
+{
+	auto n = slot->node;
+	auto g = n->group;
+	std::vector<TypeInfo*> new_input_types;
+	new_input_types.resize(n->inputs.size());
+	for (auto i = 0; i < n->inputs.size(); i++)
+		new_input_types[i] = n->inputs[i].get() == slot ? type : n->inputs[i]->type;
+	g->blueprint->change_node_structure(n, "", new_input_types);
+}
+
 static BlueprintNodePtr add_variable_node_unifily(BlueprintGroupPtr g, uint var_name, uint var_location)
 {
 	for (auto& n : g->nodes)
@@ -394,7 +405,7 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 				}
 				auto i = n->find_input(src_i.first);
 				if (src_i.second.type && i->type != src_i.second.type)
-					blueprint->set_input_type(i, src_i.second.type);
+					set_input_type(i, src_i.second.type);
 				i->type->unserialize(src_i.second.value, i->data);
 			}
 
@@ -1822,7 +1833,7 @@ void BlueprintView::on_draw()
 										case 4: type = TypeInfo::get<vec4>(); break;
 										}
 										if (blueprint_allow_type(input->allowed_types, type))
-											blueprint->set_input_type(input, type);
+											set_input_type(input, type);
 									}
 								}
 								if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_I))
@@ -1838,7 +1849,7 @@ void BlueprintView::on_draw()
 										case 4: type = TypeInfo::get<ivec4>(); break;
 										}
 										if (blueprint_allow_type(input->allowed_types, type))
-											blueprint->set_input_type(input, type);
+											set_input_type(input, type);
 									}
 								}
 								if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_U))
@@ -1854,7 +1865,7 @@ void BlueprintView::on_draw()
 										case 4: type = TypeInfo::get<uvec4>(); break;
 										}
 										if (blueprint_allow_type(input->allowed_types, type))
-											blueprint->set_input_type(input, type);
+											set_input_type(input, type);
 									}
 								}
 								if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_D))
@@ -1908,7 +1919,7 @@ void BlueprintView::on_draw()
 								}
 								else
 								{
-									blueprint->set_input_type(slot1, type0);
+									set_input_type(slot1, type0);
 									type0->unserialize(value0, slot1->data);
 								}
 								if (link_output1)
@@ -1919,7 +1930,7 @@ void BlueprintView::on_draw()
 								}
 								else
 								{
-									blueprint->set_input_type(slot0, type1);
+									set_input_type(slot0, type1);
 									type1->unserialize(value1, slot0->data);
 								}
 							};
@@ -2186,13 +2197,16 @@ void BlueprintView::on_draw()
 
 						auto& parent_rect = ax_editor->FindNode((ax::NodeEditor::NodeId)n->parent)->m_Bounds;
 						dl->AddLine(n->position, vec2((parent_rect.Min.x + parent_rect.Max.x) * 0.5f, parent_rect.Max.y), col);
+					}
 
-						if (!n->children.empty())
-						{
-							auto& self_rect = ax_editor->FindNode((ax::NodeEditor::NodeId)n)->m_Bounds;
-							for (auto c : n->children)
-								dl->AddLine(c->position, vec2((self_rect.Min.x + self_rect.Max.x) * 0.5f, self_rect.Min.y), col);
-						}
+					if (!n->children.empty())
+					{
+						auto col = color_from_depth(n->depth + 1);
+						col.Value.w = 0.3f;
+
+						auto& self_rect = ax_editor->FindNode((ax::NodeEditor::NodeId)n)->m_Bounds;
+						for (auto c : n->children)
+							dl->AddLine(c->position, vec2((self_rect.Min.x + self_rect.Max.x) * 0.5f, self_rect.Max.y), col);
 					}
 				}
 
@@ -2539,7 +2553,7 @@ void BlueprintView::on_draw()
 							for (auto t : context_slot->allowed_types)
 							{
 								if (ImGui::Selectable(ti_str(t).c_str()))
-									blueprint->set_input_type(context_slot, t);
+									set_input_type(context_slot, t);
 							}
 							ImGui::EndMenu();
 						}

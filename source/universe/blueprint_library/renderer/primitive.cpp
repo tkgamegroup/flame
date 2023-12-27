@@ -5,7 +5,7 @@ namespace flame
 {
 	void add_primitive_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Draw Line", "",
+		library->add_template("Draw Line", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Pos0",
