@@ -541,11 +541,13 @@ void BlueprintView::stop_blueprint(BlueprintInstanceGroup* debugging_group)
 
 void BlueprintView::save_blueprint()
 {
-	if (unsaved)
-	{
-		blueprint->save();
-		unsaved = false;
-	}
+	if (!blueprint)
+		return;
+	if (!unsaved)
+		return;
+
+	blueprint->save();
+	unsaved = false;
 }
 
 std::string BlueprintView::get_save_name()
@@ -573,8 +575,11 @@ void BlueprintView::on_draw()
 	if (!blueprint)
 	{
 		blueprint = Blueprint::get(blueprint_path);
-		blueprint_instance = BlueprintInstance::create(blueprint);
-		load_frame = frame;
+		if (blueprint)
+		{
+			blueprint_instance = BlueprintInstance::create(blueprint);
+			load_frame = frame;
+		}
 	}
 	if (blueprint)
 	{

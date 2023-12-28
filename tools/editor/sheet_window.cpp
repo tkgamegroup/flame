@@ -37,20 +37,21 @@ SheetView::~SheetView()
 
 void SheetView::save_sheet()
 {
-	if (unsaved)
-	{
-		if (sheet->filename.native().starts_with(app.project_static_path.native()))
-		{
-			if (sheet->name.empty())
-			{
-				sheet->name = sheet->filename.filename().stem().string();
-				sheet->name_hash = sh(sheet->name.c_str());
-			}
-		}
-		sheet->save();
+	if (!sheet)
+		return;
+	if (!unsaved)
+		return;
 
-		unsaved = false;
+	if (sheet->filename.native().starts_with(app.project_static_path.native()))
+	{
+		if (sheet->name.empty())
+		{
+			sheet->name = sheet->filename.filename().stem().string();
+			sheet->name_hash = sh(sheet->name.c_str());
+		}
 	}
+	sheet->save();
+	unsaved = false;
 }
 
 void SheetView::on_draw()
