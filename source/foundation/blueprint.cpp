@@ -3497,8 +3497,11 @@ namespace flame
 	BlueprintInstancePrivate::BlueprintInstancePrivate(BlueprintPtr _blueprint)
 	{
 		blueprint = _blueprint;
-		blueprint->ref++;
-		build();
+		if (blueprint)
+		{
+			blueprint->ref++;
+			build();
+		}
 	}
 
 	static void destroy_instance_group(BlueprintInstanceGroup& g)
@@ -3512,6 +3515,9 @@ namespace flame
 				});
 			}
 		}
+
+		for (auto& v : g.variables)
+			v.second.type->destroy(v.second.data);
 
 		std::function<void(BlueprintInstanceNode&)> destroy_node;
 		destroy_node = [&](BlueprintInstanceNode& n) {
@@ -3536,9 +3542,12 @@ namespace flame
 	{
 		if (auto debugger = BlueprintDebugger::current(); debugger && debugger->debugging && debugger->debugging->instance == this)
 			debugger->debugging = nullptr;
+		for (auto& v : variables)
+			v.second.type->destroy(v.second.data);
 		for (auto& g : groups)
 			destroy_instance_group(g.second);
-		Blueprint::release(blueprint);
+		if (blueprint)
+			Blueprint::release(blueprint);
 	}
 
 	void BlueprintInstancePrivate::build()
@@ -4637,6 +4646,15 @@ namespace flame
 		}
 	}BlueprintInstance_create;
 	BlueprintInstance::Create& BlueprintInstance::create = BlueprintInstance_create;
+
+	struct BlueprintInstanceDestroy : BlueprintInstance::Destroy
+	{
+		void operator()(BlueprintInstancePtr instance) override
+		{
+			delete instance;
+		}
+	}BlueprintInstance_destroy;
+	BlueprintInstance::Destroy& BlueprintInstance::destroy = BlueprintInstance_destroy;
 
 	struct BlueprintInstanceGet : BlueprintInstance::Get
 	{

@@ -567,19 +567,16 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto parent = *(BlueprintInstancePtr*)inputs[0].data;
-				if (parent)
+				if (auto parent = *(BlueprintInstancePtr*)inputs[0].data; parent)
 				{
-					auto host = *(uint*)inputs[1].data;
-					if (host != 0)
+					if (auto host = *(uint*)inputs[1].data; host != 0)
 					{
-						if (auto arg = parent->get_variable(host); arg.data && arg.type->tag == TagVU)
+						if (auto arg = parent->get_variable(host); arg.data && arg.type->tag == TagVQU)
 						{
-							auto ti = (TypeInfo_VectorOfUdt*)arg.type;
-							if (ti->get_wrapped() == TypeInfo::get<BlueprintInstanceHolder>())
-							{
-								auto& path = *(std::filesystem::path*)inputs[1].data;
-								if (!path.empty())
+							auto ti = (TypeInfo_VectorOfUniquePointerOfUdt*)arg.type;
+							if (ti->get_wrapped()->get_wrapped() == TypeInfo::get<BlueprintInstance>())
+							{	
+								if (auto& path = *(std::filesystem::path*)inputs[2].data; !path.empty())
 								{
 									path = Path::get(path);
 									if (std::filesystem::exists(path))
@@ -589,8 +586,6 @@ namespace flame
 										{
 											auto ins = BlueprintInstance::create(bp);
 											auto& array = *(std::vector<BlueprintInstancePtr>*)arg.data;
-											BlueprintInstanceHolder holder;
-											holder.ptr = ins;
 											array.push_back(ins);
 											Blueprint::release(bp);
 										}
@@ -617,6 +612,78 @@ namespace flame
 			}
 		);
 
+		library->add_template("Add Child Blueprints", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				},
+				{
+					.name = "Host_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Description",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto parent = *(BlueprintInstancePtr*)inputs[0].data; parent)
+				{
+					if (auto host = *(uint*)inputs[1].data; host != 0)
+					{
+						if (auto arg = parent->get_variable(host); arg.data && arg.type->tag == TagVQU)
+						{
+							auto ti = (TypeInfo_VectorOfUniquePointerOfUdt*)arg.type;
+							if (ti->get_wrapped()->get_wrapped() == TypeInfo::get<BlueprintInstance>())
+							{
+								if (auto& description = *(std::string*)inputs[2].data; !description.empty())
+								{
+									auto& array = *(std::vector<BlueprintInstancePtr>*)arg.data;
+									BlueprintInstancePtr last_instance = nullptr;
+									auto sp = SUS::to_string_vector(SUS::split(description, '\n'));
+									for (auto& l : sp)
+									{
+										SUS::trim(l);
+										if (l.empty())
+											continue;
+										auto sp2 = SUS::to_string_vector(SUS::split(l, '='));
+										if (sp2.size() == 1)
+										{
+											std::filesystem::path path(l);
+											path = Path::get(path);
+											if (std::filesystem::exists(path))
+											{
+												auto bp = Blueprint::get(path);
+												if (bp)
+												{
+													last_instance = BlueprintInstance::create(bp);
+													array.push_back(last_instance);
+													Blueprint::release(bp);
+												}
+												else
+													last_instance = nullptr;
+											}
+											else
+												last_instance = nullptr;
+										}
+										else if (sp2.size() == 2)
+										{
+											auto arg = last_instance->get_variable(sh(sp2[0].c_str()));
+											if (arg.type && arg.data)
+												arg.type->unserialize(sp2[1], arg.data);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		);
+
 		library->add_template("Remove Child Blueprint", "", BlueprintNodeFlagNone,
 			{
 				{
@@ -635,26 +702,23 @@ namespace flame
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto parent = *(BlueprintInstancePtr*)inputs[0].data;
-				if (parent)
+				if (auto parent = *(BlueprintInstancePtr*)inputs[0].data; parent)
 				{
-					auto host = *(uint*)inputs[1].data;
-					if (host != 0)
+					if (auto host = *(uint*)inputs[1].data; host != 0)
 					{
 						if (auto arg = parent->get_variable(host); arg.data && arg.type->tag == TagVU)
 						{
-							auto ti = (TypeInfo_VectorOfUdt*)arg.type;
-							if (ti->get_wrapped() == TypeInfo::get<BlueprintInstanceHolder>())
+							auto ti = (TypeInfo_VectorOfUniquePointerOfUdt*)arg.type;
+							if (ti->get_wrapped()->get_wrapped() == TypeInfo::get<BlueprintInstance>())
 							{
-								auto ins = *(BlueprintInstancePtr*)inputs[2].data;
-								if (ins)
+								if (auto ins = *(BlueprintInstancePtr*)inputs[2].data; ins)
 								{
 									auto& array = *(std::vector<BlueprintInstancePtr>*)arg.data;
 									for (auto it = array.begin(); it != array.end(); it++)
 									{
 										if (*it == ins)
 										{
-											((BlueprintInstanceHolder&)(*it)).~BlueprintInstanceHolder();
+											delete (*it);
 											array.erase(it);
 											break;
 										}

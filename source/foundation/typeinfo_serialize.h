@@ -153,6 +153,7 @@ namespace flame
 		}
 			break;
 		case TagPU:
+		case TagQU:
 			if (auto it = spec.typed_obj_delegates.find(type); it != spec.typed_obj_delegates.end())
 				it->second(*(void**)((char*)src + offset), dst.append_child(name.c_str()));
 			break;
@@ -252,6 +253,7 @@ namespace flame
 			}
 			break;
 		case TagVPU:
+		case TagVQU:
 			if (auto& vec = *(std::vector<void*>*)((char*)src + offset); !vec.empty())
 			{
 				auto ti = ((TypeInfo_VectorOfPointerOfUdt*)type)->ti;
@@ -374,6 +376,7 @@ namespace flame
 			}
 			break;
 		case TagPU:
+		case TagQU:
 			if (auto c = src.child(name.c_str()); c)
 			{
 				auto ti = (TypeInfo_PointerOfUdt*)type;
@@ -551,6 +554,7 @@ namespace flame
 			}
 			break;
 		case TagVPU:
+		case TagVQU:
 			if (auto c = src.child(name.c_str()); c)
 			{
 				auto ti = ((TypeInfo_VectorOfPointerOfUdt*)type)->ti;

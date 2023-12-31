@@ -345,6 +345,10 @@ void SheetView::on_draw()
 		if (sheet->columns.size() > 0 && sheet->columns.size() < 64)
 		{
 			auto manipulate_data = [](TypeInfo* type, void* data) {
+				auto text_height = [](const std::string& s) {
+					return ImGui::GetFontSize() * (1 + std::count(s.begin(), s.end(), '\n'));
+				};
+
 				auto changed = false;
 				if (type->tag == TagD)
 				{
@@ -385,21 +389,17 @@ void SheetView::on_draw()
 						}
 						break;
 					case DataString:
-						ImGui::PushItemWidth(-FLT_MIN);
-						ImGui::InputText("", (std::string*)data);
+						ImGui::InputTextMultiline("", (std::string*)data, vec2(ImGui::GetContentRegionAvail().x - 3, text_height(*(std::string*)data) + 6));
 						changed |= ImGui::IsItemDeactivatedAfterEdit();
-						ImGui::PopItemWidth();
 						break;
 					case DataWString:
-						ImGui::PushItemWidth(-FLT_MIN);
 						{
 							auto s = w2s(*(std::wstring*)data);
-							ImGui::InputText("", &s);
+							ImGui::InputTextMultiline("", &s, vec2(ImGui::GetContentRegionAvail().x - 3, text_height(s) + 6));
 							changed |= ImGui::IsItemDeactivatedAfterEdit();
 							if (changed)
 								*(std::wstring*)data = s2w(s);
 						}
-						ImGui::PopItemWidth();
 						break;
 					case DataPath:
 						ImGui::PushItemWidth(-20.f);

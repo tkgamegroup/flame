@@ -554,7 +554,7 @@ namespace flame
 
 		UnserializeXmlSpec spec;
 		spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = path_delegate;
-		spec.typed_obj_delegates[TypeInfo::get<Component*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
+		spec.typed_obj_delegates[TypeInfo::get<std::unique_ptr<Component>>()] = [&](pugi::xml_node src, void* dst_o)->void* {
 			std::string name = src.attribute("type_name").value();
 			auto hash = sh(name.c_str());
 			auto ui = find_udt(hash);
@@ -576,7 +576,7 @@ namespace flame
 			spec.excludes.emplace_back("flame::Entity"_h, "children"_h);
 		else
 		{
-			spec.typed_obj_delegates[TypeInfo::get<Entity*>()] = [&](pugi::xml_node src, void* dst_o)->void* {
+			spec.typed_obj_delegates[TypeInfo::get<std::unique_ptr<Entity>>()] = [&](pugi::xml_node src, void* dst_o)->void* {
 				auto e = new EntityPrivate();
 
 				if (auto a = src.attribute("filename"); a)

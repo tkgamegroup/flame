@@ -703,6 +703,7 @@ namespace flame
 		}
 	};
 
+	// Reflect
 	struct BlueprintInstance
 	{
 		BlueprintPtr blueprint;
@@ -760,12 +761,21 @@ namespace flame
 		{
 			virtual BlueprintInstancePtr operator()(BlueprintPtr blueprint) = 0;
 		};
+		// Reflect static
 		FLAME_FOUNDATION_API static Create& create;
+
+		struct Destroy
+		{
+			virtual void operator()(BlueprintInstancePtr instance) = 0;
+		};
+		// Reflect static
+		FLAME_FOUNDATION_API static Destroy& destroy;
 
 		struct Get
 		{
 			virtual BlueprintInstancePtr operator()(uint name) = 0;
 		};
+		// Reflect static
 		FLAME_FOUNDATION_API static Get& get;
 	};
 
@@ -773,17 +783,6 @@ namespace flame
 	{
 		BlueprintInstanceGroup* group;
 		BlueprintExecutingBlock* block;
-	};
-
-	// Reflect ctor dtor
-	struct BlueprintInstanceHolder
-	{
-		BlueprintInstancePtr ptr = nullptr;
-
-		~BlueprintInstanceHolder()
-		{
-			delete ptr;
-		}
 	};
 
 	struct BlueprintDebugger

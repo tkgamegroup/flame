@@ -59,6 +59,9 @@ namespace flame
 		case TagPU:
 			t = new TypeInfo_PointerOfUdt(name, db);
 			break;
+		case TagQU:
+			t = new TypeInfo_UniquePointerOfUdt(name, db);
+			break;
 		case TagPVE:
 			t = new TypeInfo_PointerOfVectorOfEnum(name, db);
 			break;
@@ -100,6 +103,9 @@ namespace flame
 			break;
 		case TagVPU:
 			t = new TypeInfo_VectorOfPointerOfUdt(name, db);
+			break;
+		case TagVQU:
+			t = new TypeInfo_VectorOfUniquePointerOfUdt(name, db);
 			break;
 		}
 
@@ -143,18 +149,24 @@ namespace flame
 
 	void UdtInfo::destroy_object(void* p, bool free_memory) const
 	{
-		if (auto fi = find_function("dtor"_h); fi && fi->rva)
-			fi->call<void>(p);
+		if (auto fi = find_function("destroy"_h); free_memory && fi && fi->return_type == TypeInfo::void_type &&
+			fi->parameters.size() == 1 && is_pointer(fi->parameters[0]->tag))
+			fi->call<void>(nullptr, p);
 		else
 		{
-			if (!pod)
+			if (auto fi = find_function("dtor"_h); fi && fi->rva)
+				fi->call<void>(p);
+			else
 			{
-				for (auto& v : variables)
-					v.type->destroy((char*)p + v.offset, false);
+				if (!pod)
+				{
+					for (auto& v : variables)
+						v.type->destroy((char*)p + v.offset, false);
+				}
 			}
+			if (free_memory)
+				free(p);
 		}
-		if (free_memory)
-			free(p);
 	}
 
 	void UdtInfo::copy_object(void* dst, const void* src) const

@@ -16,12 +16,14 @@ TypeTag parse_vector(std::string& name)
 	name = name.substr(0, SUS::first_parentheses_token_pos(name, '<', '>', ','));
 
 	auto is_pointer = false;
+	auto is_unique = false;
 	auto is_pair = false;
 	auto is_tuple = false;
 	auto is_virtual_udt = false;
 	if (SUS::strip_head_if(name, "std::unique_ptr<"))
 	{
 		is_pointer = true;
+		is_unique = true;
 		name = name.substr(0, SUS::first_parentheses_token_pos(name, '<', '>', ','));
 	}
 	else if (SUS::strip_head_if(name, "std::pair<"))
@@ -66,7 +68,7 @@ TypeTag parse_vector(std::string& name)
 				return TagVD;
 		}
 		else
-			return is_pointer ? TagVPU : TagVU;
+			return is_pointer ? (is_unique ? TagVQU : TagVPU) : TagVU;
 	}
 	return TagCount;
 }
@@ -193,6 +195,11 @@ TypeInfo* typeinfo_from_symbol(IDiaSymbol* s_sym)
 			{
 				name = w2s(pwname);
 				return TypeInfo::get(parse_vector(name), name, db);
+			}
+			else if (name.starts_with("std::unique_ptr<"))
+			{
+				name = name.substr(0, SUS::first_parentheses_token_pos(name, '<', '>', ','));
+				return TypeInfo::get(TagQU, name, db);
 			}
 			else if (SUS::strip_head_if(name, "flame::VirtualUdt<"))
 			{
@@ -1157,11 +1164,11 @@ process:
 				void* obj = nullptr;
 				if (library)
 				{
-					if (auto fi = u.find_function("create"_h); fi && is_in(fi->return_type->tag, TagP_Beg, TagP_End))
+					if (auto fi = u.find_function("create"_h); fi && is_pointer(fi->return_type->tag))
 					{
 						if (fi->parameters.empty())
 							obj = fi->call<void*>(nullptr);
-						else if (fi->parameters.size() == 1 && is_in(fi->parameters[0]->tag, TagP_Beg, TagP_End))
+						else if (fi->parameters.size() == 1 && is_pointer(fi->parameters[0]->tag))
 							obj = fi->call<void*>(nullptr, nullptr);
 					}
 					else
@@ -1236,9 +1243,15 @@ process:
 							a.default_value = a.var_idx != -1 ? a.var()->default_value : a.serialize(obj);
 					}
 
-					if (auto fi = u.find_function("dtor"_h); fi && fi->rva)
-						fi->call<void>(obj);
-					free(obj);
+					if (auto fi = u.find_function("destroy"_h); fi && fi->return_type == TypeInfo::void_type &&
+						fi->parameters.size() == 1 && is_pointer(fi->parameters[0]->tag))
+						fi->call<void>(nullptr, obj);
+					else
+					{
+						if (auto fi = u.find_function("dtor"_h); fi && fi->rva)
+							fi->call<void>(obj);
+						free(obj);
+					}
 				}
 
 				db.udts.emplace(sh(u.name.c_str()), u);

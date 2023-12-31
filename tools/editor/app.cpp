@@ -195,6 +195,24 @@ TypeInfo* show_types_menu()
 		}
 		ImGui::EndMenu();
 	}
+	if (ImGui::BeginMenu("Unique Pointer"))
+	{
+		if (ImGui::BeginMenu("Of Udt"))
+		{
+			for (auto& ui : tidb.udts)
+			{
+				if (!type_filter.empty())
+				{
+					if (!SUS::find_case_insensitive(ui.second.name, type_filter))
+						continue;
+				}
+				if (ImGui::Selectable(ui.second.name.c_str()))
+					ret = TypeInfo::get(TagQU, ui.second.name, tidb);
+			}
+			ImGui::EndMenu();
+		}
+		ImGui::EndMenu();
+	}
 	if (ImGui::BeginMenu("Vector"))
 	{
 		if (ImGui::BeginMenu("Of Enum"))
@@ -250,6 +268,20 @@ TypeInfo* show_types_menu()
 				}
 				if (ImGui::Selectable(ui.second.name.c_str()))
 					ret = TypeInfo::get(TagVPU, ui.second.name, tidb);
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Of Unique Pointer Of Udt"))
+		{
+			for (auto& ui : tidb.udts)
+			{
+				if (!type_filter.empty())
+				{
+					if (!SUS::find_case_insensitive(ui.second.name, type_filter))
+						continue;
+				}
+				if (ImGui::Selectable(ui.second.name.c_str()))
+					ret = TypeInfo::get(TagVQU, ui.second.name, tidb);
 			}
 			ImGui::EndMenu();
 		}

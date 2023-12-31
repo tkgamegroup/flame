@@ -14,6 +14,7 @@ namespace flame
 	*	O - Virtual Udt
 	*	A - Array
 	*	P - Pointer
+	*   Q - Unique Pointer
 	*	V - Vector
 	*/
 	enum TypeTag
@@ -28,6 +29,7 @@ namespace flame
 		TagPE,
 		TagPD,
 		TagPU,
+		TagQU,
 		TagPR,
 		TagPT,
 		TagPVE,
@@ -44,6 +46,7 @@ namespace flame
 		TagVR,
 		TagVT,
 		TagVPU,
+		TagVQU,
 
 		TagP_Beg = TagPE,
 		TagP_End = TagPVT,
@@ -107,6 +110,9 @@ namespace flame
 	concept pointer_of_udt_type = pointer_type<T> && !basic_type<std::remove_pointer_t<T>>;
 
 	template<typename T>
+	concept unique_pointer_of_udt_type = unique_pointer_type<T> && !basic_type<typename T::element_type>;
+
+	template<typename T>
 	concept array_of_enum_type = array_type<T> && enum_type<std::remove_extent_t<T>>;
 
 	template<typename T>
@@ -132,6 +138,9 @@ namespace flame
 
 	template<typename T>
 	concept vector_of_pointer_of_udt_type = vector_type<T> && pointer_of_udt_type<typename T::value_type>;
+
+	template<typename T>
+	concept vector_of_unique_pointer_of_udt_type = vector_type<T> && unique_pointer_of_udt_type<typename T::value_type>;
 
 	FLAME_FOUNDATION_API extern TypeInfoDataBase& tidb;
 
@@ -356,6 +365,13 @@ namespace flame
 			return ret;
 		}
 
+		template<unique_pointer_of_udt_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagQU, format_name(typeid(typename T::element_type).name()), db);
+			return ret;
+		}
+
 		template<array_of_enum_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
@@ -416,6 +432,13 @@ namespace flame
 		}
 
 		template<vector_of_pointer_of_udt_type T>
+		static TypeInfo* get(TypeInfoDataBase& db = tidb)
+		{
+			static auto ret = get(TagVPU, format_name(typeid(std::remove_pointer_t<typename T::value_type>).name()), db);
+			return ret;
+		}
+
+		template<vector_of_unique_pointer_of_udt_type T>
 		static TypeInfo* get(TypeInfoDataBase& db = tidb)
 		{
 			static auto ret = get(TagVPU, format_name(typeid(std::remove_pointer_t<typename T::value_type>).name()), db);
@@ -3373,6 +3396,52 @@ namespace flame
 		}
 	};
 
+	struct TypeInfo_UniquePointerOfUdt : TypeInfo
+	{
+		TypeInfo_Udt* ti = nullptr;
+
+		TypeInfo_UniquePointerOfUdt(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagQU, base_name, sizeof(void*))
+		{
+			ti = (TypeInfo_Udt*)get(TagU, name, db);
+			pod = false;
+		}
+
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = new voidptr;
+			if (ti && ti->ui)
+				*(voidptr*)p = ti->ui->create_object();
+			else
+				*(voidptr*)p = nullptr;
+			return p;
+
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			if (ti && ti->ui)
+				ti->ui->destroy_object(*(voidptr*)p);
+			if (free_memory)
+				delete (voidptr*)p;
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			if (ti && ti->ui)
+				ti->ui->copy_object(*(voidptr*)dst, *(voidptr*)src);
+			else
+				*(voidptr*)dst = *(voidptr*)src;
+		}
+		std::string serialize(const void* p) const override
+		{
+			return str_hex<uint64>((uint64) * (voidptr*)p);
+		}
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
+		}
+	};
+
 	inline void resize_vector(void* dst, TypeInfo* ti, uint new_len)
 	{
 		auto& dst_vec = *(std::vector<char>*)dst;
@@ -3384,9 +3453,11 @@ namespace flame
 			std::vector<char> temp_vec;
 			temp_vec.resize(new_len * ti->size);
 			for (auto i = 0; i < new_len; i++)
-				ti->create((char*)temp_vec.data() + i * ti->size);
+				ti->create(temp_vec.data() + i * ti->size);
 			for (auto i = 0; i < min(old_len, new_len); i++)
 				ti->copy(temp_vec.data() + i * ti->size, dst_vec.data() + i * ti->size);
+			for (auto i = 0; i < old_len; i++)
+				ti->destroy(dst_vec.data() + i * ti->size, false);
 			dst_vec = std::move(temp_vec);
 		}
 	}
@@ -3432,6 +3503,12 @@ namespace flame
 				return new std::vector<int>();
 			new(p) std::vector<char>();
 			return p;
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			resize_vector(p, ti, 0);
+			if (free_memory)
+				delete (std::vector<int>*)p;
 		}
 		void copy(void* dst, const void* src) const override
 		{
@@ -3488,6 +3565,12 @@ namespace flame
 				return new std::vector<int>();
 			new(p) std::vector<char>();
 			return p;
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			resize_vector(p, ti, 0);
+			if (free_memory)
+				delete (std::vector<int>*)p;
 		}
 		void copy(void* dst, const void* src) const override
 		{
@@ -3553,6 +3636,12 @@ namespace flame
 			new(p) std::vector<char>();
 			return p;
 		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			resize_vector(p, ti, 0);
+			if (free_memory)
+				delete (std::vector<int>*)p;
+		}
 		void copy(void* dst, const void* src) const override
 		{
 			copy_vector(dst, src, ti);
@@ -3614,6 +3703,12 @@ namespace flame
 				return new std::vector<int>();
 			new(p) std::vector<char>();
 			return p;
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			resize_vector(p, ti, 0);
+			if (free_memory)
+				delete (std::vector<int>*)p;
 		}
 		void copy(void* dst, const void* src) const override
 		{
@@ -3677,6 +3772,12 @@ namespace flame
 			new(p) std::vector<char>();
 			return p;
 		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			resize_vector(p, ti, 0);
+			if (free_memory)
+				delete (std::vector<int>*)p;
+		}
 		void copy(void* dst, const void* src) const override
 		{
 			copy_vector(dst, src, ti);
@@ -3738,6 +3839,47 @@ namespace flame
 				return new std::vector<int>();
 			new(p) std::vector<char>();
 			return p;
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			resize_vector(p, ti, 0);
+			if (free_memory)
+				delete (std::vector<int>*)p;
+		}
+		void copy(void* dst, const void* src) const override
+		{
+			copy_vector(dst, src, ti);
+		}
+
+		TypeInfo* get_wrapped() const override
+		{
+			return ti;
+		}
+	};
+
+	struct TypeInfo_VectorOfUniquePointerOfUdt : TypeInfo
+	{
+		TypeInfo_UniquePointerOfUdt* ti = nullptr;
+
+		TypeInfo_VectorOfUniquePointerOfUdt(std::string_view base_name, TypeInfoDataBase& db) :
+			TypeInfo(TagVQU, base_name, sizeof(std::vector<int>))
+		{
+			ti = (TypeInfo_UniquePointerOfUdt*)get(TagQU, name, db);
+			pod = false;
+		}
+
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				return new std::vector<int>();
+			new(p) std::vector<char>();
+			return p;
+		}
+		void destroy(void* p, bool free_memory = true) const override
+		{
+			resize_vector(p, ti, 0);
+			if (free_memory)
+				delete (std::vector<int>*)p;
 		}
 		void copy(void* dst, const void* src) const override
 		{

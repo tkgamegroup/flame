@@ -105,6 +105,9 @@ namespace flame
 	concept vector_type = is_specialization<T, std::vector>;
 
 	template<typename T>
+	concept unique_pointer_type = is_specialization<T, std::unique_ptr>;
+
+	template<typename T>
 	concept pair_type = is_specialization<T, std::pair>;
 
 	template<typename T>
