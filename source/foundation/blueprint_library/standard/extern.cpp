@@ -4,6 +4,44 @@
 
 namespace flame
 {
+	TypeInfo* type_from_template_str(std::string_view str)
+	{
+		TypeInfo* type = nullptr;
+		if (str == "b")
+			type = TypeInfo::get<bool>();
+		else if (str == "f")
+			type = TypeInfo::get<float>();
+		else if (str == "f2")
+			type = TypeInfo::get<vec2>();
+		else if (str == "f3")
+			type = TypeInfo::get<vec3>();
+		else if (str == "f4")
+			type = TypeInfo::get<vec4>();
+		else if (str == "i")
+			type = TypeInfo::get<int>();
+		else if (str == "i2")
+			type = TypeInfo::get<ivec2>();
+		else if (str == "i3")
+			type = TypeInfo::get<ivec3>();
+		else if (str == "i4")
+			type = TypeInfo::get<ivec4>();
+		else if (str == "u")
+			type = TypeInfo::get<uint>();
+		else if (str == "u2")
+			type = TypeInfo::get<uvec2>();
+		else if (str == "u3")
+			type = TypeInfo::get<uvec3>();
+		else if (str == "u4")
+			type = TypeInfo::get<uvec4>();
+		else if (str == "s")
+			type = TypeInfo::get<std::string>();
+		else if (str == "w")
+			type = TypeInfo::get<std::wstring>();
+		else if (str == "p")
+			type = TypeInfo::get<std::filesystem::path>();
+		return type;
+	}
+
 	void add_extern_node_templates(BlueprintNodeLibraryPtr library)
 	{
 		library->add_template("Get Static Blueprint Instance", "", BlueprintNodeFlagNone,
@@ -26,123 +64,136 @@ namespace flame
 			}
 		);
 
-#define GET_BP_TEMPLATE(TYPE, DV) \
-		library->add_template("Get BP " #TYPE, "", BlueprintNodeFlagNone,\
-			{\
-				{\
-					.name = "Instance",\
-					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }\
-				},\
-				{\
-					.name = "Name_hash",\
-					.allowed_types = { TypeInfo::get<std::string>() }\
-				}\
-			},\
-			{\
-				{\
-					.name = "V",\
-					.allowed_types = { TypeInfo::get<TYPE>() }\
-				}\
-			},\
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
-				auto instance = *(BlueprintInstancePtr*)inputs[0].data;\
-				auto name = *(uint*)inputs[1].data;\
-				if (instance)\
-				{\
-					auto it = instance->variables.find(name);\
-					if (it != instance->variables.end())\
-					{\
-						if (it->second.type == TypeInfo::get<TYPE>())\
-							*(TYPE*)outputs[0].data = *(TYPE*)it->second.data;\
-						else\
-							*(TYPE*)outputs[0].data = TYPE(DV); \
-					}\
-					else\
-						*(TYPE*)outputs[0].data = TYPE(DV);\
-				}\
-				else\
-					*(TYPE*)outputs[0].data = TYPE(DV);\
-			}\
+		library->add_template("Get BP V", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Instance", 
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				}, 
+				{
+					.name = "Name_hash", 
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			}, 
+			{
+				{
+					.name = "V", 
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			}, 
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto instance = *(BlueprintInstancePtr*)inputs[0].data; 
+				auto name = *(uint*)inputs[1].data; 
+				auto type = outputs[0].type;
+				if (instance)
+				{
+					auto it = instance->variables.find(name); 
+					if (it != instance->variables.end())
+					{
+						if (it->second.type == type)
+							type->copy(outputs[0].data, it->second.data); 
+						else
+							type->create(outputs[0].data); 
+					}
+					else
+						type->create(outputs[0].data);
+				}
+				else
+					type->create(outputs[0].data);
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : type_from_template_str(info.template_string);
+					if (!type)
+						return false;
+
+					info.new_inputs.resize(2);
+					info.new_inputs[0] = {
+						.name = "Instance",
+						.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Name_hash",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					info.new_outputs.resize(1);
+					info.new_outputs[0] = {
+						.name = "V",
+						.allowed_types = { type }
+					};
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
 		);
 
-		GET_BP_TEMPLATE(bool, false);
-		GET_BP_TEMPLATE(int, 0);
-		GET_BP_TEMPLATE(uint, 0);
-		GET_BP_TEMPLATE(float, 0);
-		GET_BP_TEMPLATE(ivec2, 0);
-		GET_BP_TEMPLATE(ivec3, 0);
-		GET_BP_TEMPLATE(ivec4, 0);
-		GET_BP_TEMPLATE(uvec2, 0);
-		GET_BP_TEMPLATE(uvec3, 0);
-		GET_BP_TEMPLATE(uvec4, 0);
-		GET_BP_TEMPLATE(cvec2, 0);
-		GET_BP_TEMPLATE(cvec3, 0);
-		GET_BP_TEMPLATE(cvec4, 0);
-		GET_BP_TEMPLATE(vec2, 0);
-		GET_BP_TEMPLATE(vec3, 0);
-		GET_BP_TEMPLATE(vec4, 0);
-		GET_BP_TEMPLATE(std::string, "");
-		GET_BP_TEMPLATE(std::wstring, L"");
-		GET_BP_TEMPLATE(std::filesystem::path, L"");
+		library->add_template("Set BP V", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Instance",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto instance = *(BlueprintInstancePtr*)inputs[0].data;
+				auto name = *(uint*)inputs[1].data;
+				auto type = inputs[2].type;
+				if (instance)
+				{
+					auto it = instance->variables.find(name);
+					if (it != instance->variables.end())
+					{
+						if (it->second.type == type)
+							type->copy(it->second.data, inputs[2].data);
+					}
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : type_from_template_str(info.template_string);
+					if (!type)
+						return false;
 
-#undef GET_BP_TEMPLATE
-
-#define SET_BP_TEMPLATE(TYPE) \
-		library->add_template("Set BP " #TYPE, "", BlueprintNodeFlagNone,\
-			{\
-				{\
-					.name = "Instance",\
-					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }\
-				},\
-				{\
-					.name = "Name_hash",\
-					.allowed_types = { TypeInfo::get<std::string>() }\
-				},\
-				{\
-					.name = "V",\
-					.allowed_types = { TypeInfo::get<TYPE>() }\
-				}\
-			},\
-			{\
-			},\
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
-				auto instance = *(BlueprintInstancePtr*)inputs[0].data;\
-				auto name = *(uint*)inputs[1].data;\
-				if (instance)\
-				{\
-					auto it = instance->variables.find(name);\
-					if (it != instance->variables.end())\
-					{\
-						if (it->second.type == TypeInfo::get<TYPE>())\
-							*(TYPE*)it->second.data = *(TYPE*)inputs[2].data;\
-					}\
-				}\
-			}\
+					info.new_inputs.resize(3);
+					info.new_inputs[0] = {
+						.name = "Instance",
+						.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Name_hash",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					info.new_inputs[2] = {
+						.name = "V",
+						.allowed_types = { type }
+					};
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
 		);
 
-		SET_BP_TEMPLATE(bool);
-		SET_BP_TEMPLATE(int);
-		SET_BP_TEMPLATE(uint);
-		SET_BP_TEMPLATE(float);
-		SET_BP_TEMPLATE(ivec2);
-		SET_BP_TEMPLATE(ivec3);
-		SET_BP_TEMPLATE(ivec4);
-		SET_BP_TEMPLATE(uvec2);
-		SET_BP_TEMPLATE(uvec3);
-		SET_BP_TEMPLATE(uvec4);
-		SET_BP_TEMPLATE(cvec2);
-		SET_BP_TEMPLATE(cvec3);
-		SET_BP_TEMPLATE(cvec4);
-		SET_BP_TEMPLATE(vec2);
-		SET_BP_TEMPLATE(vec3);
-		SET_BP_TEMPLATE(vec4);
-		SET_BP_TEMPLATE(std::string);
-		SET_BP_TEMPLATE(std::wstring);
-		SET_BP_TEMPLATE(std::filesystem::path);
-
-#undef SET_BP_TEMPLATE
-
-		library->add_template("Call BP void_void", "", BlueprintNodeFlagNone, 
+		library->add_template("Call BP", "", BlueprintNodeFlagEnableTemplate, 
 			{
 				{
 					.name = "Instance",
@@ -161,7 +212,11 @@ namespace flame
 				if (instance)
 				{
 					if (auto g = instance->find_group(name); g)
+					{
+						std::vector<voidptr> input_args;
+						std::vector<voidptr> output_args;
 						instance->call(g, nullptr, nullptr);
+					}
 				}
 			}
 		);
@@ -545,6 +600,57 @@ namespace flame
 
 #undef SET_SHT_TEMPLATE
 
+		library->add_template("Get Child Blueprint", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				},
+				{
+					.name = "Host_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "Instance",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+				if (auto parent = *(BlueprintInstancePtr*)inputs[0].data; parent)
+				{
+					if (auto host = *(uint*)inputs[1].data; host != 0)
+					{
+						if (auto arg = parent->get_variable(host); arg.data && arg.type->tag == TagVQU)
+						{
+							auto ti = (TypeInfo_VectorOfUniquePointerOfUdt*)arg.type;
+							if (ti->get_wrapped()->get_wrapped() == TypeInfo::get<BlueprintInstance>())
+							{
+								if (auto name = *(uint*)inputs[2].data; name)
+								{
+									auto& array = *(std::vector<BlueprintInstancePtr>*)arg.data;
+									for (auto ins : array)
+									{
+										if (ins->blueprint->name_hash == name)
+										{
+											*(BlueprintInstancePtr*)outputs[0].data = ins;
+											break;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		);
+
 		library->add_template("Add Child Blueprint", "", BlueprintNodeFlagNone,
 			{
 				{
@@ -567,6 +673,7 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(BlueprintInstancePtr*)outputs[0].data = nullptr;
 				if (auto parent = *(BlueprintInstancePtr*)inputs[0].data; parent)
 				{
 					if (auto host = *(uint*)inputs[1].data; host != 0)
@@ -588,27 +695,14 @@ namespace flame
 											auto& array = *(std::vector<BlueprintInstancePtr>*)arg.data;
 											array.push_back(ins);
 											Blueprint::release(bp);
+											*(BlueprintInstancePtr*)outputs[0].data = ins;
 										}
-										else
-											*(BlueprintInstancePtr*)outputs[0].data = nullptr;
 									}
-									else
-										*(BlueprintInstancePtr*)outputs[0].data = nullptr;
 								}
-								else
-									*(BlueprintInstancePtr*)outputs[0].data = nullptr;
 							}
-							else
-								*(BlueprintInstancePtr*)outputs[0].data = nullptr;
 						}
-						else
-							*(BlueprintInstancePtr*)outputs[0].data = nullptr;
 					}
-					else
-						*(BlueprintInstancePtr*)outputs[0].data = nullptr;
 				}
-				else
-					*(BlueprintInstancePtr*)outputs[0].data = nullptr;
 			}
 		);
 

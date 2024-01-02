@@ -1763,7 +1763,7 @@ void App::unload_project_cpp()
 	}
 }
 
-void App::change_bp_references(uint old_name, uint old_location, uint old_attribute, uint new_name, uint new_location, uint new_attribute)
+void App::change_bp_references(uint old_name, uint old_location, uint old_property, uint new_name, uint new_location, uint new_property)
 {
 	auto assets_path = app.project_path / L"assets";
 	for (auto& it : std::filesystem::recursive_directory_iterator(assets_path))
@@ -1777,7 +1777,7 @@ void App::change_bp_references(uint old_name, uint old_location, uint old_attrib
 				{
 					if (bp->name_hash != old_location)
 					{
-						if (bp->change_references(nullptr, old_name, old_location, old_attribute, new_name, new_location, new_attribute))
+						if (bp->change_references(nullptr, old_name, old_location, old_property, new_name, new_location, new_property))
 						{
 							auto is_editing = false;
 							for (auto& v : blueprint_window.views)

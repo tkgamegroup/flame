@@ -552,10 +552,25 @@ namespace flame
 		printf("blueprint alter_variable: variable not found\n");
 	}
 
-	static BlueprintSlotPtr create_slot(BlueprintNodePtr n, const BlueprintSlotDesc& desc)
+	BlueprintSlotPtr BlueprintPrivate::create_slot(BlueprintNodePtr n, const BlueprintSlotDesc& desc)
 	{
 		auto s = new BlueprintSlotPrivate;
-
+		s->node = n;
+		s->object_id = next_object_id++;
+		s->name = desc.name;
+		s->name_hash = desc.name_hash;
+		s->flags = desc.flags;
+		s->allowed_types = desc.allowed_types;
+		s->type = desc.allowed_types.front();
+		s->data = s->type->create();
+		if (s->flags & BlueprintSlotFlagInput)
+		{
+			if (!desc.default_value.empty())
+				s->type->unserialize(desc.default_value, s->data);
+			n->inputs.emplace_back(s);
+		}
+		else
+			n->outputs.emplace_back(s);
 		return s;
 	}
 
@@ -581,59 +596,39 @@ namespace flame
 		ret->display_name = display_name;
 		if (is_block)
 		{
-			auto i = new BlueprintSlotPrivate;
-			i->node = ret;
-			i->object_id = next_object_id++;
-			i->name = "Execute";
-			i->name_hash = "Execute"_h;
-			i->flags = BlueprintSlotFlagInput;
-			i->allowed_types.push_back(TypeInfo::get<BlueprintSignal>());
-			i->type = i->allowed_types.front();
-			i->data = i->type->create();
+			auto i = create_slot(ret, {
+				.name = "Execute",
+				.name_hash = "Execute"_h,
+				.flags = BlueprintSlotFlagInput,
+				.allowed_types = {TypeInfo::get<BlueprintSignal>()}
+			});
 			(*(BlueprintSignal*)i->data).v = 1;
-			ret->inputs.emplace_back(i);
 
-			auto o = new BlueprintSlotPrivate;
-			o->node = ret;
-			o->object_id = next_object_id++;
-			o->name = "Execute";
-			o->name_hash = "Execute"_h;
-			o->flags = BlueprintSlotFlagOutput;
-			o->allowed_types.push_back(TypeInfo::get<BlueprintSignal>());
-			o->type = o->allowed_types.front();
-			ret->outputs.emplace_back(o);
+			auto o = create_slot(ret, {
+				.name = "Execute",
+				.name_hash = "Execute"_h,
+				.flags = BlueprintSlotFlagOutput,
+				.allowed_types = {TypeInfo::get<BlueprintSignal>()}
+			});
 		}
 		for (auto& src_i : inputs)
 		{
-			auto i = new BlueprintSlotPrivate;
-			i->node = ret;
-			i->object_id = next_object_id++;
-			i->name = src_i.name;
-			i->name_hash = src_i.name_hash;
-			i->flags = src_i.flags | BlueprintSlotFlagInput;
-			i->allowed_types = src_i.allowed_types;
-			i->default_value = src_i.default_value;
-			if (!i->allowed_types.empty())
-			{
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				if (!i->default_value.empty())
-					i->type->unserialize(i->default_value, i->data);
-			}
-			ret->inputs.emplace_back(i);
+			create_slot(ret, {
+				.name = src_i.name,
+				.name_hash = src_i.name_hash,
+				.flags = src_i.flags | BlueprintSlotFlagInput,
+				.allowed_types = src_i.allowed_types,
+				.default_value = src_i.default_value
+			});
 		}
 		for (auto& src_o : outputs)
 		{
-			auto o = new BlueprintSlotPrivate;
-			o->node = ret;
-			o->object_id = next_object_id++;
-			o->name = src_o.name;
-			o->name_hash = src_o.name_hash;
-			o->flags = src_o.flags | BlueprintSlotFlagOutput;
-			o->allowed_types = src_o.allowed_types;
-			if (!o->allowed_types.empty())
-				o->type = o->allowed_types.front();
-			ret->outputs.emplace_back(o);
+			create_slot(ret, {
+				.name = src_o.name,
+				.name_hash = src_o.name_hash,
+				.flags = src_o.flags | BlueprintSlotFlagOutput,
+				.allowed_types = src_o.allowed_types
+			});
 		}
 		ret->constructor = constructor;
 		ret->destructor = destructor;
@@ -682,7 +677,7 @@ namespace flame
 		return add_node(group, parent, "Block", BlueprintNodeFlagNone, "", {}, {}, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, true);
 	}
 
-	BlueprintNodePtr BlueprintPrivate::add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type, uint location_name, uint attribute_name)
+	BlueprintNodePtr BlueprintPrivate::add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type, uint location_name, uint property_name)
 	{
 		assert(group && group->blueprint == this);
 		if (parent)
@@ -774,7 +769,7 @@ namespace flame
 			}
 		}
 
-		if (attribute_name)
+		if (property_name)
 		{
 			if (variable.type->tag != TagU && variable.type->tag != TagVU)
 			{
@@ -783,10 +778,10 @@ namespace flame
 			}
 
 			auto ui = variable.type->retrive_ui();
-			attribute = ui->find_variable(attribute_name);
+			attribute = ui->find_variable(property_name);
 			if (!attribute)
 			{
-				printf("blueprint add_variable_node: cannot find attribute(%u) in udt %s\n", attribute_name, ui->name.c_str());
+				printf("blueprint add_variable_node: cannot find attribute(%u) in udt %s\n", property_name, ui->name.c_str());
 				return nullptr;
 			}
 		}
@@ -887,9 +882,9 @@ namespace flame
 					type->copy(inputs[0].data, inputs[1].data);
 			};
 			break;
-		case "Get Attribute"_h:
-			ret->name = "Get Attribute";
-			ret->name_hash = "Get Attribute"_h;
+		case "Get Property"_h:
+			ret->name = "Get Property";
+			ret->name_hash = "Get Property"_h;
 			ret->display_name = "Get " + location_str + variable.name + '.' + attribute->name;
 			{
 				auto i = new BlueprintSlotPrivate;
@@ -927,7 +922,7 @@ namespace flame
 				i->allowed_types.push_back(TypeInfo::get<uint>());
 				i->type = i->allowed_types.front();
 				i->data = i->type->create();
-				*(uint*)i->data = attribute_name;
+				*(uint*)i->data = property_name;
 				ret->inputs.emplace_back(i);
 			}
 			{
@@ -942,9 +937,9 @@ namespace flame
 				ret->outputs.emplace_back(o);
 			}
 			break;
-		case "Get Attributes"_h:
-			ret->name = "Get Attribute";
-			ret->name_hash = "Get Attribute"_h;
+		case "Get Properties"_h:
+			ret->name = "Get Property";
+			ret->name_hash = "Get Property"_h;
 			ret->display_name = "Get " + location_str + variable.name + ".*";
 			{
 				auto i = new BlueprintSlotPrivate;
@@ -972,7 +967,7 @@ namespace flame
 				*(uint*)i->data = location_name;
 				ret->inputs.emplace_back(i);
 			}
-			assert(attribute_name == 0);
+			assert(property_name == 0);
 			{
 				auto o = new BlueprintSlotPrivate;
 				o->node = ret;
@@ -1009,9 +1004,9 @@ namespace flame
 					outputs[i].type->copy(outputs[i].data, (char*)data + ui->variables[i].offset);
 			};
 			break;
-		case "Set Attribute"_h:
-			ret->name = "Set Attribute";
-			ret->name_hash = "Set Attribute"_h;
+		case "Set Property"_h:
+			ret->name = "Set Property";
+			ret->name_hash = "Set Property"_h;
 			ret->display_name = "Set " + location_str + variable.name + '.' + attribute->name;
 			{
 				auto i = new BlueprintSlotPrivate;
@@ -1049,7 +1044,7 @@ namespace flame
 				i->allowed_types.push_back(TypeInfo::get<uint>());
 				i->type = i->allowed_types.front();
 				i->data = i->type->create();
-				*(uint*)i->data = attribute_name;
+				*(uint*)i->data = property_name;
 				ret->inputs.emplace_back(i);
 			}
 			{
@@ -1293,9 +1288,9 @@ namespace flame
 				}
 			};
 			break;
-		case "Array Get Item Attribute"_h:
-			ret->name = "Array Get Item Attribute";
-			ret->name_hash = "Array Get Item Attribute"_h;
+		case "Array Get Item Property"_h:
+			ret->name = "Array Get Item Property";
+			ret->name_hash = "Array Get Item Property"_h;
 			ret->display_name = "Get " + location_str + variable.name + "[]." + attribute->name;
 			{
 				auto i = new BlueprintSlotPrivate;
@@ -1333,7 +1328,7 @@ namespace flame
 				i->allowed_types.push_back(TypeInfo::get<uint>());
 				i->type = i->allowed_types.front();
 				i->data = i->type->create();
-				*(uint*)i->data = attribute_name;
+				*(uint*)i->data = property_name;
 				ret->inputs.emplace_back(i);
 			}
 			{
@@ -1375,9 +1370,9 @@ namespace flame
 				}
 			};
 			break;
-		case "Array Get Item Attributes"_h:
-			ret->name = "Array Get Item Attributes";
-			ret->name_hash = "Array Get Item Attributes"_h;
+		case "Array Get Item Properties"_h:
+			ret->name = "Array Get Item Properties";
+			ret->name_hash = "Array Get Item Properties"_h;
 			ret->display_name = "Get " + location_str + variable.name + "[].*";
 			{
 				auto i = new BlueprintSlotPrivate;
@@ -1405,7 +1400,7 @@ namespace flame
 				*(uint*)i->data = location_name;
 				ret->inputs.emplace_back(i);
 			}
-			assert(attribute_name == 0);
+			assert(property_name == 0);
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -1453,9 +1448,9 @@ namespace flame
 					memset(outputs[i].data, 0, outputs[i].type->size);
 			};
 			break;
-		case "Array Set Item Attribute"_h:
-			ret->name = "Array Set Item Attribute";
-			ret->name_hash = "Array Set Item Attribute"_h;
+		case "Array Set Item Property"_h:
+			ret->name = "Array Set Item Property";
+			ret->name_hash = "Array Set Item Property"_h;
 			ret->display_name = "Set " + location_str + variable.name + "[]." + attribute->name;
 			{
 				auto i = new BlueprintSlotPrivate;
@@ -1493,7 +1488,7 @@ namespace flame
 				i->allowed_types.push_back(TypeInfo::get<uint>());
 				i->type = i->allowed_types.front();
 				i->data = i->type->create();
-				*(uint*)i->data = attribute_name;
+				*(uint*)i->data = property_name;
 				ret->inputs.emplace_back(i);
 			}
 			{
@@ -1621,7 +1616,7 @@ namespace flame
 				*(uint*)i->data = location_name;
 				ret->inputs.emplace_back(i);
 			}
-			assert(attribute_name == 0);
+			assert(property_name == 0);
 			if (auto ui = variable.type->retrive_ui(); ui)
 			{
 				for (auto& vi : ui->variables)
@@ -2000,18 +1995,100 @@ namespace flame
 				return false;
 			}
 
-			std::map<uint, std::pair<std::string, BlueprintSlotPtr>> staging_inputs;
-			std::map<uint, std::vector<BlueprintSlotPtr>> staging_outputs;
-			for (auto& input : node->inputs)
+			for (auto& i : info.new_inputs)
 			{
-				auto& s = staging_inputs[input->name_hash];
-				auto value_str = input->type->serialize(input->data); 
-				s.first = value_str != input->default_value ? value_str : "";
-				s.second = !input->linked_slots.empty() ? input->linked_slots.front() : nullptr;
+				if (!i.name_hash)
+					i.name_hash = sh(i.name.c_str());
 			}
-			for (auto& output : node->outputs)
-				staging_outputs[output->name_hash] = output->linked_slots;
+			for (auto& o : info.new_outputs)
+			{
+				if (!o.name_hash)
+					o.name_hash = sh(o.name.c_str());
+			}
 
+			for (auto it = node->inputs.begin(); it != node->inputs.end(); )
+			{
+				auto input = it->get();
+				auto found = false;
+				for (auto& i : info.new_inputs)
+				{
+					if (i.name_hash == input->name_hash)
+					{
+						if ((i.allowed_types.empty() && input->type == nullptr) ||
+							i.allowed_types.front() == input->type)
+						{
+							input->allowed_types = i.allowed_types;
+							i.name_hash = 0;
+							found = true;
+							break;
+						}
+					}
+				}
+
+				if (!found)
+				{
+					if (!input->linked_slots.empty())
+					{
+						auto link = group->find_link(input->linked_slots.front(), input);
+						if (link)
+							remove_link(link);
+					}
+					it = node->inputs.erase(it);
+				}
+				else
+					it++;
+			}
+
+			for (auto& i : info.new_inputs)
+			{
+				if (i.name_hash)
+				{
+					i.flags = i.flags | BlueprintSlotFlagInput;
+					create_slot(node, i);
+				}
+			}
+
+			for (auto it = node->outputs.begin(); it != node->outputs.end(); )
+			{
+				auto output = it->get();
+				auto found = false;
+				for (auto& o : info.new_outputs)
+				{
+					if (o.name_hash == output->name_hash)
+					{
+						if ((o.allowed_types.empty() && output->type == nullptr) ||
+							o.allowed_types.front() == output->type)
+						{
+							output->allowed_types = o.allowed_types;
+							o.name_hash = 0;
+							found = true;
+							break;
+						}
+					}
+				}
+
+				if (!found)
+				{
+					for (auto slot : output->linked_slots)
+					{
+						auto link = group->find_link(output, slot);
+						if (link)
+							remove_link(link);
+					}
+					it = node->outputs.erase(it);
+				}
+				else
+					it++;
+			}
+
+			for (auto& o : info.new_outputs)
+			{
+				if (o.name_hash)
+				{
+					o.flags = o.flags | BlueprintSlotFlagOutput;
+					create_slot(node, o);
+				}
+			}
 		}
 
 		if (!new_input_types.empty())
@@ -2051,7 +2128,7 @@ namespace flame
 		dirty_frame = frame;
 	}
 
-	static uint get_variable_node_desc(BlueprintNodePtr nn, uint* out_name, uint* out_location, uint* out_attribute, uint node_type = 0)
+	static uint get_variable_node_desc(BlueprintNodePtr nn, uint* out_name, uint* out_location, uint* out_property, uint node_type = 0)
 	{
 		auto n = (BlueprintNode*)nn;
 		if (n)
@@ -2066,20 +2143,20 @@ namespace flame
 					*out_name = *(uint*)n->inputs[0]->data;
 				if (out_location)
 					*out_location = *(uint*)n->inputs[1]->data;
-				if (out_attribute)
-					*out_attribute = 0;
+				if (out_property)
+					*out_property = 0;
 			}
 			return 2;
-		case "Get Attribute"_h:
-		case "Set Attribute"_h:
+		case "Get Property"_h:
+		case "Set Property"_h:
 			if (n)
 			{
 				if (out_name)
 					*out_name = *(uint*)n->inputs[0]->data;
 				if (out_location)
 					*out_location = *(uint*)n->inputs[1]->data;
-				if (out_attribute)
-					*out_attribute = *(uint*)n->inputs[2]->data;
+				if (out_property)
+					*out_property = *(uint*)n->inputs[2]->data;
 			}
 			return 3;
 		case "Array Size"_h:
@@ -2090,8 +2167,8 @@ namespace flame
 					*out_name = *(uint*)n->inputs[0]->data;
 				if (out_location)
 					*out_location = *(uint*)n->inputs[1]->data;
-				if (out_attribute)
-					*out_attribute = 0;
+				if (out_property)
+					*out_property = 0;
 			}
 			return 2;
 		case "Array Get Item"_h:
@@ -2102,20 +2179,20 @@ namespace flame
 					*out_name = *(uint*)n->inputs[0]->data;
 				if (out_location)
 					*out_location = *(uint*)n->inputs[1]->data;
-				if (out_attribute)
-					*out_attribute = 0;
+				if (out_property)
+					*out_property = 0;
 			}
 			return 2;
-		case "Array Get Item Attribute"_h:
-		case "Array Set Item Attribute"_h:
+		case "Array Get Item Property"_h:
+		case "Array Set Item Property"_h:
 			if (n)
 			{
 				if (out_name)
 					*out_name = *(uint*)n->inputs[0]->data;
 				if (out_location)
 					*out_location = *(uint*)n->inputs[1]->data;
-				if (out_attribute)
-					*out_attribute = *(uint*)n->inputs[2]->data;
+				if (out_property)
+					*out_property = *(uint*)n->inputs[2]->data;
 			}
 			return 3;
 		case "Array Add Item"_h:
@@ -2126,8 +2203,8 @@ namespace flame
 					*out_name = *(uint*)n->inputs[0]->data;
 				if (out_location)
 					*out_location = *(uint*)n->inputs[1]->data;
-				if (out_attribute)
-					*out_attribute = 0;
+				if (out_property)
+					*out_property = 0;
 			}
 			return 2;
 		}
@@ -2142,17 +2219,17 @@ namespace flame
 			return n->outputs[0]->type;
 		case "Set Variable"_h:
 			return n->inputs[2]->type;
-		case "Get Attribute"_h:
+		case "Get Property"_h:
 			return n->outputs[0]->type;
-		case "Set Attribute"_h:
+		case "Set Property"_h:
 			return n->inputs[3]->type;
 		case "Array Get Item"_h:
 			return n->outputs[0]->type;
 		case "Array Set Item"_h:
 			return n->inputs[3]->type;
-		case "Array Get Item Attribute"_h:
+		case "Array Get Item Property"_h:
 			return n->outputs[0]->type;
-		case "Array Set Item Attribute"_h:
+		case "Array Set Item Property"_h:
 			return n->inputs[4]->type;
 		case "Array Add Item"_h:
 			return n->inputs[2]->type;
@@ -2160,7 +2237,7 @@ namespace flame
 		return nullptr;
 	}
 
-	bool BlueprintPrivate::change_references(BlueprintGroupPtr group, uint old_name, uint old_location, uint old_attribute, uint new_name, uint new_location, uint new_attribute)
+	bool BlueprintPrivate::change_references(BlueprintGroupPtr group, uint old_name, uint old_location, uint old_property, uint new_name, uint new_location, uint new_property)
 	{
 		auto changed = false;
 		auto process_group = [&](BlueprintGroupPtr g) {
@@ -2174,8 +2251,8 @@ namespace flame
 					if ((old_name  == 0 || *(uint*)n->inputs[0]->data == old_name) &&
 						*(uint*)n->inputs[1]->data == old_location)
 					{
-						uint var_name, var_location, var_attribute;
-						auto desc_n = get_variable_node_desc(n, &var_name, &var_location, &var_attribute);
+						uint var_name, var_location, property_name;
+						auto desc_n = get_variable_node_desc(n, &var_name, &var_location, &property_name);
 
 						struct StagingValue
 						{
@@ -2232,11 +2309,11 @@ namespace flame
 						auto old_var_type = var_type_from_variable_node(n);
 						var_name = new_name ? new_name : var_name;
 						var_location = new_location ? new_location : var_location;
-						var_attribute = new_attribute ? new_attribute : var_attribute;
+						property_name = new_property ? new_property : property_name;
 						auto parent = n->parent;
 						auto position = n->position;
 						remove_node(n, false);
-						if (auto new_n = add_variable_node(g, parent, var_name, node_type, var_location, var_attribute); new_n)
+						if (auto new_n = add_variable_node(g, parent, var_name, node_type, var_location, property_name); new_n)
 						{
 							auto new_var_type = var_type_from_variable_node(new_n);
 							if (old_var_type && new_var_type)
@@ -2258,7 +2335,7 @@ namespace flame
 												if (vi.type == old_var_type)
 												{
 													remove_node(new_n, false);
-													new_n = add_variable_node(g, parent, var_name, "Array Get Item Attribute"_h, new_location, vi.name_hash);
+													new_n = add_variable_node(g, parent, var_name, "Array Get Item Property"_h, new_location, vi.name_hash);
 													break;
 												}
 											}
@@ -2273,7 +2350,7 @@ namespace flame
 												if (vi.type == old_var_type)
 												{
 													remove_node(new_n, false);
-													new_n = add_variable_node(g, parent, var_name, "Array Set Item Attribute"_h, new_location, vi.name_hash);
+													new_n = add_variable_node(g, parent, var_name, "Array Set Item Property"_h, new_location, vi.name_hash);
 												}
 											}
 										}
@@ -3266,9 +3343,8 @@ namespace flame
 					{
 						if (auto n = ret->add_node(g, parent, sh(node_name.c_str())); n)
 						{
-							if (!node_template.empty())
+							if (n->flags & BlueprintNodeFlagEnableTemplate && !node_template.empty())
 							{
-								assert(n->change_structure_callback);
 								if (!ret->change_node_structure(n, node_template, {}))
 								{
 									printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
@@ -3826,8 +3902,8 @@ namespace flame
 				auto n = node.original;
 				if (n)
 				{
-					uint var_name, var_location, var_attribute;
-					get_variable_node_desc(n, &var_name, &var_location, &var_attribute);
+					uint var_name, var_location, property_name;
+					get_variable_node_desc(n, &var_name, &var_location, &property_name);
 
 					if (n->name_hash == "Variable"_h)
 					{
@@ -3863,13 +3939,13 @@ namespace flame
 						}
 						return;
 					}
-					if (n->name_hash == "Get Attribute"_h)
+					if (n->name_hash == "Get Property"_h)
 					{
 						if (auto [vtype, vdata] = find_var(var_name, var_location); vtype && vdata)
 						{
 							{
 								auto ui = vtype->retrive_ui();
-								auto vi = ui->find_variable(var_attribute);
+								auto vi = ui->find_variable(property_name);
 
 								BlueprintInstanceGroup::Data data;
 								data.changed_frame = frame;
@@ -3883,7 +3959,7 @@ namespace flame
 						}
 						return;
 					}
-					if (n->name_hash == "Get Attributes"_h)
+					if (n->name_hash == "Get Properties"_h)
 					{
 						if (auto [vtype, vdata] = find_var(var_name, var_location); vtype && vdata)
 						{
@@ -3903,13 +3979,13 @@ namespace flame
 						}
 						return;
 					}
-					if (n->name_hash == "Set Attribute"_h)
+					if (n->name_hash == "Set Property"_h)
 					{
 						if (auto [vtype, vdata] = find_var(var_name, var_location); vtype && vdata)
 						{
 							{
 								auto ui = vtype->retrive_ui();
-								auto vi = ui->find_variable(var_attribute);
+								auto vi = ui->find_variable(property_name);
 
 								BlueprintInstanceGroup::Data data;
 								data.changed_frame = frame;
@@ -4029,12 +4105,12 @@ namespace flame
 							}
 						}
 					}
-					if (n->name_hash == "Array Get Item Attribute"_h)
+					if (n->name_hash == "Array Get Item Property"_h)
 					{
 						if (auto [vtype, vdata] = find_var(var_name, var_location); vtype && vdata)
 						{
 							auto ui = vtype->retrive_ui();
-							auto vi = ui->find_variable(var_attribute);
+							auto vi = ui->find_variable(property_name);
 
 							{
 								BlueprintInstanceGroup::Data data;
@@ -4076,7 +4152,7 @@ namespace flame
 						}
 						return;
 					}
-					if (n->name_hash == "Array Get Item Attributes"_h)
+					if (n->name_hash == "Array Get Item Properties"_h)
 					{
 						if (auto [vtype, vdata] = find_var(var_name, var_location); vtype && vdata)
 						{
@@ -4114,12 +4190,12 @@ namespace flame
 						}
 						return;
 					}
-					if (n->name_hash == "Array Set Item Attribute"_h)
+					if (n->name_hash == "Array Set Item Property"_h)
 					{
 						if (auto [vtype, vdata] = find_var(var_name, var_location); vtype && vdata)
 						{
 							auto ui = vtype->retrive_ui();
-							auto vi = ui->find_variable(var_attribute);
+							auto vi = ui->find_variable(property_name);
 
 							{
 								BlueprintInstanceGroup::Data data;

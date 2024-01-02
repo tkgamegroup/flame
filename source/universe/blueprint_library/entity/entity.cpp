@@ -819,57 +819,10 @@ namespace flame
 					auto name = *(uint*)inputs[1].data;
 					if (auto ins = entity->get_component<cBpInstance>(); ins)
 					{
-						if (ins->bp->name_hash == name)
+						if (ins->bp->name_hash == name || name == "*"_h)
 							*(BlueprintInstancePtr*)outputs[0].data = ins->bp_ins;
 						else
 							*(BlueprintInstancePtr*)outputs[0].data = nullptr;
-					}
-					else
-						*(BlueprintInstancePtr*)outputs[0].data = nullptr;
-				}
-				else
-					*(BlueprintInstancePtr*)outputs[0].data = nullptr;
-			}
-		);
-
-		library->add_template("Select Blueprint Instance2", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Entity",
-					.allowed_types = { TypeInfo::get<EntityPtr>() }
-				},
-				{
-					.name = "Name1_hash",
-					.allowed_types = { TypeInfo::get<std::string>() }
-				},
-				{
-					.name = "Name2_hash",
-					.allowed_types = { TypeInfo::get<std::string>() }
-				}
-			},
-			{
-				{
-					.name = "Instance",
-					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
-				}
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
-				{
-					auto name1 = *(uint*)inputs[1].data;
-					auto name2 = *(uint*)inputs[2].data;
-					if (auto ins = entity->get_component<cBpInstance>(); ins)
-					{
-						if (ins->bp->name_hash == name1)
-							*(BlueprintInstancePtr*)outputs[0].data = ins->bp_ins;
-						else
-						{
-							if (ins->bp->name_hash == name2)
-								*(BlueprintInstancePtr*)outputs[0].data = ins->bp_ins;
-							else
-								*(BlueprintInstancePtr*)outputs[0].data = nullptr;
-						}
 					}
 					else
 						*(BlueprintInstancePtr*)outputs[0].data = nullptr;

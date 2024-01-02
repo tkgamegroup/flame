@@ -210,7 +210,7 @@ struct App : UniverseApplication
 	void close_prefab();
 	void load_project_cpp();
 	void unload_project_cpp();
-	void change_bp_references(uint old_name, uint old_location, uint old_attribute, uint new_name, uint new_location, uint new_attribute);
+	void change_bp_references(uint old_name, uint old_location, uint old_property, uint new_name, uint new_location, uint new_property);
 	void open_timeline(const std::filesystem::path& path);
 	void close_timeline();
 	void set_timeline_host(EntityPtr e);

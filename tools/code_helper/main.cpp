@@ -480,7 +480,7 @@ int main(int argc, char** args)
 		if (cmd.empty())
 		{
 			const char* cmds[] = {
-				"new_attribute",
+				"new_property",
 				"new_function",
 				"alter_item",
 				"remove_item",
@@ -497,7 +497,7 @@ int main(int argc, char** args)
 			}
 		}
 
-		if (cmd == "new_attribute")
+		if (cmd == "new_property")
 		{
 			if (name.empty())
 			{

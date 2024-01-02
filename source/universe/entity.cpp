@@ -670,10 +670,10 @@ namespace flame
 				return false;
 			}
 
-			std::vector<pugi::xml_attribute> old_attributes;
+			std::vector<pugi::xml_attribute> old_propertys;
 			for (auto a : doc_root.attributes())
-				old_attributes.push_back(a);
-			for (auto a : old_attributes)
+				old_propertys.push_back(a);
+			for (auto a : old_propertys)
 				doc_root.remove_attribute(a);
 			if (auto c = doc_root.child("components"); c)
 				doc_root.remove_child(c);

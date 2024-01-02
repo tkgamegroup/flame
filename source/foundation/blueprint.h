@@ -8,8 +8,9 @@ namespace flame
 	enum BlueprintNodeFlags
 	{
 		BlueprintNodeFlagNone = 0,
-		BlueprintNodeFlagHorizontalInputs = 1 << 0,
-		BlueprintNodeFlagHorizontalOutputs = 1 << 1,
+		BlueprintNodeFlagEnableTemplate = 1 << 0,
+		BlueprintNodeFlagHorizontalInputs = 1 << 1,
+		BlueprintNodeFlagHorizontalOutputs = 1 << 2,
 	};
 
 	inline BlueprintNodeFlags operator|(BlueprintNodeFlags a, BlueprintNodeFlags b)
@@ -157,16 +158,16 @@ namespace flame
 	{
 		return name == "Variable"_h ||
 			name == "Set Variable"_h ||
-			name == "Get Attribute"_h ||
-			name == "Get Attributes"_h ||
-			name == "Set Attribute"_h ||
+			name == "Get Property"_h ||
+			name == "Get Properties"_h ||
+			name == "Set Property"_h ||
 			name == "Array Size"_h ||
 			name == "Array Clear"_h ||
 			name == "Array Get Item"_h ||
 			name == "Array Set Item"_h ||
-			name == "Array Get Item Attribute"_h ||
-			name == "Array Get Item Attributes"_h ||
-			name == "Array Set Item Attribute"_h ||
+			name == "Array Get Item Property"_h ||
+			name == "Array Get Item Properties"_h ||
+			name == "Array Set Item Property"_h ||
 			name == "Array Add Item"_h ||
 			name == "Array Emplace Item"_h;
 	}
@@ -496,12 +497,12 @@ namespace flame
 			bool is_block = false, BlueprintNodeBeginBlockFunction begin_block_function = nullptr, BlueprintNodeEndBlockFunction end_block_function = nullptr) = 0;
 		virtual BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint name_hash) = 0;
 		virtual BlueprintNodePtr		add_block(BlueprintGroupPtr group, BlueprintNodePtr parent) = 0;
-		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type = "Variable"_h, uint location_name = 0 /* a static bp or enum */, uint attribute_name = 0) = 0;
+		virtual BlueprintNodePtr		add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type = "Variable"_h, uint location_name = 0 /* a static bp or enum */, uint property_name = 0) = 0;
 		virtual BlueprintNodePtr		add_call_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint group_name, uint location_name = 0 /* from other static bp */) = 0; // add a node that will call another group
 		virtual void					remove_node(BlueprintNodePtr node, bool recursively = true) = 0;
 		virtual void					set_nodes_parent(const std::vector<BlueprintNodePtr> nodes, BlueprintNodePtr new_parent) = 0;
 		virtual bool					change_node_structure(BlueprintNodePtr node, const std::string& new_template_string, const std::vector<TypeInfo*>& new_input_types) = 0;
-		virtual bool					change_references(BlueprintGroupPtr group, uint old_name, uint old_location, uint old_attribute, uint new_name, uint new_location, uint new_attribute) = 0;
+		virtual bool					change_references(BlueprintGroupPtr group, uint old_name, uint old_location, uint old_property, uint new_name, uint new_location, uint new_property) = 0;
 		virtual BlueprintLinkPtr		add_link(BlueprintSlotPtr from_slot, BlueprintSlotPtr to_slot) = 0;
 		virtual void					remove_link(BlueprintLinkPtr link) = 0;
 		virtual BlueprintGroupPtr		add_group(const std::string& name) = 0;

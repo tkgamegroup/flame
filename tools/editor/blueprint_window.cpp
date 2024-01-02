@@ -1789,6 +1789,14 @@ void BlueprintView::on_draw()
 						dl->AddText(pos, ImColor(1.f, 1.f, 1.f), text.c_str());
 					}
 					ImGui::TextUnformatted(display_name.c_str());
+					if (n->flags & BlueprintNodeFlagEnableTemplate)
+					{
+						ImGui::SameLine();
+						ImGui::SetNextItemWidth(30.f);
+						ImGui::InputText("T", &n->template_string);
+						if (ImGui::IsItemDeactivatedAfterEdit())
+							blueprint->change_node_structure(n, n->template_string, {});
+					}
 					ImGui::BeginGroup();
 					for (auto i = 0; i < n->inputs.size(); i++)
 					{
@@ -1999,7 +2007,6 @@ void BlueprintView::on_draw()
 								if (from_slot->node->name_hash == "Variable"_h)
 								{
 									ImGui::PushID(input->object_id);
-									ImGui::Indent();
 									auto name = from_slot->node->display_name;
 									ImGui::SetNextItemWidth(50.f);
 									ImGui::InputText("", &name, ImGuiInputTextFlags_ReadOnly);
@@ -2012,7 +2019,6 @@ void BlueprintView::on_draw()
 										blueprint->remove_link(group->find_link(from_slot, input));
 										unsaved = true;
 									}
-									ImGui::Unindent();
 									ImGui::PopID();
 								}
 							}
@@ -2807,7 +2813,7 @@ void BlueprintView::on_draw()
 											{ BlueprintSlotDesc{.name = vi.name, .name_hash = vi.name_hash, .flags = BlueprintSlotFlagOutput, .allowed_types = {vi.type}} }, slot_name))
 										{
 											actions.emplace_back("Get Item " + vi.name, [&, slot_name]() {
-												auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Array Get Item Attribute"_h, location_name, vi.name_hash);
+												auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Array Get Item Property"_h, location_name, vi.name_hash);
 												n->position = open_popup_pos;
 												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -2829,7 +2835,7 @@ void BlueprintView::on_draw()
 											{}, slot_name))
 										{
 											actions.emplace_back("Set Item " + vi.name, [&, slot_name]() {
-												auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Array Set Item Attribute"_h, location_name, vi.name_hash);
+												auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Array Set Item Property"_h, location_name, vi.name_hash);
 												n->position = open_popup_pos;
 												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -2848,8 +2854,8 @@ void BlueprintView::on_draw()
 										if (show_node_template(name, { BlueprintSlotDesc{.name = "Index", .name_hash = "Index"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {TypeInfo::get<uint>()}} }, 
 											outputs, slot_name))
 										{
-											actions.emplace_back("Get Item Attributes", [&, slot_name]() {
-												auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Array Get Item Attributes"_h, location_name);
+											actions.emplace_back("Get Item Properties", [&, slot_name]() {
+												auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Array Get Item Properties"_h, location_name);
 												n->position = open_popup_pos;
 												ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
@@ -3102,36 +3108,6 @@ void BlueprintView::on_draw()
 										{
 											auto& t = standard_library->node_templates[j];
 											if (!t.name.starts_with("Ramp Branch "))
-												break;
-											show_node_library_template(t);
-										}
-										ImGui::EndMenu();
-									}
-									continue;
-								}
-								if (t.name == "Format1")
-								{
-									if (ImGui::BeginMenu("Format"))
-									{
-										for (auto j = i; ; j++)
-										{
-											auto& t = standard_library->node_templates[j];
-											if (!t.name.starts_with("Format"))
-												break;
-											show_node_library_template(t);
-										}
-										ImGui::EndMenu();
-									}
-									continue;
-								}
-								if (t.name == "WFormat1")
-								{
-									if (ImGui::BeginMenu("WFormat"))
-									{
-										for (auto j = i; ; j++)
-										{
-											auto& t = standard_library->node_templates[j];
-											if (!t.name.starts_with("WFormat"))
 												break;
 											show_node_library_template(t);
 										}

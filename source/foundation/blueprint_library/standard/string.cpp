@@ -252,7 +252,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Format", "", BlueprintNodeFlagNone,
+		library->add_template("Format", "", BlueprintNodeFlagEnableTemplate,
 			{
 				{
 					.name = "Fmt",
@@ -300,7 +300,7 @@ namespace flame
 					if (n == 0)
 						return false;
 
-					n = min(n, 16U);
+					n = clamp(n, 1U, 16U);
 					info.new_inputs.resize(n + 1);
 					info.new_inputs[0] = { 
 						.name = "Fmt",
@@ -318,240 +318,85 @@ namespace flame
 						.name = "Out",
 						.allowed_types = { TypeInfo::get<std::string>() }
 					};
+
+					return true;
 				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
+		);
+
+		library->add_template("WFormat", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Fmt",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				},
+				{
+					.name = "Arg1",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto& fmt = *(std::wstring*)inputs[0].data;
+				switch (inputs_count)
+				{
+				case 2: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1])); break;
+				case 3: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2])); break;
+				case 4: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3])); break;
+				case 5: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4])); break;
+				case 6: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5])); break;
+				case 7: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6])); break;
+				case 8: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7])); break;
+				case 9: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8])); break;
+				case 10: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9])); break;
+				case 11: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10])); break;
+				case 12: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10], inputs[11])); break;
+				case 13: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10], inputs[11], inputs[12])); break;
+				case 14: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10], inputs[11], inputs[12], inputs[13])); break;
+				case 15: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10], inputs[11], inputs[12], inputs[13], inputs[14])); break;
+				case 16: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10], inputs[11], inputs[12], inputs[13], inputs[14], inputs[15])); break;
+				case 17: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4], inputs[5], inputs[6], inputs[7], inputs[8], inputs[9], inputs[10], inputs[11], inputs[12], inputs[13], inputs[14], inputs[15], inputs[16])); break;
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto n = s2t<uint>(info.template_string);
+					if (n == 0)
+						return false;
+
+					n = clamp(n, 1U, 16U);
+					info.new_inputs.resize(n + 1);
+					info.new_inputs[0] = {
+						.name = "Fmt",
+						.allowed_types = { TypeInfo::get<std::wstring>() }
+					};
+					for (uint i = 1; i <= n; ++i)
+					{
+						info.new_inputs[i] = {
+							.name = "Arg" + str(i),
+							.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+						};
+					}
+					info.new_outputs.resize(1);
+					info.new_outputs[0] = {
+						.name = "Out",
+						.allowed_types = { TypeInfo::get<std::wstring>() }
+					};
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
 				return true;
-			}
-		);
-
-		library->add_template("Format1", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Fmt",
-					.allowed_types = { TypeInfo::get<std::string>() }
-				},
-				{
-					.name = "Arg1",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<std::string>() }
-				}
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& fmt = *(std::string*)inputs[0].data;
-				*(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1]));
-			}
-		);
-
-		library->add_template("Format2", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Fmt",
-					.allowed_types = { TypeInfo::get<std::string>() }
-				},
-				{
-					.name = "Arg1",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Arg2",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<std::string>() }
-				}
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& fmt = *(std::string*)inputs[0].data;
-				*(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2]));
-			}
-		);
-
-		library->add_template("Format3", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Fmt",
-					.allowed_types = { TypeInfo::get<std::string>() }
-				},
-				{
-					.name = "Arg1",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Arg2",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Arg3",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<std::string>() }
-				}
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& fmt = *(std::string*)inputs[0].data;
-				*(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3]));
-			}
-		);
-
-		library->add_template("Format4", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Fmt",
-					.allowed_types = { TypeInfo::get<std::string>() }
-				},
-				{
-					.name = "Arg1",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Arg2",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Arg3",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Arg4",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<std::string>() }
-				}
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& fmt = *(std::string*)inputs[0].data;
-				*(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1], inputs[2], inputs[3], inputs[4]));
-			}
-		);
-
-		library->add_template("WFormat1", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Fmt",
-					.allowed_types = { TypeInfo::get<std::wstring>() }
-				},
-				{
-					.name = "Arg1",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<std::wstring>() }
-				}
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& fmt = *(std::wstring*)inputs[0].data;
-				*(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1]));
-			}
-		);
-
-		library->add_template("WFormat2", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Fmt",
-					.allowed_types = { TypeInfo::get<std::wstring>() }
-				},
-				{
-					.name = "Arg1",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Arg2",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<std::wstring>() }
-				}
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& fmt = *(std::wstring*)inputs[0].data;
-				*(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2]));
-			}
-		);
-
-		library->add_template("WFormat3", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Fmt",
-					.allowed_types = { TypeInfo::get<std::wstring>() }
-				},
-				{
-					.name = "Arg1",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Arg2",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Arg3",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<std::wstring>() }
-				}
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& fmt = *(std::wstring*)inputs[0].data;
-				*(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3]));
-			}
-		);
-
-		library->add_template("WFormat4", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Fmt",
-					.allowed_types = { TypeInfo::get<std::wstring>() }
-				},
-				{
-					.name = "Arg1",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Arg2",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Arg3",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "Arg4",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-				{
-					.name = "Out",
-					.allowed_types = { TypeInfo::get<std::wstring>() }
-				}
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& fmt = *(std::wstring*)inputs[0].data;
-				*(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1], inputs[2], inputs[3], inputs[4]));
 			}
 		);
 
