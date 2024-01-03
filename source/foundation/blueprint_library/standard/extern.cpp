@@ -68,7 +68,7 @@ namespace flame
 			[](BlueprintNodeStructureChangeInfo& info) {
 				if (info.reason == BlueprintNodeTemplateChanged)
 				{
-					auto type = info.template_string.empty() ? TypeInfo::get<float>() : type_from_template_str(info.template_string);
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
 					if (!type)
 						return false;
 
@@ -130,7 +130,7 @@ namespace flame
 			[](BlueprintNodeStructureChangeInfo& info) {
 				if (info.reason == BlueprintNodeTemplateChanged)
 				{
-					auto type = info.template_string.empty() ? TypeInfo::get<float>() : type_from_template_str(info.template_string);
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
 					if (!type)
 						return false;
 
@@ -199,13 +199,13 @@ namespace flame
 						{
 							for (auto t : SUS::split(sp[0], ','))
 							{
-								auto type = type_from_template_str(t);
+								auto type = blueprint_type_from_template_str(t);
 								if (type && type != TypeInfo::void_type)
 									input_types.push_back(type);
 							}
 							for (auto t : SUS::split(sp[1], ','))
 							{
-								auto type = type_from_template_str(t);
+								auto type = blueprint_type_from_template_str(t);
 								if (type && type != TypeInfo::void_type)
 									output_types.push_back(type);
 							}
@@ -440,7 +440,7 @@ namespace flame
 			[](BlueprintNodeStructureChangeInfo& info) {
 				if (info.reason == BlueprintNodeTemplateChanged)
 				{
-					auto type = info.template_string.empty() ? TypeInfo::get<float>() : type_from_template_str(info.template_string);
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
 					if (!type)
 						return false;
 
@@ -522,7 +522,7 @@ namespace flame
 			[](BlueprintNodeStructureChangeInfo& info) {
 				if (info.reason == BlueprintNodeTemplateChanged)
 				{
-					auto type = info.template_string.empty() ? TypeInfo::get<float>() : type_from_template_str(info.template_string);
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
 					if (!type)
 						return false;
 
@@ -576,7 +576,7 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto sht = *(SheetPtr*)inputs[0].data;
 				auto name = *(uint*)inputs[1].data;
-				auto type = outputs[0].type;
+				auto type = inputs[3].type;
 				if (sht)
 				{
 					auto column_idx = sht->find_column(name);
@@ -596,7 +596,7 @@ namespace flame
 			[](BlueprintNodeStructureChangeInfo& info) {
 				if (info.reason == BlueprintNodeTemplateChanged)
 				{
-					auto type = info.template_string.empty() ? TypeInfo::get<float>() : type_from_template_str(info.template_string);
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
 					if (!type)
 						return false;
 

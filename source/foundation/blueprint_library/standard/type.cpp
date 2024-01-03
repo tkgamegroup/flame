@@ -166,7 +166,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Array Get Random Samples", "", BlueprintNodeFlagNone,
+		library->add_template("Array Get Random Samples", "", BlueprintNodeFlagReturnTarget,
 			{
 				{
 					.name = "Array",
@@ -235,7 +235,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Array Random Sample", "", BlueprintNodeFlagNone,
+		library->add_template("Array Random Sample", "", BlueprintNodeFlagReturnTarget,
 			{
 				{
 					.name = "Array",
@@ -280,7 +280,10 @@ namespace flame
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& temp_array = *(std::vector<uint>*)outputs[3].data;
-				*(uint*)outputs[1].data = temp_array[linearRand(0, (int)temp_array.size() - 1)];
+				if (!temp_array.empty())
+					*(uint*)outputs[1].data = temp_array[linearRand(0, (int)temp_array.size() - 1)];
+				else
+					*(uint*)outputs[1].data = 0;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto& ok = *(bool*)outputs[2].data;

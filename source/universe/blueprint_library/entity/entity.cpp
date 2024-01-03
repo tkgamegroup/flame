@@ -817,7 +817,7 @@ namespace flame
 				if (entity)
 				{
 					auto name = *(uint*)inputs[1].data;
-					if (auto ins = entity->get_component<cBpInstance>(); ins)
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
 					{
 						if (ins->bp->name_hash == name || name == "*"_h)
 							*(BlueprintInstancePtr*)outputs[0].data = ins->bp_ins;
@@ -829,6 +829,237 @@ namespace flame
 				}
 				else
 					*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+			}
+		);
+
+		library->add_template("Get V", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				auto name = *(uint*)inputs[1].data;
+				auto type = outputs[0].type;
+				if (entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						auto it = instance->variables.find(name);
+						if (it != instance->variables.end())
+						{
+							if (it->second.type == type)
+								type->copy(outputs[0].data, it->second.data);
+							else
+								type->create(outputs[0].data);
+						}
+						else
+							type->create(outputs[0].data);
+					}
+					else
+						type->create(outputs[0].data);
+				}
+				else
+					type->create(outputs[0].data);
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
+					if (!type)
+						return false;
+
+					info.new_inputs.resize(2);
+					info.new_inputs[0] = {
+						.name = "Entity",
+						.allowed_types = { TypeInfo::get<EntityPtr>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Name_hash",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					info.new_outputs.resize(1);
+					info.new_outputs[0] = {
+						.name = "V",
+						.allowed_types = { type }
+					};
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
+		);
+
+		library->add_template("Set V", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				auto name = *(uint*)inputs[1].data;
+				auto type = inputs[2].type;
+				if (entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						auto it = instance->variables.find(name);
+						if (it != instance->variables.end())
+						{
+							if (it->second.type == type)
+								type->copy(it->second.data, inputs[2].data);
+						}
+					}
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
+					if (!type)
+						return false;
+
+					info.new_inputs.resize(3);
+					info.new_inputs[0] = {
+						.name = "Entity",
+						.allowed_types = { TypeInfo::get<EntityPtr>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Name_hash",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					info.new_inputs[2] = {
+						.name = "V",
+						.allowed_types = { type }
+					};
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
+		);
+
+		library->add_template("Call", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				auto name = *(uint*)inputs[1].data;
+				if (entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						if (auto g = instance->find_group(name); g)
+						{
+							std::vector<voidptr> input_args;
+							std::vector<voidptr> output_args;
+							for (auto i = 2; i < inputs_count; i++)
+								input_args.push_back(inputs[i].data);
+							for (auto i = 0; i < outputs_count; i++)
+								output_args.push_back(outputs[i].data);
+							instance->call(g, input_args.data(), output_args.data());
+						}
+					}
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					std::vector<TypeInfo*> input_types;
+					std::vector<TypeInfo*> output_types;
+					if (!info.template_string.empty())
+					{
+						auto sp = SUS::split(info.template_string, '|');
+						if (sp.size() == 2)
+						{
+							for (auto t : SUS::split(sp[0], ','))
+							{
+								auto type = blueprint_type_from_template_str(t);
+								if (type && type != TypeInfo::void_type)
+									input_types.push_back(type);
+							}
+							for (auto t : SUS::split(sp[1], ','))
+							{
+								auto type = blueprint_type_from_template_str(t);
+								if (type && type != TypeInfo::void_type)
+									output_types.push_back(type);
+							}
+						}
+
+						info.new_inputs.resize(input_types.size() + 2);
+						info.new_inputs[0] = {
+							.name = "Entity",
+							.allowed_types = { TypeInfo::get<EntityPtr>() }
+						};
+						info.new_inputs[1] = {
+							.name = "Name_hash",
+							.allowed_types = { TypeInfo::get<std::string>() }
+						};
+						for (auto i = 0; i < input_types.size(); i++)
+						{
+							info.new_inputs[i + 2] = {
+								.name = "Input " + str(i + 1),
+								.allowed_types = { input_types[i] }
+							};
+						}
+						for (auto i = 0; i < output_types.size(); i++)
+						{
+							info.new_outputs[i] = {
+								.name = "Output " + str(i + 1),
+								.allowed_types = { output_types[i] }
+							};
+						}
+					}
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
 			}
 		);
 
@@ -854,7 +1085,7 @@ namespace flame
 				if (entity)
 				{
 					auto name = *(uint*)inputs[1].data;
-					if (auto ins = entity->get_component<cBpInstance>(); ins)
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
 					{
 						if (auto g = ins->bp_ins->find_group(name); g)
 							ins->start_coroutine(g, *(float*)inputs[2].data);
@@ -1084,7 +1315,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Foreach Surrounding Entity", "", BlueprintNodeFlagNone,
+		library->add_template("Foreach Surrounding Entity", "", BlueprintNodeFlagReturnTarget,
 			{
 				{
 					.name = "Location",

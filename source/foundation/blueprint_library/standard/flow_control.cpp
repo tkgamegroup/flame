@@ -376,7 +376,7 @@ namespace flame
 			[](BlueprintNodeStructureChangeInfo& info) {
 				if (info.reason == BlueprintNodeTemplateChanged)
 				{
-					auto type = info.template_string.empty() ? TypeInfo::get<float>() : type_from_template_str(info.template_string);
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
 					if (!type)
 						return false;
 
@@ -399,27 +399,27 @@ namespace flame
 				{
 					.name = "V",
 					.allowed_types = { TypeInfo::get<float>() }
-				},
-				{
-					.name = "Levels",
-					.allowed_types = { TypeInfo::get<uint>() },
-					.default_value = "2"
 				}
 			},
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto levels = *(uint*)inputs[1].data - 1;
-				auto target_block = execution.block;
-				while (levels && target_block)
+				auto target = execution.block;
+				auto ok = false;
+				while (!ok)
 				{
-					target_block = target_block->parent;
-					levels--;
+					if (target->node->original->flags & BlueprintNodeFlagReturnTarget)
+						ok = true;
+					target = target->parent;
+					if (!target)
+						break;
+					if (!target->node->original)
+						break;
 				}
-				if (target_block)
+				if (ok)
 				{
-					auto block_node = target_block->node;
-					auto out_idx = target_block->block_output_index;
+					auto block_node = target->node;
+					auto out_idx = target->block_output_index;
 					if (out_idx != -1)
 					{
 						BlueprintAttribute out_arg = { nullptr, nullptr };
@@ -445,19 +445,14 @@ namespace flame
 			[](BlueprintNodeStructureChangeInfo& info) {
 				if (info.reason == BlueprintNodeTemplateChanged)
 				{
-					auto type = info.template_string.empty() ? TypeInfo::get<float>() : type_from_template_str(info.template_string);
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
 					if (!type)
 						return false;
 
-					info.new_inputs.resize(2);
+					info.new_inputs.resize(1);
 					info.new_inputs[0] = {
 						.name = "V",
 						.allowed_types = { type }
-					};
-					info.new_inputs[1] = {
-						.name = "Levels",
-						.allowed_types = { TypeInfo::get<uint>() },
-						.default_value = "2"
 					};
 					info.new_outputs.resize(0);
 					return true;
@@ -473,27 +468,28 @@ namespace flame
 				{
 					.name = "Levels",
 					.allowed_types = { TypeInfo::get<uint>() },
-					.default_value = "2"
+					.default_value = "1"
 				}
 			},
 			{
-				{
-					.name = "V",
-					.allowed_types = { TypeInfo::get<uint>() }
-				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto levels = *(uint*)inputs[0].data;
-				auto stop_block = execution.block;
-				while (levels && stop_block)
+				auto target = execution.block;
+				while (levels)
 				{
-					stop_block = stop_block->parent;
-					levels--;
+					if (target->node->original->flags & BlueprintNodeFlagBreakTarget)
+						levels--;
+					target = target->parent;
+					if (!target)
+						break;
+					if (!target->node->original)
+						break;
 				}
-				if (stop_block)
+				if (target)
 				{
 					auto block = execution.block;
-					while (block != stop_block)
+					while (block != target)
 					{
 						block->_break();
 						block = block->parent;

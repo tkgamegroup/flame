@@ -812,8 +812,6 @@ void BlueprintView::on_draw()
 						for (int i = 0; i < ti->vec_size; i++)
 						{
 							ImGui::PushID(i);
-							if (i > 0)
-								ImGui::SameLine();
 							ImGui::DragScalar("", ImGuiDataType_Float, &((float*)data)[i], 0.01f);
 							changed |= ImGui::IsItemDeactivatedAfterEdit();
 							ImGui::PopID();
@@ -825,8 +823,6 @@ void BlueprintView::on_draw()
 						for (int i = 0; i < ti->vec_size; i++)
 						{
 							ImGui::PushID(i);
-							if (i > 0)
-								ImGui::SameLine();
 							ImGui::DragScalar("", ImGuiDataType_S32, &((int*)data)[i]);
 							changed |= ImGui::IsItemDeactivatedAfterEdit();
 							ImGui::PopID();
@@ -1803,17 +1799,22 @@ void BlueprintView::on_draw()
 						auto input = n->inputs[i].get();
 						if (input->flags & BlueprintSlotFlagHideInUI)
 							continue;
-						ImGui::BeginGroup();
+
+						ImGui::BeginGroup(); // slot name
 						ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
 						ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(input->type));
 						ImGui::TextUnformatted(graphics::font_icon_str("play"_h).c_str());
 						ImGui::PopStyleColor();
 						ax::NodeEditor::EndPin();
-						auto display_name = input->name_hash == "Execute"_h ? "" : input->name;
-						SUS::strip_tail_if(display_name, "_hash");
-						ImGui::SameLine();
-						ImGui::TextUnformatted(display_name.c_str());
-						ImGui::EndGroup();
+						if (input->name_hash != "Execute"_h)
+						{
+							auto display_name = input->name;
+							SUS::strip_tail_if(display_name, "_hash");
+							ImGui::SameLine();
+							ImGui::TextUnformatted(display_name.c_str());
+						}
+						ImGui::EndGroup(); // slot name
+
 						if (ImGui::IsItemHovered())
 						{
 							if (debugging_group)
@@ -2032,17 +2033,22 @@ void BlueprintView::on_draw()
 						auto output = n->outputs[i].get();
 						if (!output->type || (output->flags & BlueprintSlotFlagHideInUI))
 							continue;
-						ImGui::BeginGroup();
-						auto display_name = output->name_hash == "Execute"_h ? "" : output->name;
-						SUS::strip_tail_if(display_name, "_hash");
-						ImGui::TextUnformatted(display_name.c_str());
+
+						ImGui::BeginGroup(); // slot name
+						if (output->name_hash != "Execute"_h)
+						{
+							auto display_name = output->name;
+							SUS::strip_tail_if(display_name, "_hash");
+							ImGui::TextUnformatted(display_name.c_str());
+						}
 						ImGui::SameLine();
 						ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
 						ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(output->type));
 						ImGui::TextUnformatted(graphics::font_icon_str("play"_h).c_str());
 						ImGui::PopStyleColor();
 						ax::NodeEditor::EndPin();
-						ImGui::EndGroup();
+						ImGui::EndGroup(); // slot name
+
 						if (ImGui::IsItemHovered())
 						{
 							if (debugging_group)

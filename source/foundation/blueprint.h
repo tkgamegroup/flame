@@ -9,8 +9,10 @@ namespace flame
 	{
 		BlueprintNodeFlagNone = 0,
 		BlueprintNodeFlagEnableTemplate = 1 << 0,
-		BlueprintNodeFlagHorizontalInputs = 1 << 1,
-		BlueprintNodeFlagHorizontalOutputs = 1 << 2,
+		BlueprintNodeFlagBreakTarget = 1 << 1,
+		BlueprintNodeFlagReturnTarget = 1 << 2,
+		BlueprintNodeFlagHorizontalInputs = 1 << 3,
+		BlueprintNodeFlagHorizontalOutputs = 1 << 4
 	};
 
 	inline BlueprintNodeFlags operator|(BlueprintNodeFlags a, BlueprintNodeFlags b)
@@ -170,6 +172,46 @@ namespace flame
 			name == "Array Set Item Property"_h ||
 			name == "Array Add Item"_h ||
 			name == "Array Emplace Item"_h;
+	}
+
+	inline TypeInfo* blueprint_type_from_template_str(std::string_view str)
+	{
+		TypeInfo* type = nullptr;
+		if (str == "v")
+			type = TypeInfo::void_type;
+		else if (str == "b")
+			type = TypeInfo::get<bool>();
+		else if (str == "f")
+			type = TypeInfo::get<float>();
+		else if (str == "f2")
+			type = TypeInfo::get<vec2>();
+		else if (str == "f3")
+			type = TypeInfo::get<vec3>();
+		else if (str == "f4")
+			type = TypeInfo::get<vec4>();
+		else if (str == "i")
+			type = TypeInfo::get<int>();
+		else if (str == "i2")
+			type = TypeInfo::get<ivec2>();
+		else if (str == "i3")
+			type = TypeInfo::get<ivec3>();
+		else if (str == "i4")
+			type = TypeInfo::get<ivec4>();
+		else if (str == "u")
+			type = TypeInfo::get<uint>();
+		else if (str == "u2")
+			type = TypeInfo::get<uvec2>();
+		else if (str == "u3")
+			type = TypeInfo::get<uvec3>();
+		else if (str == "u4")
+			type = TypeInfo::get<uvec4>();
+		else if (str == "s")
+			type = TypeInfo::get<std::string>();
+		else if (str == "w")
+			type = TypeInfo::get<std::wstring>();
+		else if (str == "p")
+			type = TypeInfo::get<std::filesystem::path>();
+		return type;
 	}
 
 	struct BlueprintSlot
