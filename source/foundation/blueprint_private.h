@@ -2,6 +2,8 @@
 
 namespace flame
 {
+	TypeInfo* type_from_template_str(std::string_view str);
+
 	struct BlueprintSlotPrivate : BlueprintSlot
 	{
 		std::vector<BlueprintSlotPtr> linked_slots;

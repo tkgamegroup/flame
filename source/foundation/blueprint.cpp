@@ -18,6 +18,46 @@ namespace flame
 		uint u;
 	};
 
+	TypeInfo* type_from_template_str(std::string_view str)
+	{
+		TypeInfo* type = nullptr;
+		if (str == "v")
+			type = TypeInfo::void_type;
+		else if (str == "b")
+			type = TypeInfo::get<bool>();
+		else if (str == "f")
+			type = TypeInfo::get<float>();
+		else if (str == "f2")
+			type = TypeInfo::get<vec2>();
+		else if (str == "f3")
+			type = TypeInfo::get<vec3>();
+		else if (str == "f4")
+			type = TypeInfo::get<vec4>();
+		else if (str == "i")
+			type = TypeInfo::get<int>();
+		else if (str == "i2")
+			type = TypeInfo::get<ivec2>();
+		else if (str == "i3")
+			type = TypeInfo::get<ivec3>();
+		else if (str == "i4")
+			type = TypeInfo::get<ivec4>();
+		else if (str == "u")
+			type = TypeInfo::get<uint>();
+		else if (str == "u2")
+			type = TypeInfo::get<uvec2>();
+		else if (str == "u3")
+			type = TypeInfo::get<uvec3>();
+		else if (str == "u4")
+			type = TypeInfo::get<uvec4>();
+		else if (str == "s")
+			type = TypeInfo::get<std::string>();
+		else if (str == "w")
+			type = TypeInfo::get<std::wstring>();
+		else if (str == "p")
+			type = TypeInfo::get<std::filesystem::path>();
+		return type;
+	}
+
 	static void update_depth(BlueprintNodePtr n)
 	{
 		n->depth = n->parent->depth + 1;
@@ -693,7 +733,7 @@ namespace flame
 
 		BlueprintVariable variable;
 		std::string location_str;
-		const VariableInfo* attribute = nullptr;
+		const VariableInfo* property = nullptr;
 		auto found = false;
 		if (location_name == 0 || location_name == name_hash)
 		{
@@ -778,8 +818,8 @@ namespace flame
 			}
 
 			auto ui = variable.type->retrive_ui();
-			attribute = ui->find_variable(property_name);
-			if (!attribute)
+			property = ui->find_variable(property_name);
+			if (!property)
 			{
 				printf("blueprint add_variable_node: cannot find attribute(%u) in udt %s\n", property_name, ui->name.c_str());
 				return nullptr;
@@ -885,7 +925,7 @@ namespace flame
 		case "Get Property"_h:
 			ret->name = "Get Property";
 			ret->name_hash = "Get Property"_h;
-			ret->display_name = "Get " + location_str + variable.name + '.' + attribute->name;
+			ret->display_name = "Get " + location_str + variable.name + '.' + property->name;
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -916,8 +956,8 @@ namespace flame
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
 				i->object_id = next_object_id++;
-				i->name = "Attribute";
-				i->name_hash = "Attribute"_h;
+				i->name = "Property";
+				i->name_hash = "Property"_h;
 				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
 				i->allowed_types.push_back(TypeInfo::get<uint>());
 				i->type = i->allowed_types.front();
@@ -932,8 +972,8 @@ namespace flame
 				o->name = "V";
 				o->name_hash = "V"_h;
 				o->flags = BlueprintSlotFlagOutput;
-				o->allowed_types.push_back(attribute->type);
-				o->type = attribute->type;
+				o->allowed_types.push_back(property->type);
+				o->type = property->type;
 				ret->outputs.emplace_back(o);
 			}
 			break;
@@ -975,8 +1015,8 @@ namespace flame
 				o->name = "V";
 				o->name_hash = "V"_h;
 				o->flags = BlueprintSlotFlagOutput;
-				o->allowed_types.push_back(attribute->type);
-				o->type = attribute->type;
+				o->allowed_types.push_back(property->type);
+				o->type = property->type;
 				ret->outputs.emplace_back(o);
 			}
 			if (auto ui = variable.type->retrive_ui(); ui)
@@ -1007,7 +1047,7 @@ namespace flame
 		case "Set Property"_h:
 			ret->name = "Set Property";
 			ret->name_hash = "Set Property"_h;
-			ret->display_name = "Set " + location_str + variable.name + '.' + attribute->name;
+			ret->display_name = "Set " + location_str + variable.name + '.' + property->name;
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -1038,8 +1078,8 @@ namespace flame
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
 				i->object_id = next_object_id++;
-				i->name = "Attribute";
-				i->name_hash = "Attribute"_h;
+				i->name = "Property";
+				i->name_hash = "Property"_h;
 				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
 				i->allowed_types.push_back(TypeInfo::get<uint>());
 				i->type = i->allowed_types.front();
@@ -1291,7 +1331,7 @@ namespace flame
 		case "Array Get Item Property"_h:
 			ret->name = "Array Get Item Property";
 			ret->name_hash = "Array Get Item Property"_h;
-			ret->display_name = "Get " + location_str + variable.name + "[]." + attribute->name;
+			ret->display_name = "Get " + location_str + variable.name + "[]." + property->name;
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -1322,8 +1362,8 @@ namespace flame
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
 				i->object_id = next_object_id++;
-				i->name = "Attribute";
-				i->name_hash = "Attribute"_h;
+				i->name = "Property";
+				i->name_hash = "Property"_h;
 				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
 				i->allowed_types.push_back(TypeInfo::get<uint>());
 				i->type = i->allowed_types.front();
@@ -1350,8 +1390,8 @@ namespace flame
 				o->name = "V";
 				o->name_hash = "V"_h;
 				o->flags = BlueprintSlotFlagOutput;
-				o->allowed_types.push_back(attribute->type);
-				o->type = attribute->type;
+				o->allowed_types.push_back(property->type);
+				o->type = property->type;
 				ret->outputs.emplace_back(o);
 			}
 			ret->function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
@@ -1451,7 +1491,7 @@ namespace flame
 		case "Array Set Item Property"_h:
 			ret->name = "Array Set Item Property";
 			ret->name_hash = "Array Set Item Property"_h;
-			ret->display_name = "Set " + location_str + variable.name + "[]." + attribute->name;
+			ret->display_name = "Set " + location_str + variable.name + "[]." + property->name;
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -1482,8 +1522,8 @@ namespace flame
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
 				i->object_id = next_object_id++;
-				i->name = "Attribute";
-				i->name_hash = "Attribute"_h;
+				i->name = "Property";
+				i->name_hash = "Property"_h;
 				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
 				i->allowed_types.push_back(TypeInfo::get<uint>());
 				i->type = i->allowed_types.front();
@@ -1510,8 +1550,8 @@ namespace flame
 				i->name = "V";
 				i->name_hash = "V"_h;
 				i->flags = BlueprintSlotFlagInput;
-				i->allowed_types.push_back(attribute->type);
-				i->type = attribute->type;
+				i->allowed_types.push_back(property->type);
+				i->type = property->type;
 				i->data = i->type->create();
 				ret->inputs.emplace_back(i);
 			}
@@ -2089,6 +2129,8 @@ namespace flame
 					create_slot(node, o);
 				}
 			}
+
+			node->template_string = info.template_string;
 		}
 
 		if (!new_input_types.empty())
@@ -3092,9 +3134,9 @@ namespace flame
 				auto n_link = n_links.append_child("link");
 				n_link.append_attribute("object_id").set_value(l->object_id);
 				n_link.append_attribute("from_node").set_value(l->from_slot->node->object_id);
-				n_link.append_attribute("from_slot").set_value(l->from_slot->name_hash);
+				n_link.append_attribute("from_slot").set_value(l->from_slot->name.c_str());
 				n_link.append_attribute("to_node").set_value(l->to_slot->node->object_id);
-				n_link.append_attribute("to_slot").set_value(l->to_slot->name_hash);
+				n_link.append_attribute("to_slot").set_value(l->to_slot->name.c_str());
 			}
 		}
 
@@ -3226,8 +3268,8 @@ namespace flame
 							parent = it->second;
 						else
 						{
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("add node: cannot find parent with id %d\n", parent_id);
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							continue;
 						}
 					}
@@ -3247,8 +3289,8 @@ namespace flame
 						}
 						else
 						{
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("add node: cannot find input: %s\n", name);
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 						}
 					};
 					if (node_name == "Block")
@@ -3277,7 +3319,7 @@ namespace flame
 					{
 						std::vector<pugi::xml_node> other_inputs;
 						auto desc_n = get_variable_node_desc(nullptr, nullptr, nullptr, nullptr, node_name_hash);
-						uint var_name = 0, var_location = 0, var_attribute = 0;
+						uint var_name = 0, var_location = 0, property_name = 0;
 						auto idx = 0;
 						for (auto n_input : n_node.child("inputs"))
 						{
@@ -3288,8 +3330,8 @@ namespace flame
 									var_name = n_input.attribute("value").as_uint();
 								else if (n_input_name == "Location")
 									var_location = n_input.attribute("value").as_uint();
-								else if (n_input_name == "Attribute")
-									var_attribute = n_input.attribute("value").as_uint();
+								else if (n_input_name == "Property")
+									property_name = n_input.attribute("value").as_uint();
 								else
 									other_inputs.push_back(n_input);
 							}
@@ -3297,7 +3339,7 @@ namespace flame
 								other_inputs.push_back(n_input);
 							idx++;
 						}
-						if (auto n = ret->add_variable_node(g, parent, var_name, node_name_hash, var_location, var_attribute); n)
+						if (auto n = ret->add_variable_node(g, parent, var_name, node_name_hash, var_location, property_name); n)
 						{
 							for (auto n_input : other_inputs)
 								read_input(n, n_input);
@@ -3306,8 +3348,8 @@ namespace flame
 						}
 						else
 						{
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("node with id %u cannot not be added\n", object_id);
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 						}
 					}
 					else if (node_name == "Call")
@@ -3335,8 +3377,8 @@ namespace flame
 						}
 						else
 						{
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("node with id %u cannot not be added\n", object_id);
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 						}
 					}
 					else
@@ -3347,8 +3389,8 @@ namespace flame
 							{
 								if (!ret->change_node_structure(n, node_template, {}))
 								{
-									printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 									printf("cannot apply template(%s) to node: %s, id: %u\n", node_template.c_str(), node_name.c_str(), object_id);
+									printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 								}
 							}
 							for (auto n_input : n_node.child("inputs"))
@@ -3358,23 +3400,23 @@ namespace flame
 						}
 						else
 						{
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("cannot find node template: %s, id: %u\n", node_name.c_str(), object_id);
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 						}
 					}
 				}
 				for (auto n_link : n_group.child("links"))
 				{
-					BlueprintNodePtr from_node, to_node;
-					BlueprintSlotPtr from_slot, to_slot;
+					BlueprintNodePtr from_node = nullptr, to_node = nullptr;
+					BlueprintSlotPtr from_slot = nullptr, to_slot = nullptr;
 					if (auto id = n_link.attribute("from_node").as_uint(); id)
 					{
 						if (auto it = node_map.find(id); it != node_map.end())
 							from_node = it->second;
 						else
 						{
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("link: cannot find node: %u\n", id);
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							continue;
 						}
 					}
@@ -3384,34 +3426,65 @@ namespace flame
 							to_node = it->second;
 						else
 						{
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 							printf("link: cannot find node: %u\n", id);
-							continue;
-						}
-					}
-					if (auto name = n_link.attribute("from_slot").as_uint(); name)
-					{
-						from_slot = from_node->find_output(name);
-						if (!from_slot)
-						{
 							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-							printf("link: cannot find output: %u in node: %s\n", name, from_node->display_name.empty() ? from_node->name.c_str() : from_node->display_name.c_str());
 							continue;
 						}
 					}
-					if (auto name = n_link.attribute("to_slot").as_uint(); name)
+					if (from_node)
 					{
-						to_slot = to_node->find_input(name);
-						if (!to_slot)
+						std::string name = n_link.attribute("from_slot").value();
+						if (std::isdigit(name[0]))
 						{
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-							printf("link: cannot find input: %u in node: %s\n", name, to_node->display_name.empty() ?  to_node->name.c_str() : to_node->display_name.c_str());
-							continue;
+							auto hash = s2t<uint>(name);
+							from_slot = from_node->find_output(hash);
+							if (!from_slot)
+							{
+								printf("link: cannot find output: %u in node: %s\n", hash, from_node->display_name.empty() ? from_node->name.c_str() : from_node->display_name.c_str());
+								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+								continue;
+							}
+						}
+						else
+						{
+							from_slot = from_node->find_output(name);
+							if (!from_slot)
+							{
+								printf("link: cannot find output: %s in node: %s\n", name.c_str(), from_node->display_name.empty() ? from_node->name.c_str() : from_node->display_name.c_str());
+								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+								continue;
+							}
 						}
 					}
-					if (!ret->add_link(from_slot, to_slot))
+					if (to_node)
 					{
-						printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+						std::string name = n_link.attribute("to_slot").value();
+						if (std::isdigit(name[0]))
+						{
+							auto hash = s2t<uint>(name);
+							to_slot = to_node->find_input(hash);
+							if (!to_slot)
+							{
+								printf("link: cannot find input: %u in node: %s\n", hash, to_node->display_name.empty() ? to_node->name.c_str() : to_node->display_name.c_str());
+								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+								continue;
+							}
+						}
+						else
+						{
+							to_slot = to_node->find_input(name);
+							if (!to_slot)
+							{
+								printf("link: cannot find input: %u in node: %s\n", name.c_str(), to_node->display_name.empty() ? to_node->name.c_str() : to_node->display_name.c_str());
+								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+								continue;
+							}
+						}
+					}
+					if (from_slot && to_slot)
+					{
+						if (!ret->add_link(from_slot, to_slot))
+							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 					}
 				}
 			}

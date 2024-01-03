@@ -325,145 +325,148 @@ namespace flame
 			}
 		);
 
-#define LOOP_VAR_TEMPLATE(TYPE, DV) \
-		library->add_template("Loop Var " #TYPE, "", BlueprintNodeFlagNone,\
-			{\
-			},\
-			{\
-				{\
-					.name = "V",\
-					.allowed_types = { TypeInfo::get<TYPE>() }\
-				}\
-			},\
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {\
-				auto block_node = execution.block->node;\
-				auto vec_idx = execution.block->loop_vector_index;\
-				if (vec_idx != -1)\
-				{\
-					BlueprintAttribute vec_arg = { nullptr, nullptr };\
-					if (vec_idx < block_node->inputs.size())\
-						vec_arg = block_node->inputs[vec_idx];\
-					else\
-					{\
-						vec_idx -= block_node->inputs.size();\
-						if (vec_idx < block_node->outputs.size())\
-							vec_arg = block_node->outputs[vec_idx];\
-					}\
-					if (vec_arg.data && vec_arg.type)\
-					{\
-						auto i = execution.block->executed_times;\
-						auto item_type = vec_arg.type->get_wrapped();\
-						if (item_type == TypeInfo::get<TYPE>())\
-						{\
-							auto& vec = *(std::vector<char>*)vec_arg.data;\
-							auto length = vec.size() / item_type->size;\
-							if (i < length)\
-								*(TYPE*)outputs[0].data = *(TYPE*)(vec.data() + i * item_type->size);\
-							else\
-								*(TYPE*)outputs[0].data = TYPE(DV);\
-						}\
-						else\
-							*(TYPE*)outputs[0].data = TYPE(DV);\
-					}\
-					else\
-						*(TYPE*)outputs[0].data = TYPE(DV);\
-				}\
-				else\
-					*(TYPE*)outputs[0].data = TYPE(DV);\
-			}\
+		library->add_template("Loop Var", "", BlueprintNodeFlagEnableTemplate,
+			{
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				auto block_node = execution.block->node;
+				auto vec_idx = execution.block->loop_vector_index;
+				auto type = outputs[0].type;
+				if (vec_idx != -1)
+				{
+					BlueprintAttribute vec_arg = { nullptr, nullptr };
+					if (vec_idx < block_node->inputs.size())
+						vec_arg = block_node->inputs[vec_idx];
+					else
+					{
+						vec_idx -= block_node->inputs.size();
+						if (vec_idx < block_node->outputs.size())
+							vec_arg = block_node->outputs[vec_idx];
+					}
+					if (vec_arg.data && vec_arg.type)
+					{
+						auto i = execution.block->executed_times;
+						auto item_type = vec_arg.type->get_wrapped();
+						if (item_type == type)
+						{
+							auto& vec = *(std::vector<char>*)vec_arg.data;
+							auto length = vec.size() / item_type->size;
+							if (i < length)
+								type->copy(outputs[0].data, vec.data() + i * item_type->size);
+							else
+								type->create(outputs[0].data);
+						}
+						else
+							type->create(outputs[0].data);
+					}
+					else
+						type->create(outputs[0].data);
+				}
+				else
+					type->create(outputs[0].data);
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : type_from_template_str(info.template_string);
+					if (!type)
+						return false;
+
+					info.new_inputs.resize(0);
+					info.new_outputs.resize(1);
+					info.new_outputs[0] = {
+						.name = "V",
+						.allowed_types = { type }
+					};
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
 		);
 
-		LOOP_VAR_TEMPLATE(bool, false);
-		LOOP_VAR_TEMPLATE(int, 0);
-		LOOP_VAR_TEMPLATE(uint, 0);
-		LOOP_VAR_TEMPLATE(float, 0);
-		LOOP_VAR_TEMPLATE(ivec2, 0);
-		LOOP_VAR_TEMPLATE(ivec3, 0);
-		LOOP_VAR_TEMPLATE(ivec4, 0);
-		LOOP_VAR_TEMPLATE(uvec2, 0);
-		LOOP_VAR_TEMPLATE(uvec3, 0);
-		LOOP_VAR_TEMPLATE(uvec4, 0);
-		LOOP_VAR_TEMPLATE(cvec2, 0);
-		LOOP_VAR_TEMPLATE(cvec3, 0);
-		LOOP_VAR_TEMPLATE(cvec4, 0);
-		LOOP_VAR_TEMPLATE(vec2, 0);
-		LOOP_VAR_TEMPLATE(vec3, 0);
-		LOOP_VAR_TEMPLATE(vec4, 0);
-		LOOP_VAR_TEMPLATE(std::string, "");
-		LOOP_VAR_TEMPLATE(std::wstring, L"");
-		LOOP_VAR_TEMPLATE(std::filesystem::path, L"");
+		library->add_template("Return", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "Levels",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "2"
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				auto levels = *(uint*)inputs[1].data - 1;
+				auto target_block = execution.block;
+				while (levels && target_block)
+				{
+					target_block = target_block->parent;
+					levels--;
+				}
+				if (target_block)
+				{
+					auto block_node = target_block->node;
+					auto out_idx = target_block->block_output_index;
+					if (out_idx != -1)
+					{
+						BlueprintAttribute out_arg = { nullptr, nullptr };
+						if (out_idx < block_node->inputs.size())
+							out_arg = block_node->inputs[out_idx];
+						else
+						{
+							out_idx -= block_node->inputs.size();
+							if (out_idx < block_node->outputs.size())
+								out_arg = block_node->outputs[out_idx];
+						}
+						if (out_arg.data && out_arg.type)
+						{
+							auto type = inputs[0].type;
+							if (out_arg.type == type)
+								type->copy(out_arg.data, inputs[0].data);
+						}
+					}
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : type_from_template_str(info.template_string);
+					if (!type)
+						return false;
 
-#undef LOOP_VAR_TEMPLATE
-
-#define RETURN_TEMPLATE(TYPE) \
-		library->add_template("Return " #TYPE, "", BlueprintNodeFlagNone,\
-			{\
-				{\
-					.name = "V",\
-					.allowed_types = { TypeInfo::get<TYPE>() }\
-				},\
-				{\
-					.name = "Levels",\
-					.allowed_types = { TypeInfo::get<uint>() },\
-					.default_value = "2"\
-				}\
-			},\
-			{\
-			},\
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {\
-				auto levels = *(uint*)inputs[1].data - 1;\
-				auto target_block = execution.block;\
-				while (levels && target_block)\
-				{\
-					target_block = target_block->parent;\
-					levels--;\
-				}\
-				if (target_block)\
-				{\
-					auto block_node = target_block->node;\
-					auto out_idx = target_block->block_output_index;\
-					if (out_idx != -1)\
-					{\
-						BlueprintAttribute out_arg = { nullptr, nullptr };\
-						if (out_idx < block_node->inputs.size())\
-							out_arg = block_node->inputs[out_idx];\
-						else\
-						{\
-							out_idx -= block_node->inputs.size();\
-							if (out_idx < block_node->outputs.size())\
-								out_arg = block_node->outputs[out_idx];\
-						}\
-						if (out_arg.data && out_arg.type)\
-						{\
-							if (out_arg.type == TypeInfo::get<TYPE>())\
-								*(TYPE*)out_arg.data = *(TYPE*)inputs[0].data;\
-						}\
-					}\
-				}\
-			}\
+					info.new_inputs.resize(2);
+					info.new_inputs[0] = {
+						.name = "V",
+						.allowed_types = { type }
+					};
+					info.new_inputs[1] = {
+						.name = "Levels",
+						.allowed_types = { TypeInfo::get<uint>() },
+						.default_value = "2"
+					};
+					info.new_outputs.resize(0);
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
 		);
-
-		RETURN_TEMPLATE(bool);
-		RETURN_TEMPLATE(int);
-		RETURN_TEMPLATE(uint);
-		RETURN_TEMPLATE(float);
-		RETURN_TEMPLATE(ivec2);
-		RETURN_TEMPLATE(ivec3);
-		RETURN_TEMPLATE(ivec4);
-		RETURN_TEMPLATE(uvec2);
-		RETURN_TEMPLATE(uvec3);
-		RETURN_TEMPLATE(uvec4);
-		RETURN_TEMPLATE(cvec2);
-		RETURN_TEMPLATE(cvec3);
-		RETURN_TEMPLATE(cvec4);
-		RETURN_TEMPLATE(vec2);
-		RETURN_TEMPLATE(vec3);
-		RETURN_TEMPLATE(vec4);
-		RETURN_TEMPLATE(std::string);
-		RETURN_TEMPLATE(std::wstring);
-		RETURN_TEMPLATE(std::filesystem::path);
-
-#undef RETURN_TEMPLATE
 
 		library->add_template("Break", "", BlueprintNodeFlagNone,
 			{
@@ -521,168 +524,144 @@ namespace flame
 			}
 		);
 
-#define BRANCH_TEMPLATE(N) \
-		{\
-			std::vector<BlueprintSlotDesc> inputs;\
-			std::vector<BlueprintSlotDesc> outputs;\
-			for (auto i = 0; i < N; i++) \
-			{\
-				inputs.push_back({\
-					.name = "Case " + std::to_string(i + 1),\
-					.allowed_types = { TypeInfo::get<bool>() }\
-				});\
-			};\
-			for (auto i = 0; i < N; i++) \
-			{\
-				outputs.push_back({\
-					.name = "Branch " + std::to_string(i + 1),\
-					.allowed_types = { TypeInfo::get<BlueprintSignal>() }\
-				});\
-			};\
-			outputs.push_back({\
-				.name = "Else Branch",\
-				.allowed_types = { TypeInfo::get<BlueprintSignal>() }\
-			});\
-			library->add_template(std::format("Branch {}", N), "", BlueprintNodeFlagNone,\
-				inputs,\
-				outputs,\
-				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
-					for (auto i = 0; i < N + 1; i++) \
-						(*(BlueprintSignal*)outputs[i].data).v = 0;\
-					for (auto i = 0; i < N; i++) \
-					{\
-						if (*(bool*)inputs[i].data)\
-						{\
-							(*(BlueprintSignal*)outputs[i].data).v = 1;\
-							return;\
-						}\
-					}\
-					(*(BlueprintSignal*)outputs[N].data).v = 1;\
-				}\
-			);\
-		}
+		library->add_template("Branch", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Case 1",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			{
+				{
+					.name = "Branch 1",
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+				},
+				{
+					.name = "Else Branch",
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				for (auto i = 0; i < outputs_count; i++)
+					(*(BlueprintSignal*)outputs[i].data).v = 0; 
+				auto n = outputs_count - 1;
+				for (auto i = 0; i < n; i++) 
+				{
+					if (*(bool*)inputs[i].data)
+					{
+						(*(BlueprintSignal*)outputs[i].data).v = 1; 
+						return; 
+					}
+				}
+				(*(BlueprintSignal*)outputs[n].data).v = 1;
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto n = info.template_string.empty() ? 1 : s2t<uint>(info.template_string);
+					if (!n)
+						return false;
 
-		BRANCH_TEMPLATE(2);
-		BRANCH_TEMPLATE(3);
-		BRANCH_TEMPLATE(4);
-		BRANCH_TEMPLATE(5);
-		BRANCH_TEMPLATE(6);
-		BRANCH_TEMPLATE(7);
-		BRANCH_TEMPLATE(8);
+					info.new_inputs.resize(n);
+					info.new_outputs.resize(n + 1);
+					for (auto i = 0; i < n; i++)
+					{
+						info.new_inputs[i] = {
+							.name = "Case " + str(i + 1),
+							.allowed_types = { TypeInfo::get<bool>() }
+						};
+						info.new_outputs[i] = {
+							.name = "Branch " + str(i + 1),
+							.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+						};
+					}
+					info.new_outputs[n] = {
+						.name = "Else Branch",
+						.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+					};
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
+		);
 
-#undef BRANCH_TEMPLATE
+		library->add_template("Ramp Branch", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "Stop 1",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "Branch 1",
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+				},
+				{
+					.name = "Else Branch",
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto v = *(float*)inputs[0].data;
+				for (auto i = 0; i < outputs_count; i++)
+					(*(BlueprintSignal*)outputs[i].data).v = 0;
+				auto n = outputs_count - 1;
+				for (auto i = 0; i < n; i++) 
+				{
+					if (v < *(float*)inputs[i + 1].data)
+					{
+						(*(BlueprintSignal*)outputs[i].data).v = 1; 
+						return; 
+					}
+				}
+				(*(BlueprintSignal*)outputs[n].data).v = 1; 
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto n = info.template_string.empty() ? 1 : s2t<uint>(info.template_string);
+					if (!n)
+						return false;
 
-#define SELECT_BRANCH_TEMPLATE(N) \
-		{\
-			std::vector<BlueprintSlotDesc> inputs;\
-			std::vector<BlueprintSlotDesc> outputs;\
-			inputs.push_back({\
-				.name = "V",\
-				.allowed_types = { TypeInfo::get<uint>() }\
-			});\
-			for (auto i = 0; i < N; i++) \
-			{\
-				inputs.push_back({\
-					.name = "Case " + std::to_string(i + 1),\
-					.allowed_types = { TypeInfo::get<uint>() }\
-				});\
-			};\
-			for (auto i = 0; i < N; i++) \
-			{\
-				outputs.push_back({\
-					.name = "Branch " + std::to_string(i + 1),\
-					.allowed_types = { TypeInfo::get<BlueprintSignal>() }\
-				});\
-			};\
-			outputs.push_back({\
-				.name = "Else Branch",\
-				.allowed_types = { TypeInfo::get<BlueprintSignal>() }\
-			});\
-			library->add_template(std::format("Select Branch {}", N), "", BlueprintNodeFlagNone,\
-				inputs,\
-				outputs,\
-				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
-					auto v = *(uint*)inputs[0].data;\
-					for (auto i = 0; i < N + 1; i++) \
-						(*(BlueprintSignal*)outputs[i].data).v = 0;\
-					for (auto i = 0; i < N; i++) \
-					{\
-						if (v == *(uint*)inputs[i + 1].data)\
-						{\
-							(*(BlueprintSignal*)outputs[i].data).v = 1;\
-							return;\
-						}\
-					}\
-					(*(BlueprintSignal*)outputs[N].data).v = 1;\
-				}\
-			);\
-		}
-
-		SELECT_BRANCH_TEMPLATE(2);
-		SELECT_BRANCH_TEMPLATE(3);
-		SELECT_BRANCH_TEMPLATE(4);
-		SELECT_BRANCH_TEMPLATE(5);
-		SELECT_BRANCH_TEMPLATE(6);
-		SELECT_BRANCH_TEMPLATE(7);
-		SELECT_BRANCH_TEMPLATE(8);
-
-#undef SELECT_BRANCH_TEMPLATE
-
-#define RAMP_BRANCH_TEMPLATE(N) \
-		{\
-			std::vector<BlueprintSlotDesc> inputs;\
-			std::vector<BlueprintSlotDesc> outputs;\
-			inputs.push_back({\
-				.name = "V",\
-				.allowed_types = { TypeInfo::get<float>() }\
-			});\
-			for (auto i = 0; i < N; i++) \
-			{\
-				inputs.push_back({\
-					.name = "Stop " + std::to_string(i + 1),\
-					.allowed_types = { TypeInfo::get<float>() }\
-				});\
-			};\
-			for (auto i = 0; i < N; i++) \
-			{\
-				outputs.push_back({\
-					.name = "Branch " + std::to_string(i + 1),\
-					.allowed_types = { TypeInfo::get<BlueprintSignal>() }\
-				});\
-			};\
-			outputs.push_back({\
-				.name = "Else Branch",\
-				.allowed_types = { TypeInfo::get<BlueprintSignal>() }\
-			});\
-			library->add_template(std::format("Ramp Branch {}", N), "", BlueprintNodeFlagNone,\
-				inputs,\
-				outputs,\
-				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
-					auto v = *(float*)inputs[0].data;\
-					for (auto i = 0; i < N + 1; i++) \
-						(*(BlueprintSignal*)outputs[i].data).v = 0;\
-					for (auto i = 0; i < N; i++) \
-					{\
-						if (v < *(float*)inputs[i + 1].data)\
-						{\
-							(*(BlueprintSignal*)outputs[i].data).v = 1;\
-							return;\
-						}\
-					}\
-					(*(BlueprintSignal*)outputs[N].data).v = 1;\
-				}\
-			);\
-		}
-
-		RAMP_BRANCH_TEMPLATE(2);
-		RAMP_BRANCH_TEMPLATE(3);
-		RAMP_BRANCH_TEMPLATE(4);
-		RAMP_BRANCH_TEMPLATE(5);
-		RAMP_BRANCH_TEMPLATE(6);
-		RAMP_BRANCH_TEMPLATE(7);
-		RAMP_BRANCH_TEMPLATE(8);
-
-#undef RAMP_BRANCH_TEMPLATE
+					info.new_inputs.resize(n + 1);
+					info.new_outputs.resize(n + 1);
+					info.new_inputs[0] = {
+						.name = "V",
+						.allowed_types = { TypeInfo::get<float>() }
+					};
+					for (auto i = 0; i < n; i++)
+					{
+						info.new_inputs[i + 1] = {
+							.name = "Stop " + str(i + 1),
+							.allowed_types = { TypeInfo::get<float>() }
+						};
+						info.new_outputs[i] = {
+							.name = "Branch " + str(i + 1),
+							.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+						};
+					}
+					info.new_outputs[n] = {
+						.name = "Else Branch",
+						.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+					};
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
+		);
 
 		library->add_template("Timer", "", BlueprintNodeFlagNone,
 			{

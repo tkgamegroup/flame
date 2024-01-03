@@ -4,44 +4,6 @@
 
 namespace flame
 {
-	TypeInfo* type_from_template_str(std::string_view str)
-	{
-		TypeInfo* type = nullptr;
-		if (str == "b")
-			type = TypeInfo::get<bool>();
-		else if (str == "f")
-			type = TypeInfo::get<float>();
-		else if (str == "f2")
-			type = TypeInfo::get<vec2>();
-		else if (str == "f3")
-			type = TypeInfo::get<vec3>();
-		else if (str == "f4")
-			type = TypeInfo::get<vec4>();
-		else if (str == "i")
-			type = TypeInfo::get<int>();
-		else if (str == "i2")
-			type = TypeInfo::get<ivec2>();
-		else if (str == "i3")
-			type = TypeInfo::get<ivec3>();
-		else if (str == "i4")
-			type = TypeInfo::get<ivec4>();
-		else if (str == "u")
-			type = TypeInfo::get<uint>();
-		else if (str == "u2")
-			type = TypeInfo::get<uvec2>();
-		else if (str == "u3")
-			type = TypeInfo::get<uvec3>();
-		else if (str == "u4")
-			type = TypeInfo::get<uvec4>();
-		else if (str == "s")
-			type = TypeInfo::get<std::string>();
-		else if (str == "w")
-			type = TypeInfo::get<std::wstring>();
-		else if (str == "p")
-			type = TypeInfo::get<std::filesystem::path>();
-		return type;
-	}
-
 	void add_extern_node_templates(BlueprintNodeLibraryPtr library)
 	{
 		library->add_template("Get Static Blueprint Instance", "", BlueprintNodeFlagNone,
@@ -193,7 +155,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Call BP", "", BlueprintNodeFlagEnableTemplate, 
+		library->add_template("Call BP", "", BlueprintNodeFlagEnableTemplate,
 			{
 				{
 					.name = "Instance",
@@ -215,50 +177,71 @@ namespace flame
 					{
 						std::vector<voidptr> input_args;
 						std::vector<voidptr> output_args;
-						instance->call(g, nullptr, nullptr);
+						for (auto i = 2; i < inputs_count; i++)
+							input_args.push_back(inputs[i].data);
+						for (auto i = 0; i < outputs_count; i++)
+							output_args.push_back(outputs[i].data);
+						instance->call(g, input_args.data(), output_args.data());
 					}
 				}
+			}, 
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					std::vector<TypeInfo*> input_types;
+					std::vector<TypeInfo*> output_types;
+					if (!info.template_string.empty())
+					{
+						auto sp = SUS::split(info.template_string, '|');
+						if (sp.size() == 2)
+						{
+							for (auto t : SUS::split(sp[0], ','))
+							{
+								auto type = type_from_template_str(t);
+								if (type && type != TypeInfo::void_type)
+									input_types.push_back(type);
+							}
+							for (auto t : SUS::split(sp[1], ','))
+							{
+								auto type = type_from_template_str(t);
+								if (type && type != TypeInfo::void_type)
+									output_types.push_back(type);
+							}
+						}
+
+						info.new_inputs.resize(input_types.size() + 2);
+						info.new_inputs[0] = {
+							.name = "Instance",
+							.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+						};
+						info.new_inputs[1] = {
+							.name = "Name_hash",
+							.allowed_types = { TypeInfo::get<std::string>() }
+						};
+						for (auto i = 0; i < input_types.size(); i++)
+						{
+							info.new_inputs[i + 2] = {
+								.name = "Input " + str(i + 1),
+								.allowed_types = { input_types[i] }
+							};
+						}
+						for (auto i = 0; i < output_types.size(); i++)
+						{
+							info.new_outputs[i] = {
+								.name = "Output " + str(i + 1),
+								.allowed_types = { output_types[i] } 
+							};
+						}
+					}
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
 			}
 		);
-
-#define CALL_BP_TEMPLATE_void_T(TYPE) \
-		library->add_template("Call BP void_" #TYPE, "", BlueprintNodeFlagNone,\
-			{\
-				{\
-					.name = "Instance",\
-					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }\
-				},\
-				{\
-					.name = "Name_hash",\
-					.allowed_types = { TypeInfo::get<std::string>() }\
-				},\
-				{\
-					.name = "V",\
-					.allowed_types = { TypeInfo::get<TYPE>() }\
-				}\
-			},\
-			{\
-			},\
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
-				auto instance = *(BlueprintInstancePtr*)inputs[0].data;\
-				auto name = *(uint*)inputs[1].data;\
-				if (instance)\
-				{\
-					if (auto g = instance->find_group(name); g)\
-					{\
-						std::vector<voidptr> input_args; \
-						input_args.push_back(inputs[2].data); \
-						instance->call(g, input_args.data(), nullptr); \
-					}\
-				}\
-			}\
-		);
-
-		CALL_BP_TEMPLATE_void_T(bool);
-		CALL_BP_TEMPLATE_void_T(int);
-		CALL_BP_TEMPLATE_void_T(uint);
-
-#undef CALL_BP_TEMPLATE_void_T
 
 		library->add_template("Get Static Sheet", "", BlueprintNodeFlagNone,
 			{
@@ -402,203 +385,245 @@ namespace flame
 			}
 		);
 
-#define FIND_ITEM_IN_SHEET_TEMPLATE(TYPE) \
-		library->add_template("Find " #TYPE " Item In Sheet", "", BlueprintNodeFlagNone,\
-			{\
-				{\
-					.name = "Sheet",\
-					.allowed_types = { TypeInfo::get<SheetPtr>() }\
-				},\
-				{\
-					.name = "Name_hash",\
-					.allowed_types = { TypeInfo::get<std::string>() }\
-				},\
-				{\
-					.name = "Value",\
-					.allowed_types = { TypeInfo::get<TYPE>() }\
-				}\
-			},\
-			{\
-				{\
-					.name = "Index",\
-					.allowed_types = { TypeInfo::get<int>() }\
-				}\
-			},\
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
-				auto sht = *(SheetPtr*)inputs[0].data;\
-				if (sht)\
-				{\
-					auto name = *(uint*)inputs[1].data;\
-					auto column_idx = sht->find_column(name);\
-					for (auto i = 0; i < sht->rows.size(); i++)\
-					{\
-						if (*(TYPE*)sht->rows[i].datas[column_idx] == *(TYPE*)inputs[2].data)\
-						{\
-							*(int*)outputs[0].data = i;\
-							break;\
-						}\
-					}\
-				}\
-				else\
-					*(int*)outputs[0].data = -1;\
-			}\
+		library->add_template("Find Item In Sheet", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Sheet",
+					.allowed_types = { TypeInfo::get<SheetPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Value",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "Index",
+					.allowed_types = { TypeInfo::get<int>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto sht = *(SheetPtr*)inputs[0].data;
+				if (sht)
+				{
+					auto name = *(uint*)inputs[1].data;
+					auto column_idx = sht->find_column(name);
+					auto type = inputs[2].type;
+					if (column_idx != -1)
+					{
+						if (type == sht->columns[column_idx].type)
+						{
+							for (auto i = 0; i < sht->rows.size(); i++)
+							{
+								if (type->compare(sht->rows[i].datas[column_idx], inputs[2].data))
+								{
+									*(int*)outputs[0].data = i;
+									break;
+								}
+							}
+						}
+						else
+							*(int*)outputs[0].data = -1;
+					}
+					else
+						*(int*)outputs[0].data = -1;
+				}
+				else
+					*(int*)outputs[0].data = -1;
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : type_from_template_str(info.template_string);
+					if (!type)
+						return false;
+
+					info.new_inputs.resize(3);
+					info.new_inputs[0] = {
+						.name = "Sheet",
+						.allowed_types = { TypeInfo::get<SheetPtr>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Name_hash",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					info.new_inputs[2] = {
+						.name = "Value",
+						.allowed_types = { type }
+					};
+					info.new_outputs.resize(1);
+					info.new_outputs[0] = {
+						.name = "Index",
+						.allowed_types = { TypeInfo::get<int>() }
+					};
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
 		);
 
-		FIND_ITEM_IN_SHEET_TEMPLATE(bool);
-		FIND_ITEM_IN_SHEET_TEMPLATE(int);
-		FIND_ITEM_IN_SHEET_TEMPLATE(uint);
-		FIND_ITEM_IN_SHEET_TEMPLATE(float);
-		FIND_ITEM_IN_SHEET_TEMPLATE(ivec2);
-		FIND_ITEM_IN_SHEET_TEMPLATE(ivec3);
-		FIND_ITEM_IN_SHEET_TEMPLATE(ivec4);
-		FIND_ITEM_IN_SHEET_TEMPLATE(uvec2);
-		FIND_ITEM_IN_SHEET_TEMPLATE(uvec3);
-		FIND_ITEM_IN_SHEET_TEMPLATE(uvec4);
-		FIND_ITEM_IN_SHEET_TEMPLATE(cvec2);
-		FIND_ITEM_IN_SHEET_TEMPLATE(cvec3);
-		FIND_ITEM_IN_SHEET_TEMPLATE(cvec4);
-		FIND_ITEM_IN_SHEET_TEMPLATE(vec2);
-		FIND_ITEM_IN_SHEET_TEMPLATE(vec3);
-		FIND_ITEM_IN_SHEET_TEMPLATE(vec4);
-		FIND_ITEM_IN_SHEET_TEMPLATE(std::string);
-		FIND_ITEM_IN_SHEET_TEMPLATE(std::wstring);
-		FIND_ITEM_IN_SHEET_TEMPLATE(std::filesystem::path);
+		library->add_template("Get SHT V", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Sheet",
+					.allowed_types = { TypeInfo::get<SheetPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Row",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto sht = *(SheetPtr*)inputs[0].data;
+				auto name = *(uint*)inputs[1].data;
+				auto type = outputs[0].type;
+				if (sht)
+				{
+					auto column_idx = sht->find_column(name);
+					if (column_idx != -1)
+					{
+						if (sht->columns[column_idx].type == type)
+						{
+							auto row_idx = *(uint*)inputs[2].data;
+							if (row_idx < sht->rows.size())
+								type->copy(outputs[0].data, sht->rows[row_idx].datas[column_idx]);
+							else
+								type->create(outputs[0].data);
+						}
+						else
+							type->create(outputs[0].data);
+					}
+					else
+						type->create(outputs[0].data);
+				}
+				else
+					type->create(outputs[0].data);
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : type_from_template_str(info.template_string);
+					if (!type)
+						return false;
 
-#undef FIND_ITEM_IN_SHEET_TEMPLATE
-
-#define GET_SHT_TEMPLATE(TYPE, DV) \
-		library->add_template("Get SHT " #TYPE, "", BlueprintNodeFlagNone,\
-			{\
-				{\
-					.name = "Sheet",\
-					.allowed_types = { TypeInfo::get<SheetPtr>() }\
-				},\
-				{\
-					.name = "Name_hash",\
-					.allowed_types = { TypeInfo::get<std::string>() }\
-				},\
-				{\
-					.name = "Row",\
-					.allowed_types = { TypeInfo::get<uint>() }\
-				}\
-			},\
-			{\
-				{\
-					.name = "V",\
-					.allowed_types = { TypeInfo::get<TYPE>() }\
-				}\
-			},\
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
-				auto sht = *(SheetPtr*)inputs[0].data;\
-				auto name = *(uint*)inputs[1].data;\
-				if (sht)\
-				{\
-					auto column_idx = sht->find_column(name);\
-					if (column_idx != -1)\
-					{\
-						if (sht->columns[column_idx].type == TypeInfo::get<TYPE>())\
-						{\
-							auto row_idx = *(uint*)inputs[2].data;\
-							if (row_idx < sht->rows.size())\
-								*(TYPE*)outputs[0].data = *(TYPE*)sht->rows[row_idx].datas[column_idx];\
-							else\
-								*(TYPE*)outputs[0].data = TYPE(DV); \
-						}\
-						else\
-							*(TYPE*)outputs[0].data = TYPE(DV); \
-					}\
-					else\
-						*(TYPE*)outputs[0].data = TYPE(DV);\
-				}\
-				else\
-					*(TYPE*)outputs[0].data = TYPE(DV);\
-			}\
+					info.new_inputs.resize(3);
+					info.new_inputs[0] = {
+						.name = "Sheet",
+						.allowed_types = { TypeInfo::get<SheetPtr>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Name_hash",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					info.new_inputs[2] = {
+						.name = "Row",
+						.allowed_types = { TypeInfo::get<uint>() }
+					};
+					info.new_outputs.resize(1);
+					info.new_outputs[0] = {
+						.name = "V",
+						.allowed_types = { type }
+					};
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
 		);
 
-		GET_SHT_TEMPLATE(bool, 0);
-		GET_SHT_TEMPLATE(int, 0);
-		GET_SHT_TEMPLATE(uint, 0);
-		GET_SHT_TEMPLATE(float, 0);
-		GET_SHT_TEMPLATE(ivec2, 0);
-		GET_SHT_TEMPLATE(ivec3, 0);
-		GET_SHT_TEMPLATE(ivec4, 0);
-		GET_SHT_TEMPLATE(uvec2, 0);
-		GET_SHT_TEMPLATE(uvec3, 0);
-		GET_SHT_TEMPLATE(uvec4, 0);
-		GET_SHT_TEMPLATE(cvec2, 0);
-		GET_SHT_TEMPLATE(cvec3, 0);
-		GET_SHT_TEMPLATE(cvec4, 0);
-		GET_SHT_TEMPLATE(vec2, 0);
-		GET_SHT_TEMPLATE(vec3, 0);
-		GET_SHT_TEMPLATE(vec4, 0);
-		GET_SHT_TEMPLATE(std::string, "");
-		GET_SHT_TEMPLATE(std::wstring, L"");
-		GET_SHT_TEMPLATE(std::filesystem::path, L"");
+		library->add_template("Set SHT V", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Sheet",
+					.allowed_types = { TypeInfo::get<SheetPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Row",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto sht = *(SheetPtr*)inputs[0].data;
+				auto name = *(uint*)inputs[1].data;
+				auto type = outputs[0].type;
+				if (sht)
+				{
+					auto column_idx = sht->find_column(name);
+					if (column_idx != -1)
+					{
+						if (sht->columns[column_idx].type == type)
+						{
+							auto row_idx = *(uint*)inputs[2].data;
+							if (row_idx < sht->rows.size())
+								type->copy(sht->rows[row_idx].datas[column_idx], inputs[3].data);
+						}
+					}
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : type_from_template_str(info.template_string);
+					if (!type)
+						return false;
 
-#undef GET_SHT_TEMPLATE
-
-#define SET_SHT_TEMPLATE(TYPE) \
-		library->add_template("Set SHT " #TYPE, "", BlueprintNodeFlagNone,\
-			{\
-				{\
-					.name = "Sheet",\
-					.allowed_types = { TypeInfo::get<SheetPtr>() }\
-				},\
-				{\
-					.name = "Name_hash",\
-					.allowed_types = { TypeInfo::get<std::string>() }\
-				},\
-				{\
-					.name = "Row",\
-					.allowed_types = { TypeInfo::get<uint>() }\
-				},\
-				{\
-					.name = "V",\
-					.allowed_types = { TypeInfo::get<TYPE>() }\
-				}\
-			},\
-			{\
-			},\
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {\
-				auto sht = *(SheetPtr*)inputs[0].data;\
-				auto name = *(uint*)inputs[1].data;\
-				if (sht)\
-				{\
-					auto column_idx = sht->find_column(name);\
-					if (column_idx != -1)\
-					{\
-						if (sht->columns[column_idx].type == TypeInfo::get<TYPE>())\
-						{\
-							auto row_idx = *(uint*)inputs[2].data;\
-							if (row_idx < sht->rows.size())\
-								*(TYPE*)sht->rows[row_idx].datas[column_idx] = *(TYPE*)inputs[3].data;\
-						}\
-					}\
-				}\
-			}\
+					info.new_inputs.resize(4);
+					info.new_inputs[0] = {
+						.name = "Sheet",
+						.allowed_types = { TypeInfo::get<SheetPtr>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Name_hash",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					info.new_inputs[2] = {
+						.name = "Row",
+						.allowed_types = { TypeInfo::get<uint>() }
+					};
+					info.new_inputs[3] = {
+						.name = "V",
+						.allowed_types = { type }
+					};
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
 		);
-
-		SET_SHT_TEMPLATE(bool);
-		SET_SHT_TEMPLATE(int);
-		SET_SHT_TEMPLATE(uint);
-		SET_SHT_TEMPLATE(float);
-		SET_SHT_TEMPLATE(ivec2);
-		SET_SHT_TEMPLATE(ivec3);
-		SET_SHT_TEMPLATE(ivec4);
-		SET_SHT_TEMPLATE(uvec2);
-		SET_SHT_TEMPLATE(uvec3);
-		SET_SHT_TEMPLATE(uvec4);
-		SET_SHT_TEMPLATE(cvec2);
-		SET_SHT_TEMPLATE(cvec3);
-		SET_SHT_TEMPLATE(cvec4);
-		SET_SHT_TEMPLATE(vec2);
-		SET_SHT_TEMPLATE(vec3);
-		SET_SHT_TEMPLATE(vec4);
-		SET_SHT_TEMPLATE(std::string);
-		SET_SHT_TEMPLATE(std::wstring);
-		SET_SHT_TEMPLATE(std::filesystem::path);
-
-#undef SET_SHT_TEMPLATE
 
 		library->add_template("Get Child Blueprint", "", BlueprintNodeFlagNone,
 			{
