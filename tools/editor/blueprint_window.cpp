@@ -923,7 +923,7 @@ void BlueprintView::on_draw()
 					if (selected_enum != -1)
 					{
 						blueprint->remove_enum(blueprint->enums[selected_enum].name_hash);
-						if (blueprint->enums.empty() || selected_enum == (int)blueprint->enums.size() - 1)
+						if (blueprint->enums.empty() || selected_enum >= blueprint->enums.size())
 							selected_enum = -1;
 						unsaved = true;
 					}
@@ -1004,7 +1004,7 @@ void BlueprintView::on_draw()
 							blueprint->alter_enum(e.name_hash, e.name, items);
 							if (blueprint->is_static)
 								app.change_bp_references(old_item_hash, e.name_hash, 0, 0, e.name_hash, 0);
-							if (items.empty() || selected_enum_item == (int)items.size() - 1)
+							if (items.empty() || selected_enum_item >= items.size())
 								selected_enum_item = -1;
 							unsaved = true;
 						}
@@ -1100,7 +1100,7 @@ void BlueprintView::on_draw()
 					if (selected_struct != -1)
 					{
 						blueprint->remove_struct(blueprint->structs[selected_struct].name_hash);
-						if (blueprint->structs.empty() || selected_struct == (int)blueprint->structs.size() - 1)
+						if (blueprint->structs.empty() || selected_struct >= blueprint->structs.size())
 							selected_struct = -1;
 						unsaved = true;
 					}
@@ -1181,7 +1181,7 @@ void BlueprintView::on_draw()
 							blueprint->alter_struct(s.name_hash, s.name, variables);
 							if (blueprint->is_static)
 								app.change_bp_references(old_item_hash, s.name_hash, 0, 0, s.name_hash, 0);
-							if (variables.empty() || selected_struct_variable == (int)variables.size() - 1)
+							if (variables.empty() || selected_struct_variable >= variables.size())
 								selected_struct_variable = -1;
 							unsaved = true;
 						}
@@ -1283,7 +1283,7 @@ void BlueprintView::on_draw()
 					if (selected_variable != -1)
 					{
 						blueprint->remove_variable(nullptr, blueprint->variables[selected_variable].name_hash);
-						if (blueprint->variables.empty() || selected_variable == (int)blueprint->variables.size() - 1)
+						if (blueprint->variables.empty() || selected_variable >= blueprint->variables.size())
 							selected_variable = -1;
 						unsaved = true;
 					}
@@ -1393,7 +1393,7 @@ void BlueprintView::on_draw()
 					if (selected_variable != -1)
 					{
 						blueprint->remove_variable(group, group->variables[selected_variable].name_hash);
-						if (group->variables.empty() || selected_variable == (int)group->variables.size() - 1)
+						if (group->variables.empty() || selected_variable >= (int)group->variables.size())
 							selected_variable = -1;
 						unsaved = true;
 					}
@@ -1500,7 +1500,7 @@ void BlueprintView::on_draw()
 					if (selected_input != -1)
 					{
 						blueprint->remove_group_input(group, group->inputs[selected_input].name_hash);
-						if (group->inputs.empty() || selected_input == (int)group->inputs.size() - 1)
+						if (group->inputs.empty() || selected_input >= (int)group->inputs.size())
 							selected_input = -1;
 						unsaved = true;
 					}
@@ -1589,7 +1589,7 @@ void BlueprintView::on_draw()
 					if (selected_output != -1)
 					{
 						blueprint->remove_group_output(group, group->outputs[selected_output].name_hash);
-						if (group->outputs.empty() || selected_output == (int)group->outputs.size() - 1)
+						if (group->outputs.empty() || selected_output >= (int)group->outputs.size())
 							selected_output = -1;
 						unsaved = true;
 					}
@@ -3047,7 +3047,7 @@ void BlueprintView::on_draw()
 					if (!add_node_filter.empty() || ImGui::BeginMenu("Standard"))
 					{
 						header = "Standard";
-						for (auto& t : noise_library->node_templates)
+						for (auto& t : standard_library->node_templates)
 							show_node_library_template(t);
 						if (add_node_filter.empty())
 							ImGui::EndMenu();
@@ -3055,7 +3055,7 @@ void BlueprintView::on_draw()
 					if (!add_node_filter.empty() || ImGui::BeginMenu("Extern"))
 					{
 						header = "Extern";
-						for (auto& t : noise_library->node_templates)
+						for (auto& t : extern_library->node_templates)
 							show_node_library_template(t);
 						if (add_node_filter.empty())
 							ImGui::EndMenu();
