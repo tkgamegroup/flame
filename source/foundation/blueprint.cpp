@@ -552,7 +552,7 @@ namespace flame
 		printf("blueprint alter_variable: variable not found\n");
 	}
 
-	BlueprintSlotPtr BlueprintPrivate::create_slot(BlueprintNodePtr n, const BlueprintSlotDesc& desc)
+	BlueprintSlotPtr BlueprintPrivate::create_slot(BlueprintNodePtr n, const BlueprintSlotDesc& desc, int pos)
 	{
 		auto s = new BlueprintSlotPrivate;
 		s->node = n;
@@ -567,10 +567,19 @@ namespace flame
 		{
 			if (!desc.default_value.empty())
 				s->type->unserialize(desc.default_value, s->data);
-			n->inputs.emplace_back(s);
+			if (pos == -1)
+				n->inputs.emplace_back(s);
+			else
+				n->inputs.emplace(n->inputs.begin() + pos, s);
 		}
 		else
-			n->outputs.emplace_back(s);
+		{
+
+			if (pos == -1)
+				n->outputs.emplace_back(s);
+			else
+				n->outputs.emplace(n->outputs.begin() + pos, s);
+		}
 		return s;
 	}
 
@@ -674,7 +683,7 @@ namespace flame
 
 	BlueprintNodePtr BlueprintPrivate::add_block(BlueprintGroupPtr group, BlueprintNodePtr parent)
 	{
-		return add_node(group, parent, "Block", BlueprintNodeFlagNone, "", {}, {}, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, true);
+		return add_node(group, parent, "Block", BlueprintNodeFlagHorizontalInputs, "", {}, {}, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, true);
 	}
 
 	BlueprintNodePtr BlueprintPrivate::add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type, uint location_name, uint property_name)
@@ -1996,15 +2005,17 @@ namespace flame
 				return false;
 			}
 
-			for (auto& i : info.new_inputs)
+			for (auto& d : info.new_inputs)
 			{
-				if (!i.name_hash)
-					i.name_hash = sh(i.name.c_str());
+				if (!d.name_hash)
+					d.name_hash = sh(d.name.c_str());
+				d.flags = d.flags | BlueprintSlotFlagInput;
 			}
-			for (auto& o : info.new_outputs)
+			for (auto& d : info.new_outputs)
 			{
-				if (!o.name_hash)
-					o.name_hash = sh(o.name.c_str());
+				if (!d.name_hash)
+					d.name_hash = sh(d.name.c_str());
+				d.flags = d.flags | BlueprintSlotFlagOutput;
 			}
 
 			for (auto it = node->inputs.begin(); it != node->inputs.end(); )
@@ -2019,7 +2030,7 @@ namespace flame
 							i.allowed_types.front() == input->type)
 						{
 							input->allowed_types = i.allowed_types;
-							i.name_hash = 0;
+							i.flags = BlueprintSlotFlagNone;
 							found = true;
 							break;
 						}
@@ -2040,12 +2051,26 @@ namespace flame
 					it++;
 			}
 
-			for (auto& i : info.new_inputs)
+			for (auto i = 0; i < info.new_inputs.size(); i++)
 			{
-				if (i.name_hash)
+				auto& d = info.new_inputs[i];
+				if (d.flags)
 				{
-					i.flags = i.flags | BlueprintSlotFlagInput;
-					create_slot(node, i);
+					auto pos = -1;
+					if (i > 0)
+					{
+						auto prev = info.new_inputs[i - 1].name_hash;
+						for (auto j = 0; j < node->inputs.size(); j++)
+						{
+							if (node->inputs[j]->name_hash == prev)
+							{
+								pos = j + 1;
+								break;
+							}
+						}
+					}
+					d.flags = d.flags | BlueprintSlotFlagInput;
+					create_slot(node, d, pos);
 				}
 			}
 
@@ -2061,7 +2086,7 @@ namespace flame
 							o.allowed_types.front() == output->type)
 						{
 							output->allowed_types = o.allowed_types;
-							o.name_hash = 0;
+							o.flags = BlueprintSlotFlagNone;
 							found = true;
 							break;
 						}
@@ -2082,12 +2107,26 @@ namespace flame
 					it++;
 			}
 
-			for (auto& o : info.new_outputs)
+			for (auto i = 0; i < info.new_outputs.size(); i++)
 			{
-				if (o.name_hash)
+				auto& d = info.new_outputs[i];
+				if (d.flags)
 				{
-					o.flags = o.flags | BlueprintSlotFlagOutput;
-					create_slot(node, o);
+					auto pos = -1;
+					if (i > 0)
+					{
+						auto prev = info.new_outputs[i - 1].name_hash;
+						for (auto j = 0; j < node->outputs.size(); j++)
+						{
+							if (node->outputs[j]->name_hash == prev)
+							{
+								pos = j + 1;
+								break;
+							}
+						}
+					}
+					d.flags = d.flags | BlueprintSlotFlagOutput;
+					create_slot(node, d, pos);
 				}
 			}
 

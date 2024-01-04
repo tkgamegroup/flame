@@ -28,7 +28,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("If", "", BlueprintNodeFlagNone,
+		library->add_template("If", "", BlueprintNodeFlagHorizontalOutputs,
 			{
 				{
 					.name = "Condition",
@@ -520,7 +520,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Branch", "", BlueprintNodeFlagEnableTemplate,
+		library->add_template("Branch", "", BlueprintNodeFlagEnableTemplate | BlueprintNodeFlagHorizontalInputs | BlueprintNodeFlagHorizontalOutputs,
 			{
 				{
 					.name = "Case 1",
@@ -533,7 +533,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
 				},
 				{
-					.name = "Else Branch",
+					.name = "Else",
 					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
 				}
 			},
@@ -574,7 +574,7 @@ namespace flame
 						};
 					}
 					info.new_outputs[n] = {
-						.name = "Else Branch",
+						.name = "Else",
 						.allowed_types = { TypeInfo::get<BlueprintSignal>() }
 					};
 					return true;
@@ -585,7 +585,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Ramp Branch", "", BlueprintNodeFlagEnableTemplate,
+		library->add_template("Ramp Branch", "", BlueprintNodeFlagEnableTemplate | BlueprintNodeFlagHorizontalInputs | BlueprintNodeFlagHorizontalOutputs,
 			{
 				{
 					.name = "V",
@@ -602,7 +602,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
 				},
 				{
-					.name = "Else Branch",
+					.name = "Else",
 					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
 				}
 			},
@@ -648,7 +648,7 @@ namespace flame
 						};
 					}
 					info.new_outputs[n] = {
-						.name = "Else Branch",
+						.name = "Else",
 						.allowed_types = { TypeInfo::get<BlueprintSignal>() }
 					};
 					return true;

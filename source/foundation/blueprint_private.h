@@ -34,7 +34,7 @@ namespace flame
 		BlueprintPrivate();
 		~BlueprintPrivate();
 
-		BlueprintSlotPtr		create_slot(BlueprintNodePtr n, const BlueprintSlotDesc& desc);
+		BlueprintSlotPtr		create_slot(BlueprintNodePtr n, const BlueprintSlotDesc& desc, int pos = -1);
 
 		void					add_enum(const std::string& name, const std::vector<BlueprintEnumItem>& items) override;
 		void					remove_enum(uint name) override;

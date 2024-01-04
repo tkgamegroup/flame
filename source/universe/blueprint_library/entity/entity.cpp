@@ -832,7 +832,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Get V", "", BlueprintNodeFlagEnableTemplate,
+		library->add_template("EGet V", "", BlueprintNodeFlagEnableTemplate,
 			{
 				{
 					.name = "Entity",
@@ -906,7 +906,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Set V", "", BlueprintNodeFlagEnableTemplate,
+		library->add_template("ESet V", "", BlueprintNodeFlagEnableTemplate,
 			{
 				{
 					.name = "Entity",
@@ -971,7 +971,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Call", "", BlueprintNodeFlagEnableTemplate,
+		library->add_template("ECall", "", BlueprintNodeFlagEnableTemplate,
 			{
 				{
 					.name = "Entity",

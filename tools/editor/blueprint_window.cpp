@@ -923,7 +923,7 @@ void BlueprintView::on_draw()
 					if (selected_enum != -1)
 					{
 						blueprint->remove_enum(blueprint->enums[selected_enum].name_hash);
-						if (blueprint->enums.empty())
+						if (blueprint->enums.empty() || selected_enum == (int)blueprint->enums.size() - 1)
 							selected_enum = -1;
 						unsaved = true;
 					}
@@ -1004,7 +1004,7 @@ void BlueprintView::on_draw()
 							blueprint->alter_enum(e.name_hash, e.name, items);
 							if (blueprint->is_static)
 								app.change_bp_references(old_item_hash, e.name_hash, 0, 0, e.name_hash, 0);
-							if (items.empty())
+							if (items.empty() || selected_enum_item == (int)items.size() - 1)
 								selected_enum_item = -1;
 							unsaved = true;
 						}
@@ -1100,7 +1100,7 @@ void BlueprintView::on_draw()
 					if (selected_struct != -1)
 					{
 						blueprint->remove_struct(blueprint->structs[selected_struct].name_hash);
-						if (blueprint->structs.empty())
+						if (blueprint->structs.empty() || selected_struct == (int)blueprint->structs.size() - 1)
 							selected_struct = -1;
 						unsaved = true;
 					}
@@ -1181,7 +1181,7 @@ void BlueprintView::on_draw()
 							blueprint->alter_struct(s.name_hash, s.name, variables);
 							if (blueprint->is_static)
 								app.change_bp_references(old_item_hash, s.name_hash, 0, 0, s.name_hash, 0);
-							if (variables.empty())
+							if (variables.empty() || selected_struct_variable == (int)variables.size() - 1)
 								selected_struct_variable = -1;
 							unsaved = true;
 						}
@@ -1283,7 +1283,7 @@ void BlueprintView::on_draw()
 					if (selected_variable != -1)
 					{
 						blueprint->remove_variable(nullptr, blueprint->variables[selected_variable].name_hash);
-						if (blueprint->variables.empty())
+						if (blueprint->variables.empty() || selected_variable == (int)blueprint->variables.size() - 1)
 							selected_variable = -1;
 						unsaved = true;
 					}
@@ -1393,7 +1393,7 @@ void BlueprintView::on_draw()
 					if (selected_variable != -1)
 					{
 						blueprint->remove_variable(group, group->variables[selected_variable].name_hash);
-						if (group->variables.empty())
+						if (group->variables.empty() || selected_variable == (int)group->variables.size() - 1)
 							selected_variable = -1;
 						unsaved = true;
 					}
@@ -1500,7 +1500,7 @@ void BlueprintView::on_draw()
 					if (selected_input != -1)
 					{
 						blueprint->remove_group_input(group, group->inputs[selected_input].name_hash);
-						if (group->inputs.empty())
+						if (group->inputs.empty() || selected_input == (int)group->inputs.size() - 1)
 							selected_input = -1;
 						unsaved = true;
 					}
@@ -1589,7 +1589,7 @@ void BlueprintView::on_draw()
 					if (selected_output != -1)
 					{
 						blueprint->remove_group_output(group, group->outputs[selected_output].name_hash);
-						if (group->outputs.empty())
+						if (group->outputs.empty() || selected_output == (int)group->outputs.size() - 1)
 							selected_output = -1;
 						unsaved = true;
 					}
@@ -1749,9 +1749,10 @@ void BlueprintView::on_draw()
 							continue;
 					}
 
+					ImGui::PushID(n->object_id);
+
 					auto instance_node = instance_group.node_map[n->object_id];
 
-					auto display_name = n->display_name.empty() ? n->name : n->display_name;
 					auto bg_color = ax::NodeEditor::GetStyle().Colors[ax::NodeEditor::StyleColor_NodeBg];
 					auto border_color = color_from_depth(n->depth);
 					if (blueprint_window.debugger->has_break_node(n))
@@ -1784,7 +1785,11 @@ void BlueprintView::on_draw()
 						auto text = std::format("O{}D{}", instance_node->order, n->depth);
 						dl->AddText(pos, ImColor(1.f, 1.f, 1.f), text.c_str());
 					}
-					ImGui::TextUnformatted(display_name.c_str());
+					if (n->name_hash != "Block"_h)
+					{
+						auto display_name = n->display_name.empty() ? n->name : n->display_name;
+						ImGui::TextUnformatted(display_name.c_str());
+					}
 					if (n->flags & BlueprintNodeFlagEnableTemplate)
 					{
 						ImGui::SameLine();
@@ -1800,18 +1805,37 @@ void BlueprintView::on_draw()
 						if (input->flags & BlueprintSlotFlagHideInUI)
 							continue;
 
+						if ((n->flags & BlueprintNodeFlagHorizontalInputs) && i > 0)
+							ImGui::SameLine();
+						ImGui::BeginGroup(); // slot
+
 						ImGui::BeginGroup(); // slot name
-						ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
-						ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(input->type));
-						ImGui::TextUnformatted(graphics::font_icon_str("play"_h).c_str());
-						ImGui::PopStyleColor();
-						ax::NodeEditor::EndPin();
-						if (input->name_hash != "Execute"_h)
+						if (n->flags & BlueprintNodeFlagHorizontalInputs)
 						{
+							ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_TargetDirection, ImVec2(0.0f, 1.0f));
+							ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_LinkStrength, 0.0f);
+							ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
 							auto display_name = input->name;
 							SUS::strip_tail_if(display_name, "_hash");
-							ImGui::SameLine();
+							SUS::strip_tail_if(display_name, "xecute");
 							ImGui::TextUnformatted(display_name.c_str());
+							ax::NodeEditor::EndPin();
+							ax::NodeEditor::PopStyleVar(2);
+						}
+						else
+						{
+							ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
+							ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(input->type));
+							ImGui::TextUnformatted(graphics::font_icon_str("play"_h).c_str());
+							ImGui::PopStyleColor();
+							ax::NodeEditor::EndPin();
+							if (input->name_hash != "Execute"_h)
+							{
+								auto display_name = input->name;
+								SUS::strip_tail_if(display_name, "_hash");
+								ImGui::SameLine();
+								ImGui::TextUnformatted(display_name.c_str());
+							}
 						}
 						ImGui::EndGroup(); // slot name
 
@@ -2024,9 +2048,12 @@ void BlueprintView::on_draw()
 								}
 							}
 						}
+
+						ImGui::EndGroup(); // slot
 					}
 					ImGui::EndGroup();
-					ImGui::SameLine(0.f, n->is_block ? 40.f : 16.f);
+					if (!(n->flags & BlueprintNodeFlagHorizontalInputs) && !(n->flags & BlueprintNodeFlagHorizontalOutputs))
+						ImGui::SameLine(0.f, 16.f);
 					ImGui::BeginGroup();
 					for (auto i = 0; i < n->outputs.size(); i++)
 					{
@@ -2034,19 +2061,38 @@ void BlueprintView::on_draw()
 						if (!output->type || (output->flags & BlueprintSlotFlagHideInUI))
 							continue;
 
+						if ((n->flags & BlueprintNodeFlagHorizontalOutputs) && i > 0)
+							ImGui::SameLine();
+						ImGui::BeginGroup(); // slot
+
 						ImGui::BeginGroup(); // slot name
-						if (output->name_hash != "Execute"_h)
+						if (n->flags & BlueprintNodeFlagHorizontalOutputs)
 						{
+							ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_SourceDirection, ImVec2(0.0f, -1.0f));
+							ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_LinkStrength, 0.0f);
+							ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
 							auto display_name = output->name;
 							SUS::strip_tail_if(display_name, "_hash");
+							SUS::strip_tail_if(display_name, "xecute");
 							ImGui::TextUnformatted(display_name.c_str());
+							ax::NodeEditor::EndPin();
+							ax::NodeEditor::PopStyleVar(2);
 						}
-						ImGui::SameLine();
-						ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
-						ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(output->type));
-						ImGui::TextUnformatted(graphics::font_icon_str("play"_h).c_str());
-						ImGui::PopStyleColor();
-						ax::NodeEditor::EndPin();
+						else
+						{
+							if (output->name_hash != "Execute"_h)
+							{
+								auto display_name = output->name;
+								SUS::strip_tail_if(display_name, "_hash");
+								ImGui::TextUnformatted(display_name.c_str());
+							}
+							ImGui::SameLine();
+							ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
+							ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(output->type));
+							ImGui::TextUnformatted(graphics::font_icon_str("play"_h).c_str());
+							ImGui::PopStyleColor();
+							ax::NodeEditor::EndPin();
+						}
 						ImGui::EndGroup(); // slot name
 
 						if (ImGui::IsItemHovered())
@@ -2082,6 +2128,8 @@ void BlueprintView::on_draw()
 								}
 							}
 						}
+
+						ImGui::EndGroup(); // slot
 					}
 					ImGui::EndGroup();
 
@@ -2147,7 +2195,7 @@ void BlueprintView::on_draw()
 					if (n->is_block)
 					{
 						auto col = color_from_depth(n->depth + 1);
-						ImGui::InvisibleButton("block", ImVec2(80, 4));
+						ImGui::InvisibleButton("block", ImVec2(20, 4));
 						auto p0 = ImGui::GetItemRectMin();
 						auto p1 = ImGui::GetItemRectMax();
 						dl->AddRectFilled(p0, p1, col);
@@ -2155,7 +2203,10 @@ void BlueprintView::on_draw()
 					ax::NodeEditor::EndNode();
 
 					ax::NodeEditor::PopStyleColor(2);
+
+					ImGui::PopID(); // node
 				}
+
 				if (combo_popup_name)
 				{
 					if (auto input = combo_popup_node->find_input(combo_popup_name); input)
@@ -2202,7 +2253,7 @@ void BlueprintView::on_draw()
 						if (l->from_slot->node->name_hash == "Variable"_h)
 							continue;
 					}
-					ax::NodeEditor::Link((uint64)l.get(), (uint64)l->from_slot, (uint64)l->to_slot);
+					ax::NodeEditor::Link((uint64)l.get(), (uint64)l->from_slot, (uint64)l->to_slot, color_from_type(l->from_slot->type));
 				}
 
 				for (auto n : get_selected_nodes())
