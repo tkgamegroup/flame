@@ -408,8 +408,8 @@ namespace flame
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
-					auto node = entity->get_component<cNode>();
-					node->set_pos(*(vec3*)inputs[1].data);
+					if (auto node = entity->get_component<cNode>(); node)
+						node->set_pos(*(vec3*)inputs[1].data);
 				}
 			}
 		);
@@ -479,8 +479,8 @@ namespace flame
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
-					auto node = entity->get_component<cNode>();
-					node->set_eul(*(vec3*)inputs[1].data);
+					if (auto node = entity->get_component<cNode>(); node)
+						node->set_eul(*(vec3*)inputs[1].data);
 				}
 			}
 		);
@@ -527,11 +527,13 @@ namespace flame
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
-					auto node = entity->get_component<cNode>();
-					if (inputs[1].type == TypeInfo::get<float>())
-						node->set_scl(vec3(*(float*)inputs[1].data));
-					else
-						node->set_scl(*(vec3*)inputs[1].data);
+					if (auto node = entity->get_component<cNode>(); node)
+					{
+						if (inputs[1].type == TypeInfo::get<float>())
+							node->set_scl(vec3(*(float*)inputs[1].data));
+						else
+							node->set_scl(*(vec3*)inputs[1].data);
+					}
 				}
 			}
 		);

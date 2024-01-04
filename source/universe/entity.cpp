@@ -692,7 +692,7 @@ namespace flame
 		SerializeXmlSpec spec;
 		spec.excludes.emplace_back("flame::cNode"_h, "eul"_h);
 		spec.typed_delegates[TypeInfo::get<std::filesystem::path>()] = path_delegate;
-		spec.typed_obj_delegates[TypeInfo::get<Component*>()] = [&](void* src, pugi::xml_node dst) {
+		spec.typed_obj_delegates[TypeInfo::get<std::unique_ptr<Component>>()] = [&](void* src, pugi::xml_node dst) {
 			auto comp = (Component*)src;
 			auto ui = find_udt(comp->type_hash);
 			if (ui)
@@ -707,7 +707,7 @@ namespace flame
 			spec.excludes.emplace_back("flame::Entity"_h, "children"_h);
 		else
 		{
-			spec.typed_obj_delegates[TypeInfo::get<Entity*>()] = [&](void* src, pugi::xml_node dst) {
+			spec.typed_obj_delegates[TypeInfo::get<std::unique_ptr<Entity>>()] = [&](void* src, pugi::xml_node dst) {
 				auto e = (EntityPtr)src;
 				if (e->tag & TagNotSerialized)
 				{
