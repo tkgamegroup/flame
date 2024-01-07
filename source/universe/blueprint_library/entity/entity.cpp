@@ -747,7 +747,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Add Blueprint", "", BlueprintNodeFlagNone,
+		library->add_template("Set BP", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",

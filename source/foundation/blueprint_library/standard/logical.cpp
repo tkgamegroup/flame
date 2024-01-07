@@ -415,5 +415,27 @@ namespace flame
 				*(uint*)outputs[0].data = ~b1;
 			}
 		);
+
+		library->add_template("Check Bits", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "Out",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(bool*)outputs[0].data = (*(uint*)inputs[0].data) & (*(uint*)inputs[1].data);
+			}
+		);
 	}
 }

@@ -358,6 +358,7 @@ namespace flame
 						auto& ui = it2->second;
 						if (ui.library == nullptr) // not from cpp
 							tidb.udts.erase(it2); // just remove it
+						break;
 					}
 				}
 
@@ -3104,7 +3105,7 @@ namespace flame
 							}
 							write_ti(i->type, n_input.append_attribute("type"));
 						}
-						if (i->type->tag != TagU)
+						if (i->type->tag != TagU && i->data)
 						{
 							if (auto value_str = i->type->serialize(i->data); value_str != i->default_value)
 							{
