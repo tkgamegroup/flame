@@ -289,6 +289,35 @@ namespace flame
 			}
 		);
 
+		library->add_template("Foreach Child", "", BlueprintNodeFlagNone,
+			{ {
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+				{
+					.name = "temp_array",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<std::vector<EntityPtr>>() }
+				}
+			},
+			true,
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				auto parent = *(EntityPtr*)inputs[1].data;
+				auto& temp_array = *(std::vector<EntityPtr>*)outputs[1].data;
+				temp_array.clear();
+				if (parent)
+				{
+					for (auto& c : parent->children)
+						temp_array.push_back(c.get());
+				}
+
+				execution.block->max_execute_times = temp_array.size();
+				execution.block->loop_vector_index = 3;
+			}
+		);
+
 		library->add_template("Add Child", "", BlueprintNodeFlagNone,
 			{
 				{
@@ -908,6 +937,50 @@ namespace flame
 			}
 		);
 
+		library->add_template("EGet Entity", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				auto name = *(uint*)inputs[1].data;
+				if (entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						auto it = instance->variables.find(name);
+						if (it != instance->variables.end())
+						{
+							if (it->second.type == TypeInfo::get<EntityPtr>())
+								*(EntityPtr*)outputs[0].data = *(EntityPtr*)it->second.data;
+							else
+								*(EntityPtr*)outputs[0].data = nullptr;
+						}
+						else
+							*(EntityPtr*)outputs[0].data = nullptr;
+					}
+					else
+						*(EntityPtr*)outputs[0].data = nullptr;
+				}
+				else
+					*(EntityPtr*)outputs[0].data = nullptr;
+			}
+		);
+
 		library->add_template("ESet V", "", BlueprintNodeFlagEnableTemplate,
 			{
 				{
@@ -937,7 +1010,9 @@ namespace flame
 						auto it = instance->variables.find(name);
 						if (it != instance->variables.end())
 						{
-							if (it->second.type == type)
+							if (it->second.type == type || 
+								(type == TypeInfo::get<uint>() && it->second.type == TypeInfo::get<int>()) ||
+								(type == TypeInfo::get<int>() && it->second.type == TypeInfo::get<uint>()))
 								type->copy(it->second.data, inputs[2].data);
 						}
 					}
@@ -970,6 +1045,42 @@ namespace flame
 				else if (info.reason == BlueprintNodeInputTypesChanged)
 					return true;
 				return false;
+			}
+		);
+
+		library->add_template("ESet Entity", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				auto name = *(uint*)inputs[1].data;
+				if (entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						auto it = instance->variables.find(name);
+						if (it != instance->variables.end())
+						{
+							if (it->second.type == TypeInfo::get<EntityPtr>())
+								*(EntityPtr*)it->second.data = *(EntityPtr*)inputs[2].data;
+						}
+					}
+				}
 			}
 		);
 
@@ -1294,7 +1405,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("For Each Entity", "", BlueprintNodeFlagNone,
+		library->add_template("Foreach Entity", "", BlueprintNodeFlagNone,
 			{
 			},
 			{

@@ -409,7 +409,10 @@ namespace flame
 				while (!ok)
 				{
 					if (target->node->original->flags & BlueprintNodeFlagReturnTarget)
+					{
 						ok = true;
+						break;
+					}
 					target = target->parent;
 					if (!target)
 						break;

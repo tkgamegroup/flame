@@ -2033,10 +2033,15 @@ void BlueprintView::on_draw()
 								{
 									ImGui::PushID(input->object_id);
 									auto name = from_slot->node->display_name;
+									if (name.contains('.'))
+									{
+										auto sp = SUS::to_string_vector(SUS::split(name, '.'));
+										name = sp.back();
+									}
 									ImGui::SetNextItemWidth(50.f);
 									ImGui::InputText("", &name, ImGuiInputTextFlags_ReadOnly);
 									if (ImGui::IsItemHovered())
-										tooltip = std::format("Variable: {} ({})", name, ti_str(from_slot->type));
+										tooltip = std::format("Variable: {} ({})", from_slot->node->display_name, ti_str(from_slot->type));
 									ImGui::SameLine();
 									if (ImGui::SmallButton(graphics::font_icon_str("xmark"_h).c_str()))
 									{

@@ -325,7 +325,7 @@ namespace flame
 		{
 			std::transform(s.begin(), s.end(), s.begin(), [](uint c) {
 				return std::tolower(c);
-			});
+				});
 		}
 
 		static std::basic_string<CH> get_lowered(std::basic_string_view<CH> s)
@@ -339,7 +339,7 @@ namespace flame
 		{
 			std::transform(s.begin(), s.end(), s.begin(), [](uint c) {
 				return std::toupper(c);
-			});
+				});
 		}
 
 		static std::basic_string<CH> get_uppered(std::basic_string_view<CH> s)
@@ -356,6 +356,13 @@ namespace flame
 			}));
 		}
 
+		static void ltrim(std::basic_string<CH>& s, CH t)
+		{
+			s.erase(s.begin(), std::find_if(s.begin(), s.end(), [t](char ch) {
+				return ch == t;
+			}));
+		}
+
 		static std::basic_string<CH> get_ltrimed(std::basic_string_view<CH> s)
 		{
 			auto ret = std::basic_string<CH>(s);
@@ -367,6 +374,13 @@ namespace flame
 		{
 			s.erase(std::find_if(s.rbegin(), s.rend(), [](char ch) {
 				return !std::isspace(ch);
+			}).base(), s.end());
+		}
+
+		static void rtrim(std::basic_string<CH>& s, CH t)
+		{
+			s.erase(std::find_if(s.rbegin(), s.rend(), [t](char ch) {
+				return ch == t;
 			}).base(), s.end());
 		}
 
@@ -453,8 +467,8 @@ namespace flame
 		static bool match_case_insensitive(std::basic_string_view<CH> a, std::basic_string_view<CH> b)
 		{
 			return std::equal(a.begin(), a.end(), b.begin(), b.end(), [](CH a, CH b) {
-				return std::tolower(a) == std::tolower(b); 
-			});
+				return std::tolower(a) == std::tolower(b);
+				});
 		}
 
 		static bool find_case_insensitive(std::basic_string_view<CH> str, std::basic_string_view<CH> token)
@@ -593,7 +607,7 @@ namespace flame
 		{
 			return std::find_if(s.begin(), s.end(), [](char ch) {
 				return !std::isspace(ch);
-			}) - s.begin();
+				}) - s.begin();
 		}
 	};
 
