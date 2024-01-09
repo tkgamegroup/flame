@@ -181,7 +181,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<std::wstring>() }
 				}
 			},
@@ -199,7 +199,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
 				}
 			},
@@ -221,7 +221,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
@@ -243,7 +243,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<std::wstring>() }
 				}
 			},
@@ -265,7 +265,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
@@ -315,7 +315,7 @@ namespace flame
 					}
 					info.new_outputs.resize(1);
 					info.new_outputs[0] = {
-						.name = "Out",
+						.name = "V",
 						.allowed_types = { TypeInfo::get<std::string>() }
 					};
 
@@ -340,7 +340,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<std::wstring>() }
 				}
 			},
@@ -390,7 +390,7 @@ namespace flame
 					}
 					info.new_outputs.resize(1);
 					info.new_outputs[0] = {
-						.name = "Out",
+						.name = "V",
 						.allowed_types = { TypeInfo::get<std::wstring>() }
 					};
 				}

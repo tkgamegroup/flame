@@ -201,7 +201,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
@@ -223,7 +223,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
@@ -256,7 +256,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
@@ -279,7 +279,7 @@ namespace flame
 		library->add_template("Conditional Operator", "?:", BlueprintNodeFlagNone,
 			{
 				{
-					.name = "Condition",
+					.name = "Cond",
 					.allowed_types = { TypeInfo::get<bool>(), TypeInfo::get<voidptr>() }
 				},
 				{
@@ -293,7 +293,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
 				}
 			},
@@ -338,7 +338,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
@@ -362,7 +362,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
@@ -386,7 +386,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
@@ -406,7 +406,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
@@ -429,7 +429,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},

@@ -17,7 +17,7 @@ namespace flame
 				},
 				{
 					{
-						.name = "Out",
+						.name = "V",
 						.allowed_types = { TypeInfo::get<float>() }
 					}
 				},

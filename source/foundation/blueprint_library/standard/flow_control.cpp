@@ -18,7 +18,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
 				}
 			},
@@ -31,7 +31,7 @@ namespace flame
 		library->add_template("If", "", BlueprintNodeFlagHorizontalOutputs,
 			{
 				{
-					.name = "Condition",
+					.name = "Cond",
 					.allowed_types = { TypeInfo::get<bool>(), TypeInfo::get<voidptr>() }
 				}
 			},
@@ -59,7 +59,7 @@ namespace flame
 		library->add_template("If True", "", BlueprintNodeFlagNone,
 			{
 				{
-					.name = "Condition",
+					.name = "Cond",
 					.allowed_types = { TypeInfo::get<bool>(), TypeInfo::get<voidptr>() }
 				}
 			},
@@ -79,7 +79,7 @@ namespace flame
 		library->add_template("If False", "", BlueprintNodeFlagNone,
 			{
 				{
-					.name = "Condition",
+					.name = "Cond",
 					.allowed_types = { TypeInfo::get<bool>(), TypeInfo::get<voidptr>() }
 				}
 			},

@@ -684,7 +684,7 @@ namespace flame
 
 	BlueprintNodePtr BlueprintPrivate::add_block(BlueprintGroupPtr group, BlueprintNodePtr parent)
 	{
-		return add_node(group, parent, "Block", BlueprintNodeFlagHorizontalInputs, "", {}, {}, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, true);
+		return add_node(group, parent, "Block", BlueprintNodeFlagNone, "", {}, {}, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, true);
 	}
 
 	BlueprintNodePtr BlueprintPrivate::add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type, uint location_name, uint property_name)

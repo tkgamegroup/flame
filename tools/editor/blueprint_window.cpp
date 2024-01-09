@@ -804,29 +804,28 @@ void BlueprintView::on_draw()
 					switch (ti->data_type)
 					{
 					case DataBool:
-						ImGui::SetNextItemWidth(100.f);
 						changed |= ImGui::Checkbox("", (bool*)data);
 						break;
 					case DataFloat:
-						ImGui::PushMultiItemsWidths(ti->vec_size, 60.f * ti->vec_size);
 						for (int i = 0; i < ti->vec_size; i++)
 						{
 							ImGui::PushID(i);
-							ImGui::DragScalar("", ImGuiDataType_Float, &((float*)data)[i], 0.01f);
+							auto& v = ((float*)data)[i];
+							ImGui::SetNextItemWidth(min(60.f, ImGui::CalcTextSize(str(v).c_str()).x + 6.f));
+							ImGui::DragScalar("", ImGuiDataType_Float, &v, 0.01f);
 							changed |= ImGui::IsItemDeactivatedAfterEdit();
 							ImGui::PopID();
-							ImGui::PopItemWidth();
 						}
 						break;
 					case DataInt:
-						ImGui::PushMultiItemsWidths(ti->vec_size, 60.f * ti->vec_size);
 						for (int i = 0; i < ti->vec_size; i++)
 						{
 							ImGui::PushID(i);
-							ImGui::DragScalar("", ImGuiDataType_S32, &((int*)data)[i]);
+							auto& v = ((int*)data)[i];
+							ImGui::SetNextItemWidth(min(60.f, ImGui::CalcTextSize(str(v).c_str()).x + 6.f));
+							ImGui::DragScalar("", ImGuiDataType_S32, &v);
 							changed |= ImGui::IsItemDeactivatedAfterEdit();
 							ImGui::PopID();
-							ImGui::PopItemWidth();
 						}
 						break;
 					case DataChar:
@@ -841,14 +840,17 @@ void BlueprintView::on_draw()
 						}
 						break;
 					case DataString:
-						ImGui::SetNextItemWidth(100.f);
-						ImGui::InputText("", (std::string*)data);
+					{
+						auto& s = *(std::string*)data;
+						ImGui::SetNextItemWidth(min(100.f, ImGui::CalcTextSize(s.c_str()).x + 6.f));
+						ImGui::InputText("", &s);
 						changed |= ImGui::IsItemDeactivatedAfterEdit();
+					}
 						break;
 					case DataWString:
 					{
 						auto s = w2s(*(std::wstring*)data);
-						ImGui::SetNextItemWidth(100.f);
+						ImGui::SetNextItemWidth(min(100.f, ImGui::CalcTextSize(s.c_str()).x + 6.f));
 						ImGui::InputText("", &s);
 						changed |= ImGui::IsItemDeactivatedAfterEdit();
 						if (changed)
@@ -1793,11 +1795,12 @@ void BlueprintView::on_draw()
 					if (n->flags & BlueprintNodeFlagEnableTemplate)
 					{
 						ImGui::SameLine();
-						ImGui::SetNextItemWidth(30.f);
+						ImGui::SetNextItemWidth(min(100.f, ImGui::CalcTextSize(n->template_string.c_str()).x + 6.f));
 						ImGui::InputText("T", &n->template_string);
 						if (ImGui::IsItemDeactivatedAfterEdit())
 							blueprint->change_node_structure(n, n->template_string, {});
 					}
+
 					ImGui::BeginGroup();
 					for (auto i = 0; i < n->inputs.size(); i++)
 					{
@@ -1809,35 +1812,21 @@ void BlueprintView::on_draw()
 							ImGui::SameLine();
 						ImGui::BeginGroup(); // slot
 
-						ImGui::BeginGroup(); // slot name
 						if (n->flags & BlueprintNodeFlagHorizontalInputs)
 						{
 							ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_TargetDirection, ImVec2(0.0f, 1.0f));
 							ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_LinkStrength, 0.0f);
-							ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
-							auto display_name = input->name;
-							SUS::strip_tail_if(display_name, "_hash");
-							SUS::strip_tail_if(display_name, "xecute");
-							ImGui::TextUnformatted(display_name.c_str());
-							ax::NodeEditor::EndPin();
+						}
+						ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
+						auto display_name = input->name;
+						SUS::strip_tail_if(display_name, "_hash");
+						SUS::strip_tail_if(display_name, "xecute");
+						ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(input->type));
+						ImGui::TextUnformatted(display_name.c_str());
+						ImGui::PopStyleColor();
+						ax::NodeEditor::EndPin();
+						if (n->flags & BlueprintNodeFlagHorizontalInputs)
 							ax::NodeEditor::PopStyleVar(2);
-						}
-						else
-						{
-							ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
-							ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(input->type));
-							ImGui::TextUnformatted(graphics::font_icon_str("play"_h).c_str());
-							ImGui::PopStyleColor();
-							ax::NodeEditor::EndPin();
-							if (input->name_hash != "Execute"_h)
-							{
-								auto display_name = input->name;
-								SUS::strip_tail_if(display_name, "_hash");
-								ImGui::SameLine();
-								ImGui::TextUnformatted(display_name.c_str());
-							}
-						}
-						ImGui::EndGroup(); // slot name
 
 						if (ImGui::IsItemHovered())
 						{
@@ -1918,7 +1907,7 @@ void BlueprintView::on_draw()
 												auto name = std::format("Vec{}", ti->vec_size);
 												auto new_node = blueprint->add_node(group, n->parent, sh(name.c_str()));
 												new_node->position = n->position + vec2(-144.f, 0.f);
-												blueprint->add_link(new_node->find_output("Out"_h), input);
+												blueprint->add_link(new_node->find_output("V"_h), input);
 											}
 										}
 									}
@@ -2038,7 +2027,7 @@ void BlueprintView::on_draw()
 										auto sp = SUS::to_string_vector(SUS::split(name, '.'));
 										name = sp.back();
 									}
-									ImGui::SetNextItemWidth(50.f);
+									ImGui::SetNextItemWidth(min(100.f, ImGui::CalcTextSize(name.c_str()).x + 6.f));
 									ImGui::InputText("", &name, ImGuiInputTextFlags_ReadOnly);
 									if (ImGui::IsItemHovered())
 										tooltip = std::format("Variable: {} ({})", from_slot->node->display_name, ti_str(from_slot->type));
@@ -2070,35 +2059,21 @@ void BlueprintView::on_draw()
 							ImGui::SameLine();
 						ImGui::BeginGroup(); // slot
 
-						ImGui::BeginGroup(); // slot name
 						if (n->flags & BlueprintNodeFlagHorizontalOutputs)
 						{
 							ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_SourceDirection, ImVec2(0.0f, -1.0f));
 							ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_LinkStrength, 0.0f);
-							ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
-							auto display_name = output->name;
-							SUS::strip_tail_if(display_name, "_hash");
-							SUS::strip_tail_if(display_name, "xecute");
-							ImGui::TextUnformatted(display_name.c_str());
-							ax::NodeEditor::EndPin();
+						}
+						ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
+						auto display_name = output->name;
+						SUS::strip_tail_if(display_name, "_hash");
+						SUS::strip_tail_if(display_name, "xecute");
+						ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(output->type));
+						ImGui::TextUnformatted(display_name.c_str());
+						ImGui::PopStyleColor();
+						ax::NodeEditor::EndPin();
+						if (n->flags & BlueprintNodeFlagHorizontalOutputs)
 							ax::NodeEditor::PopStyleVar(2);
-						}
-						else
-						{
-							if (output->name_hash != "Execute"_h)
-							{
-								auto display_name = output->name;
-								SUS::strip_tail_if(display_name, "_hash");
-								ImGui::TextUnformatted(display_name.c_str());
-							}
-							ImGui::SameLine();
-							ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
-							ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(output->type));
-							ImGui::TextUnformatted(graphics::font_icon_str("play"_h).c_str());
-							ImGui::PopStyleColor();
-							ax::NodeEditor::EndPin();
-						}
-						ImGui::EndGroup(); // slot name
 
 						if (ImGui::IsItemHovered())
 						{

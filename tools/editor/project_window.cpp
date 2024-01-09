@@ -738,29 +738,29 @@ ProjectView::ProjectView(const std::string& name) :
 							{
 								auto n_defalut = bp->add_node(g, nullptr, "Vec4"_h);
 								n_defalut->position = vec2(300, -200);
-								bp->add_link(n_defalut->find_output("Out"_h), n_output->find_input("o_color"_h));
+								bp->add_link(n_defalut->find_output("V"_h), n_output->find_input("o_color"_h));
 							}
 							bp->add_link(n_input->find_output("i_normal"_h), n_output->find_input("o_normal"_h));
 							{
 								auto n_defalut = bp->add_node(g, nullptr, "Scalar"_h);
 								n_defalut->position = vec2(300, 0);
-								bp->add_link(n_defalut->find_output("Out"_h), n_output->find_input("o_metallic"_h));
+								bp->add_link(n_defalut->find_output("V"_h), n_output->find_input("o_metallic"_h));
 							}
 							{
 								auto n_defalut = bp->add_node(g, nullptr, "Scalar"_h);
 								n_defalut->position = vec2(300, 80);
-								bp->add_link(n_defalut->find_output("Out"_h), n_output->find_input("o_roughness"_h));
+								bp->add_link(n_defalut->find_output("V"_h), n_output->find_input("o_roughness"_h));
 							}
 							{
 								auto n_defalut = bp->add_node(g, nullptr, "Vec3"_h);
 								n_defalut->position = vec2(300, 160);
-								bp->add_link(n_defalut->find_output("Out"_h), n_output->find_input("o_emissive"_h));
+								bp->add_link(n_defalut->find_output("V"_h), n_output->find_input("o_emissive"_h));
 							}
 							{
 								auto n_defalut = bp->add_node(g, nullptr, "Scalar"_h);
 								n_defalut->position = vec2(300, 320);
 								*(float*)n_defalut->find_input("V"_h)->data = 1.f;
-								bp->add_link(n_defalut->find_output("Out"_h), n_output->find_input("o_ao"_h));
+								bp->add_link(n_defalut->find_output("V"_h), n_output->find_input("o_ao"_h));
 							}
 							bp->save();
 						}

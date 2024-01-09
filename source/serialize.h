@@ -32,7 +32,7 @@ namespace flame
 	std::string str(T v)
 	{
 		std::ostringstream ss;
-		ss.precision(6);
+		ss.precision(4);
 		ss << v;
 		return ss.str();
 	}
@@ -118,7 +118,7 @@ namespace flame
 	std::wstring wstr(T v)
 	{
 		std::wostringstream ss;
-		ss.precision(6);
+		ss.precision(4);
 		ss << v;
 		return ss.str();
 	}

@@ -14,7 +14,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
 				}
 			},
@@ -58,7 +58,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<vec2>(), TypeInfo::get<ivec2>(), TypeInfo::get<uvec2>() }
 				}
 			},
@@ -137,7 +137,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<vec3>(), TypeInfo::get<ivec3>(), TypeInfo::get<uvec3>() }
 				}
 			},
@@ -225,7 +225,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<vec4>(), TypeInfo::get<ivec4>(), TypeInfo::get<uvec4>() }
 				}
 			},
@@ -418,7 +418,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<vec4>() }
 				}
 			},
@@ -492,7 +492,7 @@ namespace flame
 			},\
 			{\
 				{\
-					.name = "Out",\
+					.name = "V",\
 					.allowed_types = generic_types\
 				}\
 			},\
@@ -880,7 +880,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>() }
 				}
 			},
@@ -910,7 +910,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = generic_types
 				}
 			},
@@ -944,7 +944,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
@@ -965,7 +965,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>() }
 				}
 			},
@@ -995,7 +995,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>() }
 				}
 			},
@@ -1025,7 +1025,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
@@ -1043,7 +1043,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},
@@ -1135,7 +1135,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
@@ -1164,7 +1164,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<int>() }
 				}
 			},
@@ -1191,7 +1191,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},
@@ -1225,7 +1225,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "Out",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<vec3>() }
 				}
 			},

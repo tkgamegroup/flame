@@ -376,6 +376,10 @@ namespace flame
 		library->add_template("Find Entity", "", BlueprintNodeFlagNone,
 			{
 				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
 					.name = "Name",
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
@@ -387,9 +391,15 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto name = *(std::string*)inputs[0].data;
+				auto parent = *(EntityPtr*)inputs[0].data;
+				auto name = *(std::string*)inputs[1].data;
 				if (!name.empty())
-					*(EntityPtr*)outputs[0].data = World::instance()->root->find_child_recursively(name);
+				{
+					if (parent)
+						*(EntityPtr*)outputs[0].data = parent->find_child_recursively(name);
+					else
+						*(EntityPtr*)outputs[0].data = World::instance()->root->find_child_recursively(name);
+				}
 				else
 					*(EntityPtr*)outputs[0].data = nullptr;
 			}

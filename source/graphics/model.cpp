@@ -793,11 +793,10 @@ namespace flame
 								{
 									if (auto tex = prop.GetSrcObject<FbxFileTexture>(); tex)
 									{
-										std::string tex_name = tex->GetFileName();
-										if (!tex_name.empty())
+										if (std::string tex_name = tex->GetFileName(); !tex_name.empty())
 										{
 											auto fn = find_file(parent_path, tex_name);
-											if (std::filesystem::exists(fn))
+											if (std::filesystem::is_regular_file(fn))
 											{
 												if (!std::filesystem::exists(textures_destination))
 													std::filesystem::create_directories(textures_destination);
