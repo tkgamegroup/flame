@@ -2020,6 +2020,27 @@ namespace flame
 		}
 	}
 
+	void sRendererPrivate::draw_particles(uint mat_id, const std::vector<ParticleDrawData::Ptc>& ptcs)
+	{
+		auto off = buf_particles.add(nullptr, ptcs.size());
+		for (auto i = 0; i < ptcs.size(); i++)
+		{
+			auto& src = ptcs[i];
+			auto dst = buf_particles.item(off + i);
+			dst.child("i_pos0"_h).as<vec3>() = src.pos0;
+			dst.child("i_pos1"_h).as<vec3>() = src.pos1;
+			dst.child("i_pos2"_h).as<vec3>() = src.pos2;
+			dst.child("i_pos3"_h).as<vec3>() = src.pos3;
+			dst.child("i_uv"_h).as<vec4>() = src.uv;
+			dst.child("i_col"_h).as<cvec4>() = src.col;
+			dst.child("i_time"_h).as<float>() = src.time;
+		}
+		auto& ptd = particles_draws.emplace_back();
+		ptd.mat_id = mat_id;
+		ptd.vtx_off = off;
+		ptd.vtx_cnt = ptcs.size();
+	}
+
 	static std::vector<std::vector<float>> gauss_blur_weights;
 	static float* get_gauss_blur_weights(uint len)
 	{
@@ -2627,13 +2648,18 @@ namespace flame
 						{
 							auto& src = p.ptcs[i];
 							auto dst = buf_particles.item(off + i);
-							dst.child("i_pos"_h).as<vec3>() = src.pos;
-							dst.child("i_xext"_h).as<vec3>() = src.x_ext;
-							dst.child("i_yext"_h).as<vec3>() = src.y_ext;
+							dst.child("i_pos0"_h).as<vec3>() = src.pos0;
+							dst.child("i_pos1"_h).as<vec3>() = src.pos1;
+							dst.child("i_pos2"_h).as<vec3>() = src.pos2;
+							dst.child("i_pos3"_h).as<vec3>() = src.pos3;
 							dst.child("i_uv"_h).as<vec4>() = src.uv;
 							dst.child("i_col"_h).as<cvec4>() = src.col;
 							dst.child("i_time"_h).as<float>() = src.time;
 						}
+						auto& ptd = particles_draws.emplace_back();
+						ptd.mat_id = p.mat_id;
+						ptd.vtx_off = off;
+						ptd.vtx_cnt = p.ptcs.size();
 					}
 					buf_particles.upload(cb);
 					buf_particles.reset();
@@ -2726,16 +2752,13 @@ namespace flame
 						t->prm_fwd.bind_dss(cb);
 					}
 
+					cb->bind_vertex_buffer(buf_particles.buf.get(), 0);
+					for (auto& ptd : particles_draws)
 					{
-						cb->bind_vertex_buffer(buf_particles.buf.get(), 0);
-						auto vtx_off = 0;
-						for (auto& p : draw_data.particles)
-						{
-							cb->bind_pipeline(get_material_pipeline(mode, mat_reses[p.mat_id], "particle"_h, 0, 0));
-							cb->draw(p.ptcs.size(), 1, vtx_off, p.mat_id << 16);
-							vtx_off += p.ptcs.size();
-						}
+						cb->bind_pipeline(get_material_pipeline(mode, mat_reses[ptd.mat_id], "particle"_h, 0, 0));
+						cb->draw(ptd.vtx_cnt, 1, ptd.vtx_off, ptd.mat_id << 16);
 					}
+					particles_draws.clear();
 
 					cb->end_renderpass();
 				}

@@ -114,6 +114,41 @@ namespace flame
 			}
 		);
 
+		library->add_template("Get Material ID", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<int>() },
+					.default_value = "-1"
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto& id = *(int*)outputs[0].data;
+				id = -1;
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto holder = entity->get_component<cResourcesHolder>(); holder)
+					{
+						if (auto name = *(uint*)inputs[1].data; name)
+						{
+							auto r = holder->get_material_res_id(name);
+							id = r;
+						}
+					}
+				}
+			}
+		);
+
 		library->add_template("Image Atlas Item", "", BlueprintNodeFlagNone,
 			{
 				{

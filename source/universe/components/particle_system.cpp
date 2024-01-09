@@ -155,47 +155,48 @@ namespace flame
 
 	static void render_particle(const Particle& src, ParticleDrawData::Ptc& dst, ParticleRenderType render_type, const mat4& mat, const mat3& camera_rot, const uvec2& texture_sheet_size)
 	{
+		auto center = vec3(mat * vec4(src.pos, 1.f));
+		vec3 x_ext, y_ext;
 		dst.time = src.lifetime - src.time;
-		dst.pos = mat * vec4(src.pos, 1.f);
 		switch (render_type)
 		{
 		case ParticleBillboard:
 			if (src.ang != 0.f)
 			{
 				auto rot = mat3(rotate(mat4(1.f), src.ang, camera_rot[2]));
-				dst.x_ext = rot * +camera_rot[0] * src.size.x;
-				dst.y_ext = rot * -camera_rot[1] * src.size.y;
+				x_ext = rot * +camera_rot[0] * src.size.x;
+				y_ext = rot * -camera_rot[1] * src.size.y;
 			}
 			else
 			{
-				dst.x_ext = +camera_rot[0] * src.size.x;
-				dst.y_ext = -camera_rot[1] * src.size.y;
+				x_ext = +camera_rot[0] * src.size.x;
+				y_ext = -camera_rot[1] * src.size.y;
 			}
 			break;
 		case ParticleHorizontalBillboard:
 			if (src.ang != 0.f)
 			{
 				auto rot = mat3(rotate(mat4(1.f), src.ang, vec3(0.f, 1.f, 0.f)));
-				dst.x_ext = rot[0] * src.size.x;
-				dst.y_ext = rot[2] * src.size.y;
+				x_ext = rot[0] * src.size.x;
+				y_ext = rot[2] * src.size.y;
 			}
 			else
 			{
-				dst.x_ext = +vec3(1.f, 0.f, 0.f) * src.size.x;
-				dst.y_ext = +vec3(0.f, 0.f, 1.f) * src.size.y;
+				x_ext = +vec3(1.f, 0.f, 0.f) * src.size.x;
+				y_ext = +vec3(0.f, 0.f, 1.f) * src.size.y;
 			}
 			break;
 		case ParticleVerticalBillboard:
 			if (src.ang != 0.f)
 			{
 				auto rot = mat3(rotate(mat4(1.f), src.ang, vec3(0.f, 0.f, 1.f)));
-				dst.x_ext = rot[0] * src.size.x;
-				dst.y_ext = rot[1] * src.size.y;
+				x_ext = rot[0] * src.size.x;
+				y_ext = rot[1] * src.size.y;
 			}
 			else
 			{
-				dst.x_ext = +vec3(1.f, 0.f, 0.f) * src.size.x;
-				dst.y_ext = +vec3(0.f, 1.f, 0.f) * src.size.y;
+				x_ext = +vec3(1.f, 0.f, 0.f) * src.size.x;
+				y_ext = +vec3(0.f, 1.f, 0.f) * src.size.y;
 			}
 			break;
 		}
@@ -210,6 +211,11 @@ namespace flame
 		else
 			dst.uv = vec4(vec2(0.f), vec2(1.f));
 		dst.col = src.col;
+
+		dst.pos0 = center - x_ext - y_ext;
+		dst.pos1 = center + x_ext - y_ext;
+		dst.pos2 = center + x_ext + y_ext;
+		dst.pos3 = center - x_ext + y_ext;
 	}
 
 	void cParticleSystemPrivate::on_init()

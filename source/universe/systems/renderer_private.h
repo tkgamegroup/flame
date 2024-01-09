@@ -77,12 +77,20 @@ namespace flame
 		bool depth_test;
 	};
 
+	struct ParticlesDraw
+	{
+		uint mat_id;
+		uint vtx_off;
+		uint vtx_cnt;
+	};
+
 	struct sRendererPrivate : sRenderer
 	{
 		bool mark_clear_pipelines = false;
 
 		std::vector<OutlineDrawGroup> outline_groups;
 		std::vector<PrimitivesDraw> primitives_draws;
+		std::vector<ParticlesDraw> particles_draws;
 
 		std::vector<std::stack<vec2>> hud_style_vars;
 		vec2 hud_size;
@@ -197,6 +205,7 @@ namespace flame
 
 		void draw_outlines(const std::vector<ObjectDrawData>& draw_datas, const cvec4& color, uint width, OutlineMode mode) override;
 		void draw_primitives(PrimitiveType type, const vec3* points, uint count, const cvec4& color, bool depth_test) override;
+		void draw_particles(uint mat_id, const std::vector<ParticleDrawData::Ptc>& ptcs) override;
 
 		void render(int tar_idx, graphics::CommandBufferPtr cb) override;
 

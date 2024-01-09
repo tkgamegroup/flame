@@ -81,14 +81,14 @@ namespace flame
 		struct Ptc
 		{
 			float time;
-			vec3 pos;
-			vec3 x_ext;
-			vec3 y_ext;
+			vec3 pos0;
+			vec3 pos1;
+			vec3 pos2;
+			vec3 pos3;
 			vec4 uv;
 			cvec4 col;
 		};
 
-		uint type; // "Billboard"_h
 		uint mat_id;
 		std::vector<Ptc> ptcs;
 	};

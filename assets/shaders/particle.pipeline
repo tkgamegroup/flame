@@ -33,22 +33,25 @@ blend_options
 @vert
 #include "particle.vi"
 
-layout(location = 0) out vec3 o_xext;
-layout(location = 1) out vec3 o_yext;
-layout(location = 2) out vec4 o_col;
-layout(location = 3) out vec4 o_uv;
-layout(location = 4) out float o_time;
-layout(location = 5) out flat uint o_matid;
+layout(location = 0) out vec3 o_pos0;
+layout(location = 1) out vec3 o_pos1;
+layout(location = 2) out vec3 o_pos2;
+layout(location = 3) out vec3 o_pos3;
+layout(location = 4) out vec4 o_col;
+layout(location = 5) out vec4 o_uv;
+layout(location = 6) out float o_time;
+layout(location = 7) out flat uint o_matid;
 
 void main()
 {
-	o_xext = i_xext;
-	o_yext = i_yext;
+	o_pos0 = i_pos0;
+	o_pos1 = i_pos1;
+	o_pos2 = i_pos2;
+	o_pos3 = i_pos3;
 	o_col = i_col;
 	o_uv = i_uv;
 	o_time = i_time;
 	o_matid = gl_InstanceIndex >> 16;
-	gl_Position = vec4(i_pos, 1.0);
 }
 @
 
@@ -56,12 +59,14 @@ void main()
 layout (points) in;
 layout (triangle_strip, max_vertices = 4) out;
 
-layout(location = 0) in vec3 i_xext[];
-layout(location = 1) in vec3 i_yext[];
-layout(location = 2) in vec4 i_col[];
-layout(location = 3) in vec4 i_uv[];
-layout(location = 4) in float i_time[];
-layout(location = 5) in flat uint i_matid[];
+layout(location = 0) in vec3 i_pos0[];
+layout(location = 1) in vec3 i_pos1[];
+layout(location = 2) in vec3 i_pos2[];
+layout(location = 3) in vec3 i_pos3[];
+layout(location = 4) in vec4 i_col[];
+layout(location = 5) in vec4 i_uv[];
+layout(location = 6) in float i_time[];
+layout(location = 7) in flat uint i_matid[];
 
 layout(location = 0) out vec4 o_col;
 layout(location = 1) out vec2 o_uv;
@@ -70,34 +75,32 @@ layout(location = 3) out flat uint o_matid;
 
 void main()
 {
-	vec3 pos = vec3(gl_in[0].gl_Position);
-
 	o_col = i_col[0];
 	o_uv = i_uv[0].xw;
 	o_time = i_time[0];
 	o_matid = i_matid[0];
-	gl_Position = camera.proj_view * vec4(pos - i_xext[0] - i_yext[0], 1.0);
+	gl_Position = camera.proj_view * vec4(i_pos0[0], 1.0);
 	EmitVertex();
 
 	o_col = i_col[0];
 	o_uv = i_uv[0].zw;
 	o_time = i_time[0];
 	o_matid = i_matid[0];
-	gl_Position = camera.proj_view * vec4(pos + i_xext[0] - i_yext[0], 1.0);
+	gl_Position = camera.proj_view * vec4(i_pos1[0], 1.0);
 	EmitVertex();
 
 	o_col = i_col[0];
 	o_uv = i_uv[0].xy;
 	o_time = i_time[0];
 	o_matid = i_matid[0];
-	gl_Position = camera.proj_view * vec4(pos - i_xext[0] + i_yext[0], 1.0);
+	gl_Position = camera.proj_view * vec4(i_pos3[0], 1.0);
 	EmitVertex();
 
 	o_col = i_col[0];
 	o_uv = i_uv[0].zy;
 	o_time = i_time[0];
 	o_matid = i_matid[0];
-	gl_Position = camera.proj_view * vec4(pos + i_xext[0] + i_yext[0], 1.0);
+	gl_Position = camera.proj_view * vec4(i_pos2[0], 1.0);
 	EmitVertex();
 
 	EndPrimitive();

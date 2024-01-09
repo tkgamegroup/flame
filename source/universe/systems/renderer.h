@@ -1,12 +1,10 @@
 #pragma once
 
 #include "../system.h"
+#include "../draw_data.h"
 
 namespace flame
 {
-	struct ObjectDrawData;
-	struct DrawData;
-
 	enum RenderMode
 	{
 		RenderModeSimple, // forward shading, no shadows, no post-processing
@@ -346,6 +344,8 @@ namespace flame
 		virtual void draw_outlines(const std::vector<ObjectDrawData>& draw_datas, const cvec4& color, uint width, OutlineMode mode = OutlineMax) = 0;
 		// Reflect
 		virtual void draw_primitives(PrimitiveType type, const vec3* points, uint count, const cvec4& color, bool depth_test = false) = 0;
+		// Reflect
+		virtual void draw_particles(uint mat_id, const std::vector<ParticleDrawData::Ptc>& ptcs) = 0;
 
 		// Reflect
 		virtual void render(int tar_idx, graphics::CommandBufferPtr cb) = 0;

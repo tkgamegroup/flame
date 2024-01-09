@@ -94,6 +94,7 @@ struct CopiedNode
 {
 	uint object_id;
 	uint name;
+	std::string template_string;
 	uint parent;
 	std::map<uint, CopiedSlot> input_datas;
 	vec2 position;
@@ -290,6 +291,7 @@ void BlueprintView::copy_nodes(BlueprintGroupPtr g)
 			auto& n = copied_nodes.emplace_back();
 			n.object_id = src_n->object_id;
 			n.name = src_n->name_hash;
+			n.template_string = src_n->template_string;
 			n.parent = src_n->parent->object_id;
 			for (auto& i : src_n->inputs)
 			{
@@ -396,6 +398,9 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 		}
 		if (n)
 		{
+			if (!src_n.template_string.empty())
+				blueprint->change_node_structure(n, src_n.template_string, {});
+
 			for (auto& src_i : src_n.input_datas)
 			{
 				if (blueprint_is_variable_node(n->name_hash))

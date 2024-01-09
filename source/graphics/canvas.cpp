@@ -278,24 +278,35 @@ namespace flame
 
 			if (closed)
 			{
-				auto n = get_normal(path[n_pts - 1], path[0]);
+				if (path[n_pts - 1] != path[0])
+				{
+					auto n = get_normal(path[n_pts - 1], path[0]);
+					auto n1 = normalize(n + last_normal);
+					auto t1 = thickness / dot(n1, last_normal);
+					vertices[vtx_off + 0].pos = path[n_pts - 1] + n1 * t1;
+					vertices[vtx_off + 1].pos = path[n_pts - 1] - n1 * t1;
+					auto n2 = normalize(n + first_normal);
+					auto t2 = thickness / dot(n2, first_normal);
+					vertices[0].pos = path[0] + n2 * t2;
+					vertices[1].pos = path[0] - n2 * t2;
 
-				auto n1 = normalize(n + last_normal);
-				auto t1 = thickness / dot(n1, last_normal);
-				vertices[vtx_off + 0].pos = path[n_pts - 1] + n1 * t1;
-				vertices[vtx_off + 1].pos = path[n_pts - 1] - n1 * t1;
-
-				auto n2 = normalize(n + first_normal);
-				auto t2 = thickness / dot(n2, first_normal);
-				vertices[0].pos = path[0] + n2 * t2;
-				vertices[1].pos = path[0] - n2 * t2;
-
-				indices.push_back(vtx_off + 0);
-				indices.push_back(vtx_off + 1);
-				indices.push_back(1);
-				indices.push_back(vtx_off + 0);
-				indices.push_back(1);
-				indices.push_back(0);
+					indices.push_back(vtx_off + 0);
+					indices.push_back(vtx_off + 1);
+					indices.push_back(1);
+					indices.push_back(vtx_off + 0);
+					indices.push_back(1);
+					indices.push_back(0);
+				}
+				else
+				{
+					auto n = normalize(first_normal + last_normal);
+					auto t1 = thickness / dot(n, last_normal);
+					vertices[vtx_off + 0].pos = path[n_pts - 1] + n * t1;
+					vertices[vtx_off + 1].pos = path[n_pts - 1] - n * t1;
+					auto t2 = thickness / dot(n, first_normal);
+					vertices[0].pos = path[0] + n * t2;
+					vertices[1].pos = path[0] - n * t2;
+				}
 			}
 
 			auto buf_vtx_off = buf_vtx.add(vertices.data(), vertices.size());
