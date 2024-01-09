@@ -41,7 +41,7 @@ namespace flame
 		library->add_template("String Length", "", BlueprintNodeFlagNone,
 			{
 				{
-					.name = "String",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<std::string>(), 
 						TypeInfo::get<std::wstring>(), 
 						TypeInfo::get<std::filesystem::path>() }
@@ -68,7 +68,7 @@ namespace flame
 		library->add_template("String Empty", "", BlueprintNodeFlagNone,
 			{
 				{
-					.name = "String",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<std::string>(),
 						TypeInfo::get<std::wstring>(),
 						TypeInfo::get<std::filesystem::path>() }
@@ -114,7 +114,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("To String", "", BlueprintNodeFlagNone,
+		library->add_template("Str", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "V",
@@ -126,7 +126,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "String",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
@@ -136,10 +136,10 @@ namespace flame
 			}
 		);
 
-		library->add_template("String To Int", "", BlueprintNodeFlagNone,
+		library->add_template("Stoi", "", BlueprintNodeFlagNone,
 			{
 				{
-					.name = "String",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
@@ -157,7 +157,7 @@ namespace flame
 		library->add_template("String Hash", "", BlueprintNodeFlagNone,
 			{
 				{
-					.name = "String",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
@@ -403,7 +403,7 @@ namespace flame
 		library->add_template("Print", "", BlueprintNodeFlagNone,
 			{
 				{
-					.name = "String",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},

@@ -687,13 +687,13 @@ namespace flame
 			},
 			{
 				{
-					.name = "Quotient",
+					.name = "Q",
 					.allowed_types = { TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
 										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
 										}
 				},
 				{
-					.name = "Reminder",
+					.name = "R",
 					.allowed_types = { TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>(),
 										TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
 										}

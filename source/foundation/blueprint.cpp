@@ -3476,7 +3476,7 @@ namespace flame
 							to_slot = to_node->find_input(name);
 							if (!to_slot)
 							{
-								printf("link: cannot find input: %u in node: %s\n", name.c_str(), to_node->display_name.empty() ? to_node->name.c_str() : to_node->display_name.c_str());
+								printf("link: cannot find input: %s in node: %s\n", name.c_str(), to_node->display_name.empty() ? to_node->name.c_str() : to_node->display_name.c_str());
 								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 								continue;
 							}
