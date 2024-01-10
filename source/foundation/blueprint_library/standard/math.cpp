@@ -1074,6 +1074,36 @@ namespace flame
 			}
 		);
 
+		library->add_template("Arc Point", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "C",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "R",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto c = *(vec3*)inputs[0].data;
+				auto a = *(float*)inputs[1].data;
+				auto r = *(float*)inputs[2].data;
+				auto rad = radians(a);
+				*(vec3*)outputs[0].data = c + vec3(cos(rad) * r, 0.f, sin(rad) * r);
+			}
+		);
+
 		library->add_template("Bezier", "", BlueprintNodeFlagNone,
 			{
 				{

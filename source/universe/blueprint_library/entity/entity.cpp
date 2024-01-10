@@ -315,6 +315,10 @@ namespace flame
 
 				execution.block->max_execute_times = temp_array.size();
 				execution.block->loop_vector_index = 3;
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto& temp_array = *(std::vector<EntityPtr>*)outputs[1].data;
+				temp_array.clear();
 			}
 		);
 
@@ -1435,6 +1439,10 @@ namespace flame
 
 				execution.block->max_execute_times = temp_array.size();
 				execution.block->loop_vector_index = 2;
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto& temp_array = *(std::vector<EntityPtr>*)outputs[1].data;
+				temp_array.clear();
 			}
 		);
 
@@ -1518,6 +1526,10 @@ namespace flame
 					*(EntityPtr*)outputs[1].data = temp_array[execution.block->executed_times];
 					execution.block->_break();
 				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto& temp_array = *(std::vector<EntityPtr>*)outputs[2].data;
+				temp_array.clear();
 			}
 		);
 

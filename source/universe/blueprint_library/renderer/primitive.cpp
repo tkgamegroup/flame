@@ -5,7 +5,9 @@ namespace flame
 {
 	void add_primitive_node_templates(BlueprintNodeLibraryPtr library)
 	{
-		library->add_template("Make Line Strip", "", BlueprintNodeFlagNone,
+		constexpr auto SEPARATOR = std::numeric_limits<float>::quiet_NaN();
+
+		library->add_template("Make Line Strips", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Point 0",
@@ -28,21 +30,54 @@ namespace flame
 				{
 					if (array_type->get_wrapped() == TypeInfo::get<vec3>())
 					{
-						auto& strip = *(std::vector<vec3>*)inputs[2].data;
+						auto& strips = *(std::vector<vec3>*)inputs[2].data;
 						auto pt0 = *(vec3*)inputs[0].data;
 						auto pt1 = *(vec3*)inputs[1].data;
+						auto it0 = std::find_if(strips.begin(), strips.end(), [&](const auto& i) {
+							return distance(i, pt0) < 0.01f;
+						});
+						auto it1 = std::find_if(strips.begin(), strips.end(), [&](const auto& i) {
+							return distance(i, pt1) < 0.01f;
+						});
 
-						if (strip.size() >= 2)
+						if (it0 != strips.end() && it1 != strips.end())
 						{
-							if (strip.back() == pt0)
-								strip.push_back(pt1);
-							else if (strip.front() == pt1)
-								strip.insert(strip.begin(), pt0);
+							if (it1 == strips.begin())
+								strips.push_back(strips[0]);
+							else
+							{
+								auto n = 0;
+								for (auto it = it1; it != strips.end(); it++)
+								{
+									if (isnan(it->x))
+										break;
+									n++;
+								}
+
+								auto copied = std::vector<vec3>(it1, it1 + n);
+								{
+									auto b = it1;
+									auto e = it1 + n;
+									b = b == strips.begin() ? b : b - 1;
+									e = e == strips.end() ? e : e + 1;
+									strips.erase(b, e);
+								}
+								it0 = std::find_if(strips.begin(), strips.end(), [&](const auto& i) {
+									return distance(i, pt0) < 0.01f;
+								});
+								strips.insert(it0 + 1, copied.begin(), copied.end());
+							}
 						}
+						else if (it0 != strips.end())
+							strips.emplace(it0 + 1, pt1);
+						else if (it1 != strips.end())
+							strips.emplace(it1, pt0);
 						else
 						{
-							strip.push_back(pt0);
-							strip.push_back(pt1);
+							if (!strips.empty())
+								strips.push_back(vec3(SEPARATOR));
+							strips.push_back(pt0);
+							strips.push_back(pt1);
 						}
 					}
 				}
@@ -112,7 +147,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Draw Line Strip", "", BlueprintNodeFlagNone,
+		library->add_template("Draw Line Strips", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Points",
@@ -144,7 +179,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Draw Line Strip Advance", "", BlueprintNodeFlagNone,
+		library->add_template("Draw Line Strips Advance", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Points",
@@ -196,73 +231,87 @@ namespace flame
 									return normalize(cross(p2 - p1, normal));
 								};
 
-								int n_pts = points.size();
-								auto first_bitangent = get_bitangent(points[0], points[1]);
-								vec3 last_bitangent = first_bitangent;
-
-								std::vector<ParticleDrawData::Ptc> ptcs;
-								auto p0 = points[0] - first_bitangent * thickness;
-								auto p3 = points[0] + first_bitangent * thickness;
-								for (auto i = 1; i < n_pts - 1; i++)
+								auto off = 0;
+								int n_pts = 0;
+								for (auto i = 0; ; i++)
 								{
-									auto n = last_bitangent;
-									last_bitangent = get_bitangent(points[i], points[i + 1]);
-									n = normalize(n + last_bitangent);
-									auto t = thickness / dot(n, last_bitangent);
-
-									auto& ptc = ptcs.emplace_back();
-									ptc.pos0 = p0;
-									ptc.pos1 = points[i] - n * t;
-									ptc.pos2 = points[i] + n * t;
-									ptc.pos3 = p3;
-									ptc.col = color;
-									ptc.uv = vec4(0.f, 0.f, 1.f, 1.f);
-
-									p0 = ptc.pos1;
-									p3 = ptc.pos2;
-								}
-								{
-									auto& ptc = ptcs.emplace_back();
-									ptc.pos0 = p0;
-									ptc.pos1 = points.back() - last_bitangent * thickness;
-									ptc.pos2 = points.back() + last_bitangent * thickness;
-									ptc.pos3 = p3;
-									ptc.col = color;
-									ptc.uv = vec4(0.f, 0.f, 1.f, 1.f);
-								}
-								if (closed)
-								{
-									if (points[n_pts - 1] != points[0])
+									if (i < points.size() && !isnan(points[i].x))
+										n_pts++;
+									else if (n_pts >= 2)
 									{
-										auto n = get_bitangent(points[n_pts - 1], points[0]);
-										auto n1 = normalize(n + last_bitangent);
-										auto t1 = thickness / dot(n1, last_bitangent);
-										ptcs.back().pos1 = points[n_pts - 1] - n1 * t1;
-										ptcs.back().pos2 = points[n_pts - 1] + n1 * t1;
-										auto n2 = normalize(n + first_bitangent);
-										auto t2 = thickness / dot(n2, first_bitangent);
-										ptcs.front().pos0 = points[0] - n2 * t2;
-										ptcs.front().pos3 = points[0] + n2 * t2;
+										auto first_bitangent = get_bitangent(points[off], points[off + 1]);
+										vec3 last_bitangent = first_bitangent;
 
+										std::vector<ParticleDrawData::Ptc> ptcs;
+										auto p0 = points[off] - first_bitangent * thickness;
+										auto p3 = points[off] + first_bitangent * thickness;
+										for (auto j = 1; j < n_pts - 1; j++)
+										{
+											auto n = last_bitangent;
+											last_bitangent = get_bitangent(points[off + j], points[off + j + 1]);
+											n = normalize(n + last_bitangent);
+											auto t = thickness / dot(n, last_bitangent);
+
+											auto& ptc = ptcs.emplace_back();
+											ptc.pos0 = p0;
+											ptc.pos1 = points[off + j] - n * t;
+											ptc.pos2 = points[off + j] + n * t;
+											ptc.pos3 = p3;
+											ptc.col = color;
+											ptc.uv = vec4(0.f, 0.f, 1.f, 1.f);
+
+											p0 = ptc.pos1;
+											p3 = ptc.pos2;
+										}
 										{
 											auto& ptc = ptcs.emplace_back();
-											ptc.pos0 = ptcs.back().pos1;
-											ptc.pos1 = ptcs.front().pos0;
-											ptc.pos2 = ptcs.front().pos3;
-											ptc.pos3 = ptcs.back().pos2;
+											ptc.pos0 = p0;
+											ptc.pos1 = points[off + n_pts - 1] - last_bitangent * thickness;
+											ptc.pos2 = points[off + n_pts - 1] + last_bitangent * thickness;
+											ptc.pos3 = p3;
 											ptc.col = color;
 											ptc.uv = vec4(0.f, 0.f, 1.f, 1.f);
 										}
+										if (closed)
+										{
+											if (distance(points[off + n_pts - 1], points[off]) > 0.01f)
+											{
+												auto n = get_bitangent(points[off + n_pts - 1], points[off]);
+												auto n1 = normalize(n + last_bitangent);
+												auto t1 = thickness / dot(n1, last_bitangent);
+												ptcs.back().pos1 = points[off + n_pts - 1] - n1 * t1;
+												ptcs.back().pos2 = points[off + n_pts - 1] + n1 * t1;
+												auto n2 = normalize(n + first_bitangent);
+												auto t2 = thickness / dot(n2, first_bitangent);
+												ptcs.front().pos0 = points[off] - n2 * t2;
+												ptcs.front().pos3 = points[off] + n2 * t2;
+
+												{
+													auto& ptc = ptcs.emplace_back();
+													ptc.pos0 = ptcs.back().pos1;
+													ptc.pos1 = ptcs.front().pos0;
+													ptc.pos2 = ptcs.front().pos3;
+													ptc.pos3 = ptcs.back().pos2;
+													ptc.col = color;
+													ptc.uv = vec4(0.f, 0.f, 1.f, 1.f);
+												}
+											}
+											else
+											{
+												auto n = normalize(first_bitangent + last_bitangent);
+												auto t = thickness / dot(n, last_bitangent);
+												ptcs.front().pos0 = ptcs.back().pos1 = points[off] - n * t;
+												ptcs.front().pos3 = ptcs.back().pos2 = points[off] + n * t;
+											}
+										}
+
+										sRenderer::instance()->draw_particles(mat_id, ptcs);
+										n_pts = 0;
+										off = i + 1;
 									}
-									else
-									{
-										auto n = normalize(first_bitangent + last_bitangent);
-										auto t = thickness / dot(n, last_bitangent);
-										ptcs.front().pos0 = ptcs.back().pos1 = points[0] - n * t;
-										ptcs.front().pos3 = ptcs.back().pos2 = points[0] + n * t;
-									}
+									if (i >= points.size())
+										break;
 								}
-								sRenderer::instance()->draw_particles(mat_id, ptcs);
 							}
 						}
 					}

@@ -322,6 +322,10 @@ namespace flame
 				}
 				execution.block->loop_vector_index = 3;
 				execution.block->max_execute_times = temp_array.size();
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto& temp_array = *(std::vector<std::filesystem::path>*)outputs[1].data;
+				temp_array.clear();
 			}
 		);
 

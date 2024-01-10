@@ -284,6 +284,7 @@ namespace flame
 					*(uint*)outputs[1].data = temp_array[linearRand(0, (int)temp_array.size() - 1)];
 				else
 					*(uint*)outputs[1].data = 0;
+				temp_array.clear();
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto& ok = *(bool*)outputs[2].data;

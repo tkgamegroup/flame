@@ -8,8 +8,14 @@ using namespace graphics;
 
 struct App : GraphicsApplication
 {
+	enum Type
+	{
+		TypeLines,
+		TypePolygon
+	};
+
 	std::vector<std::pair<vec3, std::string>> points;
-	std::vector<std::vector<int>> primitives;
+	std::vector<std::pair<Type, std::vector<int>>> primitives;
 	std::vector<int> selected_points;
 	int selected_primitive = -1;
 
@@ -77,10 +83,15 @@ struct App : GraphicsApplication
 				}
 				if (ImGui::BeginPopupContextItem())
 				{
-					if (ImGui::MenuItem("Add Primitive"))
+					if (ImGui::MenuItem("Add Lines"))
 					{
 						if (!selected_points.empty())
-							primitives.push_back(selected_points);
+							primitives.emplace_back(TypeLines, selected_points);
+					}
+					if (ImGui::MenuItem("Add Polygon"))
+					{
+						if (!selected_points.empty())
+							primitives.emplace_back(TypePolygon, selected_points);
 					}
 					ImGui::EndPopup();
 				}
@@ -113,11 +124,11 @@ struct App : GraphicsApplication
 					points.erase(points.begin() + idx);
 					for (auto& p : primitives)
 					{
-						for (auto it = p.begin(); it != p.end();)
+						for (auto it = p.second.begin(); it != p.second.end();)
 						{
 							if (*it == idx)
 							{
-								it = p.erase(it);
+								it = p.second.erase(it);
 								break;
 							}
 							else
@@ -139,8 +150,11 @@ struct App : GraphicsApplication
 			if (selected_points.size() == 1)
 			{
 				auto idx = selected_points[0];
-				std::swap(points[idx], points[idx - 1]);
-				selected_points[0]--;
+				if (idx > 0)
+				{
+					std::swap(points[idx], points[idx - 1]);
+					selected_points[0]--;
+				}
 			}
 		}
 		ImGui::SameLine();
@@ -149,8 +163,11 @@ struct App : GraphicsApplication
 			if (selected_points.size() == 1)
 			{
 				auto idx = selected_points[0];
-				std::swap(points[idx], points[idx + 1]);
-				selected_points[0]++;
+				if (idx < points.size() - 1)
+				{
+					std::swap(points[idx], points[idx + 1]);
+					selected_points[0]++;
+				}
 			}
 		}
 		if (selected_points.size() == 1)
@@ -166,7 +183,7 @@ struct App : GraphicsApplication
 			for (auto i = 0; i < primitives.size(); i++)
 			{
 				ImGui::PushID(i);
-				if (ImGui::Selectable(TypeInfo::serialize_t(primitives[i]).c_str(), selected_primitive == i))
+				if (ImGui::Selectable(TypeInfo::serialize_t(primitives[i].second).c_str(), selected_primitive == i))
 					selected_primitive = i;
 				ImGui::PopID();
 			}
@@ -305,30 +322,50 @@ struct App : GraphicsApplication
 		}
 		for (auto& p : primitives)
 		{
-			if (p.size() < 3)
-				continue;
-			std::vector<vec2> draw_points;
-			for (auto i = 0; i < p.size(); i++)
+			switch (p.first)
 			{
-				auto next = i + 1;
-				if (next >= p.size()) next = 0;
+			case TypeLines:
+			{
+				if (p.second.size() < 2)
+					continue;
 
-				draw_points.push_back(get_projected(points[p[i]].first));
-				draw_points.push_back(get_projected(points[p[next]].first));
+				std::vector<vec2> draw_points;
+				for (auto i = 0; i < p.second.size(); i++)
+					draw_points.push_back(get_projected(points[p.second[i]].first));
+				for (auto i = 0; i < draw_points.size() - 1; i++)
+					dl->AddLine(origin + draw_points[i], origin + draw_points[i + 1], ImColor(1.f, 1.f, 1.f));
 			}
 
-			bool back_face = true;
-			for (auto i = 0; i < draw_points.size() - 2; i += 2)
+				break;
+			case TypePolygon:
 			{
-				if (cross(vec3(draw_points[i + 1] - draw_points[i + 0], 0.f), vec3(draw_points[i + 3] - draw_points[i + 2], 0.f)).z < 0.f)
+				if (p.second.size() < 3)
+					continue;
+				std::vector<vec2> draw_points;
+				for (auto i = 0; i < p.second.size(); i++)
 				{
-					back_face = false;
-					break;
-				}
-			}
+					auto next = i + 1;
+					if (next >= p.second.size()) next = 0;
 
-			for (auto i = 0; i < draw_points.size(); i += 2)
-				dl->AddLine(origin + draw_points[i], origin + draw_points[i + 1], back_face ? ImColor(0.8f, 0.5f, 0.5f) : ImColor(1.f, 1.f, 1.f));
+					draw_points.push_back(get_projected(points[p.second[i]].first));
+					draw_points.push_back(get_projected(points[p.second[next]].first));
+				}
+
+				bool back_face = true;
+				for (auto i = 0; i < draw_points.size() - 2; i += 2)
+				{
+					if (cross(vec3(draw_points[i + 1] - draw_points[i + 0], 0.f), vec3(draw_points[i + 3] - draw_points[i + 2], 0.f)).z < 0.f)
+					{
+						back_face = false;
+						break;
+					}
+				}
+
+				for (auto i = 0; i < draw_points.size(); i += 2)
+					dl->AddLine(origin + draw_points[i], origin + draw_points[i + 1], back_face ? ImColor(0.8f, 0.5f, 0.5f) : ImColor(1.f, 1.f, 1.f));
+			}
+				break;
+			}
 		}
 		ImGui::EndGroup();
 
