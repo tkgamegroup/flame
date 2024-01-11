@@ -240,6 +240,46 @@ namespace flame
 			}
 		);
 
+		library->add_template("If DE", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			true,
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				auto ok = *(uint*)inputs[1].data % *(uint*)inputs[2].data == 0;
+				execution.block->max_execute_times = ok ? 1 : 0;
+			}
+		);
+
+		library->add_template("If Not DE", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			true,
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				auto ok = *(uint*)inputs[1].data % *(uint*)inputs[2].data != 0;
+				execution.block->max_execute_times = ok ? 1 : 0;
+			}
+		);
+
 		library->add_template("Loop", "", BlueprintNodeFlagNone,
 			{
 				{

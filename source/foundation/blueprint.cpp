@@ -6,6 +6,8 @@
 
 namespace flame
 {
+	std::vector<std::pair<std::string, TypeInfo*>> BlueprintSystem::template_types;
+
 	std::vector<std::unique_ptr<BlueprintT>>						loaded_blueprints;
 	std::map<uint, std::pair<BlueprintPtr, BlueprintInstancePtr>>	named_blueprints;
 	std::vector<std::unique_ptr<BlueprintNodeLibraryT>>				loaded_libraries;

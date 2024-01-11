@@ -1242,53 +1242,6 @@ namespace flame
 				*(bool*)outputs[0].data = *(EntityPtr*)inputs[0].data == *(EntityPtr*)inputs[1].data;
 			}
 		);
-		
-		library->add_template("Loop Var Entity", "", BlueprintNodeFlagNone,
-			{
-			},
-			{
-				{
-					.name = "V",
-					.allowed_types = { TypeInfo::get<EntityPtr>() }
-				}
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto block_node = execution.block->node;
-				auto vec_idx = execution.block->loop_vector_index;
-				if (vec_idx != -1)
-				{
-					BlueprintAttribute vec_arg = { nullptr, nullptr };
-					if (vec_idx < block_node->inputs.size())
-						vec_arg = block_node->inputs[vec_idx];
-					else
-					{
-						vec_idx -= block_node->inputs.size();
-						if (vec_idx < block_node->outputs.size())
-							vec_arg = block_node->outputs[vec_idx];
-					}
-					if (vec_arg.data && vec_arg.type)
-					{
-						auto i = execution.block->executed_times;
-						auto item_type = vec_arg.type->get_wrapped();
-						if (item_type == TypeInfo::get<EntityPtr>())
-						{
-							auto& vec = *(std::vector<char>*)vec_arg.data;
-							auto length = vec.size() / item_type->size;
-							if (i < length)
-								*(EntityPtr*)outputs[0].data = *(EntityPtr*)(vec.data() + i * item_type->size);
-							else
-								*(EntityPtr*)outputs[0].data = nullptr;
-						}
-						else
-							*(EntityPtr*)outputs[0].data = nullptr;
-					}
-					else
-						*(EntityPtr*)outputs[0].data = nullptr;
-				}
-				else
-					*(EntityPtr*)outputs[0].data = nullptr;
-			}
-		);
 
 		library->add_template("Get BP Entity", "", BlueprintNodeFlagNone, 
 		{

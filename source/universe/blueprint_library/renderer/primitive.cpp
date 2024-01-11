@@ -58,8 +58,20 @@ namespace flame
 								{
 									auto b = it1;
 									auto e = it1 + n;
-									b = b == strips.begin() ? b : b - 1;
-									e = e == strips.end() ? e : e + 1;
+									if (b != strips.begin())
+									{
+										if (isnan((*(b - 1)).x))
+											b = b - 1;
+										else
+											int cut = 1;
+									}
+									if (e != strips.end())
+									{
+										if (isnan((*(e + 1)).x))
+											e = e + 1;
+										else
+											int cut = 1;
+									}
 									strips.erase(b, e);
 								}
 								it0 = std::find_if(strips.begin(), strips.end(), [&](const auto& i) {

@@ -1,4 +1,5 @@
 #include "library.h"
+#include "../entity_private.h"
 
 namespace flame
 {
@@ -23,6 +24,8 @@ namespace flame
 		auto hud_library = BlueprintNodeLibrary::get(L"universe::HUD");
 		auto audio_library = BlueprintNodeLibrary::get(L"universe::audio");
 		auto resource_library = BlueprintNodeLibrary::get(L"universe::resource");
+
+		BlueprintSystem::template_types.emplace_back("e", TypeInfo::get<EntityPtr>());
 
 		add_entity_node_templates(entity_library);
 		add_camera_node_templates(camera_library);

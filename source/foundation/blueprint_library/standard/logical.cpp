@@ -437,5 +437,27 @@ namespace flame
 				*(bool*)outputs[0].data = (*(uint*)inputs[0].data) & (*(uint*)inputs[1].data);
 			}
 		);
+
+		library->add_template("Divisible Evenly", "a%b==0", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(bool*)outputs[0].data = *(uint*)inputs[0].data % *(uint*)inputs[1].data == 0;
+			}
+		);
 	}
 }
