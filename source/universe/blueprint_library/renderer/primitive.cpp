@@ -63,14 +63,14 @@ namespace flame
 										if (isnan((*(b - 1)).x))
 											b = b - 1;
 										else
-											int cut = 1;
+											int cut = 1; // why?
 									}
 									if (e != strips.end())
 									{
 										if (isnan((*(e + 1)).x))
 											e = e + 1;
 										else
-											int cut = 1;
+											int cut = 1; // why?
 									}
 									strips.erase(b, e);
 								}

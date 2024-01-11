@@ -951,50 +951,6 @@ namespace flame
 			}
 		);
 
-		library->add_template("EGet Entity", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Entity",
-					.allowed_types = { TypeInfo::get<EntityPtr>() }
-				},
-				{
-					.name = "Name_hash",
-					.allowed_types = { TypeInfo::get<std::string>() }
-				}
-			},
-			{
-				{
-					.name = "V",
-					.allowed_types = { TypeInfo::get<EntityPtr>() }
-				}
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				auto name = *(uint*)inputs[1].data;
-				if (entity)
-				{
-					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
-					{
-						auto instance = ins->bp_ins;
-						auto it = instance->variables.find(name);
-						if (it != instance->variables.end())
-						{
-							if (it->second.type == TypeInfo::get<EntityPtr>())
-								*(EntityPtr*)outputs[0].data = *(EntityPtr*)it->second.data;
-							else
-								*(EntityPtr*)outputs[0].data = nullptr;
-						}
-						else
-							*(EntityPtr*)outputs[0].data = nullptr;
-					}
-					else
-						*(EntityPtr*)outputs[0].data = nullptr;
-				}
-				else
-					*(EntityPtr*)outputs[0].data = nullptr;
-			}
-		);
-
 		library->add_template("ESet V", "", BlueprintNodeFlagEnableTemplate,
 			{
 				{
@@ -1059,42 +1015,6 @@ namespace flame
 				else if (info.reason == BlueprintNodeInputTypesChanged)
 					return true;
 				return false;
-			}
-		);
-
-		library->add_template("ESet Entity", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Entity",
-					.allowed_types = { TypeInfo::get<EntityPtr>() }
-				},
-				{
-					.name = "Name_hash",
-					.allowed_types = { TypeInfo::get<std::string>() }
-				},
-				{
-					.name = "V",
-					.allowed_types = { TypeInfo::get<EntityPtr>() }
-				}
-			},
-			{
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				auto name = *(uint*)inputs[1].data;
-				if (entity)
-				{
-					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
-					{
-						auto instance = ins->bp_ins;
-						auto it = instance->variables.find(name);
-						if (it != instance->variables.end())
-						{
-							if (it->second.type == TypeInfo::get<EntityPtr>())
-								*(EntityPtr*)it->second.data = *(EntityPtr*)inputs[2].data;
-						}
-					}
-				}
 			}
 		);
 
@@ -1240,76 +1160,6 @@ namespace flame
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(bool*)outputs[0].data = *(EntityPtr*)inputs[0].data == *(EntityPtr*)inputs[1].data;
-			}
-		);
-
-		library->add_template("Get BP Entity", "", BlueprintNodeFlagNone, 
-		{
-		{
-			.name = "Instance", 
-			.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
-		}, 
-		{
-			.name = "Name_hash", 
-			.allowed_types = { TypeInfo::get<std::string>() }
-		}
-		}, 
-		{
-		{
-			.name = "V", 
-			.allowed_types = { TypeInfo::get<EntityPtr>() }
-		}
-		}, 
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-			auto instance = *(BlueprintInstancePtr*)inputs[0].data; 
-			auto name = *(uint*)inputs[1].data; 
-			if (instance)
-			{
-				auto it = instance->variables.find(name); 
-				if (it != instance->variables.end())
-				{
-					if (it->second.type == TypeInfo::get<EntityPtr>())
-						* (EntityPtr*)outputs[0].data = *(EntityPtr*)it->second.data; 
-					else
-						* (EntityPtr*)outputs[0].data = nullptr; 
-				}
-				else
-					* (EntityPtr*)outputs[0].data = nullptr; 
-			}
-			else
-				* (EntityPtr*)outputs[0].data = nullptr; 
-			}
-		);
-
-		library->add_template("Set BP Entity", "", BlueprintNodeFlagNone, 
-		{
-		{
-			.name = "Instance", 
-			.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
-		}, 
-		{
-			.name = "Name_hash", 
-			.allowed_types = { TypeInfo::get<std::string>() }
-		}, 
-		{
-			.name = "V", 
-			.allowed_types = { TypeInfo::get<EntityPtr>() }
-		}
-		}, 
-		{
-		}, 
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-			auto instance = *(BlueprintInstancePtr*)inputs[0].data; 
-			auto name = *(uint*)inputs[1].data; 
-			if (instance)
-			{
-				auto it = instance->variables.find(name); 
-				if (it != instance->variables.end())
-				{
-					if (it->second.type == TypeInfo::get<EntityPtr>())
-						* (EntityPtr*)it->second.data = *(EntityPtr*)inputs[2].data;
-				}
-			}
 			}
 		);
 
