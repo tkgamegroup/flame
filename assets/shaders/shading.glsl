@@ -262,17 +262,22 @@ vec3 get_env(vec3 N, vec3 V, vec3 world_pos, float metallic, vec3 albedo, vec3 f
 
 vec3 get_fog(vec3 color, float dist, float h)
 {
+	if (lighting.fog_type == FOG_NONE)
+		return color;
+
 	float f = 1.0;
 	if (lighting.fog_type == FOG_LINEAR)
 		f = map_01(dist, lighting.fog_start, lighting.fog_end);
 	else if (lighting.fog_type == FOG_EXP)
 	{
 		f = map_01(dist, lighting.fog_start, lighting.fog_end);
+		f *= lighting.fog_density;
 		f = 1.0 - exp(-f);
 	}
 	else if (lighting.fog_type == FOG_EXP2)
 	{
 		f = map_01(dist, lighting.fog_start, lighting.fog_end);
+		f *= lighting.fog_density;
 		f = 1.0 - exp(-(f * f));
 	}
 	else if (lighting.fog_type == FOG_HEIGHT_LINEAR)
@@ -284,8 +289,10 @@ vec3 get_fog(vec3 color, float dist, float h)
 	else if (lighting.fog_type == FOG_HEIGHT_EXP)
 	{
 		f = map_01(dist, lighting.fog_start, lighting.fog_end);
-		f = 1.0 - exp(-f);
+		f *= lighting.fog_density;
+		f = 1.0 - exp(-f * lighting.fog_density);
 		float fd = map_01(h, lighting.fog_base_height, lighting.fog_max_height);
+		fd *= lighting.fog_density;
 		fd = exp(-fd);
 		f = max(f, fd);
 	}
@@ -294,10 +301,11 @@ vec3 get_fog(vec3 color, float dist, float h)
 		f = map_01(dist, lighting.fog_start, lighting.fog_end);
 		f = 1.0 - exp(-(f * f));
 		float fd = map_01(h, lighting.fog_base_height, lighting.fog_max_height);
+		fd *= lighting.fog_density;
 		fd = exp(-(fd * fd));
 		f = max(f, fd);
 	}
-	return mix(color, lighting.fog_color * lighting.sky_intensity, f * lighting.fog_density);
+	return mix(color, lighting.fog_color * lighting.sky_intensity, f);
 }
 
 vec3 shading(vec3 world_pos, vec3 N, float metallic, vec3 albedo, vec3 f0, float roughness, float ao, vec3 emissive, bool receive_ssr)

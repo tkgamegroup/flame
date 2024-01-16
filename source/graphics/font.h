@@ -6,6 +6,7 @@ namespace flame
 {
 	namespace graphics
 	{
+		// Reflect
 		struct FontAtlas
 		{
 			FontAtlasType type;

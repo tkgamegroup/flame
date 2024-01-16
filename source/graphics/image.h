@@ -95,6 +95,7 @@ namespace flame
 			uvec2 sheet_size = uvec2(1);
 		};
 
+		// Reflect
 		struct Image
 		{
 			struct Layer
@@ -204,6 +205,7 @@ namespace flame
 			FLAME_GRAPHICS_API static Get& get;
 		};
 
+		// Reflect
 		struct ImageAtlas
 		{
 			struct Item
