@@ -425,6 +425,15 @@ void SheetView::on_draw()
 						break;
 					}
 				}
+				else if (type == TypeInfo::get<StrAndHash>())
+				{
+					ImGui::SetNextItemWidth(-1.f);
+					auto& snh = *(StrAndHash*)data;
+					ImGui::InputText("", &snh.s);
+					changed |= ImGui::IsItemDeactivatedAfterEdit();
+					if (changed)
+						snh.h = sh(snh.s.c_str());
+				}
 				return changed;
 			};
 

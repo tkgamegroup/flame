@@ -510,6 +510,8 @@ namespace flame
 			{
 				if (pos > prev)
 					ret.emplace_back(str.begin() + prev, str.begin() + pos);
+				else if (pos == prev)
+					ret.emplace_back();
 				prev = pos + 1;
 			}
 			if (prev < str.length())

@@ -1206,36 +1206,6 @@ namespace flame
 			nullptr
 		);
 
-		library->add_template("Circle Position", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Radius",
-					.allowed_types = { TypeInfo::get<float>() },
-					.default_value = "1"
-				},
-				{
-					.name = "Angle",
-					.allowed_types = { TypeInfo::get<float>() },
-					.default_value = "0"
-				}
-			},
-			{
-				{
-					.name = "V",
-					.allowed_types = { TypeInfo::get<vec3>() }
-				}
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto radius = *(float*)inputs[0].data;
-				auto angle = *(float*)inputs[1].data;
-				auto rad = radians(angle);
-				*(vec3*)outputs[0].data = vec3(cos(rad) * radius, 0.f, sin(rad) * radius);
-			},
-			nullptr,
-			nullptr,
-			nullptr
-		);
-
 		library->add_template("Circle Random", "", BlueprintNodeFlagNone,
 			{
 				{

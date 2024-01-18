@@ -132,6 +132,8 @@ namespace flame
 
 	inline bool blueprint_allow_type(const std::vector<TypeInfo*>& allowed_types, TypeInfo* type)
 	{
+		if (type == TypeInfo::get<voidptr>())
+			return true;
 		for (auto t : allowed_types)
 		{
 			if (t == type)

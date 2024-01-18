@@ -706,6 +706,84 @@ namespace flame
 			}
 		);
 
+		library->add_template("Ramp Select", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "Stop 1",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "Opt 1",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto v = *(float*)inputs[0].data;
+				auto n = (inputs_count - 1) / 2;
+				for (auto i = 0; i < n; i++)
+				{
+					if (v < *(float*)inputs[i * 2 + 1].data)
+					{
+						outputs[0].type->copy(outputs[0].data, inputs[i * 2 + 2].data);
+						return;
+					}
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto n = 1;
+					auto type = TypeInfo::get<float>();
+					auto sp = SUS::to_string_vector(SUS::split(info.template_string, ','));
+					if (sp.size() >= 1)
+						n = s2t<uint>(sp[0]);
+					if (sp.size() >= 2)
+						type = blueprint_type_from_template_str(sp[1]);
+					if (!n || !type)
+						return false;
+
+					info.new_inputs.resize(n * 2 + 1);
+					info.new_inputs[0] = {
+						.name = "V",
+						.allowed_types = { TypeInfo::get<float>() }
+					};
+					for (auto i = 0; i < n; i++)
+					{
+						info.new_inputs[i * 2 + 1] = {
+							.name = "Stop " + str(i + 1),
+							.allowed_types = { TypeInfo::get<float>() }
+						};
+						info.new_inputs[i * 2 + 2] = {
+							.name = "Opt " + str(i + 1),
+							.allowed_types = { type }
+						};
+					}
+					info.new_outputs.resize(1);
+					info.new_outputs[0] = {
+						.name = "V",
+						.allowed_types = { type }
+					};
+
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
+		);
+
 		library->add_template("Timer", "", BlueprintNodeFlagNone,
 			{
 				{

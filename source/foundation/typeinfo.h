@@ -3174,9 +3174,10 @@ namespace flame
 		std::string serialize(const void* p) const override
 		{
 			std::string ret;
-			for (auto& v : ui->variables)
+			for (auto i = 0; i < ui->variables.size(); i++)
 			{
-				if (!ret.empty())
+				auto& v = ui->variables[i];
+				if (i > 0)
 					ret += ',';
 				ret += v.type->serialize((char*)p + v.offset);
 			}
@@ -3184,6 +3185,8 @@ namespace flame
 		}
 		void unserialize(const std::string& str, void* p) const override
 		{
+			if (str.empty())
+				return;
 			auto sp = SUS::split(str, ',');
 			assert(sp.size() == ui->variables.size());
 			for (size_t i = 0; i < sp.size(); ++i)

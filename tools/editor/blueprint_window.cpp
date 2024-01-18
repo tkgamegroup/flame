@@ -109,6 +109,7 @@ struct CopiedLink
 	uint to_slot;
 };
 
+static BlueprintGroupPtr copy_src_group = nullptr;
 static std::vector<CopiedNode> copied_nodes;
 static std::vector<CopiedLink> copied_links;
 
@@ -280,6 +281,7 @@ void BlueprintView::copy_nodes(BlueprintGroupPtr g)
 {
 	if (auto selected_nodes = get_selected_nodes(); !selected_nodes.empty())
 	{
+		copy_src_group = g;
 		copied_nodes.clear();
 		copied_links.clear();
 		std::vector<BlueprintNodePtr> nodes;
@@ -426,8 +428,14 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 		BlueprintNodePtr to_node = nullptr;
 		if (auto it = node_map.find(src_l.from_node); it != node_map.end())
 			from_node = it->second;
-		else if (auto n = g->find_node_by_id(src_l.from_node); n)
-			from_node = n;
+		else
+		{
+			if (copy_src_group == g)
+			{
+				if (auto n = g->find_node_by_id(src_l.from_node); n)
+					from_node = n;
+			}
+		}
 		if (auto it = node_map.find(src_l.to_node); it != node_map.end())
 			to_node = it->second;
 		if (from_node && to_node)

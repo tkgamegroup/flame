@@ -895,54 +895,97 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				auto name = *(uint*)inputs[1].data;
-				auto type = outputs[0].type;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
 					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
 					{
 						auto instance = ins->bp_ins;
-						auto it = instance->variables.find(name);
-						if (it != instance->variables.end())
+						for (auto i = 0; i < outputs_count; i++)
 						{
-							if (it->second.type == type)
-								type->copy(outputs[0].data, it->second.data);
+							auto type = outputs[i].type;
+							auto it = instance->variables.find(*(uint*)inputs[i + 1].data);
+							if (it != instance->variables.end())
+							{
+								auto& arg = it->second;
+								if (arg.type == type ||
+									(type == TypeInfo::get<uint>() && arg.type == TypeInfo::get<int>()) ||
+									(type == TypeInfo::get<int>() && arg.type == TypeInfo::get<uint>()))
+									type->copy(outputs[i].data, arg.data);
+								else
+									type->create(outputs[i].data);
+							}
 							else
-								type->create(outputs[0].data);
+								type->create(outputs[i].data);
 						}
-						else
-							type->create(outputs[0].data);
 					}
 					else
-						type->create(outputs[0].data);
+					{
+						for (auto i = 0; i < outputs_count; i++)
+							outputs[i].type->create(outputs[i].data);
+					}
 				}
 				else
-					type->create(outputs[0].data);
+				{
+					for (auto i = 0; i < outputs_count; i++)
+						outputs[i].type->create(outputs[i].data);
+				}
 			},
 			nullptr,
 			nullptr,
 			[](BlueprintNodeStructureChangeInfo& info) {
 				if (info.reason == BlueprintNodeTemplateChanged)
 				{
-					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
-					if (!type)
-						return false;
+					std::vector<TypeInfo*> types;
+					for (auto t : SUS::split(info.template_string, ','))
+					{
+						auto type = blueprint_type_from_template_str(t);
+						if (type)
+							types.push_back(type);
+					}
 
-					info.new_inputs.resize(2);
+					if (types.empty())
+						types.push_back(TypeInfo::get<float>());
+
+					info.new_inputs.resize(types.size() + 1);
 					info.new_inputs[0] = {
 						.name = "Entity",
 						.allowed_types = { TypeInfo::get<EntityPtr>() }
 					};
-					info.new_inputs[1] = {
-						.name = "Name_hash",
-						.allowed_types = { TypeInfo::get<std::string>() }
-					};
-					info.new_outputs.resize(1);
-					info.new_outputs[0] = {
-						.name = "V",
-						.allowed_types = { type }
-					};
+					if (types.size() == 1)
+					{
+						info.new_inputs[1] = {
+							.name = "Name_hash",
+							.allowed_types = { TypeInfo::get<std::string>() }
+						};
+					}
+					else
+					{
+						for (auto i = 0; i < types.size(); i++)
+						{
+							info.new_inputs[i + 1] = {
+								.name = "Name" + str(i) + "_hash",
+								.allowed_types = { TypeInfo::get<std::string>() }
+							};
+						}
+					}
+					info.new_outputs.resize(types.size());
+					if (types.size() == 1)
+					{
+						info.new_outputs[0] = {
+							.name = "V",
+							.allowed_types = { types.front() }
+						};
+					}
+					else
+					{
+						for (auto i = 0; i < types.size(); i++)
+						{
+							info.new_outputs[i] = {
+								.name = "V" + str(i),
+								.allowed_types = { types[i] }
+							};
+						}
+					}
 					return true;
 				}
 				else if (info.reason == BlueprintNodeInputTypesChanged)
@@ -969,21 +1012,23 @@ namespace flame
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				auto name = *(uint*)inputs[1].data;
-				auto type = inputs[2].type;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
 					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
 					{
 						auto instance = ins->bp_ins;
-						auto it = instance->variables.find(name);
-						if (it != instance->variables.end())
+						for (auto i = 1; i < inputs_count; i += 2)
 						{
-							if (it->second.type == type || 
-								(type == TypeInfo::get<uint>() && it->second.type == TypeInfo::get<int>()) ||
-								(type == TypeInfo::get<int>() && it->second.type == TypeInfo::get<uint>()))
-								type->copy(it->second.data, inputs[2].data);
+							auto it = instance->variables.find(*(uint*)inputs[i].data);
+							if (it != instance->variables.end())
+							{
+								auto type = inputs[i + 1].type;
+								auto& arg = it->second;
+								if (it->second.type == type ||
+									(type == TypeInfo::get<uint>() && it->second.type == TypeInfo::get<int>()) ||
+									(type == TypeInfo::get<int>() && it->second.type == TypeInfo::get<uint>()))
+									type->copy(it->second.data, inputs[i + 1].data);
+							}
 						}
 					}
 				}
@@ -993,23 +1038,48 @@ namespace flame
 			[](BlueprintNodeStructureChangeInfo& info) {
 				if (info.reason == BlueprintNodeTemplateChanged)
 				{
-					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
-					if (!type)
-						return false;
+					std::vector<TypeInfo*> types;
+					for (auto t : SUS::split(info.template_string, ','))
+					{
+						auto type = blueprint_type_from_template_str(t);
+						if (type)
+							types.push_back(type);
+					}
 
-					info.new_inputs.resize(3);
+					if (types.empty())
+						types.push_back(TypeInfo::get<float>());
+
+					info.new_inputs.resize(types.size() * 2 + 1);
 					info.new_inputs[0] = {
 						.name = "Entity",
 						.allowed_types = { TypeInfo::get<EntityPtr>() }
 					};
-					info.new_inputs[1] = {
-						.name = "Name_hash",
-						.allowed_types = { TypeInfo::get<std::string>() }
-					};
-					info.new_inputs[2] = {
-						.name = "V",
-						.allowed_types = { type }
-					};
+					if (types.size() == 1)
+					{
+						info.new_inputs[1] = {
+							.name = "Name_hash",
+							.allowed_types = { TypeInfo::get<std::string>() }
+						};
+						info.new_inputs[2] = {
+							.name = "V",
+							.allowed_types = { types.front() }
+						};
+					}
+					else
+					{
+						for (auto i = 0; i < types.size(); i++)
+						{
+							info.new_inputs[i * 2 + 1] = {
+								.name = "Name" + str(i) + "_hash",
+								.allowed_types = { TypeInfo::get<std::string>() }
+							};
+							info.new_inputs[i * 2 + 2] = {
+								.name = "V" + str(i),
+								.allowed_types = { types[i] }
+							};
+						}
+					}
+
 					return true;
 				}
 				else if (info.reason == BlueprintNodeInputTypesChanged)

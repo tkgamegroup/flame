@@ -141,6 +141,12 @@ namespace flame
 		return sh(str);
 	}
 
+	struct StrAndHash
+	{
+		std::string s;
+		uint h;
+	};
+
 	template<typename T>
 	consteval auto tn()
 	{

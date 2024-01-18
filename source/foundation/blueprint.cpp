@@ -1704,12 +1704,12 @@ namespace flame
 
 			if (!call_group)
 			{
-				printf("blueprint add_call_node: cannot find group %d\n", group_name);
+				printf("blueprint add_call_node: cannot find group %u\n", group_name);
 				return nullptr;
 			}
 			if (call_group == group)
 			{
-				printf("blueprint add_call_node: cannot call its own group %d\n", group_name);
+				printf("blueprint add_call_node: cannot call itself %u\n", group_name);
 				return nullptr;
 			}
 		}
@@ -1730,7 +1730,7 @@ namespace flame
 
 				if (!call_group)
 				{
-					printf("blueprint add_call_node: cannot find group %d in blueprint '%s'\n", group_name, bp->name.c_str());
+					printf("blueprint add_call_node: cannot find group %u in blueprint '%s'\n", group_name, bp->name.c_str());
 					return nullptr;
 				}
 			}
@@ -2171,6 +2171,8 @@ namespace flame
 		auto frame = frames;
 		group->structure_changed_frame = frame;
 		dirty_frame = frame;
+
+		return true;
 	}
 
 	static uint get_variable_node_desc(BlueprintNodePtr nn, uint* out_name, uint* out_location, uint* out_property, uint node_type = 0)
@@ -2603,6 +2605,24 @@ namespace flame
 			printf("blueprint remove_group: cannot remove the last group\n");
 			return;
 		}
+
+		std::vector<BlueprintNodePtr> to_remove_nodes;
+		for (auto& g : group->blueprint->groups)
+		{
+			if (g.get() != group)
+			{
+				for (auto& n : g->nodes)
+				{
+					if (n->name_hash == "Call"_h)
+					{
+						if (*(uint*)n->inputs[0]->data == group->name_hash && *(uint*)n->inputs[1]->data == 0)
+							to_remove_nodes.push_back(n.get());
+					}
+				}
+			}
+		}
+		for (auto n : to_remove_nodes)
+			remove_node(n, false);
 
 		for (auto it = groups.begin(); it != groups.end(); it++)
 		{
