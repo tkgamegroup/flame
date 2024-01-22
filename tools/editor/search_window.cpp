@@ -15,24 +15,20 @@ SearchView::SearchView() :
 SearchView::SearchView(const std::string& name) :
 	View(&search_window, name)
 {
-#if USE_IMGUI_NODE_EDITOR
 	ax::NodeEditor::Config ax_config;
 	ax_config.UserPointer = this;
 	ax_config.SettingsFile = "";
 	ax_config.NavigateButtonIndex = 2;
 	ax_editor_find = (ax::NodeEditor::Detail::EditorContext*)ax::NodeEditor::CreateEditor(&ax_config);
 	ax_editor_replace = (ax::NodeEditor::Detail::EditorContext*)ax::NodeEditor::CreateEditor(&ax_config);
-#endif
 }
 
 SearchView::~SearchView()
 {
-#if USE_IMGUI_NODE_EDITOR
 	if (ax_editor_find)
 		ax::NodeEditor::DestroyEditor((ax::NodeEditor::EditorContext*)ax_editor_find);
 	if (ax_editor_replace)
 		ax::NodeEditor::DestroyEditor((ax::NodeEditor::EditorContext*)ax_editor_replace);
-#endif
 }
 
 void SearchView::on_draw()

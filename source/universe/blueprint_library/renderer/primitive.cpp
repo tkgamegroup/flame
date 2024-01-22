@@ -218,6 +218,11 @@ namespace flame
 				{
 					.name = "Closed",
 					.allowed_types = { TypeInfo::get<bool>() }
+				},
+				{
+					.name = "Pivot",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "0.5"
 				}
 			},
 			{
@@ -238,6 +243,7 @@ namespace flame
 							{
 								auto color = *(cvec4*)inputs[4].data;
 								auto closed = *(bool*)inputs[5].data;
+								auto pivot = *(float*)inputs[6].data;
 
 								auto get_bitangent = [&](const vec3& p1, const vec3& p2) {
 									return normalize(cross(p2 - p1, normal));
@@ -255,8 +261,8 @@ namespace flame
 										vec3 last_bitangent = first_bitangent;
 
 										std::vector<ParticleDrawData::Ptc> ptcs;
-										auto p0 = points[off] - first_bitangent * thickness;
-										auto p3 = points[off] + first_bitangent * thickness;
+										auto p0 = points[off] - first_bitangent * thickness * pivot;
+										auto p3 = points[off] + first_bitangent * thickness * (1.f - pivot);
 										for (auto j = 1; j < n_pts - 1; j++)
 										{
 											auto n = last_bitangent;
@@ -266,8 +272,8 @@ namespace flame
 
 											auto& ptc = ptcs.emplace_back();
 											ptc.pos0 = p0;
-											ptc.pos1 = points[off + j] - n * t;
-											ptc.pos2 = points[off + j] + n * t;
+											ptc.pos1 = points[off + j] - n * t * pivot;
+											ptc.pos2 = points[off + j] + n * t * (1.f - pivot);
 											ptc.pos3 = p3;
 											ptc.col = color;
 											ptc.uv = vec4(0.f, 0.f, 1.f, 1.f);
@@ -278,8 +284,8 @@ namespace flame
 										{
 											auto& ptc = ptcs.emplace_back();
 											ptc.pos0 = p0;
-											ptc.pos1 = points[off + n_pts - 1] - last_bitangent * thickness;
-											ptc.pos2 = points[off + n_pts - 1] + last_bitangent * thickness;
+											ptc.pos1 = points[off + n_pts - 1] - last_bitangent * thickness * pivot;
+											ptc.pos2 = points[off + n_pts - 1] + last_bitangent * thickness * (1.f - pivot);
 											ptc.pos3 = p3;
 											ptc.col = color;
 											ptc.uv = vec4(0.f, 0.f, 1.f, 1.f);
@@ -291,12 +297,12 @@ namespace flame
 												auto n = get_bitangent(points[off + n_pts - 1], points[off]);
 												auto n1 = normalize(n + last_bitangent);
 												auto t1 = thickness / dot(n1, last_bitangent);
-												ptcs.back().pos1 = points[off + n_pts - 1] - n1 * t1;
-												ptcs.back().pos2 = points[off + n_pts - 1] + n1 * t1;
+												ptcs.back().pos1 = points[off + n_pts - 1] - n1 * t1 * pivot;
+												ptcs.back().pos2 = points[off + n_pts - 1] + n1 * t1 * (1.f - pivot);
 												auto n2 = normalize(n + first_bitangent);
 												auto t2 = thickness / dot(n2, first_bitangent);
-												ptcs.front().pos0 = points[off] - n2 * t2;
-												ptcs.front().pos3 = points[off] + n2 * t2;
+												ptcs.front().pos0 = points[off] - n2 * t2 * t1 * pivot;
+												ptcs.front().pos3 = points[off] + n2 * t2 * (1.f - pivot);
 
 												{
 													auto& ptc = ptcs.emplace_back();
@@ -312,8 +318,8 @@ namespace flame
 											{
 												auto n = normalize(first_bitangent + last_bitangent);
 												auto t = thickness / dot(n, last_bitangent);
-												ptcs.front().pos0 = ptcs.back().pos1 = points[off] - n * t;
-												ptcs.front().pos3 = ptcs.back().pos2 = points[off] + n * t;
+												ptcs.front().pos0 = ptcs.back().pos1 = points[off] - n * t * pivot;
+												ptcs.front().pos3 = ptcs.back().pos2 = points[off] + n * t * (1.f - pivot);
 											}
 										}
 

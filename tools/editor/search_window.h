@@ -82,10 +82,8 @@ struct SearchView : View
 	std::string replace_str;
 	BpParttern bp_find_parttern;
 	BpParttern bp_replace_parttern;
-#if USE_IMGUI_NODE_EDITOR
 	ax::NodeEditor::Detail::EditorContext* ax_editor_find = nullptr;
 	ax::NodeEditor::Detail::EditorContext* ax_editor_replace = nullptr;
-#endif
 	std::vector<BlueprintResult> blueprint_results;
 	std::vector<SheetResult> sheet_results;
 

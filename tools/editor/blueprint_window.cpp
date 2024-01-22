@@ -193,6 +193,37 @@ static BlueprintNodePtr add_variable_node_unifily(BlueprintGroupPtr g, uint var_
 
 }
 
+static float get_node_posy(BlueprintNodePtr n)
+{
+	auto ret = n->position.y;
+	for (auto s : n->group->splits)
+	{
+		if (n->position.x > s)
+			ret += 10000.f;
+	}
+	return ret;
+}
+
+static bool compare_nodes_posy(const BlueprintNodePtr a, const BlueprintNodePtr b)
+{
+	return get_node_posy(a) < get_node_posy(b);
+}
+
+static void compute_node_orders(BlueprintGroupPtr g)
+{
+	std::function<void(BlueprintNodePtr)> compute_order;
+	compute_order = [&](BlueprintNodePtr n) {
+		for (auto c : n->children)
+			compute_order(c);
+		std::sort(n->children.begin(), n->children.end(), compare_nodes_posy);
+	};
+	compute_order(g->nodes.front().get());
+
+	auto frame = frames;
+	g->structure_changed_frame = frame;
+	g->blueprint->dirty_frame = frame;
+}
+
 static BlueprintNodePtr				f9_bound_breakpoint = nullptr;
 static BlueprintBreakpointOption	f9_bound_breakpoint_option;
 
@@ -218,7 +249,6 @@ BlueprintView::BlueprintView(const std::string& name) :
 		}
 	}
 
-#if USE_IMGUI_NODE_EDITOR
 	ax::NodeEditor::Config ax_config;
 	ax_config.UserPointer = this;
 	ax_config.SettingsFile = "";
@@ -232,12 +262,12 @@ BlueprintView::BlueprintView(const std::string& name) :
 			blueprint_window.debugger->debugging->name == view.group_name_hash)
 			return true;
 		auto node = (BlueprintNodePtr)(uint64)node_id;
-		if ((reason & ax::NodeEditor::SaveReasonFlags::Position) != ax::NodeEditor::SaveReasonFlags::None)
+		if ((reason & ax::NodeEditor::SaveReasonFlags::AddNode) != ax::NodeEditor::SaveReasonFlags::None ||
+			(reason & ax::NodeEditor::SaveReasonFlags::RemoveNode) != ax::NodeEditor::SaveReasonFlags::None ||
+			(reason & ax::NodeEditor::SaveReasonFlags::Position) != ax::NodeEditor::SaveReasonFlags::None)
 		{
 			auto& siblings = node->parent->children;
-			std::sort(siblings.begin(), siblings.end(), [](const auto& a, const auto& b) {
-				return a->position.y < b->position.y;
-			});
+			std::sort(siblings.begin(), siblings.end(), compare_nodes_posy);
 			auto frame = frames;
 			node->group->structure_changed_frame = frame;
 			view.blueprint->dirty_frame = frame;
@@ -246,7 +276,6 @@ BlueprintView::BlueprintView(const std::string& name) :
 		return true;
 	};
 	ax_editor = (ax::NodeEditor::Detail::EditorContext*)ax::NodeEditor::CreateEditor(&ax_config);
-#endif
 }
 
 struct BpNodePreview
@@ -271,10 +300,8 @@ BlueprintView::~BlueprintView()
 	}
 	if (blueprint_instance)
 		delete blueprint_instance;
-#if USE_IMGUI_NODE_EDITOR
 	if (ax_editor)
 		ax::NodeEditor::DestroyEditor((ax::NodeEditor::EditorContext*)ax_editor);
-#endif
 }
 
 void BlueprintView::copy_nodes(BlueprintGroupPtr g)
@@ -484,6 +511,135 @@ void BlueprintView::navigate_to_node(BlueprintNodePtr n)
 	auto ax_node = ax_editor->FindNode((ax::NodeEditor::NodeId)n);
 	if (ax_node)
 		ax_editor->NavigateTo(ax_node->GetBounds(), true, 0.f);
+}
+
+static void expand_polygon(std::vector<vec2>& polygon, float r)
+{
+	vec2 mid(0.f);
+	for (auto& v : polygon)
+		mid += v;
+	mid /= polygon.size();
+	for (auto& v : polygon)
+		v += normalize(v - mid) * r;
+}
+
+namespace GrahamScan
+{
+	// Returns true if a is lexicographically before b.
+	bool isLeftOf(const vec2& a, const vec2& b) {
+		return (a.x < b.x || (a.x == b.x && a.y < b.y));
+	}
+
+	// The z-value of the cross product of segments 
+	// (a, b) and (a, c). Positive means c is ccw
+	// from (a, b), negative cw. Zero means its collinear.
+	float ccw(const vec2& a, const vec2& b, const vec2& c) {
+		return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+	}
+
+	// Used to sort points in ccw order about a pivot.
+	struct ccwSorter {
+		const vec2& pivot;
+
+		ccwSorter(const vec2& inPivot) : pivot(inPivot) { }
+
+		bool operator()(const vec2& a, const vec2& b) {
+			return ccw(pivot, a, b) < 0;
+		}
+	};
+
+	static std::vector<vec2> compute(std::vector<vec2>& v)
+	{
+		if (v.size() < 3)
+			return std::vector<vec2>();
+
+		// Put our leftmost point at index 0
+		std::swap(v[0], *min_element(v.begin(), v.end(), isLeftOf));
+
+		// Sort the rest of the points in counter-clockwise order
+		// from our leftmost point.
+		sort(v.begin() + 1, v.end(), ccwSorter(v[0]));
+
+		// Add our first three points to the hull.
+		std::vector<vec2> hull;
+		auto it = v.begin();
+		hull.push_back(*it++);
+		hull.push_back(*it++);
+		hull.push_back(*it++);
+
+		while (it != v.end()) {
+			// Pop off any points that make a convex angle with *it
+			while (hull.size() > 1 && ccw(*(hull.rbegin() + 1), *(hull.rbegin()), *it) >= 0)
+				hull.pop_back();
+			hull.push_back(*it++);
+		}
+
+		return hull;
+	}
+}
+
+void BlueprintView::build_node_block_verts(BlueprintNodePtr n)
+{
+	if (!n->is_block)
+		return;
+	auto& verts = block_verts[n->object_id];
+	verts.clear();
+	for (auto c : n->children)
+		build_node_block_verts(c);
+	if (n != n->group->nodes.front().get())
+	{
+		std::vector<vec2> points;
+		if (auto ax_node = ax_editor->FindNode((ax::NodeEditor::NodeId)n); ax_node)
+		{
+			auto im_rect = ax_node->GetBounds();
+			auto rect = Rect(im_rect.Min, im_rect.Max);
+			if (rect.a == rect.b)
+				points.push_back(rect.a);
+			else
+			{
+				auto pts = rect.get_points();
+				pts[0] = pts[1] - vec2(0.f, 8.f);
+				pts[3] = pts[2] - vec2(0.f, 8.f);
+				points.insert(points.end(), pts.begin(), pts.end());
+			}
+		}
+		for (auto c : n->children)
+		{
+			if (auto ax_node = ax_editor->FindNode((ax::NodeEditor::NodeId)c); ax_node)
+			{
+				auto im_rect = ax_node->GetBounds();
+				auto rect = Rect(im_rect.Min, im_rect.Max);
+				if (rect.a == rect.b)
+					points.push_back(rect.a);
+				else
+				{
+					auto pts = rect.get_points();
+					points.insert(points.end(), pts.begin(), pts.end());
+				}
+			}
+			if (auto it = block_verts.find(c->object_id); it != block_verts.end())
+				points.insert(points.end(), it->second.begin(), it->second.end());
+		}
+		verts = GrahamScan::compute(points);
+		expand_polygon(verts, 8.f);
+	}
+}
+
+void BlueprintView::build_all_block_verts(BlueprintGroupPtr g)
+{
+	block_verts.clear();
+	build_node_block_verts(g->nodes.front().get());
+}
+
+void BlueprintView::draw_block_verts(ImDrawList* dl, BlueprintNodePtr n)
+{
+	if (auto it = block_verts.find(n->object_id); it != block_verts.end())
+	{
+		if (!it->second.empty())
+			dl->AddConvexPolyFilled((ImVec2*)it->second.data(), it->second.size(), color_from_depth(n->depth + 1));
+		for (auto c : n->children)
+			draw_block_verts(dl, c);
+	}
 }
 
 static BlueprintInstanceNode* step(BlueprintInstanceGroup* debugging_group)
@@ -1723,10 +1879,12 @@ void BlueprintView::on_draw()
 			ImGui::TableSetColumnIndex(1); 
 			ImGui::BeginChild("main_area", ImVec2(0, -2));
 			{
+				auto update_block_verts = false;
 				if (group != last_group || group->structure_changed_frame > load_frame)
 				{
 					for (auto& n : group->nodes)
 						ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n.get(), n->position);
+					update_block_verts = true;
 					last_group = group;
 					load_frame = frame;
 				}
@@ -1745,9 +1903,81 @@ void BlueprintView::on_draw()
 				auto dl = ImGui::GetWindowDrawList();
 				std::string tooltip; vec2 tooltip_pos;
 
+				ImGui::SetNextItemAllowOverlap();
+				ImGui::InvisibleButton("splits", ImVec2(ImGui::GetContentRegionAvail().x, 10.f));
+				{
+					auto next_cursor = ImGui::GetCursorScreenPos();
+					vec2 p0 = ImGui::GetItemRectMin();
+					vec2 p1 = ImGui::GetItemRectMax();
+					dl->AddRectFilled(p0 + vec2(0.f, 2.f), p1 - vec2(0.f, 2.f), ImColor(0.6f, 0.6f, 0.6f, 1.f));
+
+					static vec2 mpos;
+					auto bar_id = ImGui::GetItemID();
+					if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup))
+					{
+						mpos = io.MousePos;
+						ImGui::OpenPopupEx(bar_id);
+					}
+
+					auto changed = false;
+					for (auto i = 0; i < group->splits.size(); i++)
+					{
+						auto x = ax::NodeEditor::CanvasToScreen(ImVec2(group->splits[i], 0.f)).x;
+						if (x > p0.x + 4.f && x < p1.x - 4.f)
+						{
+							ImGui::PushID(i);
+							auto _p0 = vec2(x - 4.f, p0.y);
+							auto _p1 = vec2(x + 4.f, p1.y);
+							ImGui::SetCursorScreenPos(_p0);
+							ImGui::InvisibleButton("", _p1 - _p0);
+							dl->AddRectFilled(_p0, _p1, ImColor(0.4f, 0.5f, 0.6f, ImGui::IsItemHovered() ? 0.8f : 1.f));
+
+							if (ImGui::IsItemActive())
+								group->splits[i] += io.MouseDelta.x / ax_editor->GetView().Scale;
+							if (ImGui::IsItemDeactivated())
+								changed = true;
+
+							if (ImGui::BeginPopupContextItem())
+							{
+								if (ImGui::MenuItem("Remove Split"))
+								{
+									group->splits.erase(group->splits.begin() + i);
+									i = group->splits.size() + 1;
+								}
+								ImGui::EndPopup();
+							}
+
+							ImGui::PopID();
+						}
+					}
+
+					if (ImGui::BeginPopupEx(bar_id, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings))
+					{
+						if (ImGui::MenuItem("Add Split"))
+						{
+							group->splits.push_back(ax::NodeEditor::ScreenToCanvas(ImVec2(mpos)).x);
+							changed = true;
+						}
+						ImGui::EndPopup();
+					}
+
+					if (changed)
+					{
+						std::sort(group->splits.begin(), group->splits.end());
+						compute_node_orders(group);
+						unsaved = true;
+					}
+
+					ImGui::SetCursorScreenPos(next_cursor);
+				}
+
 				if (debugging_group)
 					ax::NodeEditor::PushStyleColor(ax::NodeEditor::StyleColor_Bg, ImColor(100, 80, 60, 200));
 				ax::NodeEditor::Begin("node_editor");
+
+				for (auto s : group->splits)
+					dl->AddLine(vec2(s, -10000.f), vec2(s, +10000.f), ImColor(0.4f, 0.5f, 0.6f, 1.f));
+				draw_block_verts(dl, group->nodes.front().get());
 
 				auto executing_node = debugging_group ? debugging_group->executing_node() : nullptr;
 
@@ -1797,7 +2027,7 @@ void BlueprintView::on_draw()
 						vec2 pos = ImGui::GetCursorPos();
 						pos.y -= ImGui::GetTextLineHeight();
 						pos.y -= style.FramePadding.y * 2;
-						auto text = std::format("O{}D{}", instance_node->order, n->depth);
+						auto text = std::format("{}", instance_node->order);
 						dl->AddText(pos, ImColor(1.f, 1.f, 1.f), text.c_str());
 					}
 					if (n->name_hash != "Block"_h)
@@ -2249,28 +2479,6 @@ void BlueprintView::on_draw()
 					ax::NodeEditor::Link((uint64)l.get(), (uint64)l->from_slot, (uint64)l->to_slot, color_from_type(l->from_slot->type));
 				}
 
-				for (auto n : get_selected_nodes())
-				{
-					if (n->depth > 1)
-					{
-						auto col = color_from_depth(n->depth);
-						col.Value.w = 0.3f;
-
-						auto& parent_rect = ax_editor->FindNode((ax::NodeEditor::NodeId)n->parent)->m_Bounds;
-						dl->AddLine(n->position, vec2((parent_rect.Min.x + parent_rect.Max.x) * 0.5f, parent_rect.Max.y), col);
-					}
-
-					if (!n->children.empty())
-					{
-						auto col = color_from_depth(n->depth + 1);
-						col.Value.w = 0.3f;
-
-						auto& self_rect = ax_editor->FindNode((ax::NodeEditor::NodeId)n)->m_Bounds;
-						for (auto c : n->children)
-							dl->AddLine(c->position, vec2((self_rect.Min.x + self_rect.Max.x) * 0.5f, self_rect.Max.y), col);
-					}
-				}
-
 				auto mouse_pos = ImGui::GetMousePos();
 				static vec2				open_popup_pos;
 				static BlueprintSlotPtr	new_node_link_slot = nullptr;
@@ -2339,11 +2547,9 @@ void BlueprintView::on_draw()
 							}
 						}
 					}
-
-					if (blueprint_instance->built_frame < blueprint->dirty_frame)
-						blueprint_instance->build();
 				}
 				ax::NodeEditor::EndCreate();
+
 				if (ax::NodeEditor::BeginDelete())
 				{
 					BlueprintLinkPtr link;
@@ -2378,13 +2584,10 @@ void BlueprintView::on_draw()
 						for (auto n : to_remove_nodes)
 						{
 							remove_preview(n);
-							blueprint->remove_node(n);
+							blueprint->remove_node(n, true);
 						}
 						unsaved = true;
 					}
-
-					if (blueprint_instance->built_frame < blueprint->dirty_frame)
-						blueprint_instance->build();
 				}
 				ax::NodeEditor::EndDelete();
 
@@ -2459,10 +2662,11 @@ void BlueprintView::on_draw()
 					}
 					if (context_node->is_block)
 					{
-						if (ImGui::Selectable("Unwrap Block"))
+						if (ImGui::Selectable("Unblock"))
 						{
 							ax::NodeEditor::ClearSelection();
 							blueprint->remove_node(context_node, false);
+							compute_node_orders(group);
 							context_node = nullptr;
 						}
 					}
@@ -2475,47 +2679,6 @@ void BlueprintView::on_draw()
 								set_parent_to_hovered_node();
 						}
 					}
-					auto show_change_nodes = [&](BlueprintNodePtr src_n, const std::string& prefix, BlueprintNodeLibraryPtr library = standard_library) {
-						for (auto i = 0; i < library->node_templates.size(); i++)
-						{
-							if (library->node_templates[i].name.starts_with(prefix))
-							{
-								for (auto j = i; ; j++)
-								{
-									auto& t = library->node_templates[j];
-									if (!t.name.starts_with(prefix))
-										break;
-									if (t.name != src_n->name)
-									{
-										if (ImGui::Selectable(t.name.c_str()))
-										{
-											auto n = t.create_node(blueprint, group, src_n->parent);
-											n->position = src_n->position;
-											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
-
-											std::vector<std::pair<BlueprintSlotPtr, BlueprintSlotPtr>> to_link_args;
-											for (auto& l : src_n->group->links)
-											{
-												if (l->from_slot->node == src_n)
-													to_link_args.emplace_back(n->find_output(l->from_slot->name_hash), l->to_slot);
-												if (l->to_slot->node == src_n)
-													to_link_args.emplace_back(l->from_slot, n->find_input(l->to_slot->name_hash));
-											}
-											for (auto& args : to_link_args)
-												blueprint->add_link(args.first, args.second);
-
-											blueprint->remove_node(src_n);
-											context_node = nullptr;
-
-											ax_editor->ClearSelection();
-											unsaved = true;
-										}
-									}
-								}
-								break;
-							}
-						}
-					};
 					BlueprintBreakpointOption breakpoint_option;
 					if (!blueprint_window.debugger->has_break_node(context_node, &breakpoint_option))
 					{
@@ -3158,9 +3321,6 @@ void BlueprintView::on_draw()
 					new_node_link_slot = nullptr;
 				}
 
-				if (blueprint_instance->built_frame < blueprint->dirty_frame)
-					blueprint_instance->build();
-
 				ax::NodeEditor::Resume();
 
 				if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
@@ -3259,6 +3419,9 @@ void BlueprintView::on_draw()
 				ax::NodeEditor::End();
 				if (debugging_group)
 					ax::NodeEditor::PopStyleColor();
+
+				if (update_block_verts)
+					build_all_block_verts(group);
 
 				if (!tooltip.empty())
 				{

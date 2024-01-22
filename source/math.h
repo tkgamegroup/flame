@@ -381,6 +381,17 @@ namespace flame
 		{
 			return !(rhs.a.x > b.x || rhs.a.y > b.y || rhs.b.x < a.x || rhs.b.y < a.y);
 		}
+
+		std::vector<vec2> get_points() const
+		{
+			std::vector<vec2> ret;
+			ret.resize(4);
+			ret[0] = a;
+			ret[1] = vec2(a.x, b.y);
+			ret[2] = b;
+			ret[3] = vec2(b.x, a.y);
+			return ret;
+		}
 	};
 
 	inline bool operator==(const Rect& lhs, const Rect& rhs)

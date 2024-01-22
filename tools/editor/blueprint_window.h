@@ -3,15 +3,11 @@
 #include "app.h"
 
 #include <flame/foundation/blueprint.h>
-#if USE_IMGUI_NODE_EDITOR
 #include <flame/graphics/gui.h>
-#endif
 
 struct BlueprintView : View
 {
-#if USE_IMGUI_NODE_EDITOR
 	ax::NodeEditor::Detail::EditorContext* ax_editor = nullptr;
-#endif
 	std::filesystem::path blueprint_path;
 	BlueprintPtr blueprint = nullptr;
 	BlueprintInstancePtr blueprint_instance = nullptr;
@@ -24,6 +20,8 @@ struct BlueprintView : View
 	bool hide_var_links = true;
 	bool unsaved = false;
 
+	std::unordered_map<uint, std::vector<vec2>> block_verts;
+
 	BlueprintView();
 	BlueprintView(const std::string& name);
 	~BlueprintView();
@@ -32,6 +30,9 @@ struct BlueprintView : View
 	void paste_nodes(BlueprintGroupPtr g, const vec2& pos);
 	void set_parent_to_hovered_node();
 	void navigate_to_node(BlueprintNodePtr n);
+	void build_node_block_verts(BlueprintNodePtr n);
+	void build_all_block_verts(BlueprintGroupPtr g);
+	void draw_block_verts(ImDrawList* dl, BlueprintNodePtr n);
 	void run_blueprint(BlueprintInstanceGroup* debugging_group);
 	void step_blueprint(BlueprintInstanceGroup* debugging_group);
 	void stop_blueprint(BlueprintInstanceGroup* debugging_group);

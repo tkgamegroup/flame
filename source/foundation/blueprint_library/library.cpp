@@ -30,6 +30,10 @@ namespace flame
 		BlueprintSystem::template_types.emplace_back("u2", TypeInfo::get<uvec2>());
 		BlueprintSystem::template_types.emplace_back("u3", TypeInfo::get<uvec3>());
 		BlueprintSystem::template_types.emplace_back("u4", TypeInfo::get<uvec4>());
+		BlueprintSystem::template_types.emplace_back("c", TypeInfo::get<uchar>());
+		BlueprintSystem::template_types.emplace_back("c2", TypeInfo::get<cvec2>());
+		BlueprintSystem::template_types.emplace_back("c3", TypeInfo::get<cvec3>());
+		BlueprintSystem::template_types.emplace_back("c4", TypeInfo::get<cvec4>());
 		BlueprintSystem::template_types.emplace_back("s", TypeInfo::get<std::string>());
 		BlueprintSystem::template_types.emplace_back("w", TypeInfo::get<std::wstring>());
 		BlueprintSystem::template_types.emplace_back("p", TypeInfo::get<std::filesystem::path>());

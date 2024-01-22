@@ -407,6 +407,7 @@ namespace flame
 		std::vector<BlueprintVariable>							outputs;
 		std::vector<std::unique_ptr<BlueprintNodeT>>			nodes;
 		std::vector<std::unique_ptr<BlueprintLinkT>>			links;
+		std::vector<float>										splits;
 
 		std::vector<BlueprintInvalidNode> 						invalid_nodes;
 		std::vector<BlueprintInvalidLink>						invalid_links;
