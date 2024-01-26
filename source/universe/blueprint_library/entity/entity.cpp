@@ -304,8 +304,8 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto parent = *(EntityPtr*)inputs[1].data;
-				auto& temp_array = *(std::vector<EntityPtr>*)outputs[1].data;
+				auto parent = *(EntityPtr*)inputs[0].data;
+				auto& temp_array = *(std::vector<EntityPtr>*)outputs[0].data;
 				temp_array.clear();
 				if (parent)
 				{
@@ -314,10 +314,10 @@ namespace flame
 				}
 
 				execution.block->max_execute_times = temp_array.size();
-				execution.block->loop_vector_index = 3;
+				execution.block->loop_vector_index = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& temp_array = *(std::vector<EntityPtr>*)outputs[1].data;
+				auto& temp_array = *(std::vector<EntityPtr>*)outputs[0].data;
 				temp_array.clear();
 			}
 		);
@@ -1304,17 +1304,17 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto& temp_array = *(std::vector<EntityPtr>*)outputs[1].data;
+				auto& temp_array = *(std::vector<EntityPtr>*)outputs[0].data;
 				temp_array.clear();
 				World::instance()->root->forward_traversal([&](EntityPtr e) {
 					temp_array.push_back(e);
 				});
 
 				execution.block->max_execute_times = temp_array.size();
-				execution.block->loop_vector_index = 2;
+				execution.block->loop_vector_index = 0;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& temp_array = *(std::vector<EntityPtr>*)outputs[1].data;
+				auto& temp_array = *(std::vector<EntityPtr>*)outputs[0].data;
 				temp_array.clear();
 			}
 		);
@@ -1365,11 +1365,11 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto location = *(vec3*)inputs[1].data;
-				auto radius = *(float*)inputs[2].data;
-				auto any_filter = *(uint*)inputs[3].data;
-				auto all_filter = *(uint*)inputs[4].data;
-				auto parent_search_times = *(uint*)inputs[5].data;
+				auto location = *(vec3*)inputs[0].data;
+				auto radius = *(float*)inputs[1].data;
+				auto any_filter = *(uint*)inputs[2].data;
+				auto all_filter = *(uint*)inputs[3].data;
+				auto parent_search_times = *(uint*)inputs[4].data;
 				std::vector<std::pair<EntityPtr, cNodePtr>> res;
 				sScene::instance()->octree->get_colliding(location, radius, res, any_filter, all_filter, parent_search_times);
 
@@ -1380,28 +1380,28 @@ namespace flame
 					return a.first < b.first;
 				});
 
-				auto& temp_array = *(std::vector<EntityPtr>*)outputs[2].data;
+				auto& temp_array = *(std::vector<EntityPtr>*)outputs[1].data;
 				temp_array.resize(res.size());
 				for (auto i = 0; i < res.size(); i++)
 					temp_array[i] = (nodes_with_distance[i].second);
-				*(EntityPtr*)outputs[1].data = temp_array.empty() ? nullptr : temp_array.front();
-				*(bool*)outputs[3].data = false;
+				*(EntityPtr*)outputs[0].data = temp_array.empty() ? nullptr : temp_array.front();
+				*(bool*)outputs[2].data = false;
 				execution.block->max_execute_times = temp_array.size();
-				execution.block->loop_vector_index = 8;
-				execution.block->block_output_index = 9;
+				execution.block->loop_vector_index = 6;
+				execution.block->block_output_index = 7;
 			},
 			nullptr,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto ok = *(bool*)outputs[3].data;
+				auto ok = *(bool*)outputs[2].data;
 				if (ok)
 				{
-					auto& temp_array = *(std::vector<EntityPtr>*)outputs[2].data;
-					*(EntityPtr*)outputs[1].data = temp_array[execution.block->executed_times];
+					auto& temp_array = *(std::vector<EntityPtr>*)outputs[1].data;
+					*(EntityPtr*)outputs[0].data = temp_array[execution.block->executed_times];
 					execution.block->_break();
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& temp_array = *(std::vector<EntityPtr>*)outputs[2].data;
+				auto& temp_array = *(std::vector<EntityPtr>*)outputs[1].data;
 				temp_array.clear();
 			}
 		);

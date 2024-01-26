@@ -28,7 +28,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("If", "", BlueprintNodeFlagHorizontalOutputs,
+		library->add_template("If", "", BlueprintNodeFlagEnableTemplate,
 			{
 				{
 					.name = "Cond",
@@ -36,247 +36,348 @@ namespace flame
 				}
 			},
 			{
-				{
-					.name = "True",
-					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
-				},
-				{
-					.name = "False",
-					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
-				}
 			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+			true,
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				bool ok;
 				if (inputs[0].type == TypeInfo::get<bool>())
 					ok = *(bool*)inputs[0].data;
 				else
 					ok = (*(voidptr*)inputs[0].data) != nullptr;
-				(*(BlueprintSignal*)outputs[0].data).v = ok ? 1 : 0;
-				(*(BlueprintSignal*)outputs[1].data).v = ok ? 0 : 1;
-			}
-		);
-
-		library->add_template("If True", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Cond",
-					.allowed_types = { TypeInfo::get<bool>(), TypeInfo::get<voidptr>() }
-				}
-			},
-			{
-			},
-			true,
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				bool ok;
-				if (inputs[1].type == TypeInfo::get<bool>())
-					ok = *(bool*)inputs[1].data;
-				else
-					ok = (*(voidptr*)inputs[1].data) != nullptr;
 				execution.block->max_execute_times = ok ? 1 : 0;
-			}
-		);
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					std::string type_str = "T";
+					std::string else_str = "";
+					auto sp = SUS::split(info.template_string);
+					if (sp.size() == 1)
+					{
+						auto tk = std::string(sp[0]);
+						SUS::to_upper(tk);
+						if (tk == "EL")
+							else_str = "EL";
+						else
+							type_str = tk;
+					}
+					else if (sp.size() == 2)
+					{
+						type_str = std::string(sp[0]);
+						SUS::to_upper(type_str);
 
-		library->add_template("If False", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Cond",
-					.allowed_types = { TypeInfo::get<bool>(), TypeInfo::get<voidptr>() }
-				}
-			},
-			{
-			},
-			true,
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				bool ok;
-				if (inputs[1].type == TypeInfo::get<bool>())
-					ok = *(bool*)inputs[1].data;
-				else
-					ok = (*(voidptr*)inputs[1].data) != nullptr;
-				execution.block->max_execute_times = ok ? 0 : 1;
-			}
-		);
+						else_str = std::string(sp[1]);
+						SUS::to_upper(else_str);
+					}
 
-		library->add_template("If Less", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-			},
-			true,
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
-				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
-				auto in0_p = (char*)inputs[1].data;
-				auto in1_p = (char*)inputs[2].data;
-				auto ok = in0_ti->as_float(in0_p) < in1_ti->as_float(in1_p);
-				execution.block->max_execute_times = ok ? 1 : 0;
-			}
-		);
+					if (type_str == "T" || type_str == "F")
+					{
+						info.new_inputs.resize(1);
+						info.new_inputs[0] = {
+							.name = "Cond",
+							.allowed_types = { TypeInfo::get<bool>(), TypeInfo::get<voidptr>() }
+						};
+					}
+					else if (type_str == "E" || type_str == "NE" || type_str == "L" || type_str == "G" || type_str == "LE" || type_str == "GE")
+					{
+						info.new_inputs.resize(2);
+						info.new_inputs[0] = {
+							.name = "A",
+							.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+						};
+						info.new_inputs[1] = {
+							.name = "B",
+							.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+						};
+					}
+					else if (type_str == "DE" || type_str == "NDE")
+					{
+						info.new_inputs.resize(2);
+						info.new_inputs[0] = {
+							.name = "A",
+							.allowed_types = { TypeInfo::get<uint>() }
+						};
+						info.new_inputs[1] = {
+							.name = "B",
+							.allowed_types = { TypeInfo::get<uint>() }
+						};
+					}
+					else
+						return false;
+					if (else_str == "EL")
+					{
+						info.new_outputs.resize(1);
+						info.new_outputs[0] = {
+							.name = "Else",
+							.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+						};
+					}
 
-		library->add_template("If Greater", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-			},
-			true,
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
-				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
-				auto in0_p = (char*)inputs[1].data;
-				auto in1_p = (char*)inputs[2].data;
-				auto ok = in0_ti->as_float(in0_p) > in1_ti->as_float(in1_p);
-				execution.block->max_execute_times = ok ? 1 : 0;
-			}
-		);
+					if (type_str == "T")
+					{
+						if (else_str.empty())
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								bool b;
+								if (inputs[0].type == TypeInfo::get<bool>())
+									b = *(bool*)inputs[0].data;
+								else
+									b = (*(voidptr*)inputs[0].data) != nullptr;
+								execution.block->max_execute_times = b ? 1 : 0;
+							};
+						}
+						else if (else_str == "EL")
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								bool b;
+								if (inputs[0].type == TypeInfo::get<bool>())
+									b = *(bool*)inputs[0].data;
+								else
+									b = (*(voidptr*)inputs[0].data) != nullptr;
+								execution.block->max_execute_times = b ? 1 : 0;
 
-		library->add_template("If Equal", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-			},
-			true,
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
-				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
-				auto in0_p = (char*)inputs[1].data;
-				auto in1_p = (char*)inputs[2].data;
-				auto ok = in0_ti->as_float(in0_p) == in1_ti->as_float(in1_p);
-				execution.block->max_execute_times = ok ? 1 : 0;
-			}
-		);
+								(*(BlueprintSignal*)outputs[0].data).v = b ? 0 : 1;
+							};
+						}
+					}
+					else if (type_str == "F")
+					{
+						if (else_str.empty())
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								bool b;
+								if (inputs[0].type == TypeInfo::get<bool>())
+									b = !*(bool*)inputs[0].data;
+								else
+									b = (*(voidptr*)inputs[0].data) == nullptr;
+								execution.block->max_execute_times = b ? 1 : 0;
+							};
+						}
+						else if (else_str == "EL")
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								bool b;
+								if (inputs[0].type == TypeInfo::get<bool>())
+									b = !*(bool*)inputs[0].data;
+								else
+									b = (*(voidptr*)inputs[0].data) == nullptr;
+								execution.block->max_execute_times = b ? 1 : 0;
 
-		library->add_template("If Not Equal", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-			},
-			true,
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
-				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
-				auto in0_p = (char*)inputs[1].data;
-				auto in1_p = (char*)inputs[2].data;
-				auto ok = in0_ti->as_float(in0_p) != in1_ti->as_float(in1_p);
-				execution.block->max_execute_times = ok ? 1 : 0;
-			}
-		);
+								(*(BlueprintSignal*)outputs[0].data).v = b ? 0 : 1;
+							};
+						}
+					}
+					else if (type_str == "E")
+					{
+						if (else_str.empty())
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+								auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+								auto in0_p = (char*)inputs[0].data;
+								auto in1_p = (char*)inputs[1].data;
+								auto b = in0_ti->as_float(in0_p) == in1_ti->as_float(in1_p);
+								execution.block->max_execute_times = b ? 1 : 0;
+							};
+						}
+						else if (else_str == "EL")
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+								auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+								auto in0_p = (char*)inputs[0].data;
+								auto in1_p = (char*)inputs[1].data;
+								auto b = in0_ti->as_float(in0_p) == in1_ti->as_float(in1_p);
+								execution.block->max_execute_times = b ? 1 : 0;
 
-		library->add_template("If Less Or Equal", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-			},
-			true,
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
-				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
-				auto in0_p = (char*)inputs[1].data;
-				auto in1_p = (char*)inputs[2].data;
-				auto ok = in0_ti->as_float(in0_p) <= in1_ti->as_float(in1_p);
-				execution.block->max_execute_times = ok ? 1 : 0;
-			}
-		);
+								(*(BlueprintSignal*)outputs[0].data).v = b ? 0 : 1;
+							};
+						}
+					}
+					else if (type_str == "NE")
+					{
+						if (else_str.empty())
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+								auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+								auto in0_p = (char*)inputs[0].data;
+								auto in1_p = (char*)inputs[1].data;
+								auto b = in0_ti->as_float(in0_p) != in1_ti->as_float(in1_p);
+								execution.block->max_execute_times = b ? 1 : 0;
+							};
+						}
+						else if (else_str == "EL")
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+								auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+								auto in0_p = (char*)inputs[0].data;
+								auto in1_p = (char*)inputs[1].data;
+								auto b = in0_ti->as_float(in0_p) != in1_ti->as_float(in1_p);
+								execution.block->max_execute_times = b ? 1 : 0;
 
-		library->add_template("If Greater Or Equal", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				},
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
-				}
-			},
-			{
-			},
-			true,
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto in0_ti = (TypeInfo_Data*)inputs[1].type;
-				auto in1_ti = (TypeInfo_Data*)inputs[2].type;
-				auto in0_p = (char*)inputs[1].data;
-				auto in1_p = (char*)inputs[2].data;
-				auto ok = in0_ti->as_float(in0_p) >= in1_ti->as_float(in1_p);
-				execution.block->max_execute_times = ok ? 1 : 0;
-			}
-		);
+								(*(BlueprintSignal*)outputs[0].data).v = b ? 0 : 1;
+							};
+						}
+					}
+					else if (type_str == "L")
+					{
+						if (else_str.empty())
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+								auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+								auto in0_p = (char*)inputs[0].data;
+								auto in1_p = (char*)inputs[1].data;
+								auto b = in0_ti->as_float(in0_p) < in1_ti->as_float(in1_p);
+								execution.block->max_execute_times = b ? 1 : 0;
+							};
+						}
+						else if (else_str == "EL")
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+								auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+								auto in0_p = (char*)inputs[0].data;
+								auto in1_p = (char*)inputs[1].data;
+								auto b = in0_ti->as_float(in0_p) < in1_ti->as_float(in1_p);
+								execution.block->max_execute_times = b ? 1 : 0;
 
-		library->add_template("If DE", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<uint>() }
-				},
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<uint>() }
-				}
-			},
-			{
-			},
-			true,
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto ok = *(uint*)inputs[1].data % *(uint*)inputs[2].data == 0;
-				execution.block->max_execute_times = ok ? 1 : 0;
-			}
-		);
+								(*(BlueprintSignal*)outputs[0].data).v = b ? 0 : 1;
+							};
+						}
 
-		library->add_template("If Not DE", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<uint>() }
-				},
-				{
-					.name = "B",
-					.allowed_types = { TypeInfo::get<uint>() }
+					}
+					else if (type_str == "G")
+					{
+						if (else_str.empty())
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+								auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+								auto in0_p = (char*)inputs[0].data;
+								auto in1_p = (char*)inputs[1].data;
+								auto b = in0_ti->as_float(in0_p) > in1_ti->as_float(in1_p);
+								execution.block->max_execute_times = b ? 1 : 0;
+							};
+						}
+						else if (else_str == "EL")
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+								auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+								auto in0_p = (char*)inputs[0].data;
+								auto in1_p = (char*)inputs[1].data;
+								auto b = in0_ti->as_float(in0_p) > in1_ti->as_float(in1_p);
+								execution.block->max_execute_times = b ? 1 : 0;
+
+								(*(BlueprintSignal*)outputs[0].data).v = b ? 0 : 1;
+							};
+						}
+					}
+					else if (type_str == "LE")
+					{
+						if (else_str.empty())
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+								auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+								auto in0_p = (char*)inputs[0].data;
+								auto in1_p = (char*)inputs[1].data;
+								auto b = in0_ti->as_float(in0_p) <= in1_ti->as_float(in1_p);
+								execution.block->max_execute_times = b ? 1 : 0;
+							};
+						}
+						else if (else_str == "EL")
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+								auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+								auto in0_p = (char*)inputs[0].data;
+								auto in1_p = (char*)inputs[1].data;
+								auto b = in0_ti->as_float(in0_p) <= in1_ti->as_float(in1_p);
+								execution.block->max_execute_times = b ? 1 : 0;
+
+								(*(BlueprintSignal*)outputs[0].data).v = b ? 0 : 1;
+							};
+						}
+					}
+					else if (type_str == "GE")
+					{
+						if (else_str.empty())
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+								auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+								auto in0_p = (char*)inputs[0].data;
+								auto in1_p = (char*)inputs[1].data;
+								auto b = in0_ti->as_float(in0_p) >= in1_ti->as_float(in1_p);
+								execution.block->max_execute_times = b ? 1 : 0;
+							};
+						}
+						else if (else_str == "EL")
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+								auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+								auto in0_p = (char*)inputs[0].data;
+								auto in1_p = (char*)inputs[1].data;
+								auto b = in0_ti->as_float(in0_p) >= in1_ti->as_float(in1_p);
+								execution.block->max_execute_times = b ? 1 : 0;
+
+								(*(BlueprintSignal*)outputs[0].data).v = b ? 0 : 1;
+							};
+						}
+					}
+					else if (type_str == "DE")
+					{
+						if (else_str.empty())
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto b = *(uint*)inputs[0].data % *(uint*)inputs[1].data == 0;
+								execution.block->max_execute_times = b ? 1 : 0;
+							};
+						}
+						else if (else_str == "EL")
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto b = *(uint*)inputs[0].data % *(uint*)inputs[1].data == 0;
+								execution.block->max_execute_times = b ? 1 : 0;
+
+								(*(BlueprintSignal*)outputs[0].data).v = b ? 0 : 1;
+							};
+						}
+					}
+					else if (type_str == "NDE")
+					{
+						if (else_str.empty())
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto b = *(uint*)inputs[0].data % *(uint*)inputs[1].data != 0;
+								execution.block->max_execute_times = b ? 1 : 0;
+							};
+						}
+						else if (else_str == "EL")
+						{
+							info.new_begin_block_function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+								auto b = *(uint*)inputs[0].data % *(uint*)inputs[1].data != 0;
+								execution.block->max_execute_times = b ? 1 : 0;
+
+								(*(BlueprintSignal*)outputs[0].data).v = b ? 0 : 1;
+							};
+						}
+					}
+
+					return true;
 				}
-			},
-			{
-			},
-			true,
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto ok = *(uint*)inputs[1].data % *(uint*)inputs[2].data != 0;
-				execution.block->max_execute_times = ok ? 1 : 0;
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
 			}
 		);
 
@@ -292,7 +393,7 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				execution.block->max_execute_times = *(uint*)inputs[1].data;
+				execution.block->max_execute_times = *(uint*)inputs[0].data;
 			}
 		);
 
@@ -321,8 +422,8 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto vec_type = inputs[1].type;
-				auto vec = (std::vector<char>*)inputs[1].data;
+				auto vec_type = inputs[0].type;
+				auto vec = (std::vector<char>*)inputs[0].data;
 				if (vec && is_vector(vec_type->tag))
 				{
 					execution.block->loop_vector_index = 1;
@@ -349,9 +450,9 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto& temp_array = *(std::vector<std::filesystem::path>*)outputs[1].data;
+				auto& temp_array = *(std::vector<std::filesystem::path>*)outputs[0].data;
 				temp_array.clear();
-				auto& folder = *(std::filesystem::path*)inputs[1].data;
+				auto& folder = *(std::filesystem::path*)inputs[0].data;
 				if (!folder.empty())
 				{
 					for (auto& it : std::filesystem::directory_iterator(Path::get(folder)))
@@ -364,7 +465,7 @@ namespace flame
 				execution.block->max_execute_times = temp_array.size();
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& temp_array = *(std::vector<std::filesystem::path>*)outputs[1].data;
+				auto& temp_array = *(std::vector<std::filesystem::path>*)outputs[0].data;
 				temp_array.clear();
 			}
 		);
@@ -556,10 +657,10 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto semaphore = (bool*)inputs[1].data;
-				if (*semaphore)
+				auto& semaphore = *(bool*)inputs[0].data;
+				if (semaphore)
 				{
-					*semaphore = false;
+					semaphore = false;
 					execution.block->max_execute_times = 1;
 				}
 				else
@@ -882,13 +983,13 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto interval = *(float*)inputs[1].data;
-				auto& t = *(float*)inputs[2].data;
+				auto interval = *(float*)inputs[0].data;
+				auto& t = *(float*)inputs[1].data;
 
 				t += delta_time;
 				if (t >= interval)
 				{
-					*(float*)inputs[1].data = 0.f;
+					*(float*)inputs[0].data = 0.f;
 					execution.block->max_execute_times = 1;
 				}
 				else
@@ -932,8 +1033,8 @@ namespace flame
 			},
 			nullptr,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto time = *(float*)inputs[1].data;
-				auto& t = *(float*)inputs[2].data;
+				auto time = *(float*)inputs[0].data;
+				auto& t = *(float*)inputs[1].data;
 
 				t += delta_time;
 				if (t < time)

@@ -120,26 +120,26 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto array_type = inputs[1].type;
+				auto array_type = inputs[0].type;
 				if (array_type && is_vector(array_type->tag))
 				{
-					auto parray = (std::vector<char>*)inputs[1].data;
+					auto parray = (std::vector<char>*)inputs[0].data;
 					auto item_type = array_type->get_wrapped();
 					int size = parray->size() / item_type->size;
 
 					execution.block->max_execute_times = size;
-					execution.block->loop_vector_index = 1;
-					execution.block->block_output_index = 3;
+					execution.block->loop_vector_index = 0;
+					execution.block->block_output_index = 1;
 				}
 				else
 					execution.block->max_execute_times = 0;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& to_remove_list = *(std::vector<int>*)outputs[2].data;
+				auto& to_remove_list = *(std::vector<int>*)outputs[1].data;
 				if (!to_remove_list.empty())
 				{
-					auto array_type = inputs[1].type;
-					auto parray = (std::vector<char>*)inputs[1].data;
+					auto array_type = inputs[0].type;
+					auto parray = (std::vector<char>*)inputs[0].data;
 					auto item_type = array_type->get_wrapped();
 
 					for (auto i = 0; i < to_remove_list.size(); i++)
@@ -156,12 +156,12 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto ok = *(bool*)outputs[1].data;
+				auto ok = *(bool*)outputs[0].data;
 				if (ok)
 				{
-					auto& to_remove_list = *(std::vector<int>*)outputs[2].data;
+					auto& to_remove_list = *(std::vector<int>*)outputs[1].data;
 					to_remove_list.push_back(execution.block->executed_times);
-					*(bool*)outputs[1].data = false;
+					*(bool*)outputs[0].data = false;
 				}
 			}
 		);
@@ -192,26 +192,26 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto array_type = inputs[1].type;
+				auto array_type = inputs[0].type;
 				if (array_type && is_vector(array_type->tag))
 				{
-					auto parray = (std::vector<char>*)inputs[1].data;
+					auto parray = (std::vector<char>*)inputs[0].data;
 					auto item_type = array_type->get_wrapped();
 					int size = parray->size() / item_type->size;
 
 					execution.block->max_execute_times = size;
-					execution.block->loop_vector_index = 1;
-					execution.block->block_output_index = 5;
+					execution.block->loop_vector_index = 0;
+					execution.block->block_output_index = 3;
 				}
 				else
 					execution.block->max_execute_times = 0;
 
-				auto& indices = *(std::vector<uint>*)outputs[1].data;
+				auto& indices = *(std::vector<uint>*)outputs[0].data;
 				indices.clear();
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& indices = *(std::vector<uint>*)outputs[1].data;
-				auto number = *(uint*)inputs[2].data;
+				auto& indices = *(std::vector<uint>*)outputs[0].data;
+				auto number = *(uint*)inputs[1].data;
 				if (indices.size() > number)
 				{
 					std::vector<uint> selected;
@@ -225,13 +225,13 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto ok = *(bool*)outputs[2].data;
+				auto ok = *(bool*)outputs[1].data;
 				if (ok)
 				{
-					auto& indices = *(std::vector<uint>*)outputs[1].data;
+					auto& indices = *(std::vector<uint>*)outputs[0].data;
 					indices.push_back(execution.block->executed_times);
 				}
-				*(bool*)outputs[2].data = false;
+				*(bool*)outputs[1].data = false;
 			}
 		);
 
@@ -261,36 +261,36 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto array_type = inputs[1].type;
+				auto array_type = inputs[0].type;
 				if (array_type && is_vector(array_type->tag))
 				{
-					auto parray = (std::vector<char>*)inputs[1].data;
+					auto parray = (std::vector<char>*)inputs[0].data;
 					auto item_type = array_type->get_wrapped();
 					int size = parray->size() / item_type->size;
 
 					execution.block->max_execute_times = size;
-					execution.block->loop_vector_index = 1;
-					execution.block->block_output_index = 4;
+					execution.block->loop_vector_index = 0;
+					execution.block->block_output_index = 2;
 				}
 				else
 					execution.block->max_execute_times = 0;
 
-				auto& temp_array = *(std::vector<uint>*)outputs[3].data;
+				auto& temp_array = *(std::vector<uint>*)outputs[2].data;
 				temp_array.clear();
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& temp_array = *(std::vector<uint>*)outputs[3].data;
+				auto& temp_array = *(std::vector<uint>*)outputs[2].data;
 				if (!temp_array.empty())
-					*(uint*)outputs[1].data = temp_array[linearRand(0, (int)temp_array.size() - 1)];
+					*(uint*)outputs[0].data = temp_array[linearRand(0, (int)temp_array.size() - 1)];
 				else
-					*(uint*)outputs[1].data = 0;
+					*(uint*)outputs[0].data = 0;
 				temp_array.clear();
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto& ok = *(bool*)outputs[2].data;
+				auto& ok = *(bool*)outputs[1].data;
 				if (ok)
 				{
-					auto& temp_array = *(std::vector<uint>*)outputs[3].data;
+					auto& temp_array = *(std::vector<uint>*)outputs[2].data;
 					temp_array.push_back(execution.block->executed_times);
 				}
 				ok = false;

@@ -87,6 +87,8 @@ void SearchView::on_draw()
 								for (auto& n : g->nodes)
 								{
 									auto name = !n->display_name.empty() ? n->display_name : n->name;
+									if (!n->template_string.empty())
+										name += '#' + n->template_string;
 									auto ok = false;
 									if (search_in_names)
 									{
@@ -111,7 +113,7 @@ void SearchView::on_draw()
 										{
 											for (auto& i : n->inputs)
 											{
-												if (!i->is_linked() && i->data)
+												if (i->get_linked_count() == 0 && i->data)
 												{
 													auto value_str = i->type->serialize(i->data);
 													if (match_whole_word)

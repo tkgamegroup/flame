@@ -133,11 +133,6 @@ namespace flame
 			type->destroy(data);
 	}
 
-	bool BlueprintSlotPrivate::is_linked() const
-	{
-		return !linked_slots.empty();
-	}
-
 	uint BlueprintSlotPrivate::get_linked_count() const
 	{
 		return linked_slots.size();
@@ -606,23 +601,6 @@ namespace flame
 		ret->name_hash = sh(name.c_str());
 		ret->flags = flags;
 		ret->display_name = display_name;
-		if (is_block)
-		{
-			auto i = create_slot(ret, {
-				.name = "Execute",
-				.name_hash = "Execute"_h,
-				.flags = BlueprintSlotFlagInput,
-				.allowed_types = {TypeInfo::get<BlueprintSignal>()}
-			});
-			(*(BlueprintSignal*)i->data).v = 1;
-
-			auto o = create_slot(ret, {
-				.name = "Execute",
-				.name_hash = "Execute"_h,
-				.flags = BlueprintSlotFlagOutput,
-				.allowed_types = {TypeInfo::get<BlueprintSignal>()}
-			});
-		}
 		for (auto& src_i : inputs)
 		{
 			create_slot(ret, {
@@ -686,7 +664,13 @@ namespace flame
 
 	BlueprintNodePtr BlueprintPrivate::add_block(BlueprintGroupPtr group, BlueprintNodePtr parent)
 	{
-		return add_node(group, parent, "Block", BlueprintNodeFlagNone, "", {}, {}, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, true);
+		return add_node(group, parent, "Block", BlueprintNodeFlagNone, "", {
+				{
+					.name = "Execute",
+					.name_hash = "Execute"_h,
+					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
+				}
+			}, {}, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, true);
 	}
 
 	BlueprintNodePtr BlueprintPrivate::add_variable_node(BlueprintGroupPtr group, BlueprintNodePtr parent, uint variable_name, uint type, uint location_name, uint property_name)
@@ -2002,6 +1986,10 @@ namespace flame
 			BlueprintNodeStructureChangeInfo info;
 			info.reason = BlueprintNodeTemplateChanged;
 			info.template_string = new_template_string;
+			info.new_function = (BlueprintNodeFunction)INVALID_POINTER;
+			info.new_loop_function = (BlueprintNodeLoopFunction)INVALID_POINTER;
+			info.new_begin_block_function = (BlueprintNodeBeginBlockFunction)INVALID_POINTER;
+			info.new_end_block_function = (BlueprintNodeEndBlockFunction)INVALID_POINTER;
 			if (!node->change_structure_callback(info))
 			{
 				printf("blueprint change_node_structure: change_structure_callback failed\n");
@@ -2132,6 +2120,15 @@ namespace flame
 					create_slot(node, d, pos);
 				}
 			}
+
+			if (info.new_function != INVALID_POINTER)
+				node->function = info.new_function;
+			if (info.new_loop_function != INVALID_POINTER)
+				node->loop_function = info.new_loop_function;
+			if (info.new_begin_block_function != INVALID_POINTER)
+				node->begin_block_function = info.new_begin_block_function;
+			if (info.new_end_block_function != INVALID_POINTER)
+				node->end_block_function = info.new_end_block_function;
 
 			node->template_string = info.template_string;
 		}
@@ -2524,6 +2521,13 @@ namespace flame
 				remove_link(l.get());
 				break;
 			}
+		}
+
+		if (from_slot->type == TypeInfo::get<BlueprintSignal>() &&
+			to_slot->node->name_hash == "Block"_h)
+		{
+			to_slot->node->display_name = from_slot->name;
+			;
 		}
 
 		auto ret = new BlueprintLinkPrivate;
@@ -3061,6 +3065,16 @@ namespace flame
 				}
 			}
 
+			if (!g.first->splits.empty())
+			{
+				auto n_splits = n_group.append_child("splits");
+				for (auto s : g.first->splits)
+				{
+					auto n_split = n_splits.append_child("split");
+					n_split.append_attribute("v").set_value(s);
+				}
+			}
+
 			std::vector<BlueprintNodePtr> sorted_nodes;
 			std::function<void(BlueprintNodePtr)> tranverse_node;
 			tranverse_node = [&](BlueprintNodePtr n) {
@@ -3272,6 +3286,9 @@ namespace flame
 					ret->add_group_input(g, n_input.attribute("name").value(), read_ti(n_input.attribute("type")));
 				for (auto n_output : n_group.child("outputs"))
 					ret->add_group_output(g, n_output.attribute("name").value(), read_ti(n_output.attribute("type")));
+
+				for (auto n_split : n_group.child("splits"))
+					g->splits.push_back(n_split.attribute("v").as_float());
 
 				std::map<uint, BlueprintNodePtr> node_map;
 
@@ -4673,8 +4690,7 @@ namespace flame
 			}
 			else
 			{
-				auto signal = *(uint*)current_node.inputs[0].data;
-				if (signal)
+				if (node->name_hash != "Block"_h || *(uint*)current_node.inputs[0].data)
 				{
 					BlueprintExecutingBlock new_block;
 					new_block.max_execute_times = 1;
@@ -4691,11 +4707,7 @@ namespace flame
 						new_block.node = &current_node;
 						group->executing_stack.push_back(new_block);
 					}
-
-					*(uint*)current_node.outputs[0].data = 1;
 				}
-				else
-					*(uint*)current_node.outputs[0].data = 0;
 			}
 
 			current_node.updated_frame = frame;

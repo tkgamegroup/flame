@@ -324,7 +324,7 @@ void BlueprintView::copy_nodes(BlueprintGroupPtr g)
 			n.parent = src_n->parent->object_id;
 			for (auto& i : src_n->inputs)
 			{
-				if (!i->is_linked())
+				if (i->get_linked_count() == 0)
 				{
 					CopiedSlot s;
 					if ((i->type && !i->allowed_types.empty() && i->type != i->allowed_types.front()))
@@ -1988,6 +1988,8 @@ void BlueprintView::on_draw()
 					auto n = nn.get();
 					if (n == group->nodes.front().get()) // skip root block
 						continue;
+					if (n->flags & BlueprintNodeFlagWidget)
+						continue;
 					if (hide_var_links)
 					{
 						if (n->name_hash == "Variable"_h)
@@ -2030,331 +2032,369 @@ void BlueprintView::on_draw()
 						auto text = std::format("{}", instance_node->order);
 						dl->AddText(pos, ImColor(1.f, 1.f, 1.f), text.c_str());
 					}
+
+					if (n->name_hash == "Block"_h)
+					{
+						ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_LinkStrength, 0.f);
+						ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_TargetDirection, ImVec2(0.f, +1.f));
+						ax::NodeEditor::BeginPin((uint64)n->inputs.front().get(), ax::NodeEditor::PinKind::Input);
+						ImGui::InvisibleButton("", ImVec2(4.f, 14.f));
+						ax::NodeEditor::EndPin();
+						ax::NodeEditor::PopStyleVar(2);
+						ImGui::SameLine(5.f);
+						ImGui::TextUnformatted((n->display_name.empty() ? n->name : n->display_name).c_str());
+					}
+					else
+					{
+						ImGui::TextUnformatted((n->display_name.empty() ? n->name : n->display_name).c_str());
+						if (n->flags & BlueprintNodeFlagEnableTemplate)
+						{
+							ImGui::SameLine();
+							ImGui::SetNextItemWidth(min(100.f, ImGui::CalcTextSize(n->template_string.c_str()).x + 6.f));
+							ImGui::InputText("T", &n->template_string);
+							if (ImGui::IsItemDeactivatedAfterEdit())
+								blueprint->change_node_structure(n, n->template_string, {});
+						}
+					}
+
 					if (n->name_hash != "Block"_h)
 					{
-						auto display_name = n->display_name.empty() ? n->name : n->display_name;
-						ImGui::TextUnformatted(display_name.c_str());
-					}
-					if (n->flags & BlueprintNodeFlagEnableTemplate)
-					{
-						ImGui::SameLine();
-						ImGui::SetNextItemWidth(min(100.f, ImGui::CalcTextSize(n->template_string.c_str()).x + 6.f));
-						ImGui::InputText("T", &n->template_string);
-						if (ImGui::IsItemDeactivatedAfterEdit())
-							blueprint->change_node_structure(n, n->template_string, {});
-					}
-
-					ImGui::BeginGroup();
-					for (auto i = 0; i < n->inputs.size(); i++)
-					{
-						auto input = n->inputs[i].get();
-						if (input->flags & BlueprintSlotFlagHideInUI)
-							continue;
-
-						if ((n->flags & BlueprintNodeFlagHorizontalInputs) && i > 0)
-							ImGui::SameLine();
-						ImGui::BeginGroup(); // slot
-
-						if (n->flags & BlueprintNodeFlagHorizontalInputs)
+						ImGui::BeginGroup();
+						auto n_slots = 0;
+						for (auto i = 0; i < n->inputs.size(); i++)
 						{
-							ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_TargetDirection, ImVec2(0.0f, 1.0f));
-							ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_LinkStrength, 0.0f);
-						}
-						ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
-						auto display_name = input->name;
-						SUS::strip_tail_if(display_name, "_hash");
-						SUS::strip_tail_if(display_name, "xecute");
-						ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(input->type));
-						ImGui::TextUnformatted(display_name.c_str());
-						ImGui::PopStyleColor();
-						ax::NodeEditor::EndPin();
-						if (n->flags & BlueprintNodeFlagHorizontalInputs)
-							ax::NodeEditor::PopStyleVar(2);
+							auto input = n->inputs[i].get();
+							if (input->flags & BlueprintSlotFlagHideInUI)
+								continue;
 
-						if (ImGui::IsItemHovered())
-						{
-							if (debugging_group)
+							if ((n->flags & BlueprintNodeFlagHorizontalInputs) && n_slots > 0)
+								ImGui::SameLine();
+							ImGui::BeginGroup(); // slot
+
+							auto n_push_styles = 0;
+							if (n->flags & BlueprintNodeFlagHorizontalInputs)
 							{
-								auto id = input->is_linked() ? input->get_linked(0)->object_id : input->object_id;
-								if (auto it = instance_group.slot_datas.find(id); it != instance_group.slot_datas.end())
+								ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_LinkStrength, 0.f);
+								ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_TargetDirection, ImVec2(0.f, +1.f));
+								n_push_styles += 2;
+							}
+							ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
+							auto display_name = input->name;
+							SUS::strip_tail_if(display_name, "_hash");
+							ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(input->type));
+							ImGui::TextUnformatted(display_name.c_str());
+							ImGui::PopStyleColor();
+							ax::NodeEditor::EndPin();
+							if (n_push_styles)
+								ax::NodeEditor::PopStyleVar(n_push_styles);
+
+							if (ImGui::IsItemHovered())
+							{
+								if (debugging_group)
 								{
-									auto& arg = it->second.attribute;
-									tooltip = std::format("Value: {} ({})", get_value_str(arg), ti_str(arg.type));
+									auto id = input->get_linked_count() > 0 ? input->get_linked(0)->object_id : input->object_id;
+									if (auto it = instance_group.slot_datas.find(id); it != instance_group.slot_datas.end())
+									{
+										auto& arg = it->second.attribute;
+										tooltip = std::format("Value: {} ({})", get_value_str(arg), ti_str(arg.type));
+									}
+								}
+								else
+									tooltip = std::format("({})", ti_str(input->type));
+								ax::NodeEditor::Suspend();
+								tooltip_pos = io.MousePos;
+								ax::NodeEditor::Resume();
+
+								if (!input->get_linked_count() > 0)
+								{
+									if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_F))
+									{
+										if (input->type->tag == TagD)
+										{
+											auto ti = (TypeInfo_Data*)input->type;
+											auto type = TypeInfo::get<float>();
+											switch (ti->vec_size)
+											{
+											case 2: type = TypeInfo::get<vec2>(); break;
+											case 3: type = TypeInfo::get<vec3>(); break;
+											case 4: type = TypeInfo::get<vec4>(); break;
+											}
+											if (blueprint_allow_type(input->allowed_types, type))
+												set_input_type(input, type);
+										}
+									}
+									if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_I))
+									{
+										if (input->type->tag == TagD)
+										{
+											auto ti = (TypeInfo_Data*)input->type;
+											auto type = TypeInfo::get<int>();
+											switch (ti->vec_size)
+											{
+											case 2: type = TypeInfo::get<ivec2>(); break;
+											case 3: type = TypeInfo::get<ivec3>(); break;
+											case 4: type = TypeInfo::get<ivec4>(); break;
+											}
+											if (blueprint_allow_type(input->allowed_types, type))
+												set_input_type(input, type);
+										}
+									}
+									if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_U))
+									{
+										if (input->type->tag == TagD)
+										{
+											auto ti = (TypeInfo_Data*)input->type;
+											auto type = TypeInfo::get<uint>();
+											switch (ti->vec_size)
+											{
+											case 2: type = TypeInfo::get<uvec2>(); break;
+											case 3: type = TypeInfo::get<uvec3>(); break;
+											case 4: type = TypeInfo::get<uvec4>(); break;
+											}
+											if (blueprint_allow_type(input->allowed_types, type))
+												set_input_type(input, type);
+										}
+									}
+									if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_D))
+									{
+										if (input->type->tag == TagD)
+										{
+											auto ti = (TypeInfo_Data*)input->type;
+											if (ti->vec_size > 1)
+											{
+												if (ti->data_type == DataFloat || ti->data_type == DataInt)
+												{
+													auto name = std::format("Vec{}", ti->vec_size);
+													auto new_node = blueprint->add_node(group, n->parent, sh(name.c_str()));
+													new_node->position = n->position + vec2(-144.f, 0.f);
+													blueprint->add_link(new_node->find_output("V"_h), input);
+												}
+											}
+										}
+									}
+								}
+
+								auto swap_inputs = [&](BlueprintSlotPtr slot0, BlueprintSlotPtr slot1) {
+									BlueprintSlotPtr link_output0 = nullptr;
+									BlueprintSlotPtr link_output1 = nullptr;
+									TypeInfo* type0 = nullptr;
+									TypeInfo* type1 = nullptr;
+									std::string value0;
+									std::string value1;
+
+									if (slot0->get_linked_count() > 0)
+										link_output0 = slot0->get_linked(0);
+									else
+									{
+										type0 = slot0->type;
+										value0 = type0->serialize(slot0->data);
+									}
+
+									if (slot1->get_linked_count() > 0)
+										link_output1 = slot1->get_linked(0);
+									else
+									{
+										type1 = slot1->type;
+										value1 = type1->serialize(slot1->data);
+									}
+
+									if (link_output0)
+									{
+										if (auto l = group->find_link(link_output0, slot0); l)
+											blueprint->remove_link(l);
+										blueprint->add_link(link_output0, slot1);
+									}
+									else
+									{
+										set_input_type(slot1, type0);
+										type0->unserialize(value0, slot1->data);
+									}
+									if (link_output1)
+									{
+										if (auto l = group->find_link(link_output1, slot1); l)
+											blueprint->remove_link(l);
+										blueprint->add_link(link_output1, slot0);
+									}
+									else
+									{
+										set_input_type(slot0, type1);
+										type1->unserialize(value1, slot0->data);
+									}
+									};
+								if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Z))
+								{
+									if (i > 0)
+									{
+										auto prev_input = n->inputs[i - 1].get();
+										if (blueprint_allow_type(input->allowed_types, prev_input->type) &&
+											blueprint_allow_type(prev_input->allowed_types, input->type))
+										{
+											swap_inputs(input, prev_input);
+											unsaved = true;
+										}
+									}
+								}
+								if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_X))
+								{
+									if (i < n->inputs.size() - 1)
+									{
+										auto next_input = n->inputs[i + 1].get();
+										if (blueprint_allow_type(input->allowed_types, next_input->type) &&
+											blueprint_allow_type(next_input->allowed_types, input->type))
+										{
+											swap_inputs(input, next_input);
+											unsaved = true;
+										}
+									}
 								}
 							}
-							else
-								tooltip = std::format("({})", ti_str(input->type));
-							ax::NodeEditor::Suspend();
-							tooltip_pos = io.MousePos;
-							ax::NodeEditor::Resume();
 
-							if (!input->is_linked())
+							if (!input->get_linked_count() > 0)
 							{
-								if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_F))
+								if (debugging_group)
+									ImGui::BeginDisabled();
+								ImGui::PushID(input);
+								auto no_combo_popup = combo_popup_name == 0;
+								if (manipulate_value(input->type, input->data, input->name_hash, &combo_popup_name))
 								{
-									if (input->type->tag == TagD)
+									input->data_changed_frame = frame;
+									group->data_changed_frame = frame;
+									blueprint->dirty_frame = frame;
+									unsaved = true;
+								}
+								if (combo_popup_name && no_combo_popup)
+								{
+									combo_popup_node = n;
+									ax::NodeEditor::Suspend();
+									ImGui::OpenPopup("combo"_h);
+									ax::NodeEditor::Resume();
+								}
+								ImGui::PopID();
+								if (debugging_group)
+									ImGui::EndDisabled();
+							}
+							else
+							{
+								if (hide_var_links)
+								{
+									auto from_slot = input->get_linked(0);
+									if (from_slot->node->name_hash == "Variable"_h)
 									{
-										auto ti = (TypeInfo_Data*)input->type;
-										auto type = TypeInfo::get<float>();
-										switch (ti->vec_size)
+										ImGui::PushID(input->object_id);
+										auto name = from_slot->node->display_name;
+										if (name.contains('.'))
 										{
-										case 2: type = TypeInfo::get<vec2>(); break;
-										case 3: type = TypeInfo::get<vec3>(); break;
-										case 4: type = TypeInfo::get<vec4>(); break;
+											auto sp = SUS::to_string_vector(SUS::split(name, '.'));
+											name = sp.back();
 										}
-										if (blueprint_allow_type(input->allowed_types, type))
-											set_input_type(input, type);
+										ImGui::SetNextItemWidth(min(100.f, ImGui::CalcTextSize(name.c_str()).x + 6.f));
+										ImGui::InputText("", &name, ImGuiInputTextFlags_ReadOnly);
+										if (ImGui::IsItemHovered())
+											tooltip = std::format("Variable: {} ({})", from_slot->node->display_name, ti_str(from_slot->type));
+										ImGui::SameLine();
+										if (ImGui::SmallButton(graphics::font_icon_str("xmark"_h).c_str()))
+										{
+											ax::NodeEditor::ClearSelection();
+											blueprint->remove_link(group->find_link(from_slot, input));
+											unsaved = true;
+										}
+										ImGui::PopID();
 									}
 								}
-								if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_I))
+							}
+
+							ImGui::EndGroup(); // slot
+							n_slots++;
+						}
+						ImGui::EndGroup();
+						if (!(n->flags & BlueprintNodeFlagHorizontalInputs) && !(n->flags & BlueprintNodeFlagHorizontalOutputs))
+							ImGui::SameLine(0.f, 16.f);
+						ImGui::BeginGroup();
+						n_slots = 0;
+						for (auto i = 0; i < n->outputs.size(); i++)
+						{
+							auto output = n->outputs[i].get();
+							if (!output->type || (output->flags & BlueprintSlotFlagHideInUI) || output->type == TypeInfo::get<BlueprintSignal>())
+								continue;
+
+							if ((n->flags & BlueprintNodeFlagHorizontalOutputs) && n_slots > 0)
+								ImGui::SameLine();
+							ImGui::BeginGroup(); // slot
+
+							auto n_push_styles = 0;
+							if (n->flags & BlueprintNodeFlagHorizontalOutputs)
+							{
+								ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_LinkStrength, 0.f);
+								ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_SourceDirection, ImVec2(0.f, -1.f));
+								n_push_styles += 2;
+							}
+							ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
+							auto display_name = output->name;
+							SUS::strip_tail_if(display_name, "_hash");
+							ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(output->type));
+							ImGui::TextUnformatted(display_name.c_str());
+							ImGui::PopStyleColor();
+							ax::NodeEditor::EndPin();
+							if (n_push_styles)
+								ax::NodeEditor::PopStyleVar(n_push_styles);
+
+							if (ImGui::IsItemHovered())
+							{
+								if (debugging_group)
 								{
-									if (input->type->tag == TagD)
+									if (auto it = instance_group.slot_datas.find(output->object_id); it != instance_group.slot_datas.end())
 									{
-										auto ti = (TypeInfo_Data*)input->type;
-										auto type = TypeInfo::get<int>();
-										switch (ti->vec_size)
-										{
-										case 2: type = TypeInfo::get<ivec2>(); break;
-										case 3: type = TypeInfo::get<ivec3>(); break;
-										case 4: type = TypeInfo::get<ivec4>(); break;
-										}
-										if (blueprint_allow_type(input->allowed_types, type))
-											set_input_type(input, type);
+										auto& arg = it->second.attribute;
+										tooltip = std::format("Value: {} ({})", get_value_str(arg), ti_str(arg.type));
 									}
 								}
-								if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_U))
+								else
+									tooltip = std::format("({})", ti_str(output->type));
+								ax::NodeEditor::Suspend();
+								tooltip_pos = io.MousePos;
+								ax::NodeEditor::Resume();
+
+								if (!output->get_linked_count() > 0)
 								{
-									if (input->type->tag == TagD)
+									if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_D))
 									{
-										auto ti = (TypeInfo_Data*)input->type;
-										auto type = TypeInfo::get<uint>();
-										switch (ti->vec_size)
-										{
-										case 2: type = TypeInfo::get<uvec2>(); break;
-										case 3: type = TypeInfo::get<uvec3>(); break;
-										case 4: type = TypeInfo::get<uvec4>(); break;
-										}
-										if (blueprint_allow_type(input->allowed_types, type))
-											set_input_type(input, type);
-									}
-								}
-								if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_D))
-								{
-									if (input->type->tag == TagD)
-									{
-										auto ti = (TypeInfo_Data*)input->type;
+										auto ti = (TypeInfo_Data*)output->type;
 										if (ti->vec_size > 1)
 										{
 											if (ti->data_type == DataFloat || ti->data_type == DataInt)
 											{
-												auto name = std::format("Vec{}", ti->vec_size);
-												auto new_node = blueprint->add_node(group, n->parent, sh(name.c_str()));
-												new_node->position = n->position + vec2(-144.f, 0.f);
-												blueprint->add_link(new_node->find_output("V"_h), input);
+												auto new_node = blueprint->add_node(group, n->parent, "Decompose"_h);
+												new_node->position = n->position + vec2(ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)n).x + 16.f, 0.f);
+												blueprint->add_link(output, new_node->find_input("V"_h));
 											}
 										}
 									}
 								}
 							}
 
-							auto swap_inputs = [&](BlueprintSlotPtr slot0, BlueprintSlotPtr slot1) {
-								BlueprintSlotPtr link_output0 = nullptr;
-								BlueprintSlotPtr link_output1 = nullptr;
-								TypeInfo* type0 = nullptr;
-								TypeInfo* type1 = nullptr;
-								std::string value0;
-								std::string value1;
-
-								if (slot0->is_linked())
-									link_output0 = slot0->get_linked(0);
-								else
-								{
-									type0 = slot0->type;
-									value0 = type0->serialize(slot0->data);
-								}
-
-								if (slot1->is_linked())
-									link_output1 = slot1->get_linked(0);
-								else
-								{
-									type1 = slot1->type;
-									value1 = type1->serialize(slot1->data);
-								}
-
-								if (link_output0)
-								{
-									if (auto l = group->find_link(link_output0, slot0); l)
-										blueprint->remove_link(l);
-									blueprint->add_link(link_output0, slot1);
-								}
-								else
-								{
-									set_input_type(slot1, type0);
-									type0->unserialize(value0, slot1->data);
-								}
-								if (link_output1)
-								{
-									if (auto l = group->find_link(link_output1, slot1); l)
-										blueprint->remove_link(l);
-									blueprint->add_link(link_output1, slot0);
-								}
-								else
-								{
-									set_input_type(slot0, type1);
-									type1->unserialize(value1, slot0->data);
-								}
-							};
-							if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Z))
-							{
-								if (i > 0)
-								{
-									auto prev_input = n->inputs[i - 1].get();
-									if (blueprint_allow_type(input->allowed_types, prev_input->type) &&
-										blueprint_allow_type(prev_input->allowed_types, input->type))
-									{
-										swap_inputs(input, prev_input);
-										unsaved = true;
-									}
-								}
-							}
-							if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_X))
-							{
-								if (i < n->inputs.size() - 1)
-								{
-									auto next_input = n->inputs[i + 1].get();
-									if (blueprint_allow_type(input->allowed_types, next_input->type) &&
-										blueprint_allow_type(next_input->allowed_types, input->type))
-									{
-										swap_inputs(input, next_input);
-										unsaved = true;
-									}
-								}
-							}
+							ImGui::EndGroup(); // slot
+							n_slots++;
 						}
-
-						if (!input->is_linked())
+						n_slots = 0;
+						for (auto i = 0; i < n->outputs.size(); i++)
 						{
-							if (debugging_group)
-								ImGui::BeginDisabled();
-							ImGui::PushID(input);
-							auto no_combo_popup = combo_popup_name == 0;
-							if (manipulate_value(input->type, input->data, input->name_hash, &combo_popup_name))
-							{
-								input->data_changed_frame = frame;
-								group->data_changed_frame = frame;
-								blueprint->dirty_frame = frame;
-								unsaved = true;
-							}
-							if (combo_popup_name && no_combo_popup)
-							{
-								combo_popup_node = n;
-								ax::NodeEditor::Suspend();
-								ImGui::OpenPopup("combo"_h);
-								ax::NodeEditor::Resume();
-							}
-							ImGui::PopID();
-							if (debugging_group)
-								ImGui::EndDisabled();
-						}
-						else
-						{
-							if (hide_var_links)
-							{
-								auto from_slot = input->get_linked(0);
-								if (from_slot->node->name_hash == "Variable"_h)
-								{
-									ImGui::PushID(input->object_id);
-									auto name = from_slot->node->display_name;
-									if (name.contains('.'))
-									{
-										auto sp = SUS::to_string_vector(SUS::split(name, '.'));
-										name = sp.back();
-									}
-									ImGui::SetNextItemWidth(min(100.f, ImGui::CalcTextSize(name.c_str()).x + 6.f));
-									ImGui::InputText("", &name, ImGuiInputTextFlags_ReadOnly);
-									if (ImGui::IsItemHovered())
-										tooltip = std::format("Variable: {} ({})", from_slot->node->display_name, ti_str(from_slot->type));
-									ImGui::SameLine();
-									if (ImGui::SmallButton(graphics::font_icon_str("xmark"_h).c_str()))
-									{
-										ax::NodeEditor::ClearSelection();
-										blueprint->remove_link(group->find_link(from_slot, input));
-										unsaved = true;
-									}
-									ImGui::PopID();
-								}
-							}
-						}
+							auto output = n->outputs[i].get();
+							if (output->type != TypeInfo::get<BlueprintSignal>())
+								continue;
 
-						ImGui::EndGroup(); // slot
-					}
-					ImGui::EndGroup();
-					if (!(n->flags & BlueprintNodeFlagHorizontalInputs) && !(n->flags & BlueprintNodeFlagHorizontalOutputs))
-						ImGui::SameLine(0.f, 16.f);
-					ImGui::BeginGroup();
-					for (auto i = 0; i < n->outputs.size(); i++)
-					{
-						auto output = n->outputs[i].get();
-						if (!output->type || (output->flags & BlueprintSlotFlagHideInUI))
-							continue;
-
-						if ((n->flags & BlueprintNodeFlagHorizontalOutputs) && i > 0)
-							ImGui::SameLine();
-						ImGui::BeginGroup(); // slot
-
-						if (n->flags & BlueprintNodeFlagHorizontalOutputs)
-						{
-							ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_SourceDirection, ImVec2(0.0f, -1.0f));
-							ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_LinkStrength, 0.0f);
-						}
-						ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
-						auto display_name = output->name;
-						SUS::strip_tail_if(display_name, "_hash");
-						SUS::strip_tail_if(display_name, "xecute");
-						ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(output->type));
-						ImGui::TextUnformatted(display_name.c_str());
-						ImGui::PopStyleColor();
-						ax::NodeEditor::EndPin();
-						if (n->flags & BlueprintNodeFlagHorizontalOutputs)
+							if (n_slots > 0)
+								ImGui::SetCursorScreenPos(ImGui::GetItemRectMin());
+							ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_LinkStrength, 0.f);
+							ax::NodeEditor::PushStyleVar(ax::NodeEditor::StyleVar_SourceDirection, ImVec2(0.f, -1.f));
+							ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
+							ImGui::InvisibleButton(output->name.c_str(), ImVec2(8.f, 8.f));
+							ax::NodeEditor::EndPin();
 							ax::NodeEditor::PopStyleVar(2);
 
-						if (ImGui::IsItemHovered())
-						{
-							if (debugging_group)
-							{
-								if (auto it = instance_group.slot_datas.find(output->object_id); it != instance_group.slot_datas.end())
-								{
-									auto& arg = it->second.attribute;
-									tooltip = std::format("Value: {} ({})", get_value_str(arg), ti_str(arg.type));
-								}
-							}
-							else
-								tooltip = std::format("({})", ti_str(output->type));
-							ax::NodeEditor::Suspend();
-							tooltip_pos = io.MousePos;
-							ax::NodeEditor::Resume();
-
-							if (!output->is_linked())
-							{
-								if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_D))
-								{
-									auto ti = (TypeInfo_Data*)output->type;
-									if (ti->vec_size > 1)
-									{
-										if (ti->data_type == DataFloat || ti->data_type == DataInt)
-										{
-											auto new_node = blueprint->add_node(group, n->parent, "Decompose"_h);
-											new_node->position = n->position + vec2(ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)n).x + 16.f, 0.f);
-											blueprint->add_link(output, new_node->find_input("V"_h));
-										}
-									}
-								}
-							}
+							n_slots++;
 						}
-
-						ImGui::EndGroup(); // slot
+						ImGui::EndGroup();
 					}
-					ImGui::EndGroup();
 
 					if (n->preview_provider)
 					{
@@ -2558,8 +2598,11 @@ void BlueprintView::on_draw()
 					std::vector<BlueprintNodePtr> to_remove_nodes;
 					while (ax::NodeEditor::QueryDeletedLink((ax::NodeEditor::LinkId*)&link))
 					{
-						if (ax::NodeEditor::AcceptDeletedItem())
-							to_remove_links.push_back(link);
+						if (link->to_slot->node->name_hash != "Block"_h)
+						{
+							if (ax::NodeEditor::AcceptDeletedItem())
+								to_remove_links.push_back(link);
+						}
 					}
 					if (!to_remove_links.empty())
 					{
@@ -2569,6 +2612,11 @@ void BlueprintView::on_draw()
 					}
 					while (ax::NodeEditor::QueryDeletedNode((ax::NodeEditor::NodeId*)&node))
 					{
+						if (node->name_hash == "Block"_h)
+						{
+							if (node->inputs.front()->get_linked_count() > 0)
+								continue;
+						}
 						if (ax::NodeEditor::AcceptDeletedItem())
 							blueprint_form_top_list(to_remove_nodes, node);
 					}
@@ -2584,6 +2632,14 @@ void BlueprintView::on_draw()
 						for (auto n : to_remove_nodes)
 						{
 							remove_preview(n);
+							for (auto& o : n->outputs)
+							{
+								if (o->type == TypeInfo::get<BlueprintSignal>())
+								{
+									if (o->get_linked_count() > 0)
+										blueprint->remove_node(o->get_linked(0)->node, true);
+								}
+							}
 							blueprint->remove_node(n, true);
 						}
 						unsaved = true;
@@ -2625,41 +2681,6 @@ void BlueprintView::on_draw()
 				{
 					if (ImGui::Selectable("Copy"))
 						copy_nodes(group);
-					if (ImGui::Selectable("Cut"))
-					{
-
-					}
-					if (ImGui::Selectable("Delete"))
-					{
-
-					}
-					if (ImGui::Selectable("Wrap In Block"))
-					{
-						if (auto selected_nodes = get_selected_nodes(); !selected_nodes.empty())
-						{
-							std::vector<BlueprintNodePtr> nodes;
-							for (auto n : selected_nodes)
-								blueprint_form_top_list(nodes, n);
-
-							Rect wrap_rect;
-							for (auto n : nodes)
-							{
-								Rect rect;
-								rect.a = n->position;
-								rect.b = rect.a + (vec2)ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)n);
-								rect.expand(10.f);
-								wrap_rect.expand(rect);
-							}
-
-							auto b = blueprint->add_block(group, nullptr);
-							b->position = wrap_rect.a - vec2(10.f, 45.f);
-							ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)b, b->position);
-
-							blueprint->set_nodes_parent(nodes, b);
-
-							unsaved = true;
-						}
-					}
 					if (context_node->is_block)
 					{
 						if (ImGui::Selectable("Unblock"))
@@ -2809,28 +2830,17 @@ void BlueprintView::on_draw()
 								if (n->is_block)
 									last_block = n->object_id;
 
-								switch (n->name_hash)
+								auto n_slots = 0;
+								for (auto& o : n->outputs)
 								{
-								case "If"_h:
-								{
-									auto true_block = blueprint->add_block(group, n->parent);
-									true_block->position = n->position + vec2(180.f, -23.f);
-									ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)true_block, true_block->position);
-									auto false_block = blueprint->add_block(group, n->parent);
-									false_block->position = n->position + vec2(180.f, 41.f);
-									ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)false_block, false_block->position);
-									blueprint->add_link(n->find_output("True"_h), true_block->find_input("Execute"_h));
-									blueprint->add_link(n->find_output("False"_h), false_block->find_input("Execute"_h));
-								}
-									break;
-								case "Loop"_h:
-									if (auto t2 = t.library->find_node_template("Loop Index"_h); t2)
+									if (o->type == TypeInfo::get<BlueprintSignal>())
 									{
-										auto n2 = t2->create_node(blueprint, group, n);
-										n2->position = n->position + vec2(0.f, 112.f);
-										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n2, n2->position);
+										auto n_block = blueprint->add_block(group, n->parent);
+										n_block->position = n->position + vec2(0.f, (n_slots + 1) * 100.f);
+										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n_block, n_block->position);
+										blueprint->add_link(o.get(), n_block->find_input("Execute"_h));
+										n_slots++;
 									}
-									break;
 								}
 
 								unsaved = true;
@@ -2846,32 +2856,6 @@ void BlueprintView::on_draw()
 						{
 							copied_nodes.clear();
 							copied_links.clear();
-						}
-					}
-					{
-						static BlueprintSlotDesc block_input_desc{ .name = "Execute", .name_hash = "Execute"_h, .flags = BlueprintSlotFlagInput, .allowed_types = { TypeInfo::get<BlueprintSignal>() } };
-						static BlueprintSlotDesc block_output_desc{ .name = "Execute", .name_hash = "Execute"_h, .flags = BlueprintSlotFlagOutput, .allowed_types = { TypeInfo::get<BlueprintSignal>() } };
-						uint slot_name = 0;
-						if (show_node_template("Block", { block_input_desc }, { block_output_desc }, slot_name))
-						{
-							if (ImGui::Selectable("Block"))
-							{
-								auto b = blueprint->add_block(group, new_node_block);
-								b->position = open_popup_pos;
-								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)b, b->position);
-
-								if (new_node_link_slot)
-								{
-									if (new_node_link_slot->flags & BlueprintSlotFlagOutput)
-										blueprint->add_link(new_node_link_slot, b->inputs.front().get());
-									else
-										blueprint->add_link(b->outputs.front().get(), new_node_link_slot);
-								}
-
-								last_block = b->object_id;
-
-								unsaved = true;
-							}
 						}
 					}
 					if (!add_node_filter.empty() || ImGui::BeginMenu("Variables"))

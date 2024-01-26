@@ -1066,11 +1066,10 @@ void App::on_gui()
 								auto is_editing = false;
 								for (auto& v : blueprint_window.views)
 								{
-									auto bv = (BlueprintView*)v.get();
-									if (bv->blueprint == bp)
+									if (auto bv = (BlueprintView*)v.get(); bv->blueprint == bp)
 									{
-										bv->unsaved = true;
-										is_editing = true;
+										if (bv->unsaved)
+											is_editing = true;
 									}
 								}
 								if (!is_editing)
@@ -1782,11 +1781,10 @@ void App::change_bp_references(uint old_name, uint old_location, uint old_proper
 							auto is_editing = false;
 							for (auto& v : blueprint_window.views)
 							{
-								auto bv = (BlueprintView*)v.get();
-								if (bv->blueprint == bp)
+								if (auto bv = (BlueprintView*)v.get(); bv->blueprint == bp)
 								{
-									bv->unsaved = true;
-									is_editing = true;
+									if (bv->unsaved)
+										is_editing = true;
 								}
 							}
 							if (!is_editing)

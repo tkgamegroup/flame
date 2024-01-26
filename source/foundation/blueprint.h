@@ -11,8 +11,9 @@ namespace flame
 		BlueprintNodeFlagEnableTemplate = 1 << 0,
 		BlueprintNodeFlagBreakTarget = 1 << 1,
 		BlueprintNodeFlagReturnTarget = 1 << 2,
-		BlueprintNodeFlagHorizontalInputs = 1 << 3,
-		BlueprintNodeFlagHorizontalOutputs = 1 << 4
+		BlueprintNodeFlagWidget = 1 << 3,
+		BlueprintNodeFlagHorizontalInputs = 1 << 4,
+		BlueprintNodeFlagHorizontalOutputs = 1 << 5
 	};
 
 	inline BlueprintNodeFlags operator|(BlueprintNodeFlags a, BlueprintNodeFlags b)
@@ -30,7 +31,9 @@ namespace flame
 		BlueprintSlotFlagNone = 0,
 		BlueprintSlotFlagInput = 1 << 0,
 		BlueprintSlotFlagOutput = 1 << 1,
-		BlueprintSlotFlagHideInUI = 1 << 2,
+		BlueprintSlotFlagBeginWidget = 1 << 2,
+		BlueprintSlotFlagEndWidget = 1 << 3,
+		BlueprintSlotFlagHideInUI = 1 << 4
 	};
 
 	inline BlueprintSlotFlags operator|(BlueprintSlotFlags a, BlueprintSlotFlags b)
@@ -80,16 +83,6 @@ namespace flame
 		BlueprintSlotFlags		flags = BlueprintSlotFlagNone;
 		std::vector<TypeInfo*>	allowed_types;
 		std::string				default_value;
-	};
-
-	struct BlueprintNodeStructureChangeInfo
-	{
-		BlueprintNodeStructureChangeReason reason;
-		std::string template_string;
-		std::vector<TypeInfo*> input_types;
-		std::vector<TypeInfo*> output_types;
-		std::vector<BlueprintSlotDesc> new_inputs;
-		std::vector<BlueprintSlotDesc> new_outputs;
 	};
 
 	struct BlueprintEnumItem
@@ -208,7 +201,6 @@ namespace flame
 		std::string				default_value;
 		uint					data_changed_frame = 0;
 
-		virtual bool is_linked() const = 0;
 		virtual uint get_linked_count() const = 0;
 		virtual BlueprintSlotPtr get_linked(uint idx) const = 0;
 	};
@@ -220,6 +212,8 @@ namespace flame
 		void* data;
 	};
 
+	struct BlueprintNodeStructureChangeInfo;
+
 	typedef void(*BlueprintNodeFunction)(uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs);
 	typedef void(*BlueprintNodeLoopFunction)(uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution);
 	typedef void(*BlueprintNodeBeginBlockFunction)(uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution);
@@ -228,6 +222,21 @@ namespace flame
 	typedef void(*BlueprintNodeDestructor)(uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs);
 	typedef bool(*BlueprintNodeChangeStructureCallback)(BlueprintNodeStructureChangeInfo& info);
 	typedef void(*BlueprintNodePreviewProvider)(uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintNodePreview* preview);
+
+	struct BlueprintNodeStructureChangeInfo
+	{
+		BlueprintNodeStructureChangeReason reason;
+		std::string template_string;
+		std::vector<TypeInfo*> input_types;
+		std::vector<TypeInfo*> output_types;
+		std::vector<BlueprintSlotDesc> new_inputs;
+		std::vector<BlueprintSlotDesc> new_outputs;
+
+		BlueprintNodeFunction new_function;
+		BlueprintNodeLoopFunction new_loop_function;
+		BlueprintNodeBeginBlockFunction new_begin_block_function;
+		BlueprintNodeEndBlockFunction new_end_block_function;
+	};
 
 	struct BlueprintNode
 	{
@@ -391,8 +400,10 @@ namespace flame
 
 	struct BlueprintInvalidLink
 	{
-		voidptr from_slot;
-		voidptr to_slot;
+		uint from_node;
+		uint from_slot;
+		uint to_node;
+		uint to_slot;
 	};
 
 	struct BlueprintGroup
