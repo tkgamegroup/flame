@@ -4,17 +4,19 @@
 namespace flame
 {
 	void add_type_node_templates(BlueprintNodeLibraryPtr library);
-	void add_extern_node_templates(BlueprintNodeLibraryPtr library);
 	void add_logical_node_templates(BlueprintNodeLibraryPtr library);
 	void add_flow_control_node_templates(BlueprintNodeLibraryPtr library);
 	void add_math_node_templates(BlueprintNodeLibraryPtr library);
 	void add_string_node_templates(BlueprintNodeLibraryPtr library);
 	void add_time_node_templates(BlueprintNodeLibraryPtr library);
+	void add_extern_node_templates(BlueprintNodeLibraryPtr library);
+	void add_refactoring_node_templates(BlueprintNodeLibraryPtr library);
 
 	void init_library()
 	{
 		auto standard_library = BlueprintNodeLibrary::get(L"standard");
 		auto extern_library = BlueprintNodeLibrary::get(L"extern");
+		auto refactoring_library = BlueprintNodeLibrary::get(L"refactoring");
 
 		BlueprintSystem::template_types.emplace_back("v", TypeInfo::void_type);
 		BlueprintSystem::template_types.emplace_back("b", TypeInfo::get<bool>());
@@ -45,5 +47,6 @@ namespace flame
 		add_string_node_templates(standard_library);
 		add_time_node_templates(standard_library);
 		add_extern_node_templates(extern_library);
+		add_refactoring_node_templates(extern_library);
 	}
 }

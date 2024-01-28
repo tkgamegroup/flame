@@ -2519,6 +2519,11 @@ void BlueprintView::on_draw()
 					ax::NodeEditor::Link((uint64)l.get(), (uint64)l->from_slot, (uint64)l->to_slot, color_from_type(l->from_slot->type));
 				}
 
+				for (auto& l : group->invalid_links)
+				{
+
+				}
+
 				auto mouse_pos = ImGui::GetMousePos();
 				static vec2				open_popup_pos;
 				static BlueprintSlotPtr	new_node_link_slot = nullptr;

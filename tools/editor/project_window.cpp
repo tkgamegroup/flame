@@ -172,7 +172,7 @@ ProjectView::ProjectView(const std::string& name) :
 		auto ext = path.extension();
 		if (ext == L".bp")
 		{
-			auto opend = false;
+			auto opened = false;
 			for (auto& v : blueprint_window.views)
 			{
 				auto bv = (BlueprintView*)v.get();
@@ -180,16 +180,16 @@ ProjectView::ProjectView(const std::string& name) :
 				{
 					if (bv->imgui_window)
 						ImGui::FocusWindow((ImGuiWindow*)bv->imgui_window);
-					opend = true;
+					opened = true;
 					break;
 				}
 			}
-			if (!opend)
+			if (!opened)
 				blueprint_window.open_view(Path::reverse(path).string() + "##Blueprint");
 		}
 		else if (ext == L".sht")
 		{
-			auto opend = false;
+			auto opened = false;
 			for (auto& v : sheet_window.views)
 			{
 				auto sv = (SheetView*)v.get();
@@ -197,11 +197,11 @@ ProjectView::ProjectView(const std::string& name) :
 				{
 					if (sv->imgui_window)
 						ImGui::FocusWindow((ImGuiWindow*)sv->imgui_window);
-					opend = true;
+					opened = true;
 					break;
 				}
 			}
-			if (!opend)
+			if (!opened)
 				sheet_window.open_view(Path::reverse(path).string() + "##Sheet");
 		}
 		else if (ext == L".prefab")

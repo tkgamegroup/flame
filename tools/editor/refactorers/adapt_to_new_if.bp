@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<blueprint>
+	<groups>
+		<group object_id="1" name="main">
+			<variables>
+				<variable name="group" type="PU@flame::BlueprintGroup" value="cdcdcdcdcdcdcdcd" />
+				<variable name="invalid_link_from_node" type="D@uint" value="0" />
+				<variable name="invalid_link_from_slot" type="D@uint" value="0" />
+				<variable name="invalid_link_to_node" type="D@uint" value="0" />
+				<variable name="invalid_link_to_slot" type="D@uint" value="0" />
+				<variable name="changed" type="D@bool" value="false" />
+			</variables>
+			<nodes>
+				<node object_id="4" name="RF: Find Node" position="289,-136" />
+				<node object_id="8" name="Variable" position="278,-89">
+					<inputs>
+						<input name="Name" value="1190584460" />
+						<input name="Location" value="0" />
+					</inputs>
+				</node>
+				<node object_id="12" name="RF: Join Block" position="488,-49" />
+				<node object_id="15" name="RF: Find Node" position="294,-8" />
+				<node object_id="19" name="Variable" position="0,100">
+					<inputs>
+						<input name="Name" value="3987451459" />
+						<input name="Location" value="0" />
+					</inputs>
+				</node>
+				<node object_id="33" name="Set Variable" position="349,132">
+					<inputs>
+						<input name="Name" value="4128534651" />
+						<input name="Location" value="0" />
+						<input name="V" value="true" />
+					</inputs>
+				</node>
+				<node object_id="23" name="Variable" position="0,200">
+					<inputs>
+						<input name="Name" value="2644687276" />
+						<input name="Location" value="0" />
+					</inputs>
+				</node>
+			</nodes>
+			<links>
+				<link object_id="27" from_node="8" from_slot="V" to_node="15" to_slot="Group" />
+				<link object_id="28" from_node="19" from_slot="V" to_node="15" to_slot="ID" />
+				<link object_id="29" from_node="8" from_slot="V" to_node="4" to_slot="Group" />
+				<link object_id="30" from_node="23" from_slot="V" to_node="4" to_slot="ID" />
+				<link object_id="31" from_node="4" from_slot="V" to_node="12" to_slot="Src Block" />
+				<link object_id="32" from_node="15" from_slot="V" to_node="12" to_slot="Dst Block" />
+			</links>
+		</group>
+	</groups>
+</blueprint>

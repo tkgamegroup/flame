@@ -994,95 +994,335 @@ void App::on_gui()
 			{
 				for (auto& it : std::filesystem::recursive_directory_iterator(Path::get(L"assets")))
 				{
-					if (it.is_regular_file())
+					if (it.is_regular_file() && it.path().extension() == L".bp")
 					{
-						auto ext = it.path().extension();
-						if (ext == L".bp")
+						auto changed = false;
+						auto bp = Blueprint::get(it.path());
+						for (auto& g : bp->groups)
 						{
-							auto changed = false;
-							auto bp = Blueprint::get(it.path());
-							for (auto& g : bp->groups)
+							union Key
 							{
-								union Key
-								{
-									uint64 u64;
-									uint32 u32[2];
-								};
-								std::map<uint64, std::vector<BlueprintNodePtr>> var_nodes;
+								uint64 u64;
+								uint32 u32[2];
+							};
+							std::map<uint64, std::vector<BlueprintNodePtr>> var_nodes;
 
-								for (auto& n : g->nodes)
-								{
-									if (n->name_hash == "Variable"_h)
-									{
-										Key key;
-										uint var_name, var_location;
-										key.u32[0] = *(uint*)n->inputs[0]->data;
-										key.u32[1] = *(uint*)n->inputs[1]->data;
-										var_nodes[key.u64].push_back(n.get());
-									}
-								}
-
-								auto y = 0.f;
-								for (auto& kv : var_nodes)
+							for (auto& n : g->nodes)
+							{
+								if (n->name_hash == "Variable"_h)
 								{
 									Key key;
-									key.u64 = kv.first;
-
-									if (kv.second.front()->depth > 1)
-									{
-										// insert a new top node
-										auto new_n = bp->add_variable_node(g.get(), g->nodes.front().get(), key.u32[0], "Variable"_h, key.u32[1]);
-										kv.second.insert(kv.second.begin(), new_n);
-										changed = true;
-									}
-									if (kv.second.front()->position != vec2(0.f, y))
-									{
-										kv.second.front()->position = vec2(0.f, y);
-										changed = true;
-									}
-									if (kv.second.size() > 1)
-									{
-										auto from_slot = kv.second.front()->outputs[0].get();
-
-										for (auto i = 1; i < kv.second.size(); i++)
-										{
-											std::vector<BlueprintSlotPtr> staging_outputs;
-											auto n = kv.second[i];
-											auto output = n->outputs[0].get();
-											staging_outputs.resize(output->get_linked_count());
-											for (auto j = 0; j < staging_outputs.size(); j++)
-												staging_outputs[j] = output->get_linked(j);
-											bp->remove_node(n);
-											for (auto& s : staging_outputs)
-												bp->add_link(from_slot, s);
-										}
-										changed = true;
-									}
-									y += 100.f;
+									uint var_name, var_location;
+									key.u32[0] = *(uint*)n->inputs[0]->data;
+									key.u32[1] = *(uint*)n->inputs[1]->data;
+									var_nodes[key.u64].push_back(n.get());
 								}
 							}
-							if (changed)
+
+							auto y = 0.f;
+							for (auto& kv : var_nodes)
 							{
-								auto is_editing = false;
-								for (auto& v : blueprint_window.views)
+								Key key;
+								key.u64 = kv.first;
+
+								if (kv.second.front()->depth > 1)
 								{
-									if (auto bv = (BlueprintView*)v.get(); bv->blueprint == bp)
-									{
-										if (bv->unsaved)
-											is_editing = true;
-									}
+									// insert a new top node
+									auto new_n = bp->add_variable_node(g.get(), g->nodes.front().get(), key.u32[0], "Variable"_h, key.u32[1]);
+									kv.second.insert(kv.second.begin(), new_n);
+									changed = true;
 								}
-								if (!is_editing)
-									bp->save();
+								if (kv.second.front()->position != vec2(0.f, y))
+								{
+									kv.second.front()->position = vec2(0.f, y);
+									changed = true;
+								}
+								if (kv.second.size() > 1)
+								{
+									auto from_slot = kv.second.front()->outputs[0].get();
+
+									for (auto i = 1; i < kv.second.size(); i++)
+									{
+										std::vector<BlueprintSlotPtr> staging_outputs;
+										auto n = kv.second[i];
+										auto output = n->outputs[0].get();
+										staging_outputs.resize(output->get_linked_count());
+										for (auto j = 0; j < staging_outputs.size(); j++)
+											staging_outputs[j] = output->get_linked(j);
+										bp->remove_node(n);
+										for (auto& s : staging_outputs)
+											bp->add_link(from_slot, s);
+									}
+									changed = true;
+								}
+								y += 100.f;
 							}
-							Blueprint::release(bp);
 						}
+						if (changed)
+						{
+							auto is_editing = false;
+							for (auto& v : blueprint_window.views)
+							{
+								if (auto bv = (BlueprintView*)v.get(); bv->blueprint == bp)
+								{
+									if (bv->unsaved)
+										is_editing = true;
+									break;
+								}
+							}
+							if (!is_editing)
+								bp->save();
+						}
+						Blueprint::release(bp);
 					}
 				}
 			}
-			if (ImGui::MenuItem("Change References"))
+			if (ImGui::MenuItem("Refactor"))
 			{
+				enum class RefactorBlueprints
+				{
+					AllBlueprints,
+					InFolders,
+					MatchNames
+				};
 
+				static const char* refactor_blueprints_names[] = {
+					"All Blueprints",
+					"In Folders",
+					"Match Names"
+				};
+
+				enum class RefactorCategory
+				{
+					AllNodes,
+					AllLinks,
+					InvalidNodes,
+					InvalidLinks
+				};
+
+				static const char* refactor_category_names[] = {
+					"All Nodes",
+					"All Links",
+					"Invalid Nodes",
+					"Invalid Links"
+				};
+
+				struct RefactorDialog
+				{
+					bool open = false;
+					RefactorBlueprints refactor_blueprints = RefactorBlueprints::AllBlueprints;
+					RefactorCategory refactor_category = RefactorCategory::AllNodes;
+					std::vector<std::filesystem::path> action_files;
+					std::filesystem::path actions_folder;
+
+					void refresh_action_files()
+					{
+						if (actions_folder.empty())
+							return;
+						action_files.clear();
+						for (auto& it : std::filesystem::recursive_directory_iterator(actions_folder))
+						{
+							if (it.is_regular_file() && it.path().extension() == L".bp")
+								action_files.push_back(it.path());
+						}
+					}
+
+				};
+				static RefactorDialog refactor_dialog;
+
+				dialogs.push_back([&]() {
+					if (!refactor_dialog.open)
+					{
+						refactor_dialog.open = true;
+						if (auto flame_path = getenv("FLAME_PATH"); flame_path)
+						{
+							refactor_dialog.actions_folder = std::filesystem::path(flame_path);
+							refactor_dialog.actions_folder /= L"tools/editor/refactorers";
+							if (!std::filesystem::exists(refactor_dialog.actions_folder))
+								std::filesystem::create_directories(refactor_dialog.actions_folder);
+						}
+						refactor_dialog.refresh_action_files();
+					}
+
+					if (ImGui::Begin("Refactor"))
+					{
+						if (ImGui::BeginCombo("Refactor Blueprints", refactor_blueprints_names[(int)refactor_dialog.refactor_blueprints]))
+						{
+							for (auto i = 0; i < countof(refactor_blueprints_names); i++)
+							{
+								if (ImGui::Selectable(refactor_blueprints_names[i], refactor_dialog.refactor_blueprints == (RefactorBlueprints)i))
+									refactor_dialog.refactor_blueprints = (RefactorBlueprints)i;
+							}
+							ImGui::EndCombo();
+						}
+						if (ImGui::BeginCombo("Refactor Category", refactor_category_names[(int)refactor_dialog.refactor_category]))
+						{
+							for (auto i = 0; i < countof(refactor_category_names); i++)
+							{
+								if (ImGui::Selectable(refactor_category_names[i], refactor_dialog.refactor_category == (RefactorCategory)i))
+									refactor_dialog.refactor_category = (RefactorCategory)i;
+							}
+							ImGui::EndCombo();
+						}
+
+						static int selected_action = -1;
+						if (ImGui::BeginListBox("Actions"))
+						{
+							for (auto i = 0; i < refactor_dialog.action_files.size(); i++)
+							{
+								if (ImGui::Selectable(refactor_dialog.action_files[i].filename().string().c_str(), selected_action == i))
+									selected_action = i;
+							}
+							ImGui::EndListBox();
+						}
+						selected_action = min(selected_action, (int)refactor_dialog.action_files.size() - 1);
+
+						if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
+						{
+							ImGui::OpenInputDialog("New Action", "Name", [](bool ok, const std::string& str) {
+								if (ok && !str.empty())
+								{
+									if (refactor_dialog.actions_folder.empty())
+										return;
+									auto fn = refactor_dialog.actions_folder / str;
+									fn.replace_extension(L".bp");
+									if (!std::filesystem::exists(fn))
+									{
+										auto bp = Blueprint::create();
+										auto g = bp->groups.front().get();
+										bp->add_variable(g, "group", TypeInfo::get<BlueprintGroupPtr>());
+										bp->add_variable(g, "invalid_link_from_node", TypeInfo::get<uint>());
+										bp->add_variable(g, "invalid_link_from_slot", TypeInfo::get<uint>());
+										bp->add_variable(g, "invalid_link_to_node", TypeInfo::get<uint>());
+										bp->add_variable(g, "invalid_link_to_slot", TypeInfo::get<uint>());
+										bp->add_variable(g, "changed", TypeInfo::get<bool>());
+										bp->save(fn);
+
+										refactor_dialog.refresh_action_files();
+									}
+									else
+										ImGui::OpenMessageDialog("Failed to create action", "Action already existed");
+								}
+							});
+						}
+						ImGui::SameLine();
+						if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
+						{
+							if (selected_action != -1)
+							{
+								auto path = Path::get(refactor_dialog.action_files[selected_action]);
+								std::filesystem::remove(path);
+								refactor_dialog.refresh_action_files();
+							}
+						}
+						ImGui::SameLine();
+						if (ImGui::SmallButton("Edit"))
+						{
+							if (selected_action != -1)
+							{
+								auto path = Path::get(refactor_dialog.action_files[selected_action]);
+								auto opened = false;
+								for (auto& v : blueprint_window.views)
+								{
+									auto bv = (BlueprintView*)v.get();
+									if (bv->blueprint_path == path)
+									{
+										if (bv->imgui_window)
+											ImGui::FocusWindow((ImGuiWindow*)bv->imgui_window);
+										opened = true;
+										break;
+									}
+								}
+								if (!opened)
+									blueprint_window.open_view(Path::reverse(path).string() + "##Blueprint");
+							}
+						}
+
+						ImGui::Separator();
+
+						if (ImGui::Button("Refactor"))
+						{
+							if (selected_action != -1)
+							{
+								if (auto path = Path::get(refactor_dialog.action_files[selected_action]); std::filesystem::exists(path))
+								{
+									if (path.extension() == L".bp")
+									{
+										if (auto action_bp = Blueprint::get(path); action_bp)
+										{
+											auto action_ins = BlueprintInstance::create(action_bp);
+											if (auto action = action_ins->find_group("main"_h); action)
+											{
+												auto assets_path = app.project_path / L"assets";
+												for (auto& it : std::filesystem::recursive_directory_iterator(assets_path))
+												{
+													if (it.is_regular_file() && it.path().extension() == L".bp")
+													{
+														if (auto bp = Blueprint::get(it.path()); bp)
+														{
+															auto changed = false;
+															for (auto& g : bp->groups)
+															{
+																action->set_variable_as("group"_h, g.get());
+																for (auto& l : g->invalid_links)
+																{
+																	action->set_variable_as("changed"_h, false);
+																	action->set_variable_as("invalid_link_from_node"_h, l.from_node);
+																	action->set_variable_as("invalid_link_from_slot"_h, l.from_slot);
+																	action->set_variable_as("invalid_link_to_node"_h, l.to_node);
+																	action->set_variable_as("invalid_link_to_slot"_h, l.to_slot);
+																	action_ins->call(action, nullptr, nullptr);
+																	changed |= action->get_variable_as<bool>("changed"_h);
+																}
+															}
+															if (changed)
+															{
+																auto is_editing = false;
+																for (auto& v : blueprint_window.views)
+																{
+																	if (auto bv = (BlueprintView*)v.get(); bv->blueprint == bp)
+																	{
+																		if (bv->unsaved)
+																			is_editing = true;
+																		break;
+																	}
+																}
+																if (!is_editing)
+																	bp->save();
+															}
+															Blueprint::release(bp);
+														}
+													}
+												}
+
+												refactor_dialog.open = false;
+											}
+											else
+												assert(0);
+											BlueprintInstance::destroy(action_ins);
+											Blueprint::release(action_bp);
+										}
+										else
+											ImGui::OpenMessageDialog("Failed to refactor", "Action is not a valid bp");
+									}
+									else
+										assert(0);
+								}
+								else
+									ImGui::OpenMessageDialog("Failed to refactor", "Action file not found");
+							}
+							else
+								ImGui::OpenMessageDialog("Failed to refactor", "No action selected");
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("Cancel"))
+							refactor_dialog.open = false;
+
+						ImGui::End();
+					}
+
+					return refactor_dialog.open;
+				});
 			}
 			ImGui::EndMenu();
 		}
@@ -1767,32 +2007,29 @@ void App::change_bp_references(uint old_name, uint old_location, uint old_proper
 	auto assets_path = app.project_path / L"assets";
 	for (auto& it : std::filesystem::recursive_directory_iterator(assets_path))
 	{
-		if (it.is_regular_file())
+		if (it.is_regular_file() && it.path().extension() == L".bp")
 		{
-			auto ext = it.path().extension();
-			if (ext == L".bp")
+			if (auto bp = Blueprint::get(it.path()); bp)
 			{
-				if (auto bp = Blueprint::get(it.path()); bp)
+				if (bp->name_hash != old_location)
 				{
-					if (bp->name_hash != old_location)
+					if (bp->change_references(nullptr, old_name, old_location, old_property, new_name, new_location, new_property))
 					{
-						if (bp->change_references(nullptr, old_name, old_location, old_property, new_name, new_location, new_property))
+						auto is_editing = false;
+						for (auto& v : blueprint_window.views)
 						{
-							auto is_editing = false;
-							for (auto& v : blueprint_window.views)
+							if (auto bv = (BlueprintView*)v.get(); bv->blueprint == bp)
 							{
-								if (auto bv = (BlueprintView*)v.get(); bv->blueprint == bp)
-								{
-									if (bv->unsaved)
-										is_editing = true;
-								}
+								if (bv->unsaved)
+									is_editing = true;
+								break;
 							}
-							if (!is_editing)
-								bp->save();
 						}
+						if (!is_editing)
+							bp->save();
 					}
-					Blueprint::release(bp);
 				}
+				Blueprint::release(bp);
 			}
 		}
 	}

@@ -3301,6 +3301,7 @@ namespace flame
 					auto node_name_hash = sh(node_name.c_str());
 					auto parent_id = n_node.attribute("parent_id").as_uint();
 					auto object_id = n_node.attribute("object_id").as_uint();
+					auto position = s2t<2, float>(n_node.attribute("position").value());
 					BlueprintNodePtr parent = nullptr;
 					if (parent_id != 0)
 					{
@@ -3337,14 +3338,14 @@ namespace flame
 					{
 						auto n = ret->add_block(g, parent);
 						node_map[object_id] = n;
-						n->position = s2t<2, float>(n_node.attribute("position").value());
+						n->position = position;
 					}
 					else if (node_name == "Input")
 					{
 						if (auto n = g->find_node("Input"_h); n)
 						{
 							node_map[object_id] = n;
-							n->position = s2t<2, float>(n_node.attribute("position").value());
+							n->position = position;
 						}
 					}
 					else if (node_name == "Output")
@@ -3352,7 +3353,7 @@ namespace flame
 						if (auto n = g->find_node("Output"_h); n)
 						{
 							node_map[object_id] = n;
-							n->position = s2t<2, float>(n_node.attribute("position").value());
+							n->position = position;
 						}
 					}
 					else if (blueprint_is_variable_node(node_name_hash))
@@ -3384,7 +3385,7 @@ namespace flame
 							for (auto n_input : other_inputs)
 								read_input(n, n_input);
 							node_map[object_id] = n;
-							n->position = s2t<2, float>(n_node.attribute("position").value());
+							n->position = position;
 						}
 						else
 						{
@@ -3413,7 +3414,7 @@ namespace flame
 							for (auto n_input : other_inputs)
 								read_input(n, n_input);
 							node_map[object_id] = n;
-							n->position = s2t<2, float>(n_node.attribute("position").value());
+							n->position = position;
 						}
 						else
 						{
@@ -3436,7 +3437,7 @@ namespace flame
 							for (auto n_input : n_node.child("inputs"))
 								read_input(n, n_input);
 							node_map[object_id] = n;
-							n->position = s2t<2, float>(n_node.attribute("position").value());
+							n->position = position;
 						}
 						else
 						{
@@ -3447,76 +3448,121 @@ namespace flame
 				}
 				for (auto n_link : n_group.child("links"))
 				{
+					uint from_node_id = 0, to_node_id = 0;
+					uint from_slot_hash = 0, to_slot_hash = 0;
+					std::string from_slot_name, to_slot_name;
 					BlueprintNodePtr from_node = nullptr, to_node = nullptr;
 					BlueprintSlotPtr from_slot = nullptr, to_slot = nullptr;
-					if (auto id = n_link.attribute("from_node").as_uint(); id)
+					from_node_id = n_link.attribute("from_node").as_uint();
+					to_node_id = n_link.attribute("to_node").as_uint();
+					from_slot_name = n_link.attribute("from_slot").value();
+					to_slot_name = n_link.attribute("to_slot").value();
+					if (std::isdigit(from_slot_name[0]))
 					{
-						if (auto it = node_map.find(id); it != node_map.end())
-							from_node = it->second;
-						else
-						{
-							printf("link: cannot find node: %u\n", id);
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-							continue;
-						}
+						from_slot_hash = s2t<uint>(from_slot_name);
+						from_slot_name = "";
 					}
-					if (auto id = n_link.attribute("to_node").as_uint(); id)
+					else
+						from_slot_hash = sh(from_slot_name.c_str());
+					if (std::isdigit(to_slot_name[0]))
 					{
-						if (auto it = node_map.find(id); it != node_map.end())
-							to_node = it->second;
-						else
-						{
-							printf("link: cannot find node: %u\n", id);
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-							continue;
-						}
+						to_slot_hash = s2t<uint>(to_slot_name);
+						to_slot_name = "";
 					}
+					else
+						to_slot_hash = sh(to_slot_name.c_str());
+
+					if (auto it = node_map.find(from_node_id); it != node_map.end())
+					{
+						from_node = it->second;
+						from_node_id = from_node->object_id;
+					}
+					else
+					{
+						printf("link: cannot find node: %u\n", from_node_id);
+						printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+
+						g->invalid_links.push_back(BlueprintInvalidLink{
+							.from_node = 0, .from_slot = from_slot_hash, .to_node = 0, .to_slot = to_slot_hash });
+						continue;
+					}
+
+					if (auto it = node_map.find(to_node_id); it != node_map.end())
+					{
+						to_node = it->second;
+						to_node_id = to_node->object_id;
+					}
+					else
+					{
+						printf("link: cannot find node: %u\n", to_node_id);
+						printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+
+						g->invalid_links.push_back(BlueprintInvalidLink{
+							.from_node = 0, .from_slot = from_slot_hash, .to_node = 0, .to_slot = to_slot_hash });
+						continue;
+					}
+
+					auto get_node_name = [](BlueprintNodePtr node) {
+						auto name = node->display_name.empty() ? node->name : node->display_name;
+						if (!node->template_string.empty())
+							name += '#' + node->template_string;
+						return name;
+					};
+
 					if (from_node)
 					{
-						std::string name = n_link.attribute("from_slot").value();
-						if (std::isdigit(name[0]))
+						if (from_slot_name.empty())
 						{
-							auto hash = s2t<uint>(name);
-							from_slot = from_node->find_output(hash);
+							from_slot = from_node->find_output(from_slot_hash);
 							if (!from_slot)
 							{
-								printf("link: cannot find output: %u in node: %s\n", hash, from_node->display_name.empty() ? from_node->name.c_str() : from_node->display_name.c_str());
+								printf("link: cannot find output: %u in node: %s\n", from_slot_hash, get_node_name(from_node).c_str());
 								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+
+								g->invalid_links.push_back(BlueprintInvalidLink{
+									.from_node = from_node_id, .from_slot = from_slot_hash, .to_node = to_node_id, .to_slot = to_slot_hash });
 								continue;
 							}
 						}
 						else
 						{
-							from_slot = from_node->find_output(name);
+							from_slot = from_node->find_output(from_slot_name);
 							if (!from_slot)
 							{
-								printf("link: cannot find output: %s in node: %s\n", name.c_str(), from_node->display_name.empty() ? from_node->name.c_str() : from_node->display_name.c_str());
+								printf("link: cannot find output: %s in node: %s\n", from_slot_name.c_str(), get_node_name(from_node).c_str());
 								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+
+								g->invalid_links.push_back(BlueprintInvalidLink{
+									.from_node = from_node_id, .from_slot = from_slot_hash, .to_node = to_node_id, .to_slot = to_slot_hash });
 								continue;
 							}
 						}
 					}
 					if (to_node)
 					{
-						std::string name = n_link.attribute("to_slot").value();
-						if (std::isdigit(name[0]))
+						if (to_slot_name.empty())
 						{
-							auto hash = s2t<uint>(name);
-							to_slot = to_node->find_input(hash);
+							to_slot = to_node->find_input(to_slot_hash);
 							if (!to_slot)
 							{
-								printf("link: cannot find input: %u in node: %s\n", hash, to_node->display_name.empty() ? to_node->name.c_str() : to_node->display_name.c_str());
+								printf("link: cannot find input: %u in node: %s\n", to_slot_hash, get_node_name(to_node).c_str());
 								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+
+								g->invalid_links.push_back(BlueprintInvalidLink{
+									.from_node = from_node_id, .from_slot = from_slot_hash, .to_node = to_node_id, .to_slot = to_slot_hash });
 								continue;
 							}
 						}
 						else
 						{
-							to_slot = to_node->find_input(name);
+							to_slot = to_node->find_input(to_slot_name);
 							if (!to_slot)
 							{
-								printf("link: cannot find input: %s in node: %s\n", name.c_str(), to_node->display_name.empty() ? to_node->name.c_str() : to_node->display_name.c_str());
+								printf("link: cannot find input: %s in node: %s\n", to_slot_name.c_str(), get_node_name(to_node).c_str());
 								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+
+								g->invalid_links.push_back(BlueprintInvalidLink{
+									.from_node = from_node_id, .from_slot = from_slot_hash, .to_node = to_node_id, .to_slot = to_slot_hash });
 								continue;
 							}
 						}
@@ -3524,7 +3570,12 @@ namespace flame
 					if (from_slot && to_slot)
 					{
 						if (!ret->add_link(from_slot, to_slot))
+						{
 							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+
+							g->invalid_links.push_back(BlueprintInvalidLink{
+								.from_node = from_node_id, .from_slot = from_slot_hash, .to_node = to_node_id, .to_slot = to_slot_hash });
+						}
 					}
 				}
 			}
