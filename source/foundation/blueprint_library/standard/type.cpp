@@ -245,7 +245,7 @@ namespace flame
 			{
 				{
 					.name = "Index",
-					.allowed_types = { TypeInfo::get<uint>() }
+					.allowed_types = { TypeInfo::get<int>() }
 				},
 				{
 					.name = "ok",
@@ -281,9 +281,9 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& temp_array = *(std::vector<uint>*)outputs[2].data;
 				if (!temp_array.empty())
-					*(uint*)outputs[0].data = temp_array[linearRand(0, (int)temp_array.size() - 1)];
+					*(int*)outputs[0].data = temp_array[linearRand(0, (int)temp_array.size() - 1)];
 				else
-					*(uint*)outputs[0].data = 0;
+					*(int*)outputs[0].data = -1;
 				temp_array.clear();
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {

@@ -140,6 +140,7 @@ inline Window::~Window()
 		v->window = nullptr;
 }
 
+std::string get_value_str(TypeInfo* type, void* data);
 void show_entities_menu();
 TypeInfo* show_types_menu();
 void open_message_dialog(const std::string& title, const std::string& message);

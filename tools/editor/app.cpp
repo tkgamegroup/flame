@@ -57,6 +57,60 @@ static std::filesystem::path preferences_path = L"preferences.ini";
 
 static std::vector<std::function<bool()>> dialogs;
 
+std::string get_value_str(TypeInfo* type, void* data)
+{
+	auto show_entity = [](EntityPtr entity)->std::string {
+		if (entity && entity != INVALID_POINTER && entity != (EntityPtr)0xCDCDCDCDCDCDCDCD)
+		{
+			if (World::instance()->root->has_child_recursively(entity))
+			{
+				auto node = entity->get_component<cNode>();
+				return std::format("\nName: {}\nPos: {}\nParent: {}\n", entity->name,
+					node ? str(node->global_pos()) : "N\\A", entity->parent ? entity->parent->name : "[None]");
+			}
+		}
+		return "\nInvalid Entity\n";
+	};
+	if (type->tag == TagD || is_pointer(type->tag))
+	{
+		auto ret = type->serialize(data);
+		if (type == TypeInfo::get<EntityPtr>())
+			ret += show_entity(*(EntityPtr*)data);
+		return ret;
+	}
+	else if (type->tag == TagU)
+	{
+		auto ui = ((TypeInfo_Udt*)type)->ui;
+		if (ui)
+		{
+			std::string ret;
+			ret += '\n';
+			for (auto& vi : ui->variables)
+			{
+				ret += std::format(".{}={}", vi.name, vi.type->serialize((char*)data + vi.offset));
+				ret += '\n';
+			}
+			return ret;
+		}
+	}
+	else if (is_vector(type->tag))
+	{
+		auto item_type = type->get_wrapped();
+		auto parray = (std::vector<char>*)data;
+		auto array_size = (uint)parray->size() / item_type->size;
+		auto ret = std::format("Size: {}\n", array_size);
+		for (auto i = 0; i < array_size; i++)
+		{
+			auto item = parray->data() + i * item_type->size;
+			ret += std::format("\n[{}]: {}", i, item_type->serialize(item));
+			if (item_type == TypeInfo::get<EntityPtr>())
+				ret += show_entity(*(EntityPtr*)item);
+		}
+		return ret;
+	}
+	return "";
+}
+
 void show_entities_menu()
 {
 	if (ImGui::MenuItem("New Empty"))

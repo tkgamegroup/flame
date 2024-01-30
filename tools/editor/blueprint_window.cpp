@@ -769,58 +769,6 @@ void BlueprintView::on_draw()
 		if (ImGui::ToolButton("Hide Variable Links"))
 			hide_var_links = !hide_var_links;
 
-		auto get_value_str = [](const BlueprintAttribute& arg)->std::string {
-			if (arg.type->tag == TagD || is_pointer(arg.type->tag))
-			{
-				auto ret = arg.type->serialize(arg.data);
-				if (arg.type == TypeInfo::get<EntityPtr>())
-				{
-					auto entity = *(EntityPtr*)arg.data;
-					if (entity && entity != INVALID_POINTER && entity != (EntityPtr)0xCDCDCDCDCDCDCDCD)
-					{
-						if (World::instance()->root->has_child_recursively(entity))
-						{
-							auto node = entity->get_component<cNode>();
-							ret += std::format("\nName: {}\nPos: {}\nParent: {}\n", entity->name,
-								node ? str(node->global_pos()) : "N\\A", entity->parent ? entity->parent->name : "[None]");
-						}
-						else
-							ret += "\nInvalid Entitiy\n";
-					}
-				}
-				return ret;
-			}
-			else if (arg.type->tag == TagU)
-			{
-				auto ui = ((TypeInfo_Udt*)arg.type)->ui;
-				if (ui)
-				{
-					std::string ret;
-					ret += '\n';
-					for (auto& vi : ui->variables)
-					{
-						ret += std::format(".{}={}", vi.name, vi.type->serialize((char*)arg.data + vi.offset));
-						ret += '\n';
-					}
-					return ret;
-				}
-			}
-			else if (is_vector(arg.type->tag))
-			{
-				auto item_type = arg.type->get_wrapped();
-				auto parray = (std::vector<char>*)arg.data;
-				auto array_size = (uint)parray->size() / item_type->size;
-				auto ret = std::format("Size: {}", array_size);
-				for (auto i = 0; i < array_size; i++)
-				{
-					auto item = parray->data() + i * item_type->size;
-					ret += std::format("\n[{}]: {}", i, item_type->serialize(item));
-				}
-				return ret;
-			}
-			return "";
-		};
-
 		auto group = blueprint->find_group(group_name_hash);
 		if (!group)
 		{
@@ -1513,7 +1461,7 @@ void BlueprintView::on_draw()
 						if (it != debugging_group->instance->variables.end())
 						{
 							ImGui::SameLine();
-							ImGui::TextUnformatted(get_value_str(it->second).c_str());
+							ImGui::TextUnformatted(get_value_str(it->second.type, it->second.data).c_str());
 						}
 					}
 					else
@@ -1621,7 +1569,7 @@ void BlueprintView::on_draw()
 						if (it != debugging_group->variables.end())
 						{
 							ImGui::SameLine();
-							ImGui::TextUnformatted(get_value_str(it->second).c_str());
+							ImGui::TextUnformatted(get_value_str(it->second.type, it->second.data).c_str());
 						}
 					}
 					else
@@ -2096,7 +2044,7 @@ void BlueprintView::on_draw()
 									if (auto it = instance_group.slot_datas.find(id); it != instance_group.slot_datas.end())
 									{
 										auto& arg = it->second.attribute;
-										tooltip = std::format("Value: {} ({})", get_value_str(arg), ti_str(arg.type));
+										tooltip = std::format("Value: {}\nType: {})", get_value_str(arg.type, arg.data), ti_str(arg.type));
 									}
 								}
 								else
@@ -2345,7 +2293,7 @@ void BlueprintView::on_draw()
 									if (auto it = instance_group.slot_datas.find(output->object_id); it != instance_group.slot_datas.end())
 									{
 										auto& arg = it->second.attribute;
-										tooltip = std::format("Value: {} ({})", get_value_str(arg), ti_str(arg.type));
+										tooltip = std::format("Value: {}\nType: {}", get_value_str(arg.type, arg.data), ti_str(arg.type));
 									}
 								}
 								else

@@ -3389,8 +3389,8 @@ namespace flame
 						}
 						else
 						{
-							printf("node with id %u cannot not be added\n", object_id);
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+							printf(" node with id %u cannot not be added\n", object_id);
+							printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 						}
 					}
 					else if (node_name == "Call")
@@ -3418,8 +3418,8 @@ namespace flame
 						}
 						else
 						{
-							printf("node with id %u cannot not be added\n", object_id);
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+							printf(" node with id %u cannot not be added\n", object_id);
+							printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 						}
 					}
 					else
@@ -3431,7 +3431,7 @@ namespace flame
 								if (!ret->change_node_structure(n, node_template, {}))
 								{
 									printf("cannot apply template(%s) to node: %s, id: %u\n", node_template.c_str(), node_name.c_str(), object_id);
-									printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+									printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 								}
 							}
 							for (auto n_input : n_node.child("inputs"))
@@ -3442,7 +3442,7 @@ namespace flame
 						else
 						{
 							printf("cannot find node template: %s, id: %u\n", node_name.c_str(), object_id);
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+							printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 						}
 					}
 				}
@@ -3480,7 +3480,7 @@ namespace flame
 					else
 					{
 						printf("link: cannot find node: %u\n", from_node_id);
-						printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+						printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 
 						g->invalid_links.push_back(BlueprintInvalidLink{
 							.from_node = 0, .from_slot = from_slot_hash, .to_node = 0, .to_slot = to_slot_hash });
@@ -3495,7 +3495,7 @@ namespace flame
 					else
 					{
 						printf("link: cannot find node: %u\n", to_node_id);
-						printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+						printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 
 						g->invalid_links.push_back(BlueprintInvalidLink{
 							.from_node = 0, .from_slot = from_slot_hash, .to_node = 0, .to_slot = to_slot_hash });
@@ -3517,7 +3517,7 @@ namespace flame
 							if (!from_slot)
 							{
 								printf("link: cannot find output: %u in node: %s\n", from_slot_hash, get_node_name(from_node).c_str());
-								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+								printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 
 								g->invalid_links.push_back(BlueprintInvalidLink{
 									.from_node = from_node_id, .from_slot = from_slot_hash, .to_node = to_node_id, .to_slot = to_slot_hash });
@@ -3530,7 +3530,7 @@ namespace flame
 							if (!from_slot)
 							{
 								printf("link: cannot find output: %s in node: %s\n", from_slot_name.c_str(), get_node_name(from_node).c_str());
-								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+								printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 
 								g->invalid_links.push_back(BlueprintInvalidLink{
 									.from_node = from_node_id, .from_slot = from_slot_hash, .to_node = to_node_id, .to_slot = to_slot_hash });
@@ -3546,7 +3546,7 @@ namespace flame
 							if (!to_slot)
 							{
 								printf("link: cannot find input: %u in node: %s\n", to_slot_hash, get_node_name(to_node).c_str());
-								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+								printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 
 								g->invalid_links.push_back(BlueprintInvalidLink{
 									.from_node = from_node_id, .from_slot = from_slot_hash, .to_node = to_node_id, .to_slot = to_slot_hash });
@@ -3559,7 +3559,7 @@ namespace flame
 							if (!to_slot)
 							{
 								printf("link: cannot find input: %s in node: %s\n", to_slot_name.c_str(), get_node_name(to_node).c_str());
-								printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+								printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 
 								g->invalid_links.push_back(BlueprintInvalidLink{
 									.from_node = from_node_id, .from_slot = from_slot_hash, .to_node = to_node_id, .to_slot = to_slot_hash });
@@ -3571,7 +3571,7 @@ namespace flame
 					{
 						if (!ret->add_link(from_slot, to_slot))
 						{
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+							printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
 
 							g->invalid_links.push_back(BlueprintInvalidLink{
 								.from_node = from_node_id, .from_slot = from_slot_hash, .to_node = to_node_id, .to_slot = to_slot_hash });

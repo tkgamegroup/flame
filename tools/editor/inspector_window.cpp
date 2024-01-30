@@ -2328,25 +2328,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 								if (ImGui::TreeNode(v.name.c_str()))
 								{
 									if (auto it = bp_ins->variables.find(v.name_hash); it != bp_ins->variables.end())
-									{
-										auto value_str = it->second.type->serialize(it->second.data);
-										if (it->second.type == TypeInfo::get<EntityPtr>())
-										{
-											auto entity = *(EntityPtr*)it->second.data;
-											if (entity && entity != INVALID_POINTER && entity != (EntityPtr)0xCDCDCDCDCDCDCDCD)
-											{
-												if (World::instance()->root->has_child_recursively(entity))
-												{
-													auto node = entity->get_component<cNode>();
-													value_str += std::format("\nName: {}\nPos: {}\nParent: {}\n", entity->name,
-														node ? str(node->global_pos()) : "N\\A", entity->parent ? entity->parent->name : "[None]");
-												}
-												else
-													value_str += "\nInvalid Entitiy\n";
-											}
-										}
-										ImGui::TextUnformatted(value_str.c_str());
-									}
+										ImGui::TextUnformatted(get_value_str(it->second.type, it->second.data).c_str());
 									ImGui::TreePop();
 								}
 							}

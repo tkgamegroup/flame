@@ -28,7 +28,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("If", "", BlueprintNodeFlagEnableTemplate,
+		library->add_template("If", "", BlueprintNodeFlagEnableTemplate | BlueprintNodeFlagHorizontalInputs | BlueprintNodeFlagHorizontalOutputs,
 			{
 				{
 					.name = "Cond",
@@ -74,7 +74,7 @@ namespace flame
 						SUS::to_upper(else_str);
 					}
 
-					if (type_str == "T" || type_str == "F")
+					if (type_str == "T" || type_str == "Y" || type_str == "TRUE" || type_str == "YES" || type_str == "F" || type_str == "N" || type_str == "FALSE" || type_str == "NOT")
 					{
 						info.new_inputs.resize(1);
 						info.new_inputs[0] = {
@@ -117,7 +117,7 @@ namespace flame
 						};
 					}
 
-					if (type_str == "T")
+					if (type_str == "T" || type_str == "Y" || type_str == "TRUE" || type_str == "YES")
 					{
 						if (else_str.empty())
 						{
@@ -144,7 +144,7 @@ namespace flame
 							};
 						}
 					}
-					else if (type_str == "F")
+					else if (type_str == "F" || type_str == "N" || type_str == "FALSE" || type_str == "NOT")
 					{
 						if (else_str.empty())
 						{
@@ -381,7 +381,18 @@ namespace flame
 			}
 		);
 
-		library->add_template("Loop", "", BlueprintNodeFlagNone,
+		library->add_template("While", "", BlueprintNodeFlagNone | BlueprintNodeFlagBreakTarget,
+			{
+			},
+			{
+			},
+			true,
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				execution.block->max_execute_times = 10000;
+			}
+		);
+
+		library->add_template("Loop", "", BlueprintNodeFlagNone | BlueprintNodeFlagBreakTarget,
 			{
 				{
 					.name = "Times",
@@ -411,7 +422,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Foreach", "", BlueprintNodeFlagNone,
+		library->add_template("Foreach", "", BlueprintNodeFlagNone | BlueprintNodeFlagBreakTarget,
 			{
 				{
 					.name = "Vector",
@@ -426,7 +437,7 @@ namespace flame
 				auto vec = (std::vector<char>*)inputs[0].data;
 				if (vec && is_vector(vec_type->tag))
 				{
-					execution.block->loop_vector_index = 1;
+					execution.block->loop_vector_index = 0;
 					execution.block->max_execute_times = vec->size() / vec_type->get_wrapped()->size;
 				}
 				else
@@ -434,7 +445,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Foreach File", "", BlueprintNodeFlagNone,
+		library->add_template("Foreach File", "", BlueprintNodeFlagNone | BlueprintNodeFlagBreakTarget,
 			{
 				{
 					.name = "Folder",
@@ -461,7 +472,7 @@ namespace flame
 							temp_array.push_back(it.path());
 					}
 				}
-				execution.block->loop_vector_index = 3;
+				execution.block->loop_vector_index = 1;
 				execution.block->max_execute_times = temp_array.size();
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
@@ -559,9 +570,7 @@ namespace flame
 						break;
 					}
 					target = target->parent;
-					if (!target)
-						break;
-					if (!target->node->original)
+					if (!target || !target->node->original)
 						break;
 				}
 				if (ok)
@@ -624,14 +633,14 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto levels = *(uint*)inputs[0].data;
 				auto target = execution.block;
-				while (levels)
+				while (true)
 				{
 					if (target->node->original->flags & BlueprintNodeFlagBreakTarget)
 						levels--;
-					target = target->parent;
-					if (!target)
+					if (levels == 0)
 						break;
-					if (!target->node->original)
+					target = target->parent;
+					if (!target || !target->node->original)
 						break;
 				}
 				if (target)
@@ -642,6 +651,7 @@ namespace flame
 						block->_break();
 						block = block->parent;
 					}
+					target->_break();
 				}
 			}
 		);
@@ -672,6 +682,7 @@ namespace flame
 			{
 				{
 					.name = "Case 1",
+					.flags = BlueprintSlotFlagBeginWidget | BlueprintSlotFlagEndWidget,
 					.allowed_types = { TypeInfo::get<bool>() }
 				}
 			},
@@ -714,6 +725,7 @@ namespace flame
 					{
 						info.new_inputs[i] = {
 							.name = "Case " + str(i + 1),
+							.flags = BlueprintSlotFlagBeginWidget | BlueprintSlotFlagEndWidget,
 							.allowed_types = { TypeInfo::get<bool>() }
 						};
 						info.new_outputs[i] = {
@@ -821,6 +833,7 @@ namespace flame
 				},
 				{
 					.name = "Stop 1",
+					.flags = BlueprintSlotFlagBeginWidget | BlueprintSlotFlagEndWidget,
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
@@ -868,6 +881,7 @@ namespace flame
 					{
 						info.new_inputs[i + 1] = {
 							.name = "Stop " + str(i + 1),
+							.flags = BlueprintSlotFlagBeginWidget | BlueprintSlotFlagEndWidget,
 							.allowed_types = { TypeInfo::get<float>() }
 						};
 						info.new_outputs[i] = {
@@ -895,10 +909,12 @@ namespace flame
 				},
 				{
 					.name = "Stop 1",
+					.flags = BlueprintSlotFlagBeginWidget,
 					.allowed_types = { TypeInfo::get<float>() }
 				},
 				{
 					.name = "Opt 1",
+					.flags = BlueprintSlotFlagEndWidget,
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
@@ -944,10 +960,12 @@ namespace flame
 					{
 						info.new_inputs[i * 2 + 1] = {
 							.name = "Stop " + str(i + 1),
+							.flags = BlueprintSlotFlagBeginWidget,
 							.allowed_types = { TypeInfo::get<float>() }
 						};
 						info.new_inputs[i * 2 + 2] = {
 							.name = "Opt " + str(i + 1),
+							.flags = BlueprintSlotFlagEndWidget,
 							.allowed_types = { type }
 						};
 					}
