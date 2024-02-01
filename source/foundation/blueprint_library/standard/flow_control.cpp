@@ -381,7 +381,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("While", "", BlueprintNodeFlagNone | BlueprintNodeFlagBreakTarget,
+		library->add_template("While", "", BlueprintNodeFlagBreakTarget,
 			{
 			},
 			{
@@ -392,7 +392,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Loop", "", BlueprintNodeFlagNone | BlueprintNodeFlagBreakTarget,
+		library->add_template("Loop", "", BlueprintNodeFlagBreakTarget,
 			{
 				{
 					.name = "Times",
@@ -422,7 +422,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Foreach", "", BlueprintNodeFlagNone | BlueprintNodeFlagBreakTarget,
+		library->add_template("Foreach", "", BlueprintNodeFlagBreakTarget,
 			{
 				{
 					.name = "Vector",
@@ -445,7 +445,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Foreach File", "", BlueprintNodeFlagNone | BlueprintNodeFlagBreakTarget,
+		library->add_template("Foreach File", "", BlueprintNodeFlagBreakTarget,
 			{
 				{
 					.name = "Folder",

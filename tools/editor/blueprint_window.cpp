@@ -168,6 +168,24 @@ static void set_input_type(BlueprintSlotPtr slot, TypeInfo* type)
 	g->blueprint->change_node_structure(n, "", new_input_types);
 }
 
+static void post_process_new_node(BlueprintNodePtr n)
+{
+	auto group = n->group;
+	auto blueprint = group->blueprint;
+	auto n_slots = 0;
+	for (auto& o : n->outputs)
+	{
+		if (o->type == TypeInfo::get<BlueprintSignal>())
+		{
+			auto n_block = blueprint->add_block(group, n->parent);
+			n_block->position = n->position + vec2(0.f, (n_slots + 1) * 100.f);
+			ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n_block, n_block->position);
+			blueprint->add_link(o.get(), n_block->find_input("Execute"_h));
+			n_slots++;
+		}
+	}
+}
+
 static BlueprintNodePtr add_variable_node_unifily(BlueprintGroupPtr g, uint var_name, uint var_location)
 {
 	for (auto& n : g->nodes)
@@ -445,6 +463,9 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 
 			n->position = pos + src_n.position - base_pos;
 			ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+			post_process_new_node(n);
+
 			node_map[src_n.object_id] = n;
 			paste_nodes_count++;
 		}
@@ -761,12 +782,14 @@ void BlueprintView::on_draw()
 			save_blueprint();
 		ImGui::SameLine();
 		if (ImGui::Button("Zoom To Content"))
-			ax::NodeEditor::NavigateToContent(0.f);
+		{
+			if (get_selected_nodes().empty() && get_selected_links().empty())
+				ax::NodeEditor::NavigateToContent(0.f);
+			else
+				ax::NodeEditor::NavigateToSelection(true, 0.f);
+		}
 		ImGui::SameLine();
-		if (ImGui::Button("Zoom To Selection"))
-			ax::NodeEditor::NavigateToSelection(true, 0.f);
-		ImGui::SameLine();
-		if (ImGui::ToolButton("Hide Variable Links"))
+		if (ImGui::ToolButton("Hide Variable Links", hide_var_links))
 			hide_var_links = !hide_var_links;
 
 		auto group = blueprint->find_group(group_name_hash);
@@ -2001,7 +2024,10 @@ void BlueprintView::on_draw()
 							ImGui::SetNextItemWidth(min(100.f, ImGui::CalcTextSize(n->template_string.c_str()).x + 6.f));
 							ImGui::InputText("T", &n->template_string);
 							if (ImGui::IsItemDeactivatedAfterEdit())
+							{
 								blueprint->change_node_structure(n, n->template_string, {});
+								post_process_new_node(n);
+							}
 						}
 					}
 
@@ -2780,21 +2806,10 @@ void BlueprintView::on_draw()
 										blueprint->add_link(n->find_output(slot_name), new_node_link_slot);
 								}
 
+								post_process_new_node(n);
+
 								if (n->is_block)
 									last_block = n->object_id;
-
-								auto n_slots = 0;
-								for (auto& o : n->outputs)
-								{
-									if (o->type == TypeInfo::get<BlueprintSignal>())
-									{
-										auto n_block = blueprint->add_block(group, n->parent);
-										n_block->position = n->position + vec2(0.f, (n_slots + 1) * 100.f);
-										ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n_block, n_block->position);
-										blueprint->add_link(o.get(), n_block->find_input("Execute"_h));
-										n_slots++;
-									}
-								}
 
 								unsaved = true;
 							}

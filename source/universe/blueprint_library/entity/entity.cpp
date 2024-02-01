@@ -185,6 +185,10 @@ namespace flame
 				{
 					.name = "Parent",
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name",
+					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
 			{
@@ -201,6 +205,7 @@ namespace flame
 					parent->add_child(e);
 				else
 					printf("A free entity is created! Please remember to destroy it\n");
+				e->name = *(std::string*)inputs[1].data;
 			}
 		);
 
@@ -281,6 +286,60 @@ namespace flame
 					auto index = *(uint*)inputs[1].data;
 					if (index < parent->children.size())
 						*(EntityPtr*)outputs[0].data = parent->children[index].get();
+					else
+						*(EntityPtr*)outputs[0].data = nullptr;
+				}
+				else
+					*(EntityPtr*)outputs[0].data = nullptr;
+			}
+		);
+
+		library->add_template("Get First Child", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+				{
+					.name = "Child",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto parent = *(EntityPtr*)inputs[0].data;
+				if (parent)
+				{
+					if (!parent->children.empty())
+						*(EntityPtr*)outputs[0].data = parent->children.front().get();
+					else
+						*(EntityPtr*)outputs[0].data = nullptr;
+				}
+				else
+					*(EntityPtr*)outputs[0].data = nullptr;
+			}
+		);
+
+		library->add_template("Get Last Child", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+				{
+					.name = "Child",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto parent = *(EntityPtr*)inputs[0].data;
+				if (parent)
+				{
+					if (!parent->children.empty())
+						*(EntityPtr*)outputs[0].data = parent->children.back().get();
 					else
 						*(EntityPtr*)outputs[0].data = nullptr;
 				}
@@ -903,8 +962,7 @@ namespace flame
 						for (auto i = 0; i < outputs_count; i++)
 						{
 							auto type = outputs[i].type;
-							auto it = instance->variables.find(*(uint*)inputs[i + 1].data);
-							if (it != instance->variables.end())
+							if (auto it = instance->variables.find(*(uint*)inputs[i + 1].data); it != instance->variables.end())
 							{
 								auto& arg = it->second;
 								if (arg.type == type ||
@@ -1019,8 +1077,7 @@ namespace flame
 						auto instance = ins->bp_ins;
 						for (auto i = 1; i < inputs_count; i += 2)
 						{
-							auto it = instance->variables.find(*(uint*)inputs[i].data);
-							if (it != instance->variables.end())
+							if (auto it = instance->variables.find(*(uint*)inputs[i].data); it != instance->variables.end())
 							{
 								auto type = inputs[i + 1].type;
 								auto& arg = it->second;
@@ -1085,6 +1142,39 @@ namespace flame
 				else if (info.reason == BlueprintNodeInputTypesChanged)
 					return true;
 				return false;
+			}
+		);
+
+		library->add_template("EUnserialize", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Value",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						if (auto& name = *(std::string*)inputs[1].data; name.empty())
+						{
+							if (auto it = instance->variables.find(sh(name.c_str())); it != instance->variables.end())
+								it->second.type->unserialize(*(std::string*)inputs[2].data, it->second.data);
+						}
+					}
+				}
 			}
 		);
 

@@ -42,8 +42,8 @@ namespace flame
 			{
 				{
 					.name = "V",
-					.allowed_types = { TypeInfo::get<std::string>(), 
-						TypeInfo::get<std::wstring>(), 
+					.allowed_types = { TypeInfo::get<std::string>(),
+						TypeInfo::get<std::wstring>(),
 						TypeInfo::get<std::filesystem::path>() }
 				}
 			},
@@ -194,7 +194,7 @@ namespace flame
 			{
 				{
 					.name = "In",
-					.allowed_types = { TypeInfo::get<std::wstring>() }
+					.allowed_types = { TypeInfo::get<std::string>(), TypeInfo::get<std::wstring>() }
 				}
 			},
 			{
@@ -204,7 +204,10 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				*(std::filesystem::path*)outputs[0].data = *(std::wstring*)inputs[0].data;
+				if (inputs[0].type == TypeInfo::get<std::string>())
+					*(std::filesystem::path*)outputs[0].data = *(std::string*)inputs[0].data;
+				else
+					*(std::filesystem::path*)outputs[0].data = *(std::wstring*)inputs[0].data;
 			}
 		);
 
@@ -302,9 +305,9 @@ namespace flame
 
 					n = clamp(n, 1U, 16U);
 					info.new_inputs.resize(n + 1);
-					info.new_inputs[0] = { 
+					info.new_inputs[0] = {
 						.name = "Fmt",
-						.allowed_types = { TypeInfo::get<std::string>() } 
+						.allowed_types = { TypeInfo::get<std::string>() }
 					};
 					for (uint i = 1; i <= n; ++i)
 					{
@@ -381,7 +384,7 @@ namespace flame
 						.name = "Fmt",
 						.allowed_types = { TypeInfo::get<std::wstring>() }
 					};
-					for (uint i = 1; i <= n; ++i)
+					for (uint i = 1; i <= n; i++)
 					{
 						info.new_inputs[i] = {
 							.name = "Arg" + str(i),
@@ -397,6 +400,119 @@ namespace flame
 				else if (info.reason == BlueprintNodeInputTypesChanged)
 					return true;
 				return true;
+			}
+		);
+
+		library->add_template("Foreach Line", "", BlueprintNodeFlagBreakTarget,
+			{
+				{
+					.name = "Text",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "temp_array",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<std::vector<std::string>>() }
+				}
+			},
+			true,
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				auto& text = *(std::string*)inputs[0].data;
+				auto& temp_array = *(std::vector<std::string>*)outputs[0].data;
+				temp_array = SUS::to_string_vector(SUS::split(text, '\n'));
+
+				execution.block->max_execute_times = temp_array.size();
+				execution.block->loop_vector_index = 1;
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto& temp_array = *(std::vector<uint>*)outputs[0].data;
+				temp_array.clear();
+			}
+		);
+
+		library->add_template("Regex Search", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Text",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Regex",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "Matched",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto& text = *(std::string*)inputs[0].data;
+				auto& regex = *(std::string*)inputs[1].data;
+				std::smatch res;
+				auto matched = std::regex_search(text, res, std::regex(regex));
+				*(bool*)outputs[0].data = matched;
+				if (matched)
+				{
+					auto n = min((int)res.size() - 1, (int)outputs_count - 1);
+					for (auto i = 0; i < n; i++)
+						*(std::string*)outputs[i + 1].data = res[i + 1].str();
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto n = s2t<uint>(info.template_string);
+
+					n = min(n, 16U);
+					info.new_inputs.resize(2);
+					info.new_inputs[0] = {
+						.name = "Text",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Regex",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					info.new_outputs.resize(n + 1);
+					info.new_outputs[0] = {
+						.name = "Matched",
+						.allowed_types = { TypeInfo::get<bool>() }
+					};
+					for (uint i = 0; i < n; i++)
+					{
+						info.new_outputs[i + 1] = {
+							.name = "Capture " + str(i),
+							.allowed_types = { TypeInfo::get<std::string>() }
+						};
+					}
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return true;
+			}
+		);
+
+		library->add_template("Get File Name", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(std::string*)outputs[0].data = (*(std::filesystem::path*)inputs[0].data).filename().stem().string();
 			}
 		);
 
