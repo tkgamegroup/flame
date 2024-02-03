@@ -866,6 +866,107 @@ namespace flame
 			}
 		);
 
+		library->add_template("Float Divide", "/", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "A",
+					.allowed_types = generic_types
+				},
+				{
+					.name = "B",
+					.allowed_types = generic_types
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto out_ti = (TypeInfo_Data*)outputs[0].type;
+				auto in0_ti = (TypeInfo_Data*)inputs[0].type;
+				auto in1_ti = (TypeInfo_Data*)inputs[1].type;
+				auto in0_p = (char*)inputs[0].data;
+				auto in1_p = (char*)inputs[1].data;
+				
+				switch (out_ti->vec_size)
+				{
+				case 1:
+				{
+					float a, b;
+					a = in0_ti->as_float(in0_p);
+					b = in1_ti->as_float(in1_p);
+					*(float*)outputs[0].data = a / b;
+				}
+					break;
+				case 2:
+				{
+					vec2 a, b;
+					if (in0_ti->vec_size == 1)
+						a = vec2(in0_ti->as_float(in0_p));
+					else
+						in0_ti->as_floats(in0_p, 2, &a[0]);
+					if (in1_ti->vec_size == 1)
+						b = vec2(in1_ti->as_float(in1_p));
+					else
+						in1_ti->as_floats(in1_p, 2, &b[0]);
+					*(vec2*)outputs[0].data = a / b;
+				}
+					break;
+				case 3:
+				{
+					vec3 a, b;
+					if (in0_ti->vec_size == 1)
+						a = vec3(in0_ti->as_float(in0_p));
+					else
+						in0_ti->as_floats(in0_p, 3, &a[0]);
+					if (in1_ti->vec_size == 1)
+						b = vec3(in1_ti->as_float(in1_p));
+					else
+						in1_ti->as_floats(in1_p, 3, &b[0]);
+					*(vec3*)outputs[0].data = a / b;
+				}
+					break;
+				case 4:
+				{
+					vec4 a, b;
+					if (in0_ti->vec_size == 1)
+						a = vec4(in0_ti->as_float(in0_p));
+					else
+						in0_ti->as_floats(in0_p, 4, &a[0]);
+					if (in1_ti->vec_size == 1)
+						b = vec4(in1_ti->as_float(in1_p));
+					else
+						in1_ti->as_floats(in1_p, 4, &b[0]);
+					*(vec4*)outputs[0].data = a / b;
+				}
+					break;
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeInputTypesChanged)
+				{
+					auto ti0 = (TypeInfo_Data*)info.input_types[0];
+					auto ti1 = (TypeInfo_Data*)info.input_types[1];
+
+					auto vec_size = max(ti0->vec_size, ti1->vec_size);
+					switch (vec_size)
+					{
+					case 1: info.output_types[0] = TypeInfo::get<float>(); break;
+					case 2: info.output_types[0] = TypeInfo::get<vec2>(); break;
+					case 3: info.output_types[0] = TypeInfo::get<vec3>(); break;
+					case 4: info.output_types[0] = TypeInfo::get<vec4>(); break;
+					}
+
+					return true;
+				}
+				return false;
+			}
+		);
+
 		BINARY_OPERATION_TEMPLATE("Min", min, OP_FUNCTION);
 		BINARY_OPERATION_TEMPLATE("Max", max, OP_FUNCTION);
 

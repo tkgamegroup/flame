@@ -39,18 +39,33 @@ namespace ImGui
 		}
 	}
 
-	bool ToolButton(const char* label, bool selected, float rotate)
+	bool ToolButton(const char* label, bool selected, float rotation)
 	{
 		if (selected)
 			PushStyleColor(ImGuiCol_Button, GetStyleColorVec4(ImGuiCol_ButtonActive));
-		if (rotate != 0.f)
-			BeginRotation(rotate);
+		if (rotation != 0.f)
+			BeginRotation(rotation);
 		auto clicked = Button(label);
 		if (selected)
 			PopStyleColor();
-		if (rotate != 0.f)
+		if (rotation != 0.f)
 			EndRotation();
 		return clicked;
+	}
+
+	void ToolButton(const char* label, bool* v, float rotation)
+	{
+		if (*v)
+			PushStyleColor(ImGuiCol_Button, GetStyleColorVec4(ImGuiCol_ButtonActive));
+		if (rotation != 0.f)
+			BeginRotation(rotation);
+		auto clicked = Button(label);
+		if (*v)
+			PopStyleColor();
+		if (rotation != 0.f)
+			EndRotation();
+		if (clicked)
+			*v = !*v;
 	}
 
 	std::stack<ImageViewArguments> image_view_args_list;

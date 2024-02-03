@@ -140,6 +140,7 @@ inline Window::~Window()
 		v->window = nullptr;
 }
 
+bool filter_name(const std::string& name, const std::string& find_str, bool match_case, bool match_whole_word);
 std::string get_value_str(TypeInfo* type, void* data);
 void show_entities_menu();
 TypeInfo* show_types_menu();

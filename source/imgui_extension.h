@@ -45,7 +45,8 @@ namespace ImGui
 	void BeginRotation(float angle);
 	void EndRotation();
 
-	bool ToolButton(const char* label, bool selected = false, float rotate = 0.f);
+	bool ToolButton(const char* label, bool selected = false, float rotation = 0.f);
+	void ToolButton(const char* label, bool* v, float rotation = 0.f);
 
 	ImageViewArguments GetCurrentImageViewType();
 	void PushImageViewType(ImageViewArguments args);

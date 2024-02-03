@@ -1168,10 +1168,12 @@ namespace flame
 					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
 					{
 						auto instance = ins->bp_ins;
-						if (auto& name = *(std::string*)inputs[1].data; name.empty())
+						if (auto& name = *(std::string*)inputs[1].data; !name.empty())
 						{
 							if (auto it = instance->variables.find(sh(name.c_str())); it != instance->variables.end())
 								it->second.type->unserialize(*(std::string*)inputs[2].data, it->second.data);
+							else
+								printf("EUnserialize: cannot find variable: %s\n", name.c_str());
 						}
 					}
 				}

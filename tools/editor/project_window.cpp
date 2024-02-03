@@ -176,7 +176,7 @@ ProjectView::ProjectView(const std::string& name) :
 			for (auto& v : blueprint_window.views)
 			{
 				auto bv = (BlueprintView*)v.get();
-				if (bv->blueprint_path == path)
+				if (Path::get(bv->blueprint_path) == path)
 				{
 					if (bv->imgui_window)
 						ImGui::FocusWindow((ImGuiWindow*)bv->imgui_window);
@@ -193,7 +193,7 @@ ProjectView::ProjectView(const std::string& name) :
 			for (auto& v : sheet_window.views)
 			{
 				auto sv = (SheetView*)v.get();
-				if (sv->sheet_path == path)
+				if (Path::get(sv->sheet_path) == path)
 				{
 					if (sv->imgui_window)
 						ImGui::FocusWindow((ImGuiWindow*)sv->imgui_window);

@@ -177,10 +177,13 @@ static void post_process_new_node(BlueprintNodePtr n)
 	{
 		if (o->type == TypeInfo::get<BlueprintSignal>())
 		{
-			auto n_block = blueprint->add_block(group, n->parent);
-			n_block->position = n->position + vec2(0.f, (n_slots + 1) * 100.f);
-			ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n_block, n_block->position);
-			blueprint->add_link(o.get(), n_block->find_input("Execute"_h));
+			if (o->get_linked_count() == 0)
+			{
+				auto n_block = blueprint->add_block(group, n->parent);
+				n_block->position = n->position + vec2(0.f, (n_slots + 1) * 100.f);
+				ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n_block, n_block->position);
+				blueprint->add_link(o.get(), n_block->find_input("Execute"_h));
+			}
 			n_slots++;
 		}
 	}
@@ -2519,9 +2522,21 @@ void BlueprintView::on_draw()
 					{
 						if (from_slot && to_slot && from_slot != to_slot)
 						{
-							if (from_slot->flags & BlueprintSlotFlagInput)
+							if ((from_slot->flags & BlueprintSlotFlagInput) && (to_slot->flags & BlueprintSlotFlagOutput))
 								std::swap(from_slot, to_slot);
-							if (!(from_slot->flags & BlueprintSlotFlagInput) && !(to_slot->flags & BlueprintSlotFlagOutput))
+							if ((from_slot->flags & BlueprintSlotFlagInput) && (to_slot->flags & BlueprintSlotFlagInput) && from_slot->get_linked_count() == 0 &&
+								blueprint_allow_type(from_slot->allowed_types, to_slot->type))
+							{
+								if (ax::NodeEditor::AcceptNewItem())
+								{
+									if (to_slot->get_linked_count() > 0)
+									{
+										blueprint->add_link(to_slot->get_linked(0), from_slot);
+										unsaved = true;
+									}
+								}
+							}
+							else if ((from_slot->flags & BlueprintSlotFlagOutput) && (to_slot->flags & BlueprintSlotFlagInput))
 							{
 								if (from_slot->node->parent->contains(to_slot->node))
 								{
@@ -2554,7 +2569,7 @@ void BlueprintView::on_draw()
 											}
 										}
 									}
-									if (blueprint_allow_type(to_slot->allowed_types, from_slot->type))
+									else if (blueprint_allow_type(to_slot->allowed_types, from_slot->type))
 									{
 										if (ax::NodeEditor::AcceptNewItem())
 										{
@@ -2747,20 +2762,26 @@ void BlueprintView::on_draw()
 				}
 
 				static std::string add_node_filter = "";
+				static bool add_node_filter_match_case = false;
+				static bool add_node_filter_match_whole_word = false;
 				if (ImGui::BeginPopup("add_node_context_menu"))
 				{
 					auto new_node_block = new_node_link_slot ? new_node_link_slot->node->parent : nullptr;
 					if (!new_node_block)
 						new_node_block = group->find_node_by_id(last_block);
 
-					ImGui::InputText("Filter", &add_node_filter);
+					ImGui::InputText("##Filter", &add_node_filter);
+					ImGui::SameLine();
+					ImGui::ToolButton("C", &add_node_filter_match_case);
+					ImGui::SameLine();
+					ImGui::ToolButton("W", &add_node_filter_match_whole_word);
 
 					std::string header = "";
 
 					auto show_node_template = [&](const std::string& name, const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs, uint& slot_name) {
 						if (!add_node_filter.empty())
 						{
-							if (!SUS::find_case_insensitive(name, add_node_filter))
+							if (!filter_name(name, add_node_filter, add_node_filter_match_case, add_node_filter_match_whole_word))
 								return false;
 						}
 

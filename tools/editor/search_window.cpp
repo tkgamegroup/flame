@@ -41,23 +41,17 @@ void SearchView::on_draw()
 	ImGui::BeginTabBar("##tabs");
 	if (ImGui::BeginTabItem("Text"))
 	{
-		if (ImGui::ToolButton("Blueprint", search_in_blueprints))
-			search_in_blueprints = !search_in_blueprints;
+		ImGui::ToolButton("Blueprint", &search_in_blueprints);
 		ImGui::SameLine();
-		if (ImGui::ToolButton("Sheet", search_in_sheets))
-			search_in_sheets = !search_in_sheets;
+		ImGui::ToolButton("Sheet", &search_in_sheets);
 		ImGui::SameLine();
-		if (ImGui::ToolButton("Names", search_in_names))
-			search_in_names = !search_in_names;
+		ImGui::ToolButton("Names", &search_in_names);
 		ImGui::SameLine();
-		if (ImGui::ToolButton("Values", search_in_values))
-			search_in_values = !search_in_values;
+		ImGui::ToolButton("Values", &search_in_values);
 		ImGui::SameLine();
-		if (ImGui::ToolButton("Case", match_case))
-			match_case = !match_case;
+		ImGui::ToolButton("Case", &match_case);
 		ImGui::SameLine();
-		if (ImGui::ToolButton("Whole Word", match_whole_word))
-			match_whole_word = !match_whole_word;
+		ImGui::ToolButton("Whole Word", &match_whole_word);
 
 		auto do_find = false;
 		if (ImGui::InputText("##find", &find_str, ImGuiInputTextFlags_EnterReturnsTrue))
@@ -91,22 +85,7 @@ void SearchView::on_draw()
 										name += '#' + n->template_string;
 									auto ok = false;
 									if (search_in_names)
-									{
-										if (match_whole_word)
-										{
-											if (match_case)
-												ok = name == find_str;
-											else
-												ok = SUS::match_case_insensitive(name, find_str);
-										}
-										else
-										{
-											if (match_case)
-												ok = name.find(find_str) != std::string::npos;
-											else
-												ok = SUS::find_case_insensitive(name, find_str);
-										}
-									}
+										ok = filter_name(name, find_str, match_case, match_whole_word);
 									if (!ok)
 									{
 										if (search_in_values)
@@ -116,20 +95,7 @@ void SearchView::on_draw()
 												if (i->get_linked_count() == 0 && i->data)
 												{
 													auto value_str = i->type->serialize(i->data);
-													if (match_whole_word)
-													{
-														if (match_case)
-															ok = value_str == find_str;
-														else
-															ok = SUS::match_case_insensitive(value_str, find_str);
-													}
-													else
-													{
-														if (match_case)
-															ok = value_str.find(find_str) != std::string::npos;
-														else
-															ok = SUS::find_case_insensitive(value_str, find_str);
-													}
+													ok = filter_name(value_str, find_str, match_case, match_whole_word);
 													if (ok)
 														break;
 												}

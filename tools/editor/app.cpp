@@ -57,6 +57,26 @@ static std::filesystem::path preferences_path = L"preferences.ini";
 
 static std::vector<std::function<bool()>> dialogs;
 
+bool filter_name(const std::string& name, const std::string& find_str, bool match_case, bool match_whole_word)
+{
+	bool ok;
+	if (match_whole_word)
+	{
+		if (match_case)
+			ok = name == find_str;
+		else
+			ok = SUS::match_case_insensitive(name, find_str);
+	}
+	else
+	{
+		if (match_case)
+			ok = name.find(find_str) != std::string::npos;
+		else
+			ok = SUS::find_case_insensitive(name, find_str);
+	}
+	return ok;
+}
+
 std::string get_value_str(TypeInfo* type, void* data)
 {
 	auto show_entity = [](EntityPtr entity)->std::string {
@@ -160,14 +180,20 @@ TypeInfo* show_types_menu()
 	TypeInfo* ret = nullptr;
 
 	static std::string type_filter = "";
-	ImGui::InputText("Filter", &type_filter);
+	static bool filter_match_case = false;
+	static bool filter_match_whole_word = false;
+	ImGui::InputText("##Filter", &type_filter);
+	ImGui::SameLine();
+	ImGui::ToolButton("C", &filter_match_case);
+	ImGui::SameLine();
+	ImGui::ToolButton("W", &filter_match_whole_word);
 	if (ImGui::BeginMenu("Enum"))
 	{
 		for (auto& ei : tidb.enums)
 		{
 			if (!type_filter.empty())
 			{
-				if (!SUS::find_case_insensitive(ei.second.name, type_filter))
+				if (!filter_name(ei.second.name, type_filter, filter_match_case, filter_match_whole_word))
 					continue;
 			}
 			if (ImGui::Selectable(ei.second.name.c_str()))
@@ -341,6 +367,8 @@ TypeInfo* show_types_menu()
 		}
 		ImGui::EndMenu();
 	}
+	if (ret)
+		type_filter.clear();
 	return ret;
 }
 

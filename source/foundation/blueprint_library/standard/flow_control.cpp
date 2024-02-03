@@ -28,7 +28,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("If", "", BlueprintNodeFlagEnableTemplate | BlueprintNodeFlagHorizontalInputs | BlueprintNodeFlagHorizontalOutputs,
+		library->add_template("If", "", BlueprintNodeFlagEnableTemplate | BlueprintNodeFlagHorizontalOutputs,
 			{
 				{
 					.name = "Cond",

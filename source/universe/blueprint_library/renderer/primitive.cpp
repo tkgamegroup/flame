@@ -62,22 +62,16 @@ namespace flame
 									{
 										if (isnan((*(b - 1)).x))
 											b = b - 1;
-										else
-											int cut = 1; // why?
-									}
-									if (e != strips.end())
-									{
-										if (isnan((*(e + 1)).x))
-											e = e + 1;
-										else
-											int cut = 1; // why?
 									}
 									strips.erase(b, e);
 								}
 								it0 = std::find_if(strips.begin(), strips.end(), [&](const auto& i) {
 									return distance(i, pt0) < 0.01f;
 								});
-								strips.insert(it0 + 1, copied.begin(), copied.end());
+								if (it0 == strips.end())
+									int cut = 1; // why?
+								else
+									strips.insert(it0 + 1, copied.begin(), copied.end());
 							}
 						}
 						else if (it0 != strips.end())
