@@ -1082,9 +1082,9 @@ namespace flame
 								auto type = inputs[i + 1].type;
 								auto& arg = it->second;
 								if (it->second.type == type ||
-									(type == TypeInfo::get<uint>() && it->second.type == TypeInfo::get<int>()) ||
-									(type == TypeInfo::get<int>() && it->second.type == TypeInfo::get<uint>()))
-									type->copy(it->second.data, inputs[i + 1].data);
+									(type == TypeInfo::get<uint>() && arg.type == TypeInfo::get<int>()) ||
+									(type == TypeInfo::get<int>() && arg.type == TypeInfo::get<uint>()))
+									type->copy(arg.data, inputs[i + 1].data);
 							}
 						}
 					}
@@ -1381,6 +1381,188 @@ namespace flame
 					});
 					*(EntityPtr*)outputs[0].data = nodes_with_distance[0].second;
 				}
+			}
+		);
+
+		library->add_template("Find Nearest Entity", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Location",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Radius",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "5"
+				},
+				{
+					.name = "Any Filter",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "4294967295"
+				},
+				{
+					.name = "All Filter",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "0"
+				},
+				{
+					.name = "Parent Search Times",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "3"
+				}
+			},
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto location = *(vec3*)inputs[0].data;
+				auto radius = *(float*)inputs[1].data;
+				auto any_filter = *(uint*)inputs[2].data;
+				auto all_filter = *(uint*)inputs[3].data;
+				auto parent_search_times = *(uint*)inputs[4].data;
+				std::vector<std::pair<EntityPtr, cNodePtr>> res;
+				sScene::instance()->octree->get_colliding(location, radius, res, any_filter, all_filter, parent_search_times);
+
+				*(EntityPtr*)outputs[0].data = nullptr;
+
+				std::vector<std::pair<float, EntityPtr>> nodes_with_distance(res.size());
+				for (auto i = 0; i < res.size(); i++)
+					nodes_with_distance[i] = std::make_pair(distance(res[i].second->global_pos(), location), res[i].first);
+				std::sort(nodes_with_distance.begin(), nodes_with_distance.end(), [](const auto& a, const auto& b) {
+					return a.first < b.first;
+				});
+				if (inputs_count <= 5)
+				{
+					if (!nodes_with_distance.empty())
+						*(EntityPtr*)outputs[0].data = nodes_with_distance.front().second;
+				}
+				else
+				{
+					for (auto& pair : nodes_with_distance)
+					{
+						auto ok = true;
+						if (auto ins = pair.second->get_component<cBpInstance>(); ins && ins->bp_ins)
+						{
+							auto instance = ins->bp_ins;
+							for (auto i = 5; i < inputs_count; i += 3)
+							{
+								if (auto it = instance->variables.find(*(uint*)inputs[i].data); it != instance->variables.end())
+								{
+									auto type = inputs[i + 1].type;
+									auto& arg = it->second;
+									if (it->second.type == type ||
+										(type == TypeInfo::get<uint>() && arg.type == TypeInfo::get<int>()) ||
+										(type == TypeInfo::get<int>() && arg.type == TypeInfo::get<uint>()))
+									{
+										switch (*(uint*)inputs[i + 2].data)
+										{
+										case "equal"_h:
+											if (!type->compare(inputs[i + 1].data, arg.data))
+											{
+												ok = false;
+												break;
+											}
+											break;
+										case "any_flag"_h:
+											if (type == TypeInfo::get<uint>() || type == TypeInfo::get<int>())
+											{
+												if ((*(uint*)inputs[i + 1].data & *(uint*)arg.data) == 0)
+												{
+													ok = false;
+													break;
+												}
+											}
+											break;
+										case "all_flags"_h:
+											if (type == TypeInfo::get<uint>() || type == TypeInfo::get<int>())
+											{
+												if ((*(uint*)inputs[i + 1].data & *(uint*)arg.data) != *(uint*)inputs[i + 1].data)
+												{
+													ok = false;
+													break;
+												}
+											}
+											break;
+										}
+									}
+								}
+							}
+						}
+						if (ok)
+						{
+							*(EntityPtr*)outputs[0].data = pair.second;
+							break;
+						}
+					}
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					std::vector<TypeInfo*> types;
+					for (auto t : SUS::split(info.template_string, ','))
+					{
+						auto type = blueprint_type_from_template_str(t);
+						if (type)
+							types.push_back(type);
+					}
+
+					if (types.empty())
+						types.push_back(TypeInfo::get<float>());
+
+					info.new_inputs.resize(types.size() * 3 + 5);
+					info.new_inputs[0] = {
+						.name = "Location",
+						.allowed_types = { TypeInfo::get<vec3>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Radius",
+						.allowed_types = { TypeInfo::get<float>() }
+					};
+					info.new_inputs[2] = {
+						.name = "Any Filter",
+						.allowed_types = { TypeInfo::get<uint>() }
+					};
+					info.new_inputs[3] = {
+						.name = "All Filter",
+						.allowed_types = { TypeInfo::get<uint>() }
+					};
+					info.new_inputs[4] = {
+						.name = "Parent Search Times",
+						.allowed_types = { TypeInfo::get<uint>() }
+					};
+					for (auto i = 0; i < types.size(); i++)
+					{
+						info.new_inputs[i * 3 + 5] = {
+							.name = "Name" + str(i) + "_hash",
+							.allowed_types = { TypeInfo::get<std::string>() }
+						};
+						info.new_inputs[i * 3 + 6] = {
+							.name = "V" + str(i),
+							.allowed_types = { types[i] }
+						};
+						info.new_inputs[i * 3 + 7] = {
+							.name = "OP" + str(i) + "_hash",
+							.allowed_types = { TypeInfo::get<std::string>() },
+							.default_value = "equal"
+						};
+					}
+					info.new_outputs.resize(1);
+					info.new_outputs[0] = {
+						.name = "Entity",
+						.allowed_types = { TypeInfo::get<EntityPtr>() }
+					};
+
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
 			}
 		);
 

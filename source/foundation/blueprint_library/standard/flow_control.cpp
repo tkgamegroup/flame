@@ -55,7 +55,7 @@ namespace flame
 				{
 					std::string type_str = "T";
 					std::string else_str = "";
-					auto sp = SUS::split(info.template_string);
+					auto sp = SUS::split(info.template_string, ',');
 					if (sp.size() == 1)
 					{
 						auto tk = std::string(sp[0]);

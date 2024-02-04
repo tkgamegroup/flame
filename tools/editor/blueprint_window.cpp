@@ -467,8 +467,6 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 			n->position = pos + src_n.position - base_pos;
 			ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
 
-			post_process_new_node(n);
-
 			node_map[src_n.object_id] = n;
 			paste_nodes_count++;
 		}
@@ -624,6 +622,8 @@ void BlueprintView::build_node_block_verts(BlueprintNodePtr n)
 				auto pts = rect.get_points();
 				pts[0] = pts[1] - vec2(0.f, 8.f);
 				pts[3] = pts[2] - vec2(0.f, 8.f);
+				pts[1].y += 8.f;
+				pts[2].y += 8.f;
 				points.insert(points.end(), pts.begin(), pts.end());
 			}
 		}
@@ -2569,7 +2569,7 @@ void BlueprintView::on_draw()
 											}
 										}
 									}
-									else if (blueprint_allow_type(to_slot->allowed_types, from_slot->type))
+									if (blueprint_allow_type(to_slot->allowed_types, from_slot->type))
 									{
 										if (ax::NodeEditor::AcceptNewItem())
 										{
