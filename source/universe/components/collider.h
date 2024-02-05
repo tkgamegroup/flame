@@ -21,9 +21,7 @@ namespace flame
 		// Reflect
 		ColliderType type = ColliderCircle;
 		// Reflect
-		float radius = -1.f; // -1 means auto
-		// Reflect
-		float radius_add = 0.f; // add to auto radius
+		float radius_expand = 0.f; // add to radius
 
 		// Reflect
 		uint any_filter = 0xffffffff;

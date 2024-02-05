@@ -78,6 +78,7 @@ static BlueprintNodeLibraryPtr entity_library;
 static BlueprintNodeLibraryPtr camera_library;
 static BlueprintNodeLibraryPtr procedural_library;
 static BlueprintNodeLibraryPtr navigation_library;
+static BlueprintNodeLibraryPtr colliding_library;
 static BlueprintNodeLibraryPtr input_library;
 static BlueprintNodeLibraryPtr primitive_library;
 static BlueprintNodeLibraryPtr hud_library;
@@ -3237,6 +3238,14 @@ void BlueprintView::on_draw()
 						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Colliding"))
+					{
+						header = "Colliding";
+						for (auto& t : colliding_library->node_templates)
+							show_node_library_template(t);
+						if (add_node_filter.empty())
+							ImGui::EndMenu();
+					}
 					if (!add_node_filter.empty() || ImGui::BeginMenu("Procedural"))
 					{
 						header = "Procedural";
@@ -3465,6 +3474,7 @@ void BlueprintWindow::init()
 		entity_library = BlueprintNodeLibrary::get(L"universe::entity");
 		camera_library = BlueprintNodeLibrary::get(L"universe::camera");
 		navigation_library = BlueprintNodeLibrary::get(L"universe::navigation");
+		colliding_library = BlueprintNodeLibrary::get(L"universe::colliding");
 		procedural_library = BlueprintNodeLibrary::get(L"universe::procedural");
 		input_library = BlueprintNodeLibrary::get(L"universe::input");
 		primitive_library = BlueprintNodeLibrary::get(L"universe::primitive");
@@ -3479,6 +3489,7 @@ void BlueprintWindow::init()
 		node_libraries.push_back(entity_library);
 		node_libraries.push_back(camera_library);
 		node_libraries.push_back(navigation_library);
+		node_libraries.push_back(colliding_library);
 		node_libraries.push_back(procedural_library);
 		node_libraries.push_back(input_library);
 		node_libraries.push_back(primitive_library);

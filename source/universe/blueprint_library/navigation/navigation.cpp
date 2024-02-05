@@ -1,5 +1,6 @@
 #include "../../../foundation/blueprint.h"
 #include "../../../foundation/typeinfo.h"
+#include "../../entity_private.h"
 #include "../../components/nav_agent_private.h"
 #include "../../components/nav_obstacle_private.h"
 #include "../../systems/scene_private.h"
@@ -64,11 +65,9 @@ namespace flame
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto nav_agent = entity->get_component<cNavAgent>();
-					if (nav_agent)
+					if (auto nav_agent = entity->get_component<cNavAgent>(); nav_agent)
 						nav_agent->radius = *(float*)inputs[1].data;
 				}
 			}
@@ -88,11 +87,9 @@ namespace flame
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto nav_agent = entity->get_component<cNavAgent>();
-					if (nav_agent)
+					if (auto nav_agent = entity->get_component<cNavAgent>(); nav_agent)
 						nav_agent->height = *(float*)inputs[1].data;
 				}
 			}
@@ -112,11 +109,9 @@ namespace flame
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto nav_agent = entity->get_component<cNavAgent>();
-					if (nav_agent)
+					if (auto nav_agent = entity->get_component<cNavAgent>(); nav_agent)
 						nav_agent->speed = *(float*)inputs[1].data;
 				}
 			}
@@ -136,11 +131,9 @@ namespace flame
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto nav_agent = entity->get_component<cNavAgent>();
-					if (nav_agent)
+					if (auto nav_agent = entity->get_component<cNavAgent>(); nav_agent)
 						nav_agent->set_speed_scale(*(float*)inputs[1].data);
 				}
 			}
@@ -160,11 +153,9 @@ namespace flame
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto nav_agent = entity->get_component<cNavAgent>();
-					if (nav_agent)
+					if (auto nav_agent = entity->get_component<cNavAgent>(); nav_agent)
 						nav_agent->turn_speed = *(float*)inputs[1].data;
 				}
 			}
@@ -184,11 +175,9 @@ namespace flame
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto nav_agent = entity->get_component<cNavAgent>();
-					if (nav_agent)
+					if (auto nav_agent = entity->get_component<cNavAgent>(); nav_agent)
 						nav_agent->set_turn_speed_scale(*(float*)inputs[1].data);
 				}
 			}
@@ -208,11 +197,9 @@ namespace flame
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto nav_agent = entity->get_component<cNavAgent>();
-					if (nav_agent)
+					if (auto nav_agent = entity->get_component<cNavAgent>(); nav_agent)
 						nav_agent->set_target(*(vec3*)inputs[1].data);
 				}
 			}
@@ -228,11 +215,9 @@ namespace flame
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto nav_agent = entity->get_component<cNavAgent>();
-					if (nav_agent)
+					if (auto nav_agent = entity->get_component<cNavAgent>(); nav_agent)
 						nav_agent->stop();
 				}
 			}
@@ -252,11 +237,9 @@ namespace flame
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto nav_agent = entity->get_component<cNavAgent>();
-					if (nav_agent)
+					if (auto nav_agent = entity->get_component<cNavAgent>(); nav_agent)
 						nav_agent->flying = *(bool*)inputs[1].data;
 				}
 			}
@@ -276,11 +259,9 @@ namespace flame
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto nav_obstacle = entity->get_component<cNavObstacle>();
-					if (nav_obstacle)
+					if (auto nav_obstacle = entity->get_component<cNavObstacle>(); nav_obstacle)
 						nav_obstacle->radius = *(float*)inputs[1].data;
 				}
 			}
@@ -300,11 +281,9 @@ namespace flame
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto nav_obstacle = entity->get_component<cNavObstacle>();
-					if (nav_obstacle)
+					if (auto nav_obstacle = entity->get_component<cNavObstacle>(); nav_obstacle)
 						nav_obstacle->height = *(float*)inputs[1].data;
 				}
 			}

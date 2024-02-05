@@ -1007,7 +1007,7 @@ namespace flame
 				t += delta_time;
 				if (t >= interval)
 				{
-					*(float*)inputs[0].data = 0.f;
+					t = 0.f;
 					execution.block->max_execute_times = 1;
 				}
 				else

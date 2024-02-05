@@ -1,23 +1,38 @@
 #include "../entity_private.h"
 #include "node_private.h"
 #include "bp_instance_private.h"
+#include "nav_agent_private.h"
+#include "nav_obstacle_private.h"
 #include "collider_private.h"
 #include "../octree.h"
 #include "../systems/scene_private.h"
 
 namespace flame
 {
-	void cColliderPrivate::start()
+	static float get_radius(EntityPtr e)
 	{
-		bp_comp = entity->get_component<cBpInstanceT>();
-		if (bp_comp && bp_comp->bp_ins)
+		if (auto ag = e->get_component<cNavAgent>(); ag)
+			return ag->radius;
+		if (auto ob = e->get_component<cNavObstacle>(); ob)
+			return ob->radius;
+		if (auto bp_comp = e->get_component<cBpInstance>(); bp_comp && bp_comp->bp_ins)
 		{
 			auto ins = bp_comp->bp_ins;
-			if (radius == -1.f)
-				radius = ins->get_variable_as<float>("radius"_h) + radius_add;
-			on_enter_cb = ins->find_group("on_enter"_h);
-			on_exit_cb = ins->find_group("on_exit"_h);
+			return ins->get_variable_as<float>("radius"_h);
 		}
+		return 0.f;
+	}
+
+	void cColliderPrivate::start()
+	{
+		if (auto bp_comp = entity->get_component<cBpInstanceT>(); bp_comp && bp_comp->bp_ins)
+		{
+			bp_ins = bp_comp->bp_ins;
+			on_enter_cb = bp_ins->find_group("collider_on_enter"_h);
+			on_exit_cb = bp_ins->find_group("collider_on_exit"_h);
+		}
+
+		radius = get_radius(entity) + radius_expand;
 	}
 
 	void cColliderPrivate::update()
@@ -29,16 +44,14 @@ namespace flame
 			sScene::instance()->octree->get_colliding(pos, radius, res, any_filter, all_filter, parent_search_times);
 			for (auto& i : res)
 			{
-				auto r = 0.f;
-				if (auto cbp = i.first->get_component<cBpInstanceT>(); cbp && cbp->bp_ins)
-					r = cbp->bp_ins->get_variable_as<float>("radius"_h);
+				auto r = get_radius(i.first);
 				if (distance(i.second->global_pos(), pos) < r + radius)
 				{
 					if (on_enter_cb)
 					{
 						voidptr inputs[1];
 						inputs[0] = &i.first;
-						bp_comp->bp_ins->call(on_enter_cb, inputs, nullptr);
+						bp_ins->call(on_enter_cb, inputs, nullptr);
 					}
 				}
 			}

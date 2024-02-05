@@ -6,7 +6,8 @@ namespace flame
 {
 	struct cColliderPrivate : cCollider
 	{
-		cBpInstancePtr bp_comp = nullptr;
+		float radius;
+		BlueprintInstancePtr bp_ins = nullptr;
 		BlueprintInstanceGroup* on_enter_cb = nullptr;
 		BlueprintInstanceGroup* on_exit_cb = nullptr;
 
