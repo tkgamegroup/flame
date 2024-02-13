@@ -33,13 +33,13 @@ namespace flame
 					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
 				}, 
 				{
-					.name = "Name_hash", 
+					.name = "Name0_hash", 
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			}, 
 			{
 				{
-					.name = "V", 
+					.name = "V0", 
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			}, 
@@ -91,40 +91,20 @@ namespace flame
 						.name = "Instance",
 						.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
 					};
-					if (types.size() == 1)
+					for (auto i = 0; i < types.size(); i++)
 					{
-						info.new_inputs[1] = {
-							.name = "Name_hash",
+						info.new_inputs[i + 1] = {
+							.name = "Name" + str(i) + "_hash",
 							.allowed_types = { TypeInfo::get<std::string>() }
 						};
 					}
-					else
-					{
-						for (auto i = 0; i < types.size(); i++)
-						{
-							info.new_inputs[i + 1] = {
-								.name = "Name" + str(i) + "_hash",
-								.allowed_types = { TypeInfo::get<std::string>() }
-							};
-						}
-					}
 					info.new_outputs.resize(types.size());
-					if (types.size() == 1)
+					for (auto i = 0; i < types.size(); i++)
 					{
-						info.new_outputs[0] = {
-							.name = "V",
-							.allowed_types = { types.front() }
+						info.new_outputs[i] = {
+							.name = "V" + str(i),
+							.allowed_types = { types[i] }
 						};
-					}
-					else
-					{
-						for (auto i = 0; i < types.size(); i++)
-						{
-							info.new_outputs[i] = {
-								.name = "V" + str(i),
-								.allowed_types = { types[i] }
-							};
-						}
 					}
 
 					return true;
@@ -142,11 +122,11 @@ namespace flame
 					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
 				},
 				{
-					.name = "Name_hash",
+					.name = "Name0_hash",
 					.allowed_types = { TypeInfo::get<std::string>() }
 				},
 				{
-					.name = "V",
+					.name = "V0",
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
@@ -191,31 +171,128 @@ namespace flame
 						.name = "Instance",
 						.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
 					};
-					if (types.size() == 1)
+					for (auto i = 0; i < types.size(); i++)
 					{
-						info.new_inputs[1] = {
-							.name = "Name_hash",
+						info.new_inputs[i * 2 + 1] = {
+							.name = "Name" + str(i) + "_hash",
 							.allowed_types = { TypeInfo::get<std::string>() }
 						};
-						info.new_inputs[2] = {
-							.name = "V",
-							.allowed_types = { types.front() }
+						info.new_inputs[i * 2 + 2] = {
+							.name = "V" + str(i),
+							.allowed_types = { types[i] }
 						};
 					}
-					else
+
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
+		);
+
+		library->add_template("Clear BP Array", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Instance",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto instance = *(BlueprintInstancePtr*)inputs[0].data; instance)
+				{
+					auto it = instance->variables.find(*(uint*)inputs[1].data);
+					if (it != instance->variables.end())
 					{
-						for (auto i = 0; i < types.size(); i++)
-						{
-							info.new_inputs[i * 2 + 1] = {
-								.name = "Name" + str(i) + "_hash",
-								.allowed_types = { TypeInfo::get<std::string>() }
-							};
-							info.new_inputs[i * 2 + 2] = {
-								.name = "V" + str(i),
-								.allowed_types = { types[i] }
-							};
-						}
+						auto& arg = it->second;
+						if (is_array(arg.type->tag))
+							resize_vector(arg.data, arg.type, 0);
 					}
+				}
+			}
+		);
+
+		library->add_template("Get BP Array Item", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Instance",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Index",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto instance = *(BlueprintInstancePtr*)inputs[0].data; instance)
+				{
+					for (auto i = 0; i < outputs_count; i++)
+					{
+						auto type = outputs[i].type;
+						auto it = instance->variables.find(*(uint*)inputs[i + 1].data);
+						if (it != instance->variables.end())
+						{
+							auto& arg = it->second;
+							if (arg.type == type ||
+								(type == TypeInfo::get<uint>() && arg.type == TypeInfo::get<int>()) ||
+								(type == TypeInfo::get<int>() && arg.type == TypeInfo::get<uint>()))
+								type->copy(outputs[i].data, arg.data);
+							else
+								type->create(outputs[i].data);
+						}
+						else
+							type->create(outputs[i].data);
+					}
+				}
+				else
+				{
+					for (auto i = 0; i < outputs_count; i++)
+						outputs[i].type->create(outputs[i].data);
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
+					if (!type)
+						return false;
+
+					info.new_inputs.resize(3);
+					info.new_inputs[0] = {
+						.name = "Instance",
+						.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Name_hash",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					info.new_inputs[2] = {
+						.name = "Index",
+						.allowed_types = { TypeInfo::get<uint>() }
+					};
+					info.new_outputs.resize(1);
+					info.new_outputs[0] = {
+						.name = "V",
+						.allowed_types = { type }
+					};
 
 					return true;
 				}

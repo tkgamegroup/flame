@@ -1,0 +1,127 @@
+<?xml version="1.0"?>
+<blueprint>
+	<groups>
+		<group object_id="1" name="main">
+			<variables>
+				<variable name="group" type="PU@flame::BlueprintGroup" value="cdcdcdcdcdcdcdcd" />
+				<variable name="invalid_input_node" type="PU@flame::BlueprintNode" value="cdcdcdcdcdcdcdcd" />
+				<variable name="invalid_input_name" type="D@std::string" value="" />
+				<variable name="invalid_input_value" type="D@std::string" value="" />
+				<variable name="invalid_link_from_node" type="PU@flame::BlueprintNode" value="cdcdcdcdcdcdcdcd" />
+				<variable name="invalid_link_from_slot" type="PU@flame::BlueprintSlot" value="cdcdcdcdcdcdcdcd" />
+				<variable name="invalid_link_from_slot_name" type="D@std::string" value="" />
+				<variable name="invalid_link_to_node" type="PU@flame::BlueprintNode" value="cdcdcdcdcdcdcdcd" />
+				<variable name="invalid_link_to_slot" type="PU@flame::BlueprintSlot" value="cdcdcdcdcdcdcdcd" />
+				<variable name="invalid_link_to_slot_name" type="D@std::string" value="" />
+			</variables>
+			<nodes>
+				<node object_id="4" name="Variable" position="0,0">
+					<inputs>
+						<input name="Name" value="2210934735" />
+						<input name="Location" value="0" />
+					</inputs>
+				</node>
+				<node object_id="8" name="String Equal" position="225,57">
+					<inputs>
+						<input name="B" value="V" />
+					</inputs>
+				</node>
+				<node object_id="12" name="If" position="426,74" />
+				<node object_id="14" parent_id="12" name="RF: Set Input Value" position="438,159">
+					<inputs>
+						<input name="Name" value="V0" />
+					</inputs>
+				</node>
+				<node object_id="18" name="Variable" position="0,100">
+					<inputs>
+						<input name="Name" value="1085959920" />
+						<input name="Location" value="0" />
+					</inputs>
+				</node>
+				<node object_id="22" name="Variable" position="0,200">
+					<inputs>
+						<input name="Name" value="234503597" />
+						<input name="Location" value="0" />
+					</inputs>
+				</node>
+				<node object_id="26" name="String Equal" position="241,329">
+					<inputs>
+						<input name="B" value="Name_hash" />
+					</inputs>
+				</node>
+				<node object_id="30" name="If" position="442,346" />
+				<node object_id="32" parent_id="30" name="RF: Set Input Value" position="454,431">
+					<inputs>
+						<input name="Name" value="Name0_hash" />
+					</inputs>
+				</node>
+				<node object_id="61" name="Variable" position="0,400">
+					<inputs>
+						<input name="Name" value="3987451459" />
+						<input name="Location" value="0" />
+					</inputs>
+				</node>
+				<node object_id="66" name="Variable" position="0,500">
+					<inputs>
+						<input name="Name" value="2644687276" />
+						<input name="Location" value="0" />
+					</inputs>
+				</node>
+				<node object_id="44" name="String Equal" position="246,607">
+					<inputs>
+						<input name="B" value="V" />
+					</inputs>
+				</node>
+				<node object_id="53" name="If" position="458,618" />
+				<node object_id="56" parent_id="53" name="RF: Add Link" position="455,704">
+					<inputs>
+						<input name="From Slot Name" value="V0" />
+					</inputs>
+				</node>
+				<node object_id="76" name="Variable" position="0,600">
+					<inputs>
+						<input name="Name" value="3777104066" />
+						<input name="Location" value="0" />
+					</inputs>
+				</node>
+				<node object_id="81" name="Variable" position="0,300">
+					<inputs>
+						<input name="Name" value="2090909955" />
+						<input name="Location" value="0" />
+					</inputs>
+				</node>
+				<node object_id="90" name="If" position="450,947" />
+				<node object_id="92" parent_id="90" name="RF: Add Link" position="446,1032">
+					<inputs>
+						<input name="To Slot Name" value="V0" />
+					</inputs>
+				</node>
+				<node object_id="86" name="String Equal" position="238,936">
+					<inputs>
+						<input name="B" value="V" />
+					</inputs>
+				</node>
+			</nodes>
+			<links>
+				<link object_id="36" from_node="4" from_slot="V" to_node="8" to_slot="A" />
+				<link object_id="37" from_node="18" from_slot="V" to_node="14" to_slot="Node" />
+				<link object_id="38" from_node="22" from_slot="V" to_node="14" to_slot="Value" />
+				<link object_id="39" from_node="4" from_slot="V" to_node="26" to_slot="A" />
+				<link object_id="40" from_node="18" from_slot="V" to_node="32" to_slot="Node" />
+				<link object_id="41" from_node="22" from_slot="V" to_node="32" to_slot="Value" />
+				<link object_id="65" from_node="61" from_slot="V" to_node="56" to_slot="From Node" />
+				<link object_id="70" from_node="66" from_slot="V" to_node="56" to_slot="To Node" />
+				<link object_id="80" from_node="76" from_slot="V" to_node="56" to_slot="To Slot Name" />
+				<link object_id="85" from_node="81" from_slot="V" to_node="44" to_slot="A" />
+				<link object_id="97" from_node="61" from_slot="V" to_node="92" to_slot="From Node" />
+				<link object_id="98" from_node="66" from_slot="V" to_node="92" to_slot="To Node" />
+				<link object_id="102" from_node="76" from_slot="V" to_node="86" to_slot="A" />
+				<link object_id="103" from_node="81" from_slot="V" to_node="92" to_slot="From Slot Name" />
+				<link object_id="42" from_node="8" from_slot="V" to_node="12" to_slot="Cond" />
+				<link object_id="43" from_node="26" from_slot="V" to_node="30" to_slot="Cond" />
+				<link object_id="55" from_node="44" from_slot="V" to_node="53" to_slot="Cond" />
+				<link object_id="101" from_node="86" from_slot="V" to_node="90" to_slot="Cond" />
+			</links>
+		</group>
+	</groups>
+</blueprint>

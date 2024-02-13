@@ -72,6 +72,7 @@ namespace flame
 		void					remove_group_output(BlueprintGroupPtr group, uint name) override;
 		void					alter_group_output(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* new_type) override;
 
+		void					load(const std::filesystem::path& path, bool load_typeinfos) override;
 		void					save(const std::filesystem::path& path) override;
 	};
 

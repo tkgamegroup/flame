@@ -398,13 +398,50 @@ namespace flame
 		vec2 position;
 	};
 
+	enum BlueprintInvalidReason
+	{
+		BlueprintInvalidNone = 0,
+		BlueprintInvalidName = 1 << 0,
+		BlueprintInvalidType = 1 << 1,
+		BlueprintInvalidFromNode = 1 << 2,
+		BlueprintInvalidFromSlot = 1 << 3,
+		BlueprintInvalidToNode = 1 << 4,
+		BlueprintInvalidToSlot = 1 << 5
+	};
+
+	inline BlueprintInvalidReason operator|(BlueprintInvalidReason a, BlueprintInvalidReason b)
+	{
+		return (BlueprintInvalidReason)((uint)a | (uint)b);
+	}
+
+	inline BlueprintInvalidReason operator&(BlueprintInvalidReason a, BlueprintInvalidReason b)
+	{
+		return (BlueprintInvalidReason)((uint)a & (uint)b);
+	}
+
+	struct BlueprintInvalidInput
+	{
+		BlueprintInvalidReason reason;
+
+		uint node;
+		std::string name;
+		std::string type;
+		std::string value;
+	};
+
 	struct BlueprintInvalidLink
 	{
+		BlueprintInvalidReason reason;
+
 		uint from_node;
 		uint from_slot;
+		std::string from_slot_name;
 		uint to_node;
 		uint to_slot;
+		std::string to_slot_name;
 	};
+
+	FLAME_FOUNDATION_API void set_blueprint_refactoring_environment(bool is_preview, std::string* out_log);
 
 	struct BlueprintGroup
 	{
@@ -421,6 +458,7 @@ namespace flame
 		std::vector<float>										splits;
 
 		std::vector<BlueprintInvalidNode> 						invalid_nodes;
+		std::vector<BlueprintInvalidInput> 						invalid_inputs;
 		std::vector<BlueprintInvalidLink>						invalid_links;
 
 		std::string 											trigger_message;
@@ -550,13 +588,20 @@ namespace flame
 		virtual void					remove_group_output(BlueprintGroupPtr group, uint name) = 0;
 		virtual void					alter_group_output(BlueprintGroupPtr group, uint old_name, const std::string& new_name = "", TypeInfo* new_type = nullptr) = 0;
 
+		virtual void					load(const std::filesystem::path& path, bool load_typeinfos = false) = 0;
 		virtual void					save(const std::filesystem::path& path = L"") = 0;
 
 		struct Create
 		{
-			virtual BlueprintPtr operator()() = 0;
+			virtual BlueprintPtr operator()(bool empty = false) = 0;
 		};
 		FLAME_FOUNDATION_API static Create& create;
+
+		struct Destroy
+		{
+			virtual void operator()(BlueprintPtr bp) = 0;
+		};
+		FLAME_FOUNDATION_API static Destroy& destroy;
 
 		struct Get
 		{
@@ -730,6 +775,15 @@ namespace flame
 			*(T*)variables[idx].data = v;
 		}
 
+		inline void reset_all_variables()
+		{
+			for (auto& v : variables)
+			{
+				if (v.second.type->tag != TagU)
+					v.second.type->create(v.second.data);
+			}
+		}
+
 		inline BlueprintInstanceNode* executing_node() const
 		{
 			if (executing_stack.empty())
@@ -782,7 +836,7 @@ namespace flame
 				return nullptr;
 			return (BlueprintInstanceGroup*)&it->second;
 		}
-
+		
 		virtual void build() = 0;
 		virtual void prepare_executing(BlueprintInstanceGroup* group) = 0;
 		virtual void run(BlueprintInstanceGroup* group) = 0;

@@ -158,6 +158,10 @@ namespace flame
 
 	BlueprintPrivate::~BlueprintPrivate()
 	{
+		for (auto& e : enums)
+			remove_enum(e.name_hash);
+		for (auto& s : structs)
+			remove_struct(s.name_hash);
 		for (auto& v : variables)
 			v.type->destroy(v.data);
 	}
@@ -2903,6 +2907,382 @@ namespace flame
 		}
 	}
 
+	void BlueprintPrivate::load(const std::filesystem::path& path, bool load_typeinfos)
+	{
+		filename = Path::get(path);
+		if (!std::filesystem::exists(filename))
+			return;
+
+		pugi::xml_document doc;
+		pugi::xml_node doc_root;
+
+		if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("blueprint"))
+		{
+			wprintf(L"blueprint does not exist or wrong format: %s\n", path.c_str());
+			return;
+		}
+
+		for (auto n_dependency : doc_root.child("dependencies"))
+		{
+			std::filesystem::path path(n_dependency.attribute("v").value());
+			if (std::filesystem::exists(path))
+				Blueprint::get(path, true);
+		}
+
+		auto read_ti = [&](pugi::xml_attribute a) {
+			auto sp = SUS::to_string_vector(SUS::split(a.value(), '@'));
+			TypeTag tag;
+			TypeInfo::unserialize_t(sp[0], tag);
+			return TypeInfo::get(tag, sp[1]);
+		};
+
+		for (auto n_enum : doc_root.child("enums"))
+		{
+			std::string enum_name = n_enum.attribute("name").value();
+			std::vector<BlueprintEnumItem> items;
+			for (auto n_item : n_enum.child("items"))
+			{
+				auto& i = items.emplace_back();
+				i.name = n_item.attribute("name").value();
+				i.name_hash = sh(i.name.c_str());
+				i.value = n_item.attribute("value").as_int();
+			}
+			if (load_typeinfos)
+				add_enum(enum_name, items);
+			else
+			{
+				auto& e = enums.emplace_back();
+				e.name = enum_name;
+				e.name_hash = sh(name.c_str());
+				e.items = items;
+			}
+		}
+		for (auto n_struct : doc_root.child("structs"))
+		{
+			std::string struct_name = n_struct.attribute("name").value();
+			std::vector<BlueprintStructVariable> variables;
+			for (auto n_variable : n_struct.child("variables"))
+			{
+				auto& v = variables.emplace_back();
+				v.name = n_variable.attribute("name").value();
+				v.name_hash = sh(v.name.c_str());
+				v.type = read_ti(n_variable.attribute("type"));
+				v.default_value = n_variable.attribute("default_value").value();
+			}
+			if (load_typeinfos)
+				add_struct(struct_name, variables);
+			else
+			{
+				auto& s = structs.emplace_back();
+				s.name = struct_name;
+				s.name_hash = sh(name.c_str());
+				s.variables = variables;
+			}
+		}
+		for (auto n_variable : doc_root.child("variables"))
+		{
+			auto type = read_ti(n_variable.attribute("type"));
+			auto data = add_variable(nullptr, n_variable.attribute("name").value(), type);
+			type->unserialize(n_variable.attribute("value").value(), data);
+		}
+		for (auto n_group : doc_root.child("groups"))
+		{
+			auto g = add_group(n_group.attribute("name").value());
+
+			if (auto a = n_group.attribute("trigger_message"); a)
+				g->trigger_message = a.value();
+
+			for (auto n_variable : n_group.child("variables"))
+			{
+				auto type = read_ti(n_variable.attribute("type"));
+				auto data = add_variable(g, n_variable.attribute("name").value(), type);
+				type->unserialize(n_variable.attribute("value").value(), data);
+			}
+			for (auto n_input : n_group.child("inputs"))
+				add_group_input(g, n_input.attribute("name").value(), read_ti(n_input.attribute("type")));
+			for (auto n_output : n_group.child("outputs"))
+				add_group_output(g, n_output.attribute("name").value(), read_ti(n_output.attribute("type")));
+
+			for (auto n_split : n_group.child("splits"))
+				g->splits.push_back(n_split.attribute("v").as_float());
+
+			std::map<uint, BlueprintNodePtr> node_map;
+
+			for (auto n_node : n_group.child("nodes"))
+			{
+				std::string node_name = n_node.attribute("name").value();
+				auto sp = SUS::to_string_vector(SUS::split(node_name, '#'));
+				node_name = sp[0];
+				auto node_template = sp.size() > 1 ? sp[1] : "";
+				auto node_name_hash = sh(node_name.c_str());
+				auto parent_id = n_node.attribute("parent_id").as_uint();
+				auto object_id = n_node.attribute("object_id").as_uint();
+				auto position = s2t<2, float>(n_node.attribute("position").value());
+				BlueprintNodePtr parent = nullptr;
+				if (parent_id != 0)
+				{
+					if (auto it = node_map.find(parent_id); it != node_map.end())
+						parent = it->second;
+					else
+					{
+						printf("add node: cannot find parent with id %d\n", parent_id);
+						printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+						continue;
+					}
+				}
+				auto read_input = [&](BlueprintNodePtr n, pugi::xml_node n_input) {
+					auto name = n_input.attribute("name").value();
+					auto i = n->find_input(name);
+					if (i)
+					{
+						if (auto a_type = n_input.attribute("type"); a_type)
+						{
+							change_slot_type(i, read_ti(a_type));
+							update_node_output_types(n);
+							clear_invalid_links(g);
+						}
+						if (i->type->tag != TagU)
+							i->type->unserialize(n_input.attribute("value").value(), i->data);
+					}
+					else
+					{
+						printf("add node: read input: cannot find input: %s in node %d\n", name, n->object_id);
+						printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+
+						BlueprintInvalidInput ii;
+						ii.reason = BlueprintInvalidName;
+						ii.node = n->object_id;
+						ii.name = name;
+						ii.value = n_input.attribute("value").value();
+						g->invalid_inputs.push_back(ii);
+					}
+				};
+				if (node_name == "Block")
+				{
+					auto n = add_block(g, parent);
+					node_map[object_id] = n;
+					n->position = position;
+				}
+				else if (node_name == "Input")
+				{
+					if (auto n = g->find_node("Input"_h); n)
+					{
+						node_map[object_id] = n;
+						n->position = position;
+					}
+				}
+				else if (node_name == "Output")
+				{
+					if (auto n = g->find_node("Output"_h); n)
+					{
+						node_map[object_id] = n;
+						n->position = position;
+					}
+				}
+				else if (blueprint_is_variable_node(node_name_hash))
+				{
+					std::vector<pugi::xml_node> other_inputs;
+					auto desc_n = get_variable_node_desc(nullptr, nullptr, nullptr, nullptr, node_name_hash);
+					uint var_name = 0, var_location = 0, property_name = 0;
+					auto idx = 0;
+					for (auto n_input : n_node.child("inputs"))
+					{
+						if (idx < desc_n)
+						{
+							std::string n_input_name = n_input.attribute("name").value();
+							if (n_input_name == "Name")
+								var_name = n_input.attribute("value").as_uint();
+							else if (n_input_name == "Location")
+								var_location = n_input.attribute("value").as_uint();
+							else if (n_input_name == "Property")
+								property_name = n_input.attribute("value").as_uint();
+							else
+								other_inputs.push_back(n_input);
+						}
+						else
+							other_inputs.push_back(n_input);
+						idx++;
+					}
+					if (auto n = add_variable_node(g, parent, var_name, node_name_hash, var_location, property_name); n)
+					{
+						for (auto n_input : other_inputs)
+							read_input(n, n_input);
+						node_map[object_id] = n;
+						n->position = position;
+					}
+					else
+					{
+						printf(" node with id %u cannot not be added\n", object_id);
+						printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+					}
+				}
+				else if (node_name == "Call")
+				{
+					std::vector<pugi::xml_node> other_inputs;
+					uint name = 0;
+					uint location_name = 0;
+					for (auto n_input : n_node.child("inputs"))
+					{
+						std::string n_input_name = n_input.attribute("name").value();
+						if (n_input_name == "Name")
+							name = n_input.attribute("value").as_uint();
+						else if (n_input_name == "Location")
+							location_name = n_input.attribute("value").as_uint();
+						else
+							other_inputs.push_back(n_input);
+					}
+					auto n = add_call_node(g, parent, name, location_name);
+					if (n)
+					{
+						for (auto n_input : other_inputs)
+							read_input(n, n_input);
+						node_map[object_id] = n;
+						n->position = position;
+					}
+					else
+					{
+						printf(" node with id %u cannot not be added\n", object_id);
+						printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+					}
+				}
+				else
+				{
+					if (auto n = add_node(g, parent, sh(node_name.c_str())); n)
+					{
+						if (n->flags & BlueprintNodeFlagEnableTemplate && !node_template.empty())
+						{
+							if (!change_node_structure(n, node_template, {}))
+							{
+								printf("cannot apply template(%s) to node: %s, id: %u\n", node_template.c_str(), node_name.c_str(), object_id);
+								printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+							}
+						}
+						for (auto n_input : n_node.child("inputs"))
+							read_input(n, n_input);
+						node_map[object_id] = n;
+						n->position = position;
+					}
+					else
+					{
+						printf("cannot find node template: %s, id: %u\n", node_name.c_str(), object_id);
+						printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+					}
+				}
+			}
+			for (auto n_link : n_group.child("links"))
+			{
+				uint from_node_id = 0, to_node_id = 0;
+				uint from_slot_hash = 0, to_slot_hash = 0;
+				std::string from_slot_name, to_slot_name;
+				BlueprintNodePtr from_node = nullptr, to_node = nullptr;
+				BlueprintSlotPtr from_slot = nullptr, to_slot = nullptr;
+
+				from_node_id = n_link.attribute("from_node").as_uint();
+				to_node_id = n_link.attribute("to_node").as_uint();
+				from_slot_name = n_link.attribute("from_slot").value();
+				to_slot_name = n_link.attribute("to_slot").value();
+
+				if (std::isdigit(from_slot_name[0]))
+				{
+					from_slot_hash = s2t<uint>(from_slot_name);
+					from_slot_name = "";
+				}
+				else
+					from_slot_hash = sh(from_slot_name.c_str());
+				if (std::isdigit(to_slot_name[0]))
+				{
+					to_slot_hash = s2t<uint>(to_slot_name);
+					to_slot_name = "";
+				}
+				else
+					to_slot_hash = sh(to_slot_name.c_str());
+
+				if (auto it = node_map.find(from_node_id); it != node_map.end())
+				{
+					from_node = it->second;
+					from_node_id = from_node->object_id;
+				}
+				else
+					printf("link: cannot find node: %u\n", from_node_id);
+
+				if (auto it = node_map.find(to_node_id); it != node_map.end())
+				{
+					to_node = it->second;
+					to_node_id = to_node->object_id;
+				}
+				else
+					printf("link: cannot find node: %u\n", to_node_id);
+
+				auto report_invalid_link = [&](BlueprintInvalidReason reason) {
+					BlueprintInvalidLink il;
+					il.reason = reason;
+					il.from_node = from_node_id;
+					il.from_slot = from_slot_hash;
+					il.from_slot_name = from_slot_name;
+					il.to_node = to_node_id;
+					il.to_slot = to_slot_hash;
+					il.to_slot_name = to_slot_name;
+					g->invalid_links.push_back(il);
+				};
+
+				if (!from_node || !to_node)
+				{
+					printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+
+					report_invalid_link(!from_node ? BlueprintInvalidFromNode : BlueprintInvalidToNode);
+					continue;
+				}
+
+				auto get_node_name = [](BlueprintNodePtr node) {
+					auto name = node->display_name.empty() ? node->name : node->display_name;
+					if (!node->template_string.empty())
+						name += '#' + node->template_string;
+					return name;
+				};
+
+				if (from_slot_name.empty())
+				{
+					from_slot = from_node->find_output(from_slot_hash);
+					if (!from_slot)
+						printf("link: cannot find output: %u in node: %s\n", from_slot_hash, get_node_name(from_node).c_str());
+				}
+				else
+				{
+					from_slot = from_node->find_output(from_slot_name);
+					if (!from_slot)
+						printf("link: cannot find output: %s in node: %s\n", from_slot_name.c_str(), get_node_name(from_node).c_str());
+				}
+
+				if (to_slot_name.empty())
+				{
+					to_slot = to_node->find_input(to_slot_hash);
+					if (!to_slot)
+						printf("link: cannot find input: %u in node: %s\n", to_slot_hash, get_node_name(to_node).c_str());
+				}
+				else
+				{
+					to_slot = to_node->find_input(to_slot_name);
+					if (!to_slot)
+						printf("link: cannot find input: %s in node: %s\n", to_slot_name.c_str(), get_node_name(to_node).c_str());
+				}
+
+				if (!from_slot || !to_slot)
+				{
+					printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+
+					report_invalid_link(!from_slot ? BlueprintInvalidFromSlot : BlueprintInvalidToSlot);
+					continue;
+				}
+
+				if (!add_link(from_slot, to_slot))
+					printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
+			}
+		}
+
+		name = filename.filename().stem().string();
+		name_hash = sh(name.c_str());
+	}
+
 	void BlueprintPrivate::save(const std::filesystem::path& path)
 	{
 		pugi::xml_document doc;
@@ -3184,14 +3564,24 @@ namespace flame
 
 	struct BlueprintCreate : Blueprint::Create
 	{
-		BlueprintPtr operator()() override
+		BlueprintPtr operator()(bool empty) override
 		{
 			auto ret = new BlueprintPrivate;
-			ret->add_group("main");
+			if (!empty)
+				ret->add_group("main");
 			return ret;
 		}
 	}Blueprint_create;
 	Blueprint::Create& Blueprint::create = Blueprint_create;
+
+	struct BlueprintDestroy : Blueprint::Destroy
+	{
+		void operator()(BlueprintPtr bp) override
+		{
+			delete bp;
+		}
+	}Blueprint_destroy;
+	Blueprint::Destroy& Blueprint::destroy = Blueprint_destroy;
 
 	struct BlueprintGet : Blueprint::Get
 	{
@@ -3213,376 +3603,10 @@ namespace flame
 				wprintf(L"cannot found blueprint: %s", _filename.c_str());
 				return nullptr;
 			}
-			pugi::xml_document doc;
-			pugi::xml_node doc_root;
-
-			if (!doc.load_file(filename.c_str()) || (doc_root = doc.first_child()).name() != std::string("blueprint"))
-			{
-				wprintf(L"blueprint does not exist or wrong format: %s\n", _filename.c_str());
-				return nullptr;
-			}
-
-			for (auto n_dependency : doc_root.child("dependencies"))
-			{
-				std::filesystem::path path(n_dependency.attribute("v").value());
-				if (std::filesystem::exists(path))
-					Blueprint::get(path, true);
-			}
 
 			auto ret = new BlueprintPrivate;
+			ret->load(filename, true);
 
-			auto read_ti = [&](pugi::xml_attribute a) {
-				auto sp = SUS::to_string_vector(SUS::split(a.value(), '@'));
-				TypeTag tag;
-				TypeInfo::unserialize_t(sp[0], tag);
-				return TypeInfo::get(tag, sp[1]);
-			};
-
-			for (auto n_enum : doc_root.child("enums"))
-			{
-				std::vector<BlueprintEnumItem> items;
-				for (auto n_item : n_enum.child("items"))
-				{
-					auto& i = items.emplace_back();
-					i.name = n_item.attribute("name").value();
-					i.name_hash = sh(i.name.c_str());
-					i.value = n_item.attribute("value").as_int();
-				}
-				ret->add_enum(n_enum.attribute("name").value(), items);
-			}
-			for (auto n_struct : doc_root.child("structs"))
-			{
-				std::vector<BlueprintStructVariable> variables;
-				for (auto n_variable : n_struct.child("variables"))
-				{
-					auto& v = variables.emplace_back();
-					v.name = n_variable.attribute("name").value();
-					v.name_hash = sh(v.name.c_str());
-					v.type = read_ti(n_variable.attribute("type"));
-					v.default_value = n_variable.attribute("default_value").value();
-				}
-				ret->add_struct(n_struct.attribute("name").value(), variables);
-			}
-			for (auto n_variable : doc_root.child("variables"))
-			{
-				auto type = read_ti(n_variable.attribute("type"));
-				auto data = ret->add_variable(nullptr, n_variable.attribute("name").value(), type);
-				type->unserialize(n_variable.attribute("value").value(), data);
-			}
-			for (auto n_group : doc_root.child("groups"))
-			{
-				auto g = ret->add_group(n_group.attribute("name").value());
-
-				if (auto a = n_group.attribute("trigger_message"); a)
-					g->trigger_message = a.value();
-
-				for (auto n_variable : n_group.child("variables"))
-				{
-					auto type = read_ti(n_variable.attribute("type"));
-					auto data = ret->add_variable(g, n_variable.attribute("name").value(), type);
-					type->unserialize(n_variable.attribute("value").value(), data);
-				}
-				for (auto n_input : n_group.child("inputs"))
-					ret->add_group_input(g, n_input.attribute("name").value(), read_ti(n_input.attribute("type")));
-				for (auto n_output : n_group.child("outputs"))
-					ret->add_group_output(g, n_output.attribute("name").value(), read_ti(n_output.attribute("type")));
-
-				for (auto n_split : n_group.child("splits"))
-					g->splits.push_back(n_split.attribute("v").as_float());
-
-				std::map<uint, BlueprintNodePtr> node_map;
-
-				for (auto n_node : n_group.child("nodes"))
-				{
-					std::string node_name = n_node.attribute("name").value();
-					auto sp = SUS::to_string_vector(SUS::split(node_name, '#'));
-					node_name =				sp[0];
-					auto node_template =	sp.size() > 1 ? sp[1] : "";
-					auto node_name_hash = sh(node_name.c_str());
-					auto parent_id = n_node.attribute("parent_id").as_uint();
-					auto object_id = n_node.attribute("object_id").as_uint();
-					auto position = s2t<2, float>(n_node.attribute("position").value());
-					BlueprintNodePtr parent = nullptr;
-					if (parent_id != 0)
-					{
-						if (auto it = node_map.find(parent_id); it != node_map.end())
-							parent = it->second;
-						else
-						{
-							printf("add node: cannot find parent with id %d\n", parent_id);
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-							continue;
-						}
-					}
-					auto read_input = [&](BlueprintNodePtr n, pugi::xml_node n_input) {
-						auto name = n_input.attribute("name").value();
-						auto i = n->find_input(name);
-						if (i)
-						{
-							if (auto a_type = n_input.attribute("type"); a_type)
-							{
-								change_slot_type(i, read_ti(a_type));
-								update_node_output_types(n);
-								clear_invalid_links(g);
-							}
-							if (i->type->tag != TagU)
-								i->type->unserialize(n_input.attribute("value").value(), i->data);
-						}
-						else
-						{
-							printf("add node: cannot find input: %s\n", name);
-							printf("in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-						}
-					};
-					if (node_name == "Block")
-					{
-						auto n = ret->add_block(g, parent);
-						node_map[object_id] = n;
-						n->position = position;
-					}
-					else if (node_name == "Input")
-					{
-						if (auto n = g->find_node("Input"_h); n)
-						{
-							node_map[object_id] = n;
-							n->position = position;
-						}
-					}
-					else if (node_name == "Output")
-					{
-						if (auto n = g->find_node("Output"_h); n)
-						{
-							node_map[object_id] = n;
-							n->position = position;
-						}
-					}
-					else if (blueprint_is_variable_node(node_name_hash))
-					{
-						std::vector<pugi::xml_node> other_inputs;
-						auto desc_n = get_variable_node_desc(nullptr, nullptr, nullptr, nullptr, node_name_hash);
-						uint var_name = 0, var_location = 0, property_name = 0;
-						auto idx = 0;
-						for (auto n_input : n_node.child("inputs"))
-						{
-							if (idx < desc_n)
-							{
-								std::string n_input_name = n_input.attribute("name").value();
-								if (n_input_name == "Name")
-									var_name = n_input.attribute("value").as_uint();
-								else if (n_input_name == "Location")
-									var_location = n_input.attribute("value").as_uint();
-								else if (n_input_name == "Property")
-									property_name = n_input.attribute("value").as_uint();
-								else
-									other_inputs.push_back(n_input);
-							}
-							else
-								other_inputs.push_back(n_input);
-							idx++;
-						}
-						if (auto n = ret->add_variable_node(g, parent, var_name, node_name_hash, var_location, property_name); n)
-						{
-							for (auto n_input : other_inputs)
-								read_input(n, n_input);
-							node_map[object_id] = n;
-							n->position = position;
-						}
-						else
-						{
-							printf(" node with id %u cannot not be added\n", object_id);
-							printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-						}
-					}
-					else if (node_name == "Call")
-					{
-						std::vector<pugi::xml_node> other_inputs;
-						uint name = 0;
-						uint location_name = 0;
-						for (auto n_input : n_node.child("inputs"))
-						{
-							std::string n_input_name = n_input.attribute("name").value();
-							if (n_input_name == "Name")
-								name = n_input.attribute("value").as_uint();
-							else if (n_input_name == "Location")
-								location_name = n_input.attribute("value").as_uint();
-							else
-								other_inputs.push_back(n_input);
-						}
-						auto n = ret->add_call_node(g, parent, name, location_name);
-						if (n)
-						{
-							for (auto n_input : other_inputs)
-								read_input(n, n_input);
-							node_map[object_id] = n;
-							n->position = position;
-						}
-						else
-						{
-							printf(" node with id %u cannot not be added\n", object_id);
-							printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-						}
-					}
-					else
-					{
-						if (auto n = ret->add_node(g, parent, sh(node_name.c_str())); n)
-						{
-							if (n->flags & BlueprintNodeFlagEnableTemplate && !node_template.empty())
-							{
-								if (!ret->change_node_structure(n, node_template, {}))
-								{
-									printf("cannot apply template(%s) to node: %s, id: %u\n", node_template.c_str(), node_name.c_str(), object_id);
-									printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-								}
-							}
-							for (auto n_input : n_node.child("inputs"))
-								read_input(n, n_input);
-							node_map[object_id] = n;
-							n->position = position;
-						}
-						else
-						{
-							printf("cannot find node template: %s, id: %u\n", node_name.c_str(), object_id);
-							printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-						}
-					}
-				}
-				for (auto n_link : n_group.child("links"))
-				{
-					uint from_node_id = 0, to_node_id = 0;
-					uint from_slot_hash = 0, to_slot_hash = 0;
-					std::string from_slot_name, to_slot_name;
-					BlueprintNodePtr from_node = nullptr, to_node = nullptr;
-					BlueprintSlotPtr from_slot = nullptr, to_slot = nullptr;
-					from_node_id = n_link.attribute("from_node").as_uint();
-					to_node_id = n_link.attribute("to_node").as_uint();
-					from_slot_name = n_link.attribute("from_slot").value();
-					to_slot_name = n_link.attribute("to_slot").value();
-					if (std::isdigit(from_slot_name[0]))
-					{
-						from_slot_hash = s2t<uint>(from_slot_name);
-						from_slot_name = "";
-					}
-					else
-						from_slot_hash = sh(from_slot_name.c_str());
-					if (std::isdigit(to_slot_name[0]))
-					{
-						to_slot_hash = s2t<uint>(to_slot_name);
-						to_slot_name = "";
-					}
-					else
-						to_slot_hash = sh(to_slot_name.c_str());
-
-					if (auto it = node_map.find(from_node_id); it != node_map.end())
-					{
-						from_node = it->second;
-						from_node_id = from_node->object_id;
-					}
-					else
-					{
-						printf("link: cannot find node: %u\n", from_node_id);
-						printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-
-						g->invalid_links.push_back(BlueprintInvalidLink{
-							.from_node = 0, .from_slot = from_slot_hash, .to_node = 0, .to_slot = to_slot_hash });
-						continue;
-					}
-
-					if (auto it = node_map.find(to_node_id); it != node_map.end())
-					{
-						to_node = it->second;
-						to_node_id = to_node->object_id;
-					}
-					else
-					{
-						printf("link: cannot find node: %u\n", to_node_id);
-						printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-
-						g->invalid_links.push_back(BlueprintInvalidLink{
-							.from_node = 0, .from_slot = from_slot_hash, .to_node = 0, .to_slot = to_slot_hash });
-						continue;
-					}
-
-					auto get_node_name = [](BlueprintNodePtr node) {
-						auto name = node->display_name.empty() ? node->name : node->display_name;
-						if (!node->template_string.empty())
-							name += '#' + node->template_string;
-						return name;
-					};
-
-					if (from_node)
-					{
-						if (from_slot_name.empty())
-						{
-							from_slot = from_node->find_output(from_slot_hash);
-							if (!from_slot)
-							{
-								printf("link: cannot find output: %u in node: %s\n", from_slot_hash, get_node_name(from_node).c_str());
-								printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-
-								g->invalid_links.push_back(BlueprintInvalidLink{
-									.from_node = from_node_id, .from_slot = from_slot_hash, .to_node = to_node_id, .to_slot = to_slot_hash });
-								continue;
-							}
-						}
-						else
-						{
-							from_slot = from_node->find_output(from_slot_name);
-							if (!from_slot)
-							{
-								printf("link: cannot find output: %s in node: %s\n", from_slot_name.c_str(), get_node_name(from_node).c_str());
-								printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-
-								g->invalid_links.push_back(BlueprintInvalidLink{
-									.from_node = from_node_id, .from_slot = from_slot_hash, .to_node = to_node_id, .to_slot = to_slot_hash });
-								continue;
-							}
-						}
-					}
-					if (to_node)
-					{
-						if (to_slot_name.empty())
-						{
-							to_slot = to_node->find_input(to_slot_hash);
-							if (!to_slot)
-							{
-								printf("link: cannot find input: %u in node: %s\n", to_slot_hash, get_node_name(to_node).c_str());
-								printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-
-								g->invalid_links.push_back(BlueprintInvalidLink{
-									.from_node = from_node_id, .from_slot = from_slot_hash, .to_node = to_node_id, .to_slot = to_slot_hash });
-								continue;
-							}
-						}
-						else
-						{
-							to_slot = to_node->find_input(to_slot_name);
-							if (!to_slot)
-							{
-								printf("link: cannot find input: %s in node: %s\n", to_slot_name.c_str(), get_node_name(to_node).c_str());
-								printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-
-								g->invalid_links.push_back(BlueprintInvalidLink{
-									.from_node = from_node_id, .from_slot = from_slot_hash, .to_node = to_node_id, .to_slot = to_slot_hash });
-								continue;
-							}
-						}
-					}
-					if (from_slot && to_slot)
-					{
-						if (!ret->add_link(from_slot, to_slot))
-						{
-							printf(" in bp: %s, group: %s\n", filename.string().c_str(), g->name.c_str());
-
-							g->invalid_links.push_back(BlueprintInvalidLink{
-								.from_node = from_node_id, .from_slot = from_slot_hash, .to_node = to_node_id, .to_slot = to_slot_hash });
-						}
-					}
-				}
-			}
-
-			ret->filename = filename;
-			ret->name = filename.filename().stem().string();
-			ret->name_hash = sh(ret->name.c_str());
 			if (is_static)
 			{
 				ret->is_static = true;

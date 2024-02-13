@@ -943,7 +943,7 @@ namespace flame
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				},
 				{
-					.name = "Name_hash",
+					.name = "Name0_hash",
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
@@ -1009,40 +1009,20 @@ namespace flame
 						.name = "Entity",
 						.allowed_types = { TypeInfo::get<EntityPtr>() }
 					};
-					if (types.size() == 1)
+					for (auto i = 0; i < types.size(); i++)
 					{
-						info.new_inputs[1] = {
-							.name = "Name_hash",
+						info.new_inputs[i + 1] = {
+							.name = "Name" + str(i) + "_hash",
 							.allowed_types = { TypeInfo::get<std::string>() }
 						};
 					}
-					else
-					{
-						for (auto i = 0; i < types.size(); i++)
-						{
-							info.new_inputs[i + 1] = {
-								.name = "Name" + str(i) + "_hash",
-								.allowed_types = { TypeInfo::get<std::string>() }
-							};
-						}
-					}
 					info.new_outputs.resize(types.size());
-					if (types.size() == 1)
+					for (auto i = 0; i < types.size(); i++)
 					{
-						info.new_outputs[0] = {
-							.name = "V",
-							.allowed_types = { types.front() }
+						info.new_outputs[i] = {
+							.name = "V" + str(i),
+							.allowed_types = { types[i] }
 						};
-					}
-					else
-					{
-						for (auto i = 0; i < types.size(); i++)
-						{
-							info.new_outputs[i] = {
-								.name = "V" + str(i),
-								.allowed_types = { types[i] }
-							};
-						}
 					}
 					return true;
 				}
@@ -1059,11 +1039,11 @@ namespace flame
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				},
 				{
-					.name = "Name_hash",
+					.name = "Name0_hash",
 					.allowed_types = { TypeInfo::get<std::string>() }
 				},
 				{
-					.name = "V",
+					.name = "V0",
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
@@ -1111,30 +1091,16 @@ namespace flame
 						.name = "Entity",
 						.allowed_types = { TypeInfo::get<EntityPtr>() }
 					};
-					if (types.size() == 1)
+					for (auto i = 0; i < types.size(); i++)
 					{
-						info.new_inputs[1] = {
-							.name = "Name_hash",
+						info.new_inputs[i * 2 + 1] = {
+							.name = "Name" + str(i) + "_hash",
 							.allowed_types = { TypeInfo::get<std::string>() }
 						};
-						info.new_inputs[2] = {
-							.name = "V",
-							.allowed_types = { types.front() }
+						info.new_inputs[i * 2 + 2] = {
+							.name = "V" + str(i),
+							.allowed_types = { types[i] }
 						};
-					}
-					else
-					{
-						for (auto i = 0; i < types.size(); i++)
-						{
-							info.new_inputs[i * 2 + 1] = {
-								.name = "Name" + str(i) + "_hash",
-								.allowed_types = { TypeInfo::get<std::string>() }
-							};
-							info.new_inputs[i * 2 + 2] = {
-								.name = "V" + str(i),
-								.allowed_types = { types[i] }
-							};
-						}
 					}
 
 					return true;

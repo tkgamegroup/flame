@@ -1837,6 +1837,7 @@ void BlueprintView::on_draw()
 				}
 				else if (selected_nodes.size() > 1)
 					ImGui::Text("%d Nodes Selected", (int)selected_nodes.size());
+
 				auto selected_links = get_selected_links();
 				if (selected_links.size() == 1)
 				{
@@ -1848,6 +1849,24 @@ void BlueprintView::on_draw()
 				}
 				else if (selected_links.size() > 1)
 					ImGui::Text("%d Links Selected", (int)selected_links.size());
+
+				if (selected_nodes.empty() && selected_links.empty())
+				{
+					ImGui::TextUnformatted("Input ID To Select");
+					static int input_id = 0;
+					if (ImGui::InputInt("##id", &input_id, 1, 100, ImGuiInputTextFlags_EnterReturnsTrue))
+					{
+						auto n = group->find_node_by_id(input_id);
+						if (n)
+						{
+							ax::NodeEditor::SelectNode((ax::NodeEditor::NodeId)n, false);
+							ax::NodeEditor::NavigateToSelection(true, 0.f);
+						}
+						else
+							ax::NodeEditor::ClearSelection();
+					}
+				}
+
 			}
 			ImGui::EndChild();
 
