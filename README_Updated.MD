@@ -27,7 +27,6 @@ An ECS (Elastic Container Service) 3D-Game-Engine designed to empower game devel
 3. Under the **C++ destop development** tab, ensure **C++ ATL (x86 & x64)** is checked.
 4. Under the **Individual Components** tab, ensure **C++ ATL (x86 & x64) for latest v143** is checked.
 5. Download and build the required libraries using the `setup.py` script. Run it as an administrator or double-click on `run_setup_as_admin.bat`. 
-> **Warning:** Other dependencies may be required that are not built into setup.py.
 
       ### Dependencies Installed by `setup.py`
      >- **glm**: A header-only library for mathematics operations.
@@ -46,6 +45,7 @@ An ECS (Elastic Container Service) 3D-Game-Engine designed to empower game devel
      >- **imgui**: A GUI library for immediate-mode graphical user interfaces.
      >- **ImGuizmo**: A 3D gizmo widget for ImGui.
      >- **ImGui-Node-Editor**: A node editor using ImGui.
+> **Warning:** Other dependencies may be required that are not built into setup.py.
 
 6. CMake will configure extra libraries such as FBX SDK and OpenAL.
 7. Build the project in Visual Studio. For the release version, build in **RelWithDebInfo** configuration, as **DebugInfo** is always needed.
