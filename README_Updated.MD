@@ -1,6 +1,6 @@
 # ECS 3D-Game-Engine
 
-An ECS ([Amazon Elastic Container Service](https://aws.amazon.com/ecs/)) 3D-Game-Engine designed to empower game developers with efficient tools and resources.
+An ECS (Elastic Container Service) 3D-Game-Engine designed to empower game developers with efficient tools and resources.
 
 ## Build Instructions
 
