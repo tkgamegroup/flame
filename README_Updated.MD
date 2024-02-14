@@ -26,7 +26,7 @@ An ECS (Elastic Container Service) 3D-Game-Engine designed to empower game devel
 2. In Visual Studio, navigate to the **Tools and Features** section.
 3. Under the **C++ destop development** tab, ensure **C++ ATL (x86 & x64)** is checked.
 4. Under the **Individual Components** tab, ensure **C++ ATL (x86 & x64) for latest v143** is checked.
-5. Download and build the required libraries using the `setup.py` script. Run it as an administrator or double-click on `run_setup_as_admin.bat`.
+5. Download and build the required libraries using the `setup.py` script. Run it as an administrator or double-click on `run_setup_as_admin.bat`. > **Warning:** Other dependencies may be required that are not built into setup.py.
 
       ### Dependencies Installed by `setup.py`
      >- **glm**: A header-only library for mathematics operations.
