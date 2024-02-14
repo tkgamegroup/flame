@@ -28,7 +28,7 @@ An ECS (Elastic Container Service) 3D-Game-Engine designed to empower game devel
 4. Under the **Individual Components** tab, ensure **C++ ATL (x86 & x64) for latest v143** is checked.
 5. Download and build the required libraries using the `setup.py` script. Run it as an administrator or double-click on `run_setup_as_admin.bat`. 
 
-      ### Dependencies Installed by `setup.py`
+      #### Dependencies Installed by `setup.py`
      >- **glm**: A header-only library for mathematics operations.
      >- **PugiXML**: A lightweight XML processing library.
      >- **nlohmann json**: A modern JSON library for C++.
