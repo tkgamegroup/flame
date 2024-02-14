@@ -45,7 +45,8 @@ An ECS (Elastic Container Service) 3D-Game-Engine designed to empower game devel
      >- **imgui**: A GUI library for immediate-mode graphical user interfaces.
      >- **ImGuizmo**: A 3D gizmo widget for ImGui.
      >- **ImGui-Node-Editor**: A node editor using ImGui.
-     > **Warning:** Other dependencies may be required that are not built into setup.py.
+
+      > **Warning:** Other dependencies may be required that are not built into setup.py.
 
 6. CMake will configure extra libraries such as FBX SDK and OpenAL.
 7. Build the project in Visual Studio. For the release version, build in **RelWithDebInfo** configuration, as **DebugInfo** is always needed.
