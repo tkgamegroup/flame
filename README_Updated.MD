@@ -27,23 +27,25 @@ An ECS (Elastic Container Service) 3D-Game-Engine designed to empower game devel
 3. Under the **C++ destop development** tab, ensure **C++ ATL (x86 & x64)** is checked.
 4. Under the **Individual Components** tab, ensure **C++ ATL (x86 & x64) for latest v143** is checked.
 5. Download and build the required libraries using the `setup.py` script. Run it as an administrator or double-click on `run_setup_as_admin.bat`.
-      ### Dependencies Installed by `setup.py`
-    - **glm**: A header-only library for mathematics operations.
-    - **PugiXML**: A lightweight XML processing library.
-    - **nlohmann json**: A modern JSON library for C++.
-    - **cppcodec**: A header-only C++ library for base64 and hex conversions.
-    - **stb**: A collection of single-file public domain libraries for C/C++.
-    - **msdfgen**: A library for generating Multi-channel Signed Distance Fields.
-    - **sha1**: A simple SHA-1 hash function implementation in C++.
-    - **gli**: A header-only library for handling textures.
-    - **SPIRV-Cross**: A tool for converting SPIR-V to other shader languages.
-    - **exprtk**: A C++ library for parsing and evaluating mathematical expressions.
-    - **assimp**: A library to import various 3D model formats.
-    - **recastnavigation**: A navigation mesh construction toolset for games.
-    - **Font-Awesome**: A font and icon toolkit.
-    - **imgui**: A GUI library for immediate-mode graphical user interfaces.
-    - **ImGuizmo**: A 3D gizmo widget for ImGui.
-    - **ImGui-Node-Editor**: A node editor using ImGui.
+
+     > ### Dependencies Installed by `setup.py`
+    > **glm**: A header-only library for mathematics operations.
+    > **PugiXML**: A lightweight XML processing library.
+    > **nlohmann json**: A modern JSON library for C++.
+    > **cppcodec**: A header-only C++ library for base64 and hex conversions.
+    > **stb**: A collection of single-file public domain libraries for C/C++.
+    > **msdfgen**: A library for generating Multi-channel Signed Distance Fields.
+    > **sha1**: A simple SHA-1 hash function implementation in C++.
+    > **gli**: A header-only library for handling textures.
+    > **SPIRV-Cross**: A tool for converting SPIR-V to other shader languages.
+    > **exprtk**: A C++ library for parsing and evaluating mathematical expressions.
+    > **assimp**: A library to import various 3D model formats.
+    > **recastnavigation**: A navigation mesh construction toolset for games.
+    > **Font-Awesome**: A font and icon toolkit.
+    > **imgui**: A GUI library for immediate-mode graphical user interfaces.
+    > **ImGuizmo**: A 3D gizmo widget for ImGui.
+    > **ImGui-Node-Editor**: A node editor using ImGui.
+
 6. CMake will configure extra libraries such as FBX SDK and OpenAL.
 7. Build the project in Visual Studio. For the release version, build in **RelWithDebInfo** configuration, as **DebugInfo** is always needed.
 
