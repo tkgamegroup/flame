@@ -32,27 +32,27 @@ Currently, we only support the Windows platform.
 
 This project would not have been possible without the invaluable contributions and support from the following libraries:
 
-- VulkanSDK
-- GLM
-- PugiXML
-- NJson
-- cppcodec
-- stb
-- msdfgen
-- SHA1
-- GLI
-- NVTT
-- SPIRV-Cross
-- exprtk
-- Assimp
-- FBX SDK
-- PhysX
-- recastnavigation
-- Font-Awesome
-- ImGui
-- ImGuizmo
-- Imgui-node-editor
-- FortuneAlgorithm
-- OpenAL
+- [VulkanSDK](https://vulkan.lunarg.com/sdk/home#windows)
+- [GLM](https://github.com/g-truc/glm)
+- [PugiXML](https://github.com/zeux/pugixml)
+- [NJson](https://github.com/nlohmann/json)
+- [cppcodec](https://github.com/tplgy/cppcodec)
+- [stb](https://github.com/nothings/stb)
+- [msdfgen](https://github.com/Chlumsky/msdfgen)
+- [SHA1](https://github.com/vog/sha1)
+- [GLI](https://github.com/g-truc/gli)
+- [NVTT](https://developer.nvidia.com/gpu-accelerated-texture-compression)
+- [SPIRV-Cross](https://github.com/KhronosGroup/SPIRV-Cross)
+- [exprtk](https://github.com/ArashPartow/exprtk)
+- [Assimp](https://github.com/assimp/assimp)
+- [FBX SDK](https://www.autodesk.com/developer-network/platform-technologies/fbx-sdk-2020-2-1)
+- [PhysX](https://github.com/NVIDIAGameWorks/PhysX)
+- [recastnavigation](https://github.com/recastnavigation/recastnavigation)
+- [Font-Awesome](https://github.com/FortAwesome/Font-Awesome)
+- [ImGui](https://github.com/ocornut/imgui)
+- [ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo)
+- [Imgui-node-editor](https://github.com/thedmd/imgui-node-editor)
+- [FortuneAlgorithm](https://github.com/pvigier/FortuneAlgorithm)
+- [OpenAL](https://www.openal.org/)
 
 This README serves as a guide to get you started with building and using the ECS 3D-Game-Engine. If you encounter any issues or have questions, feel free to reach out to us for assistance. Happy coding!
