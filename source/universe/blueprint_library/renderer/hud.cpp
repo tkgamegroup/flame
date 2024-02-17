@@ -310,7 +310,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Button", "", BlueprintNodeFlagNone,
+		library->add_template("Hud Button", "", BlueprintNodeFlagHorizontalOutputs,
 			{
 				{
 					.name = "Label",

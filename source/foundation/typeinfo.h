@@ -3445,22 +3445,22 @@ namespace flame
 		}
 	};
 
-	inline void resize_vector(void* dst, TypeInfo* ti, uint new_len)
+	inline void resize_vector(void* dst, TypeInfo* item_type, uint new_len)
 	{
 		auto& dst_vec = *(std::vector<char>*)dst;
-		uint old_len = dst_vec.size() / ti->size;
-		if (ti->pod)
-			dst_vec.resize(new_len * ti->size);
+		uint old_len = dst_vec.size() / item_type->size;
+		if (item_type->pod)
+			dst_vec.resize(new_len * item_type->size);
 		else
 		{
 			std::vector<char> temp_vec;
-			temp_vec.resize(new_len * ti->size);
+			temp_vec.resize(new_len * item_type->size);
 			for (auto i = 0; i < new_len; i++)
-				ti->create(temp_vec.data() + i * ti->size);
+				item_type->create(temp_vec.data() + i * item_type->size);
 			for (auto i = 0; i < min(old_len, new_len); i++)
-				ti->copy(temp_vec.data() + i * ti->size, dst_vec.data() + i * ti->size);
+				item_type->copy(temp_vec.data() + i * item_type->size, dst_vec.data() + i * item_type->size);
 			for (auto i = 0; i < old_len; i++)
-				ti->destroy(dst_vec.data() + i * ti->size, false);
+				item_type->destroy(dst_vec.data() + i * item_type->size, false);
 			dst_vec = std::move(temp_vec);
 		}
 	}

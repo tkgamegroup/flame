@@ -26,7 +26,7 @@ struct BlueprintView : View
 	BlueprintView(const std::string& name);
 	~BlueprintView();
 
-	void copy_nodes(BlueprintGroupPtr g);
+	void copy_nodes(BlueprintGroupPtr g, bool include_children = true);
 	void paste_nodes(BlueprintGroupPtr g, const vec2& pos);
 	void set_parent_to_hovered_node();
 	void navigate_to_node(BlueprintNodePtr n);

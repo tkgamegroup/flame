@@ -157,7 +157,7 @@ namespace flame
 		library->add_template("String Hash", "", BlueprintNodeFlagNone,
 			{
 				{
-					.name = "V",
+					.name = "V_hash",
 					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
@@ -168,7 +168,7 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				*(uint*)outputs[0].data = sh((*(std::string*)inputs[0].data).c_str());
+				*(uint*)outputs[0].data = *(uint*)inputs[0].data;
 			}
 		);
 

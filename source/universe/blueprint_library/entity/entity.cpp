@@ -949,7 +949,7 @@ namespace flame
 			},
 			{
 				{
-					.name = "V",
+					.name = "V0",
 					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
@@ -1143,6 +1143,296 @@ namespace flame
 						}
 					}
 				}
+			}
+		);
+
+		library->add_template("EArray Clear", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						auto it = instance->variables.find(*(uint*)inputs[1].data);
+						if (it != instance->variables.end())
+						{
+							auto& arg = it->second;
+							if (is_array(arg.type->tag))
+								resize_vector(arg.data, arg.type->get_wrapped(), 0);
+						}
+					}
+				}
+			}
+		);
+
+		library->add_template("EArray Get Item", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Index",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto out_type = outputs[0].type;
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						auto it = instance->variables.find(*(uint*)inputs[1].data);
+						if (it != instance->variables.end())
+						{
+							auto& arg = it->second;
+							if (is_vector(arg.type->tag))
+							{
+								auto item_type = arg.type->get_wrapped();
+								if (item_type == out_type ||
+									(out_type == TypeInfo::get<uint>() && item_type == TypeInfo::get<int>()) ||
+									(out_type == TypeInfo::get<int>() && item_type == TypeInfo::get<uint>()))
+								{
+									auto& array = *(std::vector<char>*)arg.data;
+									auto array_size = array.size() / item_type->size;
+									auto index = *(uint*)inputs[2].data;
+									if (index < array_size)
+										out_type->copy(outputs[0].data, array.data() + index * item_type->size);
+									else
+										out_type->create(outputs[0].data);
+								}
+								else
+									out_type->create(outputs[0].data);
+							}
+							else
+								out_type->create(outputs[0].data);
+						}
+						else
+							out_type->create(outputs[0].data);
+					}
+					else
+						out_type->create(outputs[0].data);
+				}
+				else
+					out_type->create(outputs[0].data);
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
+					if (!type)
+						return false;
+
+					info.new_inputs.resize(3);
+					info.new_inputs[0] = {
+						.name = "Entity",
+						.allowed_types = { TypeInfo::get<EntityPtr>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Name_hash",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					info.new_inputs[2] = {
+						.name = "Index",
+						.allowed_types = { TypeInfo::get<uint>() }
+					};
+					info.new_outputs.resize(1);
+					info.new_outputs[0] = {
+						.name = "V",
+						.allowed_types = { type }
+					};
+
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
+		);
+
+		library->add_template("EArray Set Item", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Index",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto in_type = inputs[3].type;
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						auto it = instance->variables.find(*(uint*)inputs[1].data);
+						if (it != instance->variables.end())
+						{
+							auto& arg = it->second;
+							if (is_vector(arg.type->tag))
+							{
+								auto item_type = arg.type->get_wrapped();
+								if (item_type == in_type ||
+									(in_type == TypeInfo::get<uint>() && item_type == TypeInfo::get<int>()) ||
+									(in_type == TypeInfo::get<int>() && item_type == TypeInfo::get<uint>()))
+								{
+									auto& array = *(std::vector<char>*)arg.data;
+									auto array_size = array.size() / item_type->size;
+									auto index = *(uint*)inputs[2].data;
+									if (index < array_size)
+										in_type->copy(array.data() + index * item_type->size, inputs[3].data);
+								}
+							}
+						}
+					}
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
+					if (!type)
+						return false;
+
+					info.new_inputs.resize(4);
+					info.new_inputs[0] = {
+						.name = "Entity",
+						.allowed_types = { TypeInfo::get<EntityPtr>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Name_hash",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					info.new_inputs[2] = {
+						.name = "Index",
+						.allowed_types = { TypeInfo::get<uint>() }
+					};
+					info.new_inputs[3] = {
+						.name = "V",
+						.allowed_types = { type }
+					};
+
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
+		);
+
+		library->add_template("EArray Add Item", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto in_type = inputs[3].type;
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						auto it = instance->variables.find(*(uint*)inputs[1].data);
+						if (it != instance->variables.end())
+						{
+							auto& arg = it->second;
+							if (is_vector(arg.type->tag))
+							{
+								auto item_type = arg.type->get_wrapped();
+								if (item_type == in_type ||
+									(in_type == TypeInfo::get<uint>() && item_type == TypeInfo::get<int>()) ||
+									(in_type == TypeInfo::get<int>() && item_type == TypeInfo::get<uint>()))
+								{
+									auto& array = *(std::vector<char>*)arg.data;
+									auto array_size = array.size() / item_type->size;
+									resize_vector(arg.data, item_type, array_size + 1);
+									in_type->copy(array.data() + array_size * item_type->size, inputs[3].data);
+								}
+							}
+						}
+					}
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
+					if (!type)
+						return false;
+
+					info.new_inputs.resize(3);
+					info.new_inputs[0] = {
+						.name = "Entity",
+						.allowed_types = { TypeInfo::get<EntityPtr>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Name_hash",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					info.new_inputs[2] = {
+						.name = "V",
+						.allowed_types = { type }
+					};
+
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
 			}
 		);
 

@@ -169,7 +169,7 @@ static void set_input_type(BlueprintSlotPtr slot, TypeInfo* type)
 	g->blueprint->change_node_structure(n, "", new_input_types);
 }
 
-static void post_process_new_node(BlueprintNodePtr n)
+static void auto_add_blocks(BlueprintNodePtr n)
 {
 	auto group = n->group;
 	auto blueprint = group->blueprint;
@@ -326,7 +326,7 @@ BlueprintView::~BlueprintView()
 		ax::NodeEditor::DestroyEditor((ax::NodeEditor::EditorContext*)ax_editor);
 }
 
-void BlueprintView::copy_nodes(BlueprintGroupPtr g)
+void BlueprintView::copy_nodes(BlueprintGroupPtr g, bool include_children)
 {
 	if (auto selected_nodes = get_selected_nodes(); !selected_nodes.empty())
 	{
@@ -337,8 +337,8 @@ void BlueprintView::copy_nodes(BlueprintGroupPtr g)
 		for (auto n : selected_nodes)
 			blueprint_form_top_list(nodes, n);
 
-		std::function<void(BlueprintNodePtr)> add_node_recursively;
-		add_node_recursively = [&](BlueprintNodePtr src_n) {
+		std::function<void(BlueprintNodePtr)> copy_node;
+		copy_node = [&](BlueprintNodePtr src_n) {
 			auto& n = copied_nodes.emplace_back();
 			n.object_id = src_n->object_id;
 			n.name = src_n->name_hash;
@@ -361,11 +361,14 @@ void BlueprintView::copy_nodes(BlueprintGroupPtr g)
 				}
 			}
 			n.position = src_n->position;
-			for (auto c : src_n->children)
-				add_node_recursively(c);
+			if (include_children)
+			{
+				for (auto c : src_n->children)
+					copy_node(c);
+			}
 		};
 		for (auto n : nodes)
-			add_node_recursively(n);
+			copy_node(n);
 
 		std::vector<BlueprintLinkPtr> relevant_links;
 		for (auto& src_l : g->links)
@@ -2049,7 +2052,10 @@ void BlueprintView::on_draw()
 							if (ImGui::IsItemDeactivatedAfterEdit())
 							{
 								blueprint->change_node_structure(n, n->template_string, {});
-								post_process_new_node(n);
+								add_event([n]() {
+									auto_add_blocks(n);
+									return false;  
+								}, 0.f, 2U);
 							}
 						}
 					}
@@ -2818,6 +2824,11 @@ void BlueprintView::on_draw()
 								}
 							}
 							if (!slot_name)
+							{
+								if (name == "EGet V" || name == "ESet V")
+									slot_name = "V0"_h;
+							}
+							if (!slot_name)
 								return false;
 						}
 
@@ -2841,13 +2852,33 @@ void BlueprintView::on_draw()
 
 								if (new_node_link_slot)
 								{
+									if (slot_name == "V0"_h)
+									{
+										if (n->name_hash == "EGet V"_h || n->name_hash == "ESet V"_h)
+										{
+											if (auto type = new_node_link_slot->type; type != TypeInfo::get<float>())
+											{
+												for (auto& t : BlueprintSystem::template_types)
+												{
+													if (t.second == type)
+													{
+														blueprint->change_node_structure(n, t.first, {});
+														break;
+													}
+												}
+											}
+										}
+									}
 									if (new_node_link_slot->flags & BlueprintSlotFlagOutput)
 										blueprint->add_link(new_node_link_slot, n->find_input(slot_name));
 									else
 										blueprint->add_link(n->find_output(slot_name), new_node_link_slot);
 								}
 
-								post_process_new_node(n);
+								add_event([n]() {
+									auto_add_blocks(n);
+									return false;
+								}, 0.f, 2U);
 
 								if (n->is_block)
 									last_block = n->object_id;
@@ -3328,7 +3359,9 @@ void BlueprintView::on_draw()
 				{
 					if (!io.WantCaptureKeyboard)
 					{
-						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_C))
+						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_C))
+							copy_nodes(group, false);
+						else if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_C))
 							copy_nodes(group);
 						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_V))
 							paste_nodes(group, mouse_pos);
