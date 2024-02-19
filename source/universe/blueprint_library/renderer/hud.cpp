@@ -60,6 +60,10 @@ namespace flame
 		library->add_template("Hud", "", BlueprintNodeFlagNone,
 			{
 				{
+					.name = "ID_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
 					.name = "Pos",
 					.allowed_types = { TypeInfo::get<vec2>() }
 				},
@@ -90,19 +94,36 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto pos = *(vec2*)inputs[0].data;
-				auto size = *(vec2*)inputs[1].data;
-				auto col = *(cvec4*)inputs[2].data;
-				auto pivot = *(vec2*)inputs[3].data;
-				auto& image = *(graphics::ImageDesc*)inputs[4].data;
-				auto image_scale = *(float*)inputs[5].data;
+				auto id = *(uint*)inputs[0].data;
+				auto pos = *(vec2*)inputs[1].data;
+				auto size = *(vec2*)inputs[2].data;
+				auto col = *(cvec4*)inputs[3].data;
+				auto pivot = *(vec2*)inputs[4].data;
+				auto& image = *(graphics::ImageDesc*)inputs[5].data;
+				auto image_scale = *(float*)inputs[6].data;
 
-				sRenderer::instance()->hud_begin(pos, size, col, pivot, image, image_scale);
+				sRenderer::instance()->hud_begin(id, pos, size, col, pivot, image, image_scale);
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				sRenderer::instance()->hud_end();
+			}
+		);
+
+		library->add_template("Hud Vertical", "", BlueprintNodeFlagNone,
+			{
+			},
+			{
+			},
+			true,
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				sRenderer::instance()->hud_begin_layout(HudVertical);
+
+				execution.block->max_execute_times = 1;
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				sRenderer::instance()->hud_end_layout();
 			}
 		);
 
@@ -113,12 +134,12 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				sRenderer::instance()->hud_begin_horizontal();
+				sRenderer::instance()->hud_begin_layout(HudHorizontal);
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sRenderer::instance()->hud_end_horizontal();
+				sRenderer::instance()->hud_end_layout();
 			}
 		);
 

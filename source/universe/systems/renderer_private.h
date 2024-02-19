@@ -84,6 +84,30 @@ namespace flame
 		uint vtx_cnt;
 	};
 
+	struct HudLayout
+	{
+		HudLayoutType type;
+		Rect rect;
+		vec2 cursor;
+		vec2 pivot;
+		vec2 item_max;
+		bool auto_size;
+	};
+
+	struct Hud
+	{
+		vec2 pos;
+		vec2 size;
+		cvec4 color;
+		vec2 pivot;
+		bool stencil;
+		graphics::Canvas::DrawVert* bg_verts;
+		uint bg_vert_count;
+		int translate_cmd_idx;
+
+		std::vector<HudLayout> layouts;
+	};
+
 	struct sRendererPrivate : sRenderer
 	{
 		bool mark_clear_pipelines = false;
@@ -93,20 +117,9 @@ namespace flame
 		std::vector<ParticlesDraw> particles_draws;
 
 		std::vector<std::stack<vec2>> hud_style_vars;
-		vec2 hud_size;
-		vec2 hud_pos;
-		cvec4 hud_col;
-		bool hud_horizontal = false;
-		bool hud_stencil = false;
-		vec2 hud_pivot;
-		vec2 hud_cursor;
-		float hud_cursor_x0;
-		float hud_line_height;
-		vec2 hud_max;
+		std::unordered_map<uint, Hud> huds;
+		Hud* current_hud = nullptr;
 		Rect hud_last_rect;
-		graphics::Canvas::DrawVert* hud_bg_verts;
-		uint hud_bg_vert_count;
-		int hud_translate_cmd_idx;
 
 		sRendererPrivate();
 		sRendererPrivate(graphics::WindowPtr w);
@@ -216,15 +229,18 @@ namespace flame
 		std::vector<vec3> transform_feedback(cNodePtr node) override;
 		graphics::ImagePtr get_image(uint name) override;
 
-		void hud_begin(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, float image_scale) override;
+		void hud_add_layout(Hud& hud, HudLayoutType type, const vec2& pos);
+		void hud_finish_layout(HudLayout& layout);
+
+		void hud_begin(uint id, const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, float image_scale) override;
 		void hud_end() override;
 		void hud_set_cursor(const vec2& pos) override;
 		Rect hud_get_rect() const override;
 		vec2 hud_screen_size() const override;
 		void hud_push_style(HudStyleVar var, const vec2& value) override;
 		void hud_pop_style(HudStyleVar var) override;
-		void hud_begin_horizontal() override;
-		void hud_end_horizontal() override;
+		void hud_begin_layout(HudLayoutType type) override;
+		void hud_end_layout() override;
 		void hud_new_line() override;
 		void hud_begin_stencil_write() override;
 		void hud_end_stencil_write() override;
