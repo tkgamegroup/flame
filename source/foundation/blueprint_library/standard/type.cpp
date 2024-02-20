@@ -277,6 +277,8 @@ namespace flame
 
 				auto& temp_array = *(std::vector<uint>*)outputs[2].data;
 				temp_array.clear();
+
+				*(int*)outputs[0].data = -1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& temp_array = *(std::vector<uint>*)outputs[2].data;

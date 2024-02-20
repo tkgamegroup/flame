@@ -95,6 +95,28 @@ namespace flame
 			}
 		);
 
+		library->add_template("Nav Agent Set Stop Distance", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Distance",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto nav_agent = entity->get_component<cNavAgent>(); nav_agent)
+						nav_agent->stop_distance = *(float*)inputs[1].data;
+				}
+			}
+		);
+
 		library->add_template("Nav Agent Set Speed", "", BlueprintNodeFlagNone,
 			{
 				{

@@ -715,8 +715,9 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto sht = *(SheetPtr*)inputs[0].data;
-				if (sht)
+				*(int*)outputs[0].data = -1;
+				
+				if (auto sht = *(SheetPtr*)inputs[0].data; sht)
 				{
 					auto name = *(uint*)inputs[1].data;
 					auto column_idx = sht->find_column(name);
@@ -734,14 +735,8 @@ namespace flame
 								}
 							}
 						}
-						else
-							*(int*)outputs[0].data = -1;
 					}
-					else
-						*(int*)outputs[0].data = -1;
 				}
-				else
-					*(int*)outputs[0].data = -1;
 			},
 			nullptr,
 			nullptr,

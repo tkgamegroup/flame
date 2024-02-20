@@ -169,7 +169,7 @@ static void set_input_type(BlueprintSlotPtr slot, TypeInfo* type)
 	g->blueprint->change_node_structure(n, "", new_input_types);
 }
 
-static void auto_add_blocks(BlueprintNodePtr n)
+static void auto_add_blocks(ax::NodeEditor::Detail::EditorContext* ax_editor, BlueprintNodePtr n)
 {
 	auto group = n->group;
 	auto blueprint = group->blueprint;
@@ -182,7 +182,7 @@ static void auto_add_blocks(BlueprintNodePtr n)
 			{
 				auto n_block = blueprint->add_block(group, n->parent);
 				n_block->position = n->position + vec2(0.f, (n_slots + 1) * 100.f);
-				ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n_block, n_block->position);
+				ax_editor->SetNodePosition((ax::NodeEditor::NodeId)n, n_block->position);
 				blueprint->add_link(o.get(), n_block->find_input("Execute"_h));
 			}
 			n_slots++;
@@ -2052,8 +2052,8 @@ void BlueprintView::on_draw()
 							if (ImGui::IsItemDeactivatedAfterEdit())
 							{
 								blueprint->change_node_structure(n, n->template_string, {});
-								add_event([n]() {
-									auto_add_blocks(n);
+								add_event([this, n]() {
+									auto_add_blocks(ax_editor, n);
 									return false;  
 								}, 0.f, 2U);
 							}
@@ -2875,8 +2875,8 @@ void BlueprintView::on_draw()
 										blueprint->add_link(n->find_output(slot_name), new_node_link_slot);
 								}
 
-								add_event([n]() {
-									auto_add_blocks(n);
+								add_event([this, n]() {
+									auto_add_blocks(ax_editor, n);
 									return false;
 								}, 0.f, 2U);
 

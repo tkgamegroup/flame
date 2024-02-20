@@ -1378,7 +1378,7 @@ namespace flame
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto in_type = inputs[3].type;
+				auto in_type = inputs[2].type;
 				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
 					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
@@ -1398,7 +1398,7 @@ namespace flame
 									auto& array = *(std::vector<char>*)arg.data;
 									auto array_size = array.size() / item_type->size;
 									resize_vector(arg.data, item_type, array_size + 1);
-									in_type->copy(array.data() + array_size * item_type->size, inputs[3].data);
+									in_type->copy(array.data() + array_size * item_type->size, inputs[2].data);
 								}
 							}
 						}
