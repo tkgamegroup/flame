@@ -367,7 +367,7 @@ namespace flame
 
 		Listeners<void()> hud_callbacks;
 
-		virtual void hud_begin(uint id, const vec2& pos, const vec2& size = vec2(0.f) /* 0 size means auto layout */, const cvec4& col = cvec4(0, 0, 0, 255), const vec2& pivot = vec2(0.f),
+		virtual void hud_begin(const vec2& pos, const vec2& size = vec2(0.f) /* 0 size means auto layout */, const cvec4& col = cvec4(0, 0, 0, 255), const vec2& pivot = vec2(0.f),
 			const graphics::ImageDesc& image = {}, float image_scale = 1.f) = 0;
 		virtual void hud_end() = 0;
 		virtual void hud_set_cursor(const vec2& pos) = 0;

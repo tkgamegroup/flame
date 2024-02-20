@@ -34,6 +34,21 @@ namespace flame
 					.name = "Walkable Slope Angle",
 					.allowed_types = { TypeInfo::get<float>() },
 					.default_value = "45"
+				},
+				{
+					.name = "Cell Size",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "0.3"
+				},
+				{
+					.name = "Cell Height",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "0.2"
+				},
+				{
+					.name = "Tile Size",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "48"
 				}
 			},
 			{
@@ -44,8 +59,11 @@ namespace flame
 				auto agent_height = *(float*)inputs[2].data;
 				auto walkable_climb = *(float*)inputs[3].data;
 				auto walkable_slope_angle = *(float*)inputs[4].data;
+				auto cell_size = *(float*)inputs[5].data;
+				auto cell_height = *(float*)inputs[6].data;
+				auto tile_size = *(float*)inputs[7].data;
 				add_event([=]() {
-					sScene::instance()->navmesh_generate(nodes, agent_radius, agent_height, walkable_climb, walkable_slope_angle);
+					sScene::instance()->navmesh_generate(nodes, agent_radius, agent_height, walkable_climb, walkable_slope_angle, cell_size, cell_height, tile_size);
 					return false;
 				});
 			}
@@ -201,6 +219,50 @@ namespace flame
 				{
 					if (auto nav_agent = entity->get_component<cNavAgent>(); nav_agent)
 						nav_agent->set_turn_speed_scale(*(float*)inputs[1].data);
+				}
+			}
+		);
+
+		library->add_template("Nav Agent Set Separation Group", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Group",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto nav_agent = entity->get_component<cNavAgent>(); nav_agent)
+						nav_agent->separation_group = *(uint*)inputs[1].data;
+				}
+			}
+		);
+
+		library->add_template("Nav Agent Set Separation Weight", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Weight",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto nav_agent = entity->get_component<cNavAgent>(); nav_agent)
+						nav_agent->separation_weight = *(float*)inputs[1].data;
 				}
 			}
 		);

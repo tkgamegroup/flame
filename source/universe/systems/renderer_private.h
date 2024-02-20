@@ -117,8 +117,7 @@ namespace flame
 		std::vector<ParticlesDraw> particles_draws;
 
 		std::vector<std::stack<vec2>> hud_style_vars;
-		std::unordered_map<uint, Hud> huds;
-		Hud* current_hud = nullptr;
+		std::vector<Hud> huds;
 		Rect hud_last_rect;
 
 		sRendererPrivate();
@@ -229,10 +228,10 @@ namespace flame
 		std::vector<vec3> transform_feedback(cNodePtr node) override;
 		graphics::ImagePtr get_image(uint name) override;
 
-		void hud_add_layout(Hud& hud, HudLayoutType type, const vec2& pos);
+		void hud_add_layout(HudLayoutType type);
 		void hud_finish_layout(HudLayout& layout);
 
-		void hud_begin(uint id, const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, float image_scale) override;
+		void hud_begin(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, float image_scale) override;
 		void hud_end() override;
 		void hud_set_cursor(const vec2& pos) override;
 		Rect hud_get_rect() const override;

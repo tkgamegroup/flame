@@ -31,6 +31,8 @@ namespace flame
 		// Reflect
 		uint separation_group = 1;
 		// Reflect
+		float separation_weight = 2.f;
+		// Reflect
 		bool flying = false;
 
 		vec3 target_pos;

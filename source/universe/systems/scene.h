@@ -14,7 +14,7 @@ namespace flame
 		OctNode* octree = nullptr;
 
 		// Reflect
-		virtual void				navmesh_generate(const std::vector<EntityPtr>& nodes, float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle) = 0;
+		virtual void				navmesh_generate(const std::vector<EntityPtr>& nodes, float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle, float cell_size = 0.3f, float cell_height = 0.2f, float tile_size = 48.f) = 0;
 		// Reflect
 		virtual void				navmesh_clear() = 0;
 		// Reflect

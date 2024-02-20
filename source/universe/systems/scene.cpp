@@ -498,7 +498,7 @@ namespace flame
 		}
 	}
 
-	void sScenePrivate::navmesh_generate(const std::vector<EntityPtr>& nodes, float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle)
+	void sScenePrivate::navmesh_generate(const std::vector<EntityPtr>& nodes, float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle, float cell_size, float cell_height, float tile_size)
 	{
 #ifdef USE_RECASTNAV
 		navmesh_clear();
@@ -614,10 +614,6 @@ namespace flame
 		AABB bounds;
 		for (auto& p : positions)
 			bounds.expand(p);
-
-		auto cell_size = 0.3f;
-		auto cell_height = 0.2f;
-		auto tile_size = 48.f;
 
 		auto edge_max_error = 1.3f;
 
@@ -1355,7 +1351,7 @@ namespace flame
 				parms.collisionQueryRange = parms.radius * 12.0f;
 				parms.pathOptimizationRange = parms.radius * 30.0f;
 				parms.separationGroup = ag->separation_group;
-				parms.separationWeight = 2.f;
+				parms.separationWeight = ag->separation_weight;
 				parms.updateFlags = DT_CROWD_ANTICIPATE_TURNS | DT_CROWD_OPTIMIZE_VIS | DT_CROWD_OPTIMIZE_TOPO |
 					DT_CROWD_OBSTACLE_AVOIDANCE | DT_CROWD_SEPARATION;
 				parms.userData = ag;

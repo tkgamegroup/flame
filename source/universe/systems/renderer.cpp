@@ -3488,8 +3488,10 @@ namespace flame
 		return nullptr;
 	}
 
-	void sRendererPrivate::hud_add_layout(Hud& hud, HudLayoutType type, const vec2& pos)
+	void sRendererPrivate::hud_add_layout(HudLayoutType type)
 	{
+		auto& hud = huds.back();
+		auto pos = hud.layouts.back().cursor;
 		auto& layout = hud.layouts.emplace_back();
 		layout.type = type;
 		layout.rect.a = layout.rect.b = pos;
@@ -3510,11 +3512,9 @@ namespace flame
 		}
 	}
 
-	void sRendererPrivate::hud_begin(uint id, const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, float image_scale)
+	void sRendererPrivate::hud_begin(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, float image_scale)
 	{
-		assert(id);
-
-		current_hud = &huds[id];
+		auto& hud = huds.emplace_back();
 
 		auto canvas = render_tasks.front()->canvas;
 		auto window_padding = hud_style_vars[HudStyleVarWindowPadding].top();
@@ -3522,40 +3522,46 @@ namespace flame
 		window_padding *= scaling;
 		auto auto_sizing = size.x == 0.f && size.y == 0.f;
 
-		current_hud->pos = pos;
+		hud.pos = pos;
 		if (pos.x < 0.f)
-			current_hud->pos.x += canvas->size.x;
+			hud.pos.x += canvas->size.x;
 		if (pos.y < 0.f)
-			current_hud->pos.y += canvas->size.y;
-		current_hud->size = size * scaling;
+			hud.pos.y += canvas->size.y;
+		hud.size = size * scaling;
 		if (!auto_sizing)
-			current_hud->pos -= current_hud->size * pivot;
-		current_hud->color = col;
-		current_hud->pivot = pivot;
+			hud.pos -= hud.size * pivot;
+		hud.color = col;
+		hud.pivot = pivot;
 
-		hud_add_layout(*current_hud, HudVertical, current_hud->pos + window_padding);
+		hud.layouts.clear();
+		auto& layout = hud.layouts.emplace_back();
+		layout.type = HudVertical;
+		layout.rect.a = layout.rect.b = hud.pos + window_padding;
+		layout.cursor = layout.rect.a;
+		layout.auto_size = true;
 
 		if (!image.view)
 		{
-			current_hud->bg_verts = canvas->add_rect_filled(vec2(0.f), vec2(100.f), col); // 100 for temporary size
-			current_hud->bg_vert_count = 4;
+			hud.bg_verts = canvas->add_rect_filled(vec2(0.f), vec2(100.f), col); // 100 for temporary size
+			hud.bg_vert_count = 4;
 		}
 		else
 		{
 			auto size = (vec2)image.view->image->extent.xy() * (image.uvs.zw() - image.uvs.xy()) * image_scale;
 			auto border = image.border * image_scale;
-			current_hud->bg_verts = canvas->add_image_stretched(image.view, vec2(0.f), vec2(border.xy() + border.zw()) + vec2(1.f), image.uvs, size, border, col);
-			current_hud->bg_vert_count = 9 * 4;
+			hud.bg_verts = canvas->add_image_stretched(image.view, vec2(0.f), vec2(border.xy() + border.zw()) + vec2(1.f), image.uvs, size, border, col);
+			hud.bg_vert_count = 9 * 4;
 		}
 		if ((pivot.x != 0.f || pivot.y != 0.f) && auto_sizing)
-			current_hud->translate_cmd_idx = canvas->set_translate(vec2(0.f));
+			hud.translate_cmd_idx = canvas->set_translate(vec2(0.f));
 		else
-			current_hud->translate_cmd_idx = -1;
+			hud.translate_cmd_idx = -1;
 	}
 
 	void sRendererPrivate::hud_end()
 	{
-		auto& layout = current_hud->layouts[0];
+		auto& hud = huds.back();
+		auto& layout = hud.layouts[0];
 
 		auto canvas = render_tasks.front()->canvas;
 		auto window_padding = hud_style_vars[HudStyleVarWindowPadding].top();
@@ -3567,86 +3573,89 @@ namespace flame
 
 		hud_finish_layout(layout);
 		if (layout.auto_size)
-			current_hud->size = current_hud->size;
-		auto hud_pos = current_hud->pos;
-		auto hud_size = current_hud->size;
+			hud.size = hud.size;
+		auto hud_pos = hud.pos;
+		auto hud_size = hud.size;
 
-		if (current_hud->translate_cmd_idx != -1)
+		if (hud.translate_cmd_idx != -1)
 		{
-			auto translate = -hud_size * current_hud->pivot;
+			auto translate = -hud_size * hud.pivot;
 			hud_pos += translate;
-			canvas->draw_cmds[current_hud->translate_cmd_idx].data.translate = translate;
+			canvas->draw_cmds[hud.translate_cmd_idx].data.translate = translate;
 			canvas->set_translate(vec2(0.f));
 		}
 
-		if (current_hud->bg_verts)
+		if (hud.bg_verts)
 		{
-			if (current_hud->bg_vert_count <= 4)
+			if (hud.bg_vert_count <= 4)
 			{
 				auto scl = hud_size / 100.f; // 100 is temporary size
-				for (auto i = 0; i < current_hud->bg_vert_count; i++)
-					current_hud->bg_verts[i].pos = current_hud->bg_verts[i].pos * scl + hud_pos;
+				for (auto i = 0; i < hud.bg_vert_count; i++)
+					hud.bg_verts[i].pos = hud.bg_verts[i].pos * scl + hud_pos;
 			}
 			else // is a stretched image
 			{
-				auto sz = hud_size - current_hud->bg_verts[1].pos;
-				// current_hud->bg_verts[0] stays the same
-				// current_hud->bg_verts[1] stays the same
-				current_hud->bg_verts[2].pos.x += sz.x - 1.f;
-				current_hud->bg_verts[3].pos.x += sz.x - 1.f;
+				auto sz = hud_size - hud.bg_verts[1].pos;
+				// hud.bg_verts[0] stays the same
+				// hud.bg_verts[1] stays the same
+				hud.bg_verts[2].pos.x += sz.x - 1.f;
+				hud.bg_verts[3].pos.x += sz.x - 1.f;
 
-				current_hud->bg_verts[4].pos.y += sz.y - 1.f;
-				current_hud->bg_verts[5].pos.y += sz.y - 1.f;
-				current_hud->bg_verts[6].pos += sz - 1.f;
-				current_hud->bg_verts[7].pos += sz - 1.f;
+				hud.bg_verts[4].pos.y += sz.y - 1.f;
+				hud.bg_verts[5].pos.y += sz.y - 1.f;
+				hud.bg_verts[6].pos += sz - 1.f;
+				hud.bg_verts[7].pos += sz - 1.f;
 
-				// current_hud->bg_verts[8] stays the same
-				current_hud->bg_verts[9].pos.y += sz.y - 1.f;
-				current_hud->bg_verts[10].pos.y += sz.y - 1.f;
-				// current_hud->bg_verts[11] stays the same
+				// hud.bg_verts[8] stays the same
+				hud.bg_verts[9].pos.y += sz.y - 1.f;
+				hud.bg_verts[10].pos.y += sz.y - 1.f;
+				// hud.bg_verts[11] stays the same
 
-				current_hud->bg_verts[12].pos.x += sz.x - 1.f;
-				current_hud->bg_verts[13].pos += sz - 1.f;
-				current_hud->bg_verts[14].pos += sz - 1.f;
-				current_hud->bg_verts[15].pos.x += sz.x - 1.f;
+				hud.bg_verts[12].pos.x += sz.x - 1.f;
+				hud.bg_verts[13].pos += sz - 1.f;
+				hud.bg_verts[14].pos += sz - 1.f;
+				hud.bg_verts[15].pos.x += sz.x - 1.f;
 
-				// current_hud->bg_verts[16] stays the same
-				// current_hud->bg_verts[17] stays the same
-				// current_hud->bg_verts[18] stays the same
-				// current_hud->bg_verts[19] stays the same
+				// hud.bg_verts[16] stays the same
+				// hud.bg_verts[17] stays the same
+				// hud.bg_verts[18] stays the same
+				// hud.bg_verts[19] stays the same
 
-				current_hud->bg_verts[20].pos.x += sz.x - 1.f;
-				current_hud->bg_verts[21].pos.x += sz.x - 1.f;
-				current_hud->bg_verts[22].pos.x += sz.x - 1.f;
-				current_hud->bg_verts[23].pos.x += sz.x - 1.f;
+				hud.bg_verts[20].pos.x += sz.x - 1.f;
+				hud.bg_verts[21].pos.x += sz.x - 1.f;
+				hud.bg_verts[22].pos.x += sz.x - 1.f;
+				hud.bg_verts[23].pos.x += sz.x - 1.f;
 
-				current_hud->bg_verts[24].pos.y += sz.y - 1.f;
-				current_hud->bg_verts[25].pos.y += sz.y - 1.f;
-				current_hud->bg_verts[26].pos.y += sz.y - 1.f;
-				current_hud->bg_verts[27].pos.y += sz.y - 1.f;
+				hud.bg_verts[24].pos.y += sz.y - 1.f;
+				hud.bg_verts[25].pos.y += sz.y - 1.f;
+				hud.bg_verts[26].pos.y += sz.y - 1.f;
+				hud.bg_verts[27].pos.y += sz.y - 1.f;
 
-				current_hud->bg_verts[28].pos += sz - 1.f;
-				current_hud->bg_verts[29].pos += sz - 1.f;
-				current_hud->bg_verts[30].pos += sz - 1.f;
-				current_hud->bg_verts[31].pos += sz - 1.f;
+				hud.bg_verts[28].pos += sz - 1.f;
+				hud.bg_verts[29].pos += sz - 1.f;
+				hud.bg_verts[30].pos += sz - 1.f;
+				hud.bg_verts[31].pos += sz - 1.f;
 
-				// current_hud->bg_verts[32] stays the same
-				current_hud->bg_verts[33].pos.y += sz.y - 1.f;
-				current_hud->bg_verts[34].pos += sz - 1.f;
-				current_hud->bg_verts[35].pos.x += sz.x - 1.f;
+				// hud.bg_verts[32] stays the same
+				hud.bg_verts[33].pos.y += sz.y - 1.f;
+				hud.bg_verts[34].pos += sz - 1.f;
+				hud.bg_verts[35].pos.x += sz.x - 1.f;
 
-				for (auto i = 0; i < current_hud->bg_vert_count; i++)
-					current_hud->bg_verts[i].pos += hud_pos;
+				for (auto i = 0; i < hud.bg_vert_count; i++)
+					hud.bg_verts[i].pos += hud_pos;
 			}
 		}
 		Rect rect(hud_pos, hud_pos + hud_size);
-		if (current_hud->color.a > 0 && rect.contains(input->mpos))
+		if (hud.color.a > 0 && rect.contains(input->mpos))
 			input->mouse_used = true;
+
+		huds.pop_back();
 	}
 
 	void sRendererPrivate::hud_set_cursor(const vec2& pos)
 	{
-		auto& layout = current_hud->layouts.back();
+		auto& hud = huds.back();
+		auto& layout = hud.layouts.back();
 
 		layout.cursor = pos;
 		if (layout.auto_size)
@@ -3677,22 +3686,23 @@ namespace flame
 
 	void sRendererPrivate::hud_begin_layout(HudLayoutType type)
 	{
-		auto& layout = current_hud->layouts.back();
-		hud_add_layout(*current_hud, type, layout.cursor);
+		hud_add_layout(type);
 	}
 
 	void sRendererPrivate::hud_end_layout()
 	{
-		auto& layout = current_hud->layouts.back();
+		auto& hud = huds.back();
+		auto& layout = hud.layouts.back();
 		hud_finish_layout(layout);
 		auto size = layout.rect.size();
-		current_hud->layouts.pop_back();
+		hud.layouts.pop_back();
 		hud_add_rect(size);
 	}
 
 	void sRendererPrivate::hud_new_line()
 	{
-		auto& layout = current_hud->layouts.back();
+		auto& hud = huds.back();
+		auto& layout = hud.layouts.back();
 
 		auto item_spacing = hud_style_vars[HudStyleVarItemSpacing].top();
 		auto scaling = hud_style_vars[HudStyleVarScaling].top();
@@ -3733,7 +3743,8 @@ namespace flame
 
 	Rect sRendererPrivate::hud_add_rect(const vec2& _sz)
 	{
-		auto& layout = current_hud->layouts.back();
+		auto& hud = huds.back();
+		auto& layout = hud.layouts.back();
 
 		auto item_spacing = hud_style_vars[HudStyleVarItemSpacing].top();
 		auto scaling = hud_style_vars[HudStyleVarScaling].top();
