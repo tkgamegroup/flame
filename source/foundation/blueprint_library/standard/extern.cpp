@@ -57,6 +57,8 @@ namespace flame
 								(type == TypeInfo::get<uint>() && arg.type == TypeInfo::get<int>()) ||
 								(type == TypeInfo::get<int>() && arg.type == TypeInfo::get<uint>()))
 								type->copy(outputs[i].data, arg.data);
+							else if (type == TypeInfo::get<voidptr>())
+								*(voidptr*)outputs[i].data = arg.data;
 							else
 								type->create(outputs[i].data);
 						}

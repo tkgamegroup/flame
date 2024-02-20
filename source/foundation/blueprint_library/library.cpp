@@ -39,6 +39,7 @@ namespace flame
 		BlueprintSystem::template_types.emplace_back("s", TypeInfo::get<std::string>());
 		BlueprintSystem::template_types.emplace_back("w", TypeInfo::get<std::wstring>());
 		BlueprintSystem::template_types.emplace_back("p", TypeInfo::get<std::filesystem::path>());
+		BlueprintSystem::template_types.emplace_back("au", TypeInfo::get<std::vector<uint>>());
 
 		add_type_node_templates(standard_library);
 		add_logical_node_templates(standard_library);
