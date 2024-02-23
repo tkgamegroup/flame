@@ -2595,7 +2595,7 @@ namespace flame
 		g->name_hash = sh(name.c_str());
 		groups.emplace_back(g);
 
-		add_block(g, nullptr);
+		add_block(g, nullptr)->flags = BlueprintNodeFlagBreakTarget;
 
 		auto frame = frames;
 		g->structure_changed_frame = frame;
@@ -3600,7 +3600,7 @@ namespace flame
 
 			if (!std::filesystem::exists(filename))
 			{
-				wprintf(L"cannot found blueprint: %s", _filename.c_str());
+				wprintf(L"cannot found blueprint: %s\n", _filename.c_str());
 				return nullptr;
 			}
 
@@ -3888,6 +3888,7 @@ namespace flame
 			std::function<void(BlueprintNodePtr, BlueprintInstanceNode&)> create_node;
 			create_node = [&](BlueprintNodePtr block, BlueprintInstanceNode& o) {
 				std::vector<BlueprintInstanceNode> rest_nodes;
+				o.original = block;
 				for (auto n : block->children)
 				{
 					auto& c = rest_nodes.emplace_back();

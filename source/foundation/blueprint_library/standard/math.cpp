@@ -1341,5 +1341,112 @@ namespace flame
 			nullptr,
 			nullptr
 		);
+
+		library->add_template("Approach", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Pos",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Target",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Speed",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "Approached",
+					.allowed_types = { TypeInfo::get<bool>() }
+				},
+				{
+					.name = "Pos",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto pos = *(vec3*)inputs[0].data;
+				auto target = *(vec3*)inputs[1].data;
+				auto speed = *(float*)inputs[2].data * delta_time;
+
+				auto dir = target - pos;
+				auto dist = length(dir);
+				auto approached = dist < speed;
+
+				*(bool*)outputs[0].data = approached;
+				*(vec3*)outputs[1].data = pos + normalize(dir) * speed;
+			},
+			nullptr,
+			nullptr,
+			nullptr
+		);
+
+		library->add_template("Approach With Force", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Pos",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Target",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Max Speed",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "Velocity",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Force",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "Approached",
+					.allowed_types = { TypeInfo::get<bool>() }
+				},
+				{
+					.name = "Pos",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Velocity",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto pos = *(vec3*)inputs[0].data;
+				auto target = *(vec3*)inputs[1].data;
+				auto speed = *(float*)inputs[2].data * delta_time;
+				auto velocity = *(vec3*)inputs[3].data;
+				auto force = *(float*)inputs[4].data * delta_time;
+
+				auto dir = target - pos;
+				auto dist = length(dir);
+				auto approached = dist < speed;
+				if (force == 0.f)
+					velocity = normalize(dir) * speed;
+				else
+				{
+					velocity += normalize(dir) * force;
+					if (length(velocity) > speed)
+						velocity = normalize(velocity) * speed;
+				}
+
+				*(bool*)outputs[0].data = approached;
+				*(vec3*)outputs[1].data = pos + velocity;
+				*(vec3*)outputs[2].data = velocity;
+			},
+			nullptr,
+			nullptr,
+			nullptr
+		);
 	}
 }

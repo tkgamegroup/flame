@@ -1015,6 +1015,53 @@ namespace flame
 			}
 		);
 
+		library->add_template("Continuous Timer", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Interval",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "1"
+				},
+				{
+					.name = "t",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "0"
+				},
+				{
+					.name = "last_frame",
+					.flags = BlueprintSlotFlagHideInUI,
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "0"
+				}
+			},
+			{
+			},
+			true,
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				auto interval = *(float*)inputs[0].data;
+				auto& t = *(float*)inputs[1].data;
+				auto& last_frame = *(uint*)inputs[2].data;
+				if (last_frame + 1 < frames)
+				{
+					t = 0.f;
+					execution.block->max_execute_times = 0;
+				}
+				else
+				{
+					t += delta_time;
+					if (t >= interval)
+					{
+						t = 0.f;
+						execution.block->max_execute_times = 1;
+					}
+					else
+						execution.block->max_execute_times = 0;
+				}
+				last_frame = frames;
+			}
+		);
+
 		library->add_template("Co Wait", "", BlueprintNodeFlagNone,
 			{
 				{
