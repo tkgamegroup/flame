@@ -1333,8 +1333,7 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto min_radius = *(float*)inputs[1].data;
 				auto max_radius = *(float*)inputs[2].data;
-				auto rn = circularRand(max_radius - min_radius);
-				rn += normalize(rn) * min_radius;
+				auto rn = circularRand(linearRand(min_radius, max_radius));
 				*(vec3*)outputs[0].data = vec3(rn.x, 0.f, rn.y);
 			},
 			nullptr,
