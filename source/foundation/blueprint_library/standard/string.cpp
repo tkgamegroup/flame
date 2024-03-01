@@ -114,6 +114,72 @@ namespace flame
 			}
 		);
 
+		library->add_template("WString Equal", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(bool*)outputs[0].data = *(std::wstring*)inputs[0].data == *(std::wstring*)inputs[1].data;
+			}
+		);
+
+		library->add_template("String Find", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(bool*)outputs[0].data = (*(std::string*)inputs[0].data).find(*(std::string*)inputs[1].data) != std::string::npos;
+			}
+		);
+
+		library->add_template("WString Find", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "A",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				},
+				{
+					.name = "B",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(bool*)outputs[0].data = (*(std::wstring*)inputs[0].data).find(*(std::wstring*)inputs[1].data) != std::wstring::npos;
+			}
+		);
+
 		library->add_template("Str", "", BlueprintNodeFlagNone,
 			{
 				{

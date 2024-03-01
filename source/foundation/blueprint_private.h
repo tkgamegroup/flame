@@ -96,7 +96,7 @@ namespace flame
 	struct BlueprintInstancePrivate : BlueprintInstance
 	{
 		BlueprintInstancePrivate(BlueprintPtr blueprint);
-		~BlueprintInstancePrivate();
+		~BlueprintInstancePrivate(); 
 
 		void build() override;
 		void prepare_executing(BlueprintInstanceGroup* group) override;

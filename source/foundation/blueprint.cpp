@@ -4088,8 +4088,8 @@ namespace flame
 					}
 					return nullptr;
 				};
-				auto n = node.original;
-				if (n)
+				
+				if (auto n = node.original; n)
 				{
 					uint var_name, var_location, property_name;
 					get_variable_node_desc(n, &var_name, &var_location, &property_name);
@@ -4733,55 +4733,57 @@ namespace flame
 			auto& current_block = group->executing_stack.back();
 			auto& current_node = current_block.node->children[current_block.child_index];
 
-			auto node = current_node.original;
-			BlueprintBreakpointOption breakpoint_option;
-			if (debugger && debugger->has_break_node(node, &breakpoint_option))
+			if (auto node = current_node.original; node)
 			{
-				if (breakpoint_option == BlueprintBreakpointBreakInCode)
+				BlueprintBreakpointOption breakpoint_option;
+				if (debugger && debugger->has_break_node(node, &breakpoint_option))
 				{
-					debugger->remove_break_node(node);
-					debug_break();
-				}
-				else
-				{
-					debugger->debugging = group;
-					if (breakpoint_option == BlueprintBreakpointTriggerOnce)
+					if (breakpoint_option == BlueprintBreakpointBreakInCode)
+					{
 						debugger->remove_break_node(node);
-					debugger->callbacks.call("breakpoint_triggered"_h, node, nullptr);
-					printf("Blueprint breakpoint triggered: %s\n", node->name.c_str());
-					return nullptr;
+						debug_break();
+					}
+					else
+					{
+						debugger->debugging = group;
+						if (breakpoint_option == BlueprintBreakpointTriggerOnce)
+							debugger->remove_break_node(node);
+						debugger->callbacks.call("breakpoint_triggered"_h, node, nullptr);
+						printf("Blueprint breakpoint triggered: %s\n", node->name.c_str());
+						return nullptr;
+					}
 				}
-			}
-			if (!node->is_block)
-			{
-				if (node->function)
-					node->function(current_node.inputs.size(), current_node.inputs.data(), current_node.outputs.size(), current_node.outputs.data());
-				if (node->loop_function) // node's loop funtion is used as the odinary function but with execution data
+				if (!node->is_block)
 				{
-					BlueprintExecutionData execution_data;
-					execution_data.group = group;
-					execution_data.block = &current_block;
-					node->loop_function(current_node.inputs.size(), current_node.inputs.data(), current_node.outputs.size(), current_node.outputs.data(), execution_data);
-				}
-			}
-			else
-			{
-				if (node->name_hash != "Block"_h || *(uint*)current_node.inputs[0].data)
-				{
-					BlueprintExecutingBlock new_block;
-					new_block.max_execute_times = 1;
-					if (node->begin_block_function)
+					if (node->function)
+						node->function(current_node.inputs.size(), current_node.inputs.data(), current_node.outputs.size(), current_node.outputs.data());
+					if (node->loop_function) // node's loop funtion is used as the odinary function but with execution data
 					{
 						BlueprintExecutionData execution_data;
 						execution_data.group = group;
-						execution_data.block = &new_block;
-						node->begin_block_function(current_node.inputs.size(), current_node.inputs.data(), current_node.outputs.size(), current_node.outputs.data(), execution_data);
+						execution_data.block = &current_block;
+						node->loop_function(current_node.inputs.size(), current_node.inputs.data(), current_node.outputs.size(), current_node.outputs.data(), execution_data);
 					}
-					if (new_block.max_execute_times > 0)
+				}
+				else
+				{
+					if (node->name_hash != "Block"_h || *(uint*)current_node.inputs[0].data)
 					{
-						new_block.parent = &current_block;
-						new_block.node = &current_node;
-						group->executing_stack.push_back(new_block);
+						BlueprintExecutingBlock new_block;
+						new_block.max_execute_times = 1;
+						if (node->begin_block_function)
+						{
+							BlueprintExecutionData execution_data;
+							execution_data.group = group;
+							execution_data.block = &new_block;
+							node->begin_block_function(current_node.inputs.size(), current_node.inputs.data(), current_node.outputs.size(), current_node.outputs.data(), execution_data);
+						}
+						if (new_block.max_execute_times > 0)
+						{
+							new_block.parent = &current_block;
+							new_block.node = &current_node;
+							group->executing_stack.push_back(new_block);
+						}
 					}
 				}
 			}

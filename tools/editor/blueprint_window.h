@@ -8,17 +8,17 @@
 struct BlueprintView : View
 {
 	ax::NodeEditor::Detail::EditorContext* ax_editor = nullptr;
-	std::filesystem::path blueprint_path;
-	BlueprintPtr blueprint = nullptr;
-	BlueprintInstancePtr blueprint_instance = nullptr;
-	std::string group_name = "main";
-	uint group_name_hash = "main"_h;
-	uint load_frame = 0;
-	BlueprintGroupPtr last_group = nullptr;
-	uint last_block = 0;
-	bool show_misc = false;
-	bool hide_var_links = true;
-	bool unsaved = false;
+	std::filesystem::path	blueprint_path;
+	BlueprintPtr			blueprint = nullptr;
+	BlueprintInstancePtr	blueprint_instance = nullptr;
+	std::string				group_name = "main";
+	uint					group_name_hash = "main"_h;
+	uint					load_frame = 0;
+	BlueprintGroupPtr		last_group = nullptr;
+	uint					last_block = 0;
+	bool					show_misc = false;
+	bool					hide_var_links = true;
+	bool					unsaved = false;
 
 	std::unordered_map<uint, std::vector<vec2>> block_verts;
 

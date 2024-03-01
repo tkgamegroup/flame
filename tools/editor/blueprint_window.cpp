@@ -2827,6 +2827,8 @@ void BlueprintView::on_draw()
 							{
 								if (name == "EGet V" || name == "ESet V")
 									slot_name = "V0"_h;
+								else if (name == "Loop Var")
+									slot_name = "V"_h;
 							}
 							if (!slot_name)
 								return false;
@@ -2855,6 +2857,23 @@ void BlueprintView::on_draw()
 									if (slot_name == "V0"_h)
 									{
 										if (n->name_hash == "EGet V"_h || n->name_hash == "ESet V"_h)
+										{
+											if (auto type = new_node_link_slot->type; type != TypeInfo::get<float>())
+											{
+												for (auto& t : BlueprintSystem::template_types)
+												{
+													if (t.second == type)
+													{
+														blueprint->change_node_structure(n, t.first, {});
+														break;
+													}
+												}
+											}
+										}
+									}
+									else if (slot_name == "V"_h)
+									{
+										if (n->name_hash == "Loop Var"_h )
 										{
 											if (auto type = new_node_link_slot->type; type != TypeInfo::get<float>())
 											{
@@ -3504,6 +3523,8 @@ BlueprintWindow::BlueprintWindow() :
 				auto view = (BlueprintView*)v.get();
 				if (blueprint == view->blueprint)
 				{
+					if (view->imgui_window)
+						ImGui::FocusWindow((ImGuiWindow*)view->imgui_window);
 					auto ax_node = view->ax_editor->GetNode((ax::NodeEditor::NodeId)node);
 					view->ax_editor->NavigateTo(ax_node->GetBounds(), false, 0.f);
 					break;

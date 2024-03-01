@@ -1530,6 +1530,528 @@ namespace flame
 			}
 		);
 
+		library->add_template("EBackup Datas", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto process_entity = [&](Entity* entity) {
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						auto bp = ins->bp;
+						for (auto& v : bp->variables)
+						{
+							if (v.type->tag != TagD)
+								continue;
+							auto ok = true;
+							for (auto i = 1; i < inputs_count; i++)
+							{
+								if (inputs[i].type != TypeInfo::get<uint>())
+									break;
+								if (v.name_hash == *(uint*)inputs[i].data)
+								{
+									ok = false;
+									break;
+								}
+							}
+							if (ok)
+							{
+								auto new_name = v.name + "_backup";
+								if (auto it = instance->variables.find(v.name_hash); it != instance->variables.end())
+									instance->create_variable(sh(new_name.c_str()), v.type, it->second.data);
+							}
+						}
+					}
+				};
+
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					process_entity(entity);
+					for (auto i = (int)inputs_count - 1; i > 0; i--)
+					{
+						if (inputs[i].type == TypeInfo::get<std::string>())
+						{
+							if (auto c = entity->find_child(*(std::string*)inputs[i].data); c)
+							{
+								for (auto& cc : c->children)
+									process_entity(cc.get());
+							}
+						}
+						else
+							break;
+					}
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto num_excludes = 0;
+					auto num_child_names = 0;
+
+					for (auto& t : SUS::to_string_vector(SUS::split(info.template_string, ',')))
+					{
+						if (SUS::strip_head_if(t, "E"))
+							num_excludes = s2t<uint>(t);
+						else if (SUS::strip_head_if(t, "C"))
+							num_child_names = s2t<uint>(t);
+					}
+
+					info.new_inputs.resize(1 + num_excludes + num_child_names);
+					info.new_inputs[0] = {
+						.name = "Entity",
+						.allowed_types = { TypeInfo::get<EntityPtr>() }
+					};
+					for (auto i = 0; i < num_excludes; i++)
+					{
+						info.new_inputs[i + 1] = {
+							.name = "Exclude" + str(i) + "_hash",
+							.allowed_types = { TypeInfo::get<std::string>() }
+						};
+					}
+					for (auto i = 0; i < num_child_names; i++)
+					{
+						info.new_inputs[i + 1 + num_excludes] = {
+							.name = "Child" + str(i),
+							.allowed_types = { TypeInfo::get<std::string>() }
+						};
+					}
+
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
+		);
+
+		library->add_template("ERecover Datas", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto process_entity = [&](Entity* entity) {
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						auto bp = ins->bp;
+						for (auto& v : bp->variables)
+						{
+							if (v.type->tag != TagD)
+								continue;
+							auto new_name = v.name + "_backup";
+							if (auto it = instance->variables.find(sh(new_name.c_str())); it != instance->variables.end())
+							{
+								if (auto it2 = instance->variables.find(v.name_hash); it2 != instance->variables.end())
+									v.type->copy(it2->second.data, it->second.data);
+							}
+						}
+					}
+				};
+
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					process_entity(entity);
+					for (auto i = (int)inputs_count - 1; i > 0; i--)
+					{
+						if (inputs[i].type == TypeInfo::get<std::string>())
+						{
+							if (auto c = entity->find_child(*(std::string*)inputs[i].data); c)
+							{
+								for (auto& cc : c->children)
+									process_entity(cc.get());
+							}
+						}
+						else
+							break;
+					}
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto num_child_names = 0;
+
+					for (auto& t : SUS::to_string_vector(SUS::split(info.template_string, ',')))
+					{
+						if (SUS::strip_head_if(t, "C"))
+							num_child_names = s2t<uint>(t);
+					}
+
+					info.new_inputs.resize(1 + num_child_names);
+					info.new_inputs[0] = {
+						.name = "Entity",
+						.allowed_types = { TypeInfo::get<EntityPtr>() }
+					};
+					for (auto i = 0; i < num_child_names; i++)
+					{
+						info.new_inputs[i + 1] = {
+							.name = "Child" + str(i),
+							.allowed_types = { TypeInfo::get<std::string>() }
+						};
+					}
+
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
+		);
+
+		library->add_template("EChange Datas", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Filter",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Change",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto& filter = *(std::string*)inputs[1].data;
+
+				auto process_entity = [&](Entity* entity) {
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						auto bp = ins->bp;
+						for (auto& v : bp->variables)
+						{
+							if (v.type->tag == TagD && v.name == filter)
+							{
+								if (auto it = instance->variables.find(v.name_hash); it != instance->variables.end())
+								{
+									if (v.type == TypeInfo::get<float>())
+									{
+										auto& arg = it->second;
+										*(float*)arg.data += *(float*)inputs[2].data;
+									}
+									else if (v.type == TypeInfo::get<uint>())
+									{
+										auto& arg = it->second;
+										*(uint*)arg.data += *(float*)inputs[2].data;
+									}
+									else if (v.type == TypeInfo::get<int>())
+									{
+										auto& arg = it->second;
+										*(int*)arg.data += *(float*)inputs[2].data;
+									}
+								}
+							}
+						}
+					}
+					};
+
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					process_entity(entity);
+					for (auto i = (int)inputs_count - 1; i > 2; i--)
+					{
+						if (inputs[i].type == TypeInfo::get<std::string>())
+						{
+							if (auto c = entity->find_child(*(std::string*)inputs[i].data); c)
+							{
+								for (auto& cc : c->children)
+									process_entity(cc.get());
+							}
+						}
+						else
+							break;
+					}
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto num_child_names = 0;
+
+					for (auto& t : SUS::to_string_vector(SUS::split(info.template_string, ',')))
+					{
+						if (SUS::strip_head_if(t, "C"))
+							num_child_names = s2t<uint>(t);
+					}
+
+					info.new_inputs.resize(3 + num_child_names);
+					info.new_inputs[0] = {
+						.name = "Entity",
+						.allowed_types = { TypeInfo::get<EntityPtr>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Filter",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					info.new_inputs[2] = {
+						.name = "Change",
+						.allowed_types = { TypeInfo::get<float>() }
+					};
+					for (auto i = 0; i < num_child_names; i++)
+					{
+						info.new_inputs[i + 3] = {
+							.name = "Child" + str(i),
+							.allowed_types = { TypeInfo::get<std::string>() }
+						};
+					}
+
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
+		);
+
+		library->add_template("EScale Datas", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Filter",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Scaling",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto& filter = *(std::string*)inputs[1].data;
+
+				auto process_entity = [&](Entity* entity) {
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						auto bp = ins->bp;
+						for (auto& v : bp->variables)
+						{
+							if (v.type->tag == TagD && v.name == filter)
+							{
+								if (auto it = instance->variables.find(v.name_hash); it != instance->variables.end())
+								{
+									if (v.type == TypeInfo::get<float>())
+									{
+										auto& arg = it->second;
+										*(float*)arg.data *= *(float*)inputs[2].data;
+									}
+									else if (v.type == TypeInfo::get<uint>())
+									{
+										auto& arg = it->second;
+										*(uint*)arg.data *= *(float*)inputs[2].data;
+									}
+									else if (v.type == TypeInfo::get<int>())
+									{
+										auto& arg = it->second;
+										*(int*)arg.data *= *(float*)inputs[2].data;
+									}
+								}
+							}
+						}
+					}
+				};
+
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					process_entity(entity);
+					for (auto i = (int)inputs_count - 1; i > 2; i--)
+					{
+						if (inputs[i].type == TypeInfo::get<std::string>())
+						{
+							if (auto c = entity->find_child(*(std::string*)inputs[i].data); c)
+							{
+								for (auto& cc : c->children)
+									process_entity(cc.get());
+							}
+						}
+						else
+							break;
+					}
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto num_child_names = 0;
+
+					for (auto& t : SUS::to_string_vector(SUS::split(info.template_string, ',')))
+					{
+						if (SUS::strip_head_if(t, "C"))
+							num_child_names = s2t<uint>(t);
+					}
+
+					info.new_inputs.resize(3 + num_child_names);
+					info.new_inputs[0] = {
+						.name = "Entity",
+						.allowed_types = { TypeInfo::get<EntityPtr>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Filter",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					info.new_inputs[2] = {
+						.name = "Scaling",
+						.allowed_types = { TypeInfo::get<float>() }
+					};
+					for (auto i = 0; i < num_child_names; i++)
+					{
+						info.new_inputs[i + 3] = {
+							.name = "Child" + str(i),
+							.allowed_types = { TypeInfo::get<std::string>() }
+						};
+					}
+
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
+		);
+
+		library->add_template("Create Class", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Path",
+					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
+				}
+			},
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(EntityPtr*)outputs[0].data = nullptr;
+				auto path = Path::get(*(std::filesystem::path*)inputs[1].data);
+
+				if (auto parent = *(EntityPtr*)inputs[0].data; parent)
+				{
+					auto e = Entity::create();
+					e->add_component<cBpInstance>()->set_bp_name(path);
+					parent->add_child(e);
+					*(EntityPtr*)outputs[0].data = e;
+				}
+			}
+		);
+
+		library->add_template("Find Child Class", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Path",
+					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
+				}
+			},
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(EntityPtr*)outputs[0].data = nullptr;
+				auto path = Path::get(*(std::filesystem::path*)inputs[1].data);
+
+				if (auto parent = *(EntityPtr*)inputs[0].data; parent)
+				{
+					for (auto& c : parent->children)
+					{
+						if (auto ins = c->get_component<cBpInstance>(); ins && ins->bp)
+						{
+							if (ins->bp->filename == path)
+							{
+								*(EntityPtr*)outputs[0].data = c.get();
+								break;
+							}
+						}
+					}
+				}
+			}
+		);
+
+		library->add_template("Find Or Create Child Class", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Path",
+					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
+				}
+			},
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(EntityPtr*)outputs[0].data = nullptr;
+				auto path = Path::get(*(std::filesystem::path*)inputs[1].data);
+
+				if (auto parent = *(EntityPtr*)inputs[0].data; parent)
+				{
+					for (auto& c : parent->children)
+					{
+						if (auto ins = c->get_component<cBpInstance>(); ins && ins->bp)
+						{
+							if (ins->bp->filename == path)
+							{
+								*(EntityPtr*)outputs[0].data = c.get();
+								break;
+							}
+						}
+					}
+
+					if (!*(EntityPtr*)outputs[0].data)
+					{
+						auto e = Entity::create();
+						e->add_component<cBpInstance>()->set_bp_name(path);
+						parent->add_child(e);
+						*(EntityPtr*)outputs[0].data = e;
+					}
+				}
+			}
+		);
+
 		library->add_template("Start Coroutine", "", BlueprintNodeFlagNone,
 			{
 				{
@@ -2183,17 +2705,22 @@ namespace flame
 					.name = "Color",
 					.allowed_types = { TypeInfo::get<cvec4>() },
 					.default_value = "255,255,255,255"
+				},
+				{
+					.name = "Depth",
+					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto mesh = entity->get_component<cMesh>();
-					if (mesh)
-						mesh->set_color(*(cvec4*)inputs[1].data);
+					auto color = *(cvec4*)inputs[1].data;
+					auto depth = *(uint*)inputs[2].data;
+
+					if (auto mesh = entity->get_component<cMesh>(); mesh)
+						mesh->set_color(color);
 				}
 			}
 		);
@@ -2203,16 +2730,20 @@ namespace flame
 				{
 					.name = "Entity",
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Depth",
+					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto mesh = entity->get_component<cMesh>();
-					if (mesh)
+					auto depth = *(uint*)inputs[1].data;
+
+					if (auto mesh = entity->get_component<cMesh>(); mesh)
 						mesh->set_material_name(L"default");
 				}
 			}
@@ -2223,16 +2754,20 @@ namespace flame
 				{
 					.name = "Entity",
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Depth",
+					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto mesh = entity->get_component<cMesh>();
-					if (mesh)
+					auto depth = *(uint*)inputs[1].data;
+
+					if (auto mesh = entity->get_component<cMesh>(); mesh)
 						mesh->set_material_name(L"default_red");
 				}
 			}
@@ -2243,16 +2778,20 @@ namespace flame
 				{
 					.name = "Entity",
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Depth",
+					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto mesh = entity->get_component<cMesh>();
-					if (mesh)
+					auto depth = *(uint*)inputs[1].data;
+
+					if (auto mesh = entity->get_component<cMesh>(); mesh)
 						mesh->set_material_name(L"default_green");
 				}
 			}
@@ -2263,16 +2802,20 @@ namespace flame
 				{
 					.name = "Entity",
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Depth",
+					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto mesh = entity->get_component<cMesh>();
-					if (mesh)
+					auto depth = *(uint*)inputs[1].data;
+
+					if (auto mesh = entity->get_component<cMesh>(); mesh)
 						mesh->set_material_name(L"default_blue");
 				}
 			}
@@ -2283,16 +2826,20 @@ namespace flame
 				{
 					.name = "Entity",
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Depth",
+					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto mesh = entity->get_component<cMesh>();
-					if (mesh)
+					auto depth = *(uint*)inputs[1].data;
+
+					if (auto mesh = entity->get_component<cMesh>(); mesh)
 						mesh->set_material_name(L"default_yellow");
 				}
 			}
@@ -2303,16 +2850,20 @@ namespace flame
 				{
 					.name = "Entity",
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Depth",
+					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto mesh = entity->get_component<cMesh>();
-					if (mesh)
+					auto depth = *(uint*)inputs[1].data;
+
+					if (auto mesh = entity->get_component<cMesh>(); mesh)
 						mesh->set_material_name(L"default_purple");
 				}
 			}
@@ -2323,16 +2874,20 @@ namespace flame
 				{
 					.name = "Entity",
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Depth",
+					.allowed_types = { TypeInfo::get<uint>() }
 				}
 			},
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto entity = *(EntityPtr*)inputs[0].data;
-				if (entity)
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					auto mesh = entity->get_component<cMesh>();
-					if (mesh)
+					auto depth = *(uint*)inputs[1].data;
+
+					if (auto mesh = entity->get_component<cMesh>(); mesh)
 						mesh->set_material_name(L"default_cyan");
 				}
 			}

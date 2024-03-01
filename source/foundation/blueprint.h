@@ -775,6 +775,19 @@ namespace flame
 			*(T*)variables[idx].data = v;
 		}
 
+		inline void create_variable(uint name, TypeInfo* type, void* data)
+		{
+			if (auto it = variables.find(name); it != variables.end())
+				type->copy(it->second.data, data);
+			else
+			{
+				auto& arg = variables[name];
+				arg.type = type;
+				arg.data = arg.type->create();
+				type->copy(arg.data, data);
+			}
+		}
+
 		inline void reset_all_variables()
 		{
 			for (auto& v : variables)
@@ -821,10 +834,35 @@ namespace flame
 		}
 
 		template<class T>
+		inline T get_ith_variable_as(uint idx)
+		{
+			*(T*)variables[idx].data;
+		}
+
+		template<class T>
 		inline void set_variable_as(uint name, T v)
 		{
 			if (auto it = variables.find(name); it != variables.end())
 				*(T*)it->second.data = v;
+		}
+
+		template<class T>
+		inline void set_ith_variable_as(uint idx, T v)
+		{
+			*(T*)variables[idx].data = v;
+		}
+
+		inline void create_variable(uint name, TypeInfo* type, void* data)
+		{
+			if (auto it = variables.find(name); it != variables.end())
+				type->copy(it->second.data, data);
+			else
+			{
+				auto& arg = variables[name];
+				arg.type = type;
+				arg.data = arg.type->create();
+				type->copy(arg.data, data);
+			}
 		}
 
 		virtual ~BlueprintInstance() {}

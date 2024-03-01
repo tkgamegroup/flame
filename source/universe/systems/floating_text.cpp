@@ -65,8 +65,7 @@ namespace flame
 				auto render_task = renderer->render_tasks.front().get();
 				auto canvas = render_task->canvas;
 				auto pos = vec2(0.f);
-				if (it->bind_target)
-					pos = render_task->camera->world_to_screen(it->bind_target->global_pos() + it->offset_3d);
+				pos = render_task->camera->world_to_screen(it->bind_target ? it->bind_target->global_pos() + it->offset_3d : it->offset_3d);
 				pos += it->offset_2d;
 				it->offset_2d += it->speed;
 				canvas->add_text(canvas->default_font_atlas, it->font_size, pos, it->text, it->color, 0.5f, 0.2f);

@@ -2321,14 +2321,55 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 					auto comp = (cBpInstancePtr)cc.components[0];
 					if (auto bp_ins = comp->bp_ins; bp_ins)
 					{
-						if (ImGui::TreeNode("Bp Variables:"))
+						auto bp = comp->bp;
+						auto ins = comp->bp_ins;
+						if (ImGui::TreeNode("Variables:"))
 						{
-							for (auto& v : comp->bp->variables)
+							if (ImGui::BeginTableEx("inspector", "inspector"_h, 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
 							{
-								if (ImGui::TreeNode(v.name.c_str()))
+								ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100);
+								ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0);
+
+								for (auto& v : bp->variables)
 								{
 									if (auto it = bp_ins->variables.find(v.name_hash); it != bp_ins->variables.end())
-										ImGui::TextUnformatted(get_value_str(it->second.type, it->second.data).c_str());
+									{
+										if (is_pointer(v.type->tag))
+										{
+											ImGui::TableNextRow();
+											ImGui::TableNextColumn();
+											ImGui::TextUnformatted(get_display_name(v.name).c_str());
+											ImGui::TableNextColumn();
+
+											ImGui::TextUnformatted(get_value_str(it->second.type, it->second.data).c_str());
+										}
+										else
+											manipulate_variable(v.type, v.name, v.name_hash, 0, nullptr, nullptr, "", &it->second.data, 1, bp);
+									}
+								}
+
+								if (ins->variables.size() > bp->variables.size())
+								{
+									for (auto& v : bp->variables)
+									{
+										auto name = v.name + "_backup";
+										if (auto it = ins->variables.find(sh(name.c_str())); it != ins->variables.end())
+											manipulate_variable(v.type, name, v.name_hash, 0, nullptr, nullptr, "", &it->second.data, 1, bp);
+									}
+								}
+
+								ImGui::EndTable();
+							}
+
+							ImGui::TreePop();
+						}
+						if (ImGui::TreeNode("Groups:"))
+						{
+							for (auto& g : bp->groups)
+							{
+								if (ImGui::TreeNode(g->name.c_str()))
+								{
+
 									ImGui::TreePop();
 								}
 							}
