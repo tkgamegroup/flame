@@ -229,7 +229,9 @@ namespace flame
 				{
 					ret.view = view;
 					ret.uvs = it->second.uvs;
-					ret.border = it->second.border;
+					auto sz = (vec2)((Image*)image)->extent.xy();
+					ret.border_uvs.xy = it->second.border.xy / sz;
+					ret.border_uvs.zw = vec2(1.f) - it->second.border.zw / sz;
 				}
 				return ret;
 			}

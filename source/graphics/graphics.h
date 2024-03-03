@@ -511,7 +511,7 @@ namespace flame
 		{
 			ImageViewPtr view = nullptr;
 			vec4 uvs;
-			vec4 border;
+			vec4 border_uvs;
 		};
 	}
 }

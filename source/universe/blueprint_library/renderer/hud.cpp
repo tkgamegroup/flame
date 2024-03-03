@@ -81,9 +81,9 @@ namespace flame
 					.allowed_types = { TypeInfo::get<graphics::ImageDesc>() }
 				},
 				{
-					.name = "Image Scale",
-					.allowed_types = { TypeInfo::get<float>() },
-					.default_value = "1"
+					.name = "Border",
+					.allowed_types = { TypeInfo::get<vec4>() },
+					.default_value = "4,4,4,4"
 				}
 			},
 			{
@@ -95,9 +95,9 @@ namespace flame
 				auto col = *(cvec4*)inputs[2].data;
 				auto pivot = *(vec2*)inputs[3].data;
 				auto& image = *(graphics::ImageDesc*)inputs[4].data;
-				auto image_scale = *(float*)inputs[5].data;
+				auto border = *(vec4*)inputs[5].data;
 
-				sRenderer::instance()->hud_begin(pos, size, col, pivot, image, image_scale);
+				sRenderer::instance()->hud_begin(pos, size, col, pivot, image, border);
 
 				execution.block->max_execute_times = 1;
 			},
@@ -108,12 +108,19 @@ namespace flame
 
 		library->add_template("Hud Vertical", "", BlueprintNodeFlagNone,
 			{
+				{
+					.name = "Item Spacing",
+					.allowed_types = { TypeInfo::get<vec4>() },
+					.default_value = "2,2"
+				}
 			},
 			{
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				sRenderer::instance()->hud_begin_layout(HudVertical);
+				auto item_spacing = *(vec2*)inputs[0].data;
+
+				sRenderer::instance()->hud_begin_layout(HudVertical, item_spacing);
 
 				execution.block->max_execute_times = 1;
 			},
@@ -124,12 +131,19 @@ namespace flame
 
 		library->add_template("Hud Horizontal", "", BlueprintNodeFlagNone,
 			{
+				{
+					.name = "Item Spacing",
+					.allowed_types = { TypeInfo::get<vec4>() },
+					.default_value = "2,2"
+				}
 			},
 			{
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				sRenderer::instance()->hud_begin_layout(HudHorizontal);
+				auto item_spacing = *(vec2*)inputs[0].data;
+
+				sRenderer::instance()->hud_begin_layout(HudHorizontal, item_spacing);
 
 				execution.block->max_execute_times = 1;
 			},
@@ -177,48 +191,6 @@ namespace flame
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				sRenderer::instance()->hud_end_stencil_compare();
-			}
-		);
-
-		library->add_template("Hud Window Padding", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Padding",
-					.allowed_types = { TypeInfo::get<vec2>() },
-					.default_value = "2,2"
-				}
-			},
-			{
-			},
-			true,
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				sRenderer::instance()->hud_push_style(HudStyleVarWindowPadding, *(vec2*)inputs[0].data);
-
-				execution.block->max_execute_times = 1;
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sRenderer::instance()->hud_pop_style(HudStyleVarWindowPadding);
-			}
-		);
-
-		library->add_template("Hud Item Spacing", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Spacing",
-					.allowed_types = { TypeInfo::get<vec2>() },
-					.default_value = "2,2"
-				}
-			},
-			{
-			},
-			true,
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				sRenderer::instance()->hud_push_style(HudStyleVarItemSpacing, *(vec2*)inputs[0].data);
-
-				execution.block->max_execute_times = 1;
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sRenderer::instance()->hud_pop_style(HudStyleVarItemSpacing);
 			}
 		);
 
@@ -304,9 +276,35 @@ namespace flame
 					.allowed_types = { TypeInfo::get<graphics::ImageDesc>() }
 				},
 				{
-					.name = "Image Scale",
-					.allowed_types = { TypeInfo::get<float>() },
-					.default_value = "1"
+					.name = "Col",
+					.allowed_types = { TypeInfo::get<cvec4>() },
+					.default_value = "255,255,255,255"
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto size = *(vec2*)inputs[0].data;
+				auto& image = *(graphics::ImageDesc*)inputs[1].data;
+				auto col = *(cvec4*)inputs[2].data;
+				if (image.view)
+					sRenderer::instance()->hud_image(size, image, col);
+			}
+		);
+
+		library->add_template("Hud Image Stretched", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Size",
+					.allowed_types = { TypeInfo::get<vec2>() }
+				},
+				{
+					.name = "Image",
+					.allowed_types = { TypeInfo::get<graphics::ImageDesc>() }
+				},
+				{
+					.name = "Border",
+					.allowed_types = { TypeInfo::get<vec4>() }
 				},
 				{
 					.name = "Col",
@@ -319,10 +317,10 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto size = *(vec2*)inputs[0].data;
 				auto& image = *(graphics::ImageDesc*)inputs[1].data;
-				auto image_scale = *(float*)inputs[2].data;
+				auto border = *(vec4*)inputs[2].data;
 				auto col = *(cvec4*)inputs[3].data;
 				if (image.view)
-					sRenderer::instance()->hud_image(size, image, image_scale, col);
+					sRenderer::instance()->hud_image_stretched(size, image, border, col);
 			}
 		);
 
@@ -336,35 +334,59 @@ namespace flame
 					.name = "Font Size",
 					.allowed_types = { TypeInfo::get<uint>() },
 					.default_value = "24"
+				}
+			},
+			{
+			},
+			true,
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				auto& label = *(std::wstring*)inputs[0].data;
+				auto font_size = *(uint*)inputs[1].data;
+				auto clicked = sRenderer::instance()->hud_button(label, font_size);
+
+				execution.block->max_execute_times =  clicked ? 1 : 0;
+			}
+		);
+
+		library->add_template("Hud Image Button", "", BlueprintNodeFlagHorizontalOutputs,
+			{ 
+				{
+					.name = "Size",
+					.allowed_types = { TypeInfo::get<vec2>() }
 				},
 				{
 					.name = "Image",
 					.allowed_types = { TypeInfo::get<graphics::ImageDesc>() }
 				},
 				{
-					.name = "Image Scale",
-					.allowed_types = { TypeInfo::get<float>() },
-					.default_value = "1"
+					.name = "Border",
+					.allowed_types = { TypeInfo::get<vec4>() }
 				}
 			},
 			{
-				{
-					.name = "Hovered",
-					.allowed_types = { TypeInfo::get<BlueprintSignal>() }
-				}
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto& label = *(std::wstring*)inputs[0].data;
-				auto font_size = *(uint*)inputs[1].data;
-				auto& image = *(graphics::ImageDesc*)inputs[2].data;
-				auto image_scale = *(float*)inputs[3].data;
-				bool hovered = false;
-				auto clicked = sRenderer::instance()->hud_button(label, font_size, image, image_scale, &hovered);
+				auto size = *(vec2*)inputs[0].data;
+				auto& image = *(graphics::ImageDesc*)inputs[1].data;
+				auto border = *(vec4*)inputs[2].data;
+				auto clicked = sRenderer::instance()->hud_image_button(size, image, border);
 
-				(*(BlueprintSignal*)outputs[0].data).v = hovered ? 1 : 0;
+				execution.block->max_execute_times = clicked ? 1 : 0;
+			}
+		);
 
-				execution.block->max_execute_times =  clicked ? 1 : 0;
+		library->add_template("Hud Item Hovered", "", BlueprintNodeFlagNone,
+			{
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(bool*)outputs[0].data = sRenderer::instance()->hud_item_hovered();
 			}
 		);
 

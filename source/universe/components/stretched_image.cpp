@@ -24,7 +24,7 @@ namespace flame
 			{
 				auto p0 = element->global_pos0();
 				auto p1 = element->global_pos1();
-				canvas->add_image_stretched(image->get_view(), p0, p1, vec4(0.f, 0.f, 1.f, 1.f), (vec2)image->extent.xy() * image_scale, border * image_scale, tint_col);
+				canvas->add_image_stretched(image->get_view(), p0, p1, vec4(0.f, 0.f, 1.f, 1.f), border, border_uvs, tint_col);
 			}
 		}, "stretched_image"_h);
 	}
@@ -57,7 +57,9 @@ namespace flame
 			{
 				graphics::ImageConfig config;
 				graphics::Image::get_config(image->filename, &config);
-				border = config.border;
+				auto sz = (vec2)image->extent.xy();
+				border_uvs.xy = config.border.xy / sz;
+				border_uvs.zw = vec2(1.f) - config.border.zw / sz;
 			}
 		}
 
@@ -78,13 +80,13 @@ namespace flame
 		data_changed("tint_col"_h);
 	}
 
-	void cStretchedImagePrivate::set_image_scale(float scale)
+	void cStretchedImagePrivate::set_border(const vec4& _border)
 	{
-		if (image_scale == scale)
+		if (border == _border)
 			return;
-		image_scale = scale;
+		border = _border;
 		element->mark_drawing_dirty();
-		data_changed("image_scale"_h);
+		data_changed("border"_h);
 	}
 
 	struct cStretchedImageCreate : cStretchedImage::Create

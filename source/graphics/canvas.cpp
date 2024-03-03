@@ -526,7 +526,7 @@ namespace flame
 			return verts;
 		}
 
-		Canvas::DrawVert* CanvasPrivate::add_image_stretched(ImageViewPtr iv, const vec2& p0, const vec2& p1, const vec4& uvs, const vec2& size, const vec4& border, const cvec4& tint_col)
+		Canvas::DrawVert* CanvasPrivate::add_image_stretched(ImageViewPtr iv, const vec2& p0, const vec2& p1, const vec4& uvs, const vec4& border, const vec4& border_uvs, const cvec4& tint_col)
 		{
 			Canvas::DrawVert* ret = nullptr;
 
@@ -534,15 +534,15 @@ namespace flame
 			{
 				auto uv0 = uvs.xy(); auto uv1 = uvs.zw();
 				ret = // get the pointer to the first vertex
-				add_image(iv, vec2(p0.x + border.x, p0.y), vec2(p1.x - border.z, p0.y + border.y), vec4(mix(uv0, uv1, vec2(border.x / size.x, 0.f)), mix(uv0, uv1, vec2(1.f - border.z / size.x, border.y / size.y))), tint_col); // top border
-				add_image(iv, vec2(p0.x + border.x, p1.y - border.w), vec2(p1.x - border.z, p1.y), vec4(mix(uv0, uv1, vec2(border.x / size.x, 1.f - border.w / size.y)), mix(uv0, uv1, vec2(1.f - border.w / size.x, 1.f))), tint_col); // bottom border
-				add_image(iv, vec2(p0.x, p0.y + border.y), vec2(p0.x + border.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(0.f, border.y / size.y)), mix(uv0, uv1, vec2(border.x / size.x, 1.f - border.w / size.y))), tint_col); // left border
-				add_image(iv, vec2(p1.x - border.z, p0.y + border.y), vec2(p1.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(1.f - border.w / size.x, border.y / size.y)), mix(uv0, uv1, vec2(1.f, 1.f - border.w / size.y))), tint_col); // right border
-				add_image(iv, vec2(p0.x, p0.y), vec2(p0.x + border.x, p0.y + border.y), vec4(mix(uv0, uv1, vec2(0.f, 0.f)), mix(uv0, uv1, vec2(border.x / size.x, border.y / size.y))), tint_col); // left-top corner
-				add_image(iv, vec2(p1.x - border.z, p0.y), vec2(p1.x, p0.y + border.y), vec4(mix(uv0, uv1, vec2(1.f - border.w / size.x, 0.f)), mix(uv0, uv1, vec2(1.f, border.y / size.y))), tint_col); // right-top corner
-				add_image(iv, vec2(p0.x, p1.y - border.w), vec2(p0.x + border.x, p1.y), vec4(mix(uv0, uv1, vec2(0.f, 1.f - border.w / size.y)), mix(uv0, uv1, vec2(border.x / size.x, 1.f))), tint_col); // left-bottom corner
-				add_image(iv, vec2(p1.x - border.z, p1.y - border.w), vec2(p1.x, p1.y), vec4(mix(uv0, uv1, vec2(1.f - border.w / size.x, 1.f - border.w / size.y)), mix(uv0, uv1, vec2(1.f, 1.f))), tint_col); // right-bottom corner
-				add_image(iv, vec2(p0.x + border.x, p0.y + border.y), vec2(p1.x - border.z, p1.y - border.w), vec4(mix(uv0, uv1, vec2(border.x, border.y) / size), mix(uv0, uv1, 1.f - vec2(border.z, border.w) / size)), tint_col); // middle
+				add_image(iv, vec2(p0.x + border.x, p0.y), vec2(p1.x - border.z, p0.y + border.y), vec4(mix(uv0, uv1, vec2(border_uvs.x, 0.f)), mix(uv0, uv1, vec2(border_uvs.z, border_uvs.y))), tint_col); // top border
+				add_image(iv, vec2(p0.x + border.x, p1.y - border.w), vec2(p1.x - border.z, p1.y), vec4(mix(uv0, uv1, vec2(border_uvs.x, border_uvs.w)), mix(uv0, uv1, vec2(border_uvs.w, 1.f))), tint_col); // bottom border
+				add_image(iv, vec2(p0.x, p0.y + border.y), vec2(p0.x + border.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(0.f, border_uvs.y)), mix(uv0, uv1, vec2(border_uvs.x, border_uvs.w))), tint_col); // left border
+				add_image(iv, vec2(p1.x - border.z, p0.y + border.y), vec2(p1.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(border_uvs.w, border_uvs.y)), mix(uv0, uv1, vec2(1.f, border_uvs.w))), tint_col); // right border
+				add_image(iv, vec2(p0.x, p0.y), vec2(p0.x + border.x, p0.y + border.y), vec4(mix(uv0, uv1, vec2(0.f, 0.f)), mix(uv0, uv1, vec2(border_uvs.x, border_uvs.y))), tint_col); // left-top corner
+				add_image(iv, vec2(p1.x - border.z, p0.y), vec2(p1.x, p0.y + border.y), vec4(mix(uv0, uv1, vec2(border_uvs.w, 0.f)), mix(uv0, uv1, vec2(1.f, border_uvs.y))), tint_col); // right-top corner
+				add_image(iv, vec2(p0.x, p1.y - border.w), vec2(p0.x + border.x, p1.y), vec4(mix(uv0, uv1, vec2(0.f, border_uvs.w)), mix(uv0, uv1, vec2(border_uvs.x, 1.f))), tint_col); // left-bottom corner
+				add_image(iv, vec2(p1.x - border.z, p1.y - border.w), vec2(p1.x, p1.y), vec4(mix(uv0, uv1, vec2(border_uvs.w, border_uvs.w)), mix(uv0, uv1, vec2(1.f, 1.f))), tint_col); // right-bottom corner
+				add_image(iv, vec2(p0.x + border.x, p0.y + border.y), vec2(p1.x - border.z, p1.y - border.w), vec4(mix(uv0, uv1, vec2(border_uvs.x, border_uvs.y)), mix(uv0, uv1, vec2(border_uvs.z, border_uvs.w))), tint_col); // middle
 			}
 
 			return ret;

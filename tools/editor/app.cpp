@@ -3,6 +3,7 @@
 #include "history.h"
 #include "scene_window.h"
 #include "project_window.h"
+#include "sheet_window.h"
 #include "blueprint_window.h"
 #include "inspector_window.h"
 
@@ -1879,11 +1880,56 @@ void App::on_gui()
 			cmd_undo();
 		if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)(ImGuiKey)Keyboard_Y))
 			cmd_redo();
+		if (ImGui::IsKeyPressed((ImGuiKey)(ImGuiKey)Keyboard_GraveAccentAndTilde))
+			ImGui::OpenPopup("document_select", ImGuiPopupFlags_NoOpenOverExistingPopup);
 		for (auto w : windows)
 		{
 			for (auto& v : w->views)
 				v->on_global_shortcuts();
 		}
+	}
+
+	if (ImGui::BeginPopup("document_select", ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		auto to_close = !ImGui::IsKeyDown((ImGuiKey)(ImGuiKey)Keyboard_GraveAccentAndTilde);
+
+		ImGui::TextUnformatted("Sheets:");
+		ImGui::Indent();
+		std::vector<SheetView*> sheet_views;
+		for (auto& v : sheet_window.views)
+			sheet_views.push_back((SheetView*)v.get());
+		std::sort(sheet_views.begin(), sheet_views.end(), [](const auto a, const auto b) { return a->name < b->name; });
+		for (auto v : sheet_views)
+		{
+			ImGui::Selectable(v->name.c_str());
+			if (to_close && ImGui::IsItemHovered())
+			{
+				if (v->imgui_window)
+					ImGui::FocusWindow((ImGuiWindow*)v->imgui_window);
+			}
+		}
+		ImGui::Unindent();
+		ImGui::TextUnformatted("Blueprints:");
+		ImGui::Indent();
+		std::vector<BlueprintView*> blueprint_views;
+		for (auto& v : blueprint_window.views)
+			blueprint_views.push_back((BlueprintView*)v.get());
+		std::sort(blueprint_views.begin(), blueprint_views.end(), [](const auto a, const auto b) { return a->name < b->name; });
+		for (auto& v : blueprint_views)
+		{
+			ImGui::Selectable(v->name.c_str());
+			if (to_close && ImGui::IsItemHovered())
+			{
+				if (v->imgui_window)
+					ImGui::FocusWindow((ImGuiWindow*)v->imgui_window);
+			}
+		}
+		ImGui::Unindent();
+
+		if (to_close)
+			ImGui::CloseCurrentPopup();
+
+		ImGui::EndPopup();
 	}
 
 	if (e_preview)

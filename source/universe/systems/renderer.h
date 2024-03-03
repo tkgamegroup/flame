@@ -48,8 +48,6 @@ namespace flame
 
 	enum HudStyleVar
 	{
-		HudStyleVarWindowPadding,
-		HudStyleVarItemSpacing,
 		HudStyleVarScaling,
 		HudStyleVarCount
 	};
@@ -368,14 +366,14 @@ namespace flame
 		Listeners<void()> hud_callbacks;
 
 		virtual void hud_begin(const vec2& pos, const vec2& size = vec2(0.f) /* 0 size means auto layout */, const cvec4& col = cvec4(0, 0, 0, 255), const vec2& pivot = vec2(0.f),
-			const graphics::ImageDesc& image = {}, float image_scale = 1.f) = 0;
+			const graphics::ImageDesc& image = {}, const vec4& border = vec4(4.f)) = 0;
 		virtual void hud_end() = 0;
 		virtual void hud_set_cursor(const vec2& pos) = 0;
 		virtual Rect hud_get_rect() const = 0;
 		virtual vec2 hud_screen_size() const = 0;
 		virtual void hud_push_style(HudStyleVar var, const vec2& value) = 0;
 		virtual void hud_pop_style(HudStyleVar var) = 0;
-		virtual void hud_begin_layout(HudLayoutType type) = 0;
+		virtual void hud_begin_layout(HudLayoutType type, const vec2& item_spacing = vec2(2.f)) = 0;
 		virtual void hud_end_layout() = 0;
 		virtual void hud_new_line() = 0;
 		virtual void hud_begin_stencil_write() = 0;
@@ -384,8 +382,11 @@ namespace flame
 		virtual void hud_end_stencil_compare() = 0;
 		virtual void hud_rect(const vec2& size, const cvec4& col) = 0;
 		virtual void hud_text(std::wstring_view text, uint font_size = 24, const cvec4& col = cvec4(255)) = 0;
-		virtual void hud_image(const vec2& size, const graphics::ImageDesc& image, float image_scale = 1.f, const cvec4& col = cvec4(255)) = 0;
-		virtual bool hud_button(std::wstring_view label, uint font_size = 24, const graphics::ImageDesc& image = {}, float image_scale = 1.f, bool* p_hovered = nullptr) = 0;
+		virtual void hud_image(const vec2& size, const graphics::ImageDesc& image, const cvec4& col = cvec4(255)) = 0;
+		virtual void hud_image_stretched(const vec2& size, const graphics::ImageDesc& image, const vec4& border = vec4(0.f), const cvec4& col = cvec4(255)) = 0;
+		virtual bool hud_button(std::wstring_view label, uint font_size = 24) = 0;
+		virtual bool hud_image_button(const vec2& size, const graphics::ImageDesc& image = {}, const vec4& border = vec4(0.f)) = 0;
+		virtual bool hud_item_hovered() = 0;
 
 		// Reflect
 		virtual void send_debug_string(const std::string& str) = 0;

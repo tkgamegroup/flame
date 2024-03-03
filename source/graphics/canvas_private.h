@@ -57,7 +57,7 @@ namespace flame
 			DrawVert*	add_circle_filled(const vec2& p, float radius, const cvec4& col) override;
 			void		add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness, float border) override;
 			DrawVert*	add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col) override;
-			DrawVert*	add_image_stretched(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const vec2& size, const vec4& border, const cvec4& tint_col) override;
+			DrawVert*	add_image_stretched(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const vec4& border, const vec4& border_uvs, const cvec4& tint_col) override;
 			DrawVert*	add_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle) override;
 
 			void render(int idx, CommandBufferPtr cb);

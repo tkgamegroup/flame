@@ -54,6 +54,8 @@ namespace flame
 			return Keyboard_Ins;
 		case VK_DELETE:
 			return Keyboard_Del;
+		case VK_OEM_3:
+			return Keyboard_GraveAccentAndTilde;
 		case '0':
 			return Keyboard_0;
 		case '1':
@@ -236,6 +238,8 @@ namespace flame
 			return VK_INSERT;
 		case Keyboard_Del:
 			return VK_DELETE;
+		case Keyboard_GraveAccentAndTilde:
+			return VK_OEM_3;
 		case Keyboard_0:
 			return '0';
 		case Keyboard_1:

@@ -876,8 +876,6 @@ namespace flame
 		}, 0, 0);
 
 		hud_style_vars.resize(HudStyleVarCount);
-		hud_style_vars[HudStyleVarWindowPadding].push(vec2(2.f));
-		hud_style_vars[HudStyleVarItemSpacing].push(vec2(2.f));
 		hud_style_vars[HudStyleVarScaling].push(vec2(1.f));
 	}
 
@@ -3488,7 +3486,7 @@ namespace flame
 		return nullptr;
 	}
 
-	void sRendererPrivate::hud_add_layout(HudLayoutType type)
+	HudLayout& sRendererPrivate::hud_add_layout(HudLayoutType type)
 	{
 		auto& hud = huds.back();
 		auto pos = hud.layouts.back().cursor;
@@ -3497,29 +3495,26 @@ namespace flame
 		layout.rect.a = layout.rect.b = pos;
 		layout.cursor = pos;
 		layout.auto_size = true;
+		return layout;
 	}
 
 	void sRendererPrivate::hud_finish_layout(HudLayout& layout)
 	{
-		auto item_spacing = hud_style_vars[HudStyleVarItemSpacing].top();
 		auto scaling = hud_style_vars[HudStyleVarScaling].top();
-		item_spacing *= scaling;
 
 		if (layout.auto_size)
 		{
 			if (layout.rect.b.x > layout.rect.a.x && layout.rect.b.y > layout.rect.b.y)
-				layout.rect.b -= item_spacing;
+				layout.rect.b -= layout.item_spacing * scaling;
 		}
 	}
 
-	void sRendererPrivate::hud_begin(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, float image_scale)
+	void sRendererPrivate::hud_begin(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, const vec4& border)
 	{
 		auto& hud = huds.emplace_back();
 
 		auto canvas = render_tasks.front()->canvas;
-		auto window_padding = hud_style_vars[HudStyleVarWindowPadding].top();
 		auto scaling = hud_style_vars[HudStyleVarScaling].top();
-		window_padding *= scaling;
 		auto auto_sizing = size.x == 0.f && size.y == 0.f;
 
 		hud.pos = pos;
@@ -3532,13 +3527,14 @@ namespace flame
 			hud.pos -= hud.size * pivot;
 		hud.color = col;
 		hud.pivot = pivot;
+		hud.border = border * vec4(scaling, scaling);
 
 		hud.layouts.clear();
 		auto& layout = hud.layouts.emplace_back();
 		layout.type = HudVertical;
-		layout.rect.a = layout.rect.b = hud.pos + window_padding;
+		layout.rect.a = layout.rect.b = hud.pos + hud.border.xy();
 		layout.cursor = layout.rect.a;
-		layout.auto_size = true;
+		layout.auto_size = auto_sizing;
 
 		if (!image.view)
 		{
@@ -3547,9 +3543,8 @@ namespace flame
 		}
 		else
 		{
-			auto size = (vec2)image.view->image->extent.xy() * (image.uvs.zw() - image.uvs.xy()) * image_scale;
-			auto border = image.border * image_scale;
-			hud.bg_verts = canvas->add_image_stretched(image.view, vec2(0.f), vec2(border.xy() + border.zw()) + vec2(1.f), image.uvs, size, border, col);
+			auto size = (vec2)image.view->image->extent.xy() * (image.uvs.zw() - image.uvs.xy());
+			hud.bg_verts = canvas->add_image_stretched(image.view, vec2(0.f), vec2(border.xy() + border.zw()) + vec2(1.f), image.uvs, border, image.border_uvs, col);
 			hud.bg_vert_count = 9 * 4;
 		}
 		if ((pivot.x != 0.f || pivot.y != 0.f) && auto_sizing)
@@ -3564,23 +3559,16 @@ namespace flame
 		auto& layout = hud.layouts[0];
 
 		auto canvas = render_tasks.front()->canvas;
-		auto window_padding = hud_style_vars[HudStyleVarWindowPadding].top();
-		auto item_spacing = hud_style_vars[HudStyleVarItemSpacing].top();
-		auto scaling = hud_style_vars[HudStyleVarScaling].top();
-		window_padding *= scaling;
-		item_spacing *= scaling;
 		auto input = sInput::instance();
 
 		hud_finish_layout(layout);
 		if (layout.auto_size)
-			hud.size = hud.size;
-		auto hud_pos = hud.pos;
-		auto hud_size = hud.size;
+			hud.size = layout.rect.size() + hud.border.zw();
 
 		if (hud.translate_cmd_idx != -1)
 		{
-			auto translate = -hud_size * hud.pivot;
-			hud_pos += translate;
+			auto translate = -hud.size * hud.pivot;
+			hud.pos += translate;
 			canvas->draw_cmds[hud.translate_cmd_idx].data.translate = translate;
 			canvas->set_translate(vec2(0.f));
 		}
@@ -3589,13 +3577,13 @@ namespace flame
 		{
 			if (hud.bg_vert_count <= 4)
 			{
-				auto scl = hud_size / 100.f; // 100 is temporary size
+				auto scl = hud.size / 100.f; // 100 is temporary size
 				for (auto i = 0; i < hud.bg_vert_count; i++)
-					hud.bg_verts[i].pos = hud.bg_verts[i].pos * scl + hud_pos;
+					hud.bg_verts[i].pos = hud.bg_verts[i].pos * scl + hud.pos;
 			}
 			else // is a stretched image
 			{
-				auto sz = hud_size - hud.bg_verts[1].pos;
+				auto sz = hud.size - hud.bg_verts[1].pos;
 				// hud.bg_verts[0] stays the same
 				// hud.bg_verts[1] stays the same
 				hud.bg_verts[2].pos.x += sz.x - 1.f;
@@ -3642,10 +3630,10 @@ namespace flame
 				hud.bg_verts[35].pos.x += sz.x - 1.f;
 
 				for (auto i = 0; i < hud.bg_vert_count; i++)
-					hud.bg_verts[i].pos += hud_pos;
+					hud.bg_verts[i].pos += hud.pos;
 			}
 		}
-		Rect rect(hud_pos, hud_pos + hud_size);
+		Rect rect(hud.pos, hud.pos + hud.size);
 		if (hud.color.a > 0 && rect.contains(input->mpos))
 			input->mouse_used = true;
 
@@ -3684,9 +3672,10 @@ namespace flame
 		hud_style_vars[var].pop();
 	}
 
-	void sRendererPrivate::hud_begin_layout(HudLayoutType type)
+	void sRendererPrivate::hud_begin_layout(HudLayoutType type, const vec2& item_spacing)
 	{
-		hud_add_layout(type);
+		auto& layout = hud_add_layout(type);
+		layout.item_spacing = item_spacing;
 	}
 
 	void sRendererPrivate::hud_end_layout()
@@ -3704,14 +3693,12 @@ namespace flame
 		auto& hud = huds.back();
 		auto& layout = hud.layouts.back();
 
-		auto item_spacing = hud_style_vars[HudStyleVarItemSpacing].top();
 		auto scaling = hud_style_vars[HudStyleVarScaling].top();
-		item_spacing *= scaling;
 
 		if (layout.type == HudHorizontal)
 		{
 			layout.cursor.x = layout.rect.a.x;
-			layout.cursor.y += layout.item_max.y + item_spacing.y;
+			layout.cursor.y += layout.item_max.y + layout.item_spacing.y * scaling.y;
 			if (layout.auto_size)
 				layout.rect.b = max(layout.rect.b, layout.cursor);
 		}
@@ -3746,7 +3733,7 @@ namespace flame
 		auto& hud = huds.back();
 		auto& layout = hud.layouts.back();
 
-		auto item_spacing = hud_style_vars[HudStyleVarItemSpacing].top();
+		auto item_spacing = layout.item_spacing;
 		auto scaling = hud_style_vars[HudStyleVarScaling].top();
 		auto sz = _sz * scaling;
 		item_spacing *= scaling;
@@ -3811,48 +3798,54 @@ namespace flame
 		canvas->add_rect_filled(rect.a, rect.b, col);
 	}
 
-	void sRendererPrivate::hud_image(const vec2& _size, const graphics::ImageDesc& image, float image_scale, const cvec4& col)
+	void sRendererPrivate::hud_image(const vec2& size, const graphics::ImageDesc& image, const cvec4& col)
 	{
-		auto size = _size;
 		auto canvas = render_tasks.front()->canvas;
 		auto input = sInput::instance();
 
-		if (image.border.x > 0.f)
-		{
-			auto img_size = (vec2)image.view->image->extent.xy() * (image.uvs.zw() - image.uvs.xy()) * image_scale;
-			auto border = image.border * image_scale;
-			auto rect = hud_add_rect(size);
-			canvas->add_image_stretched(image.view, rect.a, rect.b, image.uvs, img_size, border, col);
-		}
-		else
-		{
-			if (size.x == 0.f && size.y == 0.f)
-			{
-				auto img_size = (vec2)image.view->image->extent.xy() * (image.uvs.zw() - image.uvs.xy()) * image_scale;
-				size = img_size;
-			}
-			auto rect = hud_add_rect(size);
-			canvas->add_image(image.view, rect.a, rect.b, image.uvs, col);
-		}
+		auto rect = hud_add_rect(size);
+		canvas->add_image(image.view, rect.a, rect.b, image.uvs, col);
 	}
 
-	bool sRendererPrivate::hud_button(std::wstring_view label, uint font_size, const graphics::ImageDesc& image, float image_scale, bool* p_hovered)
+	void sRendererPrivate::hud_image_stretched(const vec2& size, const graphics::ImageDesc& image, const vec4& border, const cvec4& col)
 	{
 		auto canvas = render_tasks.front()->canvas;
 		auto input = sInput::instance();
 
-		vec2 sz(0.f);
-		vec2 image_size(0.f);
+		auto rect = hud_add_rect(size);
+		canvas->add_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, col);
+	}
+
+	bool sRendererPrivate::hud_button(std::wstring_view label, uint font_size)
+	{
+		auto canvas = render_tasks.front()->canvas;
+		auto input = sInput::instance();
+
 		vec4 border(2.f);
-		if (image.view)
+		auto sz = calc_text_size(canvas->default_font_atlas, font_size, label);
+		sz += border.xy() + border.zw();
+
+		auto rect = hud_add_rect(sz);
+		auto state = 0;
+		if (rect.contains(input->mpos))
 		{
-			image_size = (vec2)image.view->image->extent.xy() * (image.uvs.zw() - image.uvs.xy()) * image_scale;
-			border = image.border * image_scale;
+			state = 1;
+			if (input->mpressed(Mouse_Left))
+				state = 2;
+
+			input->mouse_used = true;
 		}
-		if (!label.empty())
-			sz = calc_text_size(canvas->default_font_atlas, font_size, label);
-		else if (image.view)
-			sz = image_size;
+		canvas->add_rect_filled(rect.a, rect.b, state == 0 ? cvec4(35, 69, 109, 255) : cvec4(66, 150, 250, 255));
+		canvas->add_text(canvas->default_font_atlas, font_size, rect.a + border.xy(), label, cvec4(255), 0.5f, 0.2f);
+		return state == 2;
+	}
+
+	bool sRendererPrivate::hud_image_button(const vec2& size, const graphics::ImageDesc& image, const vec4& border)
+	{
+		auto canvas = render_tasks.front()->canvas;
+		auto input = sInput::instance();
+
+		auto sz = size;
 		sz += border.xy() + border.zw();
 
 		auto rect = hud_add_rect(sz);
@@ -3867,17 +3860,19 @@ namespace flame
 		}
 		if (image.view)
 		{
-			if (image.border.x > 0.f)
-				canvas->add_image_stretched(image.view, rect.a, rect.b, image.uvs, image_size, border, state == 0 ? cvec4(255) : cvec4(200));
+			if (border.x > 0.f || border.y > 0.f || border.z > 0.f || border.w > 0.f)
+				canvas->add_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, state == 0 ? cvec4(255) : cvec4(200));
 			else
 				canvas->add_image(image.view, rect.a, rect.b, image.uvs, state == 0 ? cvec4(255) : cvec4(200));
 		}
 		else
 			canvas->add_rect_filled(rect.a, rect.b, state == 0 ? cvec4(35, 69, 109, 255) : cvec4(66, 150, 250, 255));
-		canvas->add_text(canvas->default_font_atlas, font_size, rect.a + border.xy(), label, cvec4(255), 0.5f, 0.2f);
-		if (p_hovered)
-			*p_hovered = state != 0;
 		return state == 2;
+	}
+
+	bool sRendererPrivate::hud_item_hovered()
+	{
+		return hud_last_rect.contains(sInput::instance()->mpos);
 	}
 
 	void sRendererPrivate::send_debug_string(const std::string& str)

@@ -21,9 +21,9 @@ namespace flame
 		virtual void set_tint_col(const cvec4& col) = 0;
 
 		// Reflect
-		float image_scale = 1.f;
+		vec4 border = vec4(1.f);
 		// Reflect
-		virtual void set_image_scale(float scale) = 0;
+		virtual void set_border(const vec4& border) = 0;
 
 		graphics::ImagePtr image = nullptr;
 

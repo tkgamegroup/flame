@@ -90,6 +90,7 @@ namespace flame
 		Rect rect;
 		vec2 cursor;
 		vec2 pivot;
+		vec2 item_spacing;
 		vec2 item_max;
 		bool auto_size;
 	};
@@ -100,6 +101,7 @@ namespace flame
 		vec2 size;
 		cvec4 color;
 		vec2 pivot;
+		vec4 border;
 		bool stencil;
 		graphics::Canvas::DrawVert* bg_verts;
 		uint bg_vert_count;
@@ -228,17 +230,17 @@ namespace flame
 		std::vector<vec3> transform_feedback(cNodePtr node) override;
 		graphics::ImagePtr get_image(uint name) override;
 
-		void hud_add_layout(HudLayoutType type);
+		HudLayout& hud_add_layout(HudLayoutType type);
 		void hud_finish_layout(HudLayout& layout);
 
-		void hud_begin(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, float image_scale) override;
+		void hud_begin(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, const vec4& border) override;
 		void hud_end() override;
 		void hud_set_cursor(const vec2& pos) override;
 		Rect hud_get_rect() const override;
 		vec2 hud_screen_size() const override;
 		void hud_push_style(HudStyleVar var, const vec2& value) override;
 		void hud_pop_style(HudStyleVar var) override;
-		void hud_begin_layout(HudLayoutType type) override;
+		void hud_begin_layout(HudLayoutType type, const vec2& item_spacing) override;
 		void hud_end_layout() override;
 		void hud_new_line() override;
 		void hud_begin_stencil_write() override;
@@ -248,8 +250,11 @@ namespace flame
 		Rect hud_add_rect(const vec2& sz);
 		void hud_rect(const vec2& size, const cvec4& col) override;
 		void hud_text(std::wstring_view text, uint font_size, const cvec4& col) override;
-		void hud_image(const vec2& size, const graphics::ImageDesc& image, float image_scale, const cvec4& col) override;
-		bool hud_button(std::wstring_view label, uint font_size, const graphics::ImageDesc& image, float image_scale, bool* p_hovered) override;
+		void hud_image(const vec2& size, const graphics::ImageDesc& image, const cvec4& col) override;
+		void hud_image_stretched(const vec2& size, const graphics::ImageDesc& image, const vec4& border, const cvec4& col) override;
+		bool hud_button(std::wstring_view label, uint font_size) override;
+		bool hud_image_button(const vec2& size, const graphics::ImageDesc& image, const vec4& border) override;
+		bool hud_item_hovered() override;
 
 		void send_debug_string(const std::string& str) override;
 	};
