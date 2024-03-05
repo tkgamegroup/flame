@@ -278,11 +278,18 @@ namespace flame
 
 		virtual void* get_v() const { return nullptr; }
 		virtual void as_floats(void* src, uint n, float* dst) const { assert(0); for (auto i = 0; i < n; i++) dst[i] = std::numeric_limits<float>::quiet_NaN(); }
+		virtual void set_as_floats(void* dst, uint n, const float* src) const { assert(0); }
 		inline float as_float(void* p) const { float f; as_floats(p, 1, &f); return f; }
+		inline void set_as_float(void* p, float f) const { set_as_floats(p, 1, &f); }
 		virtual void as_ints(void* src, uint n, int* dst) const { assert(0); for (auto i = 0; i < n; i++) dst[i] = std::numeric_limits<int>::max(); }
+		virtual void set_as_ints(void* dst, uint n, const int* src) const { assert(0); }
 		virtual int as_int(void* p) const { int i; as_ints(p, 1, &i); return i; }
+		inline void set_as_int(void* p, int i) const { set_as_ints(p, 1, &i); }
 		virtual void as_uints(void* src, uint n, uint* dst) const { assert(0); for (auto i = 0; i < n; i++) dst[i] = std::numeric_limits<uint>::max(); }
+		virtual void set_as_uints(void* dst, uint n, const uint* src) const { assert(0); }
 		virtual uint as_uint(void* p) const { uint u; as_uints(p, 1, &u); return u; }
+		inline void set_as_uint(void* p, uint u) const { set_as_uints(p, 1, &u); }
+
 		virtual TypeInfo* get_wrapped() const { return nullptr; }
 		virtual void call_getter(const FunctionInfo* fi, void* obj, void* dst) const {};
 		virtual void call_setter(const FunctionInfo* fi, void* obj, void* src) const {};

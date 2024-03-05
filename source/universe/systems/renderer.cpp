@@ -3555,7 +3555,11 @@ namespace flame
 
 	void sRendererPrivate::hud_end()
 	{
+		if (huds.empty())
+			return;
 		auto& hud = huds.back();
+		if (hud.layouts.empty())
+			return;
 		auto& layout = hud.layouts[0];
 
 		auto canvas = render_tasks.front()->canvas;
@@ -3563,7 +3567,7 @@ namespace flame
 
 		hud_finish_layout(layout);
 		if (layout.auto_size)
-			hud.size = layout.rect.size() + hud.border.zw();
+			hud.size = layout.rect.size() + hud.border.xy() + hud.border.zw();
 
 		if (hud.translate_cmd_idx != -1)
 		{
@@ -3642,7 +3646,11 @@ namespace flame
 
 	void sRendererPrivate::hud_set_cursor(const vec2& pos)
 	{
+		if (huds.empty())
+			return;
 		auto& hud = huds.back();
+		if (hud.layouts.empty())
+			return;
 		auto& layout = hud.layouts.back();
 
 		layout.cursor = pos;
@@ -3680,6 +3688,8 @@ namespace flame
 
 	void sRendererPrivate::hud_end_layout()
 	{
+		if (huds.empty())
+			return;
 		auto& hud = huds.back();
 		auto& layout = hud.layouts.back();
 		hud_finish_layout(layout);
@@ -3690,7 +3700,11 @@ namespace flame
 
 	void sRendererPrivate::hud_new_line()
 	{
+		if (huds.empty())
+			return;
 		auto& hud = huds.back();
+		if (hud.layouts.empty())
+			return;
 		auto& layout = hud.layouts.back();
 
 		auto scaling = hud_style_vars[HudStyleVarScaling].top();
@@ -3730,7 +3744,11 @@ namespace flame
 
 	Rect sRendererPrivate::hud_add_rect(const vec2& _sz)
 	{
+		if (huds.empty())
+			return Rect();
 		auto& hud = huds.back();
+		if (hud.layouts.empty())
+			return Rect();
 		auto& layout = hud.layouts.back();
 
 		auto item_spacing = layout.item_spacing;
@@ -3751,9 +3769,9 @@ namespace flame
 			if (layout.auto_size)
 				layout.rect.b.x = max(layout.rect.b.x, layout.cursor.x + sz.x + item_spacing.x);
 			layout.cursor.x = layout.rect.a.x;
-			layout.cursor.y = layout.cursor.y + sz.y + item_spacing.y;
+			layout.cursor.y += sz.y + item_spacing.y;
 			if (layout.auto_size)
-				layout.rect.b.y = max(layout.rect.b.y, layout.cursor.y);
+				layout.rect.b.y = layout.cursor.y;
 		}
 		hud_last_rect = rect;
 		return rect;

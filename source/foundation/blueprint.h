@@ -160,6 +160,12 @@ namespace flame
 	{
 		return name == "Variable"_h ||
 			name == "Set Variable"_h ||
+			name == "Add Assign"_h ||
+			name == "Subtrac Assign"_h ||
+			name == "Multiply Assign"_h ||
+			name == "Divide Assign"_h ||
+			name == "Or Assign"_h ||
+			name == "And Assign"_h ||
 			name == "Get Property"_h ||
 			name == "Get Properties"_h ||
 			name == "Set Property"_h ||

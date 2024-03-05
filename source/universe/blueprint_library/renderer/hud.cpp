@@ -110,7 +110,7 @@ namespace flame
 			{
 				{
 					.name = "Item Spacing",
-					.allowed_types = { TypeInfo::get<vec4>() },
+					.allowed_types = { TypeInfo::get<vec2>() },
 					.default_value = "2,2"
 				}
 			},
@@ -133,7 +133,7 @@ namespace flame
 			{
 				{
 					.name = "Item Spacing",
-					.allowed_types = { TypeInfo::get<vec4>() },
+					.allowed_types = { TypeInfo::get<vec2>() },
 					.default_value = "2,2"
 				}
 			},

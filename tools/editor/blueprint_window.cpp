@@ -1980,6 +1980,7 @@ void BlueprintView::on_draw()
 
 				static uint combo_popup_name = 0;
 				static BlueprintNodePtr combo_popup_node = nullptr;
+				auto exit = false;
 				for (auto& nn : group->nodes)
 				{
 					auto n = nn.get();
@@ -2108,7 +2109,7 @@ void BlueprintView::on_draw()
 								tooltip_pos = io.MousePos;
 								ax::NodeEditor::Resume();
 
-								if (!input->get_linked_count() > 0)
+								if (input->get_linked_count() == 0)
 								{
 									if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_F))
 									{
@@ -2171,6 +2172,7 @@ void BlueprintView::on_draw()
 													auto new_node = blueprint->add_node(group, n->parent, sh(name.c_str()));
 													new_node->position = n->position + vec2(-144.f, 0.f);
 													blueprint->add_link(new_node->find_output("V"_h), input);
+													exit = true;
 												}
 											}
 										}
@@ -2252,7 +2254,7 @@ void BlueprintView::on_draw()
 								}
 							}
 
-							if (!input->get_linked_count() > 0)
+							if (input->get_linked_count() == 0)
 							{
 								if (debugging_group)
 									ImGui::BeginDisabled();
@@ -2357,7 +2359,7 @@ void BlueprintView::on_draw()
 								tooltip_pos = io.MousePos;
 								ax::NodeEditor::Resume();
 
-								if (!output->get_linked_count() > 0)
+								if (output->get_linked_count() == 0)
 								{
 									if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_D))
 									{
@@ -2369,6 +2371,7 @@ void BlueprintView::on_draw()
 												auto new_node = blueprint->add_node(group, n->parent, "Decompose"_h);
 												new_node->position = n->position + vec2(ax::NodeEditor::GetNodeSize((ax::NodeEditor::NodeId)n).x + 16.f, 0.f);
 												blueprint->add_link(output, new_node->find_input("V"_h));
+												exit = true;
 											}
 										}
 									}
@@ -2471,6 +2474,9 @@ void BlueprintView::on_draw()
 					ax::NodeEditor::PopStyleColor(2);
 
 					ImGui::PopID(); // node
+
+					if (exit)
+						break;
 				}
 
 				if (combo_popup_name)
@@ -3122,6 +3128,87 @@ void BlueprintView::on_draw()
 
 										unsaved = true;
 									});
+								}
+								if (type == TypeInfo::get<float>() || type == TypeInfo::get<int>() || type == TypeInfo::get<uint>())
+								{
+									if (show_node_template(name, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type}} }, {}, slot_name))
+									{
+										actions.emplace_back("+=", [&, slot_name]() {
+											auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Add Assign"_h, location_name);
+											n->position = open_popup_pos;
+											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+											if (new_node_link_slot)
+												blueprint->add_link(new_node_link_slot, n->find_input(slot_name));
+
+											unsaved = true;
+										});
+									}
+									if (show_node_template(name, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type}} }, {}, slot_name))
+									{
+										actions.emplace_back("-=", [&, slot_name]() {
+											auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Subtract Assign"_h, location_name);
+											n->position = open_popup_pos;
+											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+											if (new_node_link_slot)
+												blueprint->add_link(new_node_link_slot, n->find_input(slot_name));
+
+											unsaved = true;
+										});
+									}
+									if (show_node_template(name, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type}} }, {}, slot_name))
+									{
+										actions.emplace_back("*=", [&, slot_name]() {
+											auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Multiple Assign"_h, location_name);
+											n->position = open_popup_pos;
+											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+											if (new_node_link_slot)
+												blueprint->add_link(new_node_link_slot, n->find_input(slot_name));
+
+											unsaved = true;
+										});
+									}
+									if (show_node_template(name, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type}} }, {}, slot_name))
+									{
+										actions.emplace_back("/=", [&, slot_name]() {
+											auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Divide Assign"_h, location_name);
+											n->position = open_popup_pos;
+											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+											if (new_node_link_slot)
+												blueprint->add_link(new_node_link_slot, n->find_input(slot_name));
+
+											unsaved = true;
+										});
+									}
+									if (show_node_template(name, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type}} }, {}, slot_name))
+									{
+										actions.emplace_back("|=", [&, slot_name]() {
+											auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "Or Assign"_h, location_name);
+											n->position = open_popup_pos;
+											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+											if (new_node_link_slot)
+												blueprint->add_link(new_node_link_slot, n->find_input(slot_name));
+
+											unsaved = true;
+										});
+									}
+									if (show_node_template(name, { BlueprintSlotDesc{.name = "V", .name_hash = "V"_h, .flags = BlueprintSlotFlagInput, .allowed_types = {type}} }, {}, slot_name))
+									{
+										actions.emplace_back("&=", [&, slot_name]() {
+											auto n = blueprint->add_variable_node(group, new_node_block, name_hash, "And Assign"_h, location_name);
+											n->position = open_popup_pos;
+											ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position);
+
+											if (new_node_link_slot)
+												blueprint->add_link(new_node_link_slot, n->find_input(slot_name));
+
+											unsaved = true;
+										});
+									}
 								}
 							}
 							if (!actions.empty())

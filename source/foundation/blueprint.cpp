@@ -787,15 +787,8 @@ namespace flame
 			}
 		}
 
-		auto ret = new BlueprintNodePrivate;
-		ret->group = group;
-		ret->object_id = next_object_id++;
-		switch (type)
-		{
-		case "Variable"_h:
-			ret->name = "Variable";
-			ret->name_hash = "Variable"_h;
-			ret->display_name = location_str + variable.name;
+		BlueprintNodePtr ret = nullptr;
+		auto setup_variable_inputs = [&](BlueprintNodePtr ret) {
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -822,6 +815,17 @@ namespace flame
 				*(uint*)i->data = location_name;
 				ret->inputs.emplace_back(i);
 			}
+		};
+		switch (type)
+		{
+		case "Variable"_h:
+			ret = new BlueprintNodePrivate;
+			ret->group = group;
+			ret->object_id = next_object_id++;
+			ret->name = "Variable";
+			ret->name_hash = "Variable"_h;
+			ret->display_name = location_str + variable.name;
+			setup_variable_inputs(ret);
 			{
 				auto o = new BlueprintSlotPrivate;
 				o->node = ret;
@@ -835,35 +839,13 @@ namespace flame
 			}
 			break;
 		case "Set Variable"_h:
+			ret = new BlueprintNodePrivate;
+			ret->group = group;
+			ret->object_id = next_object_id++;
 			ret->name = "Set Variable";
 			ret->name_hash = "Set Variable"_h;
 			ret->display_name = "Set " + location_str + variable.name;
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Name";
-				i->name_hash = "Name"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = variable.name_hash;
-				ret->inputs.emplace_back(i);
-			}
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Location";
-				i->name_hash = "Location"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = location_name;
-				ret->inputs.emplace_back(i);
-			}
+			setup_variable_inputs(ret);
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -883,36 +865,280 @@ namespace flame
 					type->copy(inputs[0].data, inputs[1].data);
 			};
 			break;
+		case "Add Assign"_h:
+			if (variable.type->tag == TagD)
+			{
+				auto ti = (TypeInfo_Data*)variable.type;
+				if ((ti->data_type == DataInt || ti->data_type == DataFloat) && ti->vec_size == 1)
+				{
+					ret = new BlueprintNodePrivate;
+					ret->group = group;
+					ret->object_id = next_object_id++;
+					ret->name = "Add Assign";
+					ret->name_hash = "Add Assign"_h;
+					ret->display_name = location_str + variable.name + " +=";
+					setup_variable_inputs(ret);
+					{
+						auto i = new BlueprintSlotPrivate;
+						i->node = ret;
+						i->object_id = next_object_id++;
+						i->name = "V";
+						i->name_hash = "V"_h;
+						i->flags = BlueprintSlotFlagInput;
+						i->allowed_types.push_back(variable.type);
+						i->type = variable.type;
+						i->data = i->type->create();
+						ret->inputs.emplace_back(i);
+					}
+					ret->function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+						auto type = inputs[0].type;
+						auto data = inputs[0].data;
+						if (data)
+						{
+							if (type == TypeInfo::get<float>())
+								*(float*)data += *(float*)inputs[1].data;
+							else if (type == TypeInfo::get<int>())
+								*(int*)data += *(int*)inputs[1].data;
+							else if (type == TypeInfo::get<uint>())
+								*(uint*)data += *(uint*)inputs[1].data;
+						}
+					};
+				}
+				else
+					printf("blueprint add_variable_node: Addition Assign only works on int/uint/float\n");
+			}
+			else
+				printf("blueprint add_variable_node: Addition Assign only works on int/uint/float\n");
+			break;
+		case "Subtract Assign"_h:
+			if (variable.type->tag == TagD)
+			{
+				auto ti = (TypeInfo_Data*)variable.type;
+				if ((ti->data_type == DataInt || ti->data_type == DataFloat) && ti->vec_size == 1)
+				{
+					ret = new BlueprintNodePrivate;
+					ret->group = group;
+					ret->object_id = next_object_id++;
+					ret->name = "Subtract Assign";
+					ret->name_hash = "Subtract Assign"_h;
+					ret->display_name = location_str + variable.name + " -=";
+					setup_variable_inputs(ret);
+					{
+						auto i = new BlueprintSlotPrivate;
+						i->node = ret;
+						i->object_id = next_object_id++;
+						i->name = "V";
+						i->name_hash = "V"_h;
+						i->flags = BlueprintSlotFlagInput;
+						i->allowed_types.push_back(variable.type);
+						i->type = variable.type;
+						i->data = i->type->create();
+						ret->inputs.emplace_back(i);
+					}
+					ret->function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+						auto type = inputs[0].type;
+						auto data = inputs[0].data;
+						if (data)
+						{
+							if (type == TypeInfo::get<float>())
+								*(float*)data -= *(float*)inputs[1].data;
+							else if (type == TypeInfo::get<int>())
+								*(int*)data -= *(int*)inputs[1].data;
+							else if (type == TypeInfo::get<uint>())
+								*(uint*)data -= *(uint*)inputs[1].data;
+						}
+					};
+				}
+				else
+					printf("blueprint add_variable_node: Addition Assign only works on int/uint/float\n");
+			}
+			else
+				printf("blueprint add_variable_node: Addition Assign only works on int/uint/float\n");
+			break;
+		case "Multiply Assign"_h:
+			if (variable.type->tag == TagD)
+			{
+				auto ti = (TypeInfo_Data*)variable.type;
+				if ((ti->data_type == DataInt || ti->data_type == DataFloat) && ti->vec_size == 1)
+				{
+					ret = new BlueprintNodePrivate;
+					ret->group = group;
+					ret->object_id = next_object_id++;
+					ret->name = "Multiply Assign";
+					ret->name_hash = "Multiply Assign"_h;
+					ret->display_name = location_str + variable.name + " *=";
+					setup_variable_inputs(ret);
+					{
+						auto i = new BlueprintSlotPrivate;
+						i->node = ret;
+						i->object_id = next_object_id++;
+						i->name = "V";
+						i->name_hash = "V"_h;
+						i->flags = BlueprintSlotFlagInput;
+						i->allowed_types.push_back(variable.type);
+						i->type = variable.type;
+						i->data = i->type->create();
+						ret->inputs.emplace_back(i);
+					}
+					ret->function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+						auto type = inputs[0].type;
+						auto data = inputs[0].data;
+						if (data)
+						{
+							if (type == TypeInfo::get<float>())
+								*(float*)data *= *(float*)inputs[1].data;
+							else if (type == TypeInfo::get<int>())
+								*(int*)data *= *(int*)inputs[1].data;
+							else if (type == TypeInfo::get<uint>())
+								*(uint*)data *= *(uint*)inputs[1].data;
+						}
+					};
+				}
+				else
+					printf("blueprint add_variable_node: Addition Assign only works on int/uint/float\n");
+			}
+			else
+				printf("blueprint add_variable_node: Addition Assign only works on int/uint/float\n");
+			break;
+		case "Divide Assign"_h:
+			if (variable.type->tag == TagD)
+			{
+				auto ti = (TypeInfo_Data*)variable.type;
+				if ((ti->data_type == DataInt || ti->data_type == DataFloat) && ti->vec_size == 1)
+				{
+					ret = new BlueprintNodePrivate;
+					ret->group = group;
+					ret->object_id = next_object_id++;
+					ret->name = "Divide Assign";
+					ret->name_hash = "Divide Assign"_h;
+					ret->display_name = location_str + variable.name + " /=";
+					setup_variable_inputs(ret);
+					{
+						auto i = new BlueprintSlotPrivate;
+						i->node = ret;
+						i->object_id = next_object_id++;
+						i->name = "V";
+						i->name_hash = "V"_h;
+						i->flags = BlueprintSlotFlagInput;
+						i->allowed_types.push_back(variable.type);
+						i->type = variable.type;
+						i->data = i->type->create();
+						ret->inputs.emplace_back(i);
+					}
+					ret->function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+						auto type = inputs[0].type;
+						auto data = inputs[0].data;
+						if (data)
+						{
+							if (type == TypeInfo::get<float>())
+								*(float*)data /= *(float*)inputs[1].data;
+							else if (type == TypeInfo::get<int>())
+								*(int*)data /= *(int*)inputs[1].data;
+							else if (type == TypeInfo::get<uint>())
+								*(uint*)data /= *(uint*)inputs[1].data;
+						}
+					};
+				}
+				else
+					printf("blueprint add_variable_node: Addition Assign only works on int/uint/float\n");
+			}
+			else
+				printf("blueprint add_variable_node: Addition Assign only works on int/uint/float\n");
+			break;
+		case "Or Assign"_h:
+			if (variable.type->tag == TagD)
+			{
+				auto ti = (TypeInfo_Data*)variable.type;
+				if (ti->data_type == DataInt && ti->vec_size == 1)
+				{
+					ret = new BlueprintNodePrivate;
+					ret->group = group;
+					ret->object_id = next_object_id++;
+					ret->name = "Or Assign";
+					ret->name_hash = "Or Assign"_h;
+					ret->display_name = location_str + variable.name + " |=";
+					setup_variable_inputs(ret);
+					{
+						auto i = new BlueprintSlotPrivate;
+						i->node = ret;
+						i->object_id = next_object_id++;
+						i->name = "V";
+						i->name_hash = "V"_h;
+						i->flags = BlueprintSlotFlagInput;
+						i->allowed_types.push_back(variable.type);
+						i->type = variable.type;
+						i->data = i->type->create();
+						ret->inputs.emplace_back(i);
+					}
+					ret->function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+						auto type = inputs[0].type;
+						auto data = inputs[0].data;
+						if (data)
+						{
+							if (type == TypeInfo::get<int>())
+								*(int*)data |= *(int*)inputs[1].data;
+							else if (type == TypeInfo::get<uint>())
+								*(uint*)data |= *(uint*)inputs[1].data;
+						}
+					};
+				}
+				else
+					printf("blueprint add_variable_node: Addition Assign only works on int/uint\n");
+			}
+			else
+				printf("blueprint add_variable_node: Addition Assign only works on int/uint\n");
+			break;
+		case "And Assign"_h:
+			if (variable.type->tag == TagD)
+			{
+				auto ti = (TypeInfo_Data*)variable.type;
+				if (ti->data_type == DataInt && ti->vec_size == 1)
+				{
+					ret = new BlueprintNodePrivate;
+					ret->group = group;
+					ret->object_id = next_object_id++;
+					ret->name = "And Assign";
+					ret->name_hash = "And Assign"_h;
+					ret->display_name = location_str + variable.name + " &=";
+					setup_variable_inputs(ret);
+					{
+						auto i = new BlueprintSlotPrivate;
+						i->node = ret;
+						i->object_id = next_object_id++;
+						i->name = "V";
+						i->name_hash = "V"_h;
+						i->flags = BlueprintSlotFlagInput;
+						i->allowed_types.push_back(variable.type);
+						i->type = variable.type;
+						i->data = i->type->create();
+						ret->inputs.emplace_back(i);
+					}
+					ret->function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+						auto type = inputs[0].type;
+						auto data = inputs[0].data;
+						if (data)
+						{
+							if (type == TypeInfo::get<int>())
+								*(int*)data &= *(int*)inputs[1].data;
+							else if (type == TypeInfo::get<uint>())
+								*(uint*)data &= *(uint*)inputs[1].data;
+						}
+					};
+				}
+				else
+					printf("blueprint add_variable_node: Addition Assign only works on int/uint\n");
+			}
+			else
+				printf("blueprint add_variable_node: Addition Assign only works on int/uint\n");
+			break;
 		case "Get Property"_h:
+			ret = new BlueprintNodePrivate;
+			ret->group = group;
+			ret->object_id = next_object_id++;
 			ret->name = "Get Property";
 			ret->name_hash = "Get Property"_h;
 			ret->display_name = "Get " + location_str + variable.name + '.' + property->name;
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Name";
-				i->name_hash = "Name"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = variable.name_hash;
-				ret->inputs.emplace_back(i);
-			}
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Location";
-				i->name_hash = "Location"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = location_name;
-				ret->inputs.emplace_back(i);
-			}
+			setup_variable_inputs(ret);
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -939,35 +1165,13 @@ namespace flame
 			}
 			break;
 		case "Get Properties"_h:
+			ret = new BlueprintNodePrivate;
+			ret->group = group;
+			ret->object_id = next_object_id++;
 			ret->name = "Get Property";
 			ret->name_hash = "Get Property"_h;
 			ret->display_name = "Get " + location_str + variable.name + ".*";
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Name";
-				i->name_hash = "Name"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = variable.name_hash;
-				ret->inputs.emplace_back(i);
-			}
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Location";
-				i->name_hash = "Location"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = location_name;
-				ret->inputs.emplace_back(i);
-			}
+			setup_variable_inputs(ret);
 			assert(property_name == 0);
 			{
 				auto o = new BlueprintSlotPrivate;
@@ -1006,35 +1210,13 @@ namespace flame
 			};
 			break;
 		case "Set Property"_h:
+			ret = new BlueprintNodePrivate;
+			ret->group = group;
+			ret->object_id = next_object_id++;
 			ret->name = "Set Property";
 			ret->name_hash = "Set Property"_h;
 			ret->display_name = "Set " + location_str + variable.name + '.' + property->name;
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Name";
-				i->name_hash = "Name"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = variable.name_hash;
-				ret->inputs.emplace_back(i);
-			}
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Location";
-				i->name_hash = "Location"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = location_name;
-				ret->inputs.emplace_back(i);
-			}
+			setup_variable_inputs(ret);
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -1068,35 +1250,13 @@ namespace flame
 			};
 			break;
 		case "Array Size"_h:
+			ret = new BlueprintNodePrivate;
+			ret->group = group;
+			ret->object_id = next_object_id++;
 			ret->name = "Array Size";
 			ret->name_hash = "Array Size"_h;
 			ret->display_name = location_str + variable.name + ": Size";
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Name";
-				i->name_hash = "Name"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = variable.name_hash;
-				ret->inputs.emplace_back(i);
-			}
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Location";
-				i->name_hash = "Location"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = location_name;
-				ret->inputs.emplace_back(i);
-			}
+			setup_variable_inputs(ret);
 			{
 				auto o = new BlueprintSlotPrivate;
 				o->node = ret;
@@ -1117,35 +1277,13 @@ namespace flame
 			};
 			break;
 		case "Array Clear"_h:
+			ret = new BlueprintNodePrivate;
+			ret->group = group;
+			ret->object_id = next_object_id++;
 			ret->name = "Array Clear";
 			ret->name_hash = "Array Clear"_h;
 			ret->display_name = location_str + variable.name + ": Clear";
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Name";
-				i->name_hash = "Name"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = variable.name_hash;
-				ret->inputs.emplace_back(i);
-			}
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Location";
-				i->name_hash = "Location"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = location_name;
-				ret->inputs.emplace_back(i);
-			}
+			setup_variable_inputs(ret);
 			ret->function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto parray = inputs[0].data;
 				auto item_type = inputs[0].type->get_wrapped();
@@ -1153,35 +1291,13 @@ namespace flame
 			};
 			break;
 		case "Array Get Item"_h:
+			ret = new BlueprintNodePrivate;
+			ret->group = group;
+			ret->object_id = next_object_id++;
 			ret->name = "Array Get Item";
 			ret->name_hash = "Array Get Item"_h;
 			ret->display_name = "Get " + location_str + variable.name + "[]";
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Name";
-				i->name_hash = "Name"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = variable.name_hash;
-				ret->inputs.emplace_back(i);
-			}
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Location";
-				i->name_hash = "Location"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = location_name;
-				ret->inputs.emplace_back(i);
-			}
+			setup_variable_inputs(ret);
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -1222,35 +1338,13 @@ namespace flame
 			};
 			break;
 		case "Array Set Item"_h:
+			ret = new BlueprintNodePrivate;
+			ret->group = group;
+			ret->object_id = next_object_id++;
 			ret->name = "Array Set Item";
 			ret->name_hash = "Array Set Item"_h;
 			ret->display_name = "Set " + location_str + variable.name + "[]";
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Name";
-				i->name_hash = "Name"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = variable.name_hash;
-				ret->inputs.emplace_back(i);
-			}
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Location";
-				i->name_hash = "Location"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = location_name;
-				ret->inputs.emplace_back(i);
-			}
+			setup_variable_inputs(ret);
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -1290,35 +1384,13 @@ namespace flame
 			};
 			break;
 		case "Array Get Item Property"_h:
+			ret = new BlueprintNodePrivate;
+			ret->group = group;
+			ret->object_id = next_object_id++;
 			ret->name = "Array Get Item Property";
 			ret->name_hash = "Array Get Item Property"_h;
 			ret->display_name = "Get " + location_str + variable.name + "[]." + property->name;
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Name";
-				i->name_hash = "Name"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = variable.name_hash;
-				ret->inputs.emplace_back(i);
-			}
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Location";
-				i->name_hash = "Location"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = location_name;
-				ret->inputs.emplace_back(i);
-			}
+			setup_variable_inputs(ret);
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -1372,35 +1444,13 @@ namespace flame
 			};
 			break;
 		case "Array Get Item Properties"_h:
+			ret = new BlueprintNodePrivate;
+			ret->group = group;
+			ret->object_id = next_object_id++;
 			ret->name = "Array Get Item Properties";
 			ret->name_hash = "Array Get Item Properties"_h;
 			ret->display_name = "Get " + location_str + variable.name + "[].*";
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Name";
-				i->name_hash = "Name"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = variable.name_hash;
-				ret->inputs.emplace_back(i);
-			}
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Location";
-				i->name_hash = "Location"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = location_name;
-				ret->inputs.emplace_back(i);
-			}
+			setup_variable_inputs(ret);
 			assert(property_name == 0);
 			{
 				auto i = new BlueprintSlotPrivate;
@@ -1450,35 +1500,13 @@ namespace flame
 			};
 			break;
 		case "Array Set Item Property"_h:
+			ret = new BlueprintNodePrivate;
+			ret->group = group;
+			ret->object_id = next_object_id++;
 			ret->name = "Array Set Item Property";
 			ret->name_hash = "Array Set Item Property"_h;
 			ret->display_name = "Set " + location_str + variable.name + "[]." + property->name;
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Name";
-				i->name_hash = "Name"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = variable.name_hash;
-				ret->inputs.emplace_back(i);
-			}
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Location";
-				i->name_hash = "Location"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = location_name;
-				ret->inputs.emplace_back(i);
-			}
+			setup_variable_inputs(ret);
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -1533,35 +1561,13 @@ namespace flame
 				};
 			break;
 		case "Array Add Item"_h:
+			ret = new BlueprintNodePrivate;
+			ret->group = group;
+			ret->object_id = next_object_id++;
 			ret->name = "Array Add Item";
 			ret->name_hash = "Array Add Item"_h;
 			ret->display_name = location_str + variable.name + ": Add Item";
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Name";
-				i->name_hash = "Name"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = variable.name_hash;
-				ret->inputs.emplace_back(i);
-			}
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Location";
-				i->name_hash = "Location"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = location_name;
-				ret->inputs.emplace_back(i);
-			}
+			setup_variable_inputs(ret);
 			{
 				auto i = new BlueprintSlotPrivate;
 				i->node = ret;
@@ -1588,35 +1594,13 @@ namespace flame
 			};
 			break;
 		case "Array Emplace Item"_h:
+			ret = new BlueprintNodePrivate;
+			ret->group = group;
+			ret->object_id = next_object_id++;
 			ret->name = "Array Emplace Item";
 			ret->name_hash = "Array Emplace Item"_h;
 			ret->display_name = location_str + variable.name + ": Emplace Item";
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Name";
-				i->name_hash = "Name"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = variable.name_hash;
-				ret->inputs.emplace_back(i);
-			}
-			{
-				auto i = new BlueprintSlotPrivate;
-				i->node = ret;
-				i->object_id = next_object_id++;
-				i->name = "Location";
-				i->name_hash = "Location"_h;
-				i->flags = BlueprintSlotFlagInput | BlueprintSlotFlagHideInUI;
-				i->allowed_types.push_back(TypeInfo::get<uint>());
-				i->type = i->allowed_types.front();
-				i->data = i->type->create();
-				*(uint*)i->data = location_name;
-				ret->inputs.emplace_back(i);
-			}
+			setup_variable_inputs(ret);
 			assert(property_name == 0);
 			if (auto ui = variable.type->retrive_ui(); ui)
 			{
@@ -1653,17 +1637,21 @@ namespace flame
 		default:
 			assert(0);
 		}
-		ret->parent = parent;
-		if (parent)
-		{
-			parent->children.push_back(ret);
-			ret->depth = parent->depth + 1;
-		}
-		group->nodes.emplace_back(ret);
 
-		auto frame = frames;
-		group->structure_changed_frame = frame;
-		dirty_frame = frame;
+		if (ret)
+		{
+			ret->parent = parent;
+			if (parent)
+			{
+				parent->children.push_back(ret);
+				ret->depth = parent->depth + 1;
+			}
+			group->nodes.emplace_back(ret);
+
+			auto frame = frames;
+			group->structure_changed_frame = frame;
+			dirty_frame = frame;
+		}
 
 		return ret;
 	}
@@ -2185,6 +2173,12 @@ namespace flame
 		{
 		case "Variable"_h:
 		case "Set Variable"_h:
+		case "Add Assign"_h:
+		case "Subtract Assign"_h:
+		case "Multiple Assign"_h:
+		case "Divide Assign"_h:
+		case "Or Assign"_h:
+		case "And Assign"_h:
 			if (n)
 			{
 				if (out_name)
@@ -2369,7 +2363,6 @@ namespace flame
 								switch (node_type)
 								{
 									case "Variable"_h:
-										break;
 									case "Set Variable"_h:
 										break;
 									case "Array Size"_h:
@@ -4111,7 +4104,13 @@ namespace flame
 						}
 						return;
 					}
-					if (n->name_hash == "Set Variable"_h)
+					if (n->name_hash == "Set Variable"_h ||
+						n->name_hash == "Add Assign"_h || 
+						n->name_hash == "Subtract Assign"_h || 
+						n->name_hash == "Multiple Assign"_h || 
+						n->name_hash == "Divide Assign"_h || 
+						n->name_hash == "Or Assign"_h || 
+						n->name_hash == "And Assign"_h)
 					{
 						if (auto [vtype, vdata] = find_var(var_name, var_location); vtype && vdata)
 						{

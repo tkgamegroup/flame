@@ -339,7 +339,8 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& fmt = *(std::string*)inputs[0].data;
+				auto fmt = *(std::string*)inputs[0].data;
+				SUS::replace_all(fmt, "\\n", "\n");
 				switch (inputs_count)
 				{
 				case 2: *(std::string*)outputs[0].data = std::vformat(fmt, std::make_format_args(inputs[1])); break;
@@ -414,7 +415,8 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto& fmt = *(std::wstring*)inputs[0].data;
+				auto fmt = *(std::wstring*)inputs[0].data;
+				SUW::replace_all(fmt, L"\\n", L"\n");
 				switch (inputs_count)
 				{
 				case 2: *(std::wstring*)outputs[0].data = std::vformat(fmt, std::make_wformat_args(inputs[1])); break;

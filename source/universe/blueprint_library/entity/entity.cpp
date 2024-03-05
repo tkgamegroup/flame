@@ -899,20 +899,16 @@ namespace flame
 			}
 		);
 
-		library->add_template("Get Blueprint Instance", "", BlueprintNodeFlagNone,
+		library->add_template("Get BPI", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
-				},
-				{
-					.name = "Name_hash",
-					.allowed_types = { TypeInfo::get<std::string>() }
 				}
 			},
 			{
 				{
-					.name = "Instance",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
 				}
 			},
@@ -922,12 +918,7 @@ namespace flame
 				{
 					auto name = *(uint*)inputs[1].data;
 					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
-					{
-						if (ins->bp->name_hash == name || name == "*"_h)
-							*(BlueprintInstancePtr*)outputs[0].data = ins->bp_ins;
-						else
-							*(BlueprintInstancePtr*)outputs[0].data = nullptr;
-					}
+						*(BlueprintInstancePtr*)outputs[0].data = ins->bp_ins;
 					else
 						*(BlueprintInstancePtr*)outputs[0].data = nullptr;
 				}
@@ -1063,7 +1054,7 @@ namespace flame
 							{
 								auto type = inputs[i + 1].type;
 								auto& arg = it->second;
-								if (it->second.type == type ||
+								if (arg.type == type ||
 									(type == TypeInfo::get<uint>() && arg.type == TypeInfo::get<int>()) ||
 									(type == TypeInfo::get<int>() && arg.type == TypeInfo::get<uint>()))
 									type->copy(arg.data, inputs[i + 1].data);
@@ -1104,6 +1095,392 @@ namespace flame
 							.allowed_types = { types[i] }
 						};
 					}
+
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
+			}
+		);
+
+		library->add_template("EAdd Assign", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name0_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "V0",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						if (auto it = instance->variables.find(*(uint*)inputs[1].data); it != instance->variables.end())
+						{
+							auto type = inputs[2].type;
+							auto& arg = it->second;
+							if (arg.type == TypeInfo::get<float>())
+							{
+								if		(type == TypeInfo::get<float>()) *(float*)arg.data += *(float*)inputs[2].data;
+								else if (type == TypeInfo::get<int>()) *(float*)arg.data += *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(float*)arg.data += *(uint*)inputs[2].data;
+							}
+							else if (arg.type == TypeInfo::get<int>())
+							{
+								if (type == TypeInfo::get<float>()) *(int*)arg.data += *(float*)inputs[2].data;
+								else if (type == TypeInfo::get<int>()) *(int*)arg.data += *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(int*)arg.data += *(uint*)inputs[2].data;
+							}
+							else if (arg.type == TypeInfo::get<uint>())
+							{
+								if (type == TypeInfo::get<float>()) *(uint*)arg.data += *(float*)inputs[2].data;
+								else if (type == TypeInfo::get<int>()) *(uint*)arg.data += *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(uint*)arg.data += *(uint*)inputs[2].data;
+							}
+						}
+					}
+				}
+			}
+		);
+
+		library->add_template("ESubtract Assign", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name0_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "V0",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						if (auto it = instance->variables.find(*(uint*)inputs[1].data); it != instance->variables.end())
+						{
+							auto type = inputs[2].type;
+							auto& arg = it->second;
+							if (arg.type == TypeInfo::get<float>())
+							{
+								if (type == TypeInfo::get<float>()) *(float*)arg.data -= *(float*)inputs[2].data;
+								else if (type == TypeInfo::get<int>()) *(float*)arg.data -= *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(float*)arg.data -= *(uint*)inputs[2].data;
+							}
+							else if (arg.type == TypeInfo::get<int>())
+							{
+								if (type == TypeInfo::get<float>()) *(int*)arg.data -= *(float*)inputs[2].data;
+								else if (type == TypeInfo::get<int>()) *(int*)arg.data -= *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(int*)arg.data -= *(uint*)inputs[2].data;
+							}
+							else if (arg.type == TypeInfo::get<uint>())
+							{
+								if (type == TypeInfo::get<float>()) *(uint*)arg.data -= *(float*)inputs[2].data;
+								else if (type == TypeInfo::get<int>()) *(uint*)arg.data -= *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(uint*)arg.data -= *(uint*)inputs[2].data;
+							}
+						}
+					}
+				}
+			}
+		);
+
+		library->add_template("EMultiple Assign", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name0_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "V0",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						if (auto it = instance->variables.find(*(uint*)inputs[1].data); it != instance->variables.end())
+						{
+							auto type = inputs[2].type;
+							auto& arg = it->second;
+							if (arg.type == TypeInfo::get<float>())
+							{
+								if (type == TypeInfo::get<float>()) *(float*)arg.data *= *(float*)inputs[2].data;
+								else if (type == TypeInfo::get<int>()) *(float*)arg.data *= *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(float*)arg.data *= *(uint*)inputs[2].data;
+							}
+							else if (arg.type == TypeInfo::get<int>())
+							{
+								if (type == TypeInfo::get<float>()) *(int*)arg.data *= *(float*)inputs[2].data;
+								else if (type == TypeInfo::get<int>()) *(int*)arg.data *= *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(int*)arg.data *= *(uint*)inputs[2].data;
+							}
+							else if (arg.type == TypeInfo::get<uint>())
+							{
+								if (type == TypeInfo::get<float>()) *(uint*)arg.data *= *(float*)inputs[2].data;
+								else if (type == TypeInfo::get<int>()) *(uint*)arg.data *= *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(uint*)arg.data *= *(uint*)inputs[2].data;
+							}
+						}
+					}
+				}
+			}
+		);
+
+		library->add_template("EDivide Assign", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name0_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "V0",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						if (auto it = instance->variables.find(*(uint*)inputs[1].data); it != instance->variables.end())
+						{
+							auto type = inputs[2].type;
+							auto& arg = it->second;
+							if (arg.type == TypeInfo::get<float>())
+							{
+								if (type == TypeInfo::get<float>()) *(float*)arg.data /= *(float*)inputs[2].data;
+								else if (type == TypeInfo::get<int>()) *(float*)arg.data /= *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(float*)arg.data /= *(uint*)inputs[2].data;
+							}
+							else if (arg.type == TypeInfo::get<int>())
+							{
+								if (type == TypeInfo::get<float>()) *(int*)arg.data /= *(float*)inputs[2].data;
+								else if (type == TypeInfo::get<int>()) *(int*)arg.data /= *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(int*)arg.data /= *(uint*)inputs[2].data;
+							}
+							else if (arg.type == TypeInfo::get<uint>())
+							{
+								if (type == TypeInfo::get<float>()) *(uint*)arg.data /= *(float*)inputs[2].data;
+								else if (type == TypeInfo::get<int>()) *(uint*)arg.data /= *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(uint*)arg.data /= *(uint*)inputs[2].data;
+							}
+						}
+					}
+				}
+			}
+		);
+
+		library->add_template("EOr Assign", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name0_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "V0",
+					.allowed_types = { TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						if (auto it = instance->variables.find(*(uint*)inputs[1].data); it != instance->variables.end())
+						{
+							auto type = inputs[2].type;
+							auto& arg = it->second;
+							if (arg.type == TypeInfo::get<int>())
+							{
+								if (type == TypeInfo::get<int>()) *(int*)arg.data |= *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(int*)arg.data |= *(uint*)inputs[2].data;
+							}
+							else if (arg.type == TypeInfo::get<uint>())
+							{
+								if (type == TypeInfo::get<int>()) *(uint*)arg.data |= *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(uint*)arg.data |= *(uint*)inputs[2].data;
+							}
+						}
+					}
+				}
+			}
+		);
+
+		library->add_template("EAnd Assign", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name0_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "V0",
+					.allowed_types = { TypeInfo::get<int>(), TypeInfo::get<uint>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						if (auto it = instance->variables.find(*(uint*)inputs[1].data); it != instance->variables.end())
+						{
+							auto type = inputs[2].type;
+							auto& arg = it->second;
+							if (arg.type == TypeInfo::get<int>())
+							{
+								if (type == TypeInfo::get<int>()) *(int*)arg.data &= *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(int*)arg.data &= *(uint*)inputs[2].data;
+							}
+							else if (arg.type == TypeInfo::get<uint>())
+							{
+								if (type == TypeInfo::get<int>()) *(uint*)arg.data &= *(int*)inputs[2].data;
+								else if (type == TypeInfo::get<uint>()) *(uint*)arg.data &= *(uint*)inputs[2].data;
+							}
+						}
+					}
+				}
+			}
+		);
+
+		library->add_template("ESerialize All Datas", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Format",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto& format = *(std::string*)inputs[1].data;
+						auto instance = ins->bp_ins;
+
+						auto& ret = *(std::string*)outputs[0].data;
+						ret.clear();
+						for (auto& v : instance->blueprint->variables)
+						{
+							if (v.type->tag != TagD)
+								continue;
+							auto ok = true;
+							for (auto i = 2; i < inputs_count; i++)
+							{
+								if (v.name_hash == *(uint*)inputs[i].data)
+								{
+									ok = false;
+									break;
+								}
+							}
+							if (!ok)
+								continue;
+							auto line = format;
+							auto value = v.type->serialize(v.data);
+							SUS::replace_all(line, "{name}", get_display_name(v.name));
+							SUS::replace_all(line, "{value}", value);
+							if (!ret.empty())
+								ret += '\n';
+							ret += line;
+						}
+					}
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto num_excludes = 0;
+
+					for (auto& t : SUS::to_string_vector(SUS::split(info.template_string, ',')))
+					{
+						if (SUS::strip_head_if(t, "E"))
+							num_excludes = s2t<uint>(t);
+					}
+
+					info.new_inputs.resize(2 + num_excludes);
+					info.new_inputs[0] = {
+						.name = "Entity",
+						.allowed_types = { TypeInfo::get<EntityPtr>() }
+					};
+					info.new_inputs[1] = {
+						.name = "Format",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
+					for (auto i = 0; i < num_excludes; i++)
+					{
+						info.new_inputs[i + 2] = {
+							.name = "Exclude" + str(i) + "_hash",
+							.allowed_types = { TypeInfo::get<std::string>() }
+						};
+					}
+					info.new_outputs.resize(1);
+					info.new_outputs[0] = {
+						.name = "V",
+						.allowed_types = { TypeInfo::get<std::string>() }
+					};
 
 					return true;
 				}
@@ -1740,7 +2117,7 @@ namespace flame
 						auto bp = ins->bp;
 						for (auto& v : bp->variables)
 						{
-							if (v.type->tag == TagD && v.name == filter)
+							if (v.type->tag == TagD && v.name.find(filter) != std::string::npos)
 							{
 								if (auto it = instance->variables.find(v.name_hash); it != instance->variables.end())
 								{
@@ -1852,7 +2229,7 @@ namespace flame
 						auto bp = ins->bp;
 						for (auto& v : bp->variables)
 						{
-							if (v.type->tag == TagD && v.name == filter)
+							if (v.type->tag == TagD && v.name.find(filter) != std::string::npos)
 							{
 								if (auto it = instance->variables.find(v.name_hash); it != instance->variables.end())
 								{
@@ -1952,6 +2329,10 @@ namespace flame
 				{
 					.name = "Entity",
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "BPI",
+					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
@@ -1961,9 +2342,12 @@ namespace flame
 				if (auto parent = *(EntityPtr*)inputs[0].data; parent)
 				{
 					auto e = Entity::create();
-					e->add_component<cBpInstance>()->set_bp_name(path);
+					auto cbp = e->add_component<cBpInstance>();
+					cbp->set_bp_name(path);
 					parent->add_child(e);
+
 					*(EntityPtr*)outputs[0].data = e;
+					*(BlueprintInstancePtr*)outputs[1].data = cbp->bp_ins;
 				}
 			}
 		);
