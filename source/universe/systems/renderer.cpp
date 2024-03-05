@@ -3504,7 +3504,7 @@ namespace flame
 
 		if (layout.auto_size)
 		{
-			if (layout.rect.b.x > layout.rect.a.x && layout.rect.b.y > layout.rect.b.y)
+			if (layout.rect.b.x > layout.rect.a.x && layout.rect.b.y > layout.rect.a.y)
 				layout.rect.b -= layout.item_spacing * scaling;
 		}
 	}

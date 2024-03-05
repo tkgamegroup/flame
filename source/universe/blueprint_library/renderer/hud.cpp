@@ -57,6 +57,34 @@ namespace flame
 			}
 		);
 
+		library->add_template("Hud Screen Width", "", BlueprintNodeFlagNone,
+			{
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(float*)outputs[0].data = sRenderer::instance()->hud_screen_size().x;
+			}
+		);
+
+		library->add_template("Hud Screen Height", "", BlueprintNodeFlagNone,
+			{
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(float*)outputs[0].data = sRenderer::instance()->hud_screen_size().y;
+			}
+		);
+
 		library->add_template("Hud", "", BlueprintNodeFlagNone,
 			{
 				{

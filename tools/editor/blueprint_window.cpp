@@ -534,8 +534,7 @@ void BlueprintView::navigate_to_node(BlueprintNodePtr n)
 		return;
 	}
 
-	auto ax_node = ax_editor->FindNode((ax::NodeEditor::NodeId)n);
-	if (ax_node)
+	if (auto ax_node = ax_editor->FindNode((ax::NodeEditor::NodeId)n); ax_node)
 		ax_editor->NavigateTo(ax_node->GetBounds(), true, 0.f);
 }
 

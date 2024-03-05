@@ -75,9 +75,41 @@ void SearchView::on_draw()
 						if (auto bp = Blueprint::get(it.path()); bp)
 						{
 							auto blueprint_result_idx = -1;
+							auto get_blueprint_result = [&]() {
+								if (blueprint_result_idx == -1)
+								{
+									blueprint_result_idx = blueprint_results.size();
+									auto& r = blueprint_results.emplace_back();
+									r.path = Path::reverse(it.path());
+									r.path_str = r.path.string();
+								}
+							};
 							for (auto& g : bp->groups)
 							{
 								auto group_result_idx = -1;
+								auto get_group_result = [&]() {
+									if (group_result_idx == -1)
+									{
+										auto& bpr = blueprint_results[blueprint_result_idx];
+										group_result_idx = bpr.group_results.size();
+										auto& gr = bpr.group_results.emplace_back();
+										gr.name = g->name;
+										gr.name_hash = g->name_hash;
+									}
+								};
+								if (search_in_names)
+								{
+									if (filter_name(g->name, find_str, match_case, match_whole_word))
+									{
+										get_blueprint_result();
+										get_group_result();
+
+										auto& gr = blueprint_results[blueprint_result_idx].group_results[group_result_idx];
+										auto& nr = gr.node_results.emplace_back();
+										nr.name = "self";
+										nr.id = g->nodes.front()->object_id;
+									}
+								}
 								for (auto& n : g->nodes)
 								{
 									auto name = !n->display_name.empty() ? n->display_name : n->name;
@@ -104,21 +136,8 @@ void SearchView::on_draw()
 									}
 									if (ok)
 									{
-										if (blueprint_result_idx == -1)
-										{
-											blueprint_result_idx = blueprint_results.size();
-											auto& r = blueprint_results.emplace_back();
-											r.path = Path::reverse(it.path());
-											r.path_str = r.path.string();
-										}
-										if (group_result_idx == -1)
-										{
-											auto& bpr = blueprint_results[blueprint_result_idx];
-											group_result_idx = bpr.group_results.size();
-											auto& gr = bpr.group_results.emplace_back();
-											gr.name = g->name;
-											gr.name_hash = g->name_hash;
-										}
+										get_blueprint_result();
+										get_group_result();
 
 										auto& gr = blueprint_results[blueprint_result_idx].group_results[group_result_idx];
 										auto& nr = gr.node_results.emplace_back();
