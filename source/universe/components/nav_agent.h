@@ -31,7 +31,7 @@ namespace flame
 		// Reflect
 		uint separation_group = 1;
 		// Reflect
-		float separation_weight = 2.f;
+		float separation_weight = 1.f;
 		// Reflect
 		bool flying = false;
 

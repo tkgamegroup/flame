@@ -25,6 +25,7 @@ namespace flame
 				n_channel.append_attribute("node_name").set_value(ch.node_name.c_str());
 				data_soup.xml_append_v(ch.position_keys, n_channel.append_child("position_keys"));
 				data_soup.xml_append_v(ch.rotation_keys, n_channel.append_child("rotation_keys"));
+				data_soup.xml_append_v(ch.scaling_keys, n_channel.append_child("scaling_keys"));
 			}
 
 			doc.save(dst);
@@ -77,6 +78,7 @@ namespace flame
 					c.node_name = n_channel.attribute("node_name").value();
 					data_soup.xml_read_v(c.position_keys, n_channel.child("position_keys"));
 					data_soup.xml_read_v(c.rotation_keys, n_channel.child("rotation_keys"));
+					data_soup.xml_read_v(c.scaling_keys, n_channel.child("scaling_keys"));
 				}
 
 				ret->ref = 1;

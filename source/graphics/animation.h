@@ -20,9 +20,16 @@ namespace flame
 				quat q;
 			};
 
+			struct ScalingKey
+			{
+				float t;
+				vec3 s;
+			};
+
 			std::string node_name;
 			std::vector<PositionKey> position_keys;
 			std::vector<RotationKey> rotation_keys;
+			std::vector<ScalingKey> scaling_keys;
 		};
 
 		struct Animation

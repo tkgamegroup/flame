@@ -24,6 +24,7 @@
 #include <flame/universe/components/terrain.h>
 #include <flame/universe/components/volume.h>
 #include <flame/universe/components/particle_system.h>
+#include <flame/universe/components/nav_agent.h>
 #include <flame/universe/components/bp_instance.h>
 #include <flame/universe/components/world_settings.h>
 #include <flame/universe/systems/audio.h>
@@ -2312,6 +2313,21 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 					auto comp = (cParticleSystemPtr)cc.components[0];
 					if (ImGui::Button("Reset"))
 						comp->reset();
+				}
+			}
+			else if (ui.name_hash == "flame::cNavAgent"_h)
+			{
+				if (cc.components.size() == 1)
+				{
+					auto comp = (cNavAgentPtr)cc.components[0];
+					ImGui::Text("Target Pos: %s", str(comp->target_pos).c_str());
+					ImGui::SameLine();
+					if (ImGui::Button("Set"))
+					{
+						auto s = w2s(get_clipboard());
+						auto pos = s2t<3, float>(s);
+						comp->set_target(pos);
+					}
 				}
 			}
 			else if (ui.name_hash == "flame::cBpInstance"_h)

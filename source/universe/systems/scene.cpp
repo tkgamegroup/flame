@@ -57,6 +57,7 @@ bool dt_init_crowd()
 	dt_crowd = dtAllocCrowd();
 	if (dtStatusFailed(dt_crowd->init(128, 2.f/*max agent radius*/, dt_nav_mesh)))
 		return false;
+
 	dtObstacleAvoidanceParams avoid_params;
 	memcpy(&avoid_params, dt_crowd->getObstacleAvoidanceParams(0), sizeof(dtObstacleAvoidanceParams));
 	avoid_params.velBias = 0.5f;

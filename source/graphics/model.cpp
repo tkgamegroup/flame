@@ -695,6 +695,7 @@ namespace flame
 							decompose(transform, scl, qut, pos, skew, perspective);
 							channel->position_keys.push_back({ time, pos });
 							channel->rotation_keys.push_back({ time, qut });
+							channel->scaling_keys.push_back({ time, scl });
 						}
 
 						auto children_count = node->GetChildCount();
@@ -712,6 +713,8 @@ namespace flame
 						for (auto& k : ch.position_keys)
 							k.t -= start_time;
 						for (auto& k : ch.rotation_keys)
+							k.t -= start_time;
+						for (auto& k : ch.scaling_keys)
 							k.t -= start_time;
 					}
 
@@ -1301,6 +1304,13 @@ namespace flame
 							ch.rotation_keys[k].t = ai_ch->mRotationKeys[k].mTime;
 							auto& q = ai_ch->mRotationKeys[k].mValue;
 							ch.rotation_keys[k].q = quat(q.w, q.x, q.y, q.z);
+						}
+						ch.scaling_keys.resize(ai_ch->mNumScalingKeys);
+						for (auto k = 0; k < ch.scaling_keys.size(); k++)
+						{
+							ch.scaling_keys[k].t = ai_ch->mScalingKeys[k].mTime;
+							auto& s = ai_ch->mScalingKeys[k].mValue;
+							ch.scaling_keys[k].s = vec3(s.x, s.y, s.z);
 						}
 					}
 

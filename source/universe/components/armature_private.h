@@ -13,6 +13,7 @@ namespace flame
 		{
 			vec3 p = vec3(0);
 			quat q = quat(1, 0, 0, 0);
+			vec3 s = vec3(1);
 			mat4 m = mat4(1.f);
 		};
 
@@ -29,6 +30,7 @@ namespace flame
 			uint bone_idx;
 			std::vector<std::pair<float, vec3>> positions;
 			std::vector<std::pair<float, quat>> rotations;
+			std::vector<std::pair<float, vec3>> scalings;
 		};
 
 		struct BoundAnimation

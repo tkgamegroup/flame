@@ -330,5 +330,51 @@ namespace flame
 				}
 			}
 		);
+
+		library->add_template("Draw Circle", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Pos",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Radius",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "Num Of Segments",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "16"
+				},
+				{
+					.name = "Col",
+					.allowed_types = { TypeInfo::get<cvec4>() },
+					.default_value = "255,255,255,255"
+				},
+				{
+					.name = "Depth Test",
+					.allowed_types = { TypeInfo::get<bool>() },
+					.default_value = "false"
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto pos = *(vec3*)inputs[0].data;
+				auto radius = *(float*)inputs[1].data;
+				auto n = *(uint*)inputs[2].data;
+				auto col = *(cvec4*)inputs[3].data;
+				auto depth_test = *(bool*)inputs[4].data;
+
+				auto pts = std::vector<vec3>(n + 1);
+				auto step = 2.f * pi<float>() / n;
+				for (auto i = 0; i <= n; i++)
+				{
+					auto a = i * step;
+					pts[i] = pos + vec3(cos(a) * radius, 0.f, sin(a) * radius);
+				}
+				sRenderer::instance()->draw_primitives(PrimitiveLineStrip, pts.data(), n + 1, col, depth_test);
+			}
+		);
 	}
 }

@@ -404,6 +404,27 @@ namespace flame
 			}
 		);
 
+		library->add_template("Hud Stroke Item", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Thickness",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "Col",
+					.allowed_types = { TypeInfo::get<cvec4>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto thickness = *(float*)inputs[0].data;
+				auto col = *(cvec4*)inputs[1].data;
+
+				sRenderer::instance()->hud_stroke_item(thickness, col);
+			}
+		);
+
 		library->add_template("Hud Item Hovered", "", BlueprintNodeFlagNone,
 			{
 			},

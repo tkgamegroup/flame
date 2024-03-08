@@ -254,6 +254,7 @@ namespace flame
 		void hud_image_stretched(const vec2& size, const graphics::ImageDesc& image, const vec4& border, const cvec4& col) override;
 		bool hud_button(std::wstring_view label, uint font_size) override;
 		bool hud_image_button(const vec2& size, const graphics::ImageDesc& image, const vec4& border) override;
+		void hud_stroke_item(float thickness, const cvec4& col) override;
 		bool hud_item_hovered() override;
 
 		void send_debug_string(const std::string& str) override;

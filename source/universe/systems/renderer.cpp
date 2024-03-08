@@ -3888,6 +3888,14 @@ namespace flame
 		return state == 2;
 	}
 
+	void sRendererPrivate::hud_stroke_item(float thickness, const cvec4& col)
+	{
+		auto canvas = render_tasks.front()->canvas;
+
+		auto rect = hud_last_rect;
+		canvas->add_rect(rect.a, rect.b, thickness, col);
+	}
+
 	bool sRendererPrivate::hud_item_hovered()
 	{
 		return hud_last_rect.contains(sInput::instance()->mpos);

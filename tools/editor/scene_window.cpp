@@ -3,6 +3,7 @@
 #include "history.h"
 #include "tile_map_editing.h"
 
+#include <flame/foundation/system.h>
 #include <flame/universe/draw_data.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/element.h>
@@ -957,6 +958,8 @@ void SceneView::on_draw()
 					auto sz = ImGui::CalcTextSize(s.c_str(), s.c_str() + s.size());
 					ImGui::GetWindowDrawList()->AddRectFilled(p0, (vec2)p0 + (vec2)sz, ImColor(0.f, 0.f, 0.f, 0.5f));
 					ImGui::GetWindowDrawList()->AddText(p0, ImColor(255.f, 255.f, 255.f), s.c_str(), s.c_str() + s.size());
+					if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)(ImGuiKey)Keyboard_C))
+						set_clipboard(s2w(s));
 				}
 			}
 		}

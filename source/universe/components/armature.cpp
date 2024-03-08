@@ -144,6 +144,18 @@ namespace flame
 										k.first = a.duration;
 										t.rotations.push_back(k);
 									}
+									t.scalings.resize(ch.scaling_keys.size());
+									for (auto i = 0; i < t.scalings.size(); i++)
+									{
+										t.scalings[i].first = ch.scaling_keys[i].t;
+										t.scalings[i].second = ch.scaling_keys[i].s;
+									}
+									if (!t.scalings.empty() && t.scalings.back().first < a.duration)
+									{
+										auto k = t.scalings.front();
+										k.first = a.duration;
+										t.scalings.push_back(k);
+									}
 									//if (id == 0)
 									//{
 									//	if (!t.positions.empty())
@@ -248,6 +260,11 @@ namespace flame
 						b.pose.q = slerp(b.pose.q, t.rotations.front().second, transition_time / transition_duration);
 						b.node->set_qut(b.pose.q);
 					}
+					if (!t.scalings.empty())
+					{
+						b.pose.s = mix(b.pose.s, t.scalings.front().second, transition_time / transition_duration);
+						b.node->set_scl(b.pose.s);
+					}
 				}
 
 				transition_time += delta_time * playing_speed;
@@ -288,6 +305,20 @@ namespace flame
 							b.pose.q = lit->second;
 						else
 							b.pose.q = slerp(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
+						b.node->set_qut(b.pose.q);
+					}
+					if (!t.scalings.empty())
+					{
+						auto rit = std::lower_bound(t.scalings.begin(), t.scalings.end(), playing_time, [](const auto& i, auto v) {
+							return i.first < v;
+						});
+						auto lit = rit;
+						if (lit != t.scalings.begin())
+							lit--;
+						if (lit == rit)
+							b.pose.q = lit->second;
+						else
+							b.pose.q = mix(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
 						b.node->set_qut(b.pose.q);
 					}
 				}

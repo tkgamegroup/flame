@@ -386,6 +386,7 @@ namespace flame
 		virtual void hud_image_stretched(const vec2& size, const graphics::ImageDesc& image, const vec4& border = vec4(0.f), const cvec4& col = cvec4(255)) = 0;
 		virtual bool hud_button(std::wstring_view label, uint font_size = 24) = 0;
 		virtual bool hud_image_button(const vec2& size, const graphics::ImageDesc& image = {}, const vec4& border = vec4(0.f)) = 0;
+		virtual void hud_stroke_item(float thickness = 1.f, const cvec4& col = cvec4(255)) = 0;
 		virtual bool hud_item_hovered() = 0;
 
 		// Reflect
