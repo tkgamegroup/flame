@@ -33,7 +33,7 @@ float reinhard2(float x, float L_white)
 
 void main()
 {
-	vec3 rgb = texture(img_src, i_uv).rgb;
+	vec3 rgb = max(vec3(0), texture(img_src, i_uv).rgb);
 	vec3 Yxy = rgb2Yxy(rgb);
 	float lp = Yxy.x / (9.6 * pc.average_luminance + 0.0001);
 	Yxy.x = reinhard2(lp, pc.white_point);

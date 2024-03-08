@@ -1627,7 +1627,7 @@ namespace flame
 				res.mat->defines.push_back("frag:ALPHA_MAP=" + str(res.mat->alpha_map));
 			if (res.mat->splash_map != -1)
 				res.mat->defines.push_back("frag:SPLASH_MAP=" + str(res.mat->splash_map));
-			if (auto alpha_map = res.mat->alpha_map != -1 ? res.mat->alpha_map : res.mat->color_map; alpha_map != -1)
+			if (auto alpha_map = res.mat->alpha_map != -1 ? res.mat->alpha_map : res.mat->color_map; alpha_map != -1 && alpha_map < res.mat->textures.size())
 			{
 				auto& tex = res.mat->textures[alpha_map];
 				float alpha_test = 0.f;
