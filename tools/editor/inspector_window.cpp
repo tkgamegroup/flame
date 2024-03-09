@@ -1285,7 +1285,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					auto ptr1 = ti->second(p);
 					if (manipulate_variable(ti->ti1, "First", 0, 0, nullptr, nullptr, "", (voidptr*)&ptr0, 1, id) > 1)
 						changed = true;
-					if (manipulate_variable(ti->ti2, "Second", 0, 0, nullptr, nullptr, "", (voidptr*)&ptr1, 1, id) > 1)
+					if (manipulate_variable(ti->ti2, "Second", 0, 0, nullptr, nullptr, "", (voidptr*)&ptr1, 1, voidptr((uint64)id + sizeof(voidptr))) > 1)
 						changed = true;
 					ImGui::PopID();
 				}
@@ -1350,7 +1350,7 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 					for (auto& t : ti->tis)
 					{
 						auto ptr = p + t.second;
-						if (manipulate_variable(t.first, "Item " + str(j), 0, 0, nullptr, nullptr, "", (voidptr*)&ptr, 1, id) > 1)
+						if (manipulate_variable(t.first, "Item " + str(j), 0, 0, nullptr, nullptr, "", (voidptr*)&ptr, 1, voidptr((uint64)id + sizeof(voidptr) * j)) > 1)
 							changed = true;
 						j++;
 					}
@@ -2213,7 +2213,10 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 					for (auto& v : scene_window.views)
 					{
 						auto sv = (SceneView*)v.get();
-						sv->show_navigation_frames = 3;
+						if (app.e_playing)
+							sv->play_overlays.show_navigation_frames = 3;
+						else
+							sv->edit_overlays.show_navigation_frames = 3;
 					}
 				}
 			}

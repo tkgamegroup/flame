@@ -182,7 +182,6 @@ struct App : UniverseApplication
 	EntityPtr e_editor = nullptr;
 	EntityPtr e_prefab = nullptr;
 	EntityPtr e_playing = nullptr;
-	EntityPtr e_preview = nullptr;
 	bool paused = false;
 	void* ev_open_prefab = nullptr;
 
@@ -191,6 +190,8 @@ struct App : UniverseApplication
 	uint timeline_current_frame = 0;
 	bool timeline_recording = false;
 	bool timeline_playing = false;
+
+	Listeners<void(uint msg)> listeners;
 
 	ProjectSettings project_settings;
 
@@ -232,8 +233,6 @@ struct App : UniverseApplication
 	bool cmd_play();
 	bool cmd_pause();
 	bool cmd_stop();
-	bool cmd_start_preview(EntityPtr e);
-	bool cmd_stop_preview();
 	bool cmd_restart_preview();
 };
 

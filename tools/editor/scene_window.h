@@ -31,10 +31,8 @@ enum ToolMode
 	ToolWorld
 };
 
-struct SceneView : View
+struct Overlays
 {
-	std::unique_ptr<graphics::Image> render_target;
-
 	bool show_outline = true;
 	bool show_AABB = false;
 	bool show_AABB_only_selected = false;
@@ -43,6 +41,17 @@ struct SceneView : View
 	bool show_navigation = false;
 	uint show_navigation_frames = 0;
 	bool use_gizmos = true; // move, rotate, scale tools, camera controlling, selecting
+
+	void load(const std::vector<INI_Entry>& entries);
+	void save(std::ofstream& f);
+};
+
+struct SceneView : View
+{
+	std::unique_ptr<graphics::Image> render_target;
+
+	Overlays edit_overlays;
+	Overlays play_overlays;
 
 	uint camera_idx = 0;
 	float camera_zoom = 5.f;

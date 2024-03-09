@@ -5,6 +5,20 @@
 
 namespace flame
 {
+	cWorldSettingsPrivate::~cWorldSettingsPrivate()
+	{
+		auto world = World::instance();
+		for (auto& s : world->systems)
+		{
+			auto ui = find_udt(s->type_hash);
+			for (auto& a : ui->attributes)
+			{
+				if (a.type->tag == TagD)
+					a.unserialize(s.get(), a.default_value);
+			}
+		}
+	}
+
 	void cWorldSettingsPrivate::set_filename(const std::filesystem::path& path)
 	{
 		if (filename == path)

@@ -316,10 +316,10 @@ namespace flame
 						if (lit != t.scalings.begin())
 							lit--;
 						if (lit == rit)
-							b.pose.q = lit->second;
+							b.pose.s = lit->second;
 						else
-							b.pose.q = mix(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
-						b.node->set_qut(b.pose.q);
+							b.pose.s = mix(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
+						b.node->set_scl(b.pose.s);
 					}
 				}
 

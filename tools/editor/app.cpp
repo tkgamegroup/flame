@@ -1713,6 +1713,12 @@ void App::on_gui()
 				if (ImGui::BeginPopupModal("Preferences", nullptr, ImGuiWindowFlags_NoSavedSettings))
 				{
 					ImGui::Checkbox("Use Flame Debugger", &preferences.use_flame_debugger);
+					if (ImGui::Button("Save"))
+					{
+						save_preferences();
+						preferences_dialog.open = false;
+						ImGui::CloseCurrentPopup();
+					}
 					if (ImGui::Button("Close"))
 					{
 						preferences_dialog.open = false;
@@ -1822,7 +1828,7 @@ void App::on_gui()
 			ImGui::OpenInputDialog("Send Debug Cmd", "Cmd", [](bool ok, const std::string& str) {
 				if (ok)
 					sRenderer::instance()->send_debug_string(str);
-				}, "", true);
+			}, "", true);
 		}
 		ImGui::EndMenu();
 	}
@@ -1863,16 +1869,7 @@ void App::on_gui()
 			{
 				if (e_playing)
 					cmd_stop();
-				else if (e_preview)
-					cmd_stop_preview();
 			}
-		}
-		if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_F6))
-		{
-			if (!e_preview)
-				cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : e_prefab);
-			else
-				cmd_restart_preview();
 		}
 		if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)(ImGuiKey)Keyboard_B))
 			build_project();
@@ -1932,20 +1929,6 @@ void App::on_gui()
 		ImGui::EndPopup();
 	}
 
-	if (e_preview)
-	{
-		e_preview->forward_traversal([](EntityPtr e) {
-			if (!e->global_enable)
-				return;
-			for (auto& c : e->components)
-			{
-				if (c->enable)
-					c->update();
-			}
-		});
-		render_frames++;
-	}
-
 	for (auto it = dialogs.begin(); it != dialogs.end();)
 	{
 		if (!(*it)())
@@ -2000,6 +1983,11 @@ void App::load_preferences()
 		open_prefab(e.values[0]);
 		break;
 	}
+	if (auto v = scene_window.first_view(); v)
+	{
+		v->edit_overlays.load(preferences_i.get_section_entries("scene_edit_overlays"));
+		v->play_overlays.load(preferences_i.get_section_entries("scene_play_overlays"));
+	}
 
 	ImGui::GetIO().IniSavingRate = 10000.f;
 }
@@ -2033,6 +2021,13 @@ void App::save_preferences()
 	{
 		preferences_o << "[opened_prefab]\n";
 		preferences_o << prefab_path.string() << "\n";
+	}
+	if (auto v = scene_window.first_view(); v)
+	{
+		preferences_o << "[scene_edit_overlays]\n";
+		v->edit_overlays.save(preferences_o);
+		preferences_o << "[scene_play_overlays]\n";
+		v->play_overlays.save(preferences_o);
 	}
 	preferences_o.close();
 
@@ -2385,7 +2380,6 @@ void App::close_prefab()
 {
 	if (e_playing)
 		return;
-	e_preview = nullptr;
 	prefab_path = L"";
 	selection.clear("app"_h);
 
@@ -2878,8 +2872,6 @@ bool App::cmd_duplicate_entities(std::vector<EntityPtr>&& es)
 
 bool App::cmd_play()
 {
-	if (e_preview)
-		return false;
 	if (!e_playing && e_prefab)
 	{
 		add_event([this]() {
@@ -2913,6 +2905,9 @@ bool App::cmd_play()
 			}
 			return false;
 		});
+
+		listeners.call("game_started"_h);
+
 		return true;
 	}
 	else if (paused)
@@ -2922,6 +2917,7 @@ bool App::cmd_play()
 		input->transfer_events = true;
 		return true;
 	}
+
 	return false;
 }
 
@@ -2939,6 +2935,7 @@ bool App::cmd_stop()
 {
 	if (!e_playing)
 		return false;
+
 	add_event([this]() {
 		Graveyard::instance()->clear();
 		e_playing->remove_from_parent();
@@ -2964,58 +2961,7 @@ bool App::cmd_stop()
 		return false;
 	});
 
-	return true;
-}
-
-bool App::cmd_start_preview(EntityPtr e)
-{
-	if (e_preview)
-		cmd_stop_preview();
-
-	e_preview = e;
-
-	if (e_preview->enable)
-	{
-		e_preview->set_enable(false);
-		e_preview->set_enable(true);
-	}
-	e_preview->forward_traversal([](EntityPtr e) {
-		if (!e->global_enable)
-			return;
-		for (auto& c : e->components)
-		{
-			if (c->enable)
-				c->start();
-		}
-	});
-
-	return true;
-}
-
-bool App::cmd_stop_preview()
-{
-	if (!e_preview)
-		return false;
-
-	if (e_preview->enable)
-	{
-		e_preview->set_enable(false);
-		e_preview->set_enable(true);
-	}
-
-	e_preview = nullptr;
-
-	return true;
-}
-
-bool App::cmd_restart_preview()
-{
-	if (!e_preview)
-		return false;
-
-	auto e = e_preview;
-	cmd_stop_preview();
-	cmd_start_preview(e);
+	listeners.call("game_stopped"_h);
 
 	return true;
 }

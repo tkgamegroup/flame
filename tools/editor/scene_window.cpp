@@ -15,6 +15,39 @@
 #include <flame/universe/components/nav_agent.h>
 #include <flame/universe/components/nav_obstacle.h>
 
+void Overlays::load(const std::vector<INI_Entry>& entries)
+{
+	for (auto& e : entries)
+	{
+		if (e.key == "show_outline")
+			show_outline = s2t<bool>(e.values[0]);
+		else if (e.key == "show_AABB")
+			show_AABB = s2t<bool>(e.values[0]);
+		else if (e.key == "show_AABB_only_selected")
+			show_AABB_only_selected = s2t<bool>(e.values[0]);
+		else if (e.key == "show_axis")
+			show_axis = s2t<bool>(e.values[0]);
+		else if (e.key == "show_bones")
+			show_bones = s2t<bool>(e.values[0]);
+		else if (e.key == "show_navigation")
+			show_navigation = s2t<bool>(e.values[0]);
+		else if (e.key == "use_gizmos")
+			use_gizmos = s2t<bool>(e.values[0]);
+	
+	}
+}
+
+void Overlays::save(std::ofstream& f)
+{
+	f << "show_outline = " << str(show_outline) << "\n";
+	f << "show_AABB = " << str(show_AABB) << "\n";
+	f << "show_AABB_only_selected = " << str(show_AABB_only_selected) << "\n";
+	f << "show_axis = " << str(show_axis) << "\n";
+	f << "show_bones = " << str(show_bones) << "\n";
+	f << "show_navigation = " << str(show_navigation) << "\n";
+	f << "use_gizmos = " << str(use_gizmos) << "\n";
+}
+
 SceneWindow scene_window;
 
 vec3 SceneView::get_snap_pos(const vec3& _pos)
@@ -163,48 +196,59 @@ void SceneView::on_draw()
 	auto camera = camera_list[camera_idx];
 	app.renderer->render_tasks.front()->camera = camera;
 	ImGui::SameLine();
-	if (ImGui::Button("Reset"))
-	{
-		auto camera_node = camera->node;
-		camera_node->set_pos(vec3(0.f));
-		camera_node->set_qut(quat(1.f, 0.f, 0.f, 0.f));
-	}
+	if (ImGui::Button(graphics::font_icon_str("gear"_h).c_str()))
+		ImGui::OpenPopup("camera_setup");
 	static float camera_flying_speed = 0.2;
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(50.f);
-	ImGui::DragFloat("##camera_flying_speed", &camera_flying_speed, 0.01f, 0.f, 100.f);
 
+	if (ImGui::BeginPopupModal("camera_setup"))
+	{
+		ImGui::DragFloat("Fovy", &camera->fovy, 0.1f, 0.1f, 179.9f);
+		ImGui::DragFloat("zNear", &camera->zNear, 0.1f, 0.1f, 1000.f);
+		ImGui::DragFloat("zFar", &camera->zFar, 0.1f, 0.1f, 10000.f);
+		ImGui::DragFloat("flying_speed", &camera_flying_speed, 0.01f, 0.f, 100.f);
+		if (ImGui::Button("Reset"))
+		{
+			auto camera_node = camera->node;
+			camera_node->set_pos(vec3(0.f));
+			camera_node->set_qut(quat(1.f, 0.f, 0.f, 0.f));
+		}
+		if (ImGui::Button("OK"))
+			ImGui::CloseCurrentPopup();
+		ImGui::EndPopup();
+	}
+
+	auto& overlays = app.e_playing ? play_overlays : edit_overlays;
 	ImGui::SameLine();
-	if (ImGui::ToolButton("Outline", show_outline))
-		show_outline = !show_outline;
+	if (ImGui::ToolButton("Outline", overlays.show_outline))
+		overlays.show_outline = !overlays.show_outline;
 	ImGui::SameLine();
-	if (ImGui::ToolButton("AABB", show_AABB))
-		show_AABB = !show_AABB;
-	if (show_AABB)
+	if (ImGui::ToolButton("AABB", overlays.show_AABB))
+		overlays.show_AABB = !overlays.show_AABB;
+	if (overlays.show_AABB)
 	{
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(100.f);
-		if (ImGui::BeginCombo("##AABB_combo", !show_AABB_only_selected ? "All" : "Only Selected"))
+		if (ImGui::BeginCombo("##AABB_combo", !overlays.show_AABB_only_selected ? "All" : "Only Selected"))
 		{
-			if (ImGui::Selectable("All", !show_AABB_only_selected))
-				show_AABB_only_selected = false;
-			if (ImGui::Selectable("Only Selected", show_AABB_only_selected))
-				show_AABB_only_selected = true;
+			if (ImGui::Selectable("All", !overlays.show_AABB_only_selected))
+				overlays.show_AABB_only_selected = false;
+			if (ImGui::Selectable("Only Selected", overlays.show_AABB_only_selected))
+				overlays.show_AABB_only_selected = true;
 			ImGui::EndCombo();
 		}
 	}
 	ImGui::SameLine();
-	if (ImGui::ToolButton("Axis", show_axis))
-		show_axis = !show_axis;
+	if (ImGui::ToolButton("Axis", overlays.show_axis))
+		overlays.show_axis = !overlays.show_axis;
 	ImGui::SameLine();
-	if (ImGui::ToolButton("Bones", show_bones))
-		show_bones = !show_bones;
+	if (ImGui::ToolButton("Bones", overlays.show_bones))
+		overlays.show_bones = !overlays.show_bones;
 	ImGui::SameLine();
-	if (ImGui::ToolButton("Navigation", show_navigation))
-		show_navigation = !show_navigation;
+	if (ImGui::ToolButton("Navigation", overlays.show_navigation))
+		overlays.show_navigation = !overlays.show_navigation;
 	ImGui::SameLine();
-	if (ImGui::ToolButton("Gizmos", use_gizmos))
-		use_gizmos = !use_gizmos;
+	if (ImGui::ToolButton("Gizmos", overlays.use_gizmos))
+		overlays.use_gizmos = !overlays.use_gizmos;
 
 	auto last_focused_scene = scene_window.first_view();
 
@@ -302,7 +346,7 @@ void SceneView::on_draw()
 	ImGui::SameLine();
 	ImGui::Dummy(vec2(50.f, 20.f));
 	ImGui::SameLine();
-	if (!app.e_playing && !app.e_preview)
+	if (!app.e_playing)
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 1, 0, 1));
 		//if (ImGui::ToolButton((graphics::font_icon_str("play"_h) + " Build And Play").c_str()))
@@ -316,9 +360,6 @@ void SceneView::on_draw()
 		//ImGui::SameLine();
 		if (ImGui::ToolButton(graphics::font_icon_str("play"_h).c_str()))
 			app.cmd_play();
-		ImGui::SameLine();
-		if (ImGui::ToolButton(graphics::font_icon_str("circle-play"_h).c_str()))
-			app.cmd_start_preview(selection.type == Selection::tEntity ? selection.as_entity() : app.e_prefab);
 		ImGui::PopStyleColor();
 	}
 	else
@@ -342,29 +383,14 @@ void SceneView::on_draw()
 				ImGui::PopStyleColor();
 			}
 		}
-		else if (app.e_preview)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 1, 1));
-			ImGui::SameLine();
-			if (ImGui::ToolButton(graphics::font_icon_str("rotate"_h).c_str()))
-				app.cmd_restart_preview();
-			ImGui::PopStyleColor();
-		}
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
 		ImGui::SameLine();
 		if (ImGui::ToolButton(graphics::font_icon_str("stop"_h).c_str()))
 		{
 			if (app.e_playing)
 				app.cmd_stop();
-			else if (app.e_preview)
-				app.cmd_stop_preview();
 		}
 		ImGui::PopStyleColor();
-		if (app.e_preview)
-		{
-			ImGui::SameLine();
-			ImGui::Text("[%s]", app.e_preview->name.c_str());
-		}
 	}
 
 	// toolbar end
@@ -404,7 +430,7 @@ void SceneView::on_draw()
 		app.input->offset = p0;
 
 		bool gizmo_using = false;
-		if (use_gizmos)
+		if (overlays.use_gizmos)
 		{
 #if USE_IM_GUIZMO
 			if (is_in(tool, ToolMove, ToolScale) && app.e_editor && selection.type == Selection::tEntity)
@@ -745,7 +771,7 @@ void SceneView::on_draw()
 		auto& io = ImGui::GetIO();
 		auto& style = ImGui::GetStyle();
 
-		if (use_gizmos)
+		if (overlays.use_gizmos)
 		{
 			if (ImGui::IsWindowHovered())
 			{
@@ -964,7 +990,7 @@ void SceneView::on_draw()
 			}
 		}
 
-		if (show_outline)
+		if (overlays.show_outline)
 		{
 			auto outline_node = [&](EntityPtr e, const cvec4& col) {
 				if (!e->global_enable)
@@ -1002,7 +1028,7 @@ void SceneView::on_draw()
 			if (!already_outline_hovering && hovering_entity)
 				outline_node(hovering_entity, cvec4(128, 128, 64, 255));
 		}
-		if (show_AABB)
+		if (overlays.show_AABB)
 		{
 			auto draw_aabb = [](EntityPtr e) {
 				if (auto node = e->get_component<cNode>(); node)
@@ -1015,7 +1041,7 @@ void SceneView::on_draw()
 					}
 				}
 			};
-			if (show_AABB_only_selected)
+			if (overlays.show_AABB_only_selected)
 			{
 				if (selection.type == Selection::tEntity)
 				{
@@ -1038,7 +1064,7 @@ void SceneView::on_draw()
 				});
 			}
 		}
-		if (show_axis)
+		if (overlays.show_axis)
 		{
 			if (selection.type == Selection::tEntity)
 			{
@@ -1058,7 +1084,7 @@ void SceneView::on_draw()
 				}
 			}
 		}
-		if (show_bones)
+		if (overlays.show_bones)
 		{
 			World::instance()->root->forward_traversal([](EntityPtr e) {
 				if (!e->global_enable)
@@ -1085,7 +1111,7 @@ void SceneView::on_draw()
 				return true;
 			});
 		}
-		if (show_navigation || show_navigation_frames)
+		if (overlays.show_navigation || overlays.show_navigation_frames)
 		{
 			World::instance()->root->forward_traversal([](EntityPtr e) {
 				if (!e->global_enable)
@@ -1132,8 +1158,8 @@ void SceneView::on_draw()
 
 			sScene::instance()->draw_debug_primitives();
 
-			if (show_navigation_frames > 0)
-				show_navigation_frames--;
+			if (overlays.show_navigation_frames > 0)
+				overlays.show_navigation_frames--;
 		}
 
 		if (ImGui::IsWindowFocused() && ImGui::IsWindowHovered() && selection.type == Selection::tEntity)
