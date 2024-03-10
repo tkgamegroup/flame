@@ -24,14 +24,15 @@ namespace flame
 		Listeners<void(uint, uint)> playing_callbacks;
 
 		// Reflect
+		float speed = 1.f;
+		// Reflect
 		bool loop = true;
 		// Reflect
-		bool auto_play = true;
+		uint default_animation = 0;
 
 		graphics::ModelPtr model = nullptr;
 		uint playing_name = 0;
 		float playing_time = 0;
-		float playing_speed = 1.f;
 
 		virtual void reset() = 0;
 		virtual void play(uint name) = 0;

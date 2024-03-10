@@ -4,6 +4,7 @@
 namespace flame
 {
 	void add_entity_node_templates(BlueprintNodeLibraryPtr library);
+	void add_animation_node_templates(BlueprintNodeLibraryPtr library);
 	void add_camera_node_templates(BlueprintNodeLibraryPtr library);
 	void add_navigation_node_templates(BlueprintNodeLibraryPtr library);
 	void add_colliding_node_templates(BlueprintNodeLibraryPtr library);
@@ -17,6 +18,7 @@ namespace flame
 	void init_library()
 	{
 		auto entity_library = BlueprintNodeLibrary::get(L"universe::entity");
+		auto animation_library = BlueprintNodeLibrary::get(L"universe::animation");
 		auto camera_library = BlueprintNodeLibrary::get(L"universe::camera");
 		auto navigation_library = BlueprintNodeLibrary::get(L"universe::navigation");
 		auto colliding_library = BlueprintNodeLibrary::get(L"universe::colliding");
@@ -30,6 +32,7 @@ namespace flame
 		BlueprintSystem::template_types.emplace_back("e", TypeInfo::get<EntityPtr>());
 
 		add_entity_node_templates(entity_library);
+		add_animation_node_templates(animation_library);
 		add_camera_node_templates(camera_library);
 		add_navigation_node_templates(navigation_library);
 		add_colliding_node_templates(colliding_library);

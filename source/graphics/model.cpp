@@ -513,6 +513,19 @@ namespace flame
 					auto n_armature = n_components.append_child("item");
 					n_armature.append_attribute("type_name").set_value("flame::cArmature");
 					n_armature.append_attribute("armature_name").set_value(("models\\" + model_name).c_str());
+					if (!animations.empty())
+					{
+						auto n_animation_names = n_armature.append_child("animation_names");
+						for (auto& a : animations)
+						{
+							auto n_item = n_animation_names.append_child("item");
+							n_item.append_attribute("first").set_value(a->filename.string().c_str());
+							auto name = a->filename.stem().string();
+							SUS::replace_all(name, model_name_without_ext + '_', "");
+							SUS::replace_all(name, "Armature_", "");
+							n_item.append_attribute("second").set_value(name.c_str());
+						}
+					}
 					for (auto& m : model->meshes)
 					{
 						for (auto i = 0; i < m.bone_ids.size(); i++)
@@ -716,6 +729,25 @@ namespace flame
 							k.t -= start_time;
 						for (auto& k : ch.scaling_keys)
 							k.t -= start_time;
+
+						if (!ch.position_keys.empty() && ch.position_keys.back().t < animation->duration)
+						{
+							auto& k = ch.position_keys.emplace_back();
+							k.t = animation->duration;
+							k.p = ch.position_keys.front().p;
+						}
+						if (!ch.rotation_keys.empty() && ch.rotation_keys.back().t < animation->duration)
+						{
+							auto& k = ch.rotation_keys.emplace_back();
+							k.t = animation->duration;
+							k.q = ch.rotation_keys.front().q;
+						}
+						if (!ch.scaling_keys.empty() && ch.scaling_keys.back().t < animation->duration)
+						{
+							auto& k = ch.scaling_keys.emplace_back();
+							k.t = animation->duration;
+							k.s = ch.scaling_keys.front().s;
+						}
 					}
 
 					for (auto& ch : channels)
@@ -1298,6 +1330,12 @@ namespace flame
 							auto& p = ai_ch->mPositionKeys[k].mValue;
 							ch.position_keys[k].p = vec3(p.x, p.y, p.z);
 						}
+						if (!ch.position_keys.empty() && ch.position_keys.back().t < animation->duration)
+						{
+							auto& k = ch.position_keys.emplace_back();
+							k.t = animation->duration;
+							k.p = ch.position_keys.front().p;
+						}
 						ch.rotation_keys.resize(ai_ch->mNumRotationKeys);
 						for (auto k = 0; k < ch.rotation_keys.size(); k++)
 						{
@@ -1305,12 +1343,24 @@ namespace flame
 							auto& q = ai_ch->mRotationKeys[k].mValue;
 							ch.rotation_keys[k].q = quat(q.w, q.x, q.y, q.z);
 						}
+						if (!ch.rotation_keys.empty() && ch.rotation_keys.back().t < animation->duration)
+						{
+							auto& k = ch.rotation_keys.emplace_back();
+							k.t = animation->duration;
+							k.q = ch.rotation_keys.front().q;
+						}
 						ch.scaling_keys.resize(ai_ch->mNumScalingKeys);
 						for (auto k = 0; k < ch.scaling_keys.size(); k++)
 						{
 							ch.scaling_keys[k].t = ai_ch->mScalingKeys[k].mTime;
 							auto& s = ai_ch->mScalingKeys[k].mValue;
 							ch.scaling_keys[k].s = vec3(s.x, s.y, s.z);
+						}
+						if (!ch.scaling_keys.empty() && ch.scaling_keys.back().t < animation->duration)
+						{
+							auto& k = ch.scaling_keys.emplace_back();
+							k.t = animation->duration;
+							k.s = ch.scaling_keys.front().s;
 						}
 					}
 

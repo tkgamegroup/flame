@@ -120,51 +120,7 @@ namespace flame
 								{
 									auto& t = a.tracks.emplace_back();
 									t.bone_idx = id;
-									t.positions.resize(ch.position_keys.size());
-									for (auto i = 0; i < t.positions.size(); i++)
-									{
-										t.positions[i].first = ch.position_keys[i].t;
-										t.positions[i].second = ch.position_keys[i].p;
-									}
-									if (!t.positions.empty() && t.positions.back().first < a.duration)
-									{
-										auto k = t.positions.front();
-										k.first = a.duration;
-										t.positions.push_back(k);
-									}
-									t.rotations.resize(ch.rotation_keys.size());
-									for (auto i = 0; i < t.rotations.size(); i++)
-									{
-										t.rotations[i].first = ch.rotation_keys[i].t;
-										t.rotations[i].second = ch.rotation_keys[i].q;
-									}
-									if (!t.rotations.empty() && t.rotations.back().first < a.duration)
-									{
-										auto k = t.rotations.front();
-										k.first = a.duration;
-										t.rotations.push_back(k);
-									}
-									t.scalings.resize(ch.scaling_keys.size());
-									for (auto i = 0; i < t.scalings.size(); i++)
-									{
-										t.scalings[i].first = ch.scaling_keys[i].t;
-										t.scalings[i].second = ch.scaling_keys[i].s;
-									}
-									if (!t.scalings.empty() && t.scalings.back().first < a.duration)
-									{
-										auto k = t.scalings.front();
-										k.first = a.duration;
-										t.scalings.push_back(k);
-									}
-									//if (id == 0)
-									//{
-									//	if (!t.positions.empty())
-									//	{
-									//		auto first_xz = t.positions.front().second.xz();
-									//		for (auto i = 1; i < t.positions.size(); i++)
-									//			t.positions[i].second.xz = first_xz;
-									//	}
-									//}
+									t.channel = &ch;
 								}
 							}
 						}
@@ -220,11 +176,8 @@ namespace flame
 
 		node->mark_transform_dirty();
 
-		if (auto_play)
-		{
-			if (!animation_names.empty())
-				play(sh(animation_names[0].second.c_str()));
-		}
+		if (default_animation)
+			play(default_animation);
 	}
 
 	void cArmaturePrivate::on_inactive()
@@ -250,24 +203,25 @@ namespace flame
 				for (auto& t : a.tracks)
 				{
 					auto& b = bones[t.bone_idx];
-					if (!t.positions.empty())
+					auto& ch = *t.channel;
+					if (!ch.position_keys.empty())
 					{
-						b.pose.p = mix(b.pose.p, t.positions.front().second, transition_time / transition_duration);
+						b.pose.p = mix(b.pose.p, ch.position_keys.front().p, transition_time / transition_duration);
 						b.node->set_pos(b.pose.p);
 					}
-					if (!t.rotations.empty())
+					if (!ch.rotation_keys.empty())
 					{
-						b.pose.q = slerp(b.pose.q, t.rotations.front().second, transition_time / transition_duration);
+						b.pose.q = slerp(b.pose.q, ch.rotation_keys.front().q, transition_time / transition_duration);
 						b.node->set_qut(b.pose.q);
 					}
-					if (!t.scalings.empty())
+					if (!ch.scaling_keys.empty())
 					{
-						b.pose.s = mix(b.pose.s, t.scalings.front().second, transition_time / transition_duration);
+						b.pose.s = mix(b.pose.s, ch.scaling_keys.front().s, transition_time / transition_duration);
 						b.node->set_scl(b.pose.s);
 					}
 				}
 
-				transition_time += delta_time * playing_speed;
+				transition_time += delta_time * speed;
 				if (transition_time >= transition_duration)
 				{
 					playing_time = transition_time - transition_duration;
@@ -279,57 +233,64 @@ namespace flame
 				for (auto& t : a.tracks)
 				{
 					auto& b = bones[t.bone_idx];
-					if (!t.positions.empty())
+					auto& ch = *t.channel;
+					if (!ch.position_keys.empty())
 					{
-						auto rit = std::lower_bound(t.positions.begin(), t.positions.end(), playing_time, [](const auto& i, auto v) {
-							return i.first < v;
+						auto rit = std::lower_bound(ch.position_keys.begin(), ch.position_keys.end(), playing_time, [](const auto& i, auto v) {
+							return i.t < v;
 						});
 						auto lit = rit;
-						if (lit != t.positions.begin())
+						if (lit != ch.position_keys.begin())
 							lit--;
 						if (lit == rit)
-							b.pose.p = lit->second;
+							b.pose.p = lit->p;
 						else
-							b.pose.p = mix(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
+							b.pose.p = mix(lit->p, rit->p, (playing_time - lit->t) / (rit->t - lit->t));
 						b.node->set_pos(b.pose.p);
 					}
-					if (!t.rotations.empty())
+					if (!ch.rotation_keys.empty())
 					{
-						auto rit = std::lower_bound(t.rotations.begin(), t.rotations.end(), playing_time, [](const auto& i, auto v) {
-							return i.first < v;
+						auto rit = std::lower_bound(ch.rotation_keys.begin(), ch.rotation_keys.end(), playing_time, [](const auto& i, auto v) {
+							return i.t < v;
 						});
 						auto lit = rit;
-						if (lit != t.rotations.begin())
+						if (lit != ch.rotation_keys.begin())
 							lit--;
 						if (lit == rit)
-							b.pose.q = lit->second;
+							b.pose.q = lit->q;
 						else
-							b.pose.q = slerp(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
+							b.pose.q = slerp(lit->q, rit->q, (playing_time - lit->t) / (rit->t - lit->t));
 						b.node->set_qut(b.pose.q);
 					}
-					if (!t.scalings.empty())
+					if (!ch.scaling_keys.empty())
 					{
-						auto rit = std::lower_bound(t.scalings.begin(), t.scalings.end(), playing_time, [](const auto& i, auto v) {
-							return i.first < v;
+						auto rit = std::lower_bound(ch.scaling_keys.begin(), ch.scaling_keys.end(), playing_time, [](const auto& i, auto v) {
+							return i.t < v;
 						});
 						auto lit = rit;
-						if (lit != t.scalings.begin())
+						if (lit != ch.scaling_keys.begin())
 							lit--;
 						if (lit == rit)
-							b.pose.s = lit->second;
+							b.pose.s = lit->s;
 						else
-							b.pose.s = mix(lit->second, rit->second, (playing_time - lit->first) / (rit->first - lit->first));
+							b.pose.s = mix(lit->s, rit->s, (playing_time - lit->t) / (rit->t - lit->t));
 						b.node->set_scl(b.pose.s);
 					}
 				}
 
-				playing_time += delta_time * playing_speed;
+				playing_time += delta_time * speed;
 				if (playing_time >= a.duration)
 				{
 					if (!loop)
 					{
 						playing_callbacks.call("end"_h, playing_name);
-						stop();
+						if (default_animation)
+						{
+							loop = true;
+							play(default_animation);
+						}
+						else
+							stop();
 					}
 					else
 						playing_time = fmod(playing_time, a.duration);
@@ -412,7 +373,7 @@ namespace flame
 			auto _it = it->second.transitions.find(name);
 			if (_it != it->second.transitions.end())
 			{
-				transition_duration = _it->second * playing_speed;
+				transition_duration = _it->second * speed;
 				transition_time = 0.f;
 			}
 		}

@@ -2283,20 +2283,36 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 						comp->reset();
 					if (!comp->animation_names.empty())
 					{
-						static int idx = 0;
-						idx = clamp(idx, 0, (int)comp->animation_names.size());
-						if (ImGui::BeginCombo("animations", comp->animation_names[idx].second.c_str()))
+						std::string preview = "";
+						if (comp->playing_name)
 						{
-							for (auto i = 0; i < comp->animation_names.size(); i++)
+							for (auto& a : comp->animation_names)
 							{
-								auto& name = comp->animation_names[i].second;
-								if (ImGui::Selectable(name.c_str()))
+								if (sh(a.second.c_str()) == comp->playing_name)
 								{
-									idx = i;
-									comp->play(sh(name.c_str()));
+									preview = a.second;
+									break;
 								}
 							}
+						}
+						if (ImGui::BeginCombo("animations", preview.c_str()))
+						{
+							for (auto& a : comp->animation_names)
+							{
+								auto hash = sh(a.second.c_str());
+								if (ImGui::Selectable(a.second.c_str(), hash == comp->playing_name))
+									comp->play(hash);
+							}
 							ImGui::EndCombo();
+						}
+						if (comp->playing_name)
+						{
+							ImGui::SameLine();
+							if (ImGui::Button("Set Default"))
+							{
+								comp->default_animation = comp->playing_name;
+								ret_changed |= 2;
+							}
 						}
 					}
 					if (comp->playing_name != 0)
@@ -2306,7 +2322,6 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 							comp->stop();
 						ImGui::InputFloat("Time", &comp->playing_time, 0.f, 0.f, "%.3f", ImGuiInputTextFlags_ReadOnly);
 					}
-					ImGui::DragFloat("Speed", &comp->playing_speed, 0.01f);
 				}
 			}
 			else if (ui.name_hash == "flame::cParticleSystem"_h)

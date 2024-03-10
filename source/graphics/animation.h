@@ -32,10 +32,18 @@ namespace flame
 			std::vector<ScalingKey> scaling_keys;
 		};
 
+		struct EventKey
+		{
+			std::string name;
+			uint name_hash;
+			float t;
+		};
+
 		struct Animation
 		{
 			float duration;
 			std::vector<Channel> channels;
+			std::vector<EventKey> events;
 
 			std::filesystem::path filename;
 			uint ref = 0;

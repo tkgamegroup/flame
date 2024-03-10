@@ -44,7 +44,10 @@ namespace flame
 				for (auto& a : animations)
 				{
 					if (a->filename == filename)
+					{
+						a->ref++;
 						return a.get();
+					}
 				}
 
 				std::ifstream file(filename);

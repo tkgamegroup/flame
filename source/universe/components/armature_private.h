@@ -28,9 +28,7 @@ namespace flame
 		struct Track
 		{
 			uint bone_idx;
-			std::vector<std::pair<float, vec3>> positions;
-			std::vector<std::pair<float, quat>> rotations;
-			std::vector<std::pair<float, vec3>> scalings;
+			graphics::ChannelPtr channel = nullptr;
 		};
 
 		struct BoundAnimation
