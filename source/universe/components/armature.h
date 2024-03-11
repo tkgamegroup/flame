@@ -21,7 +21,8 @@ namespace flame
 		// Reflect
 		std::vector<std::tuple<std::string, std::string, float>> animation_transitions; // src animation, dst animation, transition
 
-		Listeners<void(uint, uint)> playing_callbacks;
+		Listeners<void(uint, uint)> callbacks;
+		std::vector<BlueprintInstanceGroup*> bp_callbacks;
 
 		// Reflect
 		float speed = 1.f;

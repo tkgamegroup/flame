@@ -916,7 +916,6 @@ namespace flame
 				auto entity = *(EntityPtr*)inputs[0].data;
 				if (entity)
 				{
-					auto name = *(uint*)inputs[1].data;
 					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
 						*(BlueprintInstancePtr*)outputs[0].data = ins->bp_ins;
 					else

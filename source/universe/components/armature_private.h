@@ -37,6 +37,9 @@ namespace flame
 			graphics::AnimationPtr animation = nullptr;
 			float duration;
 			std::vector<Track> tracks;
+			std::vector<graphics::EventKey>::iterator events_beg;
+			std::vector<graphics::EventKey>::iterator events_end;
+			std::vector<graphics::EventKey>::iterator events_it;
 			std::unordered_map<uint, float> transitions;
 		};
 

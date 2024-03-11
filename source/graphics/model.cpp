@@ -515,16 +515,24 @@ namespace flame
 					n_armature.append_attribute("armature_name").set_value(("models\\" + model_name).c_str());
 					if (!animations.empty())
 					{
+						auto default_animation = "run";
+						auto found_default = false;
+
 						auto n_animation_names = n_armature.append_child("animation_names");
 						for (auto& a : animations)
 						{
 							auto n_item = n_animation_names.append_child("item");
 							n_item.append_attribute("first").set_value(a->filename.string().c_str());
 							auto name = a->filename.stem().string();
-							SUS::replace_all(name, model_name_without_ext + '_', "");
-							SUS::replace_all(name, "Armature_", "");
+							SUS::strip_head_if(name, model_name_without_ext + '_');
 							n_item.append_attribute("second").set_value(name.c_str());
+
+							if (name == default_animation)
+								found_default = true;
 						}
+
+						if (found_default)
+							n_armature.append_attribute("default_animation").set_value("run"_h);
 					}
 					for (auto& m : model->meshes)
 					{
@@ -758,7 +766,9 @@ namespace flame
 
 					if (!std::filesystem::exists(animations_destination))
 						std::filesystem::create_directories(animations_destination);
-					auto fn = animations_destination / (model_name_without_ext + '_' + format_res_name(anim_stack->GetName(), "fani", i));
+					std::string ani_name = format_res_name(anim_stack->GetName(), "fani", i);
+					SUS::strip_head_if(ani_name, "Armature_");
+					auto fn = animations_destination / (model_name_without_ext + '_' + ani_name);
 					animation->save(fn);
 					animation->filename = Path::reverse(fn);
 					animations.emplace_back(animation);
@@ -1364,7 +1374,9 @@ namespace flame
 						}
 					}
 
-					auto fn = parent_path / (model_name_without_ext + '_' + format_res_name(ai_ani->mName.C_Str(), "fani", i));
+					std::string ani_name = format_res_name(ai_ani->mName.C_Str(), "fani", i);
+					SUS::strip_head_if(ani_name, "Armature_");
+					auto fn = parent_path / (model_name_without_ext + '_' + ani_name);
 					animation->save(fn);
 					animation->filename = Path::reverse(fn);
 					animations.emplace_back(animation);

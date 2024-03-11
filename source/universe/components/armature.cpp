@@ -1,3 +1,4 @@
+#include "../../foundation/blueprint.h"
 #include "../../graphics/model.h"
 #include "../entity_private.h"
 #include "../world_private.h"
@@ -123,6 +124,10 @@ namespace flame
 									t.channel = &ch;
 								}
 							}
+
+							a.events_beg = a.animation->events.begin();
+							a.events_end = a.animation->events.end();
+							a.events_it = a.events_beg;
 						}
 					}
 				}
@@ -278,12 +283,37 @@ namespace flame
 					}
 				}
 
+				if (a.events_it != a.events_end)
+				{
+					if (playing_time >= a.events_it->t)
+					{
+						callbacks.call(a.events_it->name_hash, playing_name);
+						for (auto g : bp_callbacks)
+						{
+							voidptr inputs[2];
+							inputs[0] = &a.events_it->name_hash;
+							inputs[1] = &playing_name;
+							g->instance->call(g, inputs, nullptr);
+						}
+
+						a.events_it++;
+					}
+				}
+
 				playing_time += delta_time * speed;
 				if (playing_time >= a.duration)
 				{
 					if (!loop)
 					{
-						playing_callbacks.call("end"_h, playing_name);
+						callbacks.call("end"_h, playing_name);
+						for (auto g : bp_callbacks)
+						{
+							voidptr inputs[2]; uint ev = "end"_h;
+							inputs[0] = &ev;
+							inputs[1] = &playing_name;
+							g->instance->call(g, inputs, nullptr);
+						}
+
 						if (default_animation)
 						{
 							loop = true;
@@ -293,7 +323,10 @@ namespace flame
 							stop();
 					}
 					else
+					{
 						playing_time = fmod(playing_time, a.duration);
+						a.events_it = a.events_beg;
+					}
 				}
 			}
 		}
@@ -376,6 +409,8 @@ namespace flame
 				transition_duration = _it->second * speed;
 				transition_time = 0.f;
 			}
+
+			it->second.events_it = it->second.events_beg;
 		}
 
 		playing_name = name;

@@ -84,6 +84,25 @@ namespace flame
 					data_soup.xml_read_v(c.scaling_keys, n_channel.child("scaling_keys"));
 				}
 
+				auto events_filename = filename;
+				events_filename += L".events";
+				if (std::filesystem::exists(events_filename))
+				{
+					pugi::xml_document doc;
+					pugi::xml_node doc_root;
+
+					if (doc.load_file(events_filename.c_str()) && (doc_root = doc.first_child()).name() == std::string("events"))
+					{
+						for (auto n_event : doc_root)
+						{
+							auto& ev = ret->events.emplace_back();
+							ev.name = n_event.attribute("name").value();
+							ev.name_hash = sh(ev.name.c_str());
+							ev.t = n_event.attribute("time").as_float();
+						}
+					}
+				}
+
 				ret->ref = 1;
 				animations.emplace_back(ret);
 				return ret;
