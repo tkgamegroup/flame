@@ -12,6 +12,14 @@ namespace flame
 			mat4 offset_matrix;
 		};
 
+		struct Armature
+		{
+			std::vector<Bone> bones;
+
+			std::filesystem::path filename;
+			uint ref = 0;
+		};
+
 		struct Mesh
 		{
 			ModelPtr model = nullptr;

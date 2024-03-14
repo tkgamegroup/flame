@@ -48,6 +48,16 @@ namespace flame
 			std::filesystem::path filename;
 			uint ref = 0;
 
+			inline Channel* find_channel(const std::string& node_name)
+			{
+				for (auto& c : channels)
+				{
+					if (c.node_name == node_name)
+						return &c;
+				}
+				return nullptr;
+			}
+
 			virtual ~Animation() {}
 
 			virtual void save(const std::filesystem::path& filename) = 0;
