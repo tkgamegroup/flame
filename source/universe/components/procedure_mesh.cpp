@@ -9,12 +9,15 @@ namespace flame
 {
 	cProcedureMeshPrivate::~cProcedureMeshPrivate()
 	{
-		if (mesh->mesh_res_id != -1)
+		if (cmesh->mesh_res_id != -1)
 		{
-			sRenderer::instance()->release_mesh_res(mesh->mesh_res_id);
-			mesh->mesh = nullptr;
-			mesh->mesh_res_id = -1;
+			sRenderer::instance()->release_mesh_res(cmesh->mesh_res_id);
+			cmesh->mesh = nullptr;
+			cmesh->mesh_res_id = -1;
 		}
+
+		if (converted_mesh)
+			delete converted_mesh;
 	}
 
 	void cProcedureMeshPrivate::set_blueprint_name(const std::filesystem::path& name)
@@ -37,14 +40,16 @@ namespace flame
 
 				if (pcontrol_mesh)
 				{
-					pcontrol_mesh->convert_to_mesh(converted_mesh);
-					assert(mesh->mesh_res_id == -1);
-					mesh->mesh = &converted_mesh;
-					mesh->mesh_res_id = sRenderer::instance()->get_mesh_res(&converted_mesh, -1);
-					mesh->color = pcontrol_mesh->color;
-					mesh->node->mark_transform_dirty();
+					if (!converted_mesh)
+						converted_mesh = graphics::Mesh::create();
+					pcontrol_mesh->convert_to_mesh(*converted_mesh);
+					assert(cmesh->mesh_res_id == -1);
+					cmesh->mesh = converted_mesh;
+					cmesh->mesh_res_id = sRenderer::instance()->get_mesh_res(converted_mesh, -1);
+					cmesh->color = pcontrol_mesh->color;
+					cmesh->node->mark_transform_dirty();
 
-					mesh->set_material_name(L"default");
+					cmesh->set_material_name(L"default");
 				}
 
 				delete ins;

@@ -9,7 +9,7 @@
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
-#include <flame/universe/components/armature.h>
+#include <flame/universe/components/animator.h>
 #include <flame/universe/components/terrain.h>
 #include <flame/universe/components/volume.h>
 #include <flame/universe/components/nav_agent.h>
@@ -1007,7 +1007,7 @@ void SceneView::on_draw()
 					ObjectDrawData d("terrain"_h, 0, terrain->instance_id);
 					sRenderer::instance()->draw_outlines({ d }, col, 1, OutlineMax);
 				}
-				if (auto armature = e->get_component<cArmature>(); armature && armature->model)
+				if (auto animator = e->get_component<cAnimator>(); animator && animator->armature)
 				{
 					std::vector<ObjectDrawData> ds;
 					for (auto& c : e->children)
@@ -1089,7 +1089,7 @@ void SceneView::on_draw()
 			World::instance()->root->forward_traversal([](EntityPtr e) {
 				if (!e->global_enable)
 					return false;
-				if (auto arm = e->get_component<cArmature>(); arm)
+				if (auto arm = e->get_component<cAnimator>(); arm)
 				{
 					std::function<void(cNodePtr)> draw_node;
 					draw_node = [&](cNodePtr n) {

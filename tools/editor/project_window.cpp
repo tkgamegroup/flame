@@ -21,7 +21,6 @@
 
 static graphics::ImagePtr icon_prefab;
 static graphics::ImagePtr icon_material;
-static graphics::ImagePtr icon_model;
 static graphics::ImagePtr icon_mesh;
 static graphics::ImagePtr icon_armature;
 
@@ -429,19 +428,6 @@ ProjectView::ProjectView(const std::string& name) :
 							});
 							e->save(p);
 							delete e;
-						}
-					}
-				}
-			}
-			else if (ext == L".fmod")
-			{
-				if (ImGui::MenuItem("Merge Meshes"))
-				{
-					for (auto& p : paths)
-					{
-						if (p.extension() == L".fmod")
-						{
-
 						}
 					}
 				}
@@ -1092,12 +1078,6 @@ ProjectView::ProjectView(const std::string& name) :
 			if (!item->icon)
 				item->icon = icon_material;
 		}
-		else if (ext == L".fmod")
-		{
-			if (!item->icon)
-				item->icon = icon_model;
-			item->has_children = true;
-		}
 	};
 	explorer.special_folder_provider = [](const std::filesystem::path& path, std::vector<ExplorerItem*>& out_items) {
 		if (path == L"Favorites")
@@ -1117,44 +1097,6 @@ ProjectView::ProjectView(const std::string& name) :
 				out_items.push_back(i);
 			}
 			return true;
-		}
-		else
-		{
-			auto ext = path.extension();
-			if (ext == L".fmod")
-			{
-				std::ifstream file(path);
-				if (file.good())
-				{
-					LineReader src(file);
-					src.read_block("model:");
-					pugi::xml_document doc;
-					pugi::xml_node doc_root;
-					if (doc.load_string(src.to_string().c_str()) && (doc_root = doc.first_child()).name() == std::string("model"))
-					{
-						for (auto n_bone : doc_root.child("bones"))
-						{
-							auto p = path;
-							p += L"#armature";
-							auto i = new ExplorerItem(p, "armature");
-							i->icon = icon_armature;
-							out_items.push_back(i);
-							break;
-						}
-						auto idx = 0;
-						for (auto n_mesh : doc_root.child("meshes"))
-						{
-							auto p = path;
-							p += L"#mesh" + wstr(idx);
-							auto i = new ExplorerItem(p, "mesh " + str(idx));
-							i->icon = icon_mesh;
-							out_items.push_back(i);
-							idx++;
-						}
-					}
-				}
-				return true;
-			}
 		}
 		return false;
 	};
@@ -1222,7 +1164,6 @@ void ProjectWindow::init()
 {
 	icon_prefab = graphics::Image::get(L"flame\\icon_prefab.png");
 	icon_material = graphics::Image::get(L"flame\\icon_material.png");
-	icon_model = graphics::Image::get(L"flame\\icon_model.png");
 	icon_mesh = graphics::Image::get(L"flame\\icon_mesh.png");
 	icon_armature = graphics::Image::get(L"flame\\icon_armature.png");
 

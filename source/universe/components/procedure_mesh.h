@@ -9,14 +9,14 @@ namespace flame
 	struct cProcedureMesh : Component
 	{
 		// Reflect requires
-		cMeshPtr mesh = nullptr;
+		cMeshPtr cmesh = nullptr;
 
 		// Reflect
 		std::filesystem::path blueprint_name; // use a blueprint as procedure mesh
 		// Reflect
 		virtual void set_blueprint_name(const std::filesystem::path& name) = 0;
 
-		graphics::Mesh converted_mesh;
+		graphics::MeshPtr converted_mesh;
 
 		struct Create
 		{

@@ -1,5 +1,5 @@
 #include "../../../foundation/blueprint.h"
-#include "../../components/armature_private.h"
+#include "../../components/animator_private.h"
 
 namespace flame
 {
@@ -31,23 +31,23 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					cArmaturePtr armature = nullptr;
-					armature = entity->get_component<cArmatureT>();
-					if (!armature)
+					cAnimatorPtr animator = nullptr;
+					animator = entity->get_component<cAnimatorT>();
+					if (!animator)
 					{
 						if (!entity->children.empty())
-							armature = entity->children[0]->get_component<cArmatureT>();
+							animator = entity->children[0]->get_component<cAnimatorT>();
 					}
-					if (armature)
+					if (animator)
 					{
 						auto name = *(uint*)inputs[1].data;
 						auto speed = *(float*)inputs[2].data;
 						auto loop = *(bool*)inputs[3].data;
-						if (armature->playing_name != name)
+						if (animator->playing_name != name)
 						{
-							armature->play(name);
-							armature->speed = speed;
-							armature->loop = loop;
+							animator->play(name);
+							animator->speed = speed;
+							animator->loop = loop;
 						}
 					}
 				}
@@ -66,15 +66,15 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					cArmaturePtr armature = nullptr;
-					armature = entity->get_component<cArmatureT>();
-					if (!armature)
+					cAnimatorPtr animator = nullptr;
+					animator = entity->get_component<cAnimatorT>();
+					if (!animator)
 					{
 						if (!entity->children.empty())
-							armature = entity->children[0]->get_component<cArmatureT>();
+							animator = entity->children[0]->get_component<cAnimatorT>();
 					}
-					if (armature)
-						armature->stop();
+					if (animator)
+						animator->stop();
 				}
 			}
 		);
@@ -99,20 +99,20 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					cArmaturePtr armature = nullptr;
-					armature = entity->get_component<cArmatureT>();
-					if (!armature)
+					cAnimatorPtr animator = nullptr;
+					animator = entity->get_component<cAnimatorT>();
+					if (!animator)
 					{
 						if (!entity->children.empty())
-							armature = entity->children[0]->get_component<cArmatureT>();
+							animator = entity->children[0]->get_component<cAnimatorT>();
 					}
-					if (armature)
+					if (animator)
 					{
 						auto bpi = *(BlueprintInstancePtr*)inputs[1].data;
 						auto name = *(uint*)inputs[2].data;
 						auto group = bpi->find_group(name);
 						if (group)
-							armature->bp_callbacks.push_back(group);
+							animator->bp_callbacks.push_back(group);
 					}
 				}
 			}

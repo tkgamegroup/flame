@@ -40,9 +40,9 @@ namespace flame
 						if (!procedure_mesh)
 							procedure_mesh = entity->add_component<cProcedureMesh>();
 
-						pcontrol_mesh->convert_to_mesh(procedure_mesh->converted_mesh);
-						mesh->mesh = &procedure_mesh->converted_mesh;
-						mesh->mesh_res_id = sRenderer::instance()->get_mesh_res(&procedure_mesh->converted_mesh, -1);
+						pcontrol_mesh->convert_to_mesh(*procedure_mesh->converted_mesh);
+						mesh->mesh = procedure_mesh->converted_mesh;
+						mesh->mesh_res_id = sRenderer::instance()->get_mesh_res(procedure_mesh->converted_mesh, -1);
 						mesh->color = pcontrol_mesh->color;
 						mesh->node->mark_transform_dirty();
 

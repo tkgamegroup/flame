@@ -22,69 +22,40 @@ namespace flame
 {
 	namespace graphics
 	{
-		void ModelPrivate::save(const std::filesystem::path& filename, bool binary)
+		void MeshPrivate::save(const std::filesystem::path& filename)
 		{
-			if (binary)
-			{
-				std::ofstream dst(filename, std::ios::binary);
-				dst.write("fmodb", 5);
+			std::ofstream dst(filename);
+			dst << "mesh:" << std::endl;
 
-				SerializeBinarySpec spec;
-				spec.excludes.emplace_back(th<graphics::Model>(), "filename"_h);
-				spec.excludes.emplace_back(th<graphics::Model>(), "ref"_h);
+			pugi::xml_document doc;
+			auto n_mesh = doc.append_child("mesh");
 
-				serialize_binary(this, dst, spec);
-				dst.close();
-			}
-			else
-			{
-				std::ofstream dst(filename);
-				dst << "model:" << std::endl;
+			DataSoup data_soup;
 
-				pugi::xml_document doc;
-				auto n_model = doc.append_child("model");
+			if (!positions.empty())
+				data_soup.xml_append_v(positions, n_mesh.append_child("positions"));
+			if (!uvs.empty())
+				data_soup.xml_append_v(uvs, n_mesh.append_child("uvs"));
+			if (!normals.empty())
+				data_soup.xml_append_v(normals, n_mesh.append_child("normals"));
+			if (!tangents.empty())
+				data_soup.xml_append_v(tangents, n_mesh.append_child("tangents"));
+			if (!colors.empty())
+				data_soup.xml_append_v(colors, n_mesh.append_child("colors"));
+			if (!bone_ids.empty())
+				data_soup.xml_append_v(bone_ids, n_mesh.append_child("bone_ids"));
+			if (!bone_weights.empty())
+				data_soup.xml_append_v(bone_weights, n_mesh.append_child("bone_weights"));
+			if (!indices.empty())
+				data_soup.xml_append_v(indices, n_mesh.append_child("indices"));
 
-				DataSoup data_soup;
+			n_mesh.append_attribute("bounds").set_value(str((mat2x3&)bounds).c_str());
 
-				auto n_meshes = n_model.append_child("meshes");
-				for (auto& m : meshes)
-				{
-					auto n_mesh = n_meshes.append_child("mesh");
+			doc.save(dst);
+			dst << std::endl;
 
-					if (!m.positions.empty())
-						data_soup.xml_append_v(m.positions, n_mesh.append_child("positions"));
-					if (!m.uvs.empty())
-						data_soup.xml_append_v(m.uvs, n_mesh.append_child("uvs"));
-					if (!m.normals.empty())
-						data_soup.xml_append_v(m.normals, n_mesh.append_child("normals"));
-					if (!m.tangents.empty())
-						data_soup.xml_append_v(m.tangents, n_mesh.append_child("tangents"));
-					if (!m.colors.empty())
-						data_soup.xml_append_v(m.colors, n_mesh.append_child("colors"));
-					if (!m.bone_ids.empty())
-						data_soup.xml_append_v(m.bone_ids, n_mesh.append_child("bone_ids"));
-					if (!m.bone_weights.empty())
-						data_soup.xml_append_v(m.bone_weights, n_mesh.append_child("bone_weights"));
-					if (!m.indices.empty())
-						data_soup.xml_append_v(m.indices, n_mesh.append_child("indices"));
-
-					n_mesh.append_attribute("bounds").set_value(str((mat2x3&)m.bounds).c_str());
-				}
-
-				auto n_bones = n_model.append_child("bones");
-				for (auto& b : bones)
-				{
-					auto n_bone = n_bones.append_child("bone");
-					n_bone.append_attribute("name").set_value(b.name.c_str());
-					data_soup.xml_append((uint*)&b.offset_matrix, sizeof(b.offset_matrix), n_bone.append_child("offset_matrix"));
-				}
-
-				doc.save(dst);
-				dst << std::endl;
-
-				dst << "data:" << std::endl;
-				data_soup.save(dst);
-			}
+			dst << "data:" << std::endl;
+			data_soup.save(dst);
 		}
 
 		std::filesystem::path find_file(const std::filesystem::path& dir, const std::filesystem::path& name)
@@ -107,26 +78,26 @@ namespace flame
 			return name;
 		}
 
-		struct ModelCreate : Model::Create
+		struct MeshCreate : Mesh::Create
 		{
-			ModelPtr operator()() override
+			MeshPtr operator()() override
 			{
-				return new ModelPrivate;
+				return new MeshPrivate;
 			}
-		}Model_create;
-		Model::Create& Model::create = Model_create;
+		}Mesh_create;
+		Mesh::Create& Mesh::create = Mesh_create;
 
-		static ModelPtr standard_plane = nullptr;
-		static ModelPtr standard_cube = nullptr;
-		static ModelPtr standard_sphere = nullptr;
-		static ModelPtr standard_cylinder = nullptr;
-		static ModelPtr standard_tri_prism = nullptr;
+		static MeshPtr standard_plane = nullptr;
+		static MeshPtr standard_cube = nullptr;
+		static MeshPtr standard_sphere = nullptr;
+		static MeshPtr standard_cylinder = nullptr;
+		static MeshPtr standard_tri_prism = nullptr;
 
-		static std::vector<std::unique_ptr<ModelT>> models;
+		static std::vector<std::unique_ptr<MeshT>> meshes;
 
-		struct ModelGet : Model::Get
+		struct MeshGet : Mesh::Get
 		{
-			ModelPtr operator()(const std::filesystem::path& _filename) override
+			MeshPtr operator()(const std::filesystem::path& _filename) override
 			{
 				auto wstr = _filename.wstring();
 				if (SUW::strip_head_if(wstr, L"standard_"))
@@ -135,28 +106,26 @@ namespace flame
 					{
 						if (!standard_plane)
 						{
-							auto m = new ModelPrivate;
+							auto m = new MeshPrivate;
 							m->filename = L"standard_plane";
-							auto& mesh = m->meshes.emplace_back();
-							mesh.model = m;
 							{
-								mesh.positions.push_back(vec3(0.f));
-								mesh.normals.push_back(vec3(0.f, 1.f, 0.f));
-								mesh.positions.push_back(vec3(10.f, 0.f, 0.f));
-								mesh.normals.push_back(vec3(0.f, 1.f, 0.f));
-								mesh.positions.push_back(vec3(10.f, 0.f, 10.f));
-								mesh.normals.push_back(vec3(0.f, 1.f, 0.f));
-								mesh.positions.push_back(vec3(0.f, 0.f, 10.f));
-								mesh.normals.push_back(vec3(0.f, 1.f, 0.f));
+								m->positions.push_back(vec3(0.f));
+								m->normals.push_back(vec3(0.f, 1.f, 0.f));
+								m->positions.push_back(vec3(10.f, 0.f, 0.f));
+								m->normals.push_back(vec3(0.f, 1.f, 0.f));
+								m->positions.push_back(vec3(10.f, 0.f, 10.f));
+								m->normals.push_back(vec3(0.f, 1.f, 0.f));
+								m->positions.push_back(vec3(0.f, 0.f, 10.f));
+								m->normals.push_back(vec3(0.f, 1.f, 0.f));
 
-								mesh.indices.push_back(0);
-								mesh.indices.push_back(3);
-								mesh.indices.push_back(1);
-								mesh.indices.push_back(1);
-								mesh.indices.push_back(3);
-								mesh.indices.push_back(2);
+								m->indices.push_back(0);
+								m->indices.push_back(3);
+								m->indices.push_back(1);
+								m->indices.push_back(1);
+								m->indices.push_back(3);
+								m->indices.push_back(2);
 							}
-							mesh.calc_bounds();
+							m->calc_bounds();
 
 							standard_plane = m;
 						}
@@ -166,12 +135,10 @@ namespace flame
 					{
 						if (!standard_cube)
 						{
-							auto m = new ModelPrivate;
+							auto m = new MeshPrivate;
 							m->filename = L"standard_cube";
-							auto& mesh = m->meshes.emplace_back();
-							mesh.model = m;
-							mesh_add_cube(mesh, vec3(1.f), vec3(0.f, 0.5f, 0.f), mat3(1.f));
-							mesh.calc_bounds();
+							mesh_add_cube(*m, vec3(1.f), vec3(0.f, 0.5f, 0.f), mat3(1.f));
+							m->calc_bounds();
 
 							standard_cube = m;
 						}
@@ -181,12 +148,10 @@ namespace flame
 					{
 						if (!standard_sphere)
 						{
-							auto m = new ModelPrivate;
+							auto m = new MeshPrivate;
 							m->filename = L"standard_sphere";
-							auto& mesh = m->meshes.emplace_back();
-							mesh.model = m;
-							mesh_add_sphere(mesh, 0.5f, 12, 12, vec3(0.f, 0.5f, 0.f), mat3(1.f));
-							mesh.calc_bounds();
+							mesh_add_sphere(*m, 0.5f, 12, 12, vec3(0.f, 0.5f, 0.f), mat3(1.f));
+							m->calc_bounds();
 
 							standard_sphere = m;
 						}
@@ -196,12 +161,10 @@ namespace flame
 					{
 						if (!standard_cylinder)
 						{
-							auto m = new ModelPrivate;
+							auto m = new MeshPrivate;
 							m->filename = L"standard_cylinder";
-							auto& mesh = m->meshes.emplace_back();
-							mesh.model = m;
-							mesh_add_cylinder(mesh, 0.5f, 1.f, 12, vec3(0.f, 0.5f, 0.f));
-							mesh.calc_bounds();
+							mesh_add_cylinder(*m, 0.5f, 1.f, 12, vec3(0.f, 0.5f, 0.f));
+							m->calc_bounds();
 
 							standard_cylinder = m;
 						}
@@ -211,10 +174,8 @@ namespace flame
 					{
 						if (!standard_tri_prism)
 						{
-							auto m = new ModelPrivate;
+							auto m = new MeshPrivate;
 							m->filename = L"standard_tri_prism";
-							auto& mesh = m->meshes.emplace_back();
-							mesh.model = m;
 							{
 								auto lt_0 = vec3(0.f, 0.f, -0.5f);
 								auto lt_1 = vec3(0.f, 1.f, -0.5f);
@@ -223,80 +184,80 @@ namespace flame
 								auto rt_1 = vec3(0.f, 1.f, +0.5f);
 								auto rt_2 = vec3(1.f, 0.f, +0.5f);
 
-								mesh.positions.push_back(lt_0);
-								mesh.normals.push_back(vec3(0.f, 0.f, -1.f));
-								mesh.positions.push_back(lt_1);
-								mesh.normals.push_back(vec3(0.f, 0.f, -1.f));
-								mesh.positions.push_back(lt_2);
-								mesh.normals.push_back(vec3(0.f, 0.f, -1.f));
+								m->positions.push_back(lt_0);
+								m->normals.push_back(vec3(0.f, 0.f, -1.f));
+								m->positions.push_back(lt_1);
+								m->normals.push_back(vec3(0.f, 0.f, -1.f));
+								m->positions.push_back(lt_2);
+								m->normals.push_back(vec3(0.f, 0.f, -1.f));
 								
-								mesh.indices.push_back(0);
-								mesh.indices.push_back(1);
-								mesh.indices.push_back(2);
+								m->indices.push_back(0);
+								m->indices.push_back(1);
+								m->indices.push_back(2);
 
-								mesh.positions.push_back(rt_0);
-								mesh.normals.push_back(vec3(0.f, 0.f, +1.f));
-								mesh.positions.push_back(rt_1);
-								mesh.normals.push_back(vec3(0.f, 0.f, +1.f));
-								mesh.positions.push_back(rt_2);
-								mesh.normals.push_back(vec3(0.f, 0.f, +1.f));
+								m->positions.push_back(rt_0);
+								m->normals.push_back(vec3(0.f, 0.f, +1.f));
+								m->positions.push_back(rt_1);
+								m->normals.push_back(vec3(0.f, 0.f, +1.f));
+								m->positions.push_back(rt_2);
+								m->normals.push_back(vec3(0.f, 0.f, +1.f));
 
-								mesh.indices.push_back(3);
-								mesh.indices.push_back(5);
-								mesh.indices.push_back(4);
+								m->indices.push_back(3);
+								m->indices.push_back(5);
+								m->indices.push_back(4);
 
-								mesh.positions.push_back(lt_0);
-								mesh.normals.push_back(vec3(-1.f, 0.f, 0.f));
-								mesh.positions.push_back(lt_1);
-								mesh.normals.push_back(vec3(-1.f, 0.f, 0.f));
-								mesh.positions.push_back(rt_0);
-								mesh.normals.push_back(vec3(-1.f, 0.f, 0.f));
-								mesh.positions.push_back(rt_1);
-								mesh.normals.push_back(vec3(-1.f, 0.f, 0.f));
+								m->positions.push_back(lt_0);
+								m->normals.push_back(vec3(-1.f, 0.f, 0.f));
+								m->positions.push_back(lt_1);
+								m->normals.push_back(vec3(-1.f, 0.f, 0.f));
+								m->positions.push_back(rt_0);
+								m->normals.push_back(vec3(-1.f, 0.f, 0.f));
+								m->positions.push_back(rt_1);
+								m->normals.push_back(vec3(-1.f, 0.f, 0.f));
 
-								mesh.indices.push_back(6);
-								mesh.indices.push_back(9);
-								mesh.indices.push_back(7);
-								mesh.indices.push_back(6);
-								mesh.indices.push_back(8);
-								mesh.indices.push_back(9);
+								m->indices.push_back(6);
+								m->indices.push_back(9);
+								m->indices.push_back(7);
+								m->indices.push_back(6);
+								m->indices.push_back(8);
+								m->indices.push_back(9);
 
 								auto n = normalize(cross(normalize(lt_2 - lt_1), vec3(0.f, 0.f, -1.f)));
-								mesh.positions.push_back(lt_1);
-								mesh.normals.push_back(n);
-								mesh.positions.push_back(lt_2);
-								mesh.normals.push_back(n);
-								mesh.positions.push_back(rt_1);
-								mesh.normals.push_back(n);
-								mesh.positions.push_back(rt_2);
-								mesh.normals.push_back(n);
+								m->positions.push_back(lt_1);
+								m->normals.push_back(n);
+								m->positions.push_back(lt_2);
+								m->normals.push_back(n);
+								m->positions.push_back(rt_1);
+								m->normals.push_back(n);
+								m->positions.push_back(rt_2);
+								m->normals.push_back(n);
 
-								mesh.indices.push_back(10);
-								mesh.indices.push_back(13);
-								mesh.indices.push_back(11);
-								mesh.indices.push_back(10);
-								mesh.indices.push_back(12);
-								mesh.indices.push_back(13);
+								m->indices.push_back(10);
+								m->indices.push_back(13);
+								m->indices.push_back(11);
+								m->indices.push_back(10);
+								m->indices.push_back(12);
+								m->indices.push_back(13);
 
-								mesh.positions.push_back(lt_2);
-								mesh.normals.push_back(vec3(0.f, -1.f, 0.f));
-								mesh.positions.push_back(lt_0);
-								mesh.normals.push_back(vec3(0.f, -1.f, 0.f));
-								mesh.positions.push_back(rt_2);
-								mesh.normals.push_back(vec3(0.f, -1.f, 0.f));
-								mesh.positions.push_back(rt_0);
-								mesh.normals.push_back(vec3(0.f, -1.f, 0.f));
+								m->positions.push_back(lt_2);
+								m->normals.push_back(vec3(0.f, -1.f, 0.f));
+								m->positions.push_back(lt_0);
+								m->normals.push_back(vec3(0.f, -1.f, 0.f));
+								m->positions.push_back(rt_2);
+								m->normals.push_back(vec3(0.f, -1.f, 0.f));
+								m->positions.push_back(rt_0);
+								m->normals.push_back(vec3(0.f, -1.f, 0.f));
 
-								mesh.indices.push_back(14);
-								mesh.indices.push_back(17);
-								mesh.indices.push_back(15);
-								mesh.indices.push_back(14);
-								mesh.indices.push_back(16);
-								mesh.indices.push_back(17);
+								m->indices.push_back(14);
+								m->indices.push_back(17);
+								m->indices.push_back(15);
+								m->indices.push_back(14);
+								m->indices.push_back(16);
+								m->indices.push_back(17);
 
 
 							}
-							mesh.calc_bounds();
+							m->calc_bounds();
 
 							standard_tri_prism = m;
 						}
@@ -307,7 +268,7 @@ namespace flame
 
 				auto filename = Path::get(_filename);
 
-				for (auto& m : models)
+				for (auto& m : meshes)
 				{
 					if (m->filename == filename)
 					{
@@ -316,103 +277,181 @@ namespace flame
 					}
 				}
 
-				std::ifstream file(filename, std::ios::binary);
+				std::ifstream file(filename);
 				if (!file.good())
 				{
-					wprintf(L"cannot find model: %s\n", _filename.c_str());
+					wprintf(L"cannot find armature: %s\n", _filename.c_str());
 					return nullptr;
 				}
 
-				auto ret = new ModelPrivate();
+				auto ret = new MeshPrivate();
 				ret->filename = filename;
 
-				if (char buf[5]; file.read(buf, 5).good() && strncmp(buf, "fmodb", 5) == 0)
+				LineReader src(file);
+				src.read_block("mesh:");
+
+				pugi::xml_document doc;
+				pugi::xml_node doc_root;
+				if (!doc.load_string(src.to_string().c_str()) || (doc_root = doc.first_child()).name() != std::string("mesh"))
 				{
-					UnserializeBinarySpec spec;
-					spec.excludes.emplace_back(th<graphics::Model>(), "filename"_h);
-					spec.excludes.emplace_back(th<graphics::Model>(), "ref"_h);
-
-					unserialize_binary(file, ret, spec);
+					wprintf(L"mesh format is incorrect: %s\n", _filename.c_str());
+					delete ret;
+					return nullptr;
 				}
-				else
-				{
-					file.close();
-					file.open(filename); // reopen with text mode
 
-					LineReader src(file);
-					src.read_block("model:");
+				DataSoup data_soup;
+				src.read_block("data:");
+				data_soup.load(src);
 
-					pugi::xml_document doc;
-					pugi::xml_node doc_root;
-					if (!doc.load_string(src.to_string().c_str()) || (doc_root = doc.first_child()).name() != std::string("model"))
-					{
-						wprintf(L"model format is incorrect: %s\n", _filename.c_str());
-						delete ret;
-						return nullptr;
-					}
+				data_soup.xml_read_v(ret->positions, doc_root.child("positions"));
+				if (auto n_uvs = doc_root.child("uvs"); n_uvs)
+					data_soup.xml_read_v(ret->uvs, n_uvs);
+				if (auto n_normals = doc_root.child("normals"); n_normals)
+					data_soup.xml_read_v(ret->normals, n_normals);
+				if (auto n_tangents = doc_root.child("tangents"); n_tangents)
+					data_soup.xml_read_v(ret->tangents, n_tangents);
+				if (auto n_colors = doc_root.child("colors"); n_colors)
+					data_soup.xml_read_v(ret->colors, n_colors);
+				if (auto n_bids = doc_root.child("bone_ids"); n_bids)
+					data_soup.xml_read_v(ret->bone_ids, n_bids);
+				if (auto n_wgts = doc_root.child("bone_weights"); n_wgts)
+					data_soup.xml_read_v(ret->bone_weights, n_wgts);
+				data_soup.xml_read_v(ret->indices, doc_root.child("indices"));
 
-					DataSoup data_soup;
-					src.read_block("data:");
-					data_soup.load(src);
-
-					for (auto n_mesh : doc_root.child("meshes"))
-					{
-						auto& m = ret->meshes.emplace_back();
-						m.model = ret;
-
-						data_soup.xml_read_v(m.positions, n_mesh.child("positions"));
-						if (auto n_uvs = n_mesh.child("uvs"); n_uvs)
-							data_soup.xml_read_v(m.uvs, n_uvs);
-						if (auto n_normals = n_mesh.child("normals"); n_normals)
-							data_soup.xml_read_v(m.normals, n_normals);
-						if (auto n_tangents = n_mesh.child("tangents"); n_tangents)
-							data_soup.xml_read_v(m.tangents, n_tangents);
-						if (auto n_colors = n_mesh.child("colors"); n_colors)
-							data_soup.xml_read_v(m.colors, n_colors);
-						if (auto n_bids = n_mesh.child("bone_ids"); n_bids)
-							data_soup.xml_read_v(m.bone_ids, n_bids);
-						if (auto n_wgts = n_mesh.child("bone_weights"); n_wgts)
-							data_soup.xml_read_v(m.bone_weights, n_wgts);
-						data_soup.xml_read_v(m.indices, n_mesh.child("indices"));
-
-						m.bounds = (AABB&)s2t<2, 3, float>(n_mesh.attribute("bounds").value());
-					}
-
-					for (auto n_bone : doc_root.child("bones"))
-					{
-						auto& b = ret->bones.emplace_back();
-						b.name = n_bone.attribute("name").value();
-						data_soup.xml_read(&b.offset_matrix, n_bone.child("offset_matrix"));
-					}
-
-					for (auto& m : ret->meshes)
-						ret->bounds.expand(m.bounds);
-				}
+				ret->bounds = (AABB&)s2t<2, 3, float>(doc_root.attribute("bounds").value());
 
 				ret->ref = 1;
-				models.emplace_back(ret);
+				meshes.emplace_back(ret);
 				return ret;
 			}
-		}Model_get;
-		Model::Get& Model::get = Model_get;
+		}Mesh_get;
+		Mesh::Get& Mesh::get = Mesh_get;
 
-		struct ModelRelease : Model::Release
+		struct MeshRelease : Mesh::Release
 		{
-			void operator()(ModelPtr model) override
+			void operator()(MeshPtr mesh) override
 			{
-				if (model->filename.wstring().starts_with(L"standard:"))
+				if (mesh->filename.wstring().starts_with(L"standard:"))
 					return;
-				if (model->ref == 1)
+				if (mesh->ref == 1)
 				{
-					std::erase_if(models, [&](const auto& i) {
-						return i.get() == model;
+					std::erase_if(meshes, [&](const auto& i) {
+						return i.get() == mesh;
 					});
 				}
 				else
-					model->ref--;
+					mesh->ref--;
 			}
-		}Model_release;
-		Model::Release& Model::release = Model_release;
+		}Mesh_release;
+		Mesh::Release& Mesh::release = Mesh_release;
+		void ArmaturePrivate::save(const std::filesystem::path& filename)
+		{
+			std::ofstream dst(filename);
+			dst << "armature:" << std::endl;
+
+			pugi::xml_document doc;
+			auto n_armature = doc.append_child("armature");
+
+			DataSoup data_soup;
+
+			auto n_bones = n_armature.append_child("bones");
+			for (auto& b : bones)
+			{
+				auto n_bone = n_bones.append_child("bone");
+				n_bone.append_attribute("name").set_value(b.name.c_str());
+				data_soup.xml_append((uint*)&b.offset_matrix, sizeof(b.offset_matrix), n_bone.append_child("offset_matrix"));
+			}
+
+			doc.save(dst);
+			dst << std::endl;
+
+			dst << "data:" << std::endl;
+			data_soup.save(dst);
+		}
+
+		struct ArmatureCreate : Armature::Create
+		{
+			ArmaturePtr operator()() override
+			{
+				return new ArmaturePrivate;
+			}
+		}Armature_create;
+		Armature::Create& Armature::create = Armature_create;
+
+		static std::vector<std::unique_ptr<ArmatureT>> armatures;
+
+		struct ArmatureGet : Armature::Get
+		{
+			ArmaturePtr operator()(const std::filesystem::path& _filename) override
+			{
+				auto filename = Path::get(_filename);
+
+				for (auto& a : armatures)
+				{
+					if (a->filename == filename)
+					{
+						a->ref++;
+						return a.get();
+					}
+				}
+
+				std::ifstream file(filename);
+				if (!file.good())
+				{
+					wprintf(L"cannot find armature: %s\n", _filename.c_str());
+					return nullptr;
+				}
+
+				auto ret = new ArmaturePrivate();
+				ret->filename = filename;
+
+				LineReader src(file);
+				src.read_block("armature:");
+
+				pugi::xml_document doc;
+				pugi::xml_node doc_root;
+				if (!doc.load_string(src.to_string().c_str()) || (doc_root = doc.first_child()).name() != std::string("armature"))
+				{
+					wprintf(L"armature format is incorrect: %s\n", _filename.c_str());
+					delete ret;
+					return nullptr;
+				}
+
+				DataSoup data_soup;
+				src.read_block("data:");
+				data_soup.load(src);
+
+				for (auto n_bone : doc_root.child("bones"))
+				{
+					auto& b = ret->bones.emplace_back();
+					b.name = n_bone.attribute("name").value();
+					data_soup.xml_read(&b.offset_matrix, n_bone.child("offset_matrix"));
+				}
+
+				ret->ref = 1;
+				armatures.emplace_back(ret);
+				return ret;
+			}
+		}Armature_get;
+		Armature::Get& Armature::get = Armature_get;
+
+		struct ArmatureRelease : Armature::Release
+		{
+			void operator()(ArmaturePtr arm) override
+			{
+				if (arm->filename.wstring().starts_with(L"standard:"))
+					return;
+				if (arm->ref == 1)
+				{
+					std::erase_if(armatures, [&](const auto& i) {
+						return i.get() == arm;
+					});
+				}
+				else
+					arm->ref--;
+			}
+		}Armature_release;
+		Armature::Release& Armature::release = Armature_release;
 
 		void import_scene(const std::filesystem::path& _filename, const std::filesystem::path& _destination, const vec3& rotation, float scaling, bool only_animations)
 		{
@@ -507,7 +546,6 @@ namespace flame
 			std::vector<MeshData> meshes;
 			std::vector<ArmatureData> armatures;
 			std::vector<AnimationData> animations;
-			std::unique_ptr<ModelT> model(new ModelT);
 			pugi::xml_document doc_prefab;
 
 			auto find_material = [&](const std::string& name) ->MaterialData* {
@@ -627,7 +665,7 @@ namespace flame
 
 			auto add_animator = [&](pugi::xml_node n_components, ArmatureData* arm) {
 				auto n_armature = n_components.append_child("item");
-				n_armature.append_attribute("type_name").set_value("flame::cArmature");
+				n_armature.append_attribute("type_name").set_value("flame::cAnimator");
 				if (arm)
 					n_armature.append_attribute("armature_name").set_value(arm->filename.string().c_str());
 				if (!animations.empty())
@@ -964,8 +1002,7 @@ namespace flame
 								auto control_points_count = fbx_mesh->GetControlPointsCount();
 								std::vector<ivec4> control_point_bone_ids;
 								std::vector<vec4> control_point_bone_weights;
-								auto skin_count = fbx_mesh->GetDeformerCount(FbxDeformer::eSkin);
-								if (skin_count > 0)
+								if (auto skin_count = fbx_mesh->GetDeformerCount(FbxDeformer::eSkin); skin_count > 0)
 								{
 									ArmatureData* arm = nullptr;
 
@@ -1029,11 +1066,8 @@ namespace flame
 
 									normalize_weights(control_point_bone_ids, control_point_bone_weights);
 
-									if (!n_children)
-									{
-										add_animator(n_components, arm);
-										n_children = dst.append_child("children");
-									}
+									if (auto pnode = dst.parent().parent(); pnode)
+										add_animator(pnode.child("components"), arm);
 								}
 
 								auto vertex_count = 0;
@@ -1238,7 +1272,7 @@ namespace flame
 
 								for (auto i = 0; i < material_count; i++)
 								{
-									if (material_count > 1 || skin_count > 0)
+									if (material_count > 1)
 									{
 										auto n_sub = n_children.append_child("item");
 										n_sub.append_attribute("name").set_value(i);
@@ -1503,9 +1537,10 @@ namespace flame
 									if (!n_children)
 									{
 										if (ai_mesh->mNumBones > 0)
-											add_animator(n_components, &arm);
-
-										n_children = dst.append_child("children");
+										{
+											if (auto pnode = dst.parent().parent(); pnode)
+												add_animator(pnode.child("components"), &arm);
+										}
 									}
 								}
 
@@ -1517,7 +1552,7 @@ namespace flame
 									mesh.indices[j * 3 + 2] = ai_mesh->mFaces[j].mIndices[2];
 								}
 
-								if (src->mNumMeshes > 1 || ai_mesh->mNumBones > 0)
+								if (src->mNumMeshes > 1)
 								{
 									if (!n_children)
 										n_children = dst.append_child("children");
@@ -1574,6 +1609,20 @@ namespace flame
 
 				for (auto& m : meshes)
 				{
+					auto mesh = new MeshT;
+					mesh->positions = std::move(m.positions);
+					mesh->uvs = std::move(m.uvs);
+					mesh->normals = std::move(m.normals);
+					mesh->tangents = std::move(m.tangents);
+					mesh->colors = std::move(m.colors);
+					mesh->bone_ids = std::move(m.bone_ids);
+					mesh->bone_weights = std::move(m.bone_weights);
+					mesh->indices = std::move(m.indices);
+					mesh->calc_bounds();
+
+					mesh->save(Path::get(m.filename));
+
+					delete mesh;
 				}
 			}
 
@@ -1584,6 +1633,12 @@ namespace flame
 
 				for (auto& a : armatures)
 				{
+					auto armature = new ArmatureT;
+					armature->bones = std::move(a.bones);
+
+					armature->save(Path::get(a.filename));
+
+					delete armature;
 				}
 			}
 
@@ -1597,6 +1652,28 @@ namespace flame
 					auto animation = new AnimationT;
 					animation->duration = a.duration;
 					animation->channels = std::move(a.channels);
+
+					for (auto& ch : animation->channels)
+					{
+						if (!ch.position_keys.empty() && ch.position_keys.back().t < animation->duration)
+						{
+							auto& k = ch.position_keys.emplace_back();
+							k.t = animation->duration;
+							k.p = ch.position_keys.front().p;
+						}
+						if (!ch.rotation_keys.empty() && ch.rotation_keys.back().t < animation->duration)
+						{
+							auto& k = ch.rotation_keys.emplace_back();
+							k.t = animation->duration;
+							k.q = ch.rotation_keys.front().q;
+						}
+						if (!ch.scaling_keys.empty() && ch.scaling_keys.back().t < animation->duration)
+						{
+							auto& k = ch.scaling_keys.emplace_back();
+							k.t = animation->duration;
+							k.s = ch.scaling_keys.front().s;
+						}
+					}
 
 					animation->save(Path::get(a.filename));
 

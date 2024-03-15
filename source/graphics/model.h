@@ -6,34 +6,8 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct Bone
-		{
-			std::string name;
-			mat4 offset_matrix;
-		};
-
-		struct Armature
-		{
-			std::vector<Bone> bones;
-
-			std::filesystem::path filename;
-			uint ref = 0;
-
-			inline int find_bone(std::string_view name)
-			{
-				for (auto i = 0; i < bones.size(); i++)
-				{
-					if (bones[i].name == name)
-						return i;
-				}
-				return -1;
-			};
-		};
-
 		struct Mesh
 		{
-			ModelPtr model = nullptr;
-
 			std::vector<vec3>	positions;
 			std::vector<vec2>	uvs;
 			std::vector<vec3>	normals;
@@ -44,6 +18,11 @@ namespace flame
 			std::vector<uint>	indices;
 
 			AABB bounds;
+
+			std::filesystem::path filename;
+			uint ref = 0;
+
+			virtual ~Mesh() {}
 
 			inline void reset()
 			{
@@ -96,21 +75,52 @@ namespace flame
 				for (auto& p : positions)
 					bounds.expand(p);
 			}
+
+			virtual void save(const std::filesystem::path& filename) = 0;
+
+			struct Create
+			{
+				virtual MeshPtr operator()() = 0;
+			};
+			FLAME_GRAPHICS_API static Create& create;
+
+			struct Get
+			{
+				// could be "standard_<name>" to get standard meshes
+				// standard meshes:
+				//  Name		| Size
+				//   plane		|  ext: 10
+				//   cube		|  hf-ext: 0.5
+				//   sphere		|  radius: 0.5
+				//   cylinder	|  radius: 0.5, height: 1.0
+				//   tri_prism	|  width: 1.0, height: 1.0, depth: 1.0
+				virtual MeshPtr operator()(const std::filesystem::path& filename) = 0;
+			};
+			FLAME_GRAPHICS_API static Get& get;
+
+			struct Release
+			{
+				virtual void operator()(MeshPtr model) = 0;
+			};
+			FLAME_GRAPHICS_API static Release& release;
 		};
 
-		struct Model
+		struct Bone
 		{
-			std::vector<Mesh> meshes;
-			std::vector<Bone> bones;
+			std::string name;
+			mat4 offset_matrix;
+		};
 
-			AABB bounds;
+		struct Armature
+		{
+			std::vector<Bone> bones;
 
 			std::filesystem::path filename;
 			uint ref = 0;
 
-			virtual ~Model() {}
+			virtual ~Armature() {}
 
-			inline int find_bone(std::string_view name) 
+			inline int find_bone(std::string_view name)
 			{
 				for (auto i = 0; i < bones.size(); i++)
 				{
@@ -120,31 +130,23 @@ namespace flame
 				return -1;
 			};
 
-			virtual void save(const std::filesystem::path& filename, bool binary = false) = 0;
+			virtual void save(const std::filesystem::path& filename) = 0;
 
 			struct Create
 			{
-				virtual ModelPtr operator()() = 0;
+				virtual ArmaturePtr operator()() = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 
 			struct Get
 			{
-				// could be "standard_<name>" to get standard models
-				// standard models:
-				//  Name		| Size
-				//   plane		|  ext: 10
-				//   cube		|  hf-ext: 0.5
-				//   sphere		|  radius: 0.5
-				//   cylinder	|  radius: 0.5, height: 1.0
-				//   tri_prism	|  width: 1.0, height: 1.0, depth: 1.0
-				virtual ModelPtr operator()(const std::filesystem::path& filename) = 0;
+				virtual ArmaturePtr operator()(const std::filesystem::path& filename) = 0;
 			};
 			FLAME_GRAPHICS_API static Get& get;
 
 			struct Release
 			{
-				virtual void operator()(ModelPtr model) = 0;
+				virtual void operator()(ArmaturePtr model) = 0;
 			};
 			FLAME_GRAPHICS_API static Release& release;
 		};

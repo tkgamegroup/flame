@@ -6,9 +6,14 @@ namespace flame
 {
 	namespace graphics
 	{
-		struct ModelPrivate : Model
+		struct MeshPrivate : Mesh
 		{
-			void save(const std::filesystem::path& filename, bool binary) override;
+			void save(const std::filesystem::path& filename) override;
+		};
+
+		struct ArmaturePrivate : Armature
+		{
+			void save(const std::filesystem::path& filename) override;
 		};
 	}
 }

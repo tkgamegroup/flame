@@ -49,8 +49,8 @@ namespace flame
 		FLAME_GRAPHICS_TYPE(Material);
 
 		FLAME_GRAPHICS_TYPE(Bone);
+		FLAME_GRAPHICS_TYPE(Armature);
 		FLAME_GRAPHICS_TYPE(Mesh);
-		FLAME_GRAPHICS_TYPE(Model);
 		FLAME_GRAPHICS_TYPE(Channel);
 		FLAME_GRAPHICS_TYPE(Animation);
 

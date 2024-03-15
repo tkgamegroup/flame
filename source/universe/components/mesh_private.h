@@ -6,7 +6,7 @@ namespace flame
 {
 	struct cMeshPrivate : cMesh
 	{
-		cArmaturePtr parmature = nullptr;
+		cAnimatorPtr panimator = nullptr;
 		bool dirty = true;
 
 		~cMeshPrivate();

@@ -970,13 +970,12 @@ void App::on_gui()
 											n = normalize(n);
 									}
 
-									auto model = graphics::Model::create();
-									auto& mesh = model->meshes.emplace_back();
-									mesh.positions = std::move(points);
-									mesh.indices = std::move(indices);
-									mesh.normals = std::move(normals);
-									model->save(filename);
-									delete model;
+									auto mesh = graphics::Mesh::create();
+									mesh->positions = std::move(points);
+									mesh->indices = std::move(indices);
+									mesh->normals = std::move(normals);
+									mesh->save(filename);
+									delete mesh;
 								}
 								ImGui::CloseCurrentPopup();
 								open = false;

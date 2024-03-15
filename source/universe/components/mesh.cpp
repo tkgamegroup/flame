@@ -5,29 +5,12 @@
 #include "../world_private.h"
 #include "node_private.h"
 #include "mesh_private.h"
-#include "armature_private.h"
+#include "animator_private.h"
 #include "../draw_data.h"
 #include "../systems/renderer_private.h"
 
 namespace flame
 {
-	std::pair<std::filesystem::path, uint> parse_name(const std::filesystem::path& src)
-	{
-		auto s = src.wstring();
-		auto sp = SUW::split(s, '#');
-		std::wstring name = sp.empty() ? L"" : std::wstring(sp.front());
-		if (!name.starts_with(L"standard_"))
-			name = Path::get(name);
-		auto idx = 0;
-		if (sp.size() > 1)
-		{
-			auto mesh_name = std::wstring(sp[1]);
-			SUW::strip_head_if(mesh_name, L"mesh");
-			idx = s2t<uint>(mesh_name);
-		}
-		return std::make_pair(name, idx);
-	}
-
 	cMeshPrivate::~cMeshPrivate()
 	{
 		node->drawers.remove("mesh"_h);
@@ -39,12 +22,12 @@ namespace flame
 			sRenderer::instance()->release_mesh_res(mesh_res_id);
 		if (material_res_id != -1)
 			sRenderer::instance()->release_material_res(material_res_id);
-		if (auto model_and_index = parse_name(mesh_name); !model_and_index.first.empty())
-			AssetManagemant::release(Path::get(model_and_index.first));
+		if (!mesh_name.empty())
+			AssetManagemant::release(Path::get(mesh_name));
 		if (!mesh_name.empty() && !mesh_name.native().starts_with(L"0x"))
 		{
-			if (mesh && mesh->model)
-				graphics::Model::release(mesh->model);
+			if (mesh)
+				graphics::Mesh::release(mesh);
 		}
 		if (!material_name.empty() && !material_name.native().starts_with(L"0x"))
 		{
@@ -63,8 +46,8 @@ namespace flame
 			switch (draw_data.pass)
 			{
 			case PassInstance:
-				if (parmature)
-					parmature->update_instance();
+				if (panimator)
+					panimator->update_instance();
 				else
 				{
 					if (dirty)
@@ -95,13 +78,13 @@ namespace flame
 		node->measurers.add([this](AABB& b) {
 			if (mesh)
 			{
-				if (!parmature)
+				if (!panimator)
 					b.expand(AABB(mesh->bounds.get_points(node->transform)));
 				else
 				{
-					auto pb = parmature->bone_node_map[node];
+					auto pb = panimator->bone_node_map[node];
 					if (!pb)
-						b.expand(AABB(mesh->bounds.get_points(parmature->node->transform)));
+						b.expand(AABB(mesh->bounds.get_points(panimator->node->transform)));
 					else
 						b.expand(AABB(mesh->bounds.get_points(pb->pose.m)));
 				}
@@ -124,43 +107,36 @@ namespace flame
 		if (mesh_name == name)
 			return;
 
-		auto model_and_index = parse_name(mesh_name);
-		auto _model_and_index = parse_name(name);
+		auto old_one = mesh;
+		auto old_raw = !mesh_name.empty() && mesh_name.native().starts_with(L"0x");
+		if (!mesh_name.empty())
+		{
+			if (!old_raw)
+				AssetManagemant::release(Path::get(mesh_name));
+		}
 		mesh_name = name;
-
-		if (model_and_index.first != _model_and_index.first)
+		mesh = nullptr;
+		if (!mesh_name.empty())
 		{
-			if (!model_and_index.first.empty())
-				AssetManagemant::release(Path::get(model_and_index.first));
-			if (!_model_and_index.first.empty())
-				AssetManagemant::get(Path::get(_model_and_index.first));
+			if (!mesh_name.native().starts_with(L"0x"))
+			{
+				AssetManagemant::get(Path::get(mesh_name));
+				mesh = !mesh_name.empty() ? graphics::Mesh::get(mesh_name) : nullptr;
+			}
+			else
+				mesh = (graphics::MeshPtr)s2u_hex<uint64>(mesh_name.string());
 		}
 
-		graphics::ModelPtr _model = nullptr;
-		graphics::MeshPtr _mesh = nullptr;
-		if (!_model_and_index.first.empty())
-			_model = graphics::Model::get(_model_and_index.first);
-		if (_model && !_model->meshes.empty())
-		{
-			if (_model_and_index.second < _model->meshes.size())
-				_mesh = &_model->meshes[_model_and_index.second];
-		}
-		if (!mesh || mesh->model != _model)
-		{
-			if (mesh && mesh->model)
-				graphics::Model::release(mesh->model);
-		}
-		else if (_model)
-			graphics::Model::release(_model);
-		if (mesh != _mesh)
+		if (mesh != old_one)
 		{
 			if (mesh_res_id != -1)
 				sRenderer::instance()->release_mesh_res(mesh_res_id);
-			mesh = _mesh;
 			mesh_res_id = mesh ? sRenderer::instance()->get_mesh_res(mesh, -1) : -1;
 		}
+		if (!old_raw && old_one)
+			graphics::Mesh::release(old_one);
 
-		node->mark_transform_dirty();
+		node->mark_drawing_dirty();
 		data_changed("mesh_name"_h);
 	}
 
@@ -233,11 +209,11 @@ namespace flame
 
 	void cMeshPrivate::on_active()
 	{
-		parmature = entity->get_parent_component<cArmatureT>();
+		panimator = entity->get_parent_component<cAnimatorT>();
 		if (instance_id != 0)
 		{
-			if (parmature)
-				instance_id = parmature->instance_id;
+			if (panimator)
+				instance_id = panimator->instance_id;
 			else
 				instance_id = sRenderer::instance()->register_mesh_instance(-1);
 		}
@@ -249,7 +225,7 @@ namespace flame
 	{
 		if (instance_id != 0)
 		{
-			if (!parmature)
+			if (!panimator)
 				sRenderer::instance()->register_mesh_instance(instance_id);
 			instance_id = -1;
 		}

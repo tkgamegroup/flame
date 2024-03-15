@@ -7,14 +7,43 @@ namespace flame
 	// Reflect ctor
 	struct cAnimator : Component
 	{
+		// Reflect requires
+		cNodePtr node = nullptr;
+
 		// Reflect
-		std::vector<Modifier> modifiers;
+		std::filesystem::path armature_name;
 		// Reflect
-		virtual void set_modifiers(const std::vector<Modifier>& modifiers) = 0;
+		virtual void set_armature_name(const std::filesystem::path& name) = 0;
+		// Reflect
+		std::vector<std::pair<std::filesystem::path, std::string>> animation_names;
+		// Reflect
+		virtual void set_animation_names(const std::vector<std::pair<std::filesystem::path, std::string>>& names) = 0;
+		// Reflect
+		std::vector<std::tuple<std::string, std::string, float>> animation_transitions; // src animation, dst animation, transition
+
+		Listeners<void(uint, uint)> callbacks;
+		std::vector<BlueprintInstanceGroup*> bp_callbacks;
+
+		// Reflect
+		float speed = 1.f;
+		// Reflect
+		bool loop = true;
+		// Reflect
+		uint default_animation = 0;
+
+		graphics::ArmaturePtr armature = nullptr;
+		uint playing_name = 0;
+		float playing_time = 0;
+
+		virtual void reset() = 0;
+		virtual void play(uint name) = 0;
+		virtual void stop() = 0;
+
+		int instance_id = -1;
 
 		struct Create
 		{
-			virtual cAnimatorPtr operator()(EntityPtr) = 0;
+			virtual cAnimatorPtr operator()(EntityPtr e) = 0;
 		};
 		// Reflect static
 		FLAME_UNIVERSE_API static Create& create;

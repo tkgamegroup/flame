@@ -20,7 +20,7 @@
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
-#include <flame/universe/components/armature.h>
+#include <flame/universe/components/animator.h>
 #include <flame/universe/components/terrain.h>
 #include <flame/universe/components/volume.h>
 #include <flame/universe/components/particle_system.h>
@@ -2274,11 +2274,11 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 					}
 				}
 			}
-			else if (ui.name_hash == "flame::cArmature"_h)
+			else if (ui.name_hash == "flame::cAnimator"_h)
 			{
 				if (cc.components.size() == 1)
 				{
-					auto comp = (cArmaturePtr)cc.components[0];
+					auto comp = (cAnimatorPtr)cc.components[0];
 					if (ImGui::Button("Reset"))
 						comp->reset();
 					if (!comp->animation_names.empty())
@@ -2793,18 +2793,18 @@ void InspectorView::on_draw()
 					}
 				}
 			}
-			else if (ext == L".fmod")
+			else if (ext == L".fmesh")
 			{
 				static ModelPreviewer previewer;
 				previewer.init();
 
 				if (inspected_changed)
 				{
-					if (auto model = graphics::Model::get(path); model)
+					if (auto mesh = graphics::Mesh::get(path); mesh)
 					{
-						inspected_obj = model;
+						inspected_obj = mesh;
 						inspected_obj_deletor = [](void* obj, void* info) {
-							graphics::Model::release((graphics::ModelPtr)obj);
+							graphics::Mesh::release((graphics::MeshPtr)obj);
 						};
 					}
 					else if (previewer.model)
@@ -2813,73 +2813,34 @@ void InspectorView::on_draw()
 
 				if (inspected_obj)
 				{
-					auto model = (graphics::ModelPtr)inspected_obj;
-					auto total_vertex_count = 0;
-					auto total_index_count = 0;
-					for (auto& mesh : model->meshes)
+					auto mesh = (graphics::MeshPtr)inspected_obj;
+					ImGui::Text("Vertex Count: %d", (int)mesh->positions.size());
+					ImGui::Text("Index Count: %d", (int)mesh->indices.size());
 					{
-						total_vertex_count += mesh.positions.size();
-						total_index_count += mesh.indices.size();
-					}
-					ImGui::Text("Total Vertex Count: %d", total_vertex_count);
-					ImGui::Text("Total Index Count: %d", total_index_count);
-					auto i = 0;
-					for (auto& mesh : model->meshes)
-					{
-						ImGui::Text("Mesh %d:", i);
-						ImGui::Text("Vertex Count: %d", mesh.positions.size());
-						ImGui::Text("Index Count: %d", mesh.indices.size());
 						std::string attr_str = "";
-						if (!mesh.uvs.empty()) attr_str += " uv";
-						if (!mesh.normals.empty()) attr_str += " normal";
-						if (!mesh.tangents.empty()) attr_str += " tangent";
-						if (!mesh.colors.empty()) attr_str += " color";
-						if (!mesh.bone_ids.empty()) attr_str += " bone_ids";
-						if (!mesh.bone_weights.empty()) attr_str += " bone_weights";
+						if (!mesh->uvs.empty()) attr_str += " uv";
+						if (!mesh->normals.empty()) attr_str += " normal";
+						if (!mesh->tangents.empty()) attr_str += " tangent";
+						if (!mesh->colors.empty()) attr_str += " color";
+						if (!mesh->bone_ids.empty()) attr_str += " bone_ids";
+						if (!mesh->bone_weights.empty()) attr_str += " bone_weights";
 						ImGui::Text("Attributes: %s", attr_str.data());
-						i++;
 					}
-					if (ImGui::Button("To Text"))
-						model->save(path, false);
-					if (ImGui::Button("To Binary"))
-						model->save(path, true);
-					static uint preview_mesh_index = 0;
+
 					if (ImGui::CollapsingHeader("Preview"))
 					{
 						auto preview_mesh_changed = inspected_changed;
 						uint preview_mesh_changed_frame = 0;
-						if (preview_mesh_index == 0xffffffff)
-						{
-							preview_mesh_index = 0;
-							preview_mesh_changed = true;
-						}
-						preview_mesh_index = min(preview_mesh_index, (uint)model->meshes.size() - 1);
-						if (ImGui::BeginCombo("Mesh", str(preview_mesh_index).c_str()))
-						{
-							for (uint i = 0; i < model->meshes.size(); i++)
-							{
-								if (ImGui::Selectable(str(i).c_str(), preview_mesh_index == i))
-								{
-									if (preview_mesh_index != i)
-									{
-										preview_mesh_index = i;
-										preview_mesh_changed = true;
-									}
-								}
-							}
-							ImGui::EndCombo();
-						}
+
 						if (preview_mesh_changed)
 						{
 							if (previewer.model)
-								previewer.model->get_component<cMesh>()->set_mesh_name(model->filename.wstring() + L'#' + wstr(preview_mesh_index));
+								previewer.model->get_component<cMesh>()->set_mesh_name(mesh->filename);
 							preview_mesh_changed_frame = frames;
 						}
 
 						previewer.update(preview_mesh_changed_frame);
 					}
-					else
-						preview_mesh_index = 0xffffffff;
 				}
 			}
 			else if (ext == L".fani")
