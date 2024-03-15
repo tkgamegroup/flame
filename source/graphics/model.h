@@ -18,6 +18,16 @@ namespace flame
 
 			std::filesystem::path filename;
 			uint ref = 0;
+
+			inline int find_bone(std::string_view name)
+			{
+				for (auto i = 0; i < bones.size(); i++)
+				{
+					if (bones[i].name == name)
+						return i;
+				}
+				return -1;
+			};
 		};
 
 		struct Mesh

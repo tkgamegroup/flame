@@ -470,6 +470,16 @@ namespace flame
 				std::filesystem::path filename;
 
 				std::vector<Bone> bones;
+
+				inline int find_bone(std::string_view name)
+				{
+					for (auto i = 0; i < bones.size(); i++)
+					{
+						if (bones[i].name == name)
+							return i;
+					}
+					return -1;
+				};
 			};
 
 			struct AnimationData
@@ -498,6 +508,7 @@ namespace flame
 			std::vector<ArmatureData> armatures;
 			std::vector<AnimationData> animations;
 			std::unique_ptr<ModelT> model(new ModelT);
+			pugi::xml_document doc_prefab;
 
 			auto find_material = [&](const std::string& name) ->MaterialData* {
 				for (auto& m : materials)
@@ -577,87 +588,66 @@ namespace flame
 				}
 			};
 
-			auto need_wrap_root = rotation != vec3(0.f) || scaling != 1.f;
+			auto normalize_weights = [](std::vector<ivec4>& bone_ids, std::vector<vec4>& weights) {
+				for (auto i = 0; i < bone_ids.size(); i++)
+				{
+					auto n = 0;
+					auto ids = bone_ids[i];
+					for (auto j = 0; j < 4; j++)
+					{
+						if (ids[j] == -1)
+							break;
+						n++;
+					}
+					auto& w = weights[i];
+					switch (n)
+					{
+					case 1: w = vec4(1.f, 0.f, 0.f, 0.f);				break;
+					case 2: w = vec4(w.xy() / (w.x + w.y), 0.f, 0.f);	break;
+					case 3: w = vec4(w.xyz() / (w.x + w.y + w.z), 0.f);	break;
+					case 4: w /= (w.x + w.y + w.z + w.w);				break;
+					}
+				}
+			};
+
 			auto preprocess = [&](pugi::xml_node first_node)->pugi::xml_node {
-				if (need_wrap_root)
+				if (rotation != vec3(0.f) || scaling != 1.f)
 				{
 					first_node.append_attribute("file_id").set_value(generate_guid().to_string().c_str());
 					auto n_node = first_node.append_child("components").append_child("item");
 					n_node.append_attribute("type_name").set_value("flame::cNode");
+					if (rotation != vec3(0.f))
+						n_node.append_attribute("eul").set_value(str(rotation).c_str());
+					if (scaling != 1.f)
+						n_node.append_attribute("scl").set_value(str(vec3(scaling)).c_str());
 					return first_node.append_child("children").append_child("item");
 				}
 				return first_node;
 			};
-			auto postprocess = [&](pugi::xml_node first_node) {
-				auto dst = first_node;
-				if (need_wrap_root)
-					dst = dst.child("children").first_child();
-				auto n_components = dst.child("components");
-				auto n_node = n_components.first_child();
-				if (rotation != vec3(0.f))
-					n_node.append_attribute("eul").set_value(str(rotation).c_str());
-				if (scaling != 1.f)
-					n_node.append_attribute("scl").set_value(str(vec3(scaling)).c_str());
-				if (!model->bones.empty())
+
+			auto add_animator = [&](pugi::xml_node n_components, ArmatureData* arm) {
+				auto n_armature = n_components.append_child("item");
+				n_armature.append_attribute("type_name").set_value("flame::cArmature");
+				if (arm)
+					n_armature.append_attribute("armature_name").set_value(arm->filename.string().c_str());
+				if (!animations.empty())
 				{
-					auto n_armature = n_components.append_child("item");
-					n_armature.append_attribute("type_name").set_value("flame::cArmature");
-					n_armature.append_attribute("armature_name").set_value(("models\\" + model_name_with_ext).c_str());
-					if (!animations.empty())
+					auto default_animation = "run";
+					auto found_default = false;
+
+					auto n_animation_names = n_armature.append_child("animation_names");
+					for (auto& a : animations)
 					{
-						auto default_animation = "run";
-						auto found_default = false;
+						auto n_item = n_animation_names.append_child("item");
+						n_item.append_attribute("first").set_value(a.filename.string().c_str());
+						n_item.append_attribute("second").set_value(a.name.c_str());
 
-						auto n_animation_names = n_armature.append_child("animation_names");
-						for (auto& a : animations)
-						{
-							auto n_item = n_animation_names.append_child("item");
-							n_item.append_attribute("first").set_value(a.filename.string().c_str());
-							n_item.append_attribute("second").set_value(a.name.c_str());
-
-							if (a.name == default_animation)
-								found_default = true;
-						}
-
-						if (found_default)
-							n_armature.append_attribute("default_animation").set_value("run"_h);
-					}
-					for (auto& m : model->meshes)
-					{
-						for (auto i = 0; i < m.bone_ids.size(); i++)
-						{
-							auto n = 0;
-							auto ids = m.bone_ids[i];
-							for (auto j = 0; j < 4; j++)
-							{
-								if (ids[j] == -1)
-									break;
-								n++;
-							}
-							auto& w = m.bone_weights[i];
-							switch (n)
-							{
-							case 1: w = vec4(1.f, 0.f, 0.f, 0.f);				break;
-							case 2: w = vec4(w.xy() / (w.x + w.y), 0.f, 0.f);	break;
-							case 3: w = vec4(w.xyz() / (w.x + w.y + w.z), 0.f);	break;
-							case 4: w /= (w.x + w.y + w.z + w.w);				break;
-							}
-						}
+						if (a.name == default_animation)
+							found_default = true;
 					}
 
-					auto& name = model->bones.front().name;
-					auto dst_children = dst.child("children");
-					for (auto n : dst_children.children())
-					{
-						if (auto n_children = n.child("children"); n_children)
-						{
-							if (auto nn = n_children.first_child(); nn && nn.attribute("name").value() == name)
-							{
-								dst_children.prepend_move(n);
-								break;
-							}
-						}
-					}
+					if (found_default)
+						n_armature.append_attribute("default_animation").set_value("run"_h);
 				}
 			};
 
@@ -843,8 +833,6 @@ namespace flame
 						return;
 					}
 
-					pugi::xml_document doc_prefab;
-
 					std::function<void(pugi::xml_node, fbxsdk::FbxNode*)> process_node;
 					process_node = [&](pugi::xml_node dst, fbxsdk::FbxNode* src) {
 						dst.append_attribute("file_id").set_value(generate_guid().to_string().c_str());
@@ -977,8 +965,10 @@ namespace flame
 								std::vector<ivec4> control_point_bone_ids;
 								std::vector<vec4> control_point_bone_weights;
 								auto skin_count = fbx_mesh->GetDeformerCount(FbxDeformer::eSkin);
-								if (skin_count)
+								if (skin_count > 0)
 								{
+									ArmatureData* arm = nullptr;
+
 									control_point_bone_ids.resize(control_points_count);
 									control_point_bone_weights.resize(control_points_count);
 									for (auto i = 0; i < control_points_count; i++)
@@ -994,39 +984,55 @@ namespace flame
 										{
 											auto cluster = skin_deformer->GetCluster(j);
 											auto link = cluster->GetLink();
-											if (!link) continue;
+											if (!link)
+												continue;
 
 											std::string name = link->GetName();
-											auto bone_idx = model->find_bone(name);
+											if (!arm)
+												arm = &new_armature(name);
+
+											auto bone_idx = arm->find_bone(name);
 											if (bone_idx == -1)
 											{
-												bone_idx = model->bones.size();
-												model->bones.emplace_back().name = name;
+												bone_idx = arm->bones.size();
+												auto& b = arm->bones.emplace_back();
+												b.name = name;
+												b.offset_matrix = mat4(1.f);
 											}
-
-											auto& bone = model->bones[bone_idx];
-
-											FbxAMatrix reference_init;
-											FbxAMatrix cluster_init;
-											cluster->GetTransformMatrix(reference_init);
-											reference_init *= get_geometry(src);
-											cluster->GetTransformLinkMatrix(cluster_init);
-											bone.offset_matrix = to_glm(cluster_init.Inverse() * reference_init);
-
-											int vertex_idx_count = cluster->GetControlPointIndicesCount();
-											for (int k = 0; k < vertex_idx_count; k++)
+											if (bone_idx != -1)
 											{
-												auto control_idx = cluster->GetControlPointIndices()[k];
-												if (control_idx >= control_points_count)
-													continue;
+												auto& bone = arm->bones[bone_idx];
 
-												auto weight = (float)cluster->GetControlPointWeights()[k];
-												if (weight <= 0.f)
-													continue;
+												FbxAMatrix reference_init;
+												FbxAMatrix cluster_init;
+												cluster->GetTransformMatrix(reference_init);
+												reference_init *= get_geometry(src);
+												cluster->GetTransformLinkMatrix(cluster_init);
+												bone.offset_matrix = to_glm(cluster_init.Inverse() * reference_init);
 
-												add_bone_weight(control_point_bone_ids[control_idx], control_point_bone_weights[control_idx], bone_idx, weight);
+												int vertex_idx_count = cluster->GetControlPointIndicesCount();
+												for (int k = 0; k < vertex_idx_count; k++)
+												{
+													auto control_idx = cluster->GetControlPointIndices()[k];
+													if (control_idx >= control_points_count)
+														continue;
+
+													auto weight = (float)cluster->GetControlPointWeights()[k];
+													if (weight <= 0.f)
+														continue;
+
+													add_bone_weight(control_point_bone_ids[control_idx], control_point_bone_weights[control_idx], bone_idx, weight);
+												}
 											}
 										}
+									}
+
+									normalize_weights(control_point_bone_ids, control_point_bone_weights);
+
+									if (!n_children)
+									{
+										add_animator(n_components, arm);
+										n_children = dst.append_child("children");
 									}
 								}
 
@@ -1219,7 +1225,7 @@ namespace flame
 												}
 											}
 
-											if (skin_count)
+											if (!control_point_bone_ids.empty() && !control_point_bone_weights.empty())
 											{
 												m.bone_ids.push_back(control_point_bone_ids[control_point_idx]);
 												m.bone_weights.push_back(control_point_bone_weights[control_point_idx]);
@@ -1230,18 +1236,13 @@ namespace flame
 									}
 								}
 
-								if (material_count > 1)
-								{
-									if (!n_children)
-										n_children = dst.append_child("children");
-								}
 								for (auto i = 0; i < material_count; i++)
 								{
-									if (material_count > 1)
+									if (material_count > 1 || skin_count > 0)
 									{
 										auto n_sub = n_children.append_child("item");
 										n_sub.append_attribute("name").set_value(i);
-										auto n_components = n_sub.append_child("components");
+										n_components = n_sub.append_child("components");
 										auto n_node = n_components.append_child("item");
 										n_node.append_attribute("type_name").set_value("flame::cNode");
 									}
@@ -1258,18 +1259,6 @@ namespace flame
 									n_mesh.append_attribute("material_name").set_value(material_name.c_str());
 								}
 							}
-							else if (node_type == FbxNodeAttribute::eSkeleton)
-							{
-								std::string name = src->GetName();
-								auto bone_idx = model->find_bone(name);
-								if (bone_idx == -1)
-								{
-									bone_idx = model->bones.size();
-									auto& b = model->bones.emplace_back();
-									b.name = name;
-									b.offset_matrix = mat4(1.f);
-								}
-							}
 						}
 
 						auto child_count = src->GetChildCount();
@@ -1282,11 +1271,6 @@ namespace flame
 						}
 					};
 					process_node(preprocess(doc_prefab.append_child("prefab")), scene->GetRootNode());
-					postprocess(doc_prefab.first_child());
-
-					auto fn = destination / model_name;
-					fn += L".prefab";
-					doc_prefab.save_file(fn.c_str());
 
 					scene->Destroy(true);
 				}
@@ -1393,105 +1377,6 @@ namespace flame
 						}
 					}
 
-					for (auto i = 0; i < scene->mNumMeshes; i++)
-					{
-						auto ai_mesh = scene->mMeshes[i];
-						auto& mesh = model->meshes.emplace_back();
-						mesh.model = model.get();
-
-						auto vertex_count = ai_mesh->mNumVertices;
-
-						if (ai_mesh->mVertices)
-						{
-							mesh.positions.resize(vertex_count);
-							memcpy(mesh.positions.data(), ai_mesh->mVertices, sizeof(vec3) * vertex_count);
-						}
-
-						if (auto puv = ai_mesh->mTextureCoords[0]; puv)
-						{
-							mesh.uvs.resize(vertex_count);
-							for (auto j = 0; j < vertex_count; j++)
-							{
-								auto& uv = puv[j];
-								mesh.uvs[j] = vec2(uv.x, uv.y);
-							}
-						}
-
-						if (ai_mesh->mNormals)
-						{
-							mesh.normals.resize(vertex_count);
-							memcpy(mesh.normals.data(), ai_mesh->mNormals, sizeof(vec3) * vertex_count);
-						}
-
-						if (ai_mesh->mTangents)
-						{
-							mesh.tangents.resize(vertex_count);
-							memcpy(mesh.tangents.data(), ai_mesh->mTangents, sizeof(vec3) * vertex_count);
-						}
-
-						if (ai_mesh->mColors[0])
-						{
-							mesh.colors.resize(vertex_count);
-							for (auto i = 0; i < vertex_count; i++)
-							{
-								auto& col = ai_mesh->mColors[0][i];
-								mesh.colors[i] = cvec4(col.r * 255.f, col.g * 255.f, col.b * 255.f, col.a * 255.f);
-							}
-						}
-
-						if (ai_mesh->mNumBones > 0)
-						{
-							mesh.bone_ids.resize(vertex_count);
-							mesh.bone_weights.resize(vertex_count);
-							for (auto j = 0; j < vertex_count; j++)
-							{
-								mesh.bone_ids[j] = ivec4(-1);
-								mesh.bone_weights[j] = vec4(0.f);
-							}
-
-							for (auto j = 0; j < ai_mesh->mNumBones; j++)
-							{
-								auto ai_bone = ai_mesh->mBones[j];
-
-								std::string name = ai_bone->mName.C_Str();
-								auto bone_idx = model->find_bone(name);
-								if (bone_idx == -1)
-								{
-									bone_idx = model->bones.size();
-									auto& m = ai_bone->mOffsetMatrix;
-									auto& b = model->bones.emplace_back();
-									b.name = name;
-									b.offset_matrix = mat4(
-										vec4(m.a1, m.b1, m.c1, m.d1),
-										vec4(m.a2, m.b2, m.c2, m.d2),
-										vec4(m.a3, m.b3, m.c3, m.d3),
-										vec4(m.a4, m.b4, m.c4, m.d4)
-									);
-								}
-
-								auto weights_count = ai_bone->mNumWeights;
-								if (weights_count > 0)
-								{
-									for (auto j = 0; j < weights_count; j++)
-									{
-										auto w = ai_bone->mWeights[j];
-										add_bone_weight(mesh.bone_ids[w.mVertexId], mesh.bone_weights[w.mVertexId], bone_idx, w.mWeight);
-									}
-								}
-							}
-						}
-
-						mesh.indices.resize(ai_mesh->mNumFaces * 3);
-						for (auto j = 0; j < ai_mesh->mNumFaces; j++)
-						{
-							mesh.indices[j * 3 + 0] = ai_mesh->mFaces[j].mIndices[0];
-							mesh.indices[j * 3 + 1] = ai_mesh->mFaces[j].mIndices[1];
-							mesh.indices[j * 3 + 2] = ai_mesh->mFaces[j].mIndices[2];
-						}
-
-						mesh.calc_bounds();
-					}
-
 					pugi::xml_document doc_prefab;
 
 					std::function<void(pugi::xml_node, aiNode*)> process_node;
@@ -1500,11 +1385,12 @@ namespace flame
 						dst.append_attribute("name").set_value(name.c_str());
 
 						auto n_components = dst.append_child("components");
+						auto n_node = n_components.append_child("item");
+						n_node.append_attribute("type_name").set_value("flame::cNode");
+
+						pugi::xml_node n_children;
 
 						{
-							auto n_node = n_components.append_child("item");
-							n_node.append_attribute("type_name").set_value("flame::cNode");
-
 							aiVector3D s;
 							aiVector3D r;
 							ai_real a;
@@ -1526,50 +1412,138 @@ namespace flame
 
 						if (src->mNumMeshes > 0)
 						{
-							if (name == "trigger")
+							for (auto i = 0; i < src->mNumMeshes; i++)
 							{
-								auto n_rigid = n_components.append_child("item");
-								n_rigid.append_attribute("type_name").set_value("flame::cRigid");
-								n_rigid.append_attribute("dynamic").set_value(false);
-								auto n_shape = n_components.append_child("item");
-								n_shape.append_attribute("type_name").set_value("flame::cShape");
-								n_shape.append_attribute("type").set_value("Cube");
-								n_shape.append_attribute("size").set_value("2,2,0.01");
-								n_shape.append_attribute("trigger").set_value(true);
-							}
-							else
-							{
+								auto ai_mesh = scene->mMeshes[src->mMeshes[i]];
+								auto& mesh = new_mesh(ai_mesh->mName.length == 0 ? str((int)meshes.size()) : ai_mesh->mName.C_Str());
+
+								auto vertex_count = ai_mesh->mNumVertices;
+
+								if (ai_mesh->mVertices)
+								{
+									mesh.positions.resize(vertex_count);
+									memcpy(mesh.positions.data(), ai_mesh->mVertices, sizeof(vec3) * vertex_count);
+								}
+
+								if (auto puv = ai_mesh->mTextureCoords[0]; puv)
+								{
+									mesh.uvs.resize(vertex_count);
+									for (auto j = 0; j < vertex_count; j++)
+									{
+										auto& uv = puv[j];
+										mesh.uvs[j] = vec2(uv.x, uv.y);
+									}
+								}
+
+								if (ai_mesh->mNormals)
+								{
+									mesh.normals.resize(vertex_count);
+									memcpy(mesh.normals.data(), ai_mesh->mNormals, sizeof(vec3) * vertex_count);
+								}
+
+								if (ai_mesh->mTangents)
+								{
+									mesh.tangents.resize(vertex_count);
+									memcpy(mesh.tangents.data(), ai_mesh->mTangents, sizeof(vec3) * vertex_count);
+								}
+
+								if (ai_mesh->mColors[0])
+								{
+									mesh.colors.resize(vertex_count);
+									for (auto i = 0; i < vertex_count; i++)
+									{
+										auto& col = ai_mesh->mColors[0][i];
+										mesh.colors[i] = cvec4(col.r * 255.f, col.g * 255.f, col.b * 255.f, col.a * 255.f);
+									}
+								}
+
+								if (ai_mesh->mNumBones > 0)
+								{
+									auto& arm = new_armature(ai_mesh->mName.C_Str());
+
+									mesh.bone_ids.resize(vertex_count);
+									mesh.bone_weights.resize(vertex_count);
+									for (auto j = 0; j < vertex_count; j++)
+									{
+										mesh.bone_ids[j] = ivec4(-1);
+										mesh.bone_weights[j] = vec4(0.f);
+									}
+
+									for (auto j = 0; j < ai_mesh->mNumBones; j++)
+									{
+										auto ai_bone = ai_mesh->mBones[j];
+
+										std::string name = ai_bone->mName.C_Str();
+										auto bone_idx = arm.find_bone(name);
+										if (bone_idx == -1)
+										{
+											bone_idx = arm.bones.size();
+											auto& m = ai_bone->mOffsetMatrix;
+											auto& b = arm.bones.emplace_back();
+											b.name = name;
+											b.offset_matrix = mat4(
+												vec4(m.a1, m.b1, m.c1, m.d1),
+												vec4(m.a2, m.b2, m.c2, m.d2),
+												vec4(m.a3, m.b3, m.c3, m.d3),
+												vec4(m.a4, m.b4, m.c4, m.d4)
+											);
+										}
+
+										auto weights_count = ai_bone->mNumWeights;
+										if (weights_count > 0)
+										{
+											for (auto j = 0; j < weights_count; j++)
+											{
+												auto w = ai_bone->mWeights[j];
+												add_bone_weight(mesh.bone_ids[w.mVertexId], mesh.bone_weights[w.mVertexId], bone_idx, w.mWeight);
+											}
+										}
+									}
+
+									if (!n_children)
+									{
+										if (ai_mesh->mNumBones > 0)
+											add_animator(n_components, &arm);
+
+										n_children = dst.append_child("children");
+									}
+								}
+
+								mesh.indices.resize(ai_mesh->mNumFaces * 3);
+								for (auto j = 0; j < ai_mesh->mNumFaces; j++)
+								{
+									mesh.indices[j * 3 + 0] = ai_mesh->mFaces[j].mIndices[0];
+									mesh.indices[j * 3 + 1] = ai_mesh->mFaces[j].mIndices[1];
+									mesh.indices[j * 3 + 2] = ai_mesh->mFaces[j].mIndices[2];
+								}
+
+								if (src->mNumMeshes > 1 || ai_mesh->mNumBones > 0)
+								{
+									if (!n_children)
+										n_children = dst.append_child("children");
+
+									auto n_sub = n_children.append_child("item");
+									n_sub.append_attribute("name").set_value(i);
+									n_components = n_sub.append_child("components");
+									auto n_node = n_components.append_child("item");
+									n_node.append_attribute("type_name").set_value("flame::cNode");
+								}
+
 								auto n_mesh = n_components.append_child("item");
 								n_mesh.append_attribute("type_name").set_value("flame::cMesh");
-								auto mesh_idx = src->mMeshes[0];
-								auto mesh = scene->mMeshes[mesh_idx];
-								n_mesh.append_attribute("mesh_name").set_value(("models\\" + model_name_with_ext + "#mesh" + str(mesh_idx)).c_str());
-								n_mesh.append_attribute("material_name").set_value(("materials\\" + materials[mesh->mMaterialIndex].name).c_str());
-								if (name == "mesh_collider")
-								{
-									auto n_rigid = n_components.append_child("item");
-									n_rigid.append_attribute("type_name").set_value("flame::cRigid");
-									n_rigid.append_attribute("dynamic").set_value(false);
-									auto n_shape = n_components.append_child("item");
-									n_shape.append_attribute("type_name").set_value("flame::cShape");
-									n_shape.append_attribute("type").set_value("Mesh");
-								}
+								n_mesh.append_attribute("mesh_name").set_value(mesh.filename.c_str());
+								n_mesh.append_attribute("material_name").set_value(materials[ai_mesh->mMaterialIndex].filename.string().c_str());
 							}
 						}
 
 						if (src->mNumChildren > 0)
 						{
-							auto n_children = dst.append_child("children");
+							n_children = dst.append_child("children");
 							for (auto i = 0; i < src->mNumChildren; i++)
 								process_node(n_children.append_child("item"), src->mChildren[i]);
 						}
 					};
 					process_node(preprocess(doc_prefab.append_child("prefab")), scene->mRootNode);
-					postprocess(doc_prefab.first_child());
-
-					auto fn = destination / model_name;
-					fn += L".prefab";
-					doc_prefab.save_file(fn.c_str());
 				}
 #endif
 			}
@@ -1593,6 +1567,26 @@ namespace flame
 				}
 			}
 
+			if (!meshes.empty())
+			{
+				if (!std::filesystem::exists(meshes_destination))
+					std::filesystem::create_directories(meshes_destination);
+
+				for (auto& m : meshes)
+				{
+				}
+			}
+
+			if (!armatures.empty())
+			{
+				if (!std::filesystem::exists(armatures_destination))
+					std::filesystem::create_directories(armatures_destination);
+
+				for (auto& a : armatures)
+				{
+				}
+			}
+
 			if (!animations.empty())
 			{
 				if (!std::filesystem::exists(animations_destination))
@@ -1609,6 +1603,10 @@ namespace flame
 					delete animation;
 				}
 			}
+
+			auto fn = destination / model_name;
+			fn += L".prefab";
+			doc_prefab.save_file(fn.c_str());
 		}
 	}
 }
