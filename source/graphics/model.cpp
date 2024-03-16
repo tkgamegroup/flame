@@ -958,7 +958,7 @@ namespace flame
 								auto polygon_count = fbx_mesh->GetPolygonCount();
 
 								auto mesh_idx = meshes.size();
-								for (auto i = 0; i < material_count; i++)
+								for (auto i = 0; i < max(1, material_count); i++)
 									new_mesh(material_count > 1 ? mesh_name + '_' + str(i) : mesh_name);
 
 								fbxsdk::FbxLayerElementArrayTemplate<int> empty_index_array(fbxsdk::eFbxUndefined);
@@ -1270,7 +1270,7 @@ namespace flame
 									}
 								}
 
-								for (auto i = 0; i < material_count; i++)
+								for (auto i = 0; i < max(1, material_count); i++)
 								{
 									if (material_count > 1)
 									{
@@ -1281,9 +1281,10 @@ namespace flame
 										n_node.append_attribute("type_name").set_value("flame::cNode");
 									}
 
+									auto& mesh = meshes[mesh_idx + i];
 									auto n_mesh = n_components.append_child("item");
-									n_mesh.append_attribute("type_name").set_value("flame::cMesh");
-									n_mesh.append_attribute("mesh_name").set_value(meshes[mesh_idx + i].filename.string().c_str());
+									n_mesh.append_attribute("type_name").set_value(mesh.bone_ids.empty() ? "flame::cMesh" : "flame::cSkinnedMesh");
+									n_mesh.append_attribute("mesh_name").set_value(mesh.filename.string().c_str());
 									std::string material_name = "default";
 									if (auto fbx_mat = src->GetMaterial(i); fbx_mat)
 									{
@@ -1565,7 +1566,7 @@ namespace flame
 								}
 
 								auto n_mesh = n_components.append_child("item");
-								n_mesh.append_attribute("type_name").set_value("flame::cMesh");
+								n_mesh.append_attribute("type_name").set_value(mesh.bone_ids.empty() ? "flame::cMesh" : "flame::cSkinnedMesh");
 								n_mesh.append_attribute("mesh_name").set_value(mesh.filename.c_str());
 								n_mesh.append_attribute("material_name").set_value(materials[ai_mesh->mMaterialIndex].filename.string().c_str());
 							}
@@ -1646,6 +1647,44 @@ namespace flame
 			{
 				if (!std::filesystem::exists(animations_destination))
 					std::filesystem::create_directories(animations_destination);
+
+				if (armatures.empty())
+				{
+					auto has_repeat_channel = false;
+					std::map<std::string, Channel*> global_channels;
+					for (auto& a : animations)
+					{
+						for (auto& ch : a.channels)
+						{
+							auto it = global_channels.find(ch.node_name);
+							if (it == global_channels.end())
+								it = global_channels.emplace(ch.node_name, &ch).first;
+							else
+							{
+								has_repeat_channel = true;
+								break;
+							}
+						}
+						if (has_repeat_channel)
+							break;
+					}
+					if (!has_repeat_channel)
+					{
+						std::vector<Channel> global_channels_vec;
+						for (auto& [name, ch] : global_channels)
+							global_channels_vec.push_back(std::move(*ch));
+						std::sort(global_channels_vec.begin(), global_channels_vec.end(), [](auto& a, auto& b) { return a.node_name < b.node_name; });
+						auto duration = 0.f;
+						for (auto& a : animations)
+							duration = max(duration, a.duration);
+
+						animations.clear();
+						auto& a = new_animation("combined", duration);
+						a.channels = std::move(global_channels_vec);
+					}
+
+					add_animator(doc_prefab.first_child().child("components"), nullptr);
+				}
 
 				for (auto& a : animations)
 				{

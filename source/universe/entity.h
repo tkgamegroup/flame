@@ -113,12 +113,12 @@ namespace flame
 		}
 
 		template<typename T>
-		std::vector<T*> get_components(uint lv) const
+		std::vector<T*> get_components(int lv) const
 		{
 			std::vector<T*> ret;
 			if (auto comp = get_component<T>(); comp)
 				ret.push_back(comp);
-			if (lv > 0)
+			if (lv != 0)
 			{
 				for (auto& cc : children)
 				{

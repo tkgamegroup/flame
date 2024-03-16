@@ -1,14 +1,15 @@
 #pragma once
 
-#include "mesh.h"
+#include "skinned_mesh.h"
 
 namespace flame
 {
-	struct cMeshPrivate : cMesh
+	struct cSkinnedMeshPrivate : cSkinnedMesh
 	{
+		cAnimatorPtr animator = nullptr;
 		bool dirty = true;
 
-		~cMeshPrivate();
+		~cSkinnedMeshPrivate();
 		void on_init() override;
 
 		void set_mesh_name(const std::filesystem::path& mesh_name) override;

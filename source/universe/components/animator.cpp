@@ -24,125 +24,137 @@ namespace flame
 		}
 	}
 
+	void cAnimatorPrivate::new_cluster(uint cluster_idx, const std::string& name, EntityPtr e, const mat4& offmat)
+	{
+		auto& dst = clusters[cluster_idx];
+		dst.name = name;
+		dst.node = e->get_component<cNodeT>();
+		if (dst.node)
+		{
+			dst.offmat = offmat;
+			dst.node->data_listeners.add([this, cluster_idx](uint hash) {
+				if (hash == "transform"_h)
+				{
+					auto& cluster = clusters[cluster_idx];
+					cluster.pose.m = cluster.node->transform * cluster.offmat;
+					dirty = true;
+				}
+			}, "animator"_h);
+		}
+		else
+			dst.offmat = mat4(1.f);
+	}
+
 	void cAnimatorPrivate::attach()
 	{
 		if (armature)
 		{
-			bones.resize(armature->bones.size());
-			for (auto i = 0; i < bones.size(); i++)
+			clusters.resize(armature->bones.size());
+			for (auto i = 0; i < clusters.size(); i++)
 			{
-				auto& src = armature->bones[i];
-				auto& dst = bones[i];
-				auto e = entity->find_child_recursively(src.name);
-				if (e)
-				{
-					dst.name = src.name;
-					dst.node = e->get_component<cNodeT>();
-					if (dst.node)
-					{
-						dst.offmat = src.offset_matrix;
-						dst.node->data_listeners.add([this, i](uint hash) {
-							if (hash == "transform"_h)
-							{
-								auto& bone = bones[i];
-								bone.pose.m = bone.node->transform * bone.offmat;
-								dirty = true;
-							}
-						}, "animator"_h);
-					}
-					else
-						dst.offmat = mat4(1.f);
-				}
+				auto& bone = armature->bones[i];
+				if (auto e = entity->find_child_recursively(bone.name); e)
+					new_cluster(i, bone.name, e, bone.offset_matrix);
 				else
-					printf("cAnimator: cannot find node of bone's name: %s\n", src.name.c_str());
+					printf("cAnimator: cannot find node of bone's name: %s\n", bone.name.c_str());
 			}
-
-			bone_node_map.clear();
-			for (auto& c : entity->children)
+		}
+		else
+		{
+			auto all_nodes = entity->get_components<cNode>(-1);
+			clusters.resize(all_nodes.size());
+			for (auto i = 0; i < clusters.size(); i++)
 			{
-				Bone* pb = nullptr;
-				if (!bones.empty())
-					pb = &bones[0];
-				for (auto& b : bones)
+				auto node = all_nodes[i];
+				new_cluster(i, node->entity->name, node->entity, mat4(1.f));
+			}
+		}
+
+		node_to_cluster.clear();
+		for (auto& c : entity->children)
+		{
+			Cluster* pc = nullptr;
+			if (!clusters.empty())
+				pc = &clusters[0];
+			for (auto& cluster : clusters)
+			{
+				if (!cluster.node)
+					continue;
+				if (c->name.find(cluster.name) != std::string::npos)
 				{
-					if (!b.node)
-						continue;
-					if (c->name.find(b.name) != std::string::npos)
-					{
-						pb = &b;
-						break;
-					}
+					pc = &cluster;
+					break;
 				}
-				bone_node_map[c->get_component<cNodeT>()] = pb;
 			}
+			node_to_cluster[c->get_component<cNodeT>()] = pc;
+		}
 
-			if (!bones.empty())
+		if (!clusters.empty())
+		{
+			for (auto& n : animation_names)
 			{
-				for (auto& n : animation_names)
+				if (!n.first.empty() && !n.second.empty())
 				{
-					if (!n.first.empty() && !n.second.empty())
+					auto& a = animations[sh(n.second.c_str())];
+					a.path = Path::get(n.first);
+					AssetManagemant::get(a.path);
+					a.animation = graphics::Animation::get(a.path);
+					if (a.animation)
 					{
-						auto& a = animations[sh(n.second.c_str())];
-						a.path = Path::get(n.first);
-						AssetManagemant::get(a.path);
-						a.animation = graphics::Animation::get(a.path);
-						if (a.animation)
+						a.duration = a.animation->duration;
+
+						for (auto& ch : a.animation->channels)
 						{
-							a.duration = a.animation->duration;
-
-							for (auto& ch : a.animation->channels)
+							auto find_bone = [&](std::string_view name) {
+								for (auto i = 0; i < clusters.size(); i++)
+								{
+									if (clusters[i].name == name)
+										return i;
+									auto sp = SUS::split(clusters[i].name, ':');
+									if (sp.size() == 2 && sp[1] == name)
+										return i;
+								}
+								return -1;
+							};
+							auto id = find_bone(ch.node_name);
+							if (id == -1)
 							{
-								auto find_bone = [&](std::string_view name) {
-									for (auto i = 0; i < bones.size(); i++)
-									{
-										if (bones[i].name == name)
-											return i;
-										auto sp = SUS::split(bones[i].name, ':');
-										if (sp.size() == 2 && sp[1] == name)
-											return i;
-									}
-									return -1;
-									};
-								auto id = find_bone(ch.node_name);
-								if (id == -1)
-								{
-									auto sp = SUS::split(ch.node_name, ':');
-									if (sp.size() == 2)
-										id = find_bone(sp[1]);
-								}
-								if (id != -1)
-								{
-									auto& t = a.tracks.emplace_back();
-									t.bone_idx = id;
-									t.channel = &ch;
-								}
+								auto sp = SUS::split(ch.node_name, ':');
+								if (sp.size() == 2)
+									id = find_bone(sp[1]);
 							}
-
-							a.events_beg = a.animation->events.begin();
-							a.events_end = a.animation->events.end();
-							a.events_it = a.events_beg;
+							if (id != -1)
+							{
+								auto& t = a.tracks.emplace_back();
+								t.cluster_idx = id;
+								t.channel = &ch;
+							}
 						}
+
+						a.events_beg = a.animation->events.begin();
+						a.events_end = a.animation->events.end();
+						a.events_it = a.events_beg;
 					}
 				}
+			}
 
-				for (auto& t : animation_transitions)
-				{
-					auto it = animations.find(sh(std::get<0>(t)));
-					if (it != animations.end())
-						it->second.transitions[sh(std::get<1>(t))] = std::get<2>(t);
-				}
+			for (auto& t : animation_transitions)
+			{
+				auto it = animations.find(sh(std::get<0>(t)));
+				if (it != animations.end())
+					it->second.transitions[sh(std::get<1>(t))] = std::get<2>(t);
 			}
 		}
 	}
 
 	void cAnimatorPrivate::detach()
 	{
-		for (auto& b : bones)
+		for (auto& c : clusters)
 		{
-			if (b.node)
-				b.node->data_listeners.remove("animator"_h);
+			if (c.node)
+				c.node->data_listeners.remove("animator"_h);
 		}
-		bones.clear();
+		clusters.clear();
 		for (auto& a : animations)
 		{
 			if (!a.second.path.empty())
@@ -157,10 +169,13 @@ namespace flame
 	{
 		if (dirty)
 		{
-			std::vector<mat4> mats(bones.size());
-			for (auto i = 0; i < bones.size(); i++)
-				mats[i] = bones[i].pose.m;
-			sRenderer::instance()->set_armature_instance(instance_id, mats.data(), mats.size());
+			if (armature)
+			{
+				std::vector<mat4> mats(clusters.size());
+				for (auto i = 0; i < clusters.size(); i++)
+					mats[i] = clusters[i].pose.m;
+				sRenderer::instance()->set_armature_instance(instance_id, mats.data(), mats.size());
+			}
 			dirty = false;
 		}
 	}
@@ -169,7 +184,7 @@ namespace flame
 	{
 		attach();
 
-		if (instance_id != 0)
+		if (instance_id != 0 && armature)
 			instance_id = sRenderer::instance()->register_armature_instance(-1);
 
 		node->mark_transform_dirty();
@@ -200,22 +215,22 @@ namespace flame
 			{
 				for (auto& t : a.tracks)
 				{
-					auto& b = bones[t.bone_idx];
+					auto& c = clusters[t.cluster_idx];
 					auto& ch = *t.channel;
 					if (!ch.position_keys.empty())
 					{
-						b.pose.p = mix(b.pose.p, ch.position_keys.front().p, transition_time / transition_duration);
-						b.node->set_pos(b.pose.p);
+						c.pose.p = mix(c.pose.p, ch.position_keys.front().p, transition_time / transition_duration);
+						c.node->set_pos(c.pose.p);
 					}
 					if (!ch.rotation_keys.empty())
 					{
-						b.pose.q = slerp(b.pose.q, ch.rotation_keys.front().q, transition_time / transition_duration);
-						b.node->set_qut(b.pose.q);
+						c.pose.q = slerp(c.pose.q, ch.rotation_keys.front().q, transition_time / transition_duration);
+						c.node->set_qut(c.pose.q);
 					}
 					if (!ch.scaling_keys.empty())
 					{
-						b.pose.s = mix(b.pose.s, ch.scaling_keys.front().s, transition_time / transition_duration);
-						b.node->set_scl(b.pose.s);
+						c.pose.s = mix(c.pose.s, ch.scaling_keys.front().s, transition_time / transition_duration);
+						c.node->set_scl(c.pose.s);
 					}
 				}
 
@@ -230,7 +245,7 @@ namespace flame
 			{
 				for (auto& t : a.tracks)
 				{
-					auto& b = bones[t.bone_idx];
+					auto& c = clusters[t.cluster_idx];
 					auto& ch = *t.channel;
 					if (!ch.position_keys.empty())
 					{
@@ -241,10 +256,10 @@ namespace flame
 						if (lit != ch.position_keys.begin())
 							lit--;
 						if (lit == rit)
-							b.pose.p = lit->p;
+							c.pose.p = lit->p;
 						else
-							b.pose.p = mix(lit->p, rit->p, (playing_time - lit->t) / (rit->t - lit->t));
-						b.node->set_pos(b.pose.p);
+							c.pose.p = mix(lit->p, rit->p, (playing_time - lit->t) / (rit->t - lit->t));
+						c.node->set_pos(c.pose.p);
 					}
 					if (!ch.rotation_keys.empty())
 					{
@@ -255,10 +270,10 @@ namespace flame
 						if (lit != ch.rotation_keys.begin())
 							lit--;
 						if (lit == rit)
-							b.pose.q = lit->q;
+							c.pose.q = lit->q;
 						else
-							b.pose.q = slerp(lit->q, rit->q, (playing_time - lit->t) / (rit->t - lit->t));
-						b.node->set_qut(b.pose.q);
+							c.pose.q = slerp(lit->q, rit->q, (playing_time - lit->t) / (rit->t - lit->t));
+						c.node->set_qut(c.pose.q);
 					}
 					if (!ch.scaling_keys.empty())
 					{
@@ -269,10 +284,10 @@ namespace flame
 						if (lit != ch.scaling_keys.begin())
 							lit--;
 						if (lit == rit)
-							b.pose.s = lit->s;
+							c.pose.s = lit->s;
 						else
-							b.pose.s = mix(lit->s, rit->s, (playing_time - lit->t) / (rit->t - lit->t));
-						b.node->set_scl(b.pose.s);
+							c.pose.s = mix(lit->s, rit->s, (playing_time - lit->t) / (rit->t - lit->t));
+						c.node->set_scl(c.pose.s);
 					}
 				}
 
@@ -352,7 +367,7 @@ namespace flame
 
 		armature_name = _armature_name;
 
-		if (instance_id != -1)
+		if (!clusters.empty())
 		{
 			stop();
 			detach();
@@ -367,7 +382,7 @@ namespace flame
 	{
 		animation_names = names;
 
-		if (instance_id != -1)
+		if (!clusters.empty())
 		{
 			stop();
 			detach();
@@ -377,10 +392,10 @@ namespace flame
 
 	void cAnimatorPrivate::reset()
 	{
-		if (!bones.empty())
+		if (!clusters.empty())
 		{
-			for (auto& b : bones)
-				b.pose.m = mat4(1.f);
+			for (auto& c : clusters)
+				c.pose.m = mat4(1.f);
 		}
 		dirty = true;
 	}

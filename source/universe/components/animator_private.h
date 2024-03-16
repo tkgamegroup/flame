@@ -17,7 +17,7 @@ namespace flame
 			mat4 m = mat4(1.f);
 		};
 
-		struct Bone
+		struct Cluster
 		{
 			std::string name;
 			cNodePtr node = nullptr;
@@ -27,7 +27,7 @@ namespace flame
 
 		struct Track
 		{
-			uint bone_idx;
+			uint cluster_idx;
 			graphics::ChannelPtr channel = nullptr;
 		};
 
@@ -44,14 +44,15 @@ namespace flame
 		};
 
 		bool dirty = true;
-		std::vector<Bone> bones;
-		std::unordered_map<cNodePtr, Bone*> bone_node_map;
+		std::vector<Cluster> clusters;
+		std::unordered_map<cNodePtr, Cluster*> node_to_cluster;
 		std::unordered_map<uint, BoundAnimation> animations;
 		float transition_time = -1.f;
 		float transition_duration = 0.f;
 
 		~cAnimatorPrivate();
 
+		void new_cluster(uint cluster_idx, const std::string& name, EntityPtr e, const mat4& offmat = mat4(1.f));
 		void attach();
 		void detach();
 		void update_instance();
