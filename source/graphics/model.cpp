@@ -1648,6 +1648,95 @@ namespace flame
 				if (!std::filesystem::exists(animations_destination))
 					std::filesystem::create_directories(animations_destination);
 
+				for (auto& a : animations)
+				{
+					for (auto it = a.channels.begin(); it != a.channels.end(); )
+					{
+						if (!it->position_keys.empty())
+						{
+							if (it->position_keys.size() > 2)
+							{
+								auto dist = 0.f;
+								for (auto i = 1; i < it->position_keys.size(); i++)
+									dist += distance(it->position_keys[i].p, it->position_keys[i - 1].p);
+								if (dist < 0.0001f)
+									it->position_keys.erase(it->position_keys.begin() + 1, it->position_keys.end() - 1);
+							}
+
+							if (it->position_keys.size() == 2)
+							{
+								if (distance(it->position_keys[0].p, vec3(0.f)) < 0.0001f &&
+									distance(it->position_keys[1].p, vec3(0.f)) < 0.0001f)
+									it->position_keys.clear();
+							}
+							else if (it->position_keys.size() == 1)
+							{
+								if (distance(it->position_keys[0].p, vec3(0.f)) < 0.0001f)
+									it->position_keys.clear();
+							}
+						}
+
+						if (!it->rotation_keys.empty())
+						{
+							if (it->rotation_keys.size() > 2)
+							{
+								auto dist = 0.f;
+								for (auto i = 1; i < it->rotation_keys.size(); i++)
+								{
+									auto qd = inverse(it->rotation_keys[i].q) * it->rotation_keys[i - 1].q;
+									auto angle = abs(2.f * atan2(length(vec3(qd.x, qd.y, qd.z)), qd.w));
+									dist += angle;
+								}
+								if (dist < 0.1f)
+									it->rotation_keys.erase(it->rotation_keys.begin() + 1, it->rotation_keys.end() - 1);
+							}
+
+							if (it->rotation_keys.size() == 2)
+							{
+								auto qd = inverse(it->rotation_keys[1].q) * it->rotation_keys[0].q;
+								auto angle = abs(2.f * atan2(length(vec3(qd.x, qd.y, qd.z)), qd.w));
+								if (angle < 0.1f)
+									it->rotation_keys.clear();
+							}
+							else if (it->rotation_keys.size() == 1)
+							{
+								if (it->rotation_keys[0].q == quat(1.f, 0.f, 0.f, 0.f))
+									it->rotation_keys.clear();
+							}
+						}
+
+						if (!it->scaling_keys.empty())
+						{
+							if (it->scaling_keys.size() > 2)
+							{
+								auto dist = 0.f;
+								for (auto i = 1; i < it->scaling_keys.size(); i++)
+									dist += distance(it->scaling_keys[i].s, it->scaling_keys[i - 1].s);
+								if (dist < 0.001f)
+									it->scaling_keys.erase(it->scaling_keys.begin() + 1, it->scaling_keys.end() - 1);
+							}
+
+							if (it->scaling_keys.size() == 2)
+							{
+								if (distance(it->scaling_keys[0].s, vec3(1.f)) < 0.001f &&
+									distance(it->scaling_keys[1].s, vec3(1.f)) < 0.001f)
+									it->scaling_keys.clear();
+							}
+							else if (it->scaling_keys.size() == 1)
+							{
+								if (distance(it->scaling_keys[0].s, vec3(1.f)) < 0.001f)
+									it->scaling_keys.clear();
+							}
+						}
+
+						if (it->position_keys.empty() && it->rotation_keys.empty() && it->scaling_keys.empty())
+							it = a.channels.erase(it);
+						else
+							++it;
+					}
+
+				}
+
 				if (armatures.empty())
 				{
 					auto has_repeat_channel = false;

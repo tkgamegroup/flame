@@ -105,7 +105,7 @@ namespace flame
 
 						for (auto& ch : a.animation->channels)
 						{
-							auto find_bone = [&](std::string_view name) {
+							auto find_cluster = [&](std::string_view name) {
 								for (auto i = 0; i < clusters.size(); i++)
 								{
 									if (clusters[i].name == name)
@@ -116,12 +116,12 @@ namespace flame
 								}
 								return -1;
 							};
-							auto id = find_bone(ch.node_name);
+							auto id = find_cluster(ch.node_name);
 							if (id == -1)
 							{
 								auto sp = SUS::split(ch.node_name, ':');
 								if (sp.size() == 2)
-									id = find_bone(sp[1]);
+									id = find_cluster(sp[1]);
 							}
 							if (id != -1)
 							{
