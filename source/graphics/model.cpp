@@ -654,10 +654,6 @@ namespace flame
 					first_node.append_attribute("file_id").set_value(generate_guid().to_string().c_str());
 					auto n_node = first_node.append_child("components").append_child("item");
 					n_node.append_attribute("type_name").set_value("flame::cNode");
-					if (rotation != vec3(0.f))
-						n_node.append_attribute("eul").set_value(str(rotation).c_str());
-					if (scaling != 1.f)
-						n_node.append_attribute("scl").set_value(str(vec3(scaling)).c_str());
 					return first_node.append_child("children").append_child("item");
 				}
 				return first_node;
@@ -778,6 +774,8 @@ namespace flame
 				FbxSystemUnit our_system_unit(100.0);
 				our_system_unit.ConvertScene(scene);
 
+				auto scene_root = scene->GetRootNode();
+
 				FbxArray<FbxString*> anim_names;
 				scene->FillAnimStackNameArray(anim_names);
 				auto anim_count = anim_names.GetCount();
@@ -838,7 +836,7 @@ namespace flame
 					};
 
 					for (auto t = start_time; t < stop_time; t += 1.f / 24.f)
-						get_node_animation(scene->GetRootNode(), t);
+						get_node_animation(scene_root, t);
 
 					if (ani.channels.empty())
 						animations.pop_back();
@@ -888,6 +886,14 @@ namespace flame
 								mat = inverse(to_glm(parent->EvaluateGlobalTransform())) * mat;
 							vec3 pos; quat qut; vec3 scl; vec3 skew; vec4 perspective;
 							decompose(mat, scl, qut, pos, skew, perspective);
+
+							if (src == scene_root)
+							{
+								//if (rotation != vec3(0.f))
+								//	n_node.append_attribute("eul").set_value(str(rotation).c_str());
+								if (scaling != 1.f)
+									scl *= scaling;
+							}
 
 							if (pos != vec3(0.f))
 								n_node.append_attribute("pos").set_value(str(pos).c_str());
@@ -1296,8 +1302,7 @@ namespace flame
 							}
 						}
 
-						auto child_count = src->GetChildCount();
-						if (child_count > 0)
+						if (auto child_count = src->GetChildCount(); child_count > 0)
 						{
 							if (!n_children)
 								n_children = dst.append_child("children");
@@ -1305,7 +1310,7 @@ namespace flame
 								process_node(n_children.append_child("item"), src->GetChild(i));
 						}
 					};
-					process_node(preprocess(doc_prefab.append_child("prefab")), scene->GetRootNode());
+					process_node(preprocess(doc_prefab.append_child("prefab")), scene_root);
 
 					scene->Destroy(true);
 				}
@@ -1331,6 +1336,8 @@ namespace flame
 					printf("%s\n", importer.GetErrorString());
 					return;
 				}
+				
+				auto scene_root = scene->mRootNode;
 
 				for (auto i = 0; i < scene->mNumAnimations; i++)
 				{
@@ -1433,6 +1440,14 @@ namespace flame
 							src->mTransformation.Decompose(s, r, a, p);
 							a *= 0.5f;
 							auto q = normalize(vec4(sin(a) * vec3(r.x, r.y, r.z), cos(a)));
+
+							if (src == scene_root)
+							{
+								//if (rotation != vec3(0.f))
+								//	n_node.append_attribute("eul").set_value(str(rotation).c_str());
+								if (scaling != 1.f)
+									s *= scaling;
+							}
 
 							auto pos = vec3(p.x, p.y, p.z);
 							if (pos != vec3(0.f))

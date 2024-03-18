@@ -53,5 +53,7 @@ namespace flame
 			};
 			FLAME_GRAPHICS_API static GetList& get_list;
 		};
+
+		extern Listeners<void(int, CommandBufferPtr)> renderers;
 	}
 }

@@ -27,12 +27,12 @@ namespace flame
 			ImagePtr main_img = nullptr;
 			std::unique_ptr<DescriptorSetT> main_ds;
 
-			CanvasPrivate(WindowPtr window);
+			CanvasPrivate();
 			~CanvasPrivate();
 
-			void create_rp(Format format);
+			void create_renderpass(Format format);
 			void set_targets(std::span<ImageViewPtr> targets) override;
-			void bind_window_targets() override;
+			void bind_window(WindowPtr window) override;
 			void reset();
 			DrawCmd& get_blit_cmd(DescriptorSetPtr ds);
 			DrawCmd& get_sdf_cmd(DescriptorSetPtr ds, float sdf_scale, float thickness, float border);
@@ -60,7 +60,7 @@ namespace flame
 			DrawVert*	add_image_stretched(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const vec4& border, const vec4& border_uvs, const cvec4& tint_col) override;
 			DrawVert*	add_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle) override;
 
-			void render(int idx, CommandBufferPtr cb);
+			void render(int idx, CommandBufferPtr cb) override;
 		};
 	}
 }

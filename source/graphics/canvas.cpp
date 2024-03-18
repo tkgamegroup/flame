@@ -29,16 +29,9 @@ namespace flame
 			return ret;
 		}
 
-		CanvasPrivate::CanvasPrivate(WindowPtr _window)
+		CanvasPrivate::CanvasPrivate()
 		{
-			window = _window;
-
-			auto gui_idx = window->renderers.find("gui"_h);
-			window->renderers.add([this](int idx, CommandBufferPtr cb) {
-				render(idx, cb);
-			}, "Canvas"_h, gui_idx != -1 ? gui_idx : -1);
-
-			create_rp(Format_R8G8B8A8_UNORM);
+			create_renderpass(Format_R8G8B8A8_UNORM);
 
 			std::string rp_define = "rp=" + str(rp);
 			std::vector<std::string> stencil_write_defines = { "stencil_test=true", "stencil_op=" + TypeInfo::serialize_t(StencilOpReplace), "color_mask=" + TypeInfo::serialize_t(ColorComponentNone), "frag:ALPHA_TEST" };
@@ -92,13 +85,14 @@ namespace flame
 
 		CanvasPrivate::~CanvasPrivate()
 		{
-			window->renderers.remove("Canvas"_h);
+			if (bound_window)
+				bound_window->renderers.remove("Canvas"_h);
 
 			GraphicsPipeline::release(pl);
 			FontAtlas::release(default_font_atlas);
 		}
 
-		void CanvasPrivate::create_rp(Format format)
+		void CanvasPrivate::create_renderpass(Format format)
 		{
 			std::vector<std::string> defines;
 			defines.push_back("col_fmt=" + TypeInfo::serialize_t(format));
@@ -134,15 +128,23 @@ namespace flame
 			}
 		}
 
-		void CanvasPrivate::bind_window_targets()
+		void CanvasPrivate::bind_window(WindowPtr window)
 		{
-			create_rp(Swapchain::format);
+			assert(!bound_window);
+			bound_window = window;
+
+			auto imgui_idx = window->renderers.find("imgui"_h);
+			window->renderers.add([this](int idx, CommandBufferPtr cb) {
+				render(idx, cb);
+			}, "Canvas"_h, imgui_idx != -1 ? imgui_idx : -1);
+
+			create_renderpass(Swapchain::format);
 
 			window->native->resize_listeners.add([this](const uvec2& sz) {
 				graphics::Queue::get()->wait_idle();
 				iv_tars.clear();
 				std::vector<graphics::ImageViewPtr> ivs;
-				for (auto& i : window->swapchain->images)
+				for (auto& i : bound_window->swapchain->images)
 					ivs.push_back(i->get_view());
 				set_targets(ivs);
 			});
@@ -695,9 +697,9 @@ namespace flame
 
 		struct CanvasCreate : Canvas::Create
 		{
-			CanvasPtr operator()(WindowPtr window) override
+			CanvasPtr operator()() override
 			{
-				return new CanvasPrivate(window);
+				return new CanvasPrivate();
 			}
 		}Canvas_create;
 		Canvas::Create& Canvas::create = Canvas_create;

@@ -891,7 +891,7 @@ namespace flame
 		ret->camera = camera;
 		ret->final_layout = final_layout;
 		if (need_canvas)
-			ret->canvas = graphics::Canvas::create(window);
+			ret->canvas = graphics::Canvas::create();
 		if (need_pickup)
 		{
 			ret->img_pickup.reset(graphics::Image::create(graphics::Format_R8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferSrc));
@@ -3201,6 +3201,9 @@ namespace flame
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 			cb->image_barrier(img, iv->sub, t->final_layout);
+
+			if (t->canvas)
+				t->canvas->render(tar_idx, cb);
 
 			first = false;
 		}

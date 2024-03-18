@@ -9,6 +9,7 @@
 #include <flame/universe/components/element.h>
 #include <flame/universe/components/camera.h>
 #include <flame/universe/components/mesh.h>
+#include <flame/universe/components/skinned_mesh.h>
 #include <flame/universe/components/animator.h>
 #include <flame/universe/components/terrain.h>
 #include <flame/universe/components/volume.h>
@@ -900,6 +901,11 @@ void SceneView::on_draw()
 								if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
 									draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
 							}
+							if (auto mesh = n->entity->get_component<cSkinnedMesh>(); mesh)
+							{
+								if (mesh->instance_id != -1 && mesh->mesh_res_id != -1 && mesh->material_res_id != -1)
+									draw_data.meshes.emplace_back(mesh->instance_id, mesh->mesh_res_id, mesh->material_res_id);
+							}
 						}
 						if (draw_data.categories & CateTerrain)
 						{
@@ -1002,6 +1008,11 @@ void SceneView::on_draw()
 					ObjectDrawData d("mesh"_h, mesh->mesh_res_id, mesh->instance_id);
 					sRenderer::instance()->draw_outlines({ d }, col, 1, OutlineMax);
 				}
+				if (auto mesh = e->get_component<cSkinnedMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
+				{
+					ObjectDrawData d("mesh"_h, mesh->mesh_res_id, mesh->instance_id);
+					sRenderer::instance()->draw_outlines({ d }, col, 1, OutlineMax);
+				}
 				if (auto terrain = e->get_component<cTerrain>(); terrain && terrain->instance_id != -1 && terrain->height_map)
 				{
 					ObjectDrawData d("terrain"_h, 0, terrain->instance_id);
@@ -1012,7 +1023,7 @@ void SceneView::on_draw()
 					std::vector<ObjectDrawData> ds;
 					for (auto& c : e->children)
 					{
-						if (auto mesh = c->get_component<cMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
+						if (auto mesh = c->get_component<cSkinnedMesh>(); mesh && mesh->instance_id != -1 && mesh->mesh_res_id != -1)
 							ds.emplace_back("mesh"_h, mesh->mesh_res_id, mesh->instance_id);
 					}
 					sRenderer::instance()->draw_outlines(ds, col, 1, OutlineMax);

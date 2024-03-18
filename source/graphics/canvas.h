@@ -51,7 +51,7 @@ namespace flame
 				}data;
 			};
 
-			WindowPtr window;
+			WindowPtr bound_window;
 			std::vector<ImageViewPtr> iv_tars;
 			std::vector<FramebufferPtr> fb_tars;
 			bool clear_framebuffer = true;
@@ -67,7 +67,7 @@ namespace flame
 			virtual ~Canvas() {}
 
 			virtual void set_targets(std::span<ImageViewPtr> targets) = 0;
-			virtual void bind_window_targets() = 0;
+			virtual void bind_window(WindowPtr window) = 0;
 
 			virtual uint set_translate(const vec2& translate) = 0; // return: cmd idx
 			virtual void push_scissor(const Rect& rect) = 0;
@@ -86,9 +86,11 @@ namespace flame
 			virtual DrawVert*	add_image_stretched(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const vec4& border, const vec4& border_uvs, const cvec4& tint_col) = 0;
 			virtual DrawVert*	add_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle) = 0;
 
+			virtual void render(int idx, CommandBufferPtr cb) = 0;
+
 			struct Create
 			{
-				virtual CanvasPtr operator()(WindowPtr window) = 0;
+				virtual CanvasPtr operator()() = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 		};
