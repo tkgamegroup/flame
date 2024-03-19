@@ -235,7 +235,7 @@ namespace flame
 							delete entity;
 					}
 					else
-						Graveyard::instance()->add(entity);
+						sGraveyard::instance()->add(entity);
 				}
 			}
 		);

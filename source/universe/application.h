@@ -5,18 +5,22 @@
 #include "../graphics/font.h"
 #include "entity.h"
 #include "world.h"
-#include "systems/input.h"
+#include "systems/tween.h"
 #include "systems/scene.h"
+#include "systems/input.h"
 #include "systems/renderer.h"
 #include "systems/audio.h"
+#include "systems/graveyard.h"
 
 struct UniverseApplication : GraphicsApplication
 {
 	std::unique_ptr<World> world;
+	sTweenPtr		tween;
 	sInputPtr		input;
 	sScenePtr		scene;
 	sRendererPtr	renderer;
 	sAudioPtr		audio;
+	sGraveyardPtr	graveyard;
 
 	void create(std::string_view title, const uvec2& size = uvec2(1280, 720), 
 		WindowStyleFlags styles = WindowFrame | WindowResizable,
@@ -26,10 +30,12 @@ struct UniverseApplication : GraphicsApplication
 		GraphicsApplication::create(title, size, styles, use_gui, graphics_debug, graphics_configs);
 
 		world.reset(World::create());
+		tween		= (sTweenPtr)world->add_system<sTween>();
 		scene		= (sScenePtr)world->add_system<sScene>();
 		input		= (sInputPtr)world->add_system<sInput>();
 		renderer	= (sRendererPtr)world->add_system<sRenderer>();
 		audio		= (sAudioPtr)world->add_system<sAudio>();
+		graveyard	= (sGraveyardPtr)world->add_system<sGraveyard>();
 	}
 
 	void on_render() override

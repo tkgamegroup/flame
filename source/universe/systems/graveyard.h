@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../universe.h"
+#include "../system.h"
 
 namespace flame
 {
-	struct Graveyard
+	struct sGraveyard : System
 	{
 		float duration = 5.f; // seconds
 		virtual void set_duration(float v) = 0;
@@ -14,8 +14,15 @@ namespace flame
 
 		struct Instance
 		{
-			virtual GraveyardPtr operator()() = 0;
+			virtual sGraveyardPtr operator()() = 0;
 		};
 		FLAME_UNIVERSE_API static Instance& instance;
+
+		struct Create
+		{
+			virtual sGraveyardPtr operator()(WorldPtr) = 0;
+		};
+		// Reflect static
+		FLAME_UNIVERSE_API static Create& create;
 	};
 }

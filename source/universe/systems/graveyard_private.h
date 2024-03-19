@@ -4,15 +4,17 @@
 
 namespace flame
 {
-	struct GraveyardPrivate : Graveyard
+	struct sGraveyardPrivate : sGraveyard
 	{
 		std::vector<std::pair<float, EntityPtr>> entities;
 
-		GraveyardPrivate();
+		sGraveyardPrivate();
 
 		void set_duration(float v) override;
 
 		void add(EntityPtr e) override;
 		void clear() override;
+
+		void update() override;
 	};
 }

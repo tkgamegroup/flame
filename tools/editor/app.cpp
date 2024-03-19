@@ -2936,7 +2936,7 @@ bool App::cmd_stop()
 		return false;
 
 	add_event([this]() {
-		Graveyard::instance()->clear();
+		sGraveyard::instance()->clear();
 		e_playing->remove_from_parent();
 		e_playing = nullptr;
 		world->root->add_child(e_prefab);

@@ -34,8 +34,6 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(Track);
 	FLAME_UNIVERSE_TYPE(Timeline);
 	FLAME_UNIVERSE_TYPE(TimelineInstance);
-	FLAME_UNIVERSE_TYPE(Graveyard);
-	FLAME_UNIVERSE_TYPE(Tween);
 	FLAME_UNIVERSE_TYPE(FloatingText);
 
 	FLAME_UNIVERSE_TYPE(cBpInstance);
@@ -81,6 +79,8 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(RenderTask);
 	FLAME_UNIVERSE_TYPE(sRenderer);
 	FLAME_UNIVERSE_TYPE(sAudio);
+	FLAME_UNIVERSE_TYPE(sGraveyard);
+	FLAME_UNIVERSE_TYPE(sTween);
 
 	enum TagFlags
 	{
