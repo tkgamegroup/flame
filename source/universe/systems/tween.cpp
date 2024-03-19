@@ -259,7 +259,7 @@ namespace flame
 							if (ani.target)
 							{
 								if (auto node = ani.target->get_component<cNode>(); node)
-									node->set_pos(mix(a.v0.f.xyz, a.v1.f.xyz, (ani.time - a.start_time) / a.duration));
+									node->set_pos(mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani.time - a.start_time) / a.duration));
 							}
 							break;
 						case ActionRotateTo:
@@ -276,7 +276,7 @@ namespace flame
 							if (ani.target)
 							{
 								if (auto node = ani.target->get_component<cNode>(); node)
-									node->set_scl(mix(a.v0.f.xyz, a.v1.f.xyz, (ani.time - a.start_time) / a.duration));
+									node->set_scl(mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani.time - a.start_time) / a.duration));
 							}
 							break;
 						}
