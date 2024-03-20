@@ -4,6 +4,7 @@
 #include "../../world_private.h"
 #include "../../components/node_private.h"
 #include "../../components/mesh_private.h"
+#include "../../components/skinned_mesh_private.h"
 #include "../../components/nav_agent_private.h"
 #include "../../components/bp_instance_private.h"
 #include "../../systems/input_private.h"
@@ -3102,7 +3103,9 @@ namespace flame
 					auto color = *(cvec4*)inputs[1].data;
 					auto depth = *(uint*)inputs[2].data;
 
-					if (auto mesh = entity->get_component<cMesh>(); mesh)
+					for (auto mesh : entity->get_components<cMesh>(-1))
+						mesh->set_color(color);
+					for (auto mesh : entity->get_components<cSkinnedMesh>(-1))
 						mesh->set_color(color);
 				}
 			}

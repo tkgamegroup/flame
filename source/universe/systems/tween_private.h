@@ -12,6 +12,10 @@ namespace flame
 			ActionMoveTo,
 			ActionRotateTo,
 			ActionScaleTo,
+			ActionObjectColorTo,
+			ActionLightColorTo,
+			ActionEnable,
+			ActionDisable,
 			ActionPlayAnimation,
 			ActionKill
 		};
@@ -49,6 +53,7 @@ namespace flame
 			float time;
 
 			Action& new_action(float duration);
+			void action_get_start_value(Action& a);
 		};
 
 		uint next_id = 1;
@@ -66,6 +71,10 @@ namespace flame
 		void move_to(uint id, const vec3& pos, float duration) override;
 		void rotate_to(uint id, const quat& qut, float duration) override;
 		void scale_to(uint id, const vec3& scale, float duration) override;
+		void object_color_to(uint id, const cvec4& col, float duration) override;
+		void light_color_to(uint id, const vec4& col, float duration) override;
+		void enable(uint id) override;
+		void disable(uint id) override;
 		void play_animation(uint id, uint name) override;
 		void kill(uint id) override;
 

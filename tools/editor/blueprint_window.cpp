@@ -76,6 +76,7 @@ static BlueprintNodeLibraryPtr texture_library;
 static BlueprintNodeLibraryPtr geometry_library;
 static BlueprintNodeLibraryPtr entity_library;
 static BlueprintNodeLibraryPtr animation_library;
+static BlueprintNodeLibraryPtr tween_library;
 static BlueprintNodeLibraryPtr camera_library;
 static BlueprintNodeLibraryPtr procedural_library;
 static BlueprintNodeLibraryPtr navigation_library;
@@ -3386,6 +3387,14 @@ void BlueprintView::on_draw()
 						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Tween"))
+					{
+						header = "Tween";
+						for (auto& t : tween_library->node_templates)
+							show_node_library_template(t);
+						if (add_node_filter.empty())
+							ImGui::EndMenu();
+					}
 					if (!add_node_filter.empty() || ImGui::BeginMenu("Camera"))
 					{
 						header = "Camera";
@@ -3641,6 +3650,7 @@ void BlueprintWindow::init()
 		geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
 		entity_library = BlueprintNodeLibrary::get(L"universe::entity");
 		animation_library = BlueprintNodeLibrary::get(L"universe::animation");
+		tween_library = BlueprintNodeLibrary::get(L"universe::tween");
 		camera_library = BlueprintNodeLibrary::get(L"universe::camera");
 		navigation_library = BlueprintNodeLibrary::get(L"universe::navigation");
 		colliding_library = BlueprintNodeLibrary::get(L"universe::colliding");
@@ -3657,6 +3667,7 @@ void BlueprintWindow::init()
 		node_libraries.push_back(geometry_library);
 		node_libraries.push_back(entity_library);
 		node_libraries.push_back(animation_library);
+		node_libraries.push_back(tween_library);
 		node_libraries.push_back(camera_library);
 		node_libraries.push_back(navigation_library);
 		node_libraries.push_back(colliding_library);
