@@ -432,6 +432,149 @@ namespace flame
 			TypeInfo::get<uint>(), TypeInfo::get<uvec2>(), TypeInfo::get<uvec3>(), TypeInfo::get<uvec4>()
 		};
 
+		library->add_template("Minus", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
+										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>()
+									}
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec2>(), TypeInfo::get<vec3>(), TypeInfo::get<vec4>(),
+										TypeInfo::get<int>(), TypeInfo::get<ivec2>(), TypeInfo::get<ivec3>(), TypeInfo::get<ivec4>()
+									}
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto out_ti = (TypeInfo_Data*)outputs[0].type;
+				switch (out_ti->data_type)
+				{
+				case DataFloat:
+					switch (out_ti->vec_size)
+					{
+					case 1:
+						*(float*)outputs[0].data = -(*(float*)inputs[0].data);
+						break;
+					case 2:
+						*(vec2*)outputs[0].data = -(*(vec2*)inputs[0].data);
+						break;
+					case 3:
+						*(vec3*)outputs[0].data = -(*(vec3*)inputs[0].data);
+						break;
+					case 4:
+						*(vec4*)outputs[0].data = -(*(vec4*)inputs[0].data);
+						break;
+					}
+					break;
+				case DataInt:
+					switch (out_ti->vec_size)
+					{
+					case 1:
+						*(int*)outputs[0].data = -(*(int*)inputs[0].data);
+						break;
+					case 2:
+						*(ivec2*)outputs[0].data = -(*(ivec2*)inputs[0].data);
+						break;
+					case 3:
+						*(ivec3*)outputs[0].data = -(*(ivec3*)inputs[0].data);
+						break;
+					case 4:
+						*(ivec4*)outputs[0].data = -(*(ivec4*)inputs[0].data);
+						break;
+					}
+					break;
+				}
+
+			}, 
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeInputTypesChanged)
+				{
+					info.output_types[0] = info.input_types[0];
+
+					return true;
+				}
+
+				return false;
+			}
+		);
+
+		library->add_template("Value Approach", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "T",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>() }
+				},
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>() }
+				},
+				{
+					.name = "P",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "Min",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto out_ti = (TypeInfo_Data*)outputs[0].type;
+				auto p = *(float*)inputs[2].data;
+				auto m = *(float*)inputs[3].data;
+				switch (out_ti->data_type)
+				{
+				case DataFloat:
+				{
+					auto t = *(float*)inputs[0].data;
+					auto v = *(float*)inputs[1].data;
+					auto c = (t - v) * p;
+					c = sign(c) * max(abs(c), m);
+					if (t > v)
+						*(float*)outputs[0].data = min(v + c, t);
+					else
+						*(float*)outputs[0].data = max(v + c, t);
+				}
+					break;
+				case DataInt:
+				{
+					auto t = *(int*)inputs[0].data;
+					auto v = *(int*)inputs[1].data;
+					auto c = (t - v) * p;
+					c = sign(c) * max(abs(c), m);
+					if (t > v)
+						*(int*)outputs[0].data = min(v + (int)c, t);
+					else
+						*(int*)outputs[0].data = max(v + (int)c, t);
+				}
+					break;
+				}
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeInputTypesChanged)
+				{
+					info.output_types[0] = info.input_types[0];
+
+					return true;
+				}
+
+				return false;
+			}
+		);
+
 		auto binary_input_types_changed_function = [](BlueprintNodeStructureChangeInfo& info) {
 			if (info.reason == BlueprintNodeInputTypesChanged)
 			{
@@ -502,7 +645,7 @@ namespace flame
 				auto in1_ti = (TypeInfo_Data*)inputs[1].type;\
 				auto in0_p = (char*)inputs[0].data;\
 				auto in1_p = (char*)inputs[1].data;\
-\
+				\
 				if (out_ti->data_type == DataFloat)\
 				{\
 					switch (out_ti->vec_size)\

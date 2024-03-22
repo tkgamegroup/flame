@@ -666,7 +666,7 @@ namespace flame
 					n_armature.append_attribute("armature_name").set_value(arm->filename.string().c_str());
 				if (!animations.empty())
 				{
-					auto default_animation = "run";
+					auto default_animation = "idle";
 					auto found_default = false;
 
 					auto n_animation_names = n_armature.append_child("animation_names");
@@ -681,7 +681,7 @@ namespace flame
 					}
 
 					if (found_default)
-						n_armature.append_attribute("default_animation").set_value("run"_h);
+						n_armature.append_attribute("default_animation").set_value("idle"_h);
 				}
 			};
 

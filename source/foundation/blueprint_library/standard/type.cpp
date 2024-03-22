@@ -59,6 +59,72 @@ namespace flame
 			}
 		);
 
+		library->add_template("To Vec2", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec3>(), TypeInfo::get<vec4>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec2>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				inputs[0].type->as_floats(inputs[0].data, 2, (float*)outputs[0].data);
+			}
+		);
+
+		library->add_template("To Vec3", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec2>(), TypeInfo::get<vec4>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				inputs[0].type->as_floats(inputs[0].data, 3, (float*)outputs[0].data);
+			}
+		);
+
+		library->add_template("To Vec4", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec2>(), TypeInfo::get<vec3>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec4>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				inputs[0].type->as_floats(inputs[0].data, 4, (float*)outputs[0].data);
+			}
+		);
+
+		library->add_template("Swizzle", "", BlueprintNodeFlagNone,
+			{
+
+			},
+			{
+
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+
+			}
+		);
+
 		library->add_template("Array Find", "", BlueprintNodeFlagNone,
 			{
 				{

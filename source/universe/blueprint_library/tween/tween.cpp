@@ -1,5 +1,6 @@
 #include "../../../foundation/blueprint.h"
 #include "../../entity_private.h"
+#include "../../components/bp_instance_private.h"
 #include "../../systems/tween_private.h"
 
 namespace flame
@@ -27,6 +28,106 @@ namespace flame
 				}
 				else
 					*(uint*)outputs[0].data = 0;
+			}
+		);
+
+		library->add_template("Tween Begin Renderer", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Group_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					{
+						auto instance = ins->bp_ins;
+						if (auto group = instance->find_group(*(uint*)inputs[1].data); group)
+						{
+							auto id = sTween::instance()->begin(sTween::RendererGui, group);
+							*(uint*)outputs[0].data = id;
+						}
+						else
+							*(uint*)outputs[0].data = 0;
+					}
+					else
+						*(uint*)outputs[0].data = 0;
+				}
+				else
+					*(uint*)outputs[0].data = 0;
+			}
+		);
+
+		library->add_template("Tween Set Custom Data", "", BlueprintNodeFlagEnableTemplate,
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto id = *(uint*)inputs[0].data;
+				if (id != 0)
+				{
+					if (inputs[1].data)
+						sTween::instance()->set_custom_data(id, inputs[1].type, inputs[1].data);
+
+					*(uint*)outputs[0].data = id;
+				}
+				else
+					*(uint*)outputs[0].data = 0;
+			},
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
+					if (!type)
+						return false;
+
+					info.new_inputs.resize(2);
+					info.new_inputs[0] = {
+						.name = "ID",
+						.allowed_types = { TypeInfo::get<uint>() }
+					};
+					info.new_inputs[1] = {
+						.name = "V",
+						.allowed_types = { type }
+					};
+					info.new_outputs.resize(1);
+					info.new_outputs[0] = {
+						.name = "ID",
+						.allowed_types = { TypeInfo::get<uint>() }
+					};
+
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
 			}
 		);
 
@@ -353,6 +454,58 @@ namespace flame
 				if (id != 0)
 				{
 					sTween::instance()->kill(id);
+
+					*(uint*)outputs[0].data = id;
+				}
+				else
+					*(uint*)outputs[0].data = 0;
+			}
+		);
+
+		library->add_template("Tween Set Callback", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Group_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto id = *(uint*)inputs[0].data;
+				if (id != 0)
+				{
+					if (auto entity = *(EntityPtr*)inputs[1].data; entity)
+					{
+						auto ins = entity->get_component<cBpInstance>();
+						if (ins && ins->bp_ins)
+						{
+							auto instance = ins->bp_ins;
+							if (auto group = instance->find_group(*(uint*)inputs[2].data); group)
+							{
+								sTween::instance()->set_callback(id, group);
+								*(uint*)outputs[0].data = id;
+							}
+							else
+								*(uint*)outputs[0].data = 0;
+						}
+						else
+							*(uint*)outputs[0].data = 0;
+					}
+					else
+						*(uint*)outputs[0].data = 0;
 
 					*(uint*)outputs[0].data = id;
 				}

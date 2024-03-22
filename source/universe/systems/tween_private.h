@@ -17,7 +17,8 @@ namespace flame
 			ActionEnable,
 			ActionDisable,
 			ActionPlayAnimation,
-			ActionKill
+			ActionKill,
+			ActionCallback
 		};
 
 		struct Action
@@ -43,6 +44,8 @@ namespace flame
 			vec3 renderer_pos;
 			quat renderer_qut;
 			vec3 renderer_scl;
+			TypeInfo* custom_data_type = nullptr;
+			void* custom_data = nullptr;
 			std::list<Track> tracks;
 
 			// building
@@ -52,19 +55,21 @@ namespace flame
 			// running
 			float time;
 
+			~Animation();
 			Action& new_action(float duration);
 			void action_get_start_value(Action& a);
 		};
 
 		uint next_id = 1;
 
-		std::unordered_map<uint, Animation> staging_animations;
+		std::unordered_map<uint, std::unique_ptr<Animation>> staging_animations;
 		std::vector<std::unique_ptr<Animation>> animations;
 
 		sTweenPrivate();
 
 		uint begin(EntityPtr e) override;
 		uint begin(RendererType render_type, BlueprintInstanceGroupPtr render) override;
+		void set_custom_data(uint id, TypeInfo* type, void* data) override;
 		void end(uint id) override;
 		void newline(uint id) override;
 		void wait(uint id, float time) override;
@@ -77,6 +82,9 @@ namespace flame
 		void disable(uint id) override;
 		void play_animation(uint id, uint name) override;
 		void kill(uint id) override;
+		void set_callback(uint id, BlueprintInstanceGroupPtr callback) override;
+
+		void clear() override;
 
 		void update() override;
 	};

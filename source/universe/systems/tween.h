@@ -13,6 +13,7 @@ namespace flame
 
 		virtual uint begin(EntityPtr e) = 0;
 		virtual uint begin(RendererType render_type, BlueprintInstanceGroupPtr render) = 0;
+		virtual void set_custom_data(uint id, TypeInfo* type, void* data) = 0;
 		virtual void end(uint id) = 0;
 		virtual void newline(uint id) = 0;
 		virtual void wait(uint id, float time) = 0;
@@ -25,6 +26,9 @@ namespace flame
 		virtual void disable(uint id) = 0;
 		virtual void play_animation(uint id, uint name) = 0;
 		virtual void kill(uint id) = 0;
+		virtual void set_callback(uint id, BlueprintInstanceGroupPtr callback) = 0;
+
+		virtual void clear() = 0;
 
 		struct Instance
 		{

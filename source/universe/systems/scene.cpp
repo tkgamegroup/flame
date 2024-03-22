@@ -62,7 +62,7 @@ bool dt_init_crowd()
 	memcpy(&avoid_params, dt_crowd->getObstacleAvoidanceParams(0), sizeof(dtObstacleAvoidanceParams));
 	avoid_params.velBias = 0.5f;
 	avoid_params.adaptiveDivs = 7;
-	avoid_params.adaptiveRings = 2;
+	avoid_params.adaptiveRings = 3;
 	avoid_params.adaptiveDepth = 3;
 	dt_crowd->setObstacleAvoidanceParams(0, &avoid_params);
 }

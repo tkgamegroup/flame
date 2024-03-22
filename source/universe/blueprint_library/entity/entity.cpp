@@ -199,14 +199,14 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto e = Entity::create();
-				*(EntityPtr*)outputs[0].data = e;
-				auto parent = *(EntityPtr*)inputs[0].data;
-				if (parent)
+				if (auto parent = *(EntityPtr*)inputs[0].data; parent)
+				{
+					auto e = Entity::create();
+					*(EntityPtr*)outputs[0].data = e;
+
 					parent->add_child(e);
-				else
-					printf("A free entity is created! Please remember to destroy it\n");
-				e->name = *(std::string*)inputs[1].data;
+					e->name = *(std::string*)inputs[1].data;
+				}
 			}
 		);
 

@@ -2937,6 +2937,8 @@ bool App::cmd_stop()
 
 	add_event([this]() {
 		sGraveyard::instance()->clear();
+		sTween::instance()->clear();
+
 		e_playing->remove_from_parent();
 		e_playing = nullptr;
 		world->root->add_child(e_prefab);

@@ -3435,9 +3435,9 @@ void BlueprintView::on_draw()
 						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("primitive"))
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Primitive"))
 					{
-						header = "primitive";
+						header = "Primitive";
 						for (auto& t : primitive_library->node_templates)
 							show_node_library_template(t);
 						if (add_node_filter.empty())

@@ -12,6 +12,17 @@
 
 namespace flame
 {
+	sTweenPrivate::Animation::~Animation()
+	{
+		if (bp_renderer)
+		{
+			if (renderer_type == RendererGui)
+				sRenderer::instance()->hud_callbacks.remove((uint)this);
+		}
+		if (custom_data)
+			custom_data_type->destroy(custom_data);
+	}
+
 	sTweenPrivate::Action& sTweenPrivate::Animation::new_action(float duration)
 	{
 		auto max_duration = 0.f;
@@ -64,6 +75,8 @@ namespace flame
 				if (auto node = target->get_component<cNode>(); node)
 					a.v0.f.xyz = node->pos;
 			}
+			else if (bp_renderer)
+				a.v0.f.xyz = renderer_pos;
 			break;
 		case ActionRotateTo:
 			if (target)
@@ -74,6 +87,11 @@ namespace flame
 					a.v0.f = vec4(q.x, q.y, q.z, q.w);
 				}
 			}
+			else if (bp_renderer)
+			{
+				auto& q = renderer_qut;
+				a.v0.f = vec4(q.x, q.y, q.z, q.w);
+			}
 			break;
 		case ActionScaleTo:
 			if (target)
@@ -81,6 +99,8 @@ namespace flame
 				if (auto node = target->get_component<cNode>(); node)
 					a.v0.f.xyz = node->scl;
 			}
+			else if (bp_renderer)
+				a.v0.f.xyz = renderer_scl;
 			break;
 		case ActionObjectColorTo:
 			if (target)
@@ -115,39 +135,56 @@ namespace flame
 	uint sTweenPrivate::begin(EntityPtr e)
 	{
 		auto id = next_id++;
-		auto& a = staging_animations[id];
-		a.target = e;
-		a.tracks.emplace_back();
-		a.curr_track = a.tracks.begin();
+		auto a = new Animation;
+		staging_animations.emplace(id, a);
+		a->target = e;
+		a->tracks.emplace_back();
+		a->curr_track = a->tracks.begin();
 		return id;
 	}
 
 	uint sTweenPrivate::begin(RendererType render_type, BlueprintInstanceGroupPtr render)
 	{
 		auto id = next_id++;
-		auto& a = staging_animations[id];
-		a.renderer_type = render_type;
-		a.bp_renderer = render;
-		a.tracks.emplace_back();
+		auto a = new Animation;
+		staging_animations.emplace(id, a);
+		a->renderer_type = render_type;
+		a->bp_renderer = render;
+		a->tracks.emplace_back();
 
-		a.renderer_pos = vec3(0.f);
-		a.renderer_qut = quat(1.f, 0.f, 0.f, 0.f);
-		a.renderer_scl = vec3(1.f);
+		a->renderer_pos = vec3(0.f);
+		a->renderer_qut = quat(1.f, 0.f, 0.f, 0.f);
+		a->renderer_scl = vec3(1.f);
 
 		return id;
+	}
+
+	void sTweenPrivate::set_custom_data(uint id, TypeInfo* type, void* data)
+	{
+		if (auto it = staging_animations.find(id); it != staging_animations.end())
+		{
+			auto a = it->second.get();
+			a->custom_data_type = type;
+			a->custom_data = type->create();
+			type->copy(a->custom_data, data);
+		}
 	}
 
 	void sTweenPrivate::end(uint id)
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
-			auto a = new Animation(std::move(it->second));
+			auto a = it->second.release();
 			a->time = 0.f;
 			if (a->bp_renderer && a->renderer_type == RendererGui)
 			{
 				sRenderer::instance()->hud_callbacks.add([a]() {
 					auto bp_ins = a->bp_renderer->instance;
-					voidptr inputs[3];
+					voidptr inputs[4];
+					inputs[0] = &a->renderer_pos;
+					inputs[1] = &a->renderer_qut;
+					inputs[2] = &a->renderer_scl;
+					inputs[3] = a->custom_data;
 					bp_ins->call(a->bp_renderer, inputs, nullptr);
 				}, (uint)a);
 			}
@@ -161,14 +198,14 @@ namespace flame
 	void sTweenPrivate::newline(uint id)
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
-			it->second.newline = true;
+			it->second->newline = true;
 	}
 
 	void sTweenPrivate::wait(uint id, float time)
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
-			auto& a = it->second.new_action(time);
+			auto& a = it->second->new_action(time);
 			a.type = ActionWait;
 		}
 	}
@@ -177,7 +214,7 @@ namespace flame
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
-			auto& a = it->second.new_action(duration);
+			auto& a = it->second->new_action(duration);
 			a.type = ActionMoveTo;
 			a.v1.f.xyz = pos;
 		}
@@ -187,7 +224,7 @@ namespace flame
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
-			auto& a = it->second.new_action(duration);
+			auto& a = it->second->new_action(duration);
 			a.type = ActionRotateTo;
 			a.v1.f = vec4(qut.x, qut.y, qut.z, qut.w);
 		}
@@ -197,7 +234,7 @@ namespace flame
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
-			auto& a = it->second.new_action(duration);
+			auto& a = it->second->new_action(duration);
 			a.type = ActionScaleTo;
 			a.v1.f.xyz = scale;
 		}
@@ -207,7 +244,7 @@ namespace flame
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
-			auto& a = it->second.new_action(duration);
+			auto& a = it->second->new_action(duration);
 			a.type = ActionObjectColorTo;
 			a.v1.c = col;
 		}
@@ -217,7 +254,7 @@ namespace flame
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
-			auto& a = it->second.new_action(duration);
+			auto& a = it->second->new_action(duration);
 			a.type = ActionLightColorTo;
 			a.v1.f = col;
 		}
@@ -227,7 +264,7 @@ namespace flame
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
-			auto& a = it->second.new_action(0.f);
+			auto& a = it->second->new_action(0.f);
 			a.type = ActionEnable;
 		}
 	}
@@ -236,7 +273,7 @@ namespace flame
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
-			auto& a = it->second.new_action(0.f);
+			auto& a = it->second->new_action(0.f);
 			a.type = ActionDisable;
 		}
 	}
@@ -245,7 +282,7 @@ namespace flame
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
-			auto& a = it->second.new_action(0.f);
+			auto& a = it->second->new_action(0.f);
 			a.type = ActionPlayAnimation;
 			a.v1.u[0] = name;
 		}
@@ -255,96 +292,130 @@ namespace flame
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
-			auto& a = it->second.new_action(0.f);
+			auto& a = it->second->new_action(0.f);
 			a.type = ActionKill;
 		}
+	}
+
+	void sTweenPrivate::set_callback(uint id, BlueprintInstanceGroupPtr callback)
+	{
+		if (auto it = staging_animations.find(id); it != staging_animations.end())
+		{
+			auto& a = it->second->new_action(0.f);
+			a.type = ActionCallback;
+			a.v1.p = callback;
+		}
+	}
+
+	void sTweenPrivate::clear()
+	{
+		staging_animations.clear();
+		animations.clear();
 	}
 
 	void sTweenPrivate::update()
 	{
 		for (auto it = animations.begin(); it != animations.end();)
 		{
-			auto& ani = *it->get();
-			ani.time += delta_time;
+			auto ani = it->get();
+			ani->time += delta_time;
 
-			for (auto it2 = ani.tracks.begin(); it2 != ani.tracks.end(); )
+			for (auto it2 = ani->tracks.begin(); it2 != ani->tracks.end(); )
 			{
 				auto& t = *it2;
 
 				if (!t.actions.empty())
 				{
-					while (ani.time >= t.actions.front().end_time)
+					while (ani->time >= t.actions.front().end_time)
 					{
 						auto& a = t.actions.front();
 						switch (a.type)
 						{
 						case ActionMoveTo:
-							if (ani.target)
+							if (ani->target)
 							{
-								if (auto node = ani.target->get_component<cNode>(); node)
+								if (auto node = ani->target->get_component<cNode>(); node)
 									node->set_pos(a.v1.f.xyz);
 							}
+							else if (ani->bp_renderer)
+								ani->renderer_pos = a.v1.f.xyz;
 							break;
 						case ActionRotateTo:
-							if (ani.target)
+							if (ani->target)
 							{
-								if (auto node = ani.target->get_component<cNode>(); node)
+								if (auto node = ani->target->get_component<cNode>(); node)
 								{
 									auto& v = a.v1.f;
 									node->set_qut(quat(v.w, v.x, v.y, v.z));
 								}
 							}
-							break;
-						case ActionScaleTo:
-							if (ani.target)
+							else if (ani->bp_renderer)
 							{
-								if (auto node = ani.target->get_component<cNode>(); node)
-									node->set_scl(a.v1.f.xyz);
+								auto& v = a.v1.f;
+								ani->renderer_qut = quat(v.w, v.x, v.y, v.z);
 							}
 							break;
-						case ActionObjectColorTo:
-							if (ani.target)
+						case ActionScaleTo:
+							if (ani->target)
 							{
-								for (auto mesh : ani.target->get_components<cMesh>(-1))
+								if (auto node = ani->target->get_component<cNode>(); node)
+									node->set_scl(a.v1.f.xyz);
+							}
+							else if (ani->bp_renderer)
+								ani->renderer_scl = a.v1.f.xyz;
+							break;
+						case ActionObjectColorTo:
+							if (ani->target)
+							{
+								for (auto mesh : ani->target->get_components<cMesh>(-1))
 									mesh->set_color(a.v1.c);
-								for (auto mesh : ani.target->get_components<cSkinnedMesh>(-1))
+								for (auto mesh : ani->target->get_components<cSkinnedMesh>(-1))
 									mesh->set_color(a.v1.c);
 							}
 							break;
 						case ActionLightColorTo:
-							if (ani.target)
+							if (ani->target)
 							{
-								if (auto light = ani.target->get_component<cDirectionalLight>(); light)
+								if (auto light = ani->target->get_component<cDirectionalLight>(); light)
 									light->color = a.v1.f;
-								if (auto light = ani.target->get_component<cPointLight>(); light)
+								if (auto light = ani->target->get_component<cPointLight>(); light)
 									light->color = a.v1.f;
 							}
 							break;
 						case ActionEnable:
-							if (ani.target)
-								ani.target->set_enable(true);
+							if (ani->target)
+								ani->target->set_enable(true);
 							break;
 						case ActionDisable:
-							if (ani.target)
-								ani.target->set_enable(false);
+							if (ani->target)
+								ani->target->set_enable(false);
 							break;
 						case ActionPlayAnimation:
-							if (ani.target)
+							if (ani->target)
 							{
-								if (auto animator = ani.target->get_component<cAnimator>(); animator)
+								if (auto animator = ani->target->get_component<cAnimator>(); animator)
 									animator->play(a.v1.u[0]);
 							}
 							break;
 						case ActionKill:
-							if (ani.target)
-								sGraveyard::instance()->add(ani.target);
+							if (ani->target)
+								sGraveyard::instance()->add(ani->target);
+							break;
+						case ActionCallback:
+						{
+							auto g = (BlueprintInstanceGroupPtr)a.v1.p;
+							auto bp_ins = g->instance;
+							voidptr inputs[1];
+							inputs[0] = ani->custom_data;
+							bp_ins->call(g, inputs, nullptr);
+						}
 							break;
 						}
 
 						t.actions.pop_front();
 						if (t.actions.empty())
 							break;
-						ani.action_get_start_value(t.actions.front());
+						ani->action_get_start_value(t.actions.front());
 					}
 				}
 
@@ -355,46 +426,55 @@ namespace flame
 						switch (a.type)
 						{
 						case ActionMoveTo:
-							if (ani.target)
+							if (ani->target)
 							{
-								if (auto node = ani.target->get_component<cNode>(); node)
-									node->set_pos(mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani.time - a.start_time) / a.duration));
+								if (auto node = ani->target->get_component<cNode>(); node)
+									node->set_pos(mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration));
 							}
+							else if (ani->bp_renderer)
+								ani->renderer_pos = mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration);
 							break;
 						case ActionRotateTo:
-							if (ani.target)
+							if (ani->target)
 							{
-								if (auto node = ani.target->get_component<cNode>(); node)
+								if (auto node = ani->target->get_component<cNode>(); node)
 								{
 									auto& v0 = a.v0.f; auto& v1 = a.v1.f;
-									node->set_qut(slerp(quat(v0.w, v0.x, v0.y, v0.z), quat(v1.w, v1.x, v1.y, v1.z), (ani.time - a.start_time) / a.duration));
+									node->set_qut(slerp(quat(v0.w, v0.x, v0.y, v0.z), quat(v1.w, v1.x, v1.y, v1.z), (ani->time - a.start_time) / a.duration));
 								}
+							}
+							else if (ani->bp_renderer)
+							{
+								auto& v0 = a.v0.f; auto& v1 = a.v1.f;
+								ani->renderer_qut = slerp(quat(v0.w, v0.x, v0.y, v0.z), quat(v1.w, v1.x, v1.y, v1.z), (ani->time - a.start_time) / a.duration);
 							}
 							break;
 						case ActionScaleTo:
-							if (ani.target)
+							if (ani->target)
 							{
-								if (auto node = ani.target->get_component<cNode>(); node)
-									node->set_scl(mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani.time - a.start_time) / a.duration));
+								if (auto node = ani->target->get_component<cNode>(); node)
+									node->set_scl(mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration));
 							}
+							else if (ani->bp_renderer)
+								ani->renderer_scl = mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration);
 							break;
 						case ActionObjectColorTo:
-							if (ani.target)
+							if (ani->target)
 							{
-								auto col = mix(a.v0.c, a.v1.c, (ani.time - a.start_time) / a.duration);
-								for (auto mesh : ani.target->get_components<cMesh>(-1))
+								auto col = mix(a.v0.c, a.v1.c, (ani->time - a.start_time) / a.duration);
+								for (auto mesh : ani->target->get_components<cMesh>(-1))
 									mesh->set_color(col);
-								for (auto mesh : ani.target->get_components<cSkinnedMesh>(-1))
+								for (auto mesh : ani->target->get_components<cSkinnedMesh>(-1))
 									mesh->set_color(col);
 							}
 							break;
 						case ActionLightColorTo:
-							if (ani.target)
+							if (ani->target)
 							{
-								auto col = mix(a.v0.f, a.v1.f, (ani.time - a.start_time) / a.duration);
-								if (auto light = ani.target->get_component<cDirectionalLight>(); light)
+								auto col = mix(a.v0.f, a.v1.f, (ani->time - a.start_time) / a.duration);
+								if (auto light = ani->target->get_component<cDirectionalLight>(); light)
 									light->color = col;
-								if (auto light = ani.target->get_component<cPointLight>(); light)
+								if (auto light = ani->target->get_component<cPointLight>(); light)
 									light->color = col;
 							}
 							break;
@@ -403,17 +483,13 @@ namespace flame
 				}
 
 				if (t.actions.empty())
-					it2 = ani.tracks.erase(it2);
+					it2 = ani->tracks.erase(it2);
 				else
 					it2++;
 			}
 
-			if (ani.tracks.empty())
-			{
-				if (ani.bp_renderer && ani.renderer_type == RendererGui)
-					sRenderer::instance()->hud_callbacks.remove((uint)&ani);
+			if (ani->tracks.empty())
 				it = animations.erase(it);
-			}
 			else
 				it++;
 		}
