@@ -207,6 +207,8 @@ namespace flame
 					parent->add_child(e);
 					e->name = *(std::string*)inputs[1].data;
 				}
+				else
+					*(EntityPtr*)outputs[0].data = nullptr;
 			}
 		);
 
