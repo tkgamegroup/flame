@@ -202,10 +202,10 @@ namespace flame
 				if (auto parent = *(EntityPtr*)inputs[0].data; parent)
 				{
 					auto e = Entity::create();
-					*(EntityPtr*)outputs[0].data = e;
-
 					parent->add_child(e);
 					e->name = *(std::string*)inputs[1].data;
+
+					*(EntityPtr*)outputs[0].data = e;
 				}
 				else
 					*(EntityPtr*)outputs[0].data = nullptr;

@@ -43,6 +43,8 @@ dtPolyRef dt_nearest_poly(const vec3& pos, const vec3& ext, vec3* pt)
 
 bool dt_init_nav_query()
 {
+	dt_filter.setIncludeFlags(0xffff);
+	dt_filter.setExcludeFlags(0);
 	dt_nav_query = dtAllocNavMeshQuery();
 	return !dtStatusFailed(dt_nav_query->init(dt_nav_mesh, 2048));
 }

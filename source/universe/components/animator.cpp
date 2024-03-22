@@ -406,7 +406,7 @@ namespace flame
 			return;
 
 		transition_time = -1.f;
-		auto it = animations.find(playing_name);
+		auto it = animations.find(name);
 		if (it != animations.end())
 		{
 			auto _it = it->second.transitions.find(name);
