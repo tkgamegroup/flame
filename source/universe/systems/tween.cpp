@@ -83,40 +83,40 @@ namespace flame
 			if (type == TweenEntity)
 			{
 				if (auto node = a.target.e->get_component<cNode>(); node)
-					a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz = node->pos;
+					(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = node->pos;
 			}
 			else if (type == TweenGui)
-				a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz = renderer_datas[a.target.idx].pos;
+				(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = renderer_datas[a.target.idx].pos;
 			break;
 		case ActionRotate:
 			if (type == TweenEntity)
 			{
 				if (auto node = a.target.e->get_component<cNode>(); node)
-					a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz = node->get_eul();
+					(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = node->get_eul();
 			}
 			else if (type == TweenGui)
-				a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz =renderer_datas[a.target.idx].eul;
+				(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = renderer_datas[a.target.idx].eul;
 			break;
 		case ActionScale:
 			if (type == TweenEntity)
 			{
 				if (auto node = a.target.e->get_component<cNode>(); node)
-					a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz = node->scl;
+					(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = node->scl;
 			}
 			else if (type == TweenGui)
-				a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz =renderer_datas[a.target.idx].scl;
+				(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = renderer_datas[a.target.idx].scl;
 			break;
 		case ActionObjectColor:
 			if (type == TweenEntity)
 			{
 				auto meshes = a.target.e->get_components<cMesh>(-1);
 				if (!meshes.empty())
-					a.dir == ActionForward ? a.v0.c : a.v1.c = meshes[0]->color;
+					(a.dir == ActionForward ? a.v0.c : a.v1.c) = meshes[0]->color;
 				else
 				{
 					auto skinned_meshes = a.target.e->get_components<cSkinnedMesh>(-1);
 					if (!skinned_meshes.empty())
-						a.dir == ActionForward ? a.v0.c : a.v1.c = skinned_meshes[0]->color;
+						(a.dir == ActionForward ? a.v0.c : a.v1.c) = skinned_meshes[0]->color;
 				}
 			}
 			break;
@@ -124,14 +124,14 @@ namespace flame
 			if (type == TweenEntity)
 			{
 				if (auto light = a.target.e->get_component<cDirectionalLight>(); light)
-					a.dir == ActionForward ? a.v0.c : a.v1.c = light->color;
+					(a.dir == ActionForward ? a.v0.f : a.v1.f) = light->color;
 				if (auto light = a.target.e->get_component<cPointLight>(); light)
-					a.dir == ActionForward ? a.v0.c : a.v1.c = light->color;
+					(a.dir == ActionForward ? a.v0.f : a.v1.f) = light->color;
 			}
 			break;
 		case ActionAlpha:
 			if (type == TweenGui)
-				a.dir == ActionForward ? a.v0.f[0] : a.v1.f[0] = renderer_datas[a.target.idx].alpha;
+				(a.dir == ActionForward ? a.v0.f[0] : a.v1.f[0]) = renderer_datas[a.target.idx].alpha;
 			break;
 		}
 	}
@@ -487,9 +487,9 @@ namespace flame
 							if (ani->type == TweenEntity)
 							{
 								if (auto light = a.target.e->get_component<cDirectionalLight>(); light)
-									light->color = a.v1.f;
+									light->set_color(a.v1.f);
 								if (auto light = a.target.e->get_component<cPointLight>(); light)
-									light->color = a.v1.f;
+									light->set_color(a.v1.f);
 							}
 							break;
 						case ActionAlpha:
@@ -581,9 +581,9 @@ namespace flame
 							{
 								auto col = mix(a.v0.f, a.v1.f, (ani->time - a.start_time) / a.duration);
 								if (auto light = a.target.e->get_component<cDirectionalLight>(); light)
-									light->color = col;
+									light->set_color(col);
 								if (auto light = a.target.e->get_component<cPointLight>(); light)
-									light->color = col;
+									light->set_color(col);
 							}
 							break;
 						case ActionAlpha:
