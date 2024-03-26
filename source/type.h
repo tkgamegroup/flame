@@ -25,6 +25,8 @@
 	using name##T = name##Private; \
 	using name##Ptr = name##Private*;
 
+#define FLAME_HASH_AND_ADDRESS(name) mh(#name),&name
+
 namespace flame
 {
 	using uchar = unsigned char;
@@ -176,6 +178,31 @@ namespace flame
 	consteval unsigned int th()
 	{
 		return sh(tn<T>());
+	}
+
+	consteval std::string_view mn(std::string_view name)
+	{
+		constexpr auto prefix1 = std::string_view{ "." };
+		constexpr auto prefix2 = std::string_view{ "->" };
+
+		auto start = name.find_last_of(prefix1);
+		if (start == std::string::npos)
+		{
+			start = name.find_last_of(prefix2);
+			if (start == std::string::npos)
+				start = 0;
+			else
+				start++;
+		}
+		else
+			start++;
+
+		return name.substr(start, (name.size() - start));
+	}
+
+	consteval unsigned int mh(std::string_view name)
+	{
+		return sh(mn(name));
 	}
 
 	template<typename F>

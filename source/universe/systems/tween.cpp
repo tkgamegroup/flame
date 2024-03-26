@@ -14,50 +14,60 @@ namespace flame
 {
 	sTweenPrivate::Animation::~Animation()
 	{
-		if (bp_renderer)
-		{
-			if (renderer_type == RendererGui)
-				sRenderer::instance()->hud_callbacks.remove((uint)this);
-		}
+		if (type == TweenGui)
+			sRenderer::instance()->hud_callbacks.remove((uint)this);
 		if (custom_data)
 			custom_data_type->destroy(custom_data);
 	}
 
 	sTweenPrivate::Action& sTweenPrivate::Animation::new_action(float duration)
 	{
-		auto max_duration = 0.f;
-		for (auto& t : tracks)
-			max_duration = std::max(max_duration, t.duration);
-
-		auto get_track = [&]() -> Track& {
-			if (newline)
-			{
-				curr_track++;
-				if (curr_track == tracks.end())
-				{
-					tracks.emplace_back();
-					curr_track = tracks.end();
-					curr_track--;
-				}
-				newline = false;
-
-				return *curr_track;
-			}
-
-			curr_track = tracks.begin();
-			return tracks.front();
-		};
-
-		auto& t = get_track();
-		if (t.duration < max_duration)
+		if (newline)
 		{
-			auto& a = t.actions.emplace_back();
-			a.duration = max_duration - t.duration;
-			a.start_time = t.duration;
-			a.end_time = a.start_time + a.duration;
-			t.duration += a.duration;
+			auto& last_t = *curr_track;
+			auto start_time = last_t.actions.empty() ? 0.f : last_t.actions.back().start_time;
+
+			curr_track++;
+			if (curr_track == tracks.end())
+			{
+				tracks.emplace_back();
+				curr_track = tracks.end();
+				curr_track--;
+			}
+			newline = false;
+
+			auto& t = *curr_track;
+			if (t.duration < start_time)
+			{
+				auto& a = t.actions.emplace_back();
+				a.duration = start_time - t.duration;
+				a.start_time = t.duration;
+				a.end_time = a.start_time + a.duration;
+				t.duration += a.duration;
+			}
 		}
+		else
+		{
+			curr_track = tracks.begin();
+			auto& t = *curr_track;
+
+			auto max_duration = 0.f;
+			for (auto& t : tracks)
+				max_duration = std::max(max_duration, t.duration);
+
+			if (t.duration < max_duration)
+			{
+				auto& a = t.actions.emplace_back();
+				a.duration = max_duration - t.duration;
+				a.start_time = t.duration;
+				a.end_time = a.start_time + a.duration;
+				t.duration += a.duration;
+			}
+		}
+
+		auto& t = *curr_track;
 		auto& a = t.actions.emplace_back();
+		a.target = curr_target;
 		a.duration = duration;
 		a.start_time = t.duration;
 		a.end_time = a.start_time + duration;
@@ -70,60 +80,58 @@ namespace flame
 		switch (a.type)
 		{
 		case ActionMoveTo:
-			if (target)
+			if (type == TweenEntity)
 			{
-				if (auto node = target->get_component<cNode>(); node)
+				if (auto node = a.target.e->get_component<cNode>(); node)
 					a.v0.f.xyz = node->pos;
 			}
-			else if (bp_renderer)
-				a.v0.f.xyz = renderer_pos;
+			else if (type == TweenGui)
+				a.v0.f.xyz = renderer_datas[a.target.idx].pos;
 			break;
 		case ActionRotateTo:
-			if (target)
+			if (type == TweenEntity)
 			{
-				if (auto node = target->get_component<cNode>(); node)
-				{
-					auto& q = node->qut;
-					a.v0.f = vec4(q.x, q.y, q.z, q.w);
-				}
+				if (auto node = a.target.e->get_component<cNode>(); node)
+					a.v0.f.xyz = node->get_eul();
 			}
-			else if (bp_renderer)
-			{
-				auto& q = renderer_qut;
-				a.v0.f = vec4(q.x, q.y, q.z, q.w);
-			}
+			else if (type == TweenGui)
+				a.v0.f.xyz =renderer_datas[a.target.idx].eul;
 			break;
 		case ActionScaleTo:
-			if (target)
+			if (type == TweenEntity)
 			{
-				if (auto node = target->get_component<cNode>(); node)
+				if (auto node = a.target.e->get_component<cNode>(); node)
 					a.v0.f.xyz = node->scl;
 			}
-			else if (bp_renderer)
-				a.v0.f.xyz = renderer_scl;
+			else if (type == TweenGui)
+				a.v0.f.xyz =renderer_datas[a.target.idx].scl;
 			break;
 		case ActionObjectColorTo:
-			if (target)
+			if (type == TweenEntity)
 			{
-				auto meshes = target->get_components<cMesh>(-1);
+				auto meshes = a.target.e->get_components<cMesh>(-1);
 				if (!meshes.empty())
 					a.v0.c = meshes[0]->color;
 				else
 				{
-					auto skinned_meshes = target->get_components<cSkinnedMesh>(-1);
+					auto skinned_meshes = a.target.e->get_components<cSkinnedMesh>(-1);
 					if (!skinned_meshes.empty())
 						a.v0.c = skinned_meshes[0]->color;
 				}
 			}
 			break;
 		case ActionLightColorTo:
-			if (target)
+			if (type == TweenEntity)
 			{
-				if (auto light = target->get_component<cDirectionalLight>(); light)
+				if (auto light = a.target.e->get_component<cDirectionalLight>(); light)
 					a.v0.f = light->color;
-				if (auto light = target->get_component<cPointLight>(); light)
+				if (auto light = a.target.e->get_component<cPointLight>(); light)
 					a.v0.f = light->color;
 			}
+			break;
+		case ActionAlphaTo:
+			if (type == TweenGui)
+				a.v0.f[0] =renderer_datas[a.target.idx].alpha;
 			break;
 		}
 	}
@@ -132,31 +140,48 @@ namespace flame
 	{
 	}
 
-	uint sTweenPrivate::begin(EntityPtr e)
+	uint sTweenPrivate::begin()
 	{
 		auto id = next_id++;
 		auto a = new Animation;
-		staging_animations.emplace(id, a);
-		a->target = e;
+		a->type = TweenEntity;
+		a->curr_target.e = nullptr;
 		a->tracks.emplace_back();
 		a->curr_track = a->tracks.begin();
+		staging_animations.emplace(id, a);
 		return id;
 	}
 
-	uint sTweenPrivate::begin(RendererType render_type, BlueprintInstanceGroupPtr render)
+	uint sTweenPrivate::begin(BlueprintInstanceGroupPtr renderer, uint target_count)
 	{
 		auto id = next_id++;
 		auto a = new Animation;
-		staging_animations.emplace(id, a);
-		a->renderer_type = render_type;
-		a->bp_renderer = render;
+		a->type = TweenGui;
+		a->curr_target.idx = 0;
 		a->tracks.emplace_back();
-
-		a->renderer_pos = vec3(0.f);
-		a->renderer_qut = quat(1.f, 0.f, 0.f, 0.f);
-		a->renderer_scl = vec3(1.f);
-
+		a->curr_track = a->tracks.begin();
+		a->renderer = renderer;
+		a->renderer_datas.resize(target_count);
+		staging_animations.emplace(id, a);
 		return id;
+	}
+
+	void sTweenPrivate::set_target(uint id, EntityPtr e)
+	{
+		if (auto it = staging_animations.find(id); it != staging_animations.end())
+		{
+			auto a = it->second.get();
+			a->curr_target.e = e;
+		}
+	}
+
+	void sTweenPrivate::set_target(uint id, uint idx)
+	{
+		if (auto it = staging_animations.find(id); it != staging_animations.end())
+		{
+			auto a = it->second.get();
+			a->curr_target.idx = idx;
+		}
 	}
 
 	void sTweenPrivate::set_custom_data(uint id, TypeInfo* type, void* data)
@@ -176,20 +201,29 @@ namespace flame
 		{
 			auto a = it->second.release();
 			a->time = 0.f;
-			if (a->bp_renderer && a->renderer_type == RendererGui)
+			if (a->type == TweenGui)
 			{
 				sRenderer::instance()->hud_callbacks.add([a]() {
-					auto bp_ins = a->bp_renderer->instance;
-					voidptr inputs[4];
-					inputs[0] = &a->renderer_pos;
-					inputs[1] = &a->renderer_qut;
-					inputs[2] = &a->renderer_scl;
-					inputs[3] = a->custom_data;
-					bp_ins->call(a->bp_renderer, inputs, nullptr);
+					auto g = a->renderer;
+					auto ins = g->instance;
+					std::vector<std::pair<uint, voidptr>> inputs;
+					inputs.emplace_back(FLAME_HASH_AND_ADDRESS(a->custom_data));
+					for (auto i = 0; i < a->renderer_datas.size(); i++)
+					{
+						auto& d = a->renderer_datas[i];
+						inputs.emplace_back(inputs.size() > 1 ? sh(("pos" + str(i)).c_str()) : "pos"_h, &d.pos);
+						inputs.emplace_back(inputs.size() > 1 ? sh(("eul" + str(i)).c_str()) : "eul"_h, &d.eul);
+						inputs.emplace_back(inputs.size() > 1 ? sh(("scl" + str(i)).c_str()) : "scl"_h, &d.scl);
+						inputs.emplace_back(inputs.size() > 1 ? sh(("alpha" + str(i)).c_str()) : "alpha"_h, &d.alpha);
+					}
+					ins->call(g, inputs, {});
 				}, (uint)a);
 			}
 			for (auto& t : a->tracks)
-				a->action_get_start_value(t.actions.front());
+			{
+				if (!t.actions.empty())
+					a->action_get_start_value(t.actions.front());
+			}
 			animations.emplace_back(a);
 			staging_animations.erase(it);
 		}
@@ -220,13 +254,13 @@ namespace flame
 		}
 	}
 
-	void sTweenPrivate::rotate_to(uint id, const quat& qut, float duration)
+	void sTweenPrivate::rotate_to(uint id, const vec3& eul, float duration)
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
 			auto& a = it->second->new_action(duration);
 			a.type = ActionRotateTo;
-			a.v1.f = vec4(qut.x, qut.y, qut.z, qut.w);
+			a.v1.f.xyz = eul;
 		}
 	}
 
@@ -257,6 +291,16 @@ namespace flame
 			auto& a = it->second->new_action(duration);
 			a.type = ActionLightColorTo;
 			a.v1.f = col;
+		}
+	}
+
+	void sTweenPrivate::alpha_to(uint id, float alpha, float duration)
+	{
+		if (auto it = staging_animations.find(id); it != staging_animations.end())
+		{
+			auto& a = it->second->new_action(duration);
+			a.type = ActionAlphaTo;
+			a.v1.f[0] = alpha;
 		}
 	}
 
@@ -332,74 +376,72 @@ namespace flame
 						switch (a.type)
 						{
 						case ActionMoveTo:
-							if (ani->target)
+							if (ani->type == TweenEntity)
 							{
-								if (auto node = ani->target->get_component<cNode>(); node)
+								if (auto node = a.target.e->get_component<cNode>(); node)
 									node->set_pos(a.v1.f.xyz);
 							}
-							else if (ani->bp_renderer)
-								ani->renderer_pos = a.v1.f.xyz;
+							else if (ani->type == TweenGui)
+								ani->renderer_datas[a.target.idx].pos = a.v1.f.xyz;
 							break;
 						case ActionRotateTo:
-							if (ani->target)
+							if (ani->type == TweenEntity)
 							{
-								if (auto node = ani->target->get_component<cNode>(); node)
-								{
-									auto& v = a.v1.f;
-									node->set_qut(quat(v.w, v.x, v.y, v.z));
-								}
+								if (auto node = a.target.e->get_component<cNode>(); node)
+									node->set_eul(a.v1.f.xyz());
 							}
-							else if (ani->bp_renderer)
-							{
-								auto& v = a.v1.f;
-								ani->renderer_qut = quat(v.w, v.x, v.y, v.z);
-							}
+							else if (ani->type == TweenGui)
+								ani->renderer_datas[a.target.idx].eul = a.v1.f.xyz();
 							break;
 						case ActionScaleTo:
-							if (ani->target)
+							if (ani->type == TweenEntity)
 							{
-								if (auto node = ani->target->get_component<cNode>(); node)
+								if (auto node = a.target.e->get_component<cNode>(); node)
 									node->set_scl(a.v1.f.xyz);
 							}
-							else if (ani->bp_renderer)
-								ani->renderer_scl = a.v1.f.xyz;
+							else if (ani->type == TweenGui)
+								ani->renderer_datas[a.target.idx].scl = a.v1.f.xyz;
 							break;
 						case ActionObjectColorTo:
-							if (ani->target)
+							if (ani->type == TweenEntity)
 							{
-								for (auto mesh : ani->target->get_components<cMesh>(-1))
+								for (auto mesh : a.target.e->get_components<cMesh>(-1))
 									mesh->set_color(a.v1.c);
-								for (auto mesh : ani->target->get_components<cSkinnedMesh>(-1))
+								for (auto mesh : a.target.e->get_components<cSkinnedMesh>(-1))
 									mesh->set_color(a.v1.c);
 							}
 							break;
 						case ActionLightColorTo:
-							if (ani->target)
+							if (ani->type == TweenEntity)
 							{
-								if (auto light = ani->target->get_component<cDirectionalLight>(); light)
+								if (auto light = a.target.e->get_component<cDirectionalLight>(); light)
 									light->color = a.v1.f;
-								if (auto light = ani->target->get_component<cPointLight>(); light)
+								if (auto light = a.target.e->get_component<cPointLight>(); light)
 									light->color = a.v1.f;
 							}
 							break;
+						case ActionAlphaTo:
+							if (ani->type == TweenGui)
+								ani->renderer_datas[a.target.idx].alpha = a.v1.f[0];
+							break;
 						case ActionEnable:
-							if (ani->target)
-								ani->target->set_enable(true);
+							if (ani->type == TweenEntity)
+								a.target.e->set_enable(true);
 							break;
 						case ActionDisable:
-							if (ani->target)
-								ani->target->set_enable(false);
+							if (ani->type == TweenEntity)
+								a.target.e->set_enable(false);
 							break;
 						case ActionPlayAnimation:
-							if (ani->target)
+							if (ani->type == TweenEntity)
 							{
-								if (auto animator = ani->target->get_component<cAnimator>(); animator)
+								if (auto animator = a.target.e->get_component<cAnimator>(); animator)
 									animator->play(a.v1.u[0]);
 							}
 							break;
 						case ActionKill:
-							if (ani->target)
-								sGraveyard::instance()->add(ani->target);
+							if (ani->type == TweenEntity)
+								sGraveyard::instance()->add(a.target.e);
 							break;
 						case ActionCallback:
 						{
@@ -426,57 +468,55 @@ namespace flame
 						switch (a.type)
 						{
 						case ActionMoveTo:
-							if (ani->target)
+							if (ani->type == TweenEntity)
 							{
-								if (auto node = ani->target->get_component<cNode>(); node)
+								if (auto node = a.target.e->get_component<cNode>(); node)
 									node->set_pos(mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration));
 							}
-							else if (ani->bp_renderer)
-								ani->renderer_pos = mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration);
+							else if (ani->type == TweenGui)
+								ani->renderer_datas[a.target.idx].pos = mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration);
 							break;
 						case ActionRotateTo:
-							if (ani->target)
+							if (ani->type == TweenEntity)
 							{
-								if (auto node = ani->target->get_component<cNode>(); node)
-								{
-									auto& v0 = a.v0.f; auto& v1 = a.v1.f;
-									node->set_qut(slerp(quat(v0.w, v0.x, v0.y, v0.z), quat(v1.w, v1.x, v1.y, v1.z), (ani->time - a.start_time) / a.duration));
-								}
+								if (auto node = a.target.e->get_component<cNode>(); node)
+									node->set_eul(mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration));
 							}
-							else if (ani->bp_renderer)
-							{
-								auto& v0 = a.v0.f; auto& v1 = a.v1.f;
-								ani->renderer_qut = slerp(quat(v0.w, v0.x, v0.y, v0.z), quat(v1.w, v1.x, v1.y, v1.z), (ani->time - a.start_time) / a.duration);
-							}
+							else if (ani->type == TweenGui)
+								ani->renderer_datas[a.target.idx].eul = mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration);
 							break;
 						case ActionScaleTo:
-							if (ani->target)
+							if (ani->type == TweenEntity)
 							{
-								if (auto node = ani->target->get_component<cNode>(); node)
+								if (auto node = a.target.e->get_component<cNode>(); node)
 									node->set_scl(mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration));
 							}
-							else if (ani->bp_renderer)
-								ani->renderer_scl = mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration);
+							else if (ani->type == TweenGui)
+								ani->renderer_datas[a.target.idx].scl = mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration);
 							break;
 						case ActionObjectColorTo:
-							if (ani->target)
+							if (ani->type == TweenEntity)
 							{
 								auto col = mix(a.v0.c, a.v1.c, (ani->time - a.start_time) / a.duration);
-								for (auto mesh : ani->target->get_components<cMesh>(-1))
+								for (auto mesh : a.target.e->get_components<cMesh>(-1))
 									mesh->set_color(col);
-								for (auto mesh : ani->target->get_components<cSkinnedMesh>(-1))
+								for (auto mesh : a.target.e->get_components<cSkinnedMesh>(-1))
 									mesh->set_color(col);
 							}
 							break;
 						case ActionLightColorTo:
-							if (ani->target)
+							if (ani->type == TweenEntity)
 							{
 								auto col = mix(a.v0.f, a.v1.f, (ani->time - a.start_time) / a.duration);
-								if (auto light = ani->target->get_component<cDirectionalLight>(); light)
+								if (auto light = a.target.e->get_component<cDirectionalLight>(); light)
 									light->color = col;
-								if (auto light = ani->target->get_component<cPointLight>(); light)
+								if (auto light = a.target.e->get_component<cPointLight>(); light)
 									light->color = col;
 							}
+							break;
+						case ActionAlphaTo:
+							if (ani->type == TweenGui)
+								ani->renderer_datas[a.target.idx].alpha = mix(a.v0.f[0], a.v1.f[0], (ani->time - a.start_time) / a.duration);
 							break;
 						}
 					}

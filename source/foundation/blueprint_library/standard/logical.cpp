@@ -276,7 +276,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Conditional Operator", "?:", BlueprintNodeFlagNone,
+		library->add_template("Conditional Operator", "?:", BlueprintNodeFlagEnableTemplate,
 			{
 				{
 					.name = "Cond",
@@ -284,17 +284,17 @@ namespace flame
 				},
 				{
 					.name = "A",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+					.allowed_types = { TypeInfo::get<float>() }
 				},
 				{
 					.name = "B",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
 			{
 				{
 					.name = "V",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+					.allowed_types = { TypeInfo::get<float>() }
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
@@ -304,23 +304,41 @@ namespace flame
 				else
 					b = (*(voidptr*)inputs[0].data) != nullptr;
 
-				auto in_ti = b ? inputs[1].type : inputs[2].type;
 				auto in_p = b ? inputs[1].data : inputs[2].data;
-				if (outputs[0].type == TypeInfo::get<float>())
-					*(float*)outputs[0].data = in_ti->as_float(in_p);
-				else if (outputs[0].type == TypeInfo::get<int>())
-					*(int*)outputs[0].data = in_ti->as_int(in_p);
-				else if (outputs[0].type == TypeInfo::get<uint>())
-					*(uint*)outputs[0].data = in_ti->as_uint(in_p);
+				outputs[0].type->copy(outputs[0].data, in_p);
 			},
 			nullptr,
 			nullptr,
 			[](BlueprintNodeStructureChangeInfo& info) {
-				if (info.reason == BlueprintNodeInputTypesChanged)
+				if (info.reason == BlueprintNodeTemplateChanged)
 				{
-					info.output_types = { info.input_types[1] };
+					auto type = info.template_string.empty() ? TypeInfo::get<float>() : blueprint_type_from_template_str(info.template_string);
+					if (!type)
+						return false;
+
+					info.new_inputs.resize(3);
+					info.new_inputs[0] = {
+						.name = "Cond",
+						.allowed_types = { TypeInfo::get<bool>(), TypeInfo::get<voidptr>() }
+					};
+					info.new_inputs[1] = {
+						.name = "A",
+						.allowed_types = { type }
+					};
+					info.new_inputs[2] = {
+						.name = "B",
+						.allowed_types = { type }
+					};
+					info.new_outputs.resize(1);
+					info.new_outputs[0] = {
+						.name = "V",
+						.allowed_types = { type }
+					};
+
 					return true;
 				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
 				return false;
 			}
 		);

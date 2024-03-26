@@ -1,40 +1,33 @@
-#include <flame/foundation/foundation.h>
-#include <flame/foundation/system.h>
-#include <flame/foundation/typeinfo.h>
-#include <flame/graphics/noise.h>
+#include <string>
+
+namespace flame
+{
+	std::string_view mn(std::string_view name)
+	{
+		constexpr auto prefix1 = std::string_view{ "." };
+		constexpr auto prefix2 = std::string_view{ "->" };
+
+		auto start = name.find_last_of(prefix1);
+		if (start == std::string::npos)
+		{
+			start = name.find_last_of(prefix2);
+			if (start == std::string::npos)
+				start = 0;
+			else
+				start++;
+		}
+		else
+			start++;
+
+		return name.substr(start, (name.size() - start));
+	}
+}
 
 using namespace flame;
 
-struct P
-{
-	float x;
-	float y;
-};
-
-template <>
-struct std::formatter<P, char> : std::formatter<std::string>
-{
-	auto format(P p, std::format_context& ctx) const
-	{
-		auto str = std::format("{}, {}", p.x, p.y);
-		return std::copy(str.begin(), str.end(), ctx.out());
-	}
-};
-
-template <>
-struct std::formatter<P, wchar_t> : std::formatter<std::wstring>
-{
-	auto format(P p, std::wformat_context& ctx) const
-	{
-		auto str = std::format(L"{}, {}", p.x, p.y);
-		return std::copy(str.begin(), str.end(), ctx.out());
-	}
-};
-
 int main(int argc, char** args) 
 {
-	P p;
-	std::format(L"", p);
+	auto wtf = mn("abc.def");
 	return 0;
 }
 

@@ -91,6 +91,7 @@ namespace flame
 		vec2 cursor;
 		vec2 pivot;
 		vec2 item_spacing;
+		vec4 border;
 		vec2 item_max;
 		bool auto_size;
 	};
@@ -240,7 +241,7 @@ namespace flame
 		vec2 hud_screen_size() const override;
 		void hud_push_style(HudStyleVar var, const vec2& value) override;
 		void hud_pop_style(HudStyleVar var) override;
-		void hud_begin_layout(HudLayoutType type, const vec2& item_spacing) override;
+		void hud_begin_layout(HudLayoutType type, const vec2& item_spacing, const vec4& border) override;
 		void hud_end_layout() override;
 		void hud_new_line() override;
 		void hud_begin_stencil_write() override;
@@ -252,10 +253,12 @@ namespace flame
 		void hud_text(std::wstring_view text, uint font_size, const cvec4& col) override;
 		void hud_image(const vec2& size, const graphics::ImageDesc& image, const cvec4& col) override;
 		void hud_image_stretched(const vec2& size, const graphics::ImageDesc& image, const vec4& border, const cvec4& col) override;
+		void hud_image_rotated(const vec2& size, const graphics::ImageDesc& image, const cvec4& col, float angle) override;
 		bool hud_button(std::wstring_view label, uint font_size) override;
 		bool hud_image_button(const vec2& size, const graphics::ImageDesc& image, const vec4& border) override;
 		void hud_stroke_item(float thickness, const cvec4& col) override;
 		bool hud_item_hovered() override;
+		bool hud_item_clicked() override;
 
 		void send_debug_string(const std::string& str) override;
 	};

@@ -417,29 +417,12 @@ int manipulate_variable(TypeInfo* type, const std::string& name, uint name_hash,
 		}
 		else
 		{
-			std::string str_value;
-			if (same[0])
-			{
-				for (auto& ii : ei->items)
-				{
-					if (value == 0 && ii.value == 0)
-						str_value = ii.name;
-					else if (value & ii.value)
-					{
-						if (!str_value.empty())
-							str_value += '|';
-						str_value += ii.name;
-					}
-				}
-			}
-			else
-				str_value = "-";
 			ImGui::SetNextItemWidth(-FLT_MIN);
-			if (ImGui::BeginCombo("", str_value.c_str()))
+			if (ImGui::BeginCombo("", same[0] ? ti->serialize(data).c_str() : "-"))
 			{
 				for (auto& ii : ei->items)
 				{
-					bool selected = value & ii.value;
+					bool selected = (value & ii.value);
 					if (ImGui::Selectable(ii.name.c_str(), selected))
 					{
 						if (selected)

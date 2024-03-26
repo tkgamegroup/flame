@@ -1396,7 +1396,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("ESerialize All Datas", "", BlueprintNodeFlagEnableTemplate,
+		library->add_template("ESerialize All Datas", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -1425,18 +1425,7 @@ namespace flame
 						ret.clear();
 						for (auto& v : instance->blueprint->variables)
 						{
-							if (v.type->tag != TagD)
-								continue;
-							auto ok = true;
-							for (auto i = 2; i < inputs_count; i++)
-							{
-								if (v.name_hash == *(uint*)inputs[i].data)
-								{
-									ok = false;
-									break;
-								}
-							}
-							if (!ok)
+							if (v.type->tag != TagD || (v.flags & BlueprintVariableFlagAttribute) == 0)
 								continue;
 							auto line = format;
 							auto value = v.type->serialize(v.data);
@@ -1448,47 +1437,6 @@ namespace flame
 						}
 					}
 				}
-			},
-			nullptr,
-			nullptr,
-			[](BlueprintNodeStructureChangeInfo& info) {
-				if (info.reason == BlueprintNodeTemplateChanged)
-				{
-					auto num_excludes = 0;
-
-					for (auto& t : SUS::to_string_vector(SUS::split(info.template_string, ',')))
-					{
-						if (SUS::strip_head_if(t, "E"))
-							num_excludes = s2t<uint>(t);
-					}
-
-					info.new_inputs.resize(2 + num_excludes);
-					info.new_inputs[0] = {
-						.name = "Entity",
-						.allowed_types = { TypeInfo::get<EntityPtr>() }
-					};
-					info.new_inputs[1] = {
-						.name = "Format",
-						.allowed_types = { TypeInfo::get<std::string>() }
-					};
-					for (auto i = 0; i < num_excludes; i++)
-					{
-						info.new_inputs[i + 2] = {
-							.name = "Exclude" + str(i) + "_hash",
-							.allowed_types = { TypeInfo::get<std::string>() }
-						};
-					}
-					info.new_outputs.resize(1);
-					info.new_outputs[0] = {
-						.name = "V",
-						.allowed_types = { TypeInfo::get<std::string>() }
-					};
-
-					return true;
-				}
-				else if (info.reason == BlueprintNodeInputTypesChanged)
-					return true;
-				return false;
 			}
 		);
 
@@ -1926,25 +1874,11 @@ namespace flame
 						auto bp = ins->bp;
 						for (auto& v : bp->variables)
 						{
-							if (v.type->tag != TagD)
+							if (v.type->tag != TagD || (v.flags & BlueprintVariableFlagAttribute) == 0)
 								continue;
-							auto ok = true;
-							for (auto i = 1; i < inputs_count; i++)
-							{
-								if (inputs[i].type != TypeInfo::get<uint>())
-									break;
-								if (v.name_hash == *(uint*)inputs[i].data)
-								{
-									ok = false;
-									break;
-								}
-							}
-							if (ok)
-							{
-								auto new_name = v.name + "_backup";
-								if (auto it = instance->variables.find(v.name_hash); it != instance->variables.end())
-									instance->create_variable(sh(new_name.c_str()), v.type, it->second.data);
-							}
+							auto new_name = v.name + "_backup";
+							if (auto it = instance->variables.find(v.name_hash); it != instance->variables.end())
+								instance->create_variable(sh(new_name.c_str()), v.type, it->second.data);
 						}
 					}
 				};
@@ -1972,32 +1906,22 @@ namespace flame
 			[](BlueprintNodeStructureChangeInfo& info) {
 				if (info.reason == BlueprintNodeTemplateChanged)
 				{
-					auto num_excludes = 0;
 					auto num_child_names = 0;
 
 					for (auto& t : SUS::to_string_vector(SUS::split(info.template_string, ',')))
 					{
-						if (SUS::strip_head_if(t, "E"))
-							num_excludes = s2t<uint>(t);
-						else if (SUS::strip_head_if(t, "C"))
+						if (SUS::strip_head_if(t, "C"))
 							num_child_names = s2t<uint>(t);
 					}
 
-					info.new_inputs.resize(1 + num_excludes + num_child_names);
+					info.new_inputs.resize(1 + num_child_names);
 					info.new_inputs[0] = {
 						.name = "Entity",
 						.allowed_types = { TypeInfo::get<EntityPtr>() }
 					};
-					for (auto i = 0; i < num_excludes; i++)
-					{
-						info.new_inputs[i + 1] = {
-							.name = "Exclude" + str(i) + "_hash",
-							.allowed_types = { TypeInfo::get<std::string>() }
-						};
-					}
 					for (auto i = 0; i < num_child_names; i++)
 					{
-						info.new_inputs[i + 1 + num_excludes] = {
+						info.new_inputs[i + 1] = {
 							.name = "Child" + str(i),
 							.allowed_types = { TypeInfo::get<std::string>() }
 						};
@@ -2028,7 +1952,7 @@ namespace flame
 						auto bp = ins->bp;
 						for (auto& v : bp->variables)
 						{
-							if (v.type->tag != TagD)
+							if (v.type->tag != TagD || (v.flags & BlueprintVariableFlagAttribute) == 0)
 								continue;
 							auto new_name = v.name + "_backup";
 							if (auto it = instance->variables.find(sh(new_name.c_str())); it != instance->variables.end())

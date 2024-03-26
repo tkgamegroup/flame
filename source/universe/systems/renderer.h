@@ -373,7 +373,7 @@ namespace flame
 		virtual vec2 hud_screen_size() const = 0;
 		virtual void hud_push_style(HudStyleVar var, const vec2& value) = 0;
 		virtual void hud_pop_style(HudStyleVar var) = 0;
-		virtual void hud_begin_layout(HudLayoutType type, const vec2& item_spacing = vec2(2.f)) = 0;
+		virtual void hud_begin_layout(HudLayoutType type, const vec2& item_spacing = vec2(2.f), const vec4& border = vec4(0.f)) = 0;
 		virtual void hud_end_layout() = 0;
 		virtual void hud_new_line() = 0;
 		virtual void hud_begin_stencil_write() = 0;
@@ -384,10 +384,12 @@ namespace flame
 		virtual void hud_text(std::wstring_view text, uint font_size = 24, const cvec4& col = cvec4(255)) = 0;
 		virtual void hud_image(const vec2& size, const graphics::ImageDesc& image, const cvec4& col = cvec4(255)) = 0;
 		virtual void hud_image_stretched(const vec2& size, const graphics::ImageDesc& image, const vec4& border = vec4(0.f), const cvec4& col = cvec4(255)) = 0;
+		virtual void hud_image_rotated(const vec2& size, const graphics::ImageDesc& image, const cvec4& col, float angle) = 0;
 		virtual bool hud_button(std::wstring_view label, uint font_size = 24) = 0;
 		virtual bool hud_image_button(const vec2& size, const graphics::ImageDesc& image = {}, const vec4& border = vec4(0.f)) = 0;
 		virtual void hud_stroke_item(float thickness = 1.f, const cvec4& col = cvec4(255)) = 0;
 		virtual bool hud_item_hovered() = 0;
+		virtual bool hud_item_clicked() = 0;
 
 		// Reflect
 		virtual void send_debug_string(const std::string& str) = 0;

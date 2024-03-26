@@ -166,14 +166,14 @@ namespace flame
 			v.type->destroy(v.data);
 	}
 
-	void BlueprintPrivate::add_enum(const std::string& name, const std::vector<BlueprintEnumItem>& items)
+	BlueprintEnum* BlueprintPrivate::add_enum(const std::string& name, const std::vector<BlueprintEnumItem>& items)
 	{
 		for (auto& e : enums)
 		{
 			if (e.name == name)
 			{
 				printf("blueprint add_enum: %s enum already existed\n", name.c_str());
-				return;
+				return nullptr;
 			}
 		}
 
@@ -214,6 +214,8 @@ namespace flame
 			}
 			new_ei.library = nullptr;
 		}
+
+		return &e;
 	}
 
 	void BlueprintPrivate::remove_enum(uint name)
@@ -297,14 +299,14 @@ namespace flame
 		}
 	}
 
-	void BlueprintPrivate::add_struct(const std::string& name, const std::vector<BlueprintStructVariable>& variables)
+	BlueprintStruct* BlueprintPrivate::add_struct(const std::string& name, const std::vector<BlueprintStructVariable>& variables)
 	{
 		for (auto& s : structs)
 		{
 			if (s.name == name)
 			{
 				printf("blueprint add_struct: %s struct already existed\n", name.c_str());
-				return;
+				return nullptr;
 			}
 		}
 
@@ -313,7 +315,7 @@ namespace flame
 		if (find_udt(name_hash, tidb))
 		{
 			printf("blueprint add_struct: %s struct already existed\n", name.c_str());
-			return;
+			return nullptr;
 		}
 
 		auto& s = structs.emplace_back();
@@ -344,6 +346,8 @@ namespace flame
 				new_ui.pod = false;
 		}
 		new_ui.library = nullptr;
+
+		return &s;
 	}
 
 	void BlueprintPrivate::remove_struct(uint name)
@@ -414,7 +418,7 @@ namespace flame
 		}
 	}
 
-	void* BlueprintPrivate::add_variable(BlueprintGroupPtr group, const std::string& name, TypeInfo* type)
+	BlueprintVariable* BlueprintPrivate::add_variable(BlueprintGroupPtr group, const std::string& name, TypeInfo* type)
 	{
 		assert(!group || group->blueprint == this);
 		auto& vars = group ? group->variables : variables;
@@ -424,7 +428,7 @@ namespace flame
 			if (v.name == name)
 			{
 				printf("blueprint add_variable: variable already exists\n");
-				return v.data;
+				return nullptr;
 			}
 		}
 
@@ -448,7 +452,7 @@ namespace flame
 		}
 		dirty_frame = frame;
 
-		return v.data;
+		return &v;
 	}
 
 	void BlueprintPrivate::remove_variable(BlueprintGroupPtr group, uint name)
@@ -2975,8 +2979,9 @@ namespace flame
 		for (auto n_variable : doc_root.child("variables"))
 		{
 			auto type = read_ti(n_variable.attribute("type"));
-			auto data = add_variable(nullptr, n_variable.attribute("name").value(), type);
-			type->unserialize(n_variable.attribute("value").value(), data);
+			auto var = add_variable(nullptr, n_variable.attribute("name").value(), type);
+			TypeInfo::unserialize_t(n_variable.attribute("flags").value(), var->flags);
+			type->unserialize(n_variable.attribute("value").value(), var->data);
 		}
 		for (auto n_group : doc_root.child("groups"))
 		{
@@ -2988,8 +2993,9 @@ namespace flame
 			for (auto n_variable : n_group.child("variables"))
 			{
 				auto type = read_ti(n_variable.attribute("type"));
-				auto data = add_variable(g, n_variable.attribute("name").value(), type);
-				type->unserialize(n_variable.attribute("value").value(), data);
+				auto var = add_variable(g, n_variable.attribute("name").value(), type);
+				TypeInfo::unserialize_t(n_variable.attribute("flags").value(), var->flags);
+				type->unserialize(n_variable.attribute("value").value(), var->data);
 			}
 			for (auto n_input : n_group.child("inputs"))
 				add_group_input(g, n_input.attribute("name").value(), read_ti(n_input.attribute("type")));
@@ -3355,6 +3361,7 @@ namespace flame
 			{
 				auto n_variable = n_variables.append_child("variable");
 				n_variable.append_attribute("name").set_value(v.name.c_str());
+				n_variable.append_attribute("flags").set_value(TypeInfo::serialize_t(v.flags).c_str());
 				write_ti(v.type, n_variable.append_attribute("type"));
 				if (!is_pointer(v.type->tag) && !is_vector(v.type->tag))
 					n_variable.append_attribute("value").set_value(v.type->serialize(v.data).c_str());
@@ -3413,6 +3420,7 @@ namespace flame
 						continue;
 					auto n_variable = n_variables.append_child("variable");
 					n_variable.append_attribute("name").set_value(v.name.c_str());
+					n_variable.append_attribute("flags").set_value(TypeInfo::serialize_t(v.flags).c_str());
 					write_ti(v.type, n_variable.append_attribute("type"));
 					n_variable.append_attribute("value").set_value(v.type->serialize(v.data).c_str());
 				}
@@ -4837,26 +4845,64 @@ namespace flame
 	{
 		assert(group->instance == this);
 
-		if (auto obj = group->input_node; obj)
+		if (auto n = group->input_node; n)
 		{
-			for (auto i = 0; i < obj->outputs.size(); i++)
+			for (auto i = 0; i < n->outputs.size(); i++)
 			{
-				auto& slot = obj->outputs[i];
-				slot.type->copy(slot.data, inputs[i]);
+				auto& slot = n->outputs[i];
+				if (inputs[i])
+					slot.type->copy(slot.data, inputs[i]);
+				else
+					slot.type->create(slot.data);
 			}
 		}
 
 		prepare_executing(group);
 		run(group);
 
-		if (auto obj = group->output_node; obj)
+		if (auto n = group->output_node; n)
 		{
-			for (auto i = 0; i < obj->inputs.size(); i++)
+			for (auto i = 0; i < n->inputs.size(); i++)
 			{
-				auto& slot = obj->inputs[i];
-				slot.type->copy(outputs[i], slot.data);
+				auto& slot = n->inputs[i];
+				if (outputs[i])
+					slot.type->copy(outputs[i], slot.data);
 			}
 		}
+	}
+
+	void BlueprintInstancePrivate::call(BlueprintInstanceGroup* group, const std::vector<std::pair<uint, void*>>& named_inputs, const std::vector<std::pair<uint, void*>>& named_outputs)
+	{
+		auto original = group->original;
+		std::vector<void*> inputs(original->inputs.size());
+		std::vector<void*> outputs(original->outputs.size());
+		for (auto i = 0; i < inputs.size(); i++)
+		{
+			inputs[i] = nullptr;
+			auto& input = original->inputs[i];
+			for (auto& named_input : named_inputs)
+			{
+				if (named_input.first == input.name_hash)
+				{
+					inputs[i] = named_input.second;
+					break;
+				}
+			}
+		}
+		for (auto i = 0; i < outputs.size(); i++)
+		{
+			outputs[i] = nullptr;
+			auto& output = original->outputs[i];
+			for (auto& named_output : named_outputs)
+			{
+				if (named_output.first == output.name_hash)
+				{
+					outputs[i] = named_output.second;
+					break;
+				}
+			}
+		}
+		call(group, inputs.data(), outputs.data());
 	}
 
 	void BlueprintInstancePrivate::register_group(BlueprintInstanceGroup* group)

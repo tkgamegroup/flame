@@ -133,7 +133,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Vertical", "", BlueprintNodeFlagNone,
+		library->add_template("Hud Vertical", "", BlueprintNodeFlagEnableTemplate,
 			{
 				{
 					.name = "Item Spacing",
@@ -145,18 +145,57 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto item_spacing = *(vec2*)inputs[0].data;
-
-				sRenderer::instance()->hud_begin_layout(HudVertical, item_spacing);
+				vec2 item_spacing(2.f);
+				vec4 border(0.f);
+				if (inputs_count > 0)
+					item_spacing = *(vec2*)inputs[0].data;
+				if (inputs_count > 1)
+					border = *(vec4*)inputs[1].data;
+				sRenderer::instance()->hud_begin_layout(HudVertical, item_spacing, border);
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				sRenderer::instance()->hud_end_layout();
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto num_args = 1;
+					if (SUS::strip_head_if(info.template_string, "args"))
+						num_args = s2t<int>(info.template_string);
+
+					num_args = clamp(num_args, 0, 2);
+
+					info.new_inputs.resize(num_args);
+					if (num_args > 0)
+					{
+						info.new_inputs[0] = {
+							.name = "Item Spacing",
+							.allowed_types = { TypeInfo::get<vec2>() },
+							.default_value = "2,2"
+						};
+					}
+					if (num_args > 1)
+					{
+						info.new_inputs[1] = {
+							.name = "Border",
+							.allowed_types = { TypeInfo::get<vec4>() }
+						};
+					}
+
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
 			}
 		);
 
-		library->add_template("Hud Horizontal", "", BlueprintNodeFlagNone,
+		library->add_template("Hud Horizontal", "", BlueprintNodeFlagEnableTemplate,
 			{
 				{
 					.name = "Item Spacing",
@@ -168,14 +207,53 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto item_spacing = *(vec2*)inputs[0].data;
-
-				sRenderer::instance()->hud_begin_layout(HudHorizontal, item_spacing);
+				vec2 item_spacing(2.f);
+				vec4 border(0.f);
+				if (inputs_count > 0)
+					item_spacing = *(vec2*)inputs[0].data;
+				if (inputs_count > 1)
+					border = *(vec4*)inputs[1].data;
+				sRenderer::instance()->hud_begin_layout(HudHorizontal, item_spacing, border);
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				sRenderer::instance()->hud_end_layout();
+			},
+			nullptr,
+			nullptr,
+			nullptr,
+			[](BlueprintNodeStructureChangeInfo& info) {
+				if (info.reason == BlueprintNodeTemplateChanged)
+				{
+					auto num_args = 1;
+					if (SUS::strip_head_if(info.template_string, "args"))
+						num_args = s2t<int>(info.template_string);
+
+					num_args = clamp(num_args, 0, 2);
+
+					info.new_inputs.resize(num_args);
+					if (num_args > 0)
+					{
+						info.new_inputs[0] = {
+							.name = "Item Spacing",
+							.allowed_types = { TypeInfo::get<vec2>() },
+							.default_value = "2,2"
+						};
+					}
+					if (num_args > 1)
+					{
+						info.new_inputs[1] = {
+							.name = "Border",
+							.allowed_types = { TypeInfo::get<vec4>() }
+						};
+					}
+
+					return true;
+				}
+				else if (info.reason == BlueprintNodeInputTypesChanged)
+					return true;
+				return false;
 			}
 		);
 
@@ -351,6 +429,38 @@ namespace flame
 			}
 		);
 
+		library->add_template("Hud Image Rotated", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Size",
+					.allowed_types = { TypeInfo::get<vec2>() }
+				},
+				{
+					.name = "Image",
+					.allowed_types = { TypeInfo::get<graphics::ImageDesc>() }
+				},
+				{
+					.name = "Col",
+					.allowed_types = { TypeInfo::get<cvec4>() },
+					.default_value = "255,255,255,255"
+				},
+				{
+					.name = "Angle",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto size = *(vec2*)inputs[0].data;
+				auto& image = *(graphics::ImageDesc*)inputs[1].data;
+				auto col = *(cvec4*)inputs[2].data;
+				auto angle = *(float*)inputs[3].data;
+				if (image.view)
+					sRenderer::instance()->hud_image_rotated(size, image, col, angle);
+			}
+		);
+
 		library->add_template("Hud Button", "", BlueprintNodeFlagHorizontalOutputs,
 			{
 				{
@@ -435,6 +545,20 @@ namespace flame
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				*(bool*)outputs[0].data = sRenderer::instance()->hud_item_hovered();
+			}
+		);
+
+		library->add_template("Hud Item Clicked", "", BlueprintNodeFlagNone,
+			{
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(bool*)outputs[0].data = sRenderer::instance()->hud_item_clicked();
 			}
 		);
 	}

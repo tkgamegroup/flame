@@ -9,10 +9,6 @@ namespace flame
 	{
 		library->add_template("Tween Begin", "", BlueprintNodeFlagNone,
 			{
-				{
-					.name = "Entity",
-					.allowed_types = { TypeInfo::get<EntityPtr>() }
-				}
 			},
 			{
 				{
@@ -21,17 +17,12 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
-				{
-					auto id = sTween::instance()->begin(entity);
-					*(uint*)outputs[0].data = id;
-				}
-				else
-					*(uint*)outputs[0].data = 0;
+				auto id = sTween::instance()->begin();
+				*(uint*)outputs[0].data = id;
 			}
 		);
 
-		library->add_template("Tween Begin Renderer", "", BlueprintNodeFlagNone,
+		library->add_template("Tween Begin Gui", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -40,6 +31,11 @@ namespace flame
 				{
 					.name = "Group_hash",
 					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "Target Count",
+					.allowed_types = { TypeInfo::get<uint>() },
+					.default_value = "1"
 				}
 			},
 			{
@@ -56,7 +52,8 @@ namespace flame
 						auto instance = ins->bp_ins;
 						if (auto group = instance->find_group(*(uint*)inputs[1].data); group)
 						{
-							auto id = sTween::instance()->begin(sTween::RendererGui, group);
+							auto count = *(uint*)inputs[2].data;
+							auto id = sTween::instance()->begin(group, count);
 							*(uint*)outputs[0].data = id;
 						}
 						else
@@ -70,6 +67,70 @@ namespace flame
 			}
 		);
 
+		library->add_template("Tween Set Target Entity", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto id = *(uint*)inputs[0].data;
+				if (id != 0)
+				{
+					auto entity = *(EntityPtr*)inputs[1].data;
+					if (entity)
+						sTween::instance()->set_target(id, entity);
+					else
+						*(uint*)outputs[0].data = 0;
+
+					*(uint*)outputs[0].data = id;
+				}
+				else
+					*(uint*)outputs[0].data = 0;
+			}
+		);
+
+		library->add_template("Tween Set Target Idx", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Idx",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto id = *(uint*)inputs[0].data;
+				if (id != 0)
+				{
+					auto idx = *(uint*)inputs[1].data;
+					sTween::instance()->set_target(id, idx);
+
+					*(uint*)outputs[0].data = id;
+				}
+				else
+					*(uint*)outputs[0].data = 0;
+			}
+		);
 		library->add_template("Tween Set Custom Data", "", BlueprintNodeFlagEnableTemplate,
 			{
 				{
@@ -144,6 +205,32 @@ namespace flame
 				auto id = *(uint*)inputs[0].data;
 				if (id != 0)
 					sTween::instance()->end(id);
+			}
+		);
+
+		library->add_template("Tween Newline", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto id = *(uint*)inputs[0].data;
+				if (id != 0)
+				{
+					sTween::instance()->newline(id);
+
+					*(uint*)outputs[0].data = id;
+				}
+				else
+					*(uint*)outputs[0].data = 0;
 			}
 		);
 
@@ -236,9 +323,7 @@ namespace flame
 				auto id = *(uint*)inputs[0].data;
 				if (id != 0)
 				{
-					auto eul = *(vec3*)inputs[1].data;
-					auto qut = quat(mat3(eulerAngleYXZ(radians(eul.x), radians(eul.y), radians(eul.z))));
-					sTween::instance()->rotate_to(id, qut, *(float*)inputs[2].data);
+					sTween::instance()->rotate_to(id, *(vec3*)inputs[1].data, *(float*)inputs[2].data);
 
 					*(uint*)outputs[0].data = id;
 				}
@@ -346,6 +431,40 @@ namespace flame
 				if (id != 0)
 				{
 					sTween::instance()->light_color_to(id, *(vec4*)inputs[1].data, *(float*)inputs[2].data);
+
+					*(uint*)outputs[0].data = id;
+				}
+				else
+					*(uint*)outputs[0].data = 0;
+			}
+		);
+
+		library->add_template("Tween Alpha To", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Alpha",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "Duration",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto id = *(uint*)inputs[0].data;
+				if (id != 0)
+				{
+					sTween::instance()->alpha_to(id, *(float*)inputs[1].data, *(float*)inputs[2].data);
 
 					*(uint*)outputs[0].data = id;
 				}

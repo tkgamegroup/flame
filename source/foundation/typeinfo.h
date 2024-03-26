@@ -971,16 +971,14 @@ namespace flame
 			}
 			else
 			{
-				for (auto i = 0; i < ei->items.size(); i++)
+				for (auto& ii : ei->items)
 				{
-					if ((vv & 1) == 1)
+					if ((vv & ii.value) == ii.value)
 					{
 						if (!ret.empty())
 							ret += '|';
-						auto it = ei->find_item_by_value(1 << i);
-						ret += it ? it->name : "";
+						ret += ii.name;
 					}
-					vv >>= 1;
 				}
 			}
 			return ret;

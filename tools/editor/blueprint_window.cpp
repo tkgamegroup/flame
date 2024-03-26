@@ -1472,6 +1472,26 @@ void BlueprintView::on_draw()
 							app.change_bp_references(old_name_hash, blueprint->name_hash, 0, sh(name.c_str()), blueprint->name_hash, 0);
 						unsaved = true;
 					}
+					{
+						auto ti = (TypeInfo_Enum*)TypeInfo::get<BlueprintVariableFlags>();
+						auto ei = ti->ei;
+						if (ImGui::BeginCombo("Flags", ti->serialize(&var.flags).c_str()))
+						{
+							for (auto& ii : ei->items)
+							{
+								bool selected = (var.flags & ii.value);
+								if (ImGui::Selectable(ii.name.c_str(), selected))
+								{
+									if (selected)
+										(int&)var.flags &= ~ii.value;
+									else
+										(int&)var.flags |= ii.value;
+								}
+							}
+							ImGui::EndCombo();
+						}
+					}
+					ImGui::SetNextItemWidth(200.f);
 					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
 					{
 						if (auto type = show_types_menu(); type)
@@ -1580,6 +1600,25 @@ void BlueprintView::on_draw()
 					{
 						blueprint->alter_variable(group, var.name_hash, name, var.type);
 						unsaved = true;
+					}
+					{
+						auto ti = (TypeInfo_Enum*)TypeInfo::get<BlueprintVariableFlags>();
+						auto ei = ti->ei;
+						if (ImGui::BeginCombo("Flags", ti->serialize(&var.flags).c_str()))
+						{
+							for (auto& ii : ei->items)
+							{
+								bool selected = (var.flags & ii.value);
+								if (ImGui::Selectable(ii.name.c_str(), selected))
+								{
+									if (selected)
+										(int&)var.flags &= ~ii.value;
+									else
+										(int&)var.flags |= ii.value;
+								}
+							}
+							ImGui::EndCombo();
+						}
 					}
 					ImGui::SetNextItemWidth(200.f);
 					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))

@@ -176,7 +176,11 @@ namespace flame
 					auto name = *(uint*)inputs[1].data;
 					if (name)
 						item = atlas->get_item(name);
+					else
+						item.view = nullptr;
 				}
+				else
+					item.view = nullptr;
 			}
 		);
 	}

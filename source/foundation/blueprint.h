@@ -46,6 +46,12 @@ namespace flame
 		return (BlueprintSlotFlags)((uint)a & (uint)b);
 	}
 
+	enum BlueprintVariableFlags
+	{
+		BlueprintVariableFlagNone = 0,
+		BlueprintVariableFlagAttribute = 1 << 0,
+	};
+
 	enum BlueprintNodeStructureChangeReason
 	{
 		BlueprintNodeInputTypesChanged,
@@ -390,10 +396,11 @@ namespace flame
 
 	struct BlueprintVariable
 	{
-		std::string name;
-		uint		name_hash = 0;
-		TypeInfo*	type = nullptr;
-		void*		data = nullptr;
+		std::string				name;
+		uint					name_hash = 0;
+		BlueprintVariableFlags	flags = BlueprintVariableFlagNone;
+		TypeInfo*				type = nullptr;
+		void*					data = nullptr;
 	};
 
 	struct BlueprintInvalidNode
@@ -558,14 +565,14 @@ namespace flame
 
 		virtual ~Blueprint() {}
 
-		virtual void					add_enum(const std::string& name, const std::vector<BlueprintEnumItem>& items) = 0;
+		virtual BlueprintEnum*			add_enum(const std::string& name, const std::vector<BlueprintEnumItem>& items) = 0;
 		virtual void					remove_enum(uint name) = 0;
 		virtual void					alter_enum(uint old_name, const std::string& new_name, const std::vector<BlueprintEnumItem>& new_items) = 0;
-		virtual void					add_struct(const std::string& name, const std::vector<BlueprintStructVariable>& variables) = 0;
+		virtual BlueprintStruct*		add_struct(const std::string& name, const std::vector<BlueprintStructVariable>& variables) = 0;
 		virtual void					remove_struct(uint name) = 0;
 		virtual void					alter_struct(uint old_name, const std::string& new_name, const std::vector<BlueprintStructVariable>& new_variables) = 0;
 
-		virtual void*					add_variable(BlueprintGroupPtr group /* or null for blueprint variable */, const std::string& name, TypeInfo* type) = 0; // return: the data of the variable
+		virtual BlueprintVariable*		add_variable(BlueprintGroupPtr group /* or null for blueprint variable */, const std::string& name, TypeInfo* type) = 0; // return: the data of the variable
 		virtual void					remove_variable(BlueprintGroupPtr group /* or null for blueprint variable */, uint name) = 0;
 		virtual void					alter_variable(BlueprintGroupPtr group /* or null for blueprint variable */, uint old_name, const std::string& new_name = "", TypeInfo* new_type = nullptr) = 0;
 		virtual BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, const std::string& name, BlueprintNodeFlags flags, const std::string& display_name,
@@ -887,6 +894,7 @@ namespace flame
 		virtual BlueprintInstanceNode* step(BlueprintInstanceGroup* group) = 0; // return: next node
 		virtual void stop(BlueprintInstanceGroup* group) = 0;
 		virtual void call(BlueprintInstanceGroup* group, void** inputs, void** outputs) = 0;
+		virtual void call(BlueprintInstanceGroup* group, const std::vector<std::pair<uint, void*>>& named_inputs, const std::vector<std::pair<uint, void*>>& named_outputs) = 0;
 		virtual void register_group(BlueprintInstanceGroup* group) = 0;
 		virtual void unregister_group(BlueprintInstanceGroup* group) = 0;
 		virtual void broadcast(uint message) = 0;

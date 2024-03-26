@@ -35,14 +35,14 @@ namespace flame
 
 		BlueprintSlotPtr		create_slot(BlueprintNodePtr n, const BlueprintSlotDesc& desc, int pos = -1);
 
-		void					add_enum(const std::string& name, const std::vector<BlueprintEnumItem>& items) override;
+		BlueprintEnum*			add_enum(const std::string& name, const std::vector<BlueprintEnumItem>& items) override;
 		void					remove_enum(uint name) override;
 		void					alter_enum(uint old_name, const std::string& new_name, const std::vector<BlueprintEnumItem>& new_items) override;
-		void					add_struct(const std::string& name, const std::vector<BlueprintStructVariable>& variables) override;
+		BlueprintStruct*		add_struct(const std::string& name, const std::vector<BlueprintStructVariable>& variables) override;
 		void					remove_struct(uint name) override;
 		void					alter_struct(uint old_name, const std::string& new_name, const std::vector<BlueprintStructVariable>& new_variables) override;
 
-		void*					add_variable(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;
+		BlueprintVariable*		add_variable(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;
 		void					remove_variable(BlueprintGroupPtr group, uint name) override;
 		void					alter_variable(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* new_type) override;
 
@@ -104,6 +104,7 @@ namespace flame
 		BlueprintInstanceNode* step(BlueprintInstanceGroup* group) override;
 		void stop(BlueprintInstanceGroup* group) override;
 		void call(BlueprintInstanceGroup* group, void** inputs, void** outputs) override;
+		void call(BlueprintInstanceGroup* group, const std::vector<std::pair<uint, void*>>& named_inputs, const std::vector<std::pair<uint, void*>>& named_outputs) override;
 		void register_group(BlueprintInstanceGroup* group) override;
 		void unregister_group(BlueprintInstanceGroup* group) override;
 		void broadcast(uint message) override;

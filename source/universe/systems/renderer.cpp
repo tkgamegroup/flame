@@ -3509,6 +3509,7 @@ namespace flame
 		{
 			if (layout.rect.b.x > layout.rect.a.x && layout.rect.b.y > layout.rect.a.y)
 				layout.rect.b -= layout.item_spacing * scaling;
+			layout.rect.b += layout.border.xy() + layout.border.zw();
 		}
 	}
 
@@ -3683,10 +3684,12 @@ namespace flame
 		hud_style_vars[var].pop();
 	}
 
-	void sRendererPrivate::hud_begin_layout(HudLayoutType type, const vec2& item_spacing)
+	void sRendererPrivate::hud_begin_layout(HudLayoutType type, const vec2& item_spacing, const vec4& border)
 	{
 		auto& layout = hud_add_layout(type);
 		layout.item_spacing = item_spacing;
+		layout.border = border;
+		layout.cursor += border.xy();
 	}
 
 	void sRendererPrivate::hud_end_layout()
@@ -3837,6 +3840,15 @@ namespace flame
 		canvas->add_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, col);
 	}
 
+	void sRendererPrivate::hud_image_rotated(const vec2& size, const graphics::ImageDesc& image, const cvec4& col, float angle)
+	{
+		auto canvas = render_tasks.front()->canvas;
+		auto input = sInput::instance();
+
+		auto rect = hud_add_rect(size);
+		canvas->add_image_rotated(image.view, rect.a, rect.b, image.uvs, col, angle);
+	}
+
 	bool sRendererPrivate::hud_button(std::wstring_view label, uint font_size)
 	{
 		auto canvas = render_tasks.front()->canvas;
@@ -3902,6 +3914,13 @@ namespace flame
 	bool sRendererPrivate::hud_item_hovered()
 	{
 		return hud_last_rect.contains(sInput::instance()->mpos);
+	}
+
+	bool sRendererPrivate::hud_item_clicked()
+	{
+		auto input = sInput::instance();
+
+		return hud_last_rect.contains(sInput::instance()->mpos) && input->mpressed(Mouse_Left);
 	}
 
 	void sRendererPrivate::send_debug_string(const std::string& str)

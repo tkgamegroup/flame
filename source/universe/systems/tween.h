@@ -4,24 +4,28 @@
 
 namespace flame
 {
+	enum TweenType
+	{
+		TweenEntity,
+		TweenGui
+	};
+
 	struct sTween : System
 	{
-		enum RendererType
-		{
-			RendererGui
-		};
-
-		virtual uint begin(EntityPtr e) = 0;
-		virtual uint begin(RendererType render_type, BlueprintInstanceGroupPtr render) = 0;
+		virtual uint begin() = 0;
+		virtual uint begin(BlueprintInstanceGroupPtr renderer, uint target_count) = 0;
+		virtual void set_target(uint id, EntityPtr e) = 0;
+		virtual void set_target(uint id, uint idx) = 0;
 		virtual void set_custom_data(uint id, TypeInfo* type, void* data) = 0;
 		virtual void end(uint id) = 0;
 		virtual void newline(uint id) = 0;
 		virtual void wait(uint id, float time) = 0;
 		virtual void move_to(uint id, const vec3& pos, float duration) = 0;
-		virtual void rotate_to(uint id, const quat& qut, float duration) = 0;
+		virtual void rotate_to(uint id, const vec3& eul, float duration) = 0;
 		virtual void scale_to(uint id, const vec3& scl, float duration) = 0;
 		virtual void object_color_to(uint id, const cvec4& col, float duration) = 0;
 		virtual void light_color_to(uint id, const vec4& col, float duration) = 0;
+		virtual void alpha_to(uint id, float alpha, float duration) = 0;
 		virtual void enable(uint id) = 0;
 		virtual void disable(uint id) = 0;
 		virtual void play_animation(uint id, uint name) = 0;
