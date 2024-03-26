@@ -13,7 +13,7 @@ namespace flame
 			auto ui = find_udt(s->type_hash);
 			for (auto& a : ui->attributes)
 			{
-				if (a.type->tag == TagD)
+				if (a.type->tag == TagD || a.type->tag == TagE)
 					a.unserialize(s.get(), a.default_value);
 			}
 		}
@@ -64,6 +64,15 @@ namespace flame
 		}
 
 		auto world = World::instance();
+		for (auto& s : world->systems)
+		{
+			auto ui = find_udt(s->type_hash);
+			for (auto& a : ui->attributes)
+			{
+				if (a.type->tag == TagD || a.type->tag == TagE)
+					a.unserialize(s.get(), a.default_value);
+			}
+		}
 		for (auto n : doc_root.children())
 		{
 			auto hash = sh(n.attribute("name").value());

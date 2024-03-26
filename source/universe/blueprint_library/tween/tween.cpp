@@ -298,6 +298,40 @@ namespace flame
 			}
 		);
 
+		library->add_template("Tween Move From", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Pos",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Duration",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto id = *(uint*)inputs[0].data;
+				if (id != 0)
+				{
+					sTween::instance()->move_from(id, *(vec3*)inputs[1].data, *(float*)inputs[2].data);
+
+					*(uint*)outputs[0].data = id;
+				}
+				else
+					*(uint*)outputs[0].data = 0;
+			}
+		);
+
 		library->add_template("Tween Rotate To", "", BlueprintNodeFlagNone,
 			{
 				{
@@ -324,6 +358,40 @@ namespace flame
 				if (id != 0)
 				{
 					sTween::instance()->rotate_to(id, *(vec3*)inputs[1].data, *(float*)inputs[2].data);
+
+					*(uint*)outputs[0].data = id;
+				}
+				else
+					*(uint*)outputs[0].data = 0;
+			}
+		);
+
+		library->add_template("Tween Rotate From", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Eul",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Duration",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto id = *(uint*)inputs[0].data;
+				if (id != 0)
+				{
+					sTween::instance()->rotate_from(id, *(vec3*)inputs[1].data, *(float*)inputs[2].data);
 
 					*(uint*)outputs[0].data = id;
 				}
@@ -371,6 +439,45 @@ namespace flame
 			}
 		);
 
+		library->add_template("Tween Scale From", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Scl",
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<vec3>() }
+				},
+				{
+					.name = "Duration",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto id = *(uint*)inputs[0].data;
+				if (id != 0)
+				{
+					vec3 scl;
+					if (inputs[1].type == TypeInfo::get<float>())
+						scl = vec3(*(float*)inputs[1].data);
+					else
+						scl = *(vec3*)inputs[1].data;
+					sTween::instance()->scale_from(id, scl, *(float*)inputs[2].data);
+
+					*(uint*)outputs[0].data = id;
+				}
+				else
+					*(uint*)outputs[0].data = 0;
+			}
+		);
+
 		library->add_template("Tween Object Color To", "", BlueprintNodeFlagNone,
 			{
 				{
@@ -397,6 +504,40 @@ namespace flame
 				if (id != 0)
 				{
 					sTween::instance()->object_color_to(id, *(cvec4*)inputs[1].data, *(float*)inputs[2].data);
+
+					*(uint*)outputs[0].data = id;
+				}
+				else
+					*(uint*)outputs[0].data = 0;
+			}
+		);
+
+		library->add_template("Tween Object Color From", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Col",
+					.allowed_types = { TypeInfo::get<cvec4>() }
+				},
+				{
+					.name = "Duration",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto id = *(uint*)inputs[0].data;
+				if (id != 0)
+				{
+					sTween::instance()->object_color_from(id, *(cvec4*)inputs[1].data, *(float*)inputs[2].data);
 
 					*(uint*)outputs[0].data = id;
 				}
@@ -439,6 +580,40 @@ namespace flame
 			}
 		);
 
+		library->add_template("Tween Light Color From", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Col",
+					.allowed_types = { TypeInfo::get<vec4>() }
+				},
+				{
+					.name = "Duration",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto id = *(uint*)inputs[0].data;
+				if (id != 0)
+				{
+					sTween::instance()->light_color_from(id, *(vec4*)inputs[1].data, *(float*)inputs[2].data);
+
+					*(uint*)outputs[0].data = id;
+				}
+				else
+					*(uint*)outputs[0].data = 0;
+			}
+		);
+
 		library->add_template("Tween Alpha To", "", BlueprintNodeFlagNone,
 			{
 				{
@@ -465,6 +640,40 @@ namespace flame
 				if (id != 0)
 				{
 					sTween::instance()->alpha_to(id, *(float*)inputs[1].data, *(float*)inputs[2].data);
+
+					*(uint*)outputs[0].data = id;
+				}
+				else
+					*(uint*)outputs[0].data = 0;
+			}
+		);
+
+		library->add_template("Tween Alpha From", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				},
+				{
+					.name = "Alpha",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "Duration",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "ID",
+					.allowed_types = { TypeInfo::get<uint>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto id = *(uint*)inputs[0].data;
+				if (id != 0)
+				{
+					sTween::instance()->alpha_from(id, *(float*)inputs[1].data, *(float*)inputs[2].data);
 
 					*(uint*)outputs[0].data = id;
 				}

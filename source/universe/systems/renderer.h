@@ -49,6 +49,7 @@ namespace flame
 	enum HudStyleVar
 	{
 		HudStyleVarScaling,
+		HudStyleVarAlpha,
 		HudStyleVarCount
 	};
 
@@ -114,6 +115,11 @@ namespace flame
 		virtual RenderTaskPtr add_render_task_with_window_targets(RenderMode mode, cCameraPtr camera, 
 			bool need_canvas = true, bool need_pickup = true) = 0;
 		virtual void remove_render_task(RenderTaskPtr task) = 0;
+
+		// Reflect
+		virtual RenderMode get_render_mode() = 0; // first task's mode
+		// Reflect
+		virtual void set_render_mode(RenderMode mode) = 0; // first task's mode
 
 		// Reflect
 		graphics::ImageViewPtr sky_map = nullptr;

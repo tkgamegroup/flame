@@ -165,8 +165,9 @@ namespace flame
 				if (info.reason == BlueprintNodeTemplateChanged)
 				{
 					auto num_args = 1;
-					if (SUS::strip_head_if(info.template_string, "args"))
-						num_args = s2t<int>(info.template_string);
+					auto str = info.template_string;
+					if (SUS::strip_head_if(str, "args"))
+						num_args = s2t<int>(str);
 
 					num_args = clamp(num_args, 0, 2);
 
@@ -227,8 +228,9 @@ namespace flame
 				if (info.reason == BlueprintNodeTemplateChanged)
 				{
 					auto num_args = 1;
-					if (SUS::strip_head_if(info.template_string, "args"))
-						num_args = s2t<int>(info.template_string);
+					auto str = info.template_string;
+					if (SUS::strip_head_if(str, "args"))
+						num_args = s2t<int>(str);
 
 					num_args = clamp(num_args, 0, 2);
 
@@ -317,6 +319,27 @@ namespace flame
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				sRenderer::instance()->hud_pop_style(HudStyleVarScaling);
+			}
+		);
+
+		library->add_template("Hud Alpha", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Alpha",
+					.allowed_types = { TypeInfo::get<float>() },
+					.default_value = "1"
+				}
+			},
+			{
+			},
+			true,
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
+				sRenderer::instance()->hud_push_style(HudStyleVarAlpha, vec2(*(float*)inputs[0].data));
+
+				execution.block->max_execute_times = 1;
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				sRenderer::instance()->hud_pop_style(HudStyleVarAlpha);
 			}
 		);
 

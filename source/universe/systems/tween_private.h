@@ -23,17 +23,23 @@ namespace flame
 		enum ActionType
 		{
 			ActionWait,
-			ActionMoveTo,
-			ActionRotateTo,
-			ActionScaleTo,
-			ActionObjectColorTo,
-			ActionLightColorTo,
-			ActionAlphaTo,
+			ActionMove,
+			ActionRotate,
+			ActionScale,
+			ActionObjectColor,
+			ActionLightColor,
+			ActionAlpha,
 			ActionEnable,
 			ActionDisable,
 			ActionPlayAnimation,
 			ActionKill,
 			ActionCallback
+		};
+
+		enum ActionDirection
+		{
+			ActionForward,
+			ActionBackward
 		};
 
 		struct Action
@@ -43,6 +49,7 @@ namespace flame
 			float start_time;
 			float end_time;
 			ActionType type;
+			ActionDirection dir;
 			float duration;
 			lVariant v0, v1;
 		};
@@ -92,11 +99,17 @@ namespace flame
 		void newline(uint id) override;
 		void wait(uint id, float time) override;
 		void move_to(uint id, const vec3& pos, float duration) override;
+		void move_from(uint id, const vec3& pos, float duration) override;
 		void rotate_to(uint id, const vec3& eul, float duration) override;
+		void rotate_from(uint id, const vec3& eul, float duration) override;
 		void scale_to(uint id, const vec3& scale, float duration) override;
+		void scale_from(uint id, const vec3& scale, float duration) override;
 		void object_color_to(uint id, const cvec4& col, float duration) override;
+		void object_color_from(uint id, const cvec4& col, float duration) override;
 		void light_color_to(uint id, const vec4& col, float duration) override;
+		void light_color_from(uint id, const vec4& col, float duration) override;
 		void alpha_to(uint id, float alpha, float duration) override;
+		void alpha_from(uint id, float alpha, float duration) override;
 		void enable(uint id) override;
 		void disable(uint id) override;
 		void play_animation(uint id, uint name) override;

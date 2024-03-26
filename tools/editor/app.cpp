@@ -1775,17 +1775,6 @@ void App::on_gui()
 		}
 		ImGui::EndMenu();
 	}
-	if (ImGui::BeginMenu("Render"))
-	{
-		auto render_task = renderer->render_tasks.front().get();
-		if (ImGui::MenuItem("Shaded", nullptr, render_task->mode == RenderModeShaded))
-			render_task->mode = RenderModeShaded;
-		if (ImGui::MenuItem("Camera Light", nullptr, render_task->mode == RenderModeCameraLight))
-			render_task->mode = RenderModeCameraLight;
-		if (ImGui::MenuItem("Wireframe", nullptr, render_task->mode == RenderModeWireframe))
-			render_task->mode = RenderModeWireframe;
-		ImGui::EndMenu();
-	}
 	if (ImGui::BeginMenu("Debug"))
 	{
 		if (ImGui::MenuItem("Calculate Hash"))
@@ -2959,6 +2948,7 @@ bool App::cmd_stop()
 				fv->camera_idx = -1;
 			sRenderer::instance()->render_tasks.front()->camera = nullptr;
 		}
+		sRenderer::instance()->render_tasks.front()->mode = RenderModeCameraLight;
 		return false;
 	});
 

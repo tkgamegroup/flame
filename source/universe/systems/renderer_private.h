@@ -134,6 +134,9 @@ namespace flame
 			bool need_canvas = true, bool need_pickup = true) override;
 		void remove_render_task(RenderTaskPtr task) override;
 
+		RenderMode get_render_mode() override;
+		void set_render_mode(RenderMode mode) override;
+
 		graphics::ImageViewPtr sky_map = nullptr;
 		graphics::ImageViewPtr sky_irr_map = nullptr;
 		graphics::ImageViewPtr sky_rad_map = nullptr;
