@@ -520,15 +520,35 @@ ProjectView::ProjectView(const std::string& name) :
 			{
 				struct NewImageDialog : ImGui::Dialog
 				{
+					enum Format
+					{
+						Format_RGBA8,
+						Format_R8
+					};
+
+					enum Type
+					{
+						TypeBlack,
+						TypeWhite,
+						TypePerlinNoise,
+						TypeSphere,
+						TypeColorPalette
+					};
+
 					std::filesystem::path dir;
 					std::string name = "new_image";
 					int format = 0;
 					ivec3 extent = ivec3(256, 256, 1);
 					int type = 0;
+
 					vec2 noise_offset = vec2(3.8f, 7.5f);
 					float noise_scale = 4.f;
 					float noise_falloff = 10.f;
 					float noise_power = 3.f;
+
+					float color_palette_saturation = 0.5f;
+					int color_palette_hud_num = 12;
+					int color_palette_value_num = 10;
 
 					std::unique_ptr<graphics::Image> image;
 
@@ -548,21 +568,21 @@ ProjectView::ProjectView(const std::string& name) :
 						graphics::Format fmt = graphics::Format_Undefined;
 						switch (format)
 						{
-						case 0: fmt = graphics::Format_R8G8B8A8_UNORM; break;
-						case 1: fmt = graphics::Format_R8_UNORM; break;
+						case Format_RGBA8: fmt = graphics::Format_R8G8B8A8_UNORM; break;
+						case Format_R8: fmt = graphics::Format_R8_UNORM; break;
 						}
 
 						auto ret = graphics::Image::create(fmt, extent, graphics::ImageUsageTransferSrc | graphics::ImageUsageTransferDst | graphics::ImageUsageAttachment | graphics::ImageUsageSampled);
 
 						switch (type)
 						{
-						case 0:
+						case TypeBlack:
 							ret->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
 							break;
-						case 1:
+						case TypeWhite:
 							ret->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
 							break;
-						case 2:
+						case TypePerlinNoise:
 							if (extent.z == 1)
 							{
 								graphics::InstanceCommandBuffer cb;
@@ -570,7 +590,7 @@ ProjectView::ProjectView(const std::string& name) :
 								cb->set_viewport_and_scissor(Rect(vec2(0), vec2(extent)));
 
 								auto fb = ret->get_shader_write_dst();
-								auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\fbm.pipeline",
+								auto pl = graphics::GraphicsPipeline::get(L"flame\\shaders\\noise\\perlin.pipeline",
 									{ "rp=" + str(fb->renderpass) });
 								graphics::PipelineResourceManager prm;
 								prm.init(pl->layout, graphics::PipelineGraphics);
@@ -590,7 +610,7 @@ ProjectView::ProjectView(const std::string& name) :
 								cb.excute();
 							}
 							break;
-						case 3:
+						case TypeSphere:
 							if (extent.z > 1)
 							{
 								graphics::StagingBuffer sb(ret->data_size, nullptr);
@@ -610,6 +630,44 @@ ProjectView::ProjectView(const std::string& name) :
 											dst[x + yoff + zoff] = (1.f - min(1.f, sqrt(fx * fx + fy * fy + fz * fz))) * 255.f;
 										}
 									}
+								}
+								cb->image_barrier(ret, {}, graphics::ImageLayoutTransferDst);
+								graphics::BufferImageCopy cpy;
+								cpy.img_ext = extent;
+								cb->copy_buffer_to_image(sb.get(), ret, cpy);
+								cb->image_barrier(ret, {}, graphics::ImageLayoutShaderReadOnly);
+								cb.excute();
+							}
+							break;
+						case TypeColorPalette:
+							if (extent.z == 1)
+							{
+								graphics::StagingBuffer sb(ret->data_size, nullptr);
+								graphics::InstanceCommandBuffer cb;
+								auto dst = (char*)sb->mapped;
+								for (auto x = 0; x < color_palette_hud_num; x++)
+								{
+									auto h = (float)x / color_palette_hud_num * 360.f;
+									for (auto y = 0; y <= color_palette_value_num; y++)
+									{
+										auto v = (float)y / color_palette_value_num;
+										auto color = rgbColor(vec3(h, color_palette_saturation, v));
+										auto idx = (color_palette_value_num - y) * extent.x * 4 + x * 4;
+										dst[idx + 0] = (char)(color.x * 255.f);
+										dst[idx + 1] = (char)(color.y * 255.f);
+										dst[idx + 2] = (char)(color.z * 255.f);
+										dst[idx + 3] = 255;
+									}
+								}
+								for (auto y = 0; y <= color_palette_value_num; y++)
+								{
+									auto v = (float)y / color_palette_value_num;
+									auto color = vec3(v);
+									auto idx = (color_palette_value_num - y) * extent.x * 4 + color_palette_hud_num * 4;
+									dst[idx + 0] = (char)(color.x * 255.f);
+									dst[idx + 1] = (char)(color.y * 255.f);
+									dst[idx + 2] = (char)(color.z * 255.f);
+									dst[idx + 3] = 255;
 								}
 								cb->image_barrier(ret, {}, graphics::ImageLayoutTransferDst);
 								graphics::BufferImageCopy cpy;
@@ -640,16 +698,22 @@ ProjectView::ProjectView(const std::string& name) :
 								"Black",
 								"White",
 								"Perlin Noise",
-								"Sphere"
+								"Sphere",
+								"Color Palette"
 							};
 							ImGui::Combo("type", &type, types, countof(types));
 							switch (type)
 							{
-							case 2:
+							case TypePerlinNoise:
 								ImGui::DragFloat2("offset", (float*)&noise_offset, 0.1f, 0.f, 100.f);
 								ImGui::DragFloat("scale", &noise_scale, 0.1f, 0.f, 10.f);
 								ImGui::DragFloat("falloff", &noise_falloff, 1.f, 2.f, 100.f);
 								ImGui::DragFloat("power", &noise_power, 0.01f, 1.f, 10.f);
+								break;
+							case TypeColorPalette:
+								ImGui::DragFloat("saturation", &color_palette_saturation, 0.01f, 0.f, 1.f);
+								ImGui::InputInt("hud num", &color_palette_hud_num);
+								ImGui::InputInt("value num", &color_palette_value_num);
 								break;
 							}
 							if (ImGui::Button("Generate"))

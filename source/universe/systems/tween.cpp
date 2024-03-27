@@ -171,6 +171,7 @@ namespace flame
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
 			auto a = it->second.get();
+			assert(e);
 			a->curr_target.e = e;
 		}
 	}
@@ -180,6 +181,7 @@ namespace flame
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
 			auto a = it->second.get();
+			assert(idx < a->renderer_datas.size());
 			a->curr_target.idx = idx;
 		}
 	}
