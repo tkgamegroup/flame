@@ -1038,7 +1038,34 @@ void BlueprintView::on_draw()
 				return changed;
 			};
 
-			if (ImGui::CollapsingHeader("Bp Enums:"))
+
+			{
+				auto s = blueprint->super_filename.string();
+				ImGui::SetNextItemWidth(150.f);
+				ImGui::InputText("Super", s.data(), ImGuiInputTextFlags_ReadOnly);
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
+					{
+						blueprint->set_super(Path::reverse(std::wstring((wchar_t*)payload->Data)));
+						unsaved = true;
+					}
+					ImGui::EndDragDropTarget();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button(graphics::font_icon_str("location-crosshairs"_h).c_str()))
+					project_window.ping(Path::get(blueprint->super_filename));
+				ImGui::SameLine();
+				if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
+				{
+					blueprint->set_super(L"");
+					unsaved = true;
+				}
+
+				if (blueprint_instance->built_frame < blueprint->dirty_frame)
+					blueprint_instance->build();
+			}
+			if (ImGui::CollapsingHeader("Enums:"))
 			{
 				ImGui::PushID("bp_enums");
 				static int selected_enum = -1;
@@ -1215,7 +1242,7 @@ void BlueprintView::on_draw()
 				if (blueprint_instance->built_frame < blueprint->dirty_frame)
 					blueprint_instance->build();
 			}
-			if (ImGui::CollapsingHeader("Bp Structs:"))
+			if (ImGui::CollapsingHeader("Structs:"))
 			{
 				ImGui::PushID("bp_structs");
 				static int selected_struct = -1;
@@ -1397,7 +1424,7 @@ void BlueprintView::on_draw()
 				if (blueprint_instance->built_frame < blueprint->dirty_frame)
 					blueprint_instance->build();
 			}
-			if (ImGui::CollapsingHeader("Bp Variables:"))
+			if (ImGui::CollapsingHeader("Variables:"))
 			{
 				ImGui::PushID("bp_variables");
 				static int selected_variable = -1;

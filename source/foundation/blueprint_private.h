@@ -33,7 +33,7 @@ namespace flame
 		BlueprintPrivate();
 		~BlueprintPrivate();
 
-		BlueprintSlotPtr		create_slot(BlueprintNodePtr n, const BlueprintSlotDesc& desc, int pos = -1);
+		void					set_super(const std::filesystem::path& filename) override;
 
 		BlueprintEnum*			add_enum(const std::string& name, const std::vector<BlueprintEnumItem>& items) override;
 		void					remove_enum(uint name) override;
@@ -45,6 +45,8 @@ namespace flame
 		BlueprintVariable*		add_variable(BlueprintGroupPtr group, const std::string& name, TypeInfo* type) override;
 		void					remove_variable(BlueprintGroupPtr group, uint name) override;
 		void					alter_variable(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* new_type) override;
+
+		BlueprintSlotPtr		create_slot(BlueprintNodePtr n, const BlueprintSlotDesc& desc, int pos = -1);
 
 		BlueprintNodePtr		add_node(BlueprintGroupPtr group, BlueprintNodePtr parent, const std::string& name, BlueprintNodeFlags flags, const std::string& display_name,
 			const std::vector<BlueprintSlotDesc>& inputs, const std::vector<BlueprintSlotDesc>& outputs,

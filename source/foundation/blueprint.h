@@ -529,6 +529,9 @@ namespace flame
 
 	struct Blueprint
 	{
+		std::filesystem::path							super_filename;
+		BlueprintPtr									super = nullptr;
+
 		std::vector<BlueprintEnum>						enums;
 		std::vector<BlueprintStruct>					structs;
 
@@ -565,6 +568,8 @@ namespace flame
 		}
 
 		virtual ~Blueprint() {}
+
+		virtual void					set_super(const std::filesystem::path& filename) = 0;
 
 		virtual BlueprintEnum*			add_enum(const std::string& name, const std::vector<BlueprintEnumItem>& items) = 0;
 		virtual void					remove_enum(uint name) = 0;

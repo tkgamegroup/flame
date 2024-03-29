@@ -158,12 +158,89 @@ namespace flame
 
 	BlueprintPrivate::~BlueprintPrivate()
 	{
+		if (super)
+			release(super);
 		for (auto& e : enums)
 			remove_enum(e.name_hash);
 		for (auto& s : structs)
 			remove_struct(s.name_hash);
 		for (auto& v : variables)
 			v.type->destroy(v.data);
+	}
+
+	void BlueprintPrivate::set_super(const std::filesystem::path& filename)
+	{
+		if (super)
+		{
+			for (auto& sv : super->variables)
+			{
+				auto is_override = false;
+				for (auto& v2 : variables)
+				{
+					if (v2.name_hash == sv.name_hash)
+					{
+						is_override = true;
+						break;
+					}
+				}
+
+				if (!is_override)
+				{
+					std::vector<BlueprintNodePtr> to_remove_nodes;
+					for (auto& g : groups)
+					{
+						for (auto& n : g->nodes)
+						{
+							if (blueprint_is_variable_node(n->name_hash))
+							{
+								if (*(uint*)n->inputs[0]->data == sv.name_hash && *(uint*)n->inputs[1]->data == 0)
+									to_remove_nodes.push_back(n.get());
+							}
+						}
+					}
+					for (auto n : to_remove_nodes)
+						remove_node(n, false);
+				}
+			}
+
+			for (auto& sg : super->groups)
+			{
+				auto is_override = false;
+				for (auto& g2 : groups)
+				{
+					if (g2->name_hash == sg->name_hash)
+					{
+						is_override = true;
+						break;
+					}
+				}
+
+				if (!is_override)
+				{
+					std::vector<BlueprintNodePtr> to_remove_nodes;
+					for (auto& g : groups)
+					{
+						for (auto& n : g->nodes)
+						{
+							if (n->name_hash == "Call"_h)
+							{
+								if (*(uint*)n->inputs[0]->data == sg->name_hash && *(uint*)n->inputs[1]->data == 0)
+									to_remove_nodes.push_back(n.get());
+							}
+						}
+					}
+					for (auto n : to_remove_nodes)
+						remove_node(n, false);
+				}
+			}
+
+			release(super);
+			super = nullptr;
+		}
+
+		super_filename = filename;
+		if (auto fn = Path::get(super_filename); std::filesystem::exists(fn))
+			super = get(fn);
 	}
 
 	BlueprintEnum* BlueprintPrivate::add_enum(const std::string& name, const std::vector<BlueprintEnumItem>& items)
@@ -440,16 +517,9 @@ namespace flame
 
 		auto frame = frames;
 		if (group)
-		{
 			group->variable_changed_frame = frame;
-			group->structure_changed_frame = frame;
-		}
 		else
-		{
 			variable_changed_frame = frame;
-			for (auto& g : groups)
-				g->structure_changed_frame = frame;
-		}
 		dirty_frame = frame;
 
 		return &v;
@@ -458,8 +528,21 @@ namespace flame
 	void BlueprintPrivate::remove_variable(BlueprintGroupPtr group, uint name)
 	{
 		assert(!group || group->blueprint == this);
-		auto& vars = group ? group->variables : variables;
 
+		auto is_override = false;
+		if (!group && super)
+		{
+			for (auto& v : super->variables)
+			{
+				if (v.name_hash == name)
+				{
+					is_override = true;
+					break;
+				}
+			}
+		}
+
+		auto& vars = group ? group->variables : variables;
 		for (auto it = vars.begin(); it != vars.end(); ++it)
 		{
 			if (it->name_hash == name)
@@ -470,40 +553,32 @@ namespace flame
 			}
 		}
 
-		std::vector<BlueprintNodePtr> to_remove_nodes;
-		auto process_group = [&](BlueprintGroupPtr group) {
-			for (auto& n : group->nodes)
-			{
-				if (blueprint_is_variable_node(n->name_hash))
-				{
-					if (*(uint*)n->inputs[0]->data == name && *(uint*)n->inputs[1]->data == 0)
-						to_remove_nodes.push_back(n.get());
-				}
-			}
-		};
-		if (group)
-			process_group(group);
-		else
+		if (!is_override)
 		{
-			for (auto& g : groups)
-				process_group(g.get());
+			std::vector<BlueprintNodePtr> to_remove_nodes;
+			auto process_group = [&](BlueprintGroupPtr group) {
+				for (auto& n : group->nodes)
+				{
+					if (blueprint_is_variable_node(n->name_hash))
+					{
+						if (*(uint*)n->inputs[0]->data == name && *(uint*)n->inputs[1]->data == 0)
+							to_remove_nodes.push_back(n.get());
+					}
+				}
+				};
+			if (group)
+				process_group(group);
+			else
+			{
+				for (auto& g : groups)
+					process_group(g.get());
+			}
+			for (auto n : to_remove_nodes)
+				remove_node(n, false);
 		}
-		for (auto n : to_remove_nodes)
-			remove_node(n, false);
 
 		auto frame = frames;
-		if (group)
-		{
-			group->variable_changed_frame = frame;
-			group->structure_changed_frame = frame;
-		}
-		else
-		{
-			variable_changed_frame = frame;
-			for (auto& g : groups)
-				g->structure_changed_frame = frame;
-		}
-		dirty_frame = frame;
+		variable_changed_frame = frame;
 	}
 
 	void BlueprintPrivate::alter_variable(BlueprintGroupPtr group, uint old_name, const std::string& new_name, TypeInfo* new_type)
@@ -712,6 +787,18 @@ namespace flame
 					variable = v;
 					found = true;
 					break;
+				}
+			}
+			if (super)
+			{
+				for (auto& v : super->variables)
+				{
+					if (v.name_hash == variable_name)
+					{
+						variable = v;
+						found = true;
+						break;
+					}
 				}
 			}
 			if (!found)
@@ -2922,12 +3009,8 @@ namespace flame
 			return;
 		}
 
-		for (auto n_dependency : doc_root.child("dependencies"))
-		{
-			std::filesystem::path path(n_dependency.attribute("v").value());
-			if (std::filesystem::exists(path))
-				Blueprint::get(path, true);
-		}
+		if (auto a = doc_root.attribute("super"); a)
+			set_super(a.value());
 
 		auto read_ti = [&](pugi::xml_attribute a) {
 			auto sp = SUS::to_string_vector(SUS::split(a.value(), '@'));
@@ -3297,36 +3380,10 @@ namespace flame
 		};
 
 		auto doc_root = doc.append_child("blueprint");
-		std::vector<BlueprintPtr> dependencies;
-		for (auto& g : groups)
-		{
-			for (auto& n : g->nodes)
-			{
-				if (blueprint_is_variable_node(n->name_hash))
-				{
-					auto name = *(uint*)n->inputs[0]->data;
-					auto location = *(uint*)n->inputs[1]->data;
-					if (location != 0)
-					{
-						auto bp = Blueprint::get(location);
-						if (bp)
-						{
-							if (std::find(dependencies.begin(), dependencies.end(), bp) == dependencies.end())
-								dependencies.push_back(bp);
-						}
-					}
-				}
-			}
-		}
-		if (!dependencies.empty())
-		{
-			auto n_dependencies = doc_root.append_child("dependencies");
-			for (auto bp : dependencies)
-			{
-				auto n_dependency = n_dependencies.append_child("dependency");
-				n_dependency.append_attribute("v").set_value(bp->filename.string().c_str());
-			}
-		}
+
+		if (super)
+			doc_root.append_attribute("super").set_value(super_filename.string().c_str());
+
 		if (!enums.empty())
 		{
 			auto n_enums = doc_root.append_child("enums");
@@ -3840,8 +3897,7 @@ namespace flame
 		if (blueprint->variable_changed_frame > variable_updated_frame)
 		{
 			std::unordered_map<uint, BlueprintAttribute> new_variables;
-			for (auto& v : blueprint->variables)
-			{
+			auto add_var = [&](const BlueprintVariable& v) {
 				BlueprintAttribute attr;
 				attr.type = v.type;
 				attr.data = v.type->create();
@@ -3850,6 +3906,16 @@ namespace flame
 				else
 					attr.type->copy(attr.data, v.data);
 				new_variables.emplace(v.name_hash, attr);
+			};
+			for (auto& v : blueprint->variables)
+				add_var(v);
+			if (blueprint->super)
+			{
+				for (auto& v : blueprint->super->variables)
+				{
+					if (auto it = new_variables.find(v.name_hash); it == new_variables.end())
+						add_var(v);
+				}
 			}
 			for (auto& pair : variables)
 				pair.second.type->destroy(pair.second.data);
@@ -4050,9 +4116,9 @@ namespace flame
 				auto find_var = [&](uint name, uint location_name = 0)->std::pair<TypeInfo*, void*> {
 					if (location_name == 0)
 					{
-						if (auto it = variables.find(name); it != variables.end())
-							return { it->second.type, it->second.data };
 						if (auto it = g.variables.find(name); it != g.variables.end())
+							return { it->second.type, it->second.data };
+						if (auto it = variables.find(name); it != variables.end())
 							return { it->second.type, it->second.data };
 						assert(0);
 					}

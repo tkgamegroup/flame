@@ -2346,9 +2346,8 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 							{
 								ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100);
 								ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 0);
-
-								for (auto& v : bp->variables)
-								{
+								
+								auto show_var = [&](const BlueprintVariable& v) {
 									if (auto it = bp_ins->variables.find(v.name_hash); it != bp_ins->variables.end())
 									{
 										if (is_pointer(v.type->tag))
@@ -2361,9 +2360,28 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 											ImGui::TextUnformatted(get_value_str(it->second.type, it->second.data).c_str());
 										}
 										else
-											manipulate_variable(v.type, v.name, v.name_hash, 0, nullptr, nullptr, "", &it->second.data, 1, bp);
+											manipulate_variable(v.type, v.name, v.name_hash, 0, nullptr, nullptr, "", &it->second.data, 1, &v);
+									}
+								};
+								if (bp->super)
+								{
+									for (auto& sv : bp->super->variables)
+									{
+										auto is_override = false;
+										for (auto& v2 : bp->variables)
+										{
+											if (v2.name_hash == sv.name_hash)
+											{
+												is_override = true;
+												break;
+											}
+										}
+										if (!is_override)
+											show_var(sv);
 									}
 								}
+								for (auto& v : bp->variables)
+									show_var(v);
 
 								if (ins->variables.size() > bp->variables.size())
 								{
@@ -2371,7 +2389,7 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 									{
 										auto name = v.name + "_backup";
 										if (auto it = ins->variables.find(sh(name.c_str())); it != ins->variables.end())
-											manipulate_variable(v.type, name, v.name_hash, 0, nullptr, nullptr, "", &it->second.data, 1, bp);
+											manipulate_variable(v.type, name, v.name_hash, 0, nullptr, nullptr, "", &it->second.data, 1, &v);
 									}
 								}
 
