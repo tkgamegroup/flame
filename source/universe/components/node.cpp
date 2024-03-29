@@ -47,7 +47,10 @@ namespace flame
 	void cNodePrivate::look_at(const vec3& t)
 	{
 		update_transform();
-		qut = inverse(mat3(lookAt(vec3(0.f), t - global_pos(), vec3(0.f, 1.f, 0.f))));
+		auto m = mat3(lookAt(vec3(0.f), t - global_pos(), vec3(0.f, 1.f, 0.f)));
+		m[0] *= -1.f;
+		m[2] *= -1.f;
+		qut = inverse(m);
 		mark_transform_dirty();
 	}
 

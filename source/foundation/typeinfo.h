@@ -272,7 +272,7 @@ namespace flame
 		virtual void* create(void* p = nullptr) const { if (!p) p = malloc(size); return p; }
 		virtual void destroy(void* p, bool free_memory = true) const { if (free_memory) free(p); }
 		virtual void copy(void* dst, const void* src) const { memcpy(dst, src ? src : get_v(), size); }
-		virtual bool compare(const void* d1, const void* d2) const { return memcmp(d1, d2, size) == 0; }
+		virtual bool compare(const void* d1, const void* d2) const { return memcmp(d1, d2 ? d2 : get_v(), size) == 0; }
 		virtual std::string serialize(const void* p) const { return ""; }
 		virtual void unserialize(const std::string& str, void* p) const {}
 
@@ -2999,6 +2999,7 @@ namespace flame
 		}
 		bool compare(const void* d1, const void* d2) const override
 		{
+			if (!d2) d2 = &v;
 			return *(std::string*)d1 == *(std::string*)d2;
 		}
 		std::string serialize(const void* p) const override
@@ -3059,6 +3060,7 @@ namespace flame
 		}
 		bool compare(const void* d1, const void* d2) const override
 		{
+			if (!d2) d2 = &v;
 			return *(std::wstring*)d1 == *(std::wstring*)d2;
 		}
 		std::string serialize(const void* p) const override
@@ -3119,6 +3121,7 @@ namespace flame
 		}
 		bool compare(const void* d1, const void* d2) const override
 		{
+			if (!d2) d2 = &v;
 			return *(std::filesystem::path*)d1 == *(std::filesystem::path*)d2;
 		}
 		std::string serialize(const void* p) const override
@@ -3356,7 +3359,7 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return str_hex<uint64>((uint64)*(voidptr*)p);
+			return str_hex<uint64>((uint64) * (voidptr*)p);
 		}
 		TypeInfo* get_wrapped() const override
 		{
@@ -3376,7 +3379,7 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return str_hex<uint64>((uint64)*(voidptr*)p);
+			return str_hex<uint64>((uint64) * (voidptr*)p);
 		}
 		TypeInfo* get_wrapped() const override
 		{
@@ -3396,7 +3399,7 @@ namespace flame
 
 		std::string serialize(const void* p) const override
 		{
-			return str_hex<uint64>((uint64)*(voidptr*)p);
+			return str_hex<uint64>((uint64) * (voidptr*)p);
 		}
 		TypeInfo* get_wrapped() const override
 		{

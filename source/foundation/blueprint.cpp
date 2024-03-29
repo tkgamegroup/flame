@@ -572,7 +572,10 @@ namespace flame
 		if (s->flags & BlueprintSlotFlagInput)
 		{
 			if (!desc.default_value.empty())
+			{
 				s->type->unserialize(desc.default_value, s->data);
+				s->default_value = desc.default_value;
+			}
 			if (pos == -1)
 				n->inputs.emplace_back(s);
 			else
@@ -3017,6 +3020,7 @@ namespace flame
 				auto parent_id = n_node.attribute("parent_id").as_uint();
 				auto object_id = n_node.attribute("object_id").as_uint();
 				auto position = s2t<2, float>(n_node.attribute("position").value());
+				auto hide_defaults = n_node.attribute("hide_defaults").as_bool();
 				BlueprintNodePtr parent = nullptr;
 				if (parent_id != 0)
 				{
@@ -3137,6 +3141,7 @@ namespace flame
 							read_input(n, n_input);
 						node_map[object_id] = n;
 						n->position = position;
+						n->hide_defaults = hide_defaults;
 					}
 					else
 					{
@@ -3160,6 +3165,7 @@ namespace flame
 							read_input(n, n_input);
 						node_map[object_id] = n;
 						n->position = position;
+						n->hide_defaults = hide_defaults;
 					}
 					else
 					{
@@ -3505,6 +3511,8 @@ namespace flame
 					node_name += '#' + n->template_string;
 				n_node.append_attribute("name").set_value(node_name.c_str());
 				n_node.append_attribute("position").set_value(str(n->position).c_str());
+				if (n->hide_defaults)
+					n_node.append_attribute("hide_defaults").set_value(n->hide_defaults);
 
 				pugi::xml_node n_inputs;
 				for (auto& i : n->inputs)

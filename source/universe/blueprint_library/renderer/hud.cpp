@@ -22,23 +22,63 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Get Rect", "", BlueprintNodeFlagNone,
+		library->add_template("Hud Rect LT", "", BlueprintNodeFlagNone,
 			{
 			},
 			{
 				{
-					.name = "A",
-					.allowed_types = { TypeInfo::get<vec2>() }
-				},
-				{
-					.name = "B",
+					.name = "V",
 					.allowed_types = { TypeInfo::get<vec2>() }
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto rect = sRenderer::instance()->hud_get_rect();
 				*(vec2*)outputs[0].data = rect.a;
-				*(vec2*)outputs[1].data = rect.b;
+			}
+		);
+
+		library->add_template("Hud Rect RT", "", BlueprintNodeFlagNone,
+			{
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec2>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto rect = sRenderer::instance()->hud_get_rect();
+				*(vec2*)outputs[0].data = vec2(rect.b.x, rect.a.y);
+			}
+		);
+
+		library->add_template("Hud Rect LB", "", BlueprintNodeFlagNone,
+			{
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec2>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto rect = sRenderer::instance()->hud_get_rect();
+				*(vec2*)outputs[0].data = vec2(rect.a.x, rect.b.y);
+			}
+		);
+
+		library->add_template("Hud Rect RB", "", BlueprintNodeFlagNone,
+			{
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec2>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto rect = sRenderer::instance()->hud_get_rect();
+				*(vec2*)outputs[0].data = rect.b;
 			}
 		);
 
@@ -133,129 +173,59 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud Vertical", "", BlueprintNodeFlagEnableTemplate,
+		library->add_template("Hud Vertical", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Item Spacing",
 					.allowed_types = { TypeInfo::get<vec2>() },
 					.default_value = "2,2"
+				},
+				{
+					.name = "Border",
+					.allowed_types = { TypeInfo::get<vec4>() },
+					.default_value = "0,0,0,0"
 				}
 			},
 			{
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				vec2 item_spacing(2.f);
-				vec4 border(0.f);
-				if (inputs_count > 0)
-					item_spacing = *(vec2*)inputs[0].data;
-				if (inputs_count > 1)
-					border = *(vec4*)inputs[1].data;
+				auto item_spacing = *(vec2*)inputs[0].data;
+				auto border = *(vec4*)inputs[1].data;
 				sRenderer::instance()->hud_begin_layout(HudVertical, item_spacing, border);
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				sRenderer::instance()->hud_end_layout();
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			[](BlueprintNodeStructureChangeInfo& info) {
-				if (info.reason == BlueprintNodeTemplateChanged)
-				{
-					auto num_args = 1;
-					auto str = info.template_string;
-					if (SUS::strip_head_if(str, "args"))
-						num_args = s2t<int>(str);
-
-					num_args = clamp(num_args, 0, 2);
-
-					info.new_inputs.resize(num_args);
-					if (num_args > 0)
-					{
-						info.new_inputs[0] = {
-							.name = "Item Spacing",
-							.allowed_types = { TypeInfo::get<vec2>() },
-							.default_value = "2,2"
-						};
-					}
-					if (num_args > 1)
-					{
-						info.new_inputs[1] = {
-							.name = "Border",
-							.allowed_types = { TypeInfo::get<vec4>() }
-						};
-					}
-
-					return true;
-				}
-				else if (info.reason == BlueprintNodeInputTypesChanged)
-					return true;
-				return false;
 			}
 		);
 
-		library->add_template("Hud Horizontal", "", BlueprintNodeFlagEnableTemplate,
+		library->add_template("Hud Horizontal", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Item Spacing",
 					.allowed_types = { TypeInfo::get<vec2>() },
 					.default_value = "2,2"
+				},
+				{
+					.name = "Border",
+					.allowed_types = { TypeInfo::get<vec4>() },
+					.default_value = "0,0,0,0"
 				}
 			},
 			{
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				vec2 item_spacing(2.f);
-				vec4 border(0.f);
-				if (inputs_count > 0)
-					item_spacing = *(vec2*)inputs[0].data;
-				if (inputs_count > 1)
-					border = *(vec4*)inputs[1].data;
+				auto item_spacing = *(vec2*)inputs[0].data;
+				auto border = *(vec4*)inputs[1].data;
 				sRenderer::instance()->hud_begin_layout(HudHorizontal, item_spacing, border);
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				sRenderer::instance()->hud_end_layout();
-			},
-			nullptr,
-			nullptr,
-			nullptr,
-			[](BlueprintNodeStructureChangeInfo& info) {
-				if (info.reason == BlueprintNodeTemplateChanged)
-				{
-					auto num_args = 1;
-					auto str = info.template_string;
-					if (SUS::strip_head_if(str, "args"))
-						num_args = s2t<int>(str);
-
-					num_args = clamp(num_args, 0, 2);
-
-					info.new_inputs.resize(num_args);
-					if (num_args > 0)
-					{
-						info.new_inputs[0] = {
-							.name = "Item Spacing",
-							.allowed_types = { TypeInfo::get<vec2>() },
-							.default_value = "2,2"
-						};
-					}
-					if (num_args > 1)
-					{
-						info.new_inputs[1] = {
-							.name = "Border",
-							.allowed_types = { TypeInfo::get<vec4>() }
-						};
-					}
-
-					return true;
-				}
-				else if (info.reason == BlueprintNodeInputTypesChanged)
-					return true;
-				return false;
 			}
 		);
 

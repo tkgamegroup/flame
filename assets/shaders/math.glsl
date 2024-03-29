@@ -279,3 +279,11 @@ float perlin(vec2 st)
     }
     return value;
 }
+
+vec2 perlin_gradient(vec2 st, float step)
+{
+	return vec2(
+				perlin(st + vec2(step, 0)) - perlin(st - vec2(step, 0)),
+				perlin(st + vec2(0, step)) - perlin(st - vec2(0, step)
+			));
+}

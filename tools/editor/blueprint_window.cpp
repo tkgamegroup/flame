@@ -2099,6 +2099,20 @@ void BlueprintView::on_draw()
 								}, 0.f, 2U);
 							}
 						}
+						if (n->inputs.size() > 0 && n->name_hash != "Input"_h && n->name_hash != "Output"_h && !blueprint_is_variable_node(n->name_hash))
+						{
+							ImGui::SameLine();
+							if (n->hide_defaults)
+							{
+								if (ImGui::SmallButton("SD"))
+									n->hide_defaults = false;
+							}
+							else
+							{
+								if (ImGui::SmallButton("HD"))
+									n->hide_defaults = true;
+							}
+						}
 					}
 
 					if (n->name_hash != "Block"_h)
@@ -2110,6 +2124,17 @@ void BlueprintView::on_draw()
 							auto input = n->inputs[i].get();
 							if (input->flags & BlueprintSlotFlagHideInUI)
 								continue;
+							if (n->hide_defaults && input->type && input->get_linked_count() == 0)
+							{
+								if (input->type->tag == TagD || input->type->tag == TagE)
+								{
+									input->type->unserialize(input->default_value, nullptr);
+									if (input->type->compare(input->data, nullptr))
+										continue;
+								}
+								else
+									continue;
+							}
 
 							if ((n->flags & BlueprintNodeFlagHorizontalInputs) && n_slots > 0)
 								ImGui::SameLine();

@@ -276,6 +276,7 @@ namespace flame
 		uint											depth = 0;
 		std::vector<BlueprintNodePtr>					children;
 		uint											degree = 0;
+		bool											hide_defaults = false;
 
 		vec2 position;
 		bool collapsed = false;

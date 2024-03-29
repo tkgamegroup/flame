@@ -329,7 +329,7 @@ namespace flame
 				},
 				{
 					.name = "Arg1",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>(), TypeInfo::get<std::string>() }
 				}
 			},
 			{
@@ -405,7 +405,7 @@ namespace flame
 				},
 				{
 					.name = "Arg1",
-					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+					.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>(), TypeInfo::get<std::wstring>() }
 				}
 			},
 			{

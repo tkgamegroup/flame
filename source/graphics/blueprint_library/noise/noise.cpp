@@ -25,6 +25,28 @@ namespace flame
 					*(float*)outputs[0].data = perlin_noise(*(vec2*)inputs[0].data);
 				}
 			);
+
+			library->add_template("Perlin Gradient", "", BlueprintNodeFlagNone,
+				{
+					{
+						.name = "UV",
+						.allowed_types = { TypeInfo::get<vec2>() }
+					},
+					{
+						.name = "Step",
+						.allowed_types = { TypeInfo::get<float>() }
+					}
+				},
+				{
+					{
+						.name = "V",
+						.allowed_types = { TypeInfo::get<vec2>() }
+					}
+				},
+				[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+					*(vec2*)outputs[0].data = perlin_gradient(*(vec2*)inputs[0].data, *(float*)inputs[1].data);
+				}
+			);
 		}
 	}
 }

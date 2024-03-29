@@ -45,6 +45,9 @@ vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 light_color, float metallic, vec3 albedo,
 	vec3 H = normalize(V + L);
 	float NdotV = dot(N, V);
 	vec3 radiance = light_color * NdotL;
+	#ifdef CEL_SHADING
+		NdotL = floor(NdotL * lighting.cel_shading_levels) / lighting.cel_shading_levels;
+	#endif
 	
 	float D = distribution_term(N, H, roughness);
 	vec3  F = fresnel_term(dot(V, H), f0);
@@ -54,9 +57,6 @@ vec3 brdf(vec3 N, vec3 V, vec3 L, vec3 light_color, float metallic, vec3 albedo,
 	vec3 specular = D * F * G / (4.0 * NdotV * NdotL + 0.0001) * radiance;
 	
 	vec3 ret = diffuse + specular;
-	#ifdef CEL_SHADING
-		ret = floor(ret * lighting.cel_shading_levels) / lighting.cel_shading_levels;
-	#endif
 	return ret;
 }
 

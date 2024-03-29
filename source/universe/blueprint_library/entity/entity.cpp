@@ -651,20 +651,27 @@ namespace flame
 				},
 				{
 					.name = "Target",
-					.allowed_types = { TypeInfo::get<EntityPtr>() }
+					.allowed_types = { TypeInfo::get<EntityPtr>(), TypeInfo::get<vec3>() }
 				}
 			},
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto entity = *(EntityPtr*)inputs[0].data;
-				auto target = *(EntityPtr*)inputs[1].data;
-				if (entity && target)
+				if (entity)
 				{
 					if (auto node = entity->get_component<cNode>(); node)
 					{
-						if (auto target_node = target->get_component<cNode>(); target_node)
-							node->look_at(target_node->global_pos());
+						if (inputs[1].type == TypeInfo::get<vec3>())
+							node->look_at(*(vec3*)inputs[1].data);
+						else
+						{
+							if (auto target = *(EntityPtr*)inputs[1].data; target)
+							{
+								if (auto target_node = target->get_component<cNode>(); target_node)
+									node->look_at(target_node->global_pos());
+							}
+						}
 					}
 				}
 			}

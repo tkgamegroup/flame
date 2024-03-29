@@ -263,8 +263,8 @@ namespace flame
 				for (auto& kv : g.slot_datas)
 				{
 					auto& arg = kv.second.attribute;
-					if (arg.type == nullptr)
-						int cut = 1;
+					if (!arg.type || arg.type->tag != TagD)
+						continue;
 					output_slot_values.emplace_back(kv.first, &arg); // we first put all slot datas into it, and then remove the input ones later
 					data_to_id[arg.data] = kv.first;
 				}
@@ -391,6 +391,9 @@ namespace flame
 						case "Perlin"_h:
 							function_str += std::format("\tv_{} = perlin({});\n", ori->outputs[0]->object_id, get_input(0));
 							break;
+						case "Perlin Gradient"_h:
+							function_str += std::format("\tv_{} = perlin_gradient({}, {});\n", ori->outputs[0]->object_id, get_input(0), get_input(1));
+							break;
 						case "Input"_h:
 							if (auto idx = ori->find_output_i("i_color"_h); idx != -1)
 							{
@@ -452,6 +455,8 @@ namespace flame
 							function_str += "\to_gbufferC = vec4(o_metallic, o_roughness, 0.0, 0.0);\n";
 							function_str += "\to_gbufferD = vec4(o_emissive, 0.0);\n";
 							function_str += "\t#endif\n";
+							break;
+						case "Block"_h:
 							break;
 						default:
 							assert(0);
