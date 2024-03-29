@@ -92,10 +92,10 @@ namespace flame
 
 	static void clear_invalid_links(BlueprintGroupPtr group)
 	{
-		std::vector<BlueprintLinkPtr> to_remove_links;
 		auto done = false;
 		while (!done)
 		{
+			std::vector<BlueprintLinkPtr> to_remove_links;
 			done = true;
 			for (auto& l : group->links)
 			{
@@ -3587,7 +3587,7 @@ namespace flame
 							}
 							write_ti(i->type, n_input.append_attribute("type"));
 						}
-						if (i->type->tag != TagU && i->data)
+						if (i->type && i->type->tag != TagU && i->data)
 						{
 							if (auto value_str = i->type->serialize(i->data); value_str != i->default_value)
 							{

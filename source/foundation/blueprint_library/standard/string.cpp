@@ -238,6 +238,24 @@ namespace flame
 			}
 		);
 
+		library->add_template("To String", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "In",
+					.allowed_types = { TypeInfo::get<std::wstring>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(std::string*)outputs[0].data = w2s(*(std::wstring*)inputs[0].data);
+			}
+		);
+
 		library->add_template("To WString", "", BlueprintNodeFlagNone,
 			{
 				{

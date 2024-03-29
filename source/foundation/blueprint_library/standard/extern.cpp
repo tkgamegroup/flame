@@ -695,7 +695,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Find Item In Sheet", "", BlueprintNodeFlagEnableTemplate,
+		library->add_template("Sheet Find", "", BlueprintNodeFlagEnableTemplate,
 			{
 				{
 					.name = "Sheet",

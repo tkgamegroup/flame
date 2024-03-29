@@ -1462,6 +1462,7 @@ void BlueprintView::on_draw()
 						blueprint->remove_variable(nullptr, blueprint->variables[selected_variable].name_hash);
 						if (blueprint->variables.empty() || selected_variable >= blueprint->variables.size())
 							selected_variable = -1;
+						ax::NodeEditor::ClearSelection();
 						unsaved = true;
 					}
 				}
@@ -1497,6 +1498,7 @@ void BlueprintView::on_draw()
 						blueprint->alter_variable(nullptr, var.name_hash, name, var.type);
 						if (blueprint->is_static)
 							app.change_bp_references(old_name_hash, blueprint->name_hash, 0, sh(name.c_str()), blueprint->name_hash, 0);
+						ax::NodeEditor::ClearSelection();
 						unsaved = true;
 					}
 					{
@@ -1526,6 +1528,7 @@ void BlueprintView::on_draw()
 							blueprint->alter_variable(nullptr, var.name_hash, "", type);
 							if (blueprint->is_static)
 								app.change_bp_references(old_name_hash, blueprint->name_hash, 0, old_name_hash, blueprint->name_hash, 0);
+							ax::NodeEditor::ClearSelection();
 							unsaved = true;
 						}
 
@@ -1592,6 +1595,7 @@ void BlueprintView::on_draw()
 						blueprint->remove_variable(group, group->variables[selected_variable].name_hash);
 						if (group->variables.empty() || selected_variable >= (int)group->variables.size())
 							selected_variable = -1;
+						ax::NodeEditor::ClearSelection();
 						unsaved = true;
 					}
 				}
@@ -1626,6 +1630,7 @@ void BlueprintView::on_draw()
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
 						blueprint->alter_variable(group, var.name_hash, name, var.type);
+						ax::NodeEditor::ClearSelection();
 						unsaved = true;
 					}
 					{
@@ -1653,6 +1658,7 @@ void BlueprintView::on_draw()
 						if (auto type = show_types_menu(); type)
 						{
 							blueprint->alter_variable(group, var.name_hash, "", type);
+							ax::NodeEditor::ClearSelection();
 							unsaved = true;
 						}
 
@@ -1718,6 +1724,7 @@ void BlueprintView::on_draw()
 						blueprint->remove_group_input(group, group->inputs[selected_input].name_hash);
 						if (group->inputs.empty() || selected_input >= (int)group->inputs.size())
 							selected_input = -1;
+						ax::NodeEditor::ClearSelection();
 						unsaved = true;
 					}
 				}
@@ -1751,6 +1758,7 @@ void BlueprintView::on_draw()
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
 						blueprint->alter_group_input(group, var.name_hash, name, var.type);
+						ax::NodeEditor::ClearSelection();
 						unsaved = true;
 					}
 					ImGui::SetNextItemWidth(200.f);
@@ -1759,6 +1767,7 @@ void BlueprintView::on_draw()
 						if (auto type = show_types_menu(); type)
 						{
 							blueprint->alter_group_input(group, var.name_hash, "", type);
+							ax::NodeEditor::ClearSelection();
 							unsaved = true;
 						}
 
@@ -1807,6 +1816,7 @@ void BlueprintView::on_draw()
 						blueprint->remove_group_output(group, group->outputs[selected_output].name_hash);
 						if (group->outputs.empty() || selected_output >= (int)group->outputs.size())
 							selected_output = -1;
+						ax::NodeEditor::ClearSelection();
 						unsaved = true;
 					}
 				}
@@ -1840,6 +1850,7 @@ void BlueprintView::on_draw()
 					if (ImGui::IsItemDeactivatedAfterEdit())
 					{
 						blueprint->alter_group_output(group, var.name_hash, name, var.type);
+						ax::NodeEditor::ClearSelection();
 						unsaved = true;
 					}
 					ImGui::SetNextItemWidth(200.f);
@@ -1848,6 +1859,7 @@ void BlueprintView::on_draw()
 						if (auto type = show_types_menu(); type)
 						{
 							blueprint->alter_group_output(group, var.name_hash, "", type);
+							ax::NodeEditor::ClearSelection();
 							unsaved = true;
 						}
 
@@ -2177,9 +2189,11 @@ void BlueprintView::on_draw()
 							ax::NodeEditor::BeginPin((uint64)input, ax::NodeEditor::PinKind::Input);
 							auto display_name = input->name;
 							SUS::strip_tail_if(display_name, "_hash");
-							ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(input->type));
+							if (input->type)
+								ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(input->type));
 							ImGui::TextUnformatted(display_name.c_str());
-							ImGui::PopStyleColor();
+							if (input->type)
+								ImGui::PopStyleColor();
 							ax::NodeEditor::EndPin();
 							if (n_push_styles)
 								ax::NodeEditor::PopStyleVar(n_push_styles);
@@ -2192,10 +2206,11 @@ void BlueprintView::on_draw()
 									if (auto it = instance_group.slot_datas.find(id); it != instance_group.slot_datas.end())
 									{
 										auto& arg = it->second.attribute;
-										tooltip = std::format("Value: {}\nType: {})", get_value_str(arg.type, arg.data), ti_str(arg.type));
+										if (arg.type)
+											tooltip = std::format("Value: {}\nType: {})", get_value_str(arg.type, arg.data), ti_str(arg.type));
 									}
 								}
-								else
+								else if (input->type)
 									tooltip = std::format("({})", ti_str(input->type));
 								ax::NodeEditor::Suspend();
 								tooltip_pos = io.MousePos;
@@ -2352,7 +2367,7 @@ void BlueprintView::on_draw()
 									ImGui::BeginDisabled();
 								ImGui::PushID(input);
 								auto no_combo_popup = combo_popup_name == 0;
-								if (manipulate_value(input->type, input->data, input->name_hash, &combo_popup_name))
+								if (input->type && manipulate_value(input->type, input->data, input->name_hash, &combo_popup_name))
 								{
 									input->data_changed_frame = frame;
 									group->data_changed_frame = frame;
@@ -2428,9 +2443,11 @@ void BlueprintView::on_draw()
 							ax::NodeEditor::BeginPin((uint64)output, ax::NodeEditor::PinKind::Output);
 							auto display_name = output->name;
 							SUS::strip_tail_if(display_name, "_hash");
-							ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(output->type));
+							if (output->type)
+								ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)color_from_type(output->type));
 							ImGui::TextUnformatted(display_name.c_str());
-							ImGui::PopStyleColor();
+							if (output->type)
+								ImGui::PopStyleColor();
 							ax::NodeEditor::EndPin();
 							if (n_push_styles)
 								ax::NodeEditor::PopStyleVar(n_push_styles);
