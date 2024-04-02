@@ -15,9 +15,12 @@ struct BlueprintView : View
 	uint					group_name_hash = "main"_h;
 	uint					load_frame = 0;
 	BlueprintGroupPtr		last_group = nullptr;
-	uint					last_block = 0;
 	bool					show_misc = false;
 	bool					hide_var_links = true;
+	bool					expand_space = false;
+	bool					remove_space = false;
+	bool					space_clicked = false;
+	Rect 					space_rect;
 	bool					unsaved = false;
 
 	std::unordered_map<uint, std::vector<vec2>> block_verts;
@@ -28,11 +31,11 @@ struct BlueprintView : View
 
 	void copy_nodes(BlueprintGroupPtr g, bool include_children = true);
 	void paste_nodes(BlueprintGroupPtr g, const vec2& pos);
-	void set_parent_to_hovered_node();
 	void navigate_to_node(BlueprintNodePtr n);
 	void build_node_block_verts(BlueprintNodePtr n);
 	void build_all_block_verts(BlueprintGroupPtr g);
 	void draw_block_verts(ImDrawList* dl, BlueprintNodePtr n);
+	BlueprintNodePtr find_hovered_block(BlueprintGroupPtr g, const vec2& pos);
 	void run_blueprint(BlueprintInstanceGroup* debugging_group);
 	void step_blueprint(BlueprintInstanceGroup* debugging_group);
 	void stop_blueprint(BlueprintInstanceGroup* debugging_group);

@@ -409,7 +409,7 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 	for (auto& src_n : copied_nodes)
 	{
 		BlueprintNodePtr n = nullptr;
-		auto parent = g->find_node_by_id(last_block);
+		auto parent = find_hovered_block(g, pos);
 		if (auto it = node_map.find(src_n.parent); it != node_map.end())
 			parent = it->second;
 		if (blueprint_is_variable_node(src_n.name))
@@ -503,24 +503,6 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 	if (paste_nodes_count || paste_links_count)
 		unsaved = true;
 	app.last_status = std::format("Pasted: {} nodes, {} links", paste_nodes_count, paste_links_count);
-}
-
-void BlueprintView::set_parent_to_hovered_node()
-{
-	auto n = (BlueprintNodePtr)(uint64)ax::NodeEditor::GetHoveredNode();
-	if (n)
-	{
-		if (!n->is_block)
-			n = n->parent;
-	}
-
-	auto nodes = get_selected_nodes();
-	if (nodes.empty())
-		return;
-
-	auto block = n ? n : nodes.front()->group->nodes.front().get();
-	blueprint->set_nodes_parent(nodes, block);
-	last_block = block->object_id;
 }
 
 void BlueprintView::navigate_to_node(BlueprintNodePtr n)
@@ -671,6 +653,33 @@ void BlueprintView::draw_block_verts(ImDrawList* dl, BlueprintNodePtr n)
 	}
 }
 
+BlueprintNodePtr BlueprintView::find_hovered_block(BlueprintGroupPtr g, const vec2& pos)
+{
+	auto ret = g->nodes.front().get();
+
+	std::stack<BlueprintNodePtr> nodes;
+	nodes.emplace(g->nodes.front().get());
+	while (!nodes.empty())
+	{
+		auto n = nodes.top();
+		nodes.pop();
+		if (n->is_block)
+		{
+			if (auto it = block_verts.find(n->object_id); it != block_verts.end())
+			{
+				auto points = it->second;
+				std::reverse(points.begin(), points.end());
+				if (convex_contains(pos, points))
+					ret = n;
+			}
+		}
+		for (auto c : n->children)
+			nodes.push(c);
+	}
+
+	return ret;
+}
+
 static BlueprintInstanceNode* step(BlueprintInstanceGroup* debugging_group)
 {
 	blueprint_window.debugger->debugging = nullptr;
@@ -799,6 +808,20 @@ void BlueprintView::on_draw()
 		ImGui::SameLine();
 		if (ImGui::ToolButton("Hide Variable Links", hide_var_links))
 			hide_var_links = !hide_var_links;
+		ImGui::SameLine();
+		if (ImGui::ToolButton("Expand Space", expand_space))
+		{
+			expand_space = !expand_space;
+			if (expand_space)
+				space_clicked = false;
+		}
+		ImGui::SameLine();
+		if (ImGui::ToolButton("Remove Space", remove_space))
+		{
+			remove_space = !remove_space;
+			if (remove_space)
+				space_clicked = false;
+		}
 
 		auto group = blueprint->find_group(group_name_hash);
 		if (!group)
@@ -2645,6 +2668,7 @@ void BlueprintView::on_draw()
 				auto mouse_pos = ImGui::GetMousePos();
 				static vec2				open_popup_pos;
 				static BlueprintSlotPtr	new_node_link_slot = nullptr;
+				static BlueprintNodePtr	hovered_block = nullptr;
 
 				if (ax::NodeEditor::BeginCreate())
 				{
@@ -2655,6 +2679,7 @@ void BlueprintView::on_draw()
 						{
 							open_popup_pos = floor((vec2)mouse_pos);
 							new_node_link_slot = from_slot;
+							hovered_block = find_hovered_block(group, open_popup_pos);
 							ImGui::OpenPopup("add_node_context_menu");
 						}
 					}
@@ -2792,6 +2817,7 @@ void BlueprintView::on_draw()
 				{
 					context_node = (BlueprintNodePtr)(uint64)context_node_id;
 					open_popup_pos = floor((vec2)mouse_pos);
+					hovered_block = find_hovered_block(group, open_popup_pos);
 					ImGui::OpenPopup("node_context_menu");
 				}
 				else if (ax::NodeEditor::ShowPinContextMenu((ax::NodeEditor::PinId*)&context_slot))
@@ -2807,6 +2833,7 @@ void BlueprintView::on_draw()
 				else if (ax::NodeEditor::ShowBackgroundContextMenu())
 				{
 					open_popup_pos = floor((vec2)mouse_pos);
+					hovered_block = find_hovered_block(group, open_popup_pos);
 					ImGui::OpenPopup("add_node_context_menu");
 				}
 				ax::NodeEditor::Resume();
@@ -2826,13 +2853,12 @@ void BlueprintView::on_draw()
 							context_node = nullptr;
 						}
 					}
-					if (auto n = ax::NodeEditor::GetSelectedObjectCount(); n >= 2)
+					if (ImGui::Selectable("Set Block To"))
 					{
-						ax::NodeEditor::NodeId node_ids[2];
-						if (ax::NodeEditor::GetSelectedNodes(node_ids, 2) == 2)
+						if (hovered_block)
 						{
-							if (ImGui::Selectable("Set Parent To Hovered Node"))
-								set_parent_to_hovered_node();
+							if (auto nodes = get_selected_nodes(); !nodes.empty())
+								blueprint->set_nodes_parent(nodes, hovered_block);
 						}
 					}
 					BlueprintBreakpointOption breakpoint_option;
@@ -2909,7 +2935,7 @@ void BlueprintView::on_draw()
 				{
 					auto new_node_block = new_node_link_slot ? new_node_link_slot->node->parent : nullptr;
 					if (!new_node_block)
-						new_node_block = group->find_node_by_id(last_block);
+						new_node_block = hovered_block;
 
 					ImGui::InputText("##Filter", &add_node_filter);
 					ImGui::SameLine();
@@ -3013,9 +3039,6 @@ void BlueprintView::on_draw()
 									auto_add_blocks(ax_editor, n);
 									return false;
 								}, 0.f, 2U);
-
-								if (n->is_block)
-									last_block = n->object_id;
 
 								unsaved = true;
 							}
@@ -3596,58 +3619,6 @@ void BlueprintView::on_draw()
 							copy_nodes(group);
 						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_V))
 							paste_nodes(group, mouse_pos);
-						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Left))
-						{
-							auto nodes = get_selected_nodes();
-							for (auto n : nodes)
-							{
-								if (n->is_block)
-								{
-									auto ax_node = ax_editor->FindNode((ax::NodeEditor::NodeId)n);
-									ax_node->m_GroupBounds.Max.x -= 10.f;
-									ax_node->m_Bounds.Max.x -= 10.f;
-								}
-							}
-						}
-						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Right))
-						{
-							auto nodes = get_selected_nodes();
-							for (auto n : nodes)
-							{
-								if (n->is_block)
-								{
-									auto ax_node = ax_editor->FindNode((ax::NodeEditor::NodeId)n);
-									ax_node->m_GroupBounds.Max.x += 10.f;
-									ax_node->m_Bounds.Max.x += 10.f;
-								}
-							}
-						}
-						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Up))
-						{
-							auto nodes = get_selected_nodes();
-							for (auto n : nodes)
-							{
-								if (n->is_block)
-								{
-									auto ax_node = ax_editor->FindNode((ax::NodeEditor::NodeId)n);
-									ax_node->m_GroupBounds.Max.y -= 10.f;
-									ax_node->m_Bounds.Max.y -= 10.f;
-								}
-							}
-						}
-						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Shift) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Down))
-						{
-							auto nodes = get_selected_nodes();
-							for (auto n : nodes)
-							{
-								if (n->is_block)
-								{
-									auto ax_node = ax_editor->FindNode((ax::NodeEditor::NodeId)n);
-									ax_node->m_GroupBounds.Max.y += 10.f;
-									ax_node->m_Bounds.Max.y += 10.f;
-								}
-							}
-						}
 						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_Left))
 						{
 							auto nodes = get_selected_nodes();
@@ -3673,11 +3644,85 @@ void BlueprintView::on_draw()
 								ax::NodeEditor::SetNodePosition((ax::NodeEditor::NodeId)n, n->position + vec2(0.f, +10.f));
 						}
 						if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_P))
-							set_parent_to_hovered_node();
+						{
+							if (auto block = find_hovered_block(group, io.MousePos); block)
+							{
+								if (auto nodes = get_selected_nodes(); !nodes.empty())
+									blueprint->set_nodes_parent(nodes, block);
+							}
+						}
 						if (ImGui::IsKeyPressed((ImGuiKey)Keyboard_F10))
 							step_blueprint(debugging_group);
 						if (ImGui::IsKeyDown((ImGuiKey)Keyboard_Ctrl) && ImGui::IsKeyPressed((ImGuiKey)Keyboard_S))
 							save_blueprint();
+					}
+
+					if (expand_space || remove_space)
+					{
+						if (!space_clicked)
+						{
+							if (io.MouseDown[ImGuiMouseButton_Left])
+							{
+								space_rect.a = io.MousePos;
+								space_clicked = true;
+							}
+						}
+						else
+						{
+							if (!io.MouseDown[ImGuiMouseButton_Left])
+							{
+								space_rect.b = io.MousePos;
+
+								auto is_node_under_rect = [&](BlueprintNodePtr n) {
+									auto ax_node = ax_editor->FindNode((ax::NodeEditor::NodeId)n);
+									auto im_rect = ax_node->GetBounds();
+									auto pts = Rect(im_rect.Min, im_rect.Max).get_points();
+									if (n->is_block)
+									{
+										if (auto it = block_verts.find(n->object_id); it != block_verts.end())
+											pts.insert(pts.end(), it->second.begin(), it->second.end());
+									}
+									for (auto& pt : pts)
+									{
+										if (pt.y < space_rect.a.y)
+											return false;
+									}
+									for (auto& pt : pts)
+									{
+										if (pt.x > space_rect.a.x && pt.x < space_rect.b.x)
+											return true;
+									}
+									return false;
+								};
+
+								if (expand_space)
+								{
+									std::vector<BlueprintNodePtr> targets;
+									for (auto& n : group->nodes)
+									{
+										if (is_node_under_rect(n.get()))
+											blueprint_form_top_list(targets, n.get());
+									}
+									auto offset = space_rect.b.y - space_rect.a.y;
+									for (auto n : targets)
+										set_offset_recurisely(n, vec2(0.f, +offset));
+								}
+								if (remove_space)
+								{
+									std::vector<BlueprintNodePtr> targets;
+									for (auto& n : group->nodes)
+									{
+										if (is_node_under_rect(n.get()))
+											blueprint_form_top_list(targets, n.get());
+									}
+									auto offset = space_rect.b.y - space_rect.a.y;
+									for (auto n : targets)
+										set_offset_recurisely(n, vec2(0.f, -offset));
+								}
+								expand_space = false;
+								remove_space = false;
+							}
+						}
 					}
 				}
 
