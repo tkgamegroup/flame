@@ -2873,7 +2873,8 @@ bool App::cmd_play()
 
 			cCameraPtr camera = nullptr;
 			e_playing->traversal_bfs([&](EntityPtr e, int) {
-				camera = e->get_component<cCamera>();
+				if (!camera)
+					camera = e->get_component<cCamera>();
 				if (camera)
 					return false;
 				return true;

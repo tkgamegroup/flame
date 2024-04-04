@@ -176,6 +176,11 @@ namespace flame
 		library->add_template("Hud Vertical", "", BlueprintNodeFlagNone,
 			{
 				{
+					.name = "Size",
+					.allowed_types = { TypeInfo::get<vec2>() },
+					.default_value = "0,0"
+				},
+				{
 					.name = "Item Spacing",
 					.allowed_types = { TypeInfo::get<vec2>() },
 					.default_value = "2,2"
@@ -190,9 +195,10 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto item_spacing = *(vec2*)inputs[0].data;
-				auto border = *(vec4*)inputs[1].data;
-				sRenderer::instance()->hud_begin_layout(HudVertical, item_spacing, border);
+				auto size = *(vec2*)inputs[0].data;
+				auto item_spacing = *(vec2*)inputs[1].data;
+				auto border = *(vec4*)inputs[2].data;
+				sRenderer::instance()->hud_begin_layout(HudVertical, size, item_spacing, border);
 
 				execution.block->max_execute_times = 1;
 			},
@@ -204,6 +210,11 @@ namespace flame
 		library->add_template("Hud Horizontal", "", BlueprintNodeFlagNone,
 			{
 				{
+					.name = "Size",
+					.allowed_types = { TypeInfo::get<vec2>() },
+					.default_value = "0,0"
+				},
+				{
 					.name = "Item Spacing",
 					.allowed_types = { TypeInfo::get<vec2>() },
 					.default_value = "2,2"
@@ -218,9 +229,10 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto item_spacing = *(vec2*)inputs[0].data;
-				auto border = *(vec4*)inputs[1].data;
-				sRenderer::instance()->hud_begin_layout(HudHorizontal, item_spacing, border);
+				auto size = *(vec2*)inputs[0].data;
+				auto item_spacing = *(vec2*)inputs[1].data;
+				auto border = *(vec4*)inputs[2].data;
+				sRenderer::instance()->hud_begin_layout(HudHorizontal, size, item_spacing, border);
 
 				execution.block->max_execute_times = 1;
 			},

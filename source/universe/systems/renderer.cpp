@@ -7,6 +7,7 @@
 #include "../components/node_private.h"
 #include "../components/element_private.h"
 #include "../components/camera_private.h"
+#include "../components/bp_instance_private.h"
 
 #include "../../foundation/typeinfo_serialize.h"
 #include "../../foundation/window.h"
@@ -2122,7 +2123,15 @@ namespace flame
 			return;
 		}
 
-		hud_callbacks.call();
+		world->root->traversal_bfs([](EntityPtr e, int) {
+			if (!e->global_enable)
+				return false;
+
+			if (auto ins = e->get_component<cBpInstance>(); ins)
+				ins->call("on_gui"_h);
+
+			return true;
+		});
 
 		auto first = true;
 		for (auto& t : render_tasks)
@@ -3699,11 +3708,16 @@ namespace flame
 		hud_style_vars[var].pop();
 	}
 
-	void sRendererPrivate::hud_begin_layout(HudLayoutType type, const vec2& item_spacing, const vec4& border)
+	void sRendererPrivate::hud_begin_layout(HudLayoutType type, const vec2& size, const vec2& item_spacing, const vec4& border)
 	{
 		auto scaling = hud_style_vars[HudStyleVarScaling].top();
 
 		auto& layout = hud_add_layout(type);
+		if (size.x != 0.f || size.y != 0.f)
+		{
+			layout.auto_size = false;
+			layout.rect.b = layout.rect.a + size * scaling;
+		}
 		layout.item_spacing = item_spacing;
 		layout.border = border;
 		layout.cursor += border.xy() * scaling;

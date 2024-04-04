@@ -369,8 +369,6 @@ namespace flame
 		// Reflect
 		virtual graphics::ImagePtr get_image(uint name) = 0;
 
-		Listeners<void()> hud_callbacks;
-
 		virtual void hud_begin(const vec2& pos, const vec2& size = vec2(0.f) /* 0 size means auto layout */, const cvec4& col = cvec4(0, 0, 0, 255), const vec2& pivot = vec2(0.f),
 			const graphics::ImageDesc& image = {}, const vec4& border = vec4(4.f)) = 0;
 		virtual void hud_end() = 0;
@@ -379,7 +377,7 @@ namespace flame
 		virtual vec2 hud_screen_size() const = 0;
 		virtual void hud_push_style(HudStyleVar var, const vec2& value) = 0;
 		virtual void hud_pop_style(HudStyleVar var) = 0;
-		virtual void hud_begin_layout(HudLayoutType type, const vec2& item_spacing = vec2(2.f), const vec4& border = vec4(0.f)) = 0;
+		virtual void hud_begin_layout(HudLayoutType type, const vec2& size = vec2(0.f), const vec2& item_spacing = vec2(2.f), const vec4& border = vec4(0.f)) = 0;
 		virtual void hud_end_layout() = 0;
 		virtual void hud_new_line() = 0;
 		virtual void hud_begin_stencil_write() = 0;

@@ -964,8 +964,13 @@ namespace flame
 								auto polygon_count = fbx_mesh->GetPolygonCount();
 
 								auto mesh_idx = meshes.size();
-								for (auto i = 0; i < max(1, material_count); i++)
-									new_mesh(material_count > 1 ? mesh_name + '_' + str(i) : mesh_name);
+								if (material_count <= 1)
+									new_mesh(mesh_name);
+								else
+								{
+									for (auto i = 0; i < material_count; i++)
+										new_mesh(mesh_name + '_' + str(i));
+								}
 
 								fbxsdk::FbxLayerElementArrayTemplate<int> empty_index_array(fbxsdk::eFbxUndefined);
 								fbxsdk::FbxLayerElementArrayTemplate<fbxsdk::FbxVector2> empty_vector2_array(fbxsdk::eFbxUndefined);
@@ -1280,6 +1285,8 @@ namespace flame
 								{
 									if (material_count > 1)
 									{
+										if (!n_children)
+											n_children = dst.append_child("children");
 										auto n_sub = n_children.append_child("item");
 										n_sub.append_attribute("name").set_value(i);
 										n_components = n_sub.append_child("components");

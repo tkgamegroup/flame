@@ -63,7 +63,8 @@ namespace flame
 		struct Animation
 		{
 			TweenType type;
-			BlueprintInstanceGroupPtr renderer;
+			EntityPtr renderer_host = nullptr;
+			BlueprintInstanceGroupPtr renderer = nullptr;
 			std::vector<RendererData> renderer_datas;
 			Target curr_target;
 
@@ -91,7 +92,7 @@ namespace flame
 		sTweenPrivate();
 
 		uint begin() override;
-		uint begin(BlueprintInstanceGroupPtr renderer, uint target_count) override;
+		uint begin(EntityPtr renderer_parent, BlueprintInstanceGroupPtr renderer, uint target_count) override;
 		void set_target(uint id, EntityPtr e) override;
 		void set_target(uint id, uint idx) override;
 		void set_custom_data(uint id, TypeInfo* type, void* data) override;

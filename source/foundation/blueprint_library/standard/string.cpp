@@ -398,7 +398,7 @@ namespace flame
 					{
 						info.new_inputs[i] = {
 							.name = "Arg" + str(i),
-							.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+							.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>(), TypeInfo::get<std::string>() }
 						};
 					}
 					info.new_outputs.resize(1);
@@ -474,7 +474,7 @@ namespace flame
 					{
 						info.new_inputs[i] = {
 							.name = "Arg" + str(i),
-							.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>() }
+							.allowed_types = { TypeInfo::get<float>(), TypeInfo::get<int>(), TypeInfo::get<uint>(), TypeInfo::get<std::wstring>() }
 						};
 					}
 					info.new_outputs.resize(1);

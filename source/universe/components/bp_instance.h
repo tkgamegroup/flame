@@ -18,6 +18,13 @@ namespace flame
 		BlueprintPtr bp = nullptr;
 		BlueprintInstancePtr bp_ins = nullptr;
 
+		BlueprintInstanceGroupPtr g_update = nullptr;
+		BlueprintInstanceGroupPtr g_on_gui = nullptr;
+
+		Listeners<void(uint)> callbacks;
+
+		virtual void call(uint name) = 0;
+
 		struct Create
 		{
 			virtual cBpInstancePtr operator()(EntityPtr) = 0;

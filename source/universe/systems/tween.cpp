@@ -6,6 +6,7 @@
 #include "../components/animator_private.h"
 #include "../components/directional_light_private.h"
 #include "../components/point_light_private.h"
+#include "../components/bp_instance_private.h"
 #include "tween_private.h"
 #include "graveyard_private.h"
 #include "renderer_private.h"
@@ -14,10 +15,10 @@ namespace flame
 {
 	sTweenPrivate::Animation::~Animation()
 	{
-		if (type == TweenGui)
-			sRenderer::instance()->hud_callbacks.remove((uint)this);
 		if (custom_data)
 			custom_data_type->destroy(custom_data);
+		if (renderer_host)
+			renderer_host->remove_from_parent();
 	}
 
 	sTweenPrivate::Action& sTweenPrivate::Animation::new_action(float duration)
@@ -152,7 +153,7 @@ namespace flame
 		return id;
 	}
 
-	uint sTweenPrivate::begin(BlueprintInstanceGroupPtr renderer, uint target_count)
+	uint sTweenPrivate::begin(EntityPtr renderer_parent, BlueprintInstanceGroupPtr renderer, uint target_count)
 	{
 		auto id = next_id++;
 		auto a = new Animation;
@@ -163,6 +164,30 @@ namespace flame
 		a->renderer = renderer;
 		a->renderer_datas.resize(target_count);
 		staging_animations.emplace(id, a);
+
+		auto host = Entity::create();
+		auto ins = host->add_component<cBpInstance>();
+		ins->callbacks.add([a](uint name) {
+			if (name == "on_gui"_h)
+			{
+				auto g = a->renderer;
+				auto ins = g->instance;
+				std::vector<std::pair<uint, voidptr>> inputs;
+				inputs.emplace_back(FLAME_HASH_AND_ADDRESS(a->custom_data));
+				for (auto i = 0; i < a->renderer_datas.size(); i++)
+				{
+					auto& d = a->renderer_datas[i];
+					inputs.emplace_back(inputs.size() > 1 ? sh(("pos" + str(i)).c_str()) : "pos"_h, &d.pos);
+					inputs.emplace_back(inputs.size() > 1 ? sh(("eul" + str(i)).c_str()) : "eul"_h, &d.eul);
+					inputs.emplace_back(inputs.size() > 1 ? sh(("scl" + str(i)).c_str()) : "scl"_h, &d.scl);
+					inputs.emplace_back(inputs.size() > 1 ? sh(("alpha" + str(i)).c_str()) : "alpha"_h, &d.alpha);
+				}
+				ins->call(g, inputs, {});
+			}
+		});
+		a->renderer_host = host;
+		renderer_parent->add_child(host);
+
 		return id;
 	}
 
@@ -203,24 +228,6 @@ namespace flame
 		{
 			auto a = it->second.release();
 			a->time = 0.f;
-			if (a->type == TweenGui)
-			{
-				sRenderer::instance()->hud_callbacks.add([a]() {
-					auto g = a->renderer;
-					auto ins = g->instance;
-					std::vector<std::pair<uint, voidptr>> inputs;
-					inputs.emplace_back(FLAME_HASH_AND_ADDRESS(a->custom_data));
-					for (auto i = 0; i < a->renderer_datas.size(); i++)
-					{
-						auto& d = a->renderer_datas[i];
-						inputs.emplace_back(inputs.size() > 1 ? sh(("pos" + str(i)).c_str()) : "pos"_h, &d.pos);
-						inputs.emplace_back(inputs.size() > 1 ? sh(("eul" + str(i)).c_str()) : "eul"_h, &d.eul);
-						inputs.emplace_back(inputs.size() > 1 ? sh(("scl" + str(i)).c_str()) : "scl"_h, &d.scl);
-						inputs.emplace_back(inputs.size() > 1 ? sh(("alpha" + str(i)).c_str()) : "alpha"_h, &d.alpha);
-					}
-					ins->call(g, inputs, {});
-				}, (uint)a);
-			}
 			for (auto& t : a->tracks)
 			{
 				if (!t.actions.empty())

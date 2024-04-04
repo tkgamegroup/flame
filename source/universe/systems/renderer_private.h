@@ -244,7 +244,7 @@ namespace flame
 		vec2 hud_screen_size() const override;
 		void hud_push_style(HudStyleVar var, const vec2& value) override;
 		void hud_pop_style(HudStyleVar var) override;
-		void hud_begin_layout(HudLayoutType type, const vec2& item_spacing, const vec4& border) override;
+		void hud_begin_layout(HudLayoutType type, const vec2& size, const vec2& item_spacing, const vec4& border) override;
 		void hud_end_layout() override;
 		void hud_new_line() override;
 		void hud_begin_stencil_write() override;

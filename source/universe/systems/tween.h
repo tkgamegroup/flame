@@ -13,7 +13,7 @@ namespace flame
 	struct sTween : System
 	{
 		virtual uint begin() = 0;
-		virtual uint begin(BlueprintInstanceGroupPtr renderer, uint target_count) = 0;
+		virtual uint begin(EntityPtr renderer_parent, BlueprintInstanceGroupPtr renderer, uint target_count) = 0;
 		virtual void set_target(uint id, EntityPtr e) = 0;
 		virtual void set_target(uint id, uint idx) = 0;
 		virtual void set_custom_data(uint id, TypeInfo* type, void* data) = 0;

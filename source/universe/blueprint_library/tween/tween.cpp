@@ -25,7 +25,11 @@ namespace flame
 		library->add_template("Tween Begin Gui", "", BlueprintNodeFlagNone,
 			{
 				{
-					.name = "Entity",
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Renderer Host",
 					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				},
 				{
@@ -45,16 +49,21 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				if (auto parent = *(EntityPtr*)inputs[0].data; parent)
 				{
-					if (auto ins = entity->get_component<cBpInstance>(); ins && ins->bp_ins)
+					if (auto renderer_host = *(EntityPtr*)inputs[1].data; renderer_host)
 					{
-						auto instance = ins->bp_ins;
-						if (auto group = instance->find_group(*(uint*)inputs[1].data); group)
+						if (auto ins = renderer_host->get_component<cBpInstance>(); ins && ins->bp_ins)
 						{
-							auto count = *(uint*)inputs[2].data;
-							auto id = sTween::instance()->begin(group, count);
-							*(uint*)outputs[0].data = id;
+							auto instance = ins->bp_ins;
+							if (auto group = instance->find_group(*(uint*)inputs[2].data); group)
+							{
+								auto count = *(uint*)inputs[3].data;
+								auto id = sTween::instance()->begin(parent, group, count);
+								*(uint*)outputs[0].data = id;
+							}
+							else
+								*(uint*)outputs[0].data = 0;
 						}
 						else
 							*(uint*)outputs[0].data = 0;
