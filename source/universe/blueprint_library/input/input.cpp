@@ -58,6 +58,20 @@ namespace flame
 			}
 		);
 
+		library->add_template("Mouse Scroll", "", BlueprintNodeFlagNone,
+			{
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<int>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(int*)outputs[0].data = sInput::instance()->mscroll;
+			}
+		);
+
 		library->add_template("Key Pressed", "", BlueprintNodeFlagNone,
 			{
 				{

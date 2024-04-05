@@ -14,8 +14,8 @@ namespace flame
 		CursorType cursor = CursorArrow;
 
 		Listeners<void(MouseButton btn, bool down)> mouse_listeners;
-		Listeners<void(const ivec2&)>				mousemove_listeners;
-		Listeners<void(int)>						scroll_listeners;
+		Listeners<void(const ivec2&)>				mouse_move_listeners;
+		Listeners<void(int)>						mouse_scroll_listeners;
 		Listeners<void(KeyboardKey key, bool down)> key_listeners;
 		Listeners<void(wchar_t)>					char_listeners;
 		Listeners<void(const uvec2&)>				resize_listeners;

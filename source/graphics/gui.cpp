@@ -623,11 +623,11 @@ namespace flame
 				ImGuiIO& io = ImGui::GetIO();
 				io.MouseDown[btn] = down;
 			});
-			native->mousemove_listeners.add([](const ivec2& pos) {
+			native->mouse_move_listeners.add([](const ivec2& pos) {
 				ImGuiIO& io = ImGui::GetIO();
 				io.MousePos = ImVec2(pos.x, pos.y);
 			});
-			native->scroll_listeners.add([](int scroll) {
+			native->mouse_scroll_listeners.add([](int scroll) {
 				ImGuiIO& io = ImGui::GetIO();
 				io.MouseWheel = scroll;
 			});

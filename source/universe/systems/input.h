@@ -12,6 +12,7 @@ namespace flame
 		float mbtn_duration[MouseButton_Count] = {};
 		vec2 mpos = vec2(0.f);
 		vec2 mdisp = vec2(0.f);
+		int mscroll = 0;
 		bool kbtn[KeyboardKey_Count] = {};
 		float kbtn_duration[KeyboardKey_Count] = {};
 

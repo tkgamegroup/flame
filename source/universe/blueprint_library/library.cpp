@@ -11,6 +11,7 @@ namespace flame
 	void add_colliding_node_templates(BlueprintNodeLibraryPtr library);
 	void add_procedural_node_templates(BlueprintNodeLibraryPtr library);
 	void add_input_node_templates(BlueprintNodeLibraryPtr library);
+	void add_renderer_node_templates(BlueprintNodeLibraryPtr library);
 	void add_primitive_node_templates(BlueprintNodeLibraryPtr library);
 	void add_hud_node_templates(BlueprintNodeLibraryPtr library);
 	void add_audio_node_templates(BlueprintNodeLibraryPtr library);
@@ -26,6 +27,7 @@ namespace flame
 		auto colliding_library = BlueprintNodeLibrary::get(L"universe::colliding");
 		auto procedural_library = BlueprintNodeLibrary::get(L"universe::procedural");
 		auto input_library = BlueprintNodeLibrary::get(L"universe::input");
+		auto renderer_library = BlueprintNodeLibrary::get(L"universe::renderer");
 		auto primitive_library = BlueprintNodeLibrary::get(L"universe::primitive");
 		auto hud_library = BlueprintNodeLibrary::get(L"universe::HUD");
 		auto audio_library = BlueprintNodeLibrary::get(L"universe::audio");
@@ -41,6 +43,7 @@ namespace flame
 		add_colliding_node_templates(colliding_library);
 		add_procedural_node_templates(procedural_library);
 		add_input_node_templates(input_library);
+		add_renderer_node_templates(renderer_library);
 		add_primitive_node_templates(primitive_library);
 		add_hud_node_templates(hud_library);
 		add_audio_node_templates(audio_library);

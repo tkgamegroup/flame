@@ -1177,12 +1177,9 @@ void SceneView::on_draw()
 		{
 			auto e = selection.as_entity();
 			if (auto terrain = e->get_component<cTerrain>(); terrain)
-			{
-			}
+				;
 			if (auto tile_map = e->get_component<cTileMap>(); tile_map)
-			{
 				tile_map_editing();
-			}
 		}
 
 		if (ImGui::BeginDragDropTarget())

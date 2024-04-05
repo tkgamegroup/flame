@@ -82,6 +82,7 @@ static BlueprintNodeLibraryPtr procedural_library;
 static BlueprintNodeLibraryPtr navigation_library;
 static BlueprintNodeLibraryPtr colliding_library;
 static BlueprintNodeLibraryPtr input_library;
+static BlueprintNodeLibraryPtr renderer_library;
 static BlueprintNodeLibraryPtr primitive_library;
 static BlueprintNodeLibraryPtr hud_library;
 static BlueprintNodeLibraryPtr audio_library;
@@ -3566,6 +3567,14 @@ void BlueprintView::on_draw()
 						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Renderer"))
+					{
+						header = "Renderer";
+						for (auto& t : renderer_library->node_templates)
+							show_node_library_template(t);
+						if (add_node_filter.empty())
+							ImGui::EndMenu();
+					}
 					if (!add_node_filter.empty() || ImGui::BeginMenu("Primitive"))
 					{
 						header = "Primitive";
@@ -3584,7 +3593,7 @@ void BlueprintView::on_draw()
 					}
 					if (!add_node_filter.empty() || ImGui::BeginMenu("Audio"))
 					{
-						header = "audio";
+						header = "Audio";
 						for (auto& t : audio_library->node_templates)
 							show_node_library_template(t);
 						if (add_node_filter.empty())
@@ -3592,7 +3601,7 @@ void BlueprintView::on_draw()
 					}
 					if (!add_node_filter.empty() || ImGui::BeginMenu("Resource"))
 					{
-						header = "resource";
+						header = "Resource";
 						for (auto& t : resource_library->node_templates)
 							show_node_library_template(t);
 						if (add_node_filter.empty())
@@ -3809,6 +3818,7 @@ void BlueprintWindow::init()
 		colliding_library = BlueprintNodeLibrary::get(L"universe::colliding");
 		procedural_library = BlueprintNodeLibrary::get(L"universe::procedural");
 		input_library = BlueprintNodeLibrary::get(L"universe::input");
+		renderer_library = BlueprintNodeLibrary::get(L"universe::renderer");
 		primitive_library = BlueprintNodeLibrary::get(L"universe::primitive");
 		hud_library = BlueprintNodeLibrary::get(L"universe::HUD");
 		audio_library = BlueprintNodeLibrary::get(L"universe::audio");
@@ -3826,6 +3836,7 @@ void BlueprintWindow::init()
 		node_libraries.push_back(colliding_library);
 		node_libraries.push_back(procedural_library);
 		node_libraries.push_back(input_library);
+		node_libraries.push_back(renderer_library);
 		node_libraries.push_back(primitive_library);
 		node_libraries.push_back(hud_library);
 		node_libraries.push_back(audio_library);

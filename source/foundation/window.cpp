@@ -68,11 +68,11 @@ namespace flame
 			case WM_MOUSEMOVE:
 				w->has_input = true;
 				w->mpos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-				w->mousemove_listeners.call(w->mpos);
+				w->mouse_move_listeners.call(w->mpos);
 				return true;
 			case WM_MOUSEWHEEL:
 				w->has_input = true;
-				w->scroll_listeners.call(GET_Y_LPARAM(wParam) > 0 ? 1 : -1);
+				w->mouse_scroll_listeners.call(GET_Y_LPARAM(wParam) > 0 ? 1 : -1);
 				return true;
 			case WM_DESTROY:
 				w->has_input = true;

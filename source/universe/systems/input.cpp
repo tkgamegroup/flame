@@ -15,8 +15,11 @@ namespace flame
 		native_widnow->mouse_listeners.add([this](MouseButton btn, bool down) {
 			mbtn_temp[btn] = down;
 		}, "input_system"_h);
-		native_widnow->mousemove_listeners.add([this](const ivec2& pos) {
+		native_widnow->mouse_move_listeners.add([this](const ivec2& pos) {
 			mpos_temp = (vec2)pos - offset;
+		}, "input_system"_h);
+		native_widnow->mouse_scroll_listeners.add([this](int scroll) {
+			mscroll = scroll;
 		}, "input_system"_h);
 		native_widnow->key_listeners.add([this](KeyboardKey key, bool down) {
 			kbtn_temp[key] = down;
@@ -30,7 +33,7 @@ namespace flame
 		//auto native_widnow = main_window->native;
 
 		//native_widnow->mouse_listeners.remove("input_system"_h);
-		//native_widnow->mousemove_listeners.remove("input_system"_h);
+		//native_widnow->mouse_move_listeners.remove("input_system"_h);
 		//native_widnow->key_listeners.remove("input_system"_h);
 	}
 
