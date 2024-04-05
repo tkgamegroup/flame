@@ -87,6 +87,54 @@ namespace flame
 			}
 		);
 
+		library->add_template("Set Camera zNear", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Camera",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto camera = *(EntityPtr*)inputs[0].data;
+				if (camera)
+				{
+					auto c_camera = camera->get_component<cCamera>();
+					if (c_camera)
+						c_camera->zNear = *(float*)inputs[1].data;
+				}
+			}
+		);
+
+		library->add_template("Set Camera zFar", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Camera",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto camera = *(EntityPtr*)inputs[0].data;
+				if (camera)
+				{
+					auto c_camera = camera->get_component<cCamera>();
+					if (c_camera)
+						c_camera->zFar = *(float*)inputs[1].data;
+				}
+			}
+		);
+
 		library->add_template("Camera Smooth Moving", "", BlueprintNodeFlagNone,
 			{
 				{

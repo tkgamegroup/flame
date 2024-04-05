@@ -1318,6 +1318,58 @@ namespace flame
 			}
 		);
 
+		library->add_template("Mix", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "V0",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "V1",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "X",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(float*)outputs[0].data = mix(*(float*)inputs[0].data, *(float*)inputs[1].data, *(float*)inputs[2].data);
+			}
+		);
+
+		library->add_template("Map01", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "X",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "V0",
+					.allowed_types = { TypeInfo::get<float>() }
+				},
+				{
+					.name = "V1",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<float>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				*(float*)outputs[0].data = map_01(*(float*)inputs[0].data, *(float*)inputs[1].data, *(float*)inputs[2].data);
+			}
+		);
+
 		library->add_template("Arc Point", "", BlueprintNodeFlagNone,
 			{
 				{

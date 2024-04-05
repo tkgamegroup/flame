@@ -19,7 +19,7 @@ namespace flame
 			mpos_temp = (vec2)pos - offset;
 		}, "input_system"_h);
 		native_widnow->mouse_scroll_listeners.add([this](int scroll) {
-			mscroll = scroll;
+			mscr_temp = scroll;
 		}, "input_system"_h);
 		native_widnow->key_listeners.add([this](KeyboardKey key, bool down) {
 			kbtn_temp[key] = down;
@@ -57,6 +57,9 @@ namespace flame
 				kbtn_duration[i] += delta_time;
 			kbtn[i] = kbtn_temp[i];
 		}
+
+		mscroll = mscr_temp;
+		mscr_temp = 0;
 
 		mouse_used = false;
 		key_used = false;

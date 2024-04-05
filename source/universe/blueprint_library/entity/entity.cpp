@@ -643,6 +643,81 @@ namespace flame
 			}
 		);
 
+		library->add_template("Get X Axis", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto node = entity->get_component<cNode>();
+					*(vec3*)outputs[0].data = node ? node->x_axis() : vec3(0.f);
+				}
+				else
+					*(vec3*)outputs[0].data = vec3(0.f);
+			}
+		);
+
+		library->add_template("Get Y Axis", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto node = entity->get_component<cNode>();
+					*(vec3*)outputs[0].data = node ? node->y_axis() : vec3(0.f);
+				}
+				else
+					*(vec3*)outputs[0].data = vec3(0.f);
+			}
+		);
+
+		library->add_template("Get Z Axis", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			{
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto node = entity->get_component<cNode>();
+					*(vec3*)outputs[0].data = node ? node->z_axis() : vec3(0.f);
+				}
+				else
+					*(vec3*)outputs[0].data = vec3(0.f);
+			}
+		);
+
 		library->add_template("Look At", "", BlueprintNodeFlagNone,
 			{
 				{
