@@ -238,7 +238,7 @@ namespace flame
 	}
 
 	// circle center, circle rarius, sector center, sector radius start, sector radius end, sector half central angle, sector direction angle
-	inline bool circle_sector_intersect(const vec2& co, float cr, const vec2& so, float sr0, float sr1, float sa, float sd)
+	inline bool circle_sector_overlap(const vec2& co, float cr, const vec2& so, float sr0, float sr1, float sa, float sd)
 	{
 		auto vec_two_circles = co - so;
 		auto dist_two_circles = length(vec_two_circles);
@@ -249,6 +249,21 @@ namespace flame
 		auto dir0 = dir(-sd + sa); auto dir1 = dir(-sd - sa);
 		if (segment_circle_overlap(so + dir0 * sr0, so + dir0 * sr1, co, cr) ||
 			segment_circle_overlap(so + dir1 * sr0, so + dir1 * sr1, co, cr))
+			return true;
+		return false;
+	}
+
+	inline bool oriented_box_circle_overlap(const vec2& bc, const vec2& be, float ba, const vec2& co, float cr)
+	{
+		auto d = dir(-ba);
+		auto p0 = bc + d * be.x;
+		auto p1 = bc - d * be.x;
+		auto p2 = bc + d * be.y;
+		auto p3 = bc - d * be.y;
+		if (segment_circle_overlap(p0, p1, co, cr) ||
+			segment_circle_overlap(p1, p2, co, cr) ||
+			segment_circle_overlap(p2, p3, co, cr) ||
+			segment_circle_overlap(p3, p0, co, cr))
 			return true;
 		return false;
 	}

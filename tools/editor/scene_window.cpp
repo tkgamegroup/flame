@@ -4,6 +4,7 @@
 #include "tile_map_editing.h"
 
 #include <flame/foundation/system.h>
+#include <flame/graphics/canvas.h>
 #include <flame/universe/draw_data.h>
 #include <flame/universe/components/node.h>
 #include <flame/universe/components/element.h>
@@ -1046,8 +1047,10 @@ void SceneView::on_draw()
 				{
 					if (!node->bounds.invalid())
 					{
-						auto points = node->bounds.get_points();
+						auto& b = node->bounds;
+						auto points = b.get_points();
 						auto line_pts = Frustum::points_to_lines(points.data());
+
 						sRenderer::instance()->draw_primitives(PrimitiveLineList, line_pts.data(), line_pts.size(), cvec4(255, 127, 127, 255));
 					}
 				}
@@ -1062,6 +1065,25 @@ void SceneView::on_draw()
 						if (!e->global_enable)
 							break;
 						draw_aabb(e);
+
+						if (auto node = e->get_component<cNode>(); node)
+						{
+							if (!node->bounds.invalid())
+							{
+								auto& b = node->bounds;
+
+								auto renderer = sRenderer::instance();
+								auto rt = renderer->render_tasks.front().get();
+								auto camera = rt->camera;
+								auto canvas = rt->canvas;
+								vec3 clip_pos;
+								if (auto p = camera->world_to_screen(b.center(), &clip_pos); all(lessThan(clip_pos, vec3(+1.f))) && all(greaterThan(clip_pos, vec3(-1.f))))
+								{
+									auto text = std::format(L"({}) - ({})\n{}", wstr(b.a), wstr(b.b), wstr(b.b - b.a));
+									canvas->add_text(nullptr, 18, p, text, cvec4(255));
+								}
+							}
+						}
 					}
 				}
 			}
@@ -1163,7 +1185,10 @@ void SceneView::on_draw()
 				if (auto agent = e->get_component<cNavAgent>(); agent)
 					draw_cylinder(agent->node->global_pos(), agent->radius, agent->height);
 				if (auto obstacle = e->get_component<cNavObstacle>(); obstacle)
-					draw_cylinder(obstacle->node->global_pos(), obstacle->radius, obstacle->height);
+				{
+					if (obstacle->type == cNavObstacle::TypeCylinder)
+						draw_cylinder(obstacle->node->global_pos(), obstacle->extent.x, obstacle->extent.y);
+				}
 				return true;
 			});
 

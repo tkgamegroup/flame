@@ -212,6 +212,38 @@ namespace flame
 			}
 		);
 
+		library->add_template("Create Node", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Parent",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Name",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				}
+			},
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				}
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto parent = *(EntityPtr*)inputs[0].data; parent)
+				{
+					auto e = Entity::create();
+					e->add_component<cNode>();
+					parent->add_child(e);
+					e->name = *(std::string*)inputs[1].data;
+
+					*(EntityPtr*)outputs[0].data = e;
+				}
+				else
+					*(EntityPtr*)outputs[0].data = nullptr;
+			}
+		);
+
 		library->add_template("Remove Entity", "", BlueprintNodeFlagNone,
 			{
 				{

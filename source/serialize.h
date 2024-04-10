@@ -21,20 +21,33 @@ namespace flame
 	template<std::integral T>
 	inline std::string str_hex(T v, bool zero_fill = true)
 	{
-		std::ostringstream ss;
+		char buf[32];
 		if (zero_fill)
-			ss << std::setfill('0') << std::setw(sizeof(T) * 2);
-		ss << std::hex << v;
-		return ss.str();
+		{
+			if constexpr (sizeof(T) == 4)
+				sprintf(buf, "%08X", v);
+			else if constexpr (sizeof(T) == 8)
+				sprintf(buf, "%016llX", v);
+		}
+		else
+		{
+			if constexpr (sizeof(T) == 4)
+				sprintf(buf, "%X", v);
+			else if constexpr (sizeof(T) == 8)
+				sprintf(buf, "%llX", v);
+		}
+		return buf;
 	}
 
 	template<std::floating_point T>
 	std::string str(T v)
 	{
-		std::ostringstream ss;
-		ss.precision(4);
-		ss << v;
-		return ss.str();
+		char buf[32];
+		if constexpr (sizeof(T) == 4)
+			sprintf(buf, "%.4f", v);
+		else if constexpr (sizeof(T) == 8)
+			sprintf(buf, "%.4lf", v);
+		return buf;
 	}
 
 	template<pointer_type T>
@@ -107,20 +120,33 @@ namespace flame
 	template<std::integral T>
 	inline std::wstring wstr_hex(T v, bool zero_fill = true)
 	{
-		std::wostringstream ss;
+		wchar_t buf[32];
 		if (zero_fill)
-			ss << std::setfill(L'0') << std::setw(sizeof(T) * 2);
-		ss << std::hex << v;
-		return ss.str();
+		{
+			if constexpr (sizeof(T) == 4)
+				swprintf(buf, L"%08X", v);
+			else if constexpr (sizeof(T) == 8)
+				swprintf(buf, L"%016llX", v);
+		}
+		else
+		{
+			if constexpr (sizeof(T) == 4)
+				swprintf(buf, L"%X", v);
+			else if constexpr (sizeof(T) == 8)
+				swprintf(buf, L"%llX", v);
+		}
+		return buf;
 	}
 
 	template<std::floating_point T>
 	std::wstring wstr(T v)
 	{
-		std::wostringstream ss;
-		ss.precision(4);
-		ss << v;
-		return ss.str();
+		wchar_t buf[32];
+		if constexpr (sizeof(T) == 4)
+			swprintf(buf, L"%.4f", v);
+		else if constexpr (sizeof(T) == 8)
+			swprintf(buf, L"%.4lf", v);
+		return buf;
 	}
 
 	template<pointer_type T>
@@ -353,14 +379,14 @@ namespace flame
 		{
 			s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](char ch) {
 				return !std::isspace(ch);
-			}));
+				}));
 		}
 
 		static void ltrim(std::basic_string<CH>& s, CH t)
 		{
 			s.erase(s.begin(), std::find_if(s.begin(), s.end(), [t](char ch) {
 				return ch == t;
-			}));
+				}));
 		}
 
 		static std::basic_string<CH> get_ltrimed(std::basic_string_view<CH> s)
@@ -374,14 +400,14 @@ namespace flame
 		{
 			s.erase(std::find_if(s.rbegin(), s.rend(), [](char ch) {
 				return !std::isspace(ch);
-			}).base(), s.end());
+				}).base(), s.end());
 		}
 
 		static void rtrim(std::basic_string<CH>& s, CH t)
 		{
 			s.erase(std::find_if(s.rbegin(), s.rend(), [t](char ch) {
 				return ch == t;
-			}).base(), s.end());
+				}).base(), s.end());
 		}
 
 		static std::basic_string<CH> get_rtrimed(std::basic_string_view<CH> s)

@@ -1143,8 +1143,16 @@ namespace flame
 		}
 		for (auto ob : nav_obstacles)
 		{
-			if (distance(ob->node->pos.xz(), pos.xz()) < ob->radius + radius)
-				return false;
+			if (ob->type == cNavObstacle::TypeCylinder)
+			{
+				if (distance(ob->node->pos.xz(), pos.xz()) < ob->extent.x + radius)
+					return false;
+			}
+			else if (ob->type == cNavObstacle::TypeBox)
+			{
+				if (oriented_box_circle_overlap(ob->node->pos.xz(), ob->extent.xz(), ob->node->get_eul().x, pos, radius))
+					return false;
+			}
 		}
 		return true;
 	}
@@ -1376,7 +1384,12 @@ namespace flame
 				if (ob->dt_id != -1)
 					break;
 				auto pos = ob->node->global_pos();
-				if (dt_tile_cache->addObstacle(&pos[0], ob->radius, ob->height, (uint*)&ob->dt_id) != DT_SUCCESS)
+				dtStatus res;
+				if (ob->type == cNavObstacle::TypeCylinder)
+					res = dt_tile_cache->addObstacle(&pos[0], ob->extent.x, ob->extent.y, (uint*)&ob->dt_id);
+				else
+					res = dt_tile_cache->addBoxObstacle(&pos[0], &ob->extent[0], radians(ob->node->get_eul().x), (uint*)&ob->dt_id);
+				if (res != DT_SUCCESS)
 				{
 					auto n = count - i - 1;
 					if (n > 0)

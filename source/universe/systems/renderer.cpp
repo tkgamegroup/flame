@@ -2120,6 +2120,12 @@ namespace flame
 			outline_groups.clear();
 			buf_primitives.reset();
 			primitives_draws.clear();
+
+			for (auto& t : render_tasks)
+			{
+				if (t->canvas)
+					t->canvas->reset();
+			}
 			return;
 		}
 
@@ -3235,6 +3241,7 @@ namespace flame
 
 	void sRendererPrivate::update()
 	{
+		int cut = 1;
 	}
 
 	cNodePtr sRendererPrivate::pick_up(const uvec2& screen_pos, vec3* out_pos, const std::function<void(cNodePtr, DrawData&)>& draw_callback)

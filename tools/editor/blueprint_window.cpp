@@ -347,6 +347,7 @@ void BlueprintView::copy_nodes(BlueprintGroupPtr g, bool include_children)
 			n.name = src_n->name_hash;
 			n.template_string = src_n->template_string;
 			n.parent = src_n->parent->object_id;
+			std::vector<BlueprintNodePtr> referenced_variables;
 			for (auto& i : src_n->inputs)
 			{
 				if (i->get_linked_count() == 0)
@@ -362,8 +363,41 @@ void BlueprintView::copy_nodes(BlueprintGroupPtr g, bool include_children)
 					if (s.type || !s.value.empty())
 						n.input_datas.emplace(i->name_hash, s);
 				}
+				else if (hide_var_links)
+				{
+					auto vn = i->get_linked(0)->node;
+					if (vn->name_hash == "Variable"_h)
+					{
+						auto had = false;
+						for (auto& nn : copied_nodes)
+						{
+							if (nn.object_id == vn->object_id)
+							{
+								had = true;
+								break;
+							}
+						}
+						if (!had)
+							referenced_variables.push_back(vn);
+					}
+				}
 			}
 			n.position = src_n->position;
+			for (auto& vn : referenced_variables)
+			{
+				auto& nn = copied_nodes.emplace_back();
+				nn.object_id = vn->object_id;
+				nn.name = vn->name_hash;
+				nn.parent = vn->parent->object_id;
+				for (auto& ii : vn->inputs)
+				{
+					CopiedSlot s;
+					if (auto value_str = ii->type->serialize(ii->data); value_str != ii->default_value)
+						s.value = value_str;
+					if (!s.value.empty())
+						nn.input_datas.emplace(ii->name_hash, s);
+				}
+			}
 			if (include_children)
 			{
 				for (auto c : src_n->children)
@@ -421,7 +455,10 @@ void BlueprintView::paste_nodes(BlueprintGroupPtr g, const vec2& pos)
 				name = s2t<uint>(it->second.value);
 			if (auto it = src_n.input_datas.find("Location"_h); it != src_n.input_datas.end())
 				location = s2t<uint>(it->second.value);
-			n = blueprint->add_variable_node(g, parent, name, src_n.name, location);
+			if (hide_var_links && src_n.name == "Variable"_h)
+				n = add_variable_node_unifily(g, name, location);
+			else
+				n = blueprint->add_variable_node(g, parent, name, src_n.name, location);
 		}
 		else if (src_n.name == "Call"_h)
 		{
@@ -705,9 +742,11 @@ void BlueprintView::run_blueprint(BlueprintInstanceGroup* debugging_group)
 {
 	if (!debugging_group)
 	{
-		auto g = blueprint_instance->find_group(group_name_hash);
-		blueprint_instance->prepare_executing(g);
-		blueprint_instance->run(g);
+		if (auto g = blueprint_instance->find_group(group_name_hash); g)
+		{
+			blueprint_instance->prepare_executing(g);
+			blueprint_instance->run(g);
+		}
 	}
 	else
 	{
@@ -720,9 +759,11 @@ void BlueprintView::step_blueprint(BlueprintInstanceGroup* debugging_group)
 {
 	if (!debugging_group)
 	{
-		auto g = blueprint_instance->find_group(group_name_hash);
-		blueprint_instance->prepare_executing(g);
-		blueprint_window.debugger->debugging = g;
+		if (auto g = blueprint_instance->find_group(group_name_hash); g)
+		{
+			blueprint_instance->prepare_executing(g);
+			blueprint_window.debugger->debugging = g;
+		}
 	}
 	else
 	{
@@ -753,6 +794,22 @@ void BlueprintView::save_blueprint()
 		return;
 	if (!unsaved)
 		return;
+
+	if (hide_var_links)
+	{
+		if (auto g = blueprint->find_group(group_name_hash); g)
+		{
+			auto y = 0.f;
+			for (auto& n : g->nodes)
+			{
+				if (n->depth == 1 && n->name_hash == "Variable"_h)
+				{
+					n->position = vec2(0.f, y);
+					y += 100.f;
+				}
+			}
+		}
+	}
 
 	blueprint->save();
 	unsaved = false;
@@ -1243,6 +1300,7 @@ void BlueprintView::on_draw()
 						if (ImGui::IsItemDeactivatedAfterEdit())
 						{
 							item.name = name;
+							item.name_hash = sh(name.c_str());
 							blueprint->alter_enum(e.name_hash, e.name, items);
 							if (blueprint->is_static)
 								app.change_bp_references(old_item_hash, e.name_hash, 0, sh(name.c_str()), e.name_hash, 0);
@@ -1420,6 +1478,7 @@ void BlueprintView::on_draw()
 						if (ImGui::IsItemDeactivatedAfterEdit())
 						{
 							variable.name = name;
+							variable.name_hash = sh(name.c_str());
 							blueprint->alter_struct(s.name_hash, s.name, variables);
 							if (blueprint->is_static)
 								app.change_bp_references(old_variable_hash, s.name_hash, 0, sh(name.c_str()), s.name_hash, 0);

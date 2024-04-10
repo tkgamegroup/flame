@@ -16,7 +16,16 @@ namespace flame
 
 	vec3 cNodePrivate::get_eul()
 	{
-		return degrees(eulerAngles(qut)).yxz();
+		auto ret = degrees(eulerAngles(qut)).yxz();
+		if (ret.x < 0.f)
+			ret.x += 360.f;
+		if (ret.y < 0.f)
+			ret.y += 360.f;
+		if (ret.z < 0.f)
+			ret.z += 360.f;
+		if (ret.y == 180.f && ret.z == 180.f)
+			ret.x = 360.f - ret.x;
+		return ret;
 	}
 
 	void cNodePrivate::set_eul(const vec3& e)

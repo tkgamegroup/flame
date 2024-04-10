@@ -2359,6 +2359,21 @@ std::pair<uint, uint> InspectedEntities::manipulate()
 
 											ImGui::TextUnformatted(get_value_str(it->second.type, it->second.data).c_str());
 										}
+										else if (is_vector(v.type->tag))
+										{
+											if (v.type->tag == TagVPU)
+											{
+												ImGui::TableNextRow();
+												ImGui::TableNextColumn();
+												ImGui::TextUnformatted(get_display_name(v.name).c_str());
+												ImGui::TableNextColumn();
+
+												auto& vec = *(std::vector<voidptr>*)it->second.data;
+												ImGui::Text("size: %d", (int)vec.size());
+											}
+											else
+												manipulate_variable(v.type, v.name, v.name_hash, 0, nullptr, nullptr, "", &it->second.data, 1, &v);
+										}
 										else
 											manipulate_variable(v.type, v.name, v.name_hash, 0, nullptr, nullptr, "", &it->second.data, 1, &v);
 									}
@@ -2815,8 +2830,10 @@ void InspectorView::on_draw()
 				if (inspected_obj)
 				{
 					auto mesh = (graphics::MeshPtr)inspected_obj;
+					auto& b = mesh->bounds;
 					ImGui::Text("Vertex Count: %d", (int)mesh->positions.size());
 					ImGui::Text("Index Count: %d", (int)mesh->indices.size());
+					ImGui::Text("(%s) - (%s): (%s)", str(b.a).c_str(), str(b.b).c_str(), str(b.b - b.a).c_str());
 					{
 						std::string attr_str = "";
 						if (!mesh->uvs.empty()) attr_str += " uv";

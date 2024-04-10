@@ -14,7 +14,12 @@ namespace flame
 		if (auto ag = e->get_component<cNavAgent>(); ag)
 			return ag->radius;
 		if (auto ob = e->get_component<cNavObstacle>(); ob)
-			return ob->radius;
+		{
+			if (ob->type == cNavObstacle::TypeCylinder)
+				return ob->extent.x;
+			else
+				return max(ob->extent.x, ob->extent.z);
+		}
 		if (auto bp_comp = e->get_component<cBpInstance>(); bp_comp && bp_comp->bp_ins)
 		{
 			auto ins = bp_comp->bp_ins;

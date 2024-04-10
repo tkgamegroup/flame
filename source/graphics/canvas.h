@@ -69,6 +69,8 @@ namespace flame
 			virtual void set_targets(std::span<ImageViewPtr> targets) = 0;
 			virtual void bind_window(WindowPtr window) = 0;
 
+			virtual void reset() = 0;
+
 			virtual uint set_translate(const vec2& translate) = 0; // return: cmd idx
 			virtual void push_scissor(const Rect& rect) = 0;
 			virtual void pop_scissor() = 0;

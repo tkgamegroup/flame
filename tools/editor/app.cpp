@@ -1876,7 +1876,7 @@ void App::on_gui()
 
 	if (ImGui::BeginPopup("document_select", ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		auto to_close = !ImGui::IsKeyDown((ImGuiKey)(ImGuiKey)Keyboard_GraveAccentAndTilde);
+		auto closing = !ImGui::IsKeyDown((ImGuiKey)(ImGuiKey)Keyboard_GraveAccentAndTilde);
 
 		ImGui::TextUnformatted("Sheets:");
 		ImGui::Indent();
@@ -1886,8 +1886,10 @@ void App::on_gui()
 		std::sort(sheet_views.begin(), sheet_views.end(), [](const auto a, const auto b) { return a->name < b->name; });
 		for (auto v : sheet_views)
 		{
-			ImGui::Selectable(v->name.c_str());
-			if (to_close && ImGui::IsItemHovered())
+			auto name = v->name;
+			SUS::strip_tail_if(name, "##Sheet");
+			ImGui::Selectable(name.c_str());
+			if (closing && ImGui::IsItemHovered())
 			{
 				if (v->imgui_window)
 					ImGui::FocusWindow((ImGuiWindow*)v->imgui_window);
@@ -1902,8 +1904,13 @@ void App::on_gui()
 		std::sort(blueprint_views.begin(), blueprint_views.end(), [](const auto a, const auto b) { return a->name < b->name; });
 		for (auto& v : blueprint_views)
 		{
-			ImGui::Selectable(v->name.c_str());
-			if (to_close && ImGui::IsItemHovered())
+			auto name = v->name;
+			SUS::strip_tail_if(name, "##Blueprint");
+			if (blueprint_window.debugger->debugging &&
+				blueprint_window.debugger->debugging->instance->blueprint == v->blueprint)
+				name += " (debugging)";
+			ImGui::Selectable(name.c_str());
+			if (closing && ImGui::IsItemHovered())
 			{
 				if (v->imgui_window)
 					ImGui::FocusWindow((ImGuiWindow*)v->imgui_window);
@@ -1911,7 +1918,7 @@ void App::on_gui()
 		}
 		ImGui::Unindent();
 
-		if (to_close)
+		if (closing)
 			ImGui::CloseCurrentPopup();
 
 		ImGui::EndPopup();

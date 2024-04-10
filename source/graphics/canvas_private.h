@@ -33,7 +33,7 @@ namespace flame
 			void create_renderpass(Format format);
 			void set_targets(std::span<ImageViewPtr> targets) override;
 			void bind_window(WindowPtr window) override;
-			void reset();
+			void reset() override;
 			DrawCmd& get_blit_cmd(DescriptorSetPtr ds);
 			DrawCmd& get_sdf_cmd(DescriptorSetPtr ds, float sdf_scale, float thickness, float border);
 

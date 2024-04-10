@@ -7,13 +7,19 @@ namespace flame
 	// Reflect ctor
 	struct cNavObstacle : Component
 	{
+		enum Type
+		{
+			TypeCylinder,
+			TypeBox
+		};
+
 		// Reflect requires
 		cNodePtr node = nullptr;
 
 		// Reflect
-		float radius = 1.f;
+		Type type = TypeCylinder;
 		// Reflect
-		float height = 1.f;
+		vec3 extent = vec3(1.f); // for cylinder: radius, height; for box: half extents
 
 		struct Create
 		{

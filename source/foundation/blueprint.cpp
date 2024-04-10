@@ -1428,6 +1428,8 @@ namespace flame
 					auto array_size = array.size() / item_type->size;
 					if (index < array_size)
 						item_type->copy(pitem, array.data() + index * item_type->size);
+					else
+						item_type->create(pitem);
 				}
 			};
 			break;
@@ -1675,10 +1677,11 @@ namespace flame
 				ret->inputs.emplace_back(i);
 			}
 			ret->function = [](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto array_type = inputs[0].type;
 				auto parray = inputs[0].data;
 				auto pitem = inputs[1].data;
 				auto item_type = inputs[1].type;
-				if (parray && pitem && item_type)
+				if (is_vector(array_type->tag) && parray && pitem && item_type)
 				{
 					auto& array = *(std::vector<char>*)parray;
 					auto array_size = array.size() / item_type->size;

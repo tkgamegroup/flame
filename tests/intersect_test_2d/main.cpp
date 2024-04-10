@@ -71,7 +71,7 @@ int entry(int argc, char** args)
 	app.create("Graphics Test", uvec2(640, 360), WindowFrame | WindowResizable, true);
 	app.main_window->renderers.add([](int idx, CommandBufferPtr cb) {
 		auto segment_circle_intersected = segment_circle_overlap(segment_start, segment_end, circle_pos, circle_radius);
-		auto circle_sector_intersected = circle_sector_intersect(circle_pos, circle_radius, sector_pos, sector_radius_start, sector_radius_end, sector_angle, sector_dir);
+		auto circle_sector_intersected = circle_sector_overlap(circle_pos, circle_radius, sector_pos, sector_radius_start, sector_radius_end, sector_angle, sector_dir);
 
 		auto add_vtx = [](const vec2& vtx, const cvec4& col) {
 			auto pv = vtx_buf.add();

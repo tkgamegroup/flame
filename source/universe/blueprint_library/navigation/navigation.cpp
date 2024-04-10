@@ -329,7 +329,7 @@ namespace flame
 			}
 		);
 
-		library->add_template("Nav Obstacle Set Radius", "", BlueprintNodeFlagNone,
+		library->add_template("Add Nav Cylinder Obstacle", "", BlueprintNodeFlagNone,
 			{
 				{
 					.name = "Entity",
@@ -338,24 +338,6 @@ namespace flame
 				{
 					.name = "Radius",
 					.allowed_types = { TypeInfo::get<float>() }
-				}
-			},
-			{
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
-				{
-					if (auto nav_obstacle = entity->get_component<cNavObstacle>(); nav_obstacle)
-						nav_obstacle->radius = *(float*)inputs[1].data;
-				}
-			}
-		);
-
-		library->add_template("Nav Obstacle Set Height", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Entity",
-					.allowed_types = { TypeInfo::get<EntityPtr>() }
 				},
 				{
 					.name = "Height",
@@ -367,8 +349,37 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
 				{
-					if (auto nav_obstacle = entity->get_component<cNavObstacle>(); nav_obstacle)
-						nav_obstacle->height = *(float*)inputs[1].data;
+					auto nav_obstacle = entity->get_component<cNavObstacle>();
+					if (!nav_obstacle)
+						nav_obstacle = entity->add_component<cNavObstacle>();
+					nav_obstacle->type = cNavObstacle::TypeCylinder;
+					nav_obstacle->extent.x = *(float*)inputs[1].data;
+					nav_obstacle->extent.y = *(float*)inputs[2].data;
+				}
+			}
+		);
+
+		library->add_template("Add Nav Box Obstacle", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Extent",
+					.allowed_types = { TypeInfo::get<vec3>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				if (auto entity = *(EntityPtr*)inputs[0].data; entity)
+				{
+					auto nav_obstacle = entity->get_component<cNavObstacle>();
+					if (!nav_obstacle)
+						nav_obstacle = entity->add_component<cNavObstacle>();
+					nav_obstacle->type = cNavObstacle::TypeBox;
+					nav_obstacle->extent = *(vec3*)inputs[1].data;
 				}
 			}
 		);
