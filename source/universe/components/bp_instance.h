@@ -24,6 +24,7 @@ namespace flame
 		Listeners<void(uint)> callbacks;
 
 		virtual void call(uint name) = 0;
+		virtual void on_message(uint msg, void* data1, void* data2) = 0;
 
 		struct Create
 		{

@@ -12,8 +12,6 @@ namespace flame
 	std::map<uint, std::pair<BlueprintPtr, BlueprintInstancePtr>>	named_blueprints;
 	std::vector<std::unique_ptr<BlueprintNodeLibraryT>>				loaded_libraries;
 
-	std::map<uint, std::vector<BlueprintInstanceGroup*>>			message_receivers;
-
 	struct PointerAndUint
 	{
 		void* p;
@@ -3076,8 +3074,8 @@ namespace flame
 		{
 			auto g = add_group(n_group.attribute("name").value());
 
-			if (auto a = n_group.attribute("trigger_message"); a)
-				g->trigger_message = a.value();
+			if (auto a = n_group.attribute("responsive"); a)
+				g->responsive = a.as_bool();
 
 			for (auto n_variable : n_group.child("variables"))
 			{
@@ -3475,8 +3473,8 @@ namespace flame
 			auto n_group = n_groups.append_child("group");
 			n_group.append_attribute("object_id").set_value(g.first->object_id);
 			n_group.append_attribute("name").set_value(g.first->name.c_str());
-			if (!g.first->trigger_message.empty())
-				n_group.append_attribute("trigger_message").set_value(g.first->trigger_message.c_str());
+			if (g.first->responsive)
+				n_group.append_attribute("responsive").set_value(g.first->responsive);
 			if (!g.first->variables.empty())
 			{
 				auto n_variables = n_group.append_child("variables");
@@ -3839,16 +3837,6 @@ namespace flame
 
 	static void destroy_instance_group(BlueprintInstanceGroup& g)
 	{
-		if (g.trigger_message)
-		{
-			if (auto it = message_receivers.find(g.trigger_message); it != message_receivers.end())
-			{
-				std::erase_if(it->second, [&](const auto& i) {
-					return i == &g;
-				});
-			}
-		}
-
 		for (auto& v : g.variables)
 			v.second.type->destroy(v.second.data);
 
@@ -3930,7 +3918,6 @@ namespace flame
 
 		auto create_group_structure = [&](BlueprintGroupPtr src_g, BlueprintInstanceGroup& g, std::map<uint, BlueprintInstanceGroup::Data>& slots_data) {
 			g.execution_type = BlueprintExecutionFunction;
-			g.trigger_message = src_g->trigger_message.empty() ? 0 : sh(src_g->trigger_message.c_str());
 			// we dont register the group here, maybe some 'static' blueprints need this functionality in later development
 			//if (g.trigger_message)
 			//{
@@ -4773,22 +4760,17 @@ namespace flame
 			build();
 
 		group->wait_time = 0.f;
+		group->executing_stack.clear();
 
-		if (!group->executing_stack.empty())
+		if (!group->root_node.children.empty())
 		{
-			if (group->executing_stack.front().node->object_id == group->root_node.object_id)
-				return;
-			group->executing_stack.clear();
+			BlueprintExecutingBlock root_block;
+			root_block.node = &group->root_node;
+			root_block.child_index = 0;
+			root_block.executed_times = 0;
+			root_block.max_execute_times = 1;
+			group->executing_stack.push_back(root_block);
 		}
-		BlueprintExecutingBlock root_block;
-		root_block.node = &group->root_node;
-		root_block.child_index = 0;
-		root_block.executed_times = 0;
-		root_block.max_execute_times = 1;
-		group->executing_stack.push_back(root_block);
-
-		if (group->executing_stack.front().node->children.empty())
-			group->executing_stack.clear();
 	}
 
 	void BlueprintInstancePrivate::run(BlueprintInstanceGroup* group)
@@ -4980,46 +4962,6 @@ namespace flame
 			}
 		}
 		call(group, inputs.data(), outputs.data());
-	}
-
-	void BlueprintInstancePrivate::register_group(BlueprintInstanceGroup* group)
-	{
-		assert(group->instance == this);
-
-		if (group->trigger_message)
-		{
-			if (auto it = message_receivers.find(group->trigger_message); it != message_receivers.end())
-				it->second.push_back(group);
-			else
-				message_receivers[group->trigger_message] = { group };
-		}
-	}
-
-	void BlueprintInstancePrivate::unregister_group(BlueprintInstanceGroup* group)
-	{
-		assert(group->instance == this);
-
-		if (group->trigger_message)
-		{
-			if (auto it = message_receivers.find(group->trigger_message); it != message_receivers.end())
-			{
-				std::erase_if(it->second, [&](const auto& i) {
-					return i == group;
-				});
-			}
-		}
-	}
-
-	void BlueprintInstancePrivate::broadcast(uint message)
-	{
-		if (auto it = message_receivers.find(message); it != message_receivers.end())
-		{
-			for (auto g : it->second)
-			{
-				g->instance->prepare_executing(g);
-				g->instance->run(g);
-			}
-		}
 	}
 
 	struct BlueprintInstanceCreate : BlueprintInstance::Create

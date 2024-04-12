@@ -1,5 +1,8 @@
 #include "entity_private.h"
 #include "world_private.h"
+#include "components/bp_instance_private.h"
+
+#include "../foundation/blueprint.h"
 
 namespace flame
 {
@@ -118,6 +121,21 @@ namespace flame
 				s->update_times++;
 			}
 		}
+	}
+
+	void WorldPrivate::bordcast(EntityPtr _root, uint msg, void* data1, void* data2)
+	{
+		if (!_root)
+			_root = root.get();
+		_root->traversal_bfs([&](EntityPtr e, int) {
+			if (!e->global_enable)
+				return false;
+
+			if (auto ins = e->get_component<cBpInstance>(); ins)
+				ins->on_message(msg, data1, data2);
+
+			return true;
+		});
 	}
 
 	static WorldPtr _instance = nullptr;

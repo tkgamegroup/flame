@@ -107,9 +107,6 @@ namespace flame
 		void stop(BlueprintInstanceGroup* group) override;
 		void call(BlueprintInstanceGroup* group, void** inputs, void** outputs) override;
 		void call(BlueprintInstanceGroup* group, const std::vector<std::pair<uint, void*>>& named_inputs, const std::vector<std::pair<uint, void*>>& named_outputs) override;
-		void register_group(BlueprintInstanceGroup* group) override;
-		void unregister_group(BlueprintInstanceGroup* group) override;
-		void broadcast(uint message) override;
 	};
 
 	extern std::map<uint, std::vector<BlueprintInstanceGroup*>> message_receivers;

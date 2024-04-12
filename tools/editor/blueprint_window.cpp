@@ -75,6 +75,7 @@ static BlueprintNodeLibraryPtr noise_library;
 static BlueprintNodeLibraryPtr texture_library;
 static BlueprintNodeLibraryPtr geometry_library;
 static BlueprintNodeLibraryPtr entity_library;
+static BlueprintNodeLibraryPtr message_library;
 static BlueprintNodeLibraryPtr animation_library;
 static BlueprintNodeLibraryPtr tween_library;
 static BlueprintNodeLibraryPtr camera_library;
@@ -962,16 +963,8 @@ void BlueprintView::on_draw()
 		}
 
 		ImGui::SameLine(0.f, 50);
-		ImGui::SetNextItemWidth(100.f);
-		if (ImGui::InputText("Trigger Message", &group->trigger_message))
-		{
-			group->structure_changed_frame = frame;
-			blueprint->dirty_frame = frame;
+		if (ImGui::Checkbox("responsive", &group->responsive))
 			unsaved = true;
-
-			if (blueprint_instance->built_frame < blueprint->dirty_frame)
-				blueprint_instance->build();
-		}
 
 		auto debugging_group = blueprint_window.debugger->debugging &&
 			blueprint_window.debugger->debugging->instance->blueprint == blueprint &&
@@ -3570,6 +3563,14 @@ void BlueprintView::on_draw()
 						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
+					if (!add_node_filter.empty() || ImGui::BeginMenu("Message"))
+					{
+						header = "Message";
+						for (auto& t : message_library->node_templates)
+							show_node_library_template(t);
+						if (add_node_filter.empty())
+							ImGui::EndMenu();
+					}
 					if (!add_node_filter.empty() || ImGui::BeginMenu("Animation"))
 					{
 						header = "Animation";
@@ -3870,6 +3871,7 @@ void BlueprintWindow::init()
 		texture_library = BlueprintNodeLibrary::get(L"graphics::texture");
 		geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
 		entity_library = BlueprintNodeLibrary::get(L"universe::entity");
+		message_library = BlueprintNodeLibrary::get(L"universe::message");
 		animation_library = BlueprintNodeLibrary::get(L"universe::animation");
 		tween_library = BlueprintNodeLibrary::get(L"universe::tween");
 		camera_library = BlueprintNodeLibrary::get(L"universe::camera");
@@ -3888,6 +3890,7 @@ void BlueprintWindow::init()
 		node_libraries.push_back(texture_library);
 		node_libraries.push_back(geometry_library);
 		node_libraries.push_back(entity_library);
+		node_libraries.push_back(message_library);
 		node_libraries.push_back(animation_library);
 		node_libraries.push_back(tween_library);
 		node_libraries.push_back(camera_library);

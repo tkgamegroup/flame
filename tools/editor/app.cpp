@@ -2899,10 +2899,11 @@ bool App::cmd_play()
 					}
 				}
 			}
+
+			listeners.call("game_started"_h);
+
 			return false;
 		});
-
-		listeners.call("game_started"_h);
 
 		return true;
 	}
@@ -2957,10 +2958,11 @@ bool App::cmd_stop()
 			sRenderer::instance()->render_tasks.front()->camera = nullptr;
 		}
 		sRenderer::instance()->render_tasks.front()->mode = RenderModeCameraLight;
+
+		listeners.call("game_stopped"_h);
+
 		return false;
 	});
-
-	listeners.call("game_stopped"_h);
 
 	return true;
 }

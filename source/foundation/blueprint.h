@@ -475,7 +475,7 @@ namespace flame
 		std::vector<BlueprintInvalidInput> 						invalid_inputs;
 		std::vector<BlueprintInvalidLink>						invalid_links;
 
-		std::string 											trigger_message;
+		bool 													responsive = false;
 
 		inline BlueprintVariable* find_variable(uint name) const
 		{
@@ -745,7 +745,7 @@ namespace flame
 		uint					name;
 
 		BlueprintExecutionType							execution_type;
-		uint											trigger_message = 0;	
+		bool 											trigger_by_message = false;
 		std::map<uint, Data>							slot_datas; // key: slot id
 		BlueprintInstanceNode							root_node;
 		std::map<uint, BlueprintInstanceNode*>			node_map;
@@ -901,9 +901,6 @@ namespace flame
 		virtual void stop(BlueprintInstanceGroup* group) = 0;
 		virtual void call(BlueprintInstanceGroup* group, void** inputs, void** outputs) = 0;
 		virtual void call(BlueprintInstanceGroup* group, const std::vector<std::pair<uint, void*>>& named_inputs, const std::vector<std::pair<uint, void*>>& named_outputs) = 0;
-		virtual void register_group(BlueprintInstanceGroup* group) = 0;
-		virtual void unregister_group(BlueprintInstanceGroup* group) = 0;
-		virtual void broadcast(uint message) = 0;
 
 		struct Create
 		{

@@ -4,6 +4,7 @@
 namespace flame
 {
 	void add_entity_node_templates(BlueprintNodeLibraryPtr library);
+	void add_message_node_templates(BlueprintNodeLibraryPtr library);
 	void add_animation_node_templates(BlueprintNodeLibraryPtr library);
 	void add_tween_node_templates(BlueprintNodeLibraryPtr library);
 	void add_camera_node_templates(BlueprintNodeLibraryPtr library);
@@ -20,6 +21,7 @@ namespace flame
 	void init_library()
 	{
 		auto entity_library = BlueprintNodeLibrary::get(L"universe::entity");
+		auto message_library = BlueprintNodeLibrary::get(L"universe::message");
 		auto animation_library = BlueprintNodeLibrary::get(L"universe::animation");
 		auto tween_library = BlueprintNodeLibrary::get(L"universe::tween");
 		auto camera_library = BlueprintNodeLibrary::get(L"universe::camera");
@@ -36,6 +38,7 @@ namespace flame
 		BlueprintSystem::template_types.emplace_back("e", TypeInfo::get<EntityPtr>());
 
 		add_entity_node_templates(entity_library);
+		add_message_node_templates(message_library);
 		add_animation_node_templates(animation_library);
 		add_tween_node_templates(tween_library);
 		add_camera_node_templates(camera_library);

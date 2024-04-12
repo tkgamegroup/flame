@@ -3357,6 +3357,13 @@ namespace flame
 			ti = (TypeInfo_Enum*)get(TagE, name, db);
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = new voidptr;
+			*(voidptr*)p = nullptr;
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			return str_hex<uint64>((uint64) * (voidptr*)p);
@@ -3377,6 +3384,13 @@ namespace flame
 			ti = (TypeInfo_Data*)get(TagD, name, db);
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = new voidptr;
+			*(voidptr*)p = nullptr;
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			return str_hex<uint64>((uint64) * (voidptr*)p);
@@ -3397,6 +3411,13 @@ namespace flame
 			ti = (TypeInfo_Udt*)get(TagU, name, db);
 		}
 
+		void* create(void* p = nullptr) const override
+		{
+			if (!p)
+				p = new voidptr;
+			*(voidptr*)p = nullptr;
+			return p;
+		}
 		std::string serialize(const void* p) const override
 		{
 			return str_hex<uint64>((uint64) * (voidptr*)p);

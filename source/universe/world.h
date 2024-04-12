@@ -40,6 +40,8 @@ namespace flame
 
 		virtual void update() = 0;
 
+		virtual void bordcast(EntityPtr root, uint msg, void* data1, void* data2) = 0;
+
 		struct Instance
 		{
 			virtual WorldPtr operator()() = 0;

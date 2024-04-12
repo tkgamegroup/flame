@@ -17,6 +17,7 @@ namespace flame
 		void set_bp_name(const std::filesystem::path& bp_name) override;
 		void start_coroutine(BlueprintInstanceGroup* group, float delay = 0.f) override;
 		void call(uint name) override;
+		void on_message(uint msg, void* data1, void* data2) override;
 		void start() override;
 		void update() override;
 	};

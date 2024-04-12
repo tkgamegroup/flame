@@ -14,5 +14,7 @@ namespace flame
 		void remove_system(uint hash, bool destroy) override;
 
 		void update() override;
+
+		void bordcast(EntityPtr root, uint msg, void* data1, void* data2) override;
 	};
 }

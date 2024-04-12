@@ -8,13 +8,6 @@ namespace flame
 	{
 		if (bp_ins)
 		{
-			// dont use static blueprints in two or more objects
-			for (auto& kv : bp_ins->groups)
-			{
-				if (kv.second.trigger_message)
-					bp_ins->unregister_group(&kv.second);
-			}
-
 			if (!bp_ins->is_static)
 				delete bp_ins;
 		}
@@ -30,13 +23,6 @@ namespace flame
 
 		if (bp_ins)
 		{
-			// dont use static blueprints in two or more objects
-			for (auto& kv : bp_ins->groups)
-			{
-				if (kv.second.trigger_message)
-					bp_ins->unregister_group(&kv.second);
-			}
-
 			if (!bp_ins->is_static)
 				delete bp_ins;
 
@@ -123,17 +109,22 @@ namespace flame
 		}
 	}
 
+	void cBpInstancePrivate::on_message(uint msg, void* data1, void* data2)
+	{
+		if (auto g = bp->find_group(msg); g && g->responsive)
+		{
+			if (auto ins_g = bp_ins->find_group(msg); ins_g)
+			{
+				voidptr inputs[] = { data1, data2 };
+				bp_ins->call(ins_g, inputs, nullptr);
+			}
+		}
+	}
+
 	void cBpInstancePrivate::start()
 	{
 		if (bp_ins)
 		{
-			// dont use static blueprints in two or more objects
-			for (auto& kv : bp_ins->groups)
-			{
-				if (kv.second.trigger_message)
-					bp_ins->register_group(&kv.second);
-			}
-
 			if (auto g = bp_ins->find_group("start"_h); g)
 			{
 				if (g->execution_type == BlueprintExecutionCoroutine)

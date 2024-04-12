@@ -1040,26 +1040,5 @@ namespace flame
 				}
 			}
 		);
-
-		library->add_template("Broadcast", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "Instance",
-					.allowed_types = { TypeInfo::get<BlueprintInstancePtr>() }
-				},
-				{
-					.name = "Message_hash",
-					.allowed_types = { TypeInfo::get<std::string>() }
-				}
-			},
-			{
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto instance = *(BlueprintInstancePtr*)inputs[0].data;
-				auto message = *(uint*)inputs[1].data;
-				if (instance)
-					instance->broadcast(message);
-			}
-		);
 	}
 }
