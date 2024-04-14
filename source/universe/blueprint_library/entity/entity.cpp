@@ -181,6 +181,37 @@ namespace flame
 			}
 		);
 
+		library->add_template("Set Component Enable", "", BlueprintNodeFlagNone,
+			{
+				{
+					.name = "Entity",
+					.allowed_types = { TypeInfo::get<EntityPtr>() }
+				},
+				{
+					.name = "Component_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
+					.name = "V",
+					.allowed_types = { TypeInfo::get<bool>() }
+				}
+			},
+			{
+			},
+			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
+				auto entity = *(EntityPtr*)inputs[0].data;
+				if (entity)
+				{
+					auto hash = *(uint*)inputs[1].data;
+					if (hash)
+					{
+						if (auto comp = entity->get_component_h(hash); comp)
+							comp->set_enable(*(bool*)inputs[2].data);
+					}
+				}
+			}
+		);
+
 		library->add_template("Create Entity", "", BlueprintNodeFlagNone,
 			{
 				{
