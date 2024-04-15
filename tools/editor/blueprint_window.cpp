@@ -271,7 +271,7 @@ BlueprintView::BlueprintView(const std::string& name) :
 		{
 			group_name = sp[1];
 			group_name_hash = sh(group_name.c_str());
-			View::name = std::string(sp[0]) + "##Blueprint";
+			View::name = std::format("{}###{}", blueprint_path.filename().string(), std::string(sp[0]));
 		}
 	}
 
@@ -818,10 +818,9 @@ void BlueprintView::save_blueprint()
 
 std::string BlueprintView::get_save_name()
 {
-	auto sp = SUS::split(name, '#');
-	if (sp.size() == 2)
-		return std::string(sp[0]) + '#' + group_name + "##" + "Blueprint";
-	return name;
+	if (blueprint_path.empty())
+		return name;
+	return blueprint_path.string() + '#' + group_name + "##" + "Blueprint";
 }
 
 void BlueprintView::on_draw()
@@ -890,7 +889,7 @@ void BlueprintView::on_draw()
 			group_name_hash = group->name_hash;
 		}
 
-		ImGui::SameLine();
+		ImGui::SameLine(0.f, 50);
 		if (ImGui::BeginCombo("##group_dropdown", "", ImGuiComboFlags_NoPreview))
 		{
 			for (auto& g : blueprint->groups)
@@ -919,7 +918,6 @@ void BlueprintView::on_draw()
 				blueprint_instance->build();
 		}
 		ImGui::SameLine();
-
 		if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
 		{
 			blueprint->remove_group(group);
@@ -962,7 +960,7 @@ void BlueprintView::on_draw()
 				blueprint_instance->build();
 		}
 
-		ImGui::SameLine(0.f, 50);
+		ImGui::SameLine();
 		if (ImGui::Checkbox("responsive", &group->responsive))
 			unsaved = true;
 
@@ -2204,7 +2202,9 @@ void BlueprintView::on_draw()
 						{
 							ImGui::SameLine();
 							ImGui::SetNextItemWidth(min(100.f, ImGui::CalcTextSize(n->template_string.c_str()).x + 6.f));
+							ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.f, 0.f));
 							ImGui::InputText("T", &n->template_string);
+							ImGui::PopStyleVar();
 							if (ImGui::IsItemDeactivatedAfterEdit())
 							{
 								blueprint->change_node_structure(n, n->template_string, {});
@@ -2216,16 +2216,30 @@ void BlueprintView::on_draw()
 						}
 						if (n->inputs.size() > 0 && n->name_hash != "Input"_h && n->name_hash != "Output"_h && !blueprint_is_variable_node(n->name_hash))
 						{
-							ImGui::SameLine();
-							if (n->hide_defaults)
+							auto show_hide = false;
+							for (auto& i : n->inputs)
 							{
-								if (ImGui::SmallButton("SD"))
-									n->hide_defaults = false;
+								if (i->flags & BlueprintSlotFlagHideInUI)
+									continue;
+								if (i->type && i->get_linked_count() == 0)
+								{
+									show_hide = true;
+									break;
+								}
 							}
-							else
+							if (show_hide)
 							{
-								if (ImGui::SmallButton("HD"))
-									n->hide_defaults = true;
+								ImGui::SameLine();
+								if (n->hide_defaults)
+								{
+									if (ImGui::SmallButton("S"))
+										n->hide_defaults = false;
+								}
+								else
+								{
+									if (ImGui::SmallButton("H"))
+										n->hide_defaults = true;
+								}
 							}
 						}
 					}

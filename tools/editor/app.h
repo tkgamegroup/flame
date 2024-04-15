@@ -222,8 +222,10 @@ struct App : UniverseApplication
 	void timeline_stop_record();
 	KeyframePtr get_keyframe(const std::string& address, bool toggle = false);
 	void timeline_toggle_playing();
+
 	void open_file_in_vs(const std::filesystem::path& path);
 	void vs_automate(const std::vector<std::wstring>& cl);
+	void intellisense_collect();
 
 	bool cmd_undo();
 	bool cmd_redo();

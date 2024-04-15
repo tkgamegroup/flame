@@ -47,6 +47,57 @@ void View::title_context_menu()
 
 App app;
 
+struct IntelliSense
+{
+	std::vector<std::pair<std::string, TypeInfo*>> top_using_types;
+
+	void collect()
+	{
+		top_using_types.clear();
+
+		std::map<TypeInfo*, int> type_count;
+
+		auto assets_path = app.project_path / L"assets";
+		for (auto& it : std::filesystem::recursive_directory_iterator(assets_path))
+		{
+			if (it.is_regular_file() && it.path().extension() == L".bp")
+			{
+				if (auto bp = Blueprint::get(it.path()); bp)
+				{
+					for (auto& v : bp->variables)
+					{
+						if (type_count.find(v.type) == type_count.end())
+							type_count[v.type] = 1;
+						else
+							type_count[v.type]++;
+					}
+					for (auto& g : bp->groups)
+					{
+						for (auto& v : g->variables)
+						{
+							if (type_count.find(v.type) == type_count.end())
+								type_count[v.type] = 1;
+							else
+								type_count[v.type]++;
+						}
+					}
+					Blueprint::release(bp);
+				}
+			}
+		}
+
+		std::vector<std::pair<TypeInfo*, int>> type_count_vec;
+		for (auto& it : type_count)
+			type_count_vec.push_back(it);
+		std::sort(type_count_vec.begin(), type_count_vec.end(), [](auto& a, auto& b) {
+			return a.second > b.second;
+		});
+		top_using_types.resize(min(5, (int)type_count_vec.size()));
+		for (auto i = 0; i < top_using_types.size(); i++)
+			top_using_types[i] = { type_count_vec[i].first->name, type_count_vec[i].first };
+	}
+}intelli_sense;
+
 struct Preferences
 {
 	bool use_flame_debugger = false; // use flame visual studio project debugger or use opened project one
@@ -55,8 +106,6 @@ struct Preferences
 static Preferences preferences;
 
 static std::filesystem::path preferences_path = L"preferences.ini";
-
-static std::vector<std::function<bool()>> dialogs;
 
 bool filter_name(const std::string& name, const std::string& find_str, bool match_case, bool match_whole_word)
 {
@@ -188,6 +237,23 @@ TypeInfo* show_types_menu()
 	ImGui::ToolButton("C", &filter_match_case);
 	ImGui::SameLine();
 	ImGui::ToolButton("W", &filter_match_whole_word);
+	ImGui::Separator();
+
+	if (!intelli_sense.top_using_types.empty())
+	{
+		for (auto& ti : intelli_sense.top_using_types)
+		{
+			if (!type_filter.empty())
+			{
+				if (!filter_name(ti.first, type_filter, filter_match_case, filter_match_whole_word))
+					continue;
+			}
+			if (ImGui::Selectable(ti.first.c_str()))
+				ret = ti.second;
+		}
+		ImGui::Separator();
+	}
+
 	if (ImGui::BeginMenu("Enum"))
 	{
 		for (auto& ei : tidb.enums)
@@ -673,6 +739,8 @@ bool App::on_update()
 	}
 	return UniverseApplication::on_update();
 }
+
+static std::vector<std::function<bool()>> dialogs;
 
 void App::on_gui()
 {
@@ -1886,9 +1954,7 @@ void App::on_gui()
 		std::sort(sheet_views.begin(), sheet_views.end(), [](const auto a, const auto b) { return a->name < b->name; });
 		for (auto v : sheet_views)
 		{
-			auto name = v->name;
-			SUS::strip_tail_if(name, "##Sheet");
-			ImGui::Selectable(name.c_str());
+			ImGui::Selectable(v->sheet_path.string().c_str());
 			if (closing && ImGui::IsItemHovered())
 			{
 				if (v->imgui_window)
@@ -1904,8 +1970,7 @@ void App::on_gui()
 		std::sort(blueprint_views.begin(), blueprint_views.end(), [](const auto a, const auto b) { return a->name < b->name; });
 		for (auto& v : blueprint_views)
 		{
-			auto name = v->name;
-			SUS::strip_tail_if(name, "##Blueprint");
+			auto name = v->blueprint_path.string();
 			if (blueprint_window.debugger->debugging &&
 				blueprint_window.debugger->debugging->instance->blueprint == v->blueprint)
 				name += " (debugging)";
@@ -2167,6 +2232,8 @@ void App::open_project(const std::filesystem::path& path)
 	}
 		break;
 	}
+
+	intellisense_collect();
 }
 
 void App::cmake_project()
@@ -2619,6 +2686,11 @@ void App::vs_automate(const std::vector<std::wstring>& cl)
 		wprintf(L"vs automate: %s\n", cl_str.c_str());
 		shell_exec(automation_path, cl_str, true);
 	}
+}
+
+void App::intellisense_collect()
+{
+	intelli_sense.collect();
 }
 
 bool App::cmd_undo()

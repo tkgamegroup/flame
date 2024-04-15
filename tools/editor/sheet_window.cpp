@@ -22,7 +22,7 @@ SheetView::SheetView(const std::string& name) :
 		{
 			if (sp[1] == "V")
 				vertical_mode = true;
-			View::name = std::string(sp[0]) + "##Sheet";
+			View::name = std::format("{}###{}", sheet_path.filename().string(), std::string(sp[0]));
 		}
 	}
 }
@@ -568,14 +568,11 @@ void SheetView::on_draw()
 
 std::string SheetView::get_save_name()
 {
-	auto sp = SUS::split(name, '#');
-	if (sp.size() == 2)
-	{
-		if (vertical_mode)
-			return std::string(sp[0]) + "#V##Sheet";
-		return std::string(sp[0]) + "##Sheet";
-	}
-	return name;
+	if (sheet_path.empty())
+		return name;
+	if (vertical_mode)
+		return sheet_path.string() + "#V##Sheet";
+	return sheet_path.string() + "##Sheet";
 }
 
 SheetWindow::SheetWindow() :

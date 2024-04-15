@@ -156,8 +156,6 @@ namespace flame
 
 	BlueprintPrivate::~BlueprintPrivate()
 	{
-		if (super)
-			release(super);
 		for (auto& e : enums)
 			remove_enum(e.name_hash);
 		for (auto& s : structs)
@@ -3701,6 +3699,8 @@ namespace flame
 	{
 		void operator()(BlueprintPtr blueprint) override
 		{
+			if (blueprint->super)
+				operator()(blueprint->super);
 			if (blueprint->ref == 1)
 			{
 				std::erase_if(loaded_blueprints, [&](const auto& bp) {
