@@ -554,7 +554,7 @@ void ModelPreviewer::init()
 	}
 	if (!render_task)
 	{
-		render_task = app.renderer->add_render_task(RenderModeSimple, camera, { image->get_view() },
+		render_task = app.renderer->add_render_task(RenderModeSimple, camera, nullptr, { image->get_view() },
 			graphics::ImageLayoutShaderReadOnly, false, false);
 		render_task->mode = RenderModeWireframe;
 	}
@@ -703,7 +703,7 @@ void App::init()
 	world->update_components = false;
 	input->transfer_events = false;
 	always_render = false;
-	renderer->add_render_task(RenderModeCameraLight, nullptr, {}, graphics::ImageLayoutShaderReadOnly);
+	renderer->add_render_task(RenderModeCameraLight, nullptr, nullptr, {}, graphics::ImageLayoutShaderReadOnly);
 
 	auto root = world->root.get();
 	root->add_component<cNode>();
@@ -1138,631 +1138,6 @@ void App::on_gui()
 
 			ImGui::EndMenu();
 		}
-		if (ImGui::BeginMenu("Blueprint"))
-		{
-			if (ImGui::MenuItem("Unify Variable Nodes"))
-			{
-				for (auto& it : std::filesystem::recursive_directory_iterator(Path::get(L"assets")))
-				{
-					if (it.is_regular_file() && it.path().extension() == L".bp")
-					{
-						auto changed = false;
-						auto bp = Blueprint::get(it.path());
-						for (auto& g : bp->groups)
-						{
-							union Key
-							{
-								uint64 u64;
-								uint32 u32[2];
-							};
-							std::map<uint64, std::vector<BlueprintNodePtr>> var_nodes;
-
-							for (auto& n : g->nodes)
-							{
-								if (n->name_hash == "Variable"_h)
-								{
-									Key key;
-									uint var_name, var_location;
-									key.u32[0] = *(uint*)n->inputs[0]->data;
-									key.u32[1] = *(uint*)n->inputs[1]->data;
-									var_nodes[key.u64].push_back(n.get());
-								}
-							}
-
-							auto y = 0.f;
-							for (auto& kv : var_nodes)
-							{
-								Key key;
-								key.u64 = kv.first;
-
-								if (kv.second.front()->depth > 1)
-								{
-									// insert a new top node
-									auto new_n = bp->add_variable_node(g.get(), g->nodes.front().get(), key.u32[0], "Variable"_h, key.u32[1]);
-									kv.second.insert(kv.second.begin(), new_n);
-									changed = true;
-								}
-								if (kv.second.front()->position != vec2(0.f, y))
-								{
-									kv.second.front()->position = vec2(0.f, y);
-									changed = true;
-								}
-								if (kv.second.size() > 1)
-								{
-									auto from_slot = kv.second.front()->outputs[0].get();
-
-									for (auto i = 1; i < kv.second.size(); i++)
-									{
-										std::vector<BlueprintSlotPtr> staging_outputs;
-										auto n = kv.second[i];
-										auto output = n->outputs[0].get();
-										staging_outputs.resize(output->get_linked_count());
-										for (auto j = 0; j < staging_outputs.size(); j++)
-											staging_outputs[j] = output->get_linked(j);
-										bp->remove_node(n);
-										for (auto& s : staging_outputs)
-											bp->add_link(from_slot, s);
-									}
-									changed = true;
-								}
-								y += 100.f;
-							}
-						}
-						if (changed)
-						{
-							auto is_editing = false;
-							for (auto& v : blueprint_window.views)
-							{
-								if (auto bv = (BlueprintView*)v.get(); bv->blueprint == bp)
-								{
-									if (bv->unsaved)
-										is_editing = true;
-									break;
-								}
-							}
-							if (!is_editing)
-								bp->save();
-						}
-						Blueprint::release(bp);
-					}
-				}
-			}
-			if (ImGui::MenuItem("Refactor"))
-			{
-				enum class RefactorBlueprints
-				{
-					AllBlueprints,
-					InFolders,
-					MatchNames
-				};
-
-				static const char* refactor_blueprints_names[] = {
-					"All Blueprints",
-					"In Folders",
-					"Match Names"
-				};
-
-				struct BpGroupInvalids
-				{
-					std::string name;
-					uint name_hash;
-					uint nodes_count;
-					uint links_count;
-					std::vector<std::pair<BlueprintInvalidNode, std::string>> invalid_nodes;
-					std::vector<std::pair<BlueprintInvalidInput, std::string>> invalid_inputs;
-					std::vector<std::pair<BlueprintInvalidLink, std::string>> invalid_links;
-				};
-
-				struct BpInvalids
-				{
-					std::filesystem::path path;
-					std::vector<BpGroupInvalids> group_invalids;
-				};
-
-				struct RefactorDialog
-				{
-					bool open = false;
-					RefactorBlueprints refactor_blueprints = RefactorBlueprints::AllBlueprints;
-					bool process_all_nodes = false;
-					bool process_all_links = false;
-					bool process_invalid_nodes = true;
-					bool process_invalid_inputs = true;
-					bool process_invalid_links = true;
-					std::vector<std::filesystem::path> action_files;
-					std::filesystem::path actions_folder;
-					int selected_action = -1;
-
-					std::vector<BpInvalids> invalids;
-					bool only_show_unresolved = false;
-					uint unresolved_nodes = 0;
-					uint unresolved_inputs = 0;
-					uint unresolved_links = 0;
-
-					void refresh_action_files()
-					{
-						if (actions_folder.empty())
-							return;
-						action_files.clear();
-						for (auto& it : std::filesystem::recursive_directory_iterator(actions_folder))
-						{
-							if (it.is_regular_file() && it.path().extension() == L".bp")
-								action_files.push_back(it.path());
-						}
-					}
-
-					void show_invalids()
-					{
-						ImGui::Checkbox("Only Show Unresolved", &only_show_unresolved);
-
-						ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
-						if (ImGui::TreeNode("Invalids"))
-						{
-
-							for (auto& inv : invalids)
-							{
-								auto bp_header_status = -1;
-								auto open_bp_header = [&]() {
-									bp_header_status = ImGui::TreeNode(inv.path.string().c_str());
-								};
-
-								for (auto& g : inv.group_invalids)
-								{
-									auto group_header_status = -1;
-									auto open_group_header = [&]() {
-										group_header_status = ImGui::TreeNode(std::format("{} (nodes: {}, links: {}) ", g.name, g.nodes_count, g.links_count).c_str());
-									};
-
-									for (auto& n : g.invalid_nodes)
-									{
-
-									}
-									if (bp_header_status == 0)
-										break;
-									if (group_header_status == 0)
-										continue;
-
-									for (auto& i : g.invalid_inputs)
-									{
-										if (only_show_unresolved && !i.second.empty())
-											continue;
-										if (bp_header_status == -1)
-										{
-											open_bp_header();
-											if (bp_header_status == 0)
-												break;
-										}
-										if (group_header_status == -1)
-										{
-											open_group_header();
-											if (group_header_status == 0)
-												break;
-										}
-										auto title = std::format("Node({})'s {}={}", i.first.node, i.first.name, i.first.value);
-										if (i.second.empty())
-											ImGui::Text(title.c_str());
-										else
-										{
-											if (ImGui::TreeNode(title.c_str()))
-											{
-												ImGui::Text(i.second.c_str());
-												ImGui::TreePop();
-											}
-										}
-									}
-									if (bp_header_status == 0)
-										break;
-									if (group_header_status == 0)
-										continue;
-
-									for (auto& l : g.invalid_links)
-									{
-										if (only_show_unresolved && !l.second.empty())
-											continue;
-										if (bp_header_status == -1)
-										{
-											open_bp_header();
-											if (bp_header_status == 0)
-												break;
-										}
-										if (group_header_status == -1)
-										{
-											open_group_header();
-											if (group_header_status == 0)
-												break;
-										}
-										auto title = std::format("From: {} {}({}), To: {} {}({})", 
-											(l.first.reason & BlueprintInvalidFromNode) ? -(int)l.first.from_node : (int)l.first.from_node, 
-											l.first.from_slot_name, l.first.from_slot,
-											(l.first.reason & BlueprintInvalidFromNode) ? -(int)l.first.to_node : (int)l.first.to_node,
-											l.first.to_slot_name, l.first.to_slot);
-										if (l.second.empty())
-											ImGui::Text(title.c_str());
-										else
-										{
-											if (ImGui::TreeNode(title.c_str()))
-											{
-												ImGui::Text(l.second.c_str());
-												ImGui::TreePop();
-											}
-										}
-									}
-									if (bp_header_status == 0)
-										break;
-									if (group_header_status == 0)
-										continue;
-
-									if (group_header_status == 1)
-										ImGui::TreePop();
-								}
-								if (bp_header_status == 1)
-									ImGui::TreePop();
-							}
-
-							ImGui::TreePop();
-						}
-					}
-
-					bool refactor(bool is_preview)
-					{
-						if (selected_action == -1)
-						{
-							ImGui::OpenMessageDialog("Failed to refactor", "No action selected");
-							return false;
-						}
-						auto path = Path::get(action_files[selected_action]);
-						if (!std::filesystem::exists(path))
-						{
-							ImGui::OpenMessageDialog("Failed to refactor", "Action file not found");
-							return false;
-						}
-						if (path.extension() != L".bp")
-						{
-							assert(0);
-							return false;
-						}
-						auto action_bp = Blueprint::get(path);
-						if (!action_bp)
-						{
-							ImGui::OpenMessageDialog("Failed to refactor", "Action is not a valid bp");
-							return false;
-						}
-
-						auto ok = true;
-						auto action_ins = BlueprintInstance::create(action_bp);
-						if (auto action = action_ins->find_group("main"_h); action)
-						{
-							set_blueprint_refactoring_environment(is_preview, nullptr);
-
-							if (process_all_nodes || process_all_links)
-							{
-
-							}
-							if (process_invalid_nodes || process_invalid_inputs || process_invalid_links)
-							{
-								for (auto& inv : invalids)
-								{
-									auto bp = Blueprint::create(true);
-									bp->load(inv.path);
-
-									auto changed = false;
-									for (auto& gi : inv.group_invalids)
-									{
-										if (auto g = bp->find_group(gi.name_hash); g)
-										{
-											action->set_variable_as("group"_h, g);
-											if (process_invalid_nodes)
-											{
-
-											}
-											if (process_invalid_inputs)
-											{
-												for (auto& i : gi.invalid_inputs)
-												{
-													if (is_preview)
-													{
-														i.second.clear();
-														set_blueprint_refactoring_environment(true, &i.second);
-													}
-													else
-													{
-														if (i.second.empty())
-															continue;
-														changed = true;
-													}
-													action->reset_all_variables();
-													action->set_variable_as("invalid_input_node"_h, g->find_node_by_id(i.first.node));
-													action->set_variable_as("invalid_input_name"_h, i.first.name);
-													action->set_variable_as("invalid_input_value"_h, i.first.value);
-													action_ins->call(action, nullptr, nullptr);
-												}
-											}
-											if (process_invalid_links)
-											{
-												for (auto& l : gi.invalid_links)
-												{
-													if (is_preview)
-													{
-														l.second.clear();
-														set_blueprint_refactoring_environment(true, &l.second);
-													}
-													else
-													{
-														if (l.second.empty())
-															continue;
-														changed = true;
-													}
-													auto from_node = g->find_node_by_id(l.first.from_node);
-													auto to_node = g->find_node_by_id(l.first.to_node);
-													action->reset_all_variables();
-													action->set_variable_as("invalid_link_from_node"_h, from_node);
-													action->set_variable_as("invalid_link_from_slot"_h, from_node ? from_node->find_output(l.first.from_slot) : nullptr);
-													action->set_variable_as("invalid_link_from_slot_name"_h, l.first.from_slot_name);
-													action->set_variable_as("invalid_link_to_node"_h, to_node);
-													action->set_variable_as("invalid_link_to_slot"_h, to_node ? to_node->find_input(l.first.to_slot) : nullptr);
-													action->set_variable_as("invalid_link_to_slot_name"_h, l.first.to_slot_name);
-													action_ins->call(action, nullptr, nullptr);
-												}
-											}
-										}
-									}
-
-									if (!is_preview)
-									{
-										if (changed)
-										{
-											auto is_editing = false;
-											for (auto& v : blueprint_window.views)
-											{
-												if (auto bv = (BlueprintView*)v.get(); bv->blueprint == bp)
-												{
-													if (bv->unsaved)
-														is_editing = true;
-													break;
-												}
-											}
-											if (!is_editing)
-												bp->save();
-										}
-									}
-
-									Blueprint::destroy(bp);
-								}
-							}
-						}
-						else
-							assert(0);
-
-						BlueprintInstance::destroy(action_ins);
-						Blueprint::release(action_bp);
-
-						return ok;
-					}
-				};
-				static RefactorDialog refactor_dialog;
-
-				dialogs.push_back([&]() {
-					if (!refactor_dialog.open)
-					{
-						refactor_dialog.open = true;
-						if (auto flame_path = getenv("FLAME_PATH"); flame_path)
-						{
-							refactor_dialog.actions_folder = std::filesystem::path(flame_path);
-							refactor_dialog.actions_folder /= L"tools/editor/refactorers";
-							if (!std::filesystem::exists(refactor_dialog.actions_folder))
-								std::filesystem::create_directories(refactor_dialog.actions_folder);
-						}
-						refactor_dialog.refresh_action_files();
-					}
-
-					if (ImGui::Begin("Refactor"))
-					{
-						if (ImGui::BeginCombo("Refactor Blueprints", refactor_blueprints_names[(int)refactor_dialog.refactor_blueprints]))
-						{
-							for (auto i = 0; i < countof(refactor_blueprints_names); i++)
-							{
-								if (ImGui::Selectable(refactor_blueprints_names[i], refactor_dialog.refactor_blueprints == (RefactorBlueprints)i))
-									refactor_dialog.refactor_blueprints = (RefactorBlueprints)i;
-							}
-							ImGui::EndCombo();
-						}
-						ImGui::Checkbox("Process All Nodes", &refactor_dialog.process_all_nodes);
-						ImGui::Checkbox("Process All Links", &refactor_dialog.process_all_links);
-						ImGui::Checkbox("Process Invalid Nodes", &refactor_dialog.process_invalid_nodes);
-						ImGui::Checkbox("Process Invalid Inputs", &refactor_dialog.process_invalid_inputs);
-						ImGui::Checkbox("Process Invalid Links", &refactor_dialog.process_invalid_links);
-
-						if (ImGui::Button("Collect Invalids"))
-						{
-							refactor_dialog.invalids.clear();
-
-							auto assets_path = app.project_path / L"assets";
-							for (auto& it : std::filesystem::recursive_directory_iterator(assets_path))
-							{
-								if (it.is_regular_file() && it.path().extension() == L".bp")
-								{
-									auto bp = Blueprint::create(true);
-									bp->load(it.path());
-
-									BpInvalids* bp_invalids = nullptr;
-									for (auto& g : bp->groups)
-									{
-										if (!g->invalid_nodes.empty() || !g->invalid_inputs.empty() || !g->invalid_links.empty())
-										{
-											if (!bp_invalids)
-											{
-												auto& invalids = refactor_dialog.invalids.emplace_back();
-												invalids.path = Path::reverse(it.path());
-												bp_invalids = &invalids;
-											}
-											auto& invalids = bp_invalids->group_invalids.emplace_back();
-											invalids.name = g->name;
-											invalids.name_hash = g->name_hash;
-											invalids.nodes_count = g->nodes.size();
-											invalids.links_count = g->links.size();
-											invalids.invalid_nodes.resize(g->invalid_nodes.size());
-											for (auto i = 0; i < g->invalid_nodes.size(); i++)
-												invalids.invalid_nodes[i].first = g->invalid_nodes[i];
-											invalids.invalid_inputs.resize(g->invalid_inputs.size());
-											for (auto i = 0; i < g->invalid_inputs.size(); i++)
-												invalids.invalid_inputs[i].first = g->invalid_inputs[i];
-											invalids.invalid_links.resize(g->invalid_links.size());
-											for (auto i = 0; i < g->invalid_links.size(); i++)
-												invalids.invalid_links[i].first = g->invalid_links[i];
-										}
-									}
-									Blueprint::destroy(bp);
-								}
-							}
-						}
-
-						refactor_dialog.show_invalids();
-
-						ImGui::Separator();
-
-						if (ImGui::BeginListBox("Actions"))
-						{
-							for (auto i = 0; i < refactor_dialog.action_files.size(); i++)
-							{
-								if (ImGui::Selectable(refactor_dialog.action_files[i].filename().string().c_str(), refactor_dialog.selected_action == i))
-									refactor_dialog.selected_action = i;
-							}
-							ImGui::EndListBox();
-						}
-						refactor_dialog.selected_action = min(refactor_dialog.selected_action, (int)refactor_dialog.action_files.size() - 1);
-
-						if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
-						{
-							ImGui::OpenInputDialog("New Action", "Name", [](bool ok, const std::string& str) {
-								if (ok && !str.empty())
-								{
-									if (refactor_dialog.actions_folder.empty())
-										return;
-									auto fn = refactor_dialog.actions_folder / str;
-									fn.replace_extension(L".bp");
-									if (!std::filesystem::exists(fn))
-									{
-										auto bp = Blueprint::create();
-										auto g = bp->groups.front().get();
-										bp->add_variable(g, "group", TypeInfo::get<BlueprintGroupPtr>());
-										bp->add_variable(g, "invalid_input_node", TypeInfo::get<BlueprintNodePtr>());
-										bp->add_variable(g, "invalid_input_name", TypeInfo::get<std::string>());
-										bp->add_variable(g, "invalid_input_value", TypeInfo::get<std::string>());
-										bp->add_variable(g, "invalid_link_from_node", TypeInfo::get<BlueprintNodePtr>());
-										bp->add_variable(g, "invalid_link_from_slot", TypeInfo::get<BlueprintSlotPtr>());
-										bp->add_variable(g, "invalid_link_from_slot_name", TypeInfo::get<std::string>());
-										bp->add_variable(g, "invalid_link_to_node", TypeInfo::get<BlueprintNodePtr>());
-										bp->add_variable(g, "invalid_link_to_slot", TypeInfo::get<BlueprintSlotPtr>());
-										bp->add_variable(g, "invalid_link_to_slot_name", TypeInfo::get<std::string>());
-										bp->save(fn);
-
-										refactor_dialog.refresh_action_files();
-									}
-									else
-										ImGui::OpenMessageDialog("Failed to create action", "Action already existed");
-								}
-							});
-						}
-						ImGui::SameLine();
-						if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
-						{
-							if (refactor_dialog.selected_action != -1)
-							{
-								auto path = Path::get(refactor_dialog.action_files[refactor_dialog.selected_action]);
-								std::filesystem::remove(path);
-								refactor_dialog.refresh_action_files();
-							}
-						}
-						ImGui::SameLine();
-						if (ImGui::SmallButton("Edit"))
-						{
-							if (refactor_dialog.selected_action != -1)
-							{
-								auto path = Path::get(refactor_dialog.action_files[refactor_dialog.selected_action]);
-								auto opened = false;
-								for (auto& v : blueprint_window.views)
-								{
-									auto bv = (BlueprintView*)v.get();
-									if (bv->blueprint_path == path)
-									{
-										if (bv->imgui_window)
-											ImGui::FocusWindow((ImGuiWindow*)bv->imgui_window);
-										opened = true;
-										break;
-									}
-								}
-								if (!opened)
-									blueprint_window.open_view(Path::reverse(path).string() + "##Blueprint");
-							}
-						}
-
-						ImGui::Separator();
-
-						if (ImGui::Button("Refactor"))
-						{
-							if (refactor_dialog.refactor(true))
-							{
-								refactor_dialog.unresolved_nodes = 0;
-								refactor_dialog.unresolved_inputs = 0;
-								refactor_dialog.unresolved_links = 0;
-
-								for (auto& inv : refactor_dialog.invalids)
-								{
-									for (auto& g : inv.group_invalids)
-									{
-										for (auto& n : g.invalid_nodes)
-										{
-											if (n.second.empty())
-												refactor_dialog.unresolved_nodes++;
-										}
-										for (auto& i : g.invalid_inputs)
-										{
-											if (i.second.empty())
-												refactor_dialog.unresolved_inputs++;
-										}
-										for (auto& l : g.invalid_links)
-										{
-											if (l.second.empty())
-												refactor_dialog.unresolved_links++;
-										}
-									}
-								}
-
-								ImGui::OpenPopup("Result Preview");
-							}
-						}
-						ImGui::SameLine();
-						if (ImGui::Button("Cancel"))
-							refactor_dialog.open = false;
-
-						if (ImGui::BeginPopupModal("Result Preview"))
-						{
-							ImGui::Text("Unresolved Nodes: %d, Unresolved Inputs: %d, Unresolved Links: %d", 
-								refactor_dialog.unresolved_nodes,
-								refactor_dialog.unresolved_inputs,
-								refactor_dialog.unresolved_links);
-
-							refactor_dialog.show_invalids();
-
-							if (ImGui::Button("Comfire"))
-							{
-								refactor_dialog.refactor(false);
-								refactor_dialog.invalids.clear();
-							}
-							ImGui::SameLine();
-							if (ImGui::Button("Cancel"))
-								ImGui::CloseCurrentPopup();
-
-							ImGui::EndPopup();
-						}
-
-						ImGui::End();
-					}
-
-					return refactor_dialog.open;
-				});
-			}
-			ImGui::EndMenu();
-		}
 		if (ImGui::MenuItem("Preferences"))
 		{
 			struct PreferencesDialog
@@ -1795,6 +1170,704 @@ void App::on_gui()
 				}
 				return preferences_dialog.open;
 			});
+		}
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("Blueprint"))
+	{
+		if (ImGui::MenuItem("Unify Variable Nodes"))
+		{
+			for (auto& it : std::filesystem::recursive_directory_iterator(Path::get(L"assets")))
+			{
+				if (it.is_regular_file() && it.path().extension() == L".bp")
+				{
+					auto changed = false;
+					auto bp = Blueprint::get(it.path());
+					for (auto& g : bp->groups)
+					{
+						union Key
+						{
+							uint64 u64;
+							uint32 u32[2];
+						};
+						std::map<uint64, std::vector<BlueprintNodePtr>> var_nodes;
+
+						for (auto& n : g->nodes)
+						{
+							if (n->name_hash == "Variable"_h)
+							{
+								Key key;
+								uint var_name, var_location;
+								key.u32[0] = *(uint*)n->inputs[0]->data;
+								key.u32[1] = *(uint*)n->inputs[1]->data;
+								var_nodes[key.u64].push_back(n.get());
+							}
+						}
+
+						auto y = 0.f;
+						for (auto& kv : var_nodes)
+						{
+							Key key;
+							key.u64 = kv.first;
+
+							if (kv.second.front()->depth > 1)
+							{
+								// insert a new top node
+								auto new_n = bp->add_variable_node(g.get(), g->nodes.front().get(), key.u32[0], "Variable"_h, key.u32[1]);
+								kv.second.insert(kv.second.begin(), new_n);
+								changed = true;
+							}
+							if (kv.second.front()->position != vec2(0.f, y))
+							{
+								kv.second.front()->position = vec2(0.f, y);
+								changed = true;
+							}
+							if (kv.second.size() > 1)
+							{
+								auto from_slot = kv.second.front()->outputs[0].get();
+
+								for (auto i = 1; i < kv.second.size(); i++)
+								{
+									std::vector<BlueprintSlotPtr> staging_outputs;
+									auto n = kv.second[i];
+									auto output = n->outputs[0].get();
+									staging_outputs.resize(output->get_linked_count());
+									for (auto j = 0; j < staging_outputs.size(); j++)
+										staging_outputs[j] = output->get_linked(j);
+									bp->remove_node(n);
+									for (auto& s : staging_outputs)
+										bp->add_link(from_slot, s);
+								}
+								changed = true;
+							}
+							y += 100.f;
+						}
+					}
+					if (changed)
+					{
+						auto is_editing = false;
+						for (auto& v : blueprint_window.views)
+						{
+							if (auto bv = (BlueprintView*)v.get(); bv->blueprint == bp)
+							{
+								if (bv->unsaved)
+									is_editing = true;
+								break;
+							}
+						}
+						if (!is_editing)
+							bp->save();
+					}
+					Blueprint::release(bp);
+				}
+			}
+		}
+		if (ImGui::MenuItem("Refactor"))
+		{
+			enum class RefactorBlueprints
+			{
+				AllBlueprints,
+				InFolders,
+				MatchNames
+			};
+
+			static const char* refactor_blueprints_names[] = {
+				"All Blueprints",
+				"In Folders",
+				"Match Names"
+			};
+
+			struct BpGroupInvalids
+			{
+				std::string name;
+				uint name_hash;
+				uint nodes_count;
+				uint links_count;
+				std::vector<std::pair<BlueprintInvalidNode, std::string>> invalid_nodes;
+				std::vector<std::pair<BlueprintInvalidInput, std::string>> invalid_inputs;
+				std::vector<std::pair<BlueprintInvalidLink, std::string>> invalid_links;
+			};
+
+			struct BpInvalids
+			{
+				std::filesystem::path path;
+				std::vector<BpGroupInvalids> group_invalids;
+			};
+
+			struct RefactorDialog
+			{
+				bool open = false;
+				RefactorBlueprints refactor_blueprints = RefactorBlueprints::AllBlueprints;
+				bool process_all_nodes = false;
+				bool process_all_links = false;
+				bool process_invalid_nodes = true;
+				bool process_invalid_inputs = true;
+				bool process_invalid_links = true;
+				std::vector<std::filesystem::path> action_files;
+				std::filesystem::path actions_folder;
+				int selected_action = -1;
+
+				std::vector<BpInvalids> invalids;
+				bool only_show_unresolved = false;
+				uint unresolved_nodes = 0;
+				uint unresolved_inputs = 0;
+				uint unresolved_links = 0;
+
+				void refresh_action_files()
+				{
+					if (actions_folder.empty())
+						return;
+					action_files.clear();
+					for (auto& it : std::filesystem::recursive_directory_iterator(actions_folder))
+					{
+						if (it.is_regular_file() && it.path().extension() == L".bp")
+							action_files.push_back(it.path());
+					}
+				}
+
+				void show_invalids()
+				{
+					ImGui::Checkbox("Only Show Unresolved", &only_show_unresolved);
+
+					ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
+					if (ImGui::TreeNode("Invalids"))
+					{
+
+						for (auto& inv : invalids)
+						{
+							auto bp_header_status = -1;
+							auto open_bp_header = [&]() {
+								bp_header_status = ImGui::TreeNode(inv.path.string().c_str());
+							};
+
+							for (auto& g : inv.group_invalids)
+							{
+								auto group_header_status = -1;
+								auto open_group_header = [&]() {
+									group_header_status = ImGui::TreeNode(std::format("{} (nodes: {}, links: {}) ", g.name, g.nodes_count, g.links_count).c_str());
+								};
+
+								for (auto& n : g.invalid_nodes)
+								{
+
+								}
+								if (bp_header_status == 0)
+									break;
+								if (group_header_status == 0)
+									continue;
+
+								for (auto& i : g.invalid_inputs)
+								{
+									if (only_show_unresolved && !i.second.empty())
+										continue;
+									if (bp_header_status == -1)
+									{
+										open_bp_header();
+										if (bp_header_status == 0)
+											break;
+									}
+									if (group_header_status == -1)
+									{
+										open_group_header();
+										if (group_header_status == 0)
+											break;
+									}
+									auto title = std::format("Node({})'s {}={}", i.first.node, i.first.name, i.first.value);
+									if (i.second.empty())
+										ImGui::Text(title.c_str());
+									else
+									{
+										if (ImGui::TreeNode(title.c_str()))
+										{
+											ImGui::Text(i.second.c_str());
+											ImGui::TreePop();
+										}
+									}
+								}
+								if (bp_header_status == 0)
+									break;
+								if (group_header_status == 0)
+									continue;
+
+								for (auto& l : g.invalid_links)
+								{
+									if (only_show_unresolved && !l.second.empty())
+										continue;
+									if (bp_header_status == -1)
+									{
+										open_bp_header();
+										if (bp_header_status == 0)
+											break;
+									}
+									if (group_header_status == -1)
+									{
+										open_group_header();
+										if (group_header_status == 0)
+											break;
+									}
+									auto title = std::format("From: {} {}({}), To: {} {}({})", 
+										(l.first.reason & BlueprintInvalidFromNode) ? -(int)l.first.from_node : (int)l.first.from_node, 
+										l.first.from_slot_name, l.first.from_slot,
+										(l.first.reason & BlueprintInvalidFromNode) ? -(int)l.first.to_node : (int)l.first.to_node,
+										l.first.to_slot_name, l.first.to_slot);
+									if (l.second.empty())
+										ImGui::Text(title.c_str());
+									else
+									{
+										if (ImGui::TreeNode(title.c_str()))
+										{
+											ImGui::Text(l.second.c_str());
+											ImGui::TreePop();
+										}
+									}
+								}
+								if (bp_header_status == 0)
+									break;
+								if (group_header_status == 0)
+									continue;
+
+								if (group_header_status == 1)
+									ImGui::TreePop();
+							}
+							if (bp_header_status == 1)
+								ImGui::TreePop();
+						}
+
+						ImGui::TreePop();
+					}
+				}
+
+				bool refactor(bool is_preview)
+				{
+					if (selected_action == -1)
+					{
+						ImGui::OpenMessageDialog("Failed to refactor", "No action selected");
+						return false;
+					}
+					auto path = Path::get(action_files[selected_action]);
+					if (!std::filesystem::exists(path))
+					{
+						ImGui::OpenMessageDialog("Failed to refactor", "Action file not found");
+						return false;
+					}
+					if (path.extension() != L".bp")
+					{
+						assert(0);
+						return false;
+					}
+					auto action_bp = Blueprint::get(path);
+					if (!action_bp)
+					{
+						ImGui::OpenMessageDialog("Failed to refactor", "Action is not a valid bp");
+						return false;
+					}
+
+					auto ok = true;
+					auto action_ins = BlueprintInstance::create(action_bp);
+					if (auto action = action_ins->find_group("main"_h); action)
+					{
+						set_blueprint_refactoring_environment(is_preview, nullptr);
+
+						if (process_all_nodes || process_all_links)
+						{
+
+						}
+						if (process_invalid_nodes || process_invalid_inputs || process_invalid_links)
+						{
+							for (auto& inv : invalids)
+							{
+								auto bp = Blueprint::create(true);
+								bp->load(inv.path);
+
+								auto changed = false;
+								for (auto& gi : inv.group_invalids)
+								{
+									if (auto g = bp->find_group(gi.name_hash); g)
+									{
+										action->set_variable_as("group"_h, g);
+										if (process_invalid_nodes)
+										{
+
+										}
+										if (process_invalid_inputs)
+										{
+											for (auto& i : gi.invalid_inputs)
+											{
+												if (is_preview)
+												{
+													i.second.clear();
+													set_blueprint_refactoring_environment(true, &i.second);
+												}
+												else
+												{
+													if (i.second.empty())
+														continue;
+													changed = true;
+												}
+												action->reset_all_variables();
+												action->set_variable_as("invalid_input_node"_h, g->find_node_by_id(i.first.node));
+												action->set_variable_as("invalid_input_name"_h, i.first.name);
+												action->set_variable_as("invalid_input_value"_h, i.first.value);
+												action_ins->call(action, nullptr, nullptr);
+											}
+										}
+										if (process_invalid_links)
+										{
+											for (auto& l : gi.invalid_links)
+											{
+												if (is_preview)
+												{
+													l.second.clear();
+													set_blueprint_refactoring_environment(true, &l.second);
+												}
+												else
+												{
+													if (l.second.empty())
+														continue;
+													changed = true;
+												}
+												auto from_node = g->find_node_by_id(l.first.from_node);
+												auto to_node = g->find_node_by_id(l.first.to_node);
+												action->reset_all_variables();
+												action->set_variable_as("invalid_link_from_node"_h, from_node);
+												action->set_variable_as("invalid_link_from_slot"_h, from_node ? from_node->find_output(l.first.from_slot) : nullptr);
+												action->set_variable_as("invalid_link_from_slot_name"_h, l.first.from_slot_name);
+												action->set_variable_as("invalid_link_to_node"_h, to_node);
+												action->set_variable_as("invalid_link_to_slot"_h, to_node ? to_node->find_input(l.first.to_slot) : nullptr);
+												action->set_variable_as("invalid_link_to_slot_name"_h, l.first.to_slot_name);
+												action_ins->call(action, nullptr, nullptr);
+											}
+										}
+									}
+								}
+
+								if (!is_preview)
+								{
+									if (changed)
+									{
+										auto is_editing = false;
+										for (auto& v : blueprint_window.views)
+										{
+											if (auto bv = (BlueprintView*)v.get(); bv->blueprint == bp)
+											{
+												if (bv->unsaved)
+													is_editing = true;
+												break;
+											}
+										}
+										if (!is_editing)
+											bp->save();
+									}
+								}
+
+								Blueprint::destroy(bp);
+							}
+						}
+					}
+					else
+						assert(0);
+
+					BlueprintInstance::destroy(action_ins);
+					Blueprint::release(action_bp);
+
+					return ok;
+				}
+			};
+			static RefactorDialog refactor_dialog;
+
+			dialogs.push_back([&]() {
+				if (!refactor_dialog.open)
+				{
+					refactor_dialog.open = true;
+					if (auto flame_path = getenv("FLAME_PATH"); flame_path)
+					{
+						refactor_dialog.actions_folder = std::filesystem::path(flame_path);
+						refactor_dialog.actions_folder /= L"tools/editor/refactorers";
+						if (!std::filesystem::exists(refactor_dialog.actions_folder))
+							std::filesystem::create_directories(refactor_dialog.actions_folder);
+					}
+					refactor_dialog.refresh_action_files();
+				}
+
+				if (ImGui::Begin("Refactor"))
+				{
+					if (ImGui::BeginCombo("Refactor Blueprints", refactor_blueprints_names[(int)refactor_dialog.refactor_blueprints]))
+					{
+						for (auto i = 0; i < countof(refactor_blueprints_names); i++)
+						{
+							if (ImGui::Selectable(refactor_blueprints_names[i], refactor_dialog.refactor_blueprints == (RefactorBlueprints)i))
+								refactor_dialog.refactor_blueprints = (RefactorBlueprints)i;
+						}
+						ImGui::EndCombo();
+					}
+					ImGui::Checkbox("Process All Nodes", &refactor_dialog.process_all_nodes);
+					ImGui::Checkbox("Process All Links", &refactor_dialog.process_all_links);
+					ImGui::Checkbox("Process Invalid Nodes", &refactor_dialog.process_invalid_nodes);
+					ImGui::Checkbox("Process Invalid Inputs", &refactor_dialog.process_invalid_inputs);
+					ImGui::Checkbox("Process Invalid Links", &refactor_dialog.process_invalid_links);
+
+					if (ImGui::Button("Collect Invalids"))
+					{
+						refactor_dialog.invalids.clear();
+
+						auto assets_path = app.project_path / L"assets";
+						for (auto& it : std::filesystem::recursive_directory_iterator(assets_path))
+						{
+							if (it.is_regular_file() && it.path().extension() == L".bp")
+							{
+								auto bp = Blueprint::create(true);
+								bp->load(it.path());
+
+								BpInvalids* bp_invalids = nullptr;
+								for (auto& g : bp->groups)
+								{
+									if (!g->invalid_nodes.empty() || !g->invalid_inputs.empty() || !g->invalid_links.empty())
+									{
+										if (!bp_invalids)
+										{
+											auto& invalids = refactor_dialog.invalids.emplace_back();
+											invalids.path = Path::reverse(it.path());
+											bp_invalids = &invalids;
+										}
+										auto& invalids = bp_invalids->group_invalids.emplace_back();
+										invalids.name = g->name;
+										invalids.name_hash = g->name_hash;
+										invalids.nodes_count = g->nodes.size();
+										invalids.links_count = g->links.size();
+										invalids.invalid_nodes.resize(g->invalid_nodes.size());
+										for (auto i = 0; i < g->invalid_nodes.size(); i++)
+											invalids.invalid_nodes[i].first = g->invalid_nodes[i];
+										invalids.invalid_inputs.resize(g->invalid_inputs.size());
+										for (auto i = 0; i < g->invalid_inputs.size(); i++)
+											invalids.invalid_inputs[i].first = g->invalid_inputs[i];
+										invalids.invalid_links.resize(g->invalid_links.size());
+										for (auto i = 0; i < g->invalid_links.size(); i++)
+											invalids.invalid_links[i].first = g->invalid_links[i];
+									}
+								}
+								Blueprint::destroy(bp);
+							}
+						}
+					}
+
+					refactor_dialog.show_invalids();
+
+					ImGui::Separator();
+
+					if (ImGui::BeginListBox("Actions"))
+					{
+						for (auto i = 0; i < refactor_dialog.action_files.size(); i++)
+						{
+							if (ImGui::Selectable(refactor_dialog.action_files[i].filename().string().c_str(), refactor_dialog.selected_action == i))
+								refactor_dialog.selected_action = i;
+						}
+						ImGui::EndListBox();
+					}
+					refactor_dialog.selected_action = min(refactor_dialog.selected_action, (int)refactor_dialog.action_files.size() - 1);
+
+					if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
+					{
+						ImGui::OpenInputDialog("New Action", "Name", [](bool ok, const std::string& str) {
+							if (ok && !str.empty())
+							{
+								if (refactor_dialog.actions_folder.empty())
+									return;
+								auto fn = refactor_dialog.actions_folder / str;
+								fn.replace_extension(L".bp");
+								if (!std::filesystem::exists(fn))
+								{
+									auto bp = Blueprint::create();
+									auto g = bp->groups.front().get();
+									bp->add_variable(g, "group", TypeInfo::get<BlueprintGroupPtr>());
+									bp->add_variable(g, "invalid_input_node", TypeInfo::get<BlueprintNodePtr>());
+									bp->add_variable(g, "invalid_input_name", TypeInfo::get<std::string>());
+									bp->add_variable(g, "invalid_input_value", TypeInfo::get<std::string>());
+									bp->add_variable(g, "invalid_link_from_node", TypeInfo::get<BlueprintNodePtr>());
+									bp->add_variable(g, "invalid_link_from_slot", TypeInfo::get<BlueprintSlotPtr>());
+									bp->add_variable(g, "invalid_link_from_slot_name", TypeInfo::get<std::string>());
+									bp->add_variable(g, "invalid_link_to_node", TypeInfo::get<BlueprintNodePtr>());
+									bp->add_variable(g, "invalid_link_to_slot", TypeInfo::get<BlueprintSlotPtr>());
+									bp->add_variable(g, "invalid_link_to_slot_name", TypeInfo::get<std::string>());
+									bp->save(fn);
+
+									refactor_dialog.refresh_action_files();
+								}
+								else
+									ImGui::OpenMessageDialog("Failed to create action", "Action already existed");
+							}
+						});
+					}
+					ImGui::SameLine();
+					if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
+					{
+						if (refactor_dialog.selected_action != -1)
+						{
+							auto path = Path::get(refactor_dialog.action_files[refactor_dialog.selected_action]);
+							std::filesystem::remove(path);
+							refactor_dialog.refresh_action_files();
+						}
+					}
+					ImGui::SameLine();
+					if (ImGui::SmallButton("Edit"))
+					{
+						if (refactor_dialog.selected_action != -1)
+						{
+							auto path = Path::get(refactor_dialog.action_files[refactor_dialog.selected_action]);
+							auto opened = false;
+							for (auto& v : blueprint_window.views)
+							{
+								auto bv = (BlueprintView*)v.get();
+								if (bv->blueprint_path == path)
+								{
+									if (bv->imgui_window)
+										ImGui::FocusWindow((ImGuiWindow*)bv->imgui_window);
+									opened = true;
+									break;
+								}
+							}
+							if (!opened)
+								blueprint_window.open_view(Path::reverse(path).string() + "##Blueprint");
+						}
+					}
+
+					ImGui::Separator();
+
+					if (ImGui::Button("Refactor"))
+					{
+						if (refactor_dialog.refactor(true))
+						{
+							refactor_dialog.unresolved_nodes = 0;
+							refactor_dialog.unresolved_inputs = 0;
+							refactor_dialog.unresolved_links = 0;
+
+							for (auto& inv : refactor_dialog.invalids)
+							{
+								for (auto& g : inv.group_invalids)
+								{
+									for (auto& n : g.invalid_nodes)
+									{
+										if (n.second.empty())
+											refactor_dialog.unresolved_nodes++;
+									}
+									for (auto& i : g.invalid_inputs)
+									{
+										if (i.second.empty())
+											refactor_dialog.unresolved_inputs++;
+									}
+									for (auto& l : g.invalid_links)
+									{
+										if (l.second.empty())
+											refactor_dialog.unresolved_links++;
+									}
+								}
+							}
+
+							ImGui::OpenPopup("Result Preview");
+						}
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Cancel"))
+						refactor_dialog.open = false;
+
+					if (ImGui::BeginPopupModal("Result Preview"))
+					{
+						ImGui::Text("Unresolved Nodes: %d, Unresolved Inputs: %d, Unresolved Links: %d", 
+							refactor_dialog.unresolved_nodes,
+							refactor_dialog.unresolved_inputs,
+							refactor_dialog.unresolved_links);
+
+						refactor_dialog.show_invalids();
+
+						if (ImGui::Button("Comfire"))
+						{
+							refactor_dialog.refactor(false);
+							refactor_dialog.invalids.clear();
+						}
+						ImGui::SameLine();
+						if (ImGui::Button("Cancel"))
+							ImGui::CloseCurrentPopup();
+
+						ImGui::EndPopup();
+					}
+
+					ImGui::End();
+				}
+
+				return refactor_dialog.open;
+			});
+		}
+		ImGui::Separator();
+		if (ImGui::MenuItem("Generate Code"))
+		{
+			auto temp_path = app.project_path / L"temp";
+			if (!std::filesystem::exists(temp_path))
+				std::filesystem::create_directories(temp_path);
+			auto dst_path = temp_path / L"bp_code_gen";
+			if (!std::filesystem::exists(dst_path))
+				std::filesystem::create_directories(dst_path);
+			else
+			{
+				for (auto& it : std::filesystem::directory_iterator(dst_path))
+					std::filesystem::remove_all(it);
+			}
+
+			for (auto& it : std::filesystem::recursive_directory_iterator(app.project_path / L"assets"))
+			{
+				if (it.is_regular_file() && it.path().extension() == L".bp")
+				{
+					auto format_type_name = [](TypeInfo* type) -> std::string {
+						auto ret = type->name;
+						SUS::strip_head_if(ret, "glm::");
+						SUS::strip_head_if(ret, "flame::");
+						if (is_pointer(type->tag))
+							ret += '*';
+						return ret;
+					};
+
+					auto bp = Blueprint::get(it.path());
+					std::ofstream code(dst_path / (bp->name + ".hpp"));
+					code << "#pragma once\n\n";
+					auto class_name = bp->name;
+					class_name[0] = std::toupper(class_name[0]);
+					code << std::format("struct {}\n{{\n", class_name);
+
+					for (auto& v : bp->variables)
+						code << std::format("\t{} {};\n", format_type_name(v.type), v.name);
+
+					code << "\n";
+
+					for (auto& g : bp->groups)
+					{
+						code << std::format("\tvoid {} (", g->name);
+						auto first = true;
+						for (auto i = 0; i < g->inputs.size(); i++)
+						{
+							auto& v = g->inputs[i];
+							code << std::format("{} {}", format_type_name(v.type), v.name);
+							if (!first)
+								code << ", ";
+							first = false;
+						}
+						for (auto i = 0; i < g->outputs.size(); i++)
+						{
+							auto& v = g->outputs[i];
+							code << std::format("{}& {}", format_type_name(v.type), v.name);
+							if (!first)
+								code << ", ";
+							first = false;
+						}
+						code << ")\n";
+					}
+
+					code << "\n};\n";
+					code.close();
+					Blueprint::release(bp);
+				}
+			}
+		}
+		if (ImGui::MenuItem("Code To Bp"))
+		{
+
 		}
 		ImGui::EndMenu();
 	}

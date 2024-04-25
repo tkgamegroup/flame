@@ -79,8 +79,8 @@ namespace flame
 			VkQueue vk_queue;
 
 			void wait_idle() override;
-			void submit(std::span<CommandBufferPtr> commandbuffers, SemaphorePtr wait_semaphore, SemaphorePtr signal_semaphore, FencePtr signal_fence) override;
-			void present(SwapchainPtr s, SemaphorePtr wait_semaphore) override;
+			void submit(std::span<CommandBufferPtr> commandbuffers, std::span<SemaphorePtr> wait_semaphores, std::span<SemaphorePtr> signal_semaphores, FencePtr signal_fence) override;
+			void present(std::span<SwapchainPtr> swapchains, std::span<SemaphorePtr> wait_semaphores) override;
 		};
 
 		struct SemaphorePrivate : Semaphore

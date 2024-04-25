@@ -12,6 +12,8 @@ namespace flame
 {
 	struct RenderTaskPrivate : RenderTask
 	{
+		graphics::WindowPtr bound_window = nullptr;
+
 		std::unique_ptr<graphics::Image>			img_back0;
 		std::unique_ptr<graphics::Image>			img_back1;
 		std::unique_ptr<graphics::Image>			img_dst;
@@ -123,15 +125,13 @@ namespace flame
 		std::vector<Hud> huds;
 		Rect hud_last_rect;
 
+		sRendererPrivate(int); // dummy for reflection
 		sRendererPrivate();
-		sRendererPrivate(graphics::WindowPtr w);
 		~sRendererPrivate();
 
-		RenderTaskPtr add_render_task(RenderMode mode, cCameraPtr camera,
-			const std::vector<graphics::ImageViewPtr>& targets, graphics::ImageLayout final_layout =
+		RenderTaskPtr add_render_task(RenderMode mode, cCameraPtr camera, graphics::WindowPtr window = nullptr,
+			const std::vector<graphics::ImageViewPtr>& targets = {}, graphics::ImageLayout final_layout =
 			graphics::ImageLayoutShaderReadOnly, bool need_canvas = true, bool need_pickup = true) override;
-		RenderTaskPtr add_render_task_with_window_targets(RenderMode mode, cCameraPtr camera, 
-			bool need_canvas = true, bool need_pickup = true) override;
 		void remove_render_task(RenderTaskPtr task) override;
 
 		RenderMode get_render_mode() override;
@@ -225,7 +225,7 @@ namespace flame
 		void draw_primitives(PrimitiveType type, const vec3* points, uint count, const cvec4& color, bool depth_test) override;
 		void draw_particles(uint mat_id, const std::vector<ParticleDrawData::Ptc>& ptcs) override;
 
-		void render(int tar_idx, graphics::CommandBufferPtr cb) override;
+		void render(graphics::CommandBufferPtr cb) override;
 
 		void update() override;
 

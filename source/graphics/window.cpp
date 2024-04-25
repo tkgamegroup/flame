@@ -37,6 +37,7 @@ namespace flame
 			if (images.empty())
 				return -1;
 			chk_res(vkAcquireNextImageKHR(device->vk_device, vk_swapchain, UINT64_MAX, image_avalible->vk_semaphore, VK_NULL_HANDLE, &image_index));
+
 			return image_index;
 		}
 
@@ -154,10 +155,6 @@ namespace flame
 			native = _native;
 
 			swapchain.reset(Swapchain::create(native));
-			commandbuffer.reset(CommandBuffer::create(CommandPool::get()));
-			commandbuffer->want_executed_time = true;
-			finished_fence.reset(Fence::create(device));
-			finished_semaphore.reset(Semaphore::create());
 
 			native->destroy_listeners.add([this]() {
 				for (auto it = windows.begin(); it != windows.end(); it++)
@@ -179,35 +176,6 @@ namespace flame
 				native->destroy_listeners.remove("graphics_window"_h);
 
 			Queue::get()->wait_idle();
-		}
-
-		void WindowPrivate::render()
-		{
-			if (!dirty || swapchain->images.empty())
-			{
-				renderers.call(-1, commandbuffer.get());
-				return;
-			}
-
-			finished_fence->wait();
-			commandbuffer->calc_executed_time();
-			//printf("%lfms\n", (double)commandbuffer->last_executed_time / (double)1000000);
-
-			auto img_idx = swapchain->acquire_image();
-			auto curr_img = swapchain->images[img_idx].get();
-
-			commandbuffer->begin();
-
-			renderers.call(img_idx, commandbuffer.get());
-
-			commandbuffer->image_barrier(curr_img, {}, ImageLayoutPresent);
-			commandbuffer->end();
-
-			auto queue = graphics::Queue::get();
-			queue->submit1(commandbuffer.get(), swapchain->image_avalible.get(), finished_semaphore.get(), finished_fence.get());
-			queue->present(swapchain.get(), finished_semaphore.get());
-
-			dirty = false;
 		}
 
 		std::vector<WindowPtr> windows;

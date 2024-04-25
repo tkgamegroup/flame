@@ -85,9 +85,6 @@ namespace flame
 
 		CanvasPrivate::~CanvasPrivate()
 		{
-			if (bound_window)
-				bound_window->renderers.remove("Canvas"_h);
-
 			GraphicsPipeline::release(pl);
 			FontAtlas::release(default_font_atlas);
 		}
@@ -132,12 +129,7 @@ namespace flame
 		{
 			assert(!bound_window);
 			bound_window = window;
-
-			auto imgui_idx = window->renderers.find("imgui"_h);
-			window->renderers.add([this](int idx, CommandBufferPtr cb) {
-				render(idx, cb);
-			}, "Canvas"_h, imgui_idx != -1 ? imgui_idx : -1);
-
+			
 			create_renderpass(Swapchain::format);
 
 			window->native->resize_listeners.add([this](const uvec2& sz) {

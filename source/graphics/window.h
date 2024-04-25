@@ -17,6 +17,11 @@ namespace flame
 
 			virtual ~Swapchain() {}
 
+			inline ImagePtr current_image() const
+			{
+				return images[image_index].get();
+			}
+
 			virtual int acquire_image() = 0;
 
 			FLAME_GRAPHICS_API static Format format;
@@ -33,13 +38,7 @@ namespace flame
 			NativeWindowPtr native;
 			std::unique_ptr<SwapchainT> swapchain;
 
-			Listeners<void(int, CommandBufferPtr)> renderers;
-
-			bool dirty = false;
-
 			virtual ~Window() {}
-
-			virtual void render() = 0;
 
 			struct Create
 			{

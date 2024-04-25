@@ -105,15 +105,12 @@ namespace flame
 			uint ref = 0;
 		};
 
-		graphics::WindowPtr window;
 		std::vector<std::unique_ptr<RenderTaskT>> render_tasks;
 		bool dirty = false;
 
-		virtual RenderTaskPtr add_render_task(RenderMode mode, cCameraPtr camera, 
-			const std::vector<graphics::ImageViewPtr>& targets, graphics::ImageLayout final_layout = 
+		virtual RenderTaskPtr add_render_task(RenderMode mode, cCameraPtr camera, graphics::WindowPtr window = nullptr,
+			const std::vector<graphics::ImageViewPtr>& targets = {}, graphics::ImageLayout final_layout =
 			graphics::ImageLayoutShaderReadOnly, bool need_canvas = true, bool need_pickup = true) = 0;
-		virtual RenderTaskPtr add_render_task_with_window_targets(RenderMode mode, cCameraPtr camera, 
-			bool need_canvas = true, bool need_pickup = true) = 0;
 		virtual void remove_render_task(RenderTaskPtr task) = 0;
 
 		// Reflect
@@ -358,7 +355,7 @@ namespace flame
 		virtual void draw_particles(uint mat_id, const std::vector<ParticleDrawData::Ptc>& ptcs) = 0;
 
 		// Reflect
-		virtual void render(int tar_idx, graphics::CommandBufferPtr cb) = 0;
+		virtual void render(graphics::CommandBufferPtr cb) = 0;
 
 		// Reflect
 		virtual cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos = nullptr, const std::function<void(cNodePtr, DrawData&)>& draw_callback = {}) = 0;

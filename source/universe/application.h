@@ -38,14 +38,14 @@ struct UniverseApplication : GraphicsApplication
 		graveyard	= (sGraveyardPtr)world->add_system<sGraveyard>();
 	}
 
-	void on_render() override
+	virtual void on_render()
 	{
+		GraphicsApplication::on_render();
+		((sRenderer*)renderer)->render(command_buffer.get());
 	}
 
 	bool on_update() override
 	{
-		if (use_gui)
-			graphics::gui_frame();
 		world->update();
 		GraphicsApplication::on_update();
 		return true;

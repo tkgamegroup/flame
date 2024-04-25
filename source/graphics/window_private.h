@@ -21,14 +21,8 @@ namespace flame
 
 		struct WindowPrivate : Window
 		{
-			std::unique_ptr<CommandBufferPrivate> commandbuffer;
-			std::unique_ptr<FencePrivate> finished_fence;
-			std::unique_ptr<SemaphorePrivate> finished_semaphore;
-
 			WindowPrivate(NativeWindowPtr native);
 			~WindowPrivate();
-
-			void render() override;
 		};
 
 		extern std::vector<WindowPtr> windows;

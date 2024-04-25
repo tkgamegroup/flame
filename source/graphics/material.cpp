@@ -271,11 +271,10 @@ namespace flame
 
 				std::function<void(BlueprintInstanceNode& n)> process_node;
 				process_node = [&](BlueprintInstanceNode& n) {
-					auto ori = n.original;
-					if (ori)
+					if (auto node = n.original; node)
 					{
 						auto get_input = [&](uint idx)->std::string {
-							auto slot_id = ori->inputs[idx]->object_id;
+							auto slot_id = node->inputs[idx]->object_id;
 							if (auto it = g.slot_datas.find(slot_id); it != g.slot_datas.end())
 							{
 								// remove the input ones from output_slot_datas
@@ -301,29 +300,29 @@ namespace flame
 							return "";
 						};
 
-						switch (ori->name_hash)
+						switch (node->name_hash)
 						{
 						case "Scalar"_h:
 							function_str += std::format("\tv_{} = {};\n",
-								ori->outputs[0]->object_id,
+								node->outputs[0]->object_id,
 								get_input(0));
 							break;
 						case "Vec2"_h:
 							function_str += std::format("\tv_{} = vec2({}, {});\n",
-								ori->outputs[0]->object_id,
+								node->outputs[0]->object_id,
 								get_input(0),
 								get_input(1));
 							break;
 						case "Vec3"_h:
 							function_str += std::format("\tv_{} = vec3({}, {}, {});\n",
-								ori->outputs[0]->object_id,
+								node->outputs[0]->object_id,
 								get_input(0),
 								get_input(1),
 								get_input(2));
 							break;
 						case "Vec4"_h:
 							function_str += std::format("\tv_{} = vec4({}, {}, {}, {});\n",
-								ori->outputs[0]->object_id,
+								node->outputs[0]->object_id,
 								get_input(0),
 								get_input(1),
 								get_input(2),
@@ -338,8 +337,8 @@ namespace flame
 								function_str += std::format(
 									"\tv_{} = {}.x;\n"
 									"\tv_{} = {}.y;\n",
-									ori->outputs[0]->object_id, get_input(0),
-									ori->outputs[1]->object_id, get_input(0)
+									node->outputs[0]->object_id, get_input(0),
+									node->outputs[1]->object_id, get_input(0)
 								);
 								break;
 							case 3:
@@ -347,9 +346,9 @@ namespace flame
 									"\tv_{} = {}.x;\n"
 									"\tv_{} = {}.y;\n"
 									"\tv_{} = {}.z;\n",
-									ori->outputs[0]->object_id, get_input(0),
-									ori->outputs[1]->object_id, get_input(0),
-									ori->outputs[2]->object_id, get_input(0)
+									node->outputs[0]->object_id, get_input(0),
+									node->outputs[1]->object_id, get_input(0),
+									node->outputs[2]->object_id, get_input(0)
 								);
 								break;
 							case 4:
@@ -358,70 +357,70 @@ namespace flame
 									"\tv_{} = {}.y;\n"
 									"\tv_{} = {}.z;\n"
 									"\tv_{} = {}.w;\n",
-									ori->outputs[0]->object_id, get_input(0),
-									ori->outputs[1]->object_id, get_input(0),
-									ori->outputs[2]->object_id, get_input(0),
-									ori->outputs[3]->object_id, get_input(0)
+									node->outputs[0]->object_id, get_input(0),
+									node->outputs[1]->object_id, get_input(0),
+									node->outputs[2]->object_id, get_input(0),
+									node->outputs[3]->object_id, get_input(0)
 								);
 								break;
 							}
 						}
 							break;
 						case "Add"_h:
-							function_str += std::format("\tv_{} = {} + {};\n", ori->outputs[0]->object_id, get_input(0), get_input(1));
+							function_str += std::format("\tv_{} = {} + {};\n", node->outputs[0]->object_id, get_input(0), get_input(1));
 							break;
 						case "Subtract"_h:
-							function_str += std::format("\tv_{} = {} - {};\n", ori->outputs[0]->object_id, get_input(0), get_input(1));
+							function_str += std::format("\tv_{} = {} - {};\n", node->outputs[0]->object_id, get_input(0), get_input(1));
 							break;
 						case "Multiply"_h:
-							function_str += std::format("\tv_{} = {} * {};\n", ori->outputs[0]->object_id, get_input(0), get_input(1));
+							function_str += std::format("\tv_{} = {} * {};\n", node->outputs[0]->object_id, get_input(0), get_input(1));
 							break;
 						case "Divide"_h:
-							function_str += std::format("\tv_{} = {} / {};\n", ori->outputs[0]->object_id, get_input(0), get_input(1));
+							function_str += std::format("\tv_{} = {} / {};\n", node->outputs[0]->object_id, get_input(0), get_input(1));
 							break;
 						case "Normalize"_h:
-							function_str += std::format("\tv_{} = normalize({});\n", ori->outputs[0]->object_id, get_input(0));
+							function_str += std::format("\tv_{} = normalize({});\n", node->outputs[0]->object_id, get_input(0));
 							break;
 						case "HSV Color"_h:
-							function_str += std::format("\tv_{} = hsvColor({}, {}, {}, {});\n", ori->outputs[0]->object_id, get_input(0), get_input(1), get_input(2), get_input(3));
+							function_str += std::format("\tv_{} = hsvColor({}, {}, {}, {});\n", node->outputs[0]->object_id, get_input(0), get_input(1), get_input(2), get_input(3));
 							break;
 						case "Color To Vec4"_h:
-							function_str += std::format("\tv_{} = {};\n", ori->outputs[0]->object_id, get_input(0));
+							function_str += std::format("\tv_{} = {};\n", node->outputs[0]->object_id, get_input(0));
 							break;
 						case "Perlin"_h:
-							function_str += std::format("\tv_{} = perlin({});\n", ori->outputs[0]->object_id, get_input(0));
+							function_str += std::format("\tv_{} = perlin({});\n", node->outputs[0]->object_id, get_input(0));
 							break;
 						case "Perlin Gradient"_h:
-							function_str += std::format("\tv_{} = perlin_gradient({}, {});\n", ori->outputs[0]->object_id, get_input(0), get_input(1));
+							function_str += std::format("\tv_{} = perlin_gradient({}, {});\n", node->outputs[0]->object_id, get_input(0), get_input(1));
 							break;
 						case "Input"_h:
-							if (auto idx = ori->find_output_i("i_color"_h); idx != -1)
+							if (auto idx = node->find_output_i("i_color"_h); idx != -1)
 							{
-								auto slot_id = ori->outputs[idx]->object_id;
+								auto slot_id = node->outputs[idx]->object_id;
 								std::erase_if(output_slot_values, [&](const auto& i) {
 									return i.first == slot_id;
 								});
 								id_to_var_name[slot_id] = "color";
 							}
-							if (auto idx = ori->find_output_i("i_uv"_h); idx != -1)
+							if (auto idx = node->find_output_i("i_uv"_h); idx != -1)
 							{
-								auto slot_id = ori->outputs[idx]->object_id;
+								auto slot_id = node->outputs[idx]->object_id;
 								std::erase_if(output_slot_values, [&](const auto& i) {
 									return i.first == slot_id;
 								});
 								id_to_var_name[slot_id] = "i_uv";
 							}
-							if (auto idx = ori->find_output_i("i_coordw"_h); idx != -1)
+							if (auto idx = node->find_output_i("i_coordw"_h); idx != -1)
 							{
-								auto slot_id = ori->outputs[idx]->object_id;
+								auto slot_id = node->outputs[idx]->object_id;
 								std::erase_if(output_slot_values, [&](const auto& i) {
 									return i.first == slot_id;
 								});
 								id_to_var_name[slot_id] = "i_coordw";
 							}
-							if (auto idx = ori->find_output_i("i_normal"_h); idx != -1)
+							if (auto idx = node->find_output_i("i_normal"_h); idx != -1)
 							{
-								auto slot_id = ori->outputs[idx]->object_id;
+								auto slot_id = node->outputs[idx]->object_id;
 								std::erase_if(output_slot_values, [&](const auto& i) {
 									return i.first == slot_id;
 								});
@@ -434,15 +433,15 @@ namespace flame
 							function_str += "\tfloat o_metallic;\n";
 							function_str += "\tfloat o_roughness;\n";
 							function_str += "\tvec3 o_emissive;\n";
-							if (auto idx = ori->find_input_i("o_color"_h); idx != -1)
+							if (auto idx = node->find_input_i("o_color"_h); idx != -1)
 								function_str += std::format("\to_color = {};\n", get_input(idx));
-							if (auto idx = ori->find_input_i("o_normal"_h); idx != -1)
+							if (auto idx = node->find_input_i("o_normal"_h); idx != -1)
 								function_str += std::format("\to_normal = {};\n", get_input(idx));
-							if (auto idx = ori->find_input_i("o_metallic"_h); idx != -1)
+							if (auto idx = node->find_input_i("o_metallic"_h); idx != -1)
 								function_str += std::format("\to_metallic = {};\n", get_input(idx));
-							if (auto idx = ori->find_input_i("o_roughness"_h); idx != -1)
+							if (auto idx = node->find_input_i("o_roughness"_h); idx != -1)
 								function_str += std::format("\to_roughness = {};\n", get_input(idx));
-							if (auto idx = ori->find_input_i("o_emissive"_h); idx != -1)
+							if (auto idx = node->find_input_i("o_emissive"_h); idx != -1)
 								function_str += std::format("\to_emissive = {};\n", get_input(idx));
 
 							function_str += "\t#ifndef GBUFFER_PASS\n";

@@ -453,11 +453,12 @@ namespace flame
 			return want_keyboard;
 		}
 
-		static void gui_render(int img_idx, CommandBufferPtr cb)
+		void gui_render(CommandBuffer* _cb)
 		{
-			if (img_idx < 0)
-				return;
+			auto cb = (CommandBufferPtr)_cb;
+
 #ifdef USE_IMGUI
+			auto img_idx = main_window->swapchain->image_index;
 			auto curr_img = main_window->swapchain->images[img_idx].get();
 			auto curr_fb = imgui_fbs[img_idx].get();
 
@@ -854,8 +855,6 @@ namespace flame
 
 			imgui_ds->set_image_i(0, 0, imgui_img_font->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(FilterNearest, FilterNearest, false, AddressClampToEdge));
 			imgui_ds->update();
-
-			main_window->renderers.add(gui_render, "imgui"_h);
 #endif
 		}
 

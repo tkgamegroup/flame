@@ -23,8 +23,8 @@ namespace flame
 			void excute()
 			{
 				get()->end();
-				auto q = Queue::get();
-				q->submit1(get(), nullptr, nullptr, fence);
+				auto q = (Queue*)Queue::get();
+				q->submit(get(), fence);
 				if (!fence)
 					q->wait_idle();
 				else

@@ -204,13 +204,39 @@ namespace flame
 			virtual ~Queue() {}
 
 			virtual void wait_idle() = 0;
-			virtual void submit(std::span<CommandBufferPtr> commandbuffers, SemaphorePtr wait_semaphore, SemaphorePtr signal_semaphore, FencePtr signal_fence) = 0;
-			inline void submit1(CommandBufferPtr commandbuffer, SemaphorePtr wait_semaphore, SemaphorePtr signal_semaphore, FencePtr signal_fence)
+			virtual void submit(std::span<CommandBufferPtr> commandbuffers, std::span<SemaphorePtr> wait_semaphores, std::span<SemaphorePtr> signal_semaphores, FencePtr signal_fence) = 0;
+			inline void submit(CommandBufferPtr commandbuffer, SemaphorePtr wait_semaphore, SemaphorePtr signal_semaphore, FencePtr signal_fence)
 			{
 				CommandBufferPtr cbs[] = { commandbuffer };
-				submit({ cbs, 1 }, wait_semaphore, signal_semaphore, signal_fence);
+				SemaphorePtr wait_smps[] = { wait_semaphore };
+				SemaphorePtr signal_smps[] = { signal_semaphore };
+				submit({ cbs, 1 }, { wait_smps, 1 }, { signal_smps, 1 }, signal_fence);
 			}
-			virtual void present(SwapchainPtr swapchain, SemaphorePtr wait_semaphore) = 0;
+			inline void submit(CommandBufferPtr commandbuffer, std::span<SemaphorePtr> wait_semaphores, SemaphorePtr signal_semaphore, FencePtr signal_fence)
+			{
+				CommandBufferPtr cbs[] = { commandbuffer };
+				SemaphorePtr signal_smps[] = { signal_semaphore };
+				submit({ cbs, 1 }, wait_semaphores, { signal_smps, 1 }, signal_fence);
+			}
+			inline void submit(CommandBufferPtr commandbuffer, FencePtr signal_fence)
+			{
+				CommandBufferPtr cbs[] = { commandbuffer };
+				SemaphorePtr* wait_smps = nullptr;
+				SemaphorePtr* signal_smps = nullptr;
+				submit({ cbs, 1 }, { wait_smps, 0 }, { signal_smps, 0 }, signal_fence);
+			}
+			virtual void present(std::span<SwapchainPtr> swapchains, std::span<SemaphorePtr> wait_semaphores) = 0;
+			inline void present(SwapchainPtr swapchain, SemaphorePtr wait_semaphore)
+			{
+				SwapchainPtr scs[] = { swapchain };
+				SemaphorePtr wait_smps[] = { wait_semaphore };
+				present({ scs, 1 }, { wait_smps, 1 });
+			}
+			inline void present(std::span<SwapchainPtr> swapchains, SemaphorePtr wait_semaphore)
+			{
+				SemaphorePtr wait_smps[] = { wait_semaphore };
+				present(swapchains, { wait_smps, 1 });
+			}
 
 			struct Get
 			{

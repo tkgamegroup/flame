@@ -690,40 +690,63 @@ namespace flame
 			chk_res(vkQueueWaitIdle(vk_queue));
 		}
 
-		void QueuePrivate::submit(std::span<CommandBufferPtr> cbs, SemaphorePtr wait_semaphore, SemaphorePtr signal_semaphore, FencePtr signal_fence)
+		void QueuePrivate::submit(std::span<CommandBufferPtr> commandbuffers, std::span<SemaphorePtr> wait_semaphores, std::span<SemaphorePtr> signal_semaphores, FencePtr signal_fence)
 		{
-			VkSubmitInfo info;
+			std::vector<VkCommandBuffer> vk_cbs;
+			vk_cbs.resize(commandbuffers.size());
+			for (auto i = 0; i < vk_cbs.size(); i++)
+				vk_cbs[i] = commandbuffers[i]->vk_command_buffer;
+
+			std::vector<VkSemaphore> vk_wait_smps;
+			vk_wait_smps.resize(wait_semaphores.size());
+			for (auto i = 0; i < vk_wait_smps.size(); i++)
+				vk_wait_smps[i] = wait_semaphores[i]->vk_semaphore;
+
+			std::vector<VkSemaphore> vk_signal_smps;
+			vk_signal_smps.resize(signal_semaphores.size());
+			for (auto i = 0; i < vk_signal_smps.size(); i++)
+				vk_signal_smps[i] = signal_semaphores[i]->vk_semaphore;
+
+			VkSubmitInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			info.pNext = nullptr;
 			VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 			info.pWaitDstStageMask = &wait_stage;
-			info.waitSemaphoreCount = wait_semaphore ? 1 : 0;
-			info.pWaitSemaphores = wait_semaphore ? &wait_semaphore->vk_semaphore : nullptr;
-			info.commandBufferCount = cbs.size();
-			std::vector<VkCommandBuffer> vk_cbs;
-			vk_cbs.resize(cbs.size());
-			for (auto i = 0; i < vk_cbs.size(); i++)
-				vk_cbs[i] = cbs[i]->vk_command_buffer;
+			info.waitSemaphoreCount = vk_wait_smps.size();
+			info.pWaitSemaphores = vk_wait_smps.data();
+			info.commandBufferCount = commandbuffers.size();
 			info.pCommandBuffers = vk_cbs.data();
-			info.signalSemaphoreCount = signal_semaphore ? 1 : 0;
-			info.pSignalSemaphores = signal_semaphore ? &signal_semaphore->vk_semaphore : nullptr;
+			info.signalSemaphoreCount = vk_signal_smps.size();
+			info.pSignalSemaphores = vk_signal_smps.data();
 
 			chk_res(vkQueueSubmit(vk_queue, 1, &info, signal_fence ? signal_fence->vk_fence : nullptr));
 			if (signal_fence)
 				signal_fence->value = 1;
 		}
 
-		void QueuePrivate::present(SwapchainPtr swapchain, SemaphorePtr wait_semaphore)
+		void QueuePrivate::present(std::span<SwapchainPtr> swapchains, std::span<SemaphorePtr> wait_semaphores)
 		{
-			VkPresentInfoKHR info;
+			std::vector<VkSemaphore> vk_wait_smps;
+			vk_wait_smps.resize(wait_semaphores.size());
+			for (auto i = 0; i < vk_wait_smps.size(); i++)
+				vk_wait_smps[i] = wait_semaphores[i]->vk_semaphore;
+
+			std::vector<VkSwapchainKHR> vk_scs;
+			std::vector<uint> indices;
+			vk_scs.resize(swapchains.size());
+			indices.resize(swapchains.size());
+			for (auto i = 0; i < vk_scs.size(); i++)
+			{
+				vk_scs[i] = swapchains[i]->vk_swapchain;
+				indices[i] = swapchains[i]->image_index;
+			}
+
+			VkPresentInfoKHR info = {};
 			info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-			info.pNext = nullptr;
-			info.pResults = nullptr;
-			info.waitSemaphoreCount = wait_semaphore ? 1 : 0;
-			info.pWaitSemaphores = wait_semaphore ? &wait_semaphore->vk_semaphore : nullptr;
-			info.swapchainCount = 1;
-			info.pSwapchains = &swapchain->vk_swapchain;
-			info.pImageIndices = &swapchain->image_index;
+			info.waitSemaphoreCount = vk_wait_smps.size();
+			info.pWaitSemaphores = vk_wait_smps.data();
+			info.swapchainCount = vk_scs.size();
+			info.pSwapchains = vk_scs.data();
+			info.pImageIndices = indices.data();
 			chk_res(vkQueuePresentKHR(vk_queue, &info));
 		}
 

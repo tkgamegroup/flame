@@ -47,6 +47,7 @@ namespace flame
 		FLAME_GRAPHICS_API void gui_set_clear(bool clear, const vec4& color);
 		FLAME_GRAPHICS_API extern Listeners<void(CursorType& cursor)> gui_cursor_callbacks;
 		FLAME_GRAPHICS_API void gui_frame();
+		FLAME_GRAPHICS_API void gui_render(CommandBuffer* cb);
 		FLAME_GRAPHICS_API void gui_clear_inputs();
 		FLAME_GRAPHICS_API bool gui_want_mouse();
 		FLAME_GRAPHICS_API bool gui_want_keyboard();

@@ -596,16 +596,14 @@ namespace flame
 		return (vec2)targets.front()->image->extent;
 	}
 
-	sRendererPrivate::sRendererPrivate() 
+#include "marching_cubes_lookup.h"
+
+	sRendererPrivate::sRendererPrivate(int)
 	{
 	}
 
-#include "marching_cubes_lookup.h"
-
-	sRendererPrivate::sRendererPrivate(graphics::WindowPtr w)
+	sRendererPrivate::sRendererPrivate()
 	{
-		window = w;
-
 		auto graphics_device = graphics::Device::current();
 		static auto sp_trilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
 		static auto sp_shadow = graphics::Sampler::create(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder, std::numeric_limits<float>::max());
@@ -872,10 +870,6 @@ namespace flame
 
 		cb.excute();
 		
-		w->renderers.add([this](int img_idx, graphics::CommandBufferPtr cb) {
-			render(img_idx, cb);
-		}, 0, 0);
-
 		hud_style_vars.resize(HudStyleVarCount);
 		hud_style_vars[HudStyleVarScaling].push(vec2(1.f));
 		hud_style_vars[HudStyleVarAlpha].push(vec2(1.f));
@@ -885,7 +879,7 @@ namespace flame
 	{
 	}
 
-	RenderTaskPtr sRendererPrivate::add_render_task(RenderMode mode, cCameraPtr camera,
+	RenderTaskPtr sRendererPrivate::add_render_task(RenderMode mode, cCameraPtr camera, graphics::WindowPtr window,
 		const std::vector<graphics::ImageViewPtr>& targets, graphics::ImageLayout final_layout, bool need_canvas, bool need_pickup)
 	{
 		auto ret = new RenderTaskPrivate;
@@ -901,25 +895,24 @@ namespace flame
 			ret->fence_pickup.reset(graphics::Fence::create(false));
 		}
 		ret->init();
-		ret->set_targets(targets);
-		render_tasks.emplace_back(ret);
-		return ret;
-	}
-
-	RenderTaskPtr sRendererPrivate::add_render_task_with_window_targets(RenderMode mode, cCameraPtr camera, bool need_canvas, bool need_pickup)
-	{
-		auto ret = add_render_task(mode, camera, {}, graphics::ImageLayoutAttachment, need_canvas, need_pickup);
-		window->native->resize_listeners.add([this, ret](const uvec2& sz) {
-			graphics::Queue::get()->wait_idle();
+		if (window)
+		{
+			ret->bound_window = window;
+			window->native->resize_listeners.add([ret](const uvec2& sz) {
+				graphics::Queue::get()->wait_idle();
+				std::vector<graphics::ImageViewPtr> targets;
+				for (auto& i : ret->bound_window->swapchain->images)
+					targets.push_back(i->get_view());
+				ret->set_targets(targets);
+			});
 			std::vector<graphics::ImageViewPtr> targets;
 			for (auto& i : window->swapchain->images)
 				targets.push_back(i->get_view());
 			ret->set_targets(targets);
-		});
-		std::vector<graphics::ImageViewPtr> targets;
-		for (auto& i : window->swapchain->images)
-			targets.push_back(i->get_view());
-		ret->set_targets(targets);
+		}
+		else
+			ret->set_targets(targets);
+		render_tasks.emplace_back(ret);
 		return ret;
 	}
 
@@ -2087,7 +2080,7 @@ namespace flame
 		}
 	}
 
-	void sRendererPrivate::render(int tar_idx, graphics::CommandBufferPtr cb)
+	void sRendererPrivate::render(graphics::CommandBufferPtr cb)
 	{
 		if (mark_clear_pipelines)
 		{
@@ -2114,21 +2107,6 @@ namespace flame
 			mark_clear_pipelines = false;
 		}
 
-		// clear staging draws and reset buffers
-		if (tar_idx < 0)
-		{
-			outline_groups.clear();
-			buf_primitives.reset();
-			primitives_draws.clear();
-
-			for (auto& t : render_tasks)
-			{
-				if (t->canvas)
-					t->canvas->reset();
-			}
-			return;
-		}
-
 		world->root->traversal_bfs([](EntityPtr e, int) {
 			if (!e->global_enable)
 				return false;
@@ -2153,7 +2131,7 @@ namespace flame
 			}
 
 			auto mode = t->mode;
-			tar_idx = clamp(tar_idx, 0, (int)t->targets.size() - 1);
+			auto tar_idx = t->bound_window ? t->bound_window->swapchain->image_index : 0;
 			auto iv = t->targets[tar_idx];
 			auto img = iv->image;
 			auto ext = vec2(img->extent);
@@ -3241,7 +3219,6 @@ namespace flame
 
 	void sRendererPrivate::update()
 	{
-		int cut = 1;
 	}
 
 	cNodePtr sRendererPrivate::pick_up(const uvec2& screen_pos, vec3* out_pos, const std::function<void(cNodePtr, DrawData&)>& draw_callback)
@@ -3993,18 +3970,11 @@ namespace flame
 		sRendererPtr operator()(WorldPtr w) override
 		{
 			if (!w)
-				return new sRendererPrivate();
+				return new sRendererPrivate(0);  // call to dummy constructor
 
 			assert(!_instance);
 
-			auto& windows = graphics::Window::get_list();
-			if (windows.empty())
-			{
-				printf("renderer system needs graphics window\n");
-				return nullptr;
-			}
-
-			_instance = new sRendererPrivate(windows[0]);
+			_instance = new sRendererPrivate();
 			return _instance;
 		}
 	}sRenderer_create;
