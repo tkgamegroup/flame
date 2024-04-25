@@ -1,7 +1,7 @@
 # Flame Game Engine
 An ECS 3D-Game-Engine.
 
-# With The Greate Help Of:
+# Thanks To:
 
 - VulkanSDK https://vulkan.lunarg.com/sdk/home#windows
 
