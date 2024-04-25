@@ -47,11 +47,13 @@ namespace flame
 
 	enum WindowStyleFlags
 	{
+		WindowNone = 0,
 		WindowFrame = 1 << 0,
 		WindowResizable = 1 << 1,
 		WindowFullscreen = 1 << 2,
 		WindowMaximized = 1 << 3,
-		WindowTopmost = 1 << 4
+		WindowTopmost = 1 << 4,
+		WindowInvisible = 1 << 5
 	};
 
 	inline WindowStyleFlags operator| (WindowStyleFlags a, WindowStyleFlags b) { return (WindowStyleFlags)((int)a | (int)b); }

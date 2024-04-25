@@ -19,6 +19,7 @@ namespace flame
 
 		void close() override;
 
+		void set_visible(bool v) override;
 		void set_pos(const ivec2& pos) override;
 		void set_size(const uvec2& size) override;
 		ivec2 global_to_local(const ivec2& p) override;

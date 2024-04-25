@@ -9,7 +9,7 @@ namespace flame
 		ivec2 pos;
 		uvec2 size;
 		std::string title;
-		uint style;
+		uint styles;
 
 		CursorType cursor = CursorArrow;
 
@@ -31,6 +31,7 @@ namespace flame
 
 		virtual void close() = 0;
 
+		virtual void set_visible(bool v) = 0;
 		virtual void set_pos(const ivec2& pos) = 0;
 		virtual void set_size(const uvec2& size) = 0;
 		virtual ivec2 global_to_local(const ivec2& p) = 0;
@@ -39,7 +40,7 @@ namespace flame
 
 		struct Create
 		{
-			virtual NativeWindowPtr operator()(std::string_view title, const uvec2& size, WindowStyleFlags style, NativeWindowPtr parent = nullptr) = 0;
+			virtual NativeWindowPtr operator()(std::string_view title, const uvec2& size, WindowStyleFlags styles, NativeWindowPtr parent = nullptr) = 0;
 		};
 		FLAME_FOUNDATION_API static Create& create;
 

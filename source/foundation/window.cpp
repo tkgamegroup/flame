@@ -123,6 +123,11 @@ namespace flame
 		dead = true;
 	}
 
+	void NativeWindowPrivate::set_visible(bool v)
+	{
+		ShowWindow(hWnd, v ? SW_NORMAL : SW_HIDE);
+	}
+
 	void NativeWindowPrivate::set_pos(const ivec2& _pos)
 	{
 		pos = _pos;
@@ -164,7 +169,7 @@ namespace flame
 
 	struct NativeWindowCreate : NativeWindow::Create
 	{
-		NativeWindowPtr operator()(std::string_view title, const uvec2& size, WindowStyleFlags style, NativeWindowPtr parent) override
+		NativeWindowPtr operator()(std::string_view title, const uvec2& size, WindowStyleFlags styles, NativeWindowPtr parent) override
 		{
 			static bool initialized = false;
 			if (!initialized)
@@ -192,41 +197,43 @@ namespace flame
 				initialized = true;
 			}
 
-			assert(!(style & WindowFullscreen) || (!(style & WindowFrame) && !(style & WindowResizable)));
+			assert(!(styles & WindowFullscreen) || (!(styles & WindowFrame) && !(styles & WindowResizable)));
 
 			auto ret = new NativeWindowPrivate;
 			ret->title = title;
-			ret->style = style;
+			ret->styles = styles;
 
 			uvec2 final_size;
 			auto screen_size = get_screen_size();
 
-			auto win32_style = WS_VISIBLE;
-			if (style == 0)
-				win32_style |= WS_POPUP | WS_BORDER;
+			auto win32_styles = 0;
+			if (!(styles & WindowInvisible))
+				win32_styles |= WS_VISIBLE;
+			if (styles == 0)
+				win32_styles |= WS_POPUP | WS_BORDER;
 			else
 			{
-				if (style & WindowFrame)
-					win32_style |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
-				if (style & WindowResizable)
-					win32_style |= WS_THICKFRAME | WS_MAXIMIZEBOX;
-				if (style & WindowFullscreen)
+				if (styles & WindowFrame)
+					win32_styles |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+				if (styles & WindowResizable)
+					win32_styles |= WS_THICKFRAME | WS_MAXIMIZEBOX;
+				if (styles & WindowFullscreen)
 					final_size = screen_size;
-				if (style & WindowMaximized)
-					win32_style |= WS_MAXIMIZE;
+				if (styles & WindowMaximized)
+					win32_styles |= WS_MAXIMIZE;
 			}
 
-			auto win32_ex_style = 0L;
-			if (style & WindowTopmost)
-				win32_ex_style |= WS_EX_TOPMOST;
+			auto win32_ex_styles = 0L;
+			if (styles & WindowTopmost)
+				win32_ex_styles |= WS_EX_TOPMOST;
 
 			{
 				RECT rect = { 0, 0, size.x, size.y };
-				AdjustWindowRect(&rect, win32_style, false);
+				AdjustWindowRect(&rect, win32_styles, false);
 				final_size = uvec2(rect.right - rect.left, rect.bottom - rect.top);
 			}
 			ret->pos = ivec2(screen_size - final_size) / 2;
-			ret->hWnd = CreateWindowExA(win32_ex_style, "flame_wnd", title.data(), win32_style,
+			ret->hWnd = CreateWindowExA(win32_ex_styles, "flame_wnd", title.data(), win32_styles,
 				ret->pos.x, ret->pos.y, final_size.x, final_size.y, parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
 			//assert(IsWindowUnicode(ret->hWnd));
 			{

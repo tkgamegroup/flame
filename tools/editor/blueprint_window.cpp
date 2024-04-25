@@ -3004,6 +3004,7 @@ void BlueprintView::on_draw()
 					if (!new_node_block)
 						new_node_block = hovered_block;
 
+					ImGui::SetKeyboardFocusHere();
 					ImGui::InputText("##Filter", &add_node_filter);
 					ImGui::SameLine();
 					ImGui::ToolButton("C", &add_node_filter_match_case);

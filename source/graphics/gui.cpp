@@ -611,6 +611,41 @@ namespace flame
 
 		static std::unordered_map<uint, std::pair<wchar_t, std::string>> font_icons;
 
+		static void ImGui_CreateWindow(ImGuiViewport* viewport)
+		{
+			auto styles = WindowInvisible;
+			if (!(viewport->Flags & ImGuiViewportFlags_NoDecoration))
+				styles = styles | WindowFrame;
+			if (viewport->Flags & ImGuiViewportFlags_TopMost)
+				styles = styles | WindowTopmost;
+			auto native_window = NativeWindow::create("", (vec2)viewport->Size, styles);
+			auto window = graphics::Window::create(native_window);
+			viewport->PlatformUserData = window;
+			viewport->PlatformHandle = window;
+			viewport->PlatformHandleRaw = native_window->get_hwnd();
+		}
+
+		static void ImGui_DestroyWindow(ImGuiViewport* viewport)
+		{
+			auto window = (WindowPtr)viewport->PlatformUserData;
+			window->native->close();
+		}
+
+		static void ImGui_Renderer_CreateWindow(ImGuiViewport* viewport)
+		{
+			// already processed in ImGui_CreateWindow
+		}
+
+		static void ImGui_Renderer_DestroyWindow(ImGuiViewport* viewport)
+		{
+			// already processed in ImGui_DestroyWindow
+		}
+
+		static void ImGui_Renderer_SetWindowSize(ImGuiViewport* viewport, ImVec2)
+		{
+			// already processed in Window
+		}
+
 		void gui_initialize()
 		{
 #ifdef USE_IMGUI
@@ -641,7 +676,7 @@ namespace flame
 					io.KeyShift = down;
 				if (key == Keyboard_Alt)
 					io.KeyAlt = down;
-				});
+			});
 			native->char_listeners.add([](wchar_t ch) {
 				ImGuiIO& io = ImGui::GetIO();
 				io.AddInputCharacter(ch);
@@ -677,6 +712,7 @@ namespace flame
 			}
 
 			ImGuiIO& io = ImGui::GetIO();
+			//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
@@ -708,6 +744,22 @@ namespace flame
 			io.KeyMap[ImGuiKey_X] = Keyboard_X;
 			io.KeyMap[ImGuiKey_Y] = Keyboard_Y;
 			io.KeyMap[ImGuiKey_Z] = Keyboard_Z;
+
+			ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
+			platform_io.Platform_CreateWindow = ImGui_CreateWindow;
+			platform_io.Platform_DestroyWindow = ImGui_DestroyWindow;
+			//platform_io.Platform_ShowWindow = ;
+			//platform_io.Platform_SetWindowPos = ;
+			//platform_io.Platform_GetWindowPos = ;
+			//platform_io.Platform_SetWindowSize = ;
+			//platform_io.Platform_GetWindowSize = ;
+			//platform_io.Platform_SetWindowFocus = ;
+			//platform_io.Platform_GetWindowFocus = ;
+			//platform_io.Platform_GetWindowMinimized = ;
+			//platform_io.Platform_SetWindowTitle = ;
+			platform_io.Renderer_CreateWindow = ImGui_Renderer_CreateWindow;
+			platform_io.Renderer_DestroyWindow = ImGui_Renderer_DestroyWindow;
+			platform_io.Renderer_SetWindowSize = ImGui_Renderer_SetWindowSize;
 
 			{
 				auto expand_range = [](std::vector<ivec2>& ranges, wchar_t ch) {
