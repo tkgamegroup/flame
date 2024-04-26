@@ -21,7 +21,7 @@ struct GraphicsApplication : Application
 
 	void create(std::string_view title, 
 		const uvec2& size = uvec2(1280, 720), 
-		WindowStyleFlags styles = WindowFrame | WindowResizable,
+		WindowStyleFlags styles = WindowStyleFrame | WindowStyleResizable,
 		bool _use_gui = false,
 		bool graphics_debug = false, const std::vector<std::pair<uint, uint>>& graphics_configs = {})
 	{

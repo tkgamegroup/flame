@@ -47,16 +47,24 @@ namespace flame
 
 	enum WindowStyleFlags
 	{
-		WindowNone = 0,
-		WindowFrame = 1 << 0,
-		WindowResizable = 1 << 1,
-		WindowFullscreen = 1 << 2,
-		WindowMaximized = 1 << 3,
-		WindowTopmost = 1 << 4,
-		WindowInvisible = 1 << 5
+		WindowStyleNone = 0,
+		WindowStyleFrame = 1 << 0,
+		WindowStyleResizable = 1 << 1,
+		WindowStyleFullscreen = 1 << 2,
+		WindowStyleMaximized = 1 << 3,
+		WindowStyleTopmost = 1 << 4,
+		WindowStyleInvisible = 1 << 5
 	};
 
 	inline WindowStyleFlags operator| (WindowStyleFlags a, WindowStyleFlags b) { return (WindowStyleFlags)((int)a | (int)b); }
+
+	enum WindowState
+	{
+		WindowNormal,
+		WindowMinimized,
+		WindowMaximized,
+		WindowHidden
+	};
 
 	enum CursorType
 	{

@@ -11,7 +11,7 @@ struct Application
 	virtual ~Application() {}
 
 	void create(std::string_view title, const uvec2& size = uvec2(1280, 720), 
-		WindowStyleFlags styles = WindowFrame | WindowResizable)
+		WindowStyleFlags styles = WindowStyleFrame | WindowStyleResizable)
 	{
 		printf("pid: %d\n", getpid());
 		process_events();

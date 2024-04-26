@@ -305,7 +305,7 @@ namespace flame
 		static WindowPtr main_window = nullptr;
 		static RenderpassPtr imgui_rp = nullptr;
 		static RenderpassPtr imgui_rp_load = nullptr;
-		static std::vector<std::unique_ptr<FramebufferT>> imgui_fbs;
+		static std::unordered_map<WindowPtr, std::vector<std::unique_ptr<FramebufferT>>> imgui_fbs;
 		static std::unique_ptr<ImageT> imgui_img_font;
 		static VertexBuffer imgui_buf_vtx;
 		static IndexBuffer<ushort> imgui_buf_idx;
@@ -317,7 +317,7 @@ namespace flame
 
 		static std::map<std::filesystem::path, std::pair<int, ImagePtr>> icons;
 
-		static void gui_create_fbs()
+		static void gui_create_fbs(WindowPtr w)
 		{
 			if (!imgui_rp)
 			{
@@ -328,9 +328,51 @@ namespace flame
 				defines.push_back("initia_layout=Attachment");
 				imgui_rp_load = Renderpass::get(L"flame\\shaders\\color.rp", defines);
 			}
-			imgui_fbs.clear();
-			for (auto& img : main_window->swapchain->images)
-				imgui_fbs.emplace_back(Framebuffer::create(imgui_rp, img->get_view()));
+			imgui_fbs[w].clear();
+			for (auto& img : w->swapchain->images)
+				imgui_fbs[w].emplace_back(Framebuffer::create(imgui_rp, img->get_view()));
+		}
+
+		static void gui_attach_window(WindowPtr w)
+		{
+			auto native_window = w->native;
+			gui_create_fbs(w);
+			native_window->resize_listeners.add([w](const vec2&) {
+				gui_create_fbs(w);
+			});
+			native_window->mouse_listeners.add([](MouseButton btn, bool down) {
+				ImGuiIO& io = ImGui::GetIO();
+				io.AddMouseButtonEvent(btn, down);
+			});
+			native_window->mouse_move_listeners.add([native_window](const ivec2& _pos) {
+				ImGuiIO& io = ImGui::GetIO();
+				auto pos = _pos;
+				if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+					pos = native_window->local_to_global(pos);
+				io.AddMousePosEvent(pos.x, pos.y);
+			});
+			native_window->mouse_scroll_listeners.add([](int scroll) {
+				ImGuiIO& io = ImGui::GetIO();
+				io.AddMouseWheelEvent(scroll / WHEEL_DELTA, 0.f);
+			});
+			native_window->key_listeners.add([](KeyboardKey key, bool down) {
+				ImGuiIO& io = ImGui::GetIO();
+				io.KeysDown[key] = down;
+				if (key == Keyboard_Ctrl)
+					io.KeyCtrl = down;
+				if (key == Keyboard_Shift)
+					io.KeyShift = down;
+				if (key == Keyboard_Alt)
+					io.KeyAlt = down;
+			});
+			native_window->char_listeners.add([](wchar_t ch) {
+				ImGuiIO& io = ImGui::GetIO();
+				io.AddInputCharacter(ch);
+			});
+			native_window->focus_listeners.add([](bool v) {
+				if (!v)
+					gui_clear_inputs();
+			});
 		}
 
 		void* gui_native_handle()
@@ -362,14 +404,15 @@ namespace flame
 		{
 #ifdef USE_IMGUI
 			auto nw = main_window->native;
+			auto sz = nw->cl_rect.size();
 
 			auto& io = ImGui::GetIO();
 			io.DeltaTime = delta_time;
-			io.DisplaySize = ImVec2(nw->size);
+			io.DisplaySize = ImVec2(sz);
 
 			ImGui::NewFrame();
 
-			if (nw->size.x > 0 && nw->size.y > 0)
+			if (sz.x > 0 && sz.y > 0)
 			{
 				gui_callbacks.call();
 
@@ -456,155 +499,184 @@ namespace flame
 		void gui_render(CommandBuffer* _cb)
 		{
 			auto cb = (CommandBufferPtr)_cb;
+			auto windows = Window::get_list(); // get window list here so that the newly created window will render next frame
 
 #ifdef USE_IMGUI
-			auto img_idx = main_window->swapchain->image_index;
-			auto curr_img = main_window->swapchain->images[img_idx].get();
-			auto curr_fb = imgui_fbs[img_idx].get();
 
 			ImGui::Render();
+			ImGui::UpdatePlatformWindows();
 
 			cb->begin_debug_label("Gui");
-			auto draw_data = ImGui::GetDrawData();
-			int fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
-			int fb_height = (int)(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
-			if (fb_width > 0 || fb_height > 0)
+
+			int global_vtx_offset = 0;
+			int global_idx_offset = 0;
+			ImagePtr last_tex = nullptr;
+
+			std::vector<ImGuiViewport*> viewports;
+			for (auto w : windows)
 			{
-				if (draw_data->TotalVtxCount > 0)
+				if (auto viewport = ImGui::FindViewportByPlatformHandle(w); viewport)
+					viewports.push_back(viewport);
+			}
+
+			for (auto viewport : viewports)
+			{
+				auto draw_data = viewport->DrawData;
+				int fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
+				int fb_height = (int)(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
+				if (fb_width > 0 && fb_height > 0)
 				{
-					for (int i = 0; i < draw_data->CmdListsCount; i++)
+					if (draw_data->TotalVtxCount > 0)
 					{
-						auto cmd_list = draw_data->CmdLists[i];
-						imgui_buf_vtx.add(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size);
-						imgui_buf_idx.add(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size);
-					}
-
-					imgui_buf_vtx.upload(cb);
-					imgui_buf_vtx.reset();
-					imgui_buf_idx.upload(cb);
-					imgui_buf_idx.reset();
-				}
-
-				for (int n = 0; n < draw_data->CmdListsCount; n++)
-				{
-					const auto cmd_list = draw_data->CmdLists[n];
-					for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
-					{
-						const auto pcmd = &cmd_list->CmdBuffer[cmd_i];
-						if (auto tex = (ImagePtr)pcmd->TextureId; tex)
-							cb->image_barrier(tex, { 0, tex->n_levels, 0, tex->n_layers }, graphics::ImageLayoutShaderReadOnly);
-					}
-				}
-
-				if (clear_fb)
-					cb->begin_renderpass(imgui_rp, curr_fb, &clear_col);
-				else
-				{
-					cb->image_barrier(curr_img, {}, ImageLayoutAttachment);
-					cb->begin_renderpass(imgui_rp_load, curr_fb);
-				}
-				cb->set_viewport(Rect(0, 0, fb_width, fb_height));
-
-				cb->bind_pipeline(imgui_pl);
-				cb->bind_vertex_buffer(imgui_buf_vtx.buf.get(), 0);
-				cb->bind_index_buffer(imgui_buf_idx.buf.get(), sizeof(ImDrawIdx) == 2 ? IndiceTypeUshort : IndiceTypeUint);
-				cb->bind_descriptor_set(0, imgui_ds.get());
-				auto scale = 2.f / vec2(draw_data->DisplaySize.x, draw_data->DisplaySize.y);
-				auto translate = vec2(-1.f) - draw_data->DisplayPos * scale;
-				vec2 view_range(0.f, 1.f);
-				float pc_data[6];
-				memcpy(pc_data + 0, &scale,			sizeof(vec2));
-				memcpy(pc_data + 2, &translate,		sizeof(vec2));
-				memcpy(pc_data + 4, &view_range,	sizeof(vec2));
-				cb->push_constant(0, sizeof(pc_data), pc_data);
-
-				ImVec2 clip_off = draw_data->DisplayPos;
-				ImVec2 clip_scale = draw_data->FramebufferScale;
-
-				int global_vtx_offset = 0;
-				int global_idx_offset = 0;
-				ImagePtr last_tex = nullptr;
-				ImGui::ImageViewArguments last_view_args;
-				for (int n = 0; n < draw_data->CmdListsCount; n++)
-				{
-					const auto cmd_list = draw_data->CmdLists[n];
-					for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
-					{
-						const auto pcmd = &cmd_list->CmdBuffer[cmd_i];
-
-						ImVec2 clip_min((pcmd->ClipRect.x - clip_off.x) * clip_scale.x, (pcmd->ClipRect.y - clip_off.y) * clip_scale.y);
-						ImVec2 clip_max((pcmd->ClipRect.z - clip_off.x) * clip_scale.x, (pcmd->ClipRect.w - clip_off.y) * clip_scale.y);
-
-						if (clip_min.x < 0.0f) { clip_min.x = 0.0f; }
-						if (clip_min.y < 0.0f) { clip_min.y = 0.0f; }
-						if (clip_max.x > fb_width) { clip_max.x = (float)fb_width; }
-						if (clip_max.y > fb_height) { clip_max.y = (float)fb_height; }
-						if (clip_max.x < clip_min.x || clip_max.y < clip_min.y)
-							continue;
-
-						ImGui::ImageViewArguments view_args;
-						memcpy(&view_args, &pcmd->UserCallbackData, sizeof(view_args));
-						if (last_tex != pcmd->TextureId || last_view_args != view_args)
+						for (int i = 0; i < draw_data->CmdListsCount; i++)
 						{
-							static auto sp_nearest = Sampler::get(FilterNearest, FilterNearest, false, AddressClampToEdge);
+							auto cmd_list = draw_data->CmdLists[i];
+							imgui_buf_vtx.add(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size);
+							imgui_buf_idx.add(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size);
+						}
+					}
 
-							auto tex = (ImagePtr)pcmd->TextureId;
-							if (tex)
+					for (int n = 0; n < draw_data->CmdListsCount; n++)
+					{
+						const auto cmd_list = draw_data->CmdLists[n];
+						for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+						{
+							const auto pcmd = &cmd_list->CmdBuffer[cmd_i];
+							if (auto tex = (ImagePtr)pcmd->TextureId; tex)
+								cb->image_barrier(tex, { 0, tex->n_levels, 0, tex->n_layers }, graphics::ImageLayoutShaderReadOnly);
+						}
+					}
+				}
+			}
+
+			imgui_buf_vtx.upload(cb);
+			imgui_buf_vtx.reset();
+			imgui_buf_idx.upload(cb);
+			imgui_buf_idx.reset();
+
+			for (auto viewport : viewports)
+			{
+				auto w = (WindowPtr)viewport->PlatformUserData;
+				auto sc = w->swapchain.get();
+				if (sc->images.empty())
+					continue;
+				auto img_idx = sc->image_index;
+				auto curr_img = sc->images[img_idx].get();
+				auto curr_fb = imgui_fbs[w][img_idx].get();
+
+				auto draw_data = viewport->DrawData;
+				int fb_width = (int)(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
+				int fb_height = (int)(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
+				if (fb_width > 0 && fb_height > 0)
+				{
+					if (clear_fb)
+						cb->begin_renderpass(imgui_rp, curr_fb, &clear_col);
+					else
+					{
+						cb->image_barrier(curr_img, {}, ImageLayoutAttachment);
+						cb->begin_renderpass(imgui_rp_load, curr_fb);
+					}
+					cb->set_viewport(Rect(0, 0, fb_width, fb_height));
+
+					cb->bind_pipeline(imgui_pl);
+					cb->bind_vertex_buffer(imgui_buf_vtx.buf.get(), 0);
+					cb->bind_index_buffer(imgui_buf_idx.buf.get(), sizeof(ImDrawIdx) == 2 ? IndiceTypeUshort : IndiceTypeUint);
+					cb->bind_descriptor_set(0, imgui_ds.get());
+					auto scale = 2.f / vec2(draw_data->DisplaySize.x, draw_data->DisplaySize.y);
+					auto translate = vec2(-1.f) - draw_data->DisplayPos * scale;
+					vec2 view_range(0.f, 1.f);
+					float pc_data[6];
+					memcpy(pc_data + 0, &scale, sizeof(vec2));
+					memcpy(pc_data + 2, &translate, sizeof(vec2));
+					memcpy(pc_data + 4, &view_range, sizeof(vec2));
+					cb->push_constant(0, sizeof(pc_data), pc_data);
+
+					ImVec2 clip_off = draw_data->DisplayPos;
+					ImVec2 clip_scale = draw_data->FramebufferScale;
+
+					ImGui::ImageViewArguments last_view_args;
+					for (int n = 0; n < draw_data->CmdListsCount; n++)
+					{
+						const auto cmd_list = draw_data->CmdLists[n];
+						for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+						{
+							const auto pcmd = &cmd_list->CmdBuffer[cmd_i];
+
+							ImVec2 clip_min((pcmd->ClipRect.x - clip_off.x) * clip_scale.x, (pcmd->ClipRect.y - clip_off.y) * clip_scale.y);
+							ImVec2 clip_max((pcmd->ClipRect.z - clip_off.x) * clip_scale.x, (pcmd->ClipRect.w - clip_off.y) * clip_scale.y);
+
+							if (clip_min.x < 0.0f) { clip_min.x = 0.0f; }
+							if (clip_min.y < 0.0f) { clip_min.y = 0.0f; }
+							if (clip_max.x > fb_width) { clip_max.x = (float)fb_width; }
+							if (clip_max.y > fb_height) { clip_max.y = (float)fb_height; }
+							if (clip_max.x < clip_min.x || clip_max.y < clip_min.y)
+								continue;
+
+							ImGui::ImageViewArguments view_args;
+							memcpy(&view_args, &pcmd->UserCallbackData, sizeof(view_args));
+							if (last_tex != pcmd->TextureId || last_view_args != view_args)
 							{
-								ImageSwizzle swizzle;
-								SamplerPtr sampler;
-								switch (view_args.swizzle)
-								{
-								case ImGui::ImageViewR: swizzle = { SwizzleR, SwizzleZero, SwizzleZero, SwizzleOne }; break;
-								case ImGui::ImageViewG: swizzle = { SwizzleZero, SwizzleG, SwizzleZero, SwizzleOne }; break;
-								case ImGui::ImageViewB: swizzle = { SwizzleZero, SwizzleZero, SwizzleB, SwizzleOne }; break;
-								case ImGui::ImageViewA: swizzle = { SwizzleA, SwizzleA, SwizzleA, SwizzleOne }; break;
-								case ImGui::ImageViewRGB: swizzle = { SwizzleR, SwizzleG, SwizzleB, SwizzleOne }; break;
-								case ImGui::ImageViewRRR: swizzle = { SwizzleR, SwizzleR, SwizzleR, SwizzleOne }; break;
-								case ImGui::ImageViewGGG: swizzle = { SwizzleG, SwizzleG, SwizzleG, SwizzleOne }; break;
-								case ImGui::ImageViewBBB: swizzle = { SwizzleB, SwizzleB, SwizzleB, SwizzleOne }; break;
-								case ImGui::ImageViewAAA: swizzle = { SwizzleA, SwizzleA, SwizzleA, SwizzleOne }; break;
-								}
-								switch (view_args.sampler)
-								{
-								case ImGui::ImageViewLinear:
-									sampler = nullptr;
-									break;
-								case ImGui::ImageViewNearest:
-									sampler = sp_nearest;
-									break;
-								}
+								static auto sp_nearest = Sampler::get(FilterNearest, FilterNearest, false, AddressClampToEdge);
 
-								cb->bind_descriptor_set(0, tex->get_shader_read_src(view_args.level, view_args.layer, sampler, swizzle));
-								
-								if (!(view_args.range_min == 0 && (view_args.range_max == 0 || view_args.range_max == 15360)))
+								auto tex = (ImagePtr)pcmd->TextureId;
+								if (tex)
 								{
-									vec2 range;
-									range.x = unpackHalf1x16(view_args.range_min);
-									range.y = unpackHalf1x16(view_args.range_max);
-									cb->push_constant(sizeof(float) * 4, sizeof(range), &range);
+									ImageSwizzle swizzle;
+									SamplerPtr sampler;
+									switch (view_args.swizzle)
+									{
+									case ImGui::ImageViewR: swizzle = { SwizzleR, SwizzleZero, SwizzleZero, SwizzleOne }; break;
+									case ImGui::ImageViewG: swizzle = { SwizzleZero, SwizzleG, SwizzleZero, SwizzleOne }; break;
+									case ImGui::ImageViewB: swizzle = { SwizzleZero, SwizzleZero, SwizzleB, SwizzleOne }; break;
+									case ImGui::ImageViewA: swizzle = { SwizzleA, SwizzleA, SwizzleA, SwizzleOne }; break;
+									case ImGui::ImageViewRGB: swizzle = { SwizzleR, SwizzleG, SwizzleB, SwizzleOne }; break;
+									case ImGui::ImageViewRRR: swizzle = { SwizzleR, SwizzleR, SwizzleR, SwizzleOne }; break;
+									case ImGui::ImageViewGGG: swizzle = { SwizzleG, SwizzleG, SwizzleG, SwizzleOne }; break;
+									case ImGui::ImageViewBBB: swizzle = { SwizzleB, SwizzleB, SwizzleB, SwizzleOne }; break;
+									case ImGui::ImageViewAAA: swizzle = { SwizzleA, SwizzleA, SwizzleA, SwizzleOne }; break;
+									}
+									switch (view_args.sampler)
+									{
+									case ImGui::ImageViewLinear:
+										sampler = nullptr;
+										break;
+									case ImGui::ImageViewNearest:
+										sampler = sp_nearest;
+										break;
+									}
+
+									cb->bind_descriptor_set(0, tex->get_shader_read_src(view_args.level, view_args.layer, sampler, swizzle));
+
+									if (!(view_args.range_min == 0 && (view_args.range_max == 0 || view_args.range_max == 15360)))
+									{
+										vec2 range;
+										range.x = unpackHalf1x16(view_args.range_min);
+										range.y = unpackHalf1x16(view_args.range_max);
+										cb->push_constant(sizeof(float) * 4, sizeof(range), &range);
+									}
+									else
+										cb->push_constant_t(vec2(0.f, 1.f), sizeof(float) * 4);
 								}
 								else
+								{
+									cb->bind_descriptor_set(0, imgui_ds.get());
 									cb->push_constant_t(vec2(0.f, 1.f), sizeof(float) * 4);
+								}
+								last_tex = tex;
+								last_view_args = view_args;
 							}
-							else
-							{
-								cb->bind_descriptor_set(0, imgui_ds.get());
-								cb->push_constant_t(vec2(0.f, 1.f), sizeof(float) * 4);
-							}
-							last_tex = tex;
-							last_view_args = view_args;
+
+							cb->set_scissor(Rect(clip_min.x, clip_min.y, clip_max.x, clip_max.y));
+							cb->draw_indexed(pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset, 1, 0);
 						}
-
-						cb->set_scissor(Rect(clip_min.x, clip_min.y, clip_max.x, clip_max.y));
-						cb->draw_indexed(pcmd->ElemCount, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset, 1, 0);
+						global_idx_offset += cmd_list->IdxBuffer.Size;
+						global_vtx_offset += cmd_list->VtxBuffer.Size;
 					}
-					global_idx_offset += cmd_list->IdxBuffer.Size;
-					global_vtx_offset += cmd_list->VtxBuffer.Size;
-				}
 
-				cb->end_renderpass();
+					cb->end_renderpass();
+				}
 			}
+
 			cb->end_debug_label();
 #endif
 		}
@@ -613,22 +685,85 @@ namespace flame
 
 		static void ImGui_CreateWindow(ImGuiViewport* viewport)
 		{
-			auto styles = WindowInvisible;
+			auto styles = WindowStyleInvisible;
 			if (!(viewport->Flags & ImGuiViewportFlags_NoDecoration))
-				styles = styles | WindowFrame;
+				styles = styles | WindowStyleFrame;
 			if (viewport->Flags & ImGuiViewportFlags_TopMost)
-				styles = styles | WindowTopmost;
+				styles = styles | WindowStyleTopmost;
 			auto native_window = NativeWindow::create("", (vec2)viewport->Size, styles);
 			auto window = graphics::Window::create(native_window);
 			viewport->PlatformUserData = window;
 			viewport->PlatformHandle = window;
 			viewport->PlatformHandleRaw = native_window->get_hwnd();
+			viewport->RendererUserData = window;
+
+			gui_attach_window(window);
 		}
 
 		static void ImGui_DestroyWindow(ImGuiViewport* viewport)
 		{
 			auto window = (WindowPtr)viewport->PlatformUserData;
-			window->native->close();
+			add_event([window]() {
+				window->native->close();
+				return false;
+			});
+			viewport->PlatformUserData = nullptr;
+			viewport->PlatformHandle = nullptr;
+			viewport->RendererUserData = nullptr;
+		}
+
+		static void ImGui_ShowWindow(ImGuiViewport* viewport)
+		{
+			auto window = (WindowPtr)viewport->PlatformUserData;
+			window->native->show(WindowNormal);
+		}
+
+		static ImVec2 ImGui_GetWindowPos(ImGuiViewport* viewport)
+		{
+			auto window = (WindowPtr)viewport->PlatformUserData;
+			return window->native->cl_rect.a;
+		}
+
+		static void ImGui_SetWindowPos(ImGuiViewport* viewport, ImVec2 pos)
+		{
+			auto window = (WindowPtr)viewport->PlatformUserData;
+			window->native->set_pos((vec2)pos);
+		}
+
+		static ImVec2 ImGui_GetWindowSize(ImGuiViewport* viewport)
+		{
+			auto window = (WindowPtr)viewport->PlatformUserData;
+			return (vec2)window->native->size;
+		}
+
+		static void ImGui_SetWindowSize(ImGuiViewport* viewport, ImVec2 size)
+		{
+			auto window = (WindowPtr)viewport->PlatformUserData;
+			window->native->set_size((vec2)size);
+		}
+
+		static bool ImGui_GetWindowFocus(ImGuiViewport* viewport)
+		{
+			auto window = (WindowPtr)viewport->PlatformUserData;
+			return window->native->focused;
+		}
+
+		static void ImGui_SetWindowFocus(ImGuiViewport* viewport)
+		{
+			auto window = (WindowPtr)viewport->PlatformUserData;
+			window->native->set_focus();
+		}
+
+		static bool ImGui_GetWindowMinimized(ImGuiViewport* viewport)
+		{
+			auto window = (WindowPtr)viewport->PlatformUserData;
+			return window->native->state == WindowMinimized;
+		}
+
+		static void ImGui_SetWindowTitle(ImGuiViewport* viewport, const char* title)
+		{
+			auto window = (WindowPtr)viewport->PlatformUserData;
+			window->native->set_title(title);
 		}
 
 		static void ImGui_Renderer_CreateWindow(ImGuiViewport* viewport)
@@ -652,42 +787,7 @@ namespace flame
 			assert(!windows.empty());
 			main_window = windows.front();
 
-			gui_create_fbs();
-
-			auto native = main_window->native;
-			native->mouse_listeners.add([](MouseButton btn, bool down) {
-				ImGuiIO& io = ImGui::GetIO();
-				io.MouseDown[btn] = down;
-			});
-			native->mouse_move_listeners.add([](const ivec2& pos) {
-				ImGuiIO& io = ImGui::GetIO();
-				io.MousePos = ImVec2(pos.x, pos.y);
-			});
-			native->mouse_scroll_listeners.add([](int scroll) {
-				ImGuiIO& io = ImGui::GetIO();
-				io.MouseWheel = scroll;
-			});
-			native->key_listeners.add([](KeyboardKey key, bool down) {
-				ImGuiIO& io = ImGui::GetIO();
-				io.KeysDown[key] = down;
-				if (key == Keyboard_Ctrl)
-					io.KeyCtrl = down;
-				if (key == Keyboard_Shift)
-					io.KeyShift = down;
-				if (key == Keyboard_Alt)
-					io.KeyAlt = down;
-			});
-			native->char_listeners.add([](wchar_t ch) {
-				ImGuiIO& io = ImGui::GetIO();
-				io.AddInputCharacter(ch);
-			});
-			native->resize_listeners.add([](const vec2&) {
-				gui_create_fbs();
-			});
-			native->focus_listeners.add([](bool v) {
-				if (!v)
-					gui_clear_inputs();
-			});
+			gui_attach_window(main_window);
 
 			imgui_pl = GraphicsPipeline::get(L"flame\\shaders\\imgui.pipeline", { "rp=" + str(imgui_rp) });
 			imgui_buf_vtx.create(sizeof(ImDrawVert), 360000);
@@ -722,6 +822,7 @@ namespace flame
 			io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
 			io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
 			io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
+			io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
 
 			io.KeyMap[ImGuiKey_Tab] = Keyboard_Tab;
 			io.KeyMap[ImGuiKey_LeftArrow] = Keyboard_Left;
@@ -748,18 +849,37 @@ namespace flame
 			ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
 			platform_io.Platform_CreateWindow = ImGui_CreateWindow;
 			platform_io.Platform_DestroyWindow = ImGui_DestroyWindow;
-			//platform_io.Platform_ShowWindow = ;
-			//platform_io.Platform_SetWindowPos = ;
-			//platform_io.Platform_GetWindowPos = ;
-			//platform_io.Platform_SetWindowSize = ;
-			//platform_io.Platform_GetWindowSize = ;
-			//platform_io.Platform_SetWindowFocus = ;
-			//platform_io.Platform_GetWindowFocus = ;
-			//platform_io.Platform_GetWindowMinimized = ;
-			//platform_io.Platform_SetWindowTitle = ;
+			platform_io.Platform_ShowWindow = ImGui_ShowWindow;
+			platform_io.Platform_GetWindowPos = ImGui_GetWindowPos;
+			platform_io.Platform_SetWindowPos = ImGui_SetWindowPos;
+			platform_io.Platform_GetWindowSize = ImGui_GetWindowSize;
+			platform_io.Platform_SetWindowSize = ImGui_SetWindowSize;
+			platform_io.Platform_GetWindowFocus = ImGui_GetWindowFocus;
+			platform_io.Platform_SetWindowFocus = ImGui_SetWindowFocus;
+			platform_io.Platform_GetWindowMinimized = ImGui_GetWindowMinimized;
+			platform_io.Platform_SetWindowTitle = ImGui_SetWindowTitle;
 			platform_io.Renderer_CreateWindow = ImGui_Renderer_CreateWindow;
 			platform_io.Renderer_DestroyWindow = ImGui_Renderer_DestroyWindow;
 			platform_io.Renderer_SetWindowSize = ImGui_Renderer_SetWindowSize;
+
+			ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+			main_viewport->PlatformUserData = main_window;
+			main_viewport->PlatformHandle = main_window;
+			main_viewport->PlatformHandleRaw = main_window->native;
+			main_viewport->RendererUserData = main_window;
+
+			platform_io.Monitors.resize(0);
+			for (auto& src : get_monitors())
+			{
+				ImGuiPlatformMonitor dst;
+				dst.MainPos = ImVec2(src.main_pos);
+				dst.MainSize = ImVec2(src.main_size);
+				dst.WorkPos = ImVec2(src.work_pos);
+				dst.WorkSize = ImVec2(src.work_size);
+				dst.DpiScale = src.dpi_scale;
+				dst.PlatformHandle = src.handle;
+				platform_io.Monitors.push_back(dst);
+			}
 
 			{
 				auto expand_range = [](std::vector<ivec2>& ranges, wchar_t ch) {

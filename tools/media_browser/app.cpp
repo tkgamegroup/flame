@@ -53,7 +53,7 @@ File& ShowItem::file() const
 
 void App::init()
 {
-	app.create(true, "Media Browser", uvec2(1280, 720), WindowFrame | WindowResizable | WindowMaximized);
+	app.create(true, "Media Browser", uvec2(1280, 720), WindowStyleFrame | WindowStyleResizable | WindowStyleMaximized);
 	app.always_render = false;
 
 	graphics::gui_callbacks.add([this]() {

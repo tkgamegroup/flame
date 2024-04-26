@@ -698,7 +698,7 @@ bool ModelPreviewer::update(uint changed_frame, bool show_image)
 
 void App::init()
 {
-	create("Editor", uvec2(800, 600), WindowFrame | WindowResizable | WindowMaximized, true, graphics_debug, graphics_configs);
+	create("Editor", uvec2(800, 600), WindowStyleFrame | WindowStyleResizable | WindowStyleMaximized, true, graphics_debug, graphics_configs);
 	graphics::gui_set_clear(true, vec4(0.f));
 	world->update_components = false;
 	input->transfer_events = false;

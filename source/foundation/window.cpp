@@ -8,11 +8,12 @@ namespace flame
 
 	static LRESULT CALLBACK wnd_proc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
-		auto w = (NativeWindowPrivate*)GetWindowLongPtr(hWnd, 0);
-		if (w)
+		if (auto w = (NativeWindowPrivate*)GetWindowLongPtr(hWnd, 0); w)
 		{
 			switch (message)
 			{
+			case WM_CREATE:
+				return true;
 			case WM_KEYDOWN:
 			case WM_SYSKEYDOWN:
 				if (auto v = vk_code_to_key(wParam); v != KeyboardKey_Count)
@@ -74,24 +75,35 @@ namespace flame
 				w->has_input = true;
 				w->mouse_scroll_listeners.call(GET_Y_LPARAM(wParam) > 0 ? 1 : -1);
 				return true;
+			case WM_CLOSE:
+
+				return true;
 			case WM_DESTROY:
 				w->has_input = true;
 				w->dead = true;
 				return true;
-			case WM_SIZE:
-				w->has_input = true;
-				w->size = uvec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-				w->resize_listeners.call(w->size);
-				return true;
-			case WM_SETFOCUS:
-				w->focus_listeners.call(true);
-				return true;
-			case WM_KILLFOCUS:
-				w->focus_listeners.call(false);
-				return true;
 			case WM_MOVE:
 				w->has_input = true;
 				w->pos = ivec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+				w->adjust_rect();
+				return true;
+			case WM_SIZE:
+				w->has_input = true;
+				if (wParam == SIZE_MINIMIZED)
+					w->state = WindowMinimized;
+				if (wParam == SIZE_MAXIMIZED)
+					w->state = WindowMaximized;
+				w->size = uvec2(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+				w->adjust_rect();
+				w->resize_listeners.call(w->size);
+				return true;
+			case WM_SETFOCUS:
+				w->focused = true;
+				w->focus_listeners.call(true);
+				return true;
+			case WM_KILLFOCUS:
+				w->focused = false;
+				w->focus_listeners.call(false);
 				return true;
 			case WM_SETCURSOR:
 				if (LOWORD(lParam) == HTCLIENT)
@@ -117,27 +129,64 @@ namespace flame
 		});
 	}
 
+	void NativeWindowPrivate::adjust_rect()
+	{
+		RECT rect;
+		GetClientRect(hWnd, &rect);
+		cl_rect.a = local_to_global(ivec2(rect.left, rect.top));
+		cl_rect.b = local_to_global(ivec2(rect.right, rect.bottom));
+	}
+
 	void NativeWindowPrivate::close()
 	{
 		DestroyWindow(hWnd);
 		dead = true;
 	}
 
-	void NativeWindowPrivate::set_visible(bool v)
+	void NativeWindowPrivate::show(WindowState state)
 	{
-		ShowWindow(hWnd, v ? SW_NORMAL : SW_HIDE);
+		auto cmd = SW_NORMAL;
+		switch (state)
+		{
+		case WindowMinimized:
+			cmd = SW_SHOWMINIMIZED;
+			break;
+		case WindowMaximized:
+			cmd = SW_SHOWMAXIMIZED;
+			break;
+		case WindowHidden:
+			cmd = SW_HIDE;
+			break;
+		}
+		ShowWindow(hWnd, cmd);
 	}
 
 	void NativeWindowPrivate::set_pos(const ivec2& _pos)
 	{
 		pos = _pos;
 		SetWindowPos(hWnd, HWND_TOP, pos.x, pos.y, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+		adjust_rect();
+	}
+
+	void NativeWindowPrivate::set_focus()
+	{
+		SetFocus(hWnd);
 	}
 
 	void NativeWindowPrivate::set_size(const uvec2& _size)
 	{
 		size = _size;
 		SetWindowPos(hWnd, HWND_TOP, 0, 0, size.x, size.y, SWP_NOMOVE | SWP_NOZORDER);
+		adjust_rect();
+	}
+
+	ivec2 NativeWindowPrivate::local_to_global(const ivec2& p)
+	{
+		POINT pt;
+		pt.x = p.x;
+		pt.y = p.y;
+		ClientToScreen(hWnd, &pt);
+		return ivec2(pt.x, pt.y);
 	}
 
 	ivec2 NativeWindowPrivate::global_to_local(const ivec2& p)
@@ -197,34 +246,38 @@ namespace flame
 				initialized = true;
 			}
 
-			assert(!(styles & WindowFullscreen) || (!(styles & WindowFrame) && !(styles & WindowResizable)));
+			assert(!(styles & WindowStyleFullscreen) || (!(styles & WindowStyleFrame) && !(styles & WindowStyleResizable)));
 
 			auto ret = new NativeWindowPrivate;
 			ret->title = title;
 			ret->styles = styles;
+			ret->state = WindowNormal;
 
 			uvec2 final_size;
 			auto screen_size = get_screen_size();
 
 			auto win32_styles = 0;
-			if (!(styles & WindowInvisible))
+			if (!(styles & WindowStyleInvisible))
 				win32_styles |= WS_VISIBLE;
-			if (styles == 0)
-				win32_styles |= WS_POPUP | WS_BORDER;
 			else
+				ret->state = WindowHidden;
+
+			if (styles & WindowStyleFrame)
+				win32_styles |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+			else
+				win32_styles |= WS_POPUP;
+			if (styles & WindowStyleResizable)
+				win32_styles |= WS_THICKFRAME | WS_MAXIMIZEBOX;
+			if (styles & WindowStyleFullscreen)
+				final_size = screen_size;
+			if (styles & WindowStyleMaximized)
 			{
-				if (styles & WindowFrame)
-					win32_styles |= WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
-				if (styles & WindowResizable)
-					win32_styles |= WS_THICKFRAME | WS_MAXIMIZEBOX;
-				if (styles & WindowFullscreen)
-					final_size = screen_size;
-				if (styles & WindowMaximized)
-					win32_styles |= WS_MAXIMIZE;
+				win32_styles |= WS_MAXIMIZE;
+				ret->state = WindowMaximized;
 			}
 
 			auto win32_ex_styles = 0L;
-			if (styles & WindowTopmost)
+			if (styles & WindowStyleTopmost)
 				win32_ex_styles |= WS_EX_TOPMOST;
 
 			{
@@ -235,12 +288,11 @@ namespace flame
 			ret->pos = ivec2(screen_size - final_size) / 2;
 			ret->hWnd = CreateWindowExA(win32_ex_styles, "flame_wnd", title.data(), win32_styles,
 				ret->pos.x, ret->pos.y, final_size.x, final_size.y, parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
+			ret->size = uvec2(1);
 			//assert(IsWindowUnicode(ret->hWnd));
-			{
-				RECT rect;
-				GetClientRect(ret->hWnd, &rect);
-				ret->size = uvec2(rect.right - rect.left, rect.bottom - rect.top);
-			}
+			if (styles & WindowStyleMaximized)
+				ret->pos = ivec2(0);
+			ret->adjust_rect();
 
 			SetWindowLongPtr(ret->hWnd, 0, (LONG_PTR)ret);
 
@@ -275,4 +327,35 @@ namespace flame
 		}
 	}NativeWindow_list;
 	NativeWindow::List& NativeWindow::list = NativeWindow_list;
+
+	std::vector<MonitorInfo> get_monitors()
+	{
+		std::vector<MonitorInfo> ret;
+
+		EnumDisplayMonitors(nullptr, nullptr, [](HMONITOR hmonitor, HDC, LPRECT, LPARAM pret)->BOOL {
+			auto& ret = *(std::vector<MonitorInfo>*)pret;
+
+			MONITORINFO info = {};
+			info.cbSize = sizeof(MONITORINFO);
+			if (!GetMonitorInfo(hmonitor, &info))
+				return TRUE;
+
+			MonitorInfo monitor;
+			monitor.main_pos = ivec2(info.rcMonitor.left, info.rcMonitor.top);
+			monitor.main_size = ivec2(info.rcMonitor.right - info.rcMonitor.left, info.rcMonitor.bottom - info.rcMonitor.top);
+			monitor.work_pos = ivec2(info.rcWork.left, info.rcWork.top);
+			monitor.work_size = ivec2(info.rcWork.right - info.rcWork.left, info.rcWork.bottom - info.rcWork.top);
+			monitor.dpi_scale = 1.f; // TODO
+			monitor.is_primary = (info.dwFlags & MONITORINFOF_PRIMARY) != 0;
+			monitor.handle = (void*)hmonitor;
+
+			if (monitor.is_primary)
+				ret.insert(ret.begin(), monitor);
+			else
+				ret.push_back(monitor);
+			return true;
+		}, (LPARAM)&ret);
+
+		return ret;
+	}
 }

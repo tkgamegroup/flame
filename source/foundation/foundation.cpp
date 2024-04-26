@@ -358,8 +358,7 @@ namespace flame
 			}
 		}
 
-		auto windows = NativeWindow::list();
-		if (windows.empty())
+		if (NativeWindow::list().empty())
 			return 1;
 
 		last_time = performance_counter();
@@ -372,6 +371,10 @@ namespace flame
 				TranslateMessage(&msg);
 				DispatchMessageW(&msg);
 			}
+
+			process_events();
+
+			auto windows = NativeWindow::list();
 
 			for (auto it = windows.begin(); it != windows.end(); )
 			{
@@ -390,8 +393,6 @@ namespace flame
 				app_exiting = true;
 				return 0;
 			}
-
-			process_events();
 
 			if (!callback())
 			{

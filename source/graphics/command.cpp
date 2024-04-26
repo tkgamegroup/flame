@@ -701,6 +701,10 @@ namespace flame
 			vk_wait_smps.resize(wait_semaphores.size());
 			for (auto i = 0; i < vk_wait_smps.size(); i++)
 				vk_wait_smps[i] = wait_semaphores[i]->vk_semaphore;
+			std::vector<VkPipelineStageFlags> vk_wait_stages;
+			vk_wait_stages.resize(wait_semaphores.size());
+			for (auto i = 0; i < vk_wait_stages.size(); i++)
+				vk_wait_stages[i] = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
 			std::vector<VkSemaphore> vk_signal_smps;
 			vk_signal_smps.resize(signal_semaphores.size());
@@ -709,10 +713,9 @@ namespace flame
 
 			VkSubmitInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-			info.pWaitDstStageMask = &wait_stage;
 			info.waitSemaphoreCount = vk_wait_smps.size();
 			info.pWaitSemaphores = vk_wait_smps.data();
+			info.pWaitDstStageMask = vk_wait_stages.data();
 			info.commandBufferCount = commandbuffers.size();
 			info.pCommandBuffers = vk_cbs.data();
 			info.signalSemaphoreCount = vk_signal_smps.size();
