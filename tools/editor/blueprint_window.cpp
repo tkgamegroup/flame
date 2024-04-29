@@ -3645,7 +3645,13 @@ void BlueprintView::on_draw()
 									g->name_hash == "start"_h || 
 									g->name_hash == "update"_h)
 									continue;
-								if (show_node_template(g->name, {}, {}, slot_name))
+								std::vector<BlueprintSlotDesc> inputs;
+								std::vector<BlueprintSlotDesc> outputs;
+								for (auto& i : g->inputs)
+									inputs.push_back(BlueprintSlotDesc{.name = i.name, .name_hash = i.name_hash, .flags = BlueprintSlotFlagInput, .allowed_types = {i.type} });
+								for (auto& o : g->outputs)
+									outputs.push_back(BlueprintSlotDesc{ .name = o.name, .name_hash = o.name_hash, .flags = BlueprintSlotFlagOutput, .allowed_types = {o.type} });
+								if (show_node_template(g->name, inputs, outputs, slot_name))
 								{
 									if (ImGui::Selectable(g->name.c_str()))
 									{
@@ -3673,7 +3679,13 @@ void BlueprintView::on_draw()
 											if (g->name_hash == "start"_h ||
 												g->name_hash == "update"_h)
 												continue;
-											if (show_node_template(bp->name + '.' + g->name, {}, {}, slot_name))
+											std::vector<BlueprintSlotDesc> inputs;
+											std::vector<BlueprintSlotDesc> outputs;
+											for (auto& i : g->inputs)
+												inputs.push_back(BlueprintSlotDesc{ .name = i.name, .name_hash = i.name_hash, .flags = BlueprintSlotFlagInput, .allowed_types = {i.type} });
+											for (auto& o : g->outputs)
+												outputs.push_back(BlueprintSlotDesc{ .name = o.name, .name_hash = o.name_hash, .flags = BlueprintSlotFlagOutput, .allowed_types = {o.type} });
+											if (show_node_template(bp->name + '.' + g->name, inputs, outputs, slot_name))
 											{
 												if (ImGui::Selectable(g->name.c_str()))
 												{

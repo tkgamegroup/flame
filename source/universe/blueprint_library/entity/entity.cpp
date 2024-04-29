@@ -929,6 +929,10 @@ namespace flame
 				{
 					.name = "Snap NavMesh",
 					.allowed_types = { TypeInfo::get<bool>() }
+				},
+				{
+					.name = "Class",
+					.allowed_types = { TypeInfo::get<std::filesystem::path>() }
 				}
 			},
 			{
@@ -986,7 +990,27 @@ namespace flame
 									node->set_pos(pos);
 							}
 							if (e)
+							{
+								auto& path = *(std::filesystem::path*)inputs[4].data;
+								if (!path.empty())
+								{
+									path = Path::get(path);
+									if (std::filesystem::exists(path))
+									{
+										if (auto ins = e->get_component<cBpInstance>(); ins)
+											ins->set_bp_name(path);
+										else
+										{
+											ins = e->add_component<cBpInstance>();
+											ins->set_bp_name(path);
+										}
+									}
+									else
+										*(BlueprintInstancePtr*)outputs[0].data = nullptr;
+								}
+
 								parent->add_child(e);
+							}
 						}
 					}
 					else

@@ -4620,6 +4620,30 @@ namespace flame
 				it++;
 		}
 
+		// create new groups
+		for (auto& src_g : blueprint->groups)
+		{
+			auto found = false;
+			for (auto& g : groups)
+			{
+				if (g.first == src_g->name_hash)
+				{
+					found = true;
+					break;
+				}
+			}
+			if (found)
+				continue;
+
+			auto& g = groups.emplace(src_g->name_hash, BlueprintInstanceGroup()).first->second;
+			g.instance = this;
+			g.original = src_g.get();
+			g.name = src_g->name_hash;
+			create_group_structure(src_g.get(), g, g.slot_datas);
+			g.structure_updated_frame = frame;
+			g.data_updated_frame = frame;
+		}
+
 		// update existing groups
 		for (auto& g : groups)
 		{
@@ -4681,30 +4705,6 @@ namespace flame
 				}
 				g.second.data_updated_frame = frame;
 			}
-		}
-
-		// create new groups
-		for (auto& src_g : blueprint->groups)
-		{
-			auto found = false;
-			for (auto& g : groups)
-			{
-				if (g.first == src_g->name_hash)
-				{
-					found = true;
-					break;
-				}
-			}
-			if (found)
-				continue;
-
-			auto& g = groups.emplace(src_g->name_hash, BlueprintInstanceGroup()).first->second;
-			g.instance = this;
-			g.original = src_g.get();
-			g.name = src_g->name_hash;
-			create_group_structure(src_g.get(), g, g.slot_datas);
-			g.structure_updated_frame = frame;
-			g.data_updated_frame = frame;
 		}
 
 		for (auto& g : groups)
