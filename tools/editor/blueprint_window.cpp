@@ -530,8 +530,7 @@ void BlueprintView::navigate_to_node(BlueprintNodePtr n)
 {
 	if (n->group->name_hash != group_name_hash)
 	{
-		group_name = n->group->name;
-		group_name_hash = n->group->name_hash;
+		next_group_name = n->group->name_hash;
 		add_event([this, n]() { 
 			navigate_to_node(n);
 			return false;
@@ -865,82 +864,7 @@ void BlueprintView::on_draw()
 
 		auto group = blueprint->find_group(group_name_hash);
 		if (!group)
-		{
-			group = blueprint->groups[0].get();
-			group_name = group->name;
-			group_name_hash = group->name_hash;
-		}
-
-		ImGui::SameLine(0.f, 50);
-		if (ImGui::BeginCombo("##group_dropdown", "", ImGuiComboFlags_NoPreview))
-		{
-			for (auto& g : blueprint->groups)
-			{
-				if (ImGui::Selectable(g->name.c_str()))
-				{
-					group = g.get();
-					group_name = group->name;
-					group_name_hash = group->name_hash;
-					ax_editor->ClearSelection();
-				}
-			}
-			ImGui::EndCombo();
-		}
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100.f);
-		ImGui::InputText("##group", &group_name);
-		if (ImGui::IsItemDeactivatedAfterEdit())
-		{
-			blueprint->alter_group(group_name_hash, group_name);
-			group_name_hash = group->name_hash;
-			ax_editor->ClearSelection();
-			unsaved = true;
-
-			if (blueprint_instance->built_frame < blueprint->dirty_frame)
-				blueprint_instance->build();
-		}
-		ImGui::SameLine();
-		if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
-		{
-			blueprint->remove_group(group);
-			if (!blueprint->groups.empty())
-			{
-				group = blueprint->groups.back().get();
-				group_name = group->name;
-				group_name_hash = group->name_hash;
-			}
-			else
-			{
-				group_name = "";
-				group_name_hash = 0;
-			}
-			ax_editor->ClearSelection();
-			unsaved = true;
-
-			if (blueprint_instance->built_frame < blueprint->dirty_frame)
-				blueprint_instance->build();
-
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("New Group"))
-		{
-			auto name = get_unique_name("new_group", [&](const std::string& name) {
-				for (auto& g : blueprint->groups)
-				{
-					if (g->name == name)
-						return true;
-				}
-				return false;
-			});
-			group = blueprint->add_group(name);
-			group_name = group->name;
-			group_name_hash = group->name_hash;
-			ax_editor->ClearSelection();
-			unsaved = true;
-
-			if (blueprint_instance->built_frame < blueprint->dirty_frame)
-				blueprint_instance->build();
-		}
+			next_group_name = blueprint->groups[0]->name_hash;
 
 		auto debugging_group = blueprint_window.debugger->debugging &&
 			blueprint_window.debugger->debugging->instance->blueprint == blueprint &&
@@ -1095,7 +1019,11 @@ void BlueprintView::on_draw()
 			{
 				if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
 				{
-					blueprint->set_super(Path::reverse(std::wstring((wchar_t*)payload->Data)));
+					auto path = Path::reverse(std::wstring((wchar_t*)payload->Data));
+					add_event([this, path]() {
+						blueprint->set_super(path);
+						return false;
+					});
 					unsaved = true;
 				}
 				ImGui::EndDragDropTarget();
@@ -1106,12 +1034,12 @@ void BlueprintView::on_draw()
 			ImGui::SameLine();
 			if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
 			{
-				blueprint->set_super(L"");
+				add_event([this]() {
+					blueprint->set_super(L"");
+					return false;
+				});
 				unsaved = true;
 			}
-
-			if (blueprint_instance->built_frame < blueprint->dirty_frame)
-				blueprint_instance->build();
 
 			if (ImGui::CollapsingHeader("Enums:"))
 			{
@@ -1713,21 +1641,144 @@ void BlueprintView::on_draw()
 			}
 			if (ImGui::CollapsingHeader("Group Variables:"))
 			{
-				ImGui::PushID("group_variables");
-				static int selected_variable = -1;
-				ImGui::SetNextItemWidth(150.f);
-				if (ImGui::BeginListBox("##variables"))
+				if (ImGui::BeginTable("group_variables", 5, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollX | ImGuiTableFlags_NoSavedSettings,
+					(vec2)ImGui::GetContentRegionAvail() - vec2(8.f, 24.f)))
 				{
+					ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableSetupColumn("Flags", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableSetupColumn("Data", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableHeadersRow();
+
 					for (auto i = 0; i < group->variables.size(); i++)
 					{
-						if (ImGui::Selectable(group->variables[i].name.c_str(), selected_variable == i))
-							selected_variable = i;
-					}
-					ImGui::EndListBox();
-				}
-				selected_variable = min(selected_variable, (int)group->variables.size() - 1);
+						auto& v = group->variables[i];
 
-				if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
+						ImGui::TableNextRow();
+
+						ImGui::PushID(i);
+
+						ImGui::TableSetColumnIndex(0);
+						auto name = v.name;
+						ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 4.f);
+						ImGui::InputText("##name", &name);
+						if (ImGui::IsItemDeactivatedAfterEdit())
+						{
+							add_event([this, group, i, name]() {
+								auto& v = group->variables[i];
+								auto old_name_hash = v.name_hash;
+								blueprint->alter_variable(group, old_name_hash, name, v.type);
+								return false;
+							});
+							unsaved = true;
+						}
+
+						ImGui::TableSetColumnIndex(1);
+						{
+							auto ti = (TypeInfo_Enum*)TypeInfo::get<BlueprintVariableFlags>();
+							auto ei = ti->ei;
+							auto value = v.flags;
+							ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 4.f);
+							if (ImGui::BeginCombo("##flags", ti->serialize(&value).c_str()))
+							{
+								for (auto& ii : ei->items)
+								{
+									bool selected = (value & ii.value);
+									if (ImGui::Selectable(ii.name.c_str(), selected))
+									{
+										if (selected)
+											(int&)value &= ~ii.value;
+										else
+											(int&)value |= ii.value;
+										add_event([this, group, i, value]() {
+											auto& v = group->variables[i];
+											v.flags = value;
+											return false;
+										});
+									}
+								}
+								ImGui::EndCombo();
+							}
+						}
+
+						ImGui::TableSetColumnIndex(2);
+						ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 4.f);
+						if (ImGui::BeginCombo("##type", ti_str(v.type).c_str()))
+						{
+							if (auto type = show_types_menu(); type)
+							{
+								add_event([this, group, i, type]() {
+									auto& v = group->variables[i];
+									auto old_name_hash = v.name_hash;
+									blueprint->alter_variable(group, old_name_hash, "", type);
+									return false;
+								});
+								unsaved = true;
+							}
+							ImGui::EndCombo();
+						}
+
+						ImGui::TableSetColumnIndex(3);
+						if (debugging_group)
+						{
+							auto it = debugging_group->variables.find(v.name_hash);
+							if (it != debugging_group->variables.end())
+							{
+								ImGui::SameLine();
+								ImGui::TextUnformatted(get_value_str(it->second.type, it->second.data).c_str());
+							}
+						}
+						else
+						{
+							if (manipulate_value(v.type, v.data))
+								unsaved = true;
+						}
+
+						ImGui::TableSetColumnIndex(4);
+						ImGui::Button(graphics::font_icon_str("bars"_h).c_str());
+						if (ImGui::BeginDragDropSource())
+						{
+							ImGui::SetDragDropPayload("Group Variable", &i, sizeof(int));
+							ImGui::TextUnformatted(v.name.c_str());
+							ImGui::EndDragDropSource();
+						}
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (auto payload = ImGui::AcceptDragDropPayload("Group Variable"); payload)
+							{
+								auto idx = *(int*)payload->Data;
+								add_event([this, group, idx, i]() {
+									auto& vars = group->variables;
+									if (idx != i)
+									{
+										if (idx < i)
+											std::rotate(vars.begin() + idx, vars.begin() + idx + 1, vars.begin() + i + 1);
+										else
+											std::rotate(vars.begin() + i, vars.begin() + idx, vars.begin() + idx + 1);
+									}
+									return false;
+								});
+								unsaved = true;
+							}
+							ImGui::EndDragDropTarget();
+						}
+						ImGui::SameLine();
+						if (ImGui::Button(graphics::font_icon_str("trash"_h).c_str()))
+						{
+							auto name_hash = v.name_hash;
+							add_event([this, group, name_hash]() {
+								blueprint->remove_variable(group, name_hash);
+								return false;
+							});
+							unsaved = true;
+						}
+					}
+
+					ImGui::EndTable();
+				}
+
+				if (ImGui::Button("New"))
 				{
 					auto name = get_unique_name("new_variable", [&](const std::string& name) {
 						for (auto& v : group->variables)
@@ -1737,293 +1788,237 @@ void BlueprintView::on_draw()
 						}
 						return false;
 					});
-					blueprint->add_variable(group, name, TypeInfo::get<float>());
-					selected_variable = group->variables.size() - 1;
+					add_event([this, group, name]() {
+						blueprint->add_variable(group, name, TypeInfo::get<float>());
+						return false;
+					});
 					unsaved = true;
 				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
-				{
-					if (selected_variable != -1)
-					{
-						blueprint->remove_variable(group, group->variables[selected_variable].name_hash);
-						if (group->variables.empty() || selected_variable >= (int)group->variables.size())
-							selected_variable = -1;
-						ax::NodeEditor::ClearSelection();
-						unsaved = true;
-					}
-				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
-				{
-					if (selected_variable > 0)
-					{
-						std::swap(group->variables[selected_variable], group->variables[selected_variable - 1]);
-						selected_variable--;
-						unsaved = true;
-					}
-				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
-				{
-					if (selected_variable != -1 && selected_variable < group->variables.size() - 1)
-					{
-						std::swap(group->variables[selected_variable], group->variables[selected_variable + 1]);
-						selected_variable++;
-						unsaved = true;
-					}
-				}
-				if (selected_variable != -1)
-				{
-					auto& var = group->variables[selected_variable];
-
-					auto name = var.name;
-					auto old_name_hash = var.name_hash;
-					ImGui::SetNextItemWidth(200.f);
-					ImGui::InputText("Name", &name);
-					if (ImGui::IsItemDeactivatedAfterEdit())
-					{
-						blueprint->alter_variable(group, var.name_hash, name, var.type);
-						ax::NodeEditor::ClearSelection();
-						unsaved = true;
-					}
-					{
-						auto ti = (TypeInfo_Enum*)TypeInfo::get<BlueprintVariableFlags>();
-						auto ei = ti->ei;
-						if (ImGui::BeginCombo("Flags", ti->serialize(&var.flags).c_str()))
-						{
-							for (auto& ii : ei->items)
-							{
-								bool selected = (var.flags & ii.value);
-								if (ImGui::Selectable(ii.name.c_str(), selected))
-								{
-									if (selected)
-										(int&)var.flags &= ~ii.value;
-									else
-										(int&)var.flags |= ii.value;
-								}
-							}
-							ImGui::EndCombo();
-						}
-					}
-					ImGui::SetNextItemWidth(200.f);
-					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
-					{
-						if (auto type = show_types_menu(); type)
-						{
-							blueprint->alter_variable(group, var.name_hash, "", type);
-							ax::NodeEditor::ClearSelection();
-							unsaved = true;
-						}
-
-						ImGui::EndCombo();
-					}
-
-					ImGui::TextUnformatted("Value");
-					if (debugging_group)
-					{
-						auto it = debugging_group->variables.find(var.name_hash);
-						if (it != debugging_group->variables.end())
-						{
-							ImGui::SameLine();
-							ImGui::TextUnformatted(get_value_str(it->second.type, it->second.data).c_str());
-						}
-					}
-					else
-					{
-						if (manipulate_value(var.type, var.data))
-							unsaved = true;
-					}
-				}
-				ImGui::PopID();
-
-				if (blueprint_instance->built_frame < blueprint->dirty_frame)
-					blueprint_instance->build();
 			}
 
 			if (ImGui::CollapsingHeader("Group Inputs:"))
 			{
-				ImGui::PushID("group_inputs");
-				static int selected_input = -1;
-				ImGui::SetNextItemWidth(150.f);
-				if (ImGui::BeginListBox("##inputs"))
+				if (ImGui::BeginTable("group_inputs", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollX | ImGuiTableFlags_NoSavedSettings,
+					(vec2)ImGui::GetContentRegionAvail() - vec2(8.f, 24.f)))
 				{
+					ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableHeadersRow(); 
+
 					for (auto i = 0; i < group->inputs.size(); i++)
 					{
-						if (ImGui::Selectable(group->inputs[i].name.c_str(), selected_input == i))
-							selected_input = i;
-					}
-					ImGui::EndListBox();
-				}
-				selected_input = min(selected_input, (int)group->inputs.size() - 1);
+						auto& v = group->inputs[i];
 
-				if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
+						ImGui::TableNextRow();
+
+						ImGui::PushID(i);
+
+						ImGui::TableSetColumnIndex(0);
+						auto name = v.name;
+						ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 4.f);
+						ImGui::InputText("##name", &name);
+						if (ImGui::IsItemDeactivatedAfterEdit())
+						{
+							add_event([this, group, i, name]() {
+								auto& v = group->inputs[i];
+								auto old_name_hash = v.name_hash;
+								blueprint->alter_group_input(group, old_name_hash, name, v.type);
+								return false;
+							});
+							unsaved = true;
+						}
+
+						ImGui::TableSetColumnIndex(1);
+						ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 4.f);
+						if (ImGui::BeginCombo("##type", ti_str(v.type).c_str()))
+						{
+							if (auto type = show_types_menu(); type)
+							{
+								add_event([this, group, i, type]() {
+									auto& v = group->inputs[i];
+									auto old_name_hash = v.name_hash;
+									blueprint->alter_group_input(group, old_name_hash, "", type);
+									return false;
+								});
+								unsaved = true;
+							}
+							ImGui::EndCombo();
+						}
+
+						ImGui::TableSetColumnIndex(2);
+						ImGui::Button(graphics::font_icon_str("bars"_h).c_str());
+						if (ImGui::BeginDragDropSource())
+						{
+							ImGui::SetDragDropPayload("Group Input", &i, sizeof(int));
+							ImGui::TextUnformatted(v.name.c_str());
+							ImGui::EndDragDropSource();
+						}
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (auto payload = ImGui::AcceptDragDropPayload("Group Input"); payload)
+							{
+								auto idx = *(int*)payload->Data;
+								add_event([this, group, idx, i]() {
+									auto& vars = group->inputs;
+									if (idx != i)
+									{
+										if (idx < i)
+											std::rotate(vars.begin() + idx, vars.begin() + idx + 1, vars.begin() + i + 1);
+										else
+											std::rotate(vars.begin() + i, vars.begin() + idx, vars.begin() + idx + 1);
+									}
+									return false;
+								});
+								unsaved = true;
+							}
+							ImGui::EndDragDropTarget();
+						}
+						ImGui::SameLine();
+						if (ImGui::Button(graphics::font_icon_str("trash"_h).c_str()))
+						{
+							auto name_hash = v.name_hash;
+							add_event([this, group, name_hash]() {
+								blueprint->remove_group_input(group, name_hash);
+								return false;
+							});
+							unsaved = true;
+						}
+
+						ImGui::PopID();
+					}
+
+					ImGui::EndTable();
+				}
+
+				if (ImGui::Button("New"))
 				{
 					auto name = get_unique_name("new_input", [&](const std::string& name) {
-						for (auto& i : group->inputs)
+						for (auto& v : group->inputs)
 						{
-							if (i.name == name)
+							if (v.name == name)
 								return true;
 						}
 						return false;
 					});
-					blueprint->add_group_input(group, name, TypeInfo::get<float>());
-					selected_input = group->inputs.size() - 1;
+					add_event([this, group, name]() {
+						blueprint->add_group_input(group, name, TypeInfo::get<float>());
+						return false;
+					});
+					unsaved = true;
 				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
-				{
-					if (selected_input != -1)
-					{
-						blueprint->remove_group_input(group, group->inputs[selected_input].name_hash);
-						if (group->inputs.empty() || selected_input >= (int)group->inputs.size())
-							selected_input = -1;
-						ax::NodeEditor::ClearSelection();
-						unsaved = true;
-					}
-				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
-				{
-					if (selected_input > 0)
-					{
-						std::swap(group->inputs[selected_input], group->inputs[selected_input - 1]);
-						selected_input--;
-						unsaved = true;
-					}
-				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
-				{
-					if (selected_input != -1 && selected_input < group->inputs.size() - 1)
-					{
-						std::swap(group->inputs[selected_input], group->inputs[selected_input + 1]);
-						selected_input++;
-						unsaved = true;
-					}
-				}
-				if (selected_input != -1)
-				{
-					auto& var = group->inputs[selected_input];
-
-					auto name = var.name;
-					ImGui::SetNextItemWidth(200.f);
-					ImGui::InputText("Name", &name);
-					if (ImGui::IsItemDeactivatedAfterEdit())
-					{
-						blueprint->alter_group_input(group, var.name_hash, name, var.type);
-						ax::NodeEditor::ClearSelection();
-						unsaved = true;
-					}
-					ImGui::SetNextItemWidth(200.f);
-					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
-					{
-						if (auto type = show_types_menu(); type)
-						{
-							blueprint->alter_group_input(group, var.name_hash, "", type);
-							ax::NodeEditor::ClearSelection();
-							unsaved = true;
-						}
-
-						ImGui::EndCombo();
-					}
-				}
-				ImGui::PopID();
-
-				if (blueprint_instance->built_frame < blueprint->dirty_frame)
-					blueprint_instance->build();
 			}
 			if (ImGui::CollapsingHeader("Group Outputs:"))
 			{
-				ImGui::PushID("group_outputs");
-				static int selected_output = -1;
-				ImGui::SetNextItemWidth(150.f);
-				if (ImGui::BeginListBox("##outputs"))
+				if (ImGui::BeginTable("group_outputs", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollX | ImGuiTableFlags_NoSavedSettings,
+					(vec2)ImGui::GetContentRegionAvail() - vec2(8.f, 24.f)))
 				{
+					ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableHeadersRow();
+
 					for (auto i = 0; i < group->outputs.size(); i++)
 					{
-						if (ImGui::Selectable(group->outputs[i].name.c_str(), selected_output == i))
-							selected_output = i;
-					}
-					ImGui::EndListBox();
-				}
-				selected_output = min(selected_output, (int)group->outputs.size() - 1);
+						auto& v = group->outputs[i];
 
-				if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
+						ImGui::TableNextRow();
+
+						ImGui::PushID(i);
+
+						ImGui::TableSetColumnIndex(0);
+						auto name = v.name;
+						ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 4.f);
+						ImGui::InputText("##name", &name);
+						if (ImGui::IsItemDeactivatedAfterEdit())
+						{
+							add_event([this, group, i, name]() {
+								auto& v = group->outputs[i];
+								auto old_name_hash = v.name_hash;
+								blueprint->alter_group_output(group, old_name_hash, name, v.type);
+								return false;
+							});
+							unsaved = true;
+						}
+
+						ImGui::TableSetColumnIndex(1);
+						ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 4.f);
+						if (ImGui::BeginCombo("##type", ti_str(v.type).c_str()))
+						{
+							if (auto type = show_types_menu(); type)
+							{
+								add_event([this, group, i, type]() {
+									auto& v = group->outputs[i];
+									auto old_name_hash = v.name_hash;
+									blueprint->alter_group_output(group, old_name_hash, "", type);
+									return false;
+								});
+								unsaved = true;
+							}
+							ImGui::EndCombo();
+						}
+
+						ImGui::TableSetColumnIndex(2);
+						ImGui::Button(graphics::font_icon_str("bars"_h).c_str());
+						if (ImGui::BeginDragDropSource())
+						{
+							ImGui::SetDragDropPayload("Group Output", &i, sizeof(int));
+							ImGui::TextUnformatted(v.name.c_str());
+							ImGui::EndDragDropSource();
+						}
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (auto payload = ImGui::AcceptDragDropPayload("Group Output"); payload)
+							{
+								auto idx = *(int*)payload->Data;
+								add_event([this, group, idx, i]() {
+									auto& vars = group->outputs;
+									if (idx != i)
+									{
+										if (idx < i)
+											std::rotate(vars.begin() + idx, vars.begin() + idx + 1, vars.begin() + i + 1);
+										else
+											std::rotate(vars.begin() + i, vars.begin() + idx, vars.begin() + idx + 1);
+									}
+									return false;
+								});
+								unsaved = true;
+							}
+							ImGui::EndDragDropTarget();
+						}
+						ImGui::SameLine();
+						if (ImGui::Button(graphics::font_icon_str("trash"_h).c_str()))
+						{
+							auto name_hash = v.name_hash;
+							add_event([this, group, name_hash]() {
+								blueprint->remove_group_output(group, name_hash);
+								return false;
+							});
+							unsaved = true;
+						}
+
+						ImGui::PopID();
+					}
+
+					ImGui::EndTable();
+				}
+
+				if (ImGui::Button("New"))
 				{
 					auto name = get_unique_name("new_output", [&](const std::string& name) {
-						for (auto& o : group->outputs)
+						for (auto& v : group->outputs)
 						{
-							if (o.name == name)
+							if (v.name == name)
 								return true;
 						}
 						return false;
 					});
-					blueprint->add_group_output(group, name, TypeInfo::get<float>());
-					selected_output = group->outputs.size() - 1;
+					add_event([this, group, name]() {
+						blueprint->add_group_output(group, name, TypeInfo::get<float>());
+						return false;
+					});
+					unsaved = true;
 				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
-				{
-					if (selected_output != -1)
-					{
-						blueprint->remove_group_output(group, group->outputs[selected_output].name_hash);
-						if (group->outputs.empty() || selected_output >= (int)group->outputs.size())
-							selected_output = -1;
-						ax::NodeEditor::ClearSelection();
-						unsaved = true;
-					}
-				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
-				{
-					if (selected_output > 0)
-					{
-						std::swap(group->outputs[selected_output], group->outputs[selected_output - 1]);
-						selected_output--;
-						unsaved = true;
-					}
-				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
-				{
-					if (selected_output != -1 && selected_output < group->outputs.size() - 1)
-					{
-						std::swap(group->outputs[selected_output], group->outputs[selected_output + 1]);
-						selected_output++;
-						unsaved = true;
-					}
-				}
-				if (selected_output != -1)
-				{
-					auto& var = group->outputs[selected_output];
-
-					auto name = var.name;
-					ImGui::SetNextItemWidth(200.f);
-					ImGui::InputText("Name", &name);
-					if (ImGui::IsItemDeactivatedAfterEdit())
-					{
-						blueprint->alter_group_output(group, var.name_hash, name, var.type);
-						ax::NodeEditor::ClearSelection();
-						unsaved = true;
-					}
-					ImGui::SetNextItemWidth(200.f);
-					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
-					{
-						if (auto type = show_types_menu(); type)
-						{
-							blueprint->alter_group_output(group, var.name_hash, "", type);
-							ax::NodeEditor::ClearSelection();
-							unsaved = true;
-						}
-
-						ImGui::EndCombo();
-					}
-				}
-				ImGui::PopID();
-
-				if (blueprint_instance->built_frame < blueprint->dirty_frame)
-					blueprint_instance->build();
 			}
 			if (ImGui::CollapsingHeader("Selections:", ImGuiTreeNodeFlags_DefaultOpen))
 			{
@@ -2119,19 +2114,101 @@ void BlueprintView::on_draw()
 					load_frame = frame;
 				}
 
-				if (ImGui::Button(graphics::font_icon_str("play"_h).c_str()))
-					run_blueprint(debugging_group);
-				ImGui::SameLine();
-				if (ImGui::Button(graphics::font_icon_str("circle-play"_h).c_str()))
-					step_blueprint(debugging_group);
-				ImGui::SameLine();
-				if (ImGui::Button(graphics::font_icon_str("stop"_h).c_str()))
-					stop_blueprint(debugging_group);
-
 				auto& io = ImGui::GetIO();
 				auto& style = ImGui::GetStyle();
 				auto dl = ImGui::GetWindowDrawList();
 				std::string tooltip; vec2 tooltip_pos;
+
+				if (ImGui::BeginTabBar("groups", ImGuiTabBarFlags_TabListPopupButton | ImGuiTabBarFlags_FittingPolicyScroll))
+				{
+					if (ImGui::TabItemButton(graphics::font_icon_str("play"_h).c_str(), ImGuiTabItemFlags_Leading | ImGuiTabItemFlags_NoTooltip))
+						run_blueprint(debugging_group);
+					if (ImGui::TabItemButton(graphics::font_icon_str("circle-play"_h).c_str(), ImGuiTabItemFlags_Leading | ImGuiTabItemFlags_NoTooltip))
+						step_blueprint(debugging_group);
+					if (ImGui::TabItemButton(graphics::font_icon_str("stop"_h).c_str(), ImGuiTabItemFlags_Leading | ImGuiTabItemFlags_NoTooltip))
+						stop_blueprint(debugging_group);
+					if (ImGui::TabItemButton(graphics::font_icon_str("pen-to-square"_h).c_str(), ImGuiTabItemFlags_Trailing | ImGuiTabItemFlags_NoTooltip))
+					{
+						auto old_name = group->name;
+						ImGui::OpenInputDialog("Rename", "Input new group name", [this, old_name](bool ok, const std::string& name) {
+							if (ok)
+							{
+								if (name != old_name)
+								{
+									for (auto& g : blueprint->groups)
+									{
+										if (g->name == name)
+											return;
+									}
+
+									blueprint->alter_group(sh(old_name.c_str()), name);
+									next_group_name = sh(name.c_str());
+									unsaved = true;
+								}
+							}
+						}, old_name);
+					}
+					if (ImGui::TabItemButton("+", ImGuiTabItemFlags_Trailing | ImGuiTabItemFlags_NoTooltip))
+					{
+						ImGui::OpenInputDialog("New Group", "Input new group name", [this](bool ok, const std::string& name) {
+							if (ok)
+							{
+								for (auto& g : blueprint->groups)
+								{
+									if (g->name == name)
+										return;
+								}
+
+								blueprint->add_group(name);
+								next_group_name = sh(name.c_str());
+								unsaved = true;
+							}
+						});
+					}
+
+					for (auto& g : blueprint->groups)
+					{
+						auto open = true;
+						int flags = ImGuiTabItemFlags_NoAssumedClosure;
+						if (next_group_name == g->name_hash)
+						{
+							flags |= ImGuiTabItemFlags_SetSelected;
+							next_group_name = false;
+						}
+						if (ImGui::BeginTabItem(g->name.c_str(), &open, flags))
+						{
+							if (group_name_hash != g->name_hash)
+							{
+								auto name = g->name;
+								add_event([this, name]() {
+									group_name = name;
+									group_name_hash = sh(name.c_str());
+									return false;
+								});
+								app.render_frames += 3;
+							}
+							ImGui::EndTabItem();
+						}
+
+						if (!open)
+						{
+							auto group = g.get();
+							ImGui::OpenYesNoDialog("Warnning", std::format("Are you sure to remove group '{}' ?", g->name), [this, group](bool yes) {
+								if (yes)
+								{
+									if (blueprint->groups.size() == 1)
+										return;
+									blueprint->remove_group(group);
+									if (group_name_hash == group->name_hash)
+										next_group_name = blueprint->groups[0]->name_hash;
+									unsaved = true;
+								}
+							});
+						}
+					}
+
+					ImGui::EndTabBar();
+				}
 
 				ImGui::SetNextItemAllowOverlap();
 				ImGui::InvisibleButton("splits", ImVec2(ImGui::GetContentRegionAvail().x, 10.f));

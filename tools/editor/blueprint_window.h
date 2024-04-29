@@ -13,6 +13,7 @@ struct BlueprintView : View
 	BlueprintInstancePtr	blueprint_instance = nullptr;
 	std::string				group_name = "main";
 	uint					group_name_hash = "main"_h;
+	uint					next_group_name = 0;
 	uint					load_frame = 0;
 	BlueprintGroupPtr		last_group = nullptr;
 	bool					show_misc = false;
