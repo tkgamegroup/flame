@@ -3701,7 +3701,7 @@ void BlueprintView::on_draw()
 							if (!add_node_filter.empty() || ImGui::BeginMenu(l->name.c_str()))
 							{
 								header = l->name;
-								for (auto& t : standard_library->node_templates)
+								for (auto& t : l->node_templates)
 									show_node_library_template(t);
 								if (add_node_filter.empty())
 									ImGui::EndMenu();
