@@ -6,6 +6,7 @@ struct SheetView : View
 {
 	std::filesystem::path sheet_path;
 	SheetPtr sheet = nullptr;
+	bool editing_columns = false;
 	bool vertical_mode = false;
 	bool unsaved = false;
 

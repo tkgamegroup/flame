@@ -68,280 +68,14 @@ void SheetView::on_draw()
 	}
 	if (sheet)
 	{
+		if (ImGui::ToolButton("Edit Columns", editing_columns))
+			editing_columns = !editing_columns;
+		ImGui::SameLine();
 		if (ImGui::ToolButton("Vertical", vertical_mode))
 			vertical_mode = !vertical_mode;
 		ImGui::SameLine();
 		if (ImGui::Button("Save"))
 			save_sheet();
-		ImGui::SameLine();
-		if (ImGui::Button("New Column"))
-		{
-			struct NewColumnDialog : ImGui::Dialog
-			{
-				SheetView* view;
-				SheetPtr sheet;
-				std::string name;
-				TypeInfo* type;
-
-				static void open(SheetView* view)
-				{
-					auto dialog = new NewColumnDialog;
-					dialog->title = "New Column";
-					dialog->view = view;
-					dialog->sheet = view->sheet;
-					dialog->name = "new_column " + str(dialog->sheet->columns.size() + 1);
-					dialog->type = TypeInfo::get<float>();
-					Dialog::open(dialog);
-				}
-
-				void draw() override
-				{
-					if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
-					{
-						ImGui::InputText("Name", &name);
-						if (ImGui::BeginCombo("Type", ti_str(type).c_str()))
-						{
-							if (auto t = show_types_menu(); t)
-								type = t;
-							ImGui::EndCombo();
-						}
-
-						if (ImGui::Button("OK"))
-						{
-							sheet->insert_column(name, type);
-							view->unsaved = true;
-							close();
-						}
-						ImGui::SameLine();
-						if (ImGui::Button("Cancel"))
-							close();
-						ImGui::EndPopup();
-					}
-				}
-			};
-			NewColumnDialog::open(this);
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Alter Column"))
-		{
-			struct AlterColumnDialog : ImGui::Dialog
-			{
-				SheetView* view;
-				SheetPtr sheet;
-				int column_idx = 0;
-				std::vector<std::string> new_names;
-				std::vector<TypeInfo*> new_types;
-
-				static void open(SheetView* view)
-				{
-					auto dialog = new AlterColumnDialog;
-					dialog->title = "Alter Column";
-					dialog->view = view;
-					auto sheet = view->sheet;
-					dialog->sheet = sheet;
-					dialog->new_names.resize(sheet->columns.size());
-					for (auto i = 0; i < sheet->columns.size(); i++)
-						dialog->new_names[i] = sheet->columns[i].name;
-					dialog->new_types.resize(sheet->columns.size());
-					for (auto i = 0; i < sheet->columns.size(); i++)
-						dialog->new_types[i] = sheet->columns[i].type;
-					Dialog::open(dialog);
-				}
-
-				void draw() override 
-				{
-					if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
-					{
-						ImGui::BeginGroup();
-						for (auto i = 0; i < sheet->columns.size(); i++)
-						{
-							auto& column = sheet->columns[i];
-							ImGui::RadioButton(column.name.c_str(), &column_idx, i);
-						}
-						ImGui::EndGroup();
-
-						if (!sheet->columns.empty())
-						{
-							ImGui::SameLine();
-							ImGui::BeginGroup();
-							ImGui::InputText("Name", &new_names[column_idx]);
-							if (ImGui::BeginCombo("Type", ti_str(new_types[column_idx]).c_str()))
-							{
-								if (auto type = show_types_menu(); type)
-									new_types[column_idx] = type;
-								ImGui::EndCombo();
-							}
-							ImGui::EndGroup();
-						}
-
-						ImGui::Separator();
-						if (ImGui::Button("OK"))
-						{
-							auto changed = false;
-							for (auto i = 0; i < sheet->columns.size(); i++)
-							{
-								if (sheet->columns[i].name != new_names[i] || sheet->columns[i].type != new_types[i])
-								{
-									auto old_name_hash = sheet->columns[i].name_hash;
-									auto new_name_hash = sh(new_names[i].c_str());
-									sheet->alter_column(i, new_names[i], new_types[i]);
-
-									if (sheet->is_static)
-										app.change_bp_references(old_name_hash, sheet->name_hash, 0, new_name_hash, sheet->name_hash, 0);
-
-									changed = true;
-								}
-							}
-							if (changed)
-								view->unsaved = true;
-							close();
-						}
-						ImGui::SameLine();
-						if (ImGui::Button("Cancel"))
-							close();
-
-						ImGui::EndPopup();
-					}
-				}
-			};
-			AlterColumnDialog::open(this);
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Remove Column"))
-		{
-			struct RemoveColumnDialog : ImGui::Dialog
-			{
-				SheetView* view;
-				SheetPtr sheet;
-				int column_idx = 0;
-
-				static void open(SheetView* view)
-				{
-					auto dialog = new RemoveColumnDialog;
-					dialog->title = "Remove Column";
-					dialog->view = view;
-					dialog->sheet = view->sheet;
-					Dialog::open(dialog);
-				}
-
-				void draw() override
-				{
-					if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
-					{
-						for (auto i = 0; i < sheet->columns.size(); i++)
-						{
-							auto& column = sheet->columns[i];
-							ImGui::RadioButton(column.name.c_str(), &column_idx, i);
-						}
-
-						ImGui::Separator();
-						if (ImGui::Button("OK"))
-						{
-							sheet->remove_column(column_idx);
-							view->unsaved = true;
-							close();
-						}
-						ImGui::SameLine();
-						if (ImGui::Button("Cancel"))
-							close();
-
-						ImGui::EndPopup();
-					}
-				}
-			};
-			RemoveColumnDialog::open(this);
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Reorder Columns"))
-		{
-			struct ReorderColumnsDialog : ImGui::Dialog
-			{
-				SheetView* view;
-				SheetPtr sheet;
-				int column_idx = 0;
-				int new_idx = 0;
-
-				static void open(SheetView* view)
-				{
-					auto dialog = new ReorderColumnsDialog;
-					dialog->title = "Reorder Columns";
-					dialog->view = view;
-					dialog->sheet = view->sheet;
-					Dialog::open(dialog);
-				}
-
-				void draw() override
-				{
-					if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
-					{
-						ImGui::BeginGroup();
-						for (auto i = 0; i < sheet->columns.size(); i++)
-						{
-							auto& column = sheet->columns[i];
-							ImGui::RadioButton(column.name.c_str(), &column_idx, i);
-						}
-						ImGui::EndGroup();
-
-						ImGui::SameLine();
-						ImGui::BeginGroup();
-						if (ImGui::BeginCombo("New Index", str(new_idx).c_str()))
-						{
-							for (auto i = 0; i < sheet->columns.size(); i++)
-							{
-								auto& column = sheet->columns[i];
-								if (ImGui::Selectable(str(i).c_str(), i == new_idx))
-									new_idx = i;
-							}
-							ImGui::EndCombo();
-						}
-						if (ImGui::Button(graphics::font_icon_str("arrow-left"_h).c_str()))
-						{
-							if (new_idx > 0)
-								new_idx--;
-						}
-						ImGui::SameLine();
-						ImGui::Text("%d", new_idx);
-						ImGui::SameLine();
-						if (ImGui::Button(graphics::font_icon_str("arrow-right"_h).c_str()))
-						{
-							if (new_idx < sheet->columns.size() - 1)
-								new_idx++;
-						}
-						ImGui::EndGroup();
-
-						if (!sheet->columns.empty())
-						{
-							ImGui::SameLine();
-							ImGui::BeginGroup();
-							std::vector<int> indices;
-							for (auto i = 0; i < sheet->columns.size(); i++)
-								indices.push_back(i);
-							if (column_idx < new_idx)
-								std::rotate(indices.begin() + column_idx, indices.begin() + column_idx + 1, indices.begin() + new_idx + 1);
-							else
-								std::rotate(indices.begin() + new_idx, indices.begin() + column_idx, indices.begin() + column_idx + 1);
-							for (auto i : indices)
-								ImGui::TextUnformatted(sheet->columns[i].name.c_str());
-							ImGui::EndGroup();
-						}
-
-						ImGui::Separator();
-						if (ImGui::Button("OK"))
-						{
-							sheet->reorder_columns(column_idx, new_idx);
-							view->unsaved = true;
-							close();
-						}
-						ImGui::SameLine();
-						if (ImGui::Button("Cancel"))
-							close();
-
-						ImGui::EndPopup();
-					}
-				}
-			};
-			ReorderColumnsDialog::open(this);
-		}
 		if (sheet->columns.size() > 0 && sheet->columns.size() < 64)
 		{
 			auto manipulate_data = [](TypeInfo* type, void* data) {
@@ -469,6 +203,8 @@ void SheetView::on_draw()
 			{
 				if (ImGui::BeginTable("##main", sheet->columns.size() + 1, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollX | ImGuiTableFlags_NoSavedSettings, ImVec2(0.f, -30.f)))
 				{
+					ImGui::TableSetupScrollFreeze(1, 0);
+
 					for (auto i = 0; i < sheet->columns.size(); i++)
 					{
 						auto& column = sheet->columns[i];
@@ -481,8 +217,81 @@ void SheetView::on_draw()
 					{
 						auto& column = sheet->columns[i];
 						ImGui::TableSetColumnIndex(i);
-						ImGui::TableHeader(column.name.c_str());
+						ImGui::PushID(i);
+						if (!editing_columns)
+							ImGui::TableHeader(column.name.c_str());
+						else
+						{
+							auto name = column.name;
+							ImGui::Button(graphics::font_icon_str("bars"_h).c_str());
+							if (ImGui::BeginDragDropSource())
+							{
+								ImGui::SetDragDropPayload("Column", &i, sizeof(int));
+								ImGui::TextUnformatted(name.c_str());
+								ImGui::EndDragDropSource();
+							}
+							if (ImGui::BeginDragDropTarget())
+							{
+								if (auto payload = ImGui::AcceptDragDropPayload("Column"); payload)
+								{
+									auto column_idx = *(int*)payload->Data;
+									add_event([this, column_idx, i]() {
+										sheet->reorder_columns(column_idx, i);
+										return false;
+									});
+								}
+								ImGui::EndDragDropTarget();
+							}
+							ImGui::SameLine();
+							ImGui::SetNextItemWidth(100.f);
+							ImGui::InputText("##name", &name);
+							if (ImGui::IsItemDeactivatedAfterEdit())
+							{
+								auto type = column.type;
+								add_event([this, i, name, type]() {
+									sheet->alter_column(i, name, type);
+									return false;
+								});
+								unsaved = true;
+							}
+							ImGui::SameLine();
+							ImGui::SetNextItemWidth(100.f);
+							if (ImGui::BeginCombo("##type", ti_str(column.type).c_str()))
+							{
+								if (auto type = show_types_menu(); type)
+								{
+									add_event([this, i, name, type]() {
+										sheet->alter_column(i, name, type);
+										return false;
+									});
+									unsaved = true;
+								}
+								ImGui::EndCombo();
+							}
+							ImGui::SameLine();
+							if (ImGui::Button(graphics::font_icon_str("trash"_h).c_str()))
+							{
+								add_event([this, i]() {
+									sheet->remove_column(i);
+									return false;
+								});
+								unsaved = true;
+							}
+						}
+						ImGui::PopID();
 						column.width = ImGui::GetContentRegionAvail().x;
+					}
+					if (editing_columns)
+					{
+						ImGui::TableSetColumnIndex(sheet->columns.size());
+						if (ImGui::Button("New"))
+						{
+							add_event([this]() {
+								sheet->insert_column("new_column", TypeInfo::get<float>());
+								return false;
+							});
+							unsaved = true;
+						}
 					}
 
 					for (auto i = 0; i < sheet->rows.size(); i++)
@@ -507,33 +316,36 @@ void SheetView::on_draw()
 						{
 							ImGui::TableSetColumnIndex(sheet->columns.size());
 							ImGui::PushID(sheet->columns.size());
+							ImGui::Button(graphics::font_icon_str("bars"_h).c_str());
+							if (ImGui::BeginDragDropSource())
+							{
+								ImGui::SetDragDropPayload("Row", &i, sizeof(int));
+								ImGui::TextUnformatted(str(i).c_str());
+								ImGui::EndDragDropSource();
+							}
+							if (ImGui::BeginDragDropTarget())
+							{
+								if (auto payload = ImGui::AcceptDragDropPayload("Row"); payload)
+								{
+									auto row_idx = *(int*)payload->Data;
+									add_event([this, row_idx, i]() {
+										sheet->reorder_rows(row_idx, i);
+										return false;
+									});
+								}
+								ImGui::EndDragDropTarget();
+							}
+							ImGui::SameLine();
 							if (ImGui::Button(graphics::font_icon_str("trash"_h).c_str()))
 							{
-								sheet->remove_row(i);
+								add_event([this, i]() {
+									sheet->remove_row(i);
+									return false;
+								});
 								unsaved = true;
-								ImGui::PopID(); // column
-
-								ImGui::PopID(); // row
 								break;
 							}
-							ImGui::SameLine();
-							if (ImGui::Button(graphics::font_icon_str("arrow-up"_h).c_str()))
-							{
-								if (i > 0)
-								{
-									std::swap(sheet->rows[i], sheet->rows[i - 1]);
-									unsaved = true;
-								}
-							}
-							ImGui::SameLine();
-							if (ImGui::Button(graphics::font_icon_str("arrow-down"_h).c_str()))
-							{
-								if (i < sheet->rows.size() - 1)
-								{
-									std::swap(sheet->rows[i], sheet->rows[i + 1]);
-									unsaved = true;
-								}
-							}
+
 							ImGui::PopID();
 						}
 

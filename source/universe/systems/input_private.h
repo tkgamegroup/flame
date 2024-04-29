@@ -12,9 +12,12 @@ namespace flame
 		int mscr_temp = 0;
 		bool kbtn_temp[KeyboardKey_Count] = {};
 
+		NativeWindowPtr bound_window = nullptr;
+
 		sInputPrivate();
 		~sInputPrivate();
 
+		void bind_window(NativeWindowPtr w) override;
 		void update() override;
 	};
 }

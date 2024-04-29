@@ -677,6 +677,8 @@ namespace flame
 		}
 
 		std::filesystem::path		filename;
+		std::string					name;
+		uint						name_hash = 0;
 		uint						ref = 0;
 
 		virtual ~BlueprintNodeLibrary() {}

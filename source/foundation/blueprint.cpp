@@ -3818,6 +3818,10 @@ namespace flame
 
 			auto ret = new BlueprintNodeLibraryPrivate;
 			ret->filename = filename;
+			ret->name = filename.filename().string();
+			ret->name = std::string(SUS::split(ret->name, ':').back());
+			ret->name = get_display_name(ret->name);
+			ret->name_hash = sh(ret->name.c_str());
 			ret->ref = 1;
 			loaded_libraries.emplace_back(ret);
 			return ret;

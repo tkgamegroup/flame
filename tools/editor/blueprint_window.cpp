@@ -70,24 +70,6 @@ static void set_offset_recurisely(BlueprintNodePtr n, const vec2& offset)
 };
 
 static BlueprintNodeLibraryPtr standard_library;
-static BlueprintNodeLibraryPtr extern_library;
-static BlueprintNodeLibraryPtr noise_library;
-static BlueprintNodeLibraryPtr texture_library;
-static BlueprintNodeLibraryPtr geometry_library;
-static BlueprintNodeLibraryPtr entity_library;
-static BlueprintNodeLibraryPtr message_library;
-static BlueprintNodeLibraryPtr animation_library;
-static BlueprintNodeLibraryPtr tween_library;
-static BlueprintNodeLibraryPtr camera_library;
-static BlueprintNodeLibraryPtr procedural_library;
-static BlueprintNodeLibraryPtr navigation_library;
-static BlueprintNodeLibraryPtr colliding_library;
-static BlueprintNodeLibraryPtr input_library;
-static BlueprintNodeLibraryPtr renderer_library;
-static BlueprintNodeLibraryPtr primitive_library;
-static BlueprintNodeLibraryPtr hud_library;
-static BlueprintNodeLibraryPtr audio_library;
-static BlueprintNodeLibraryPtr resource_library;
 
 struct CopiedSlot
 {
@@ -960,10 +942,6 @@ void BlueprintView::on_draw()
 				blueprint_instance->build();
 		}
 
-		ImGui::SameLine();
-		if (ImGui::Checkbox("responsive", &group->responsive))
-			unsaved = true;
-
 		auto debugging_group = blueprint_window.debugger->debugging &&
 			blueprint_window.debugger->debugging->instance->blueprint == blueprint &&
 			blueprint_window.debugger->debugging->name == group_name_hash ?
@@ -1110,49 +1088,229 @@ void BlueprintView::on_draw()
 				return changed;
 			};
 
-
+			auto super_filename = blueprint->super_filename.string();
+			ImGui::SetNextItemWidth(150.f);
+			ImGui::InputText("Super", super_filename.data(), ImGuiInputTextFlags_ReadOnly);
+			if (ImGui::BeginDragDropTarget())
 			{
-				auto s = blueprint->super_filename.string();
-				ImGui::SetNextItemWidth(150.f);
-				ImGui::InputText("Super", s.data(), ImGuiInputTextFlags_ReadOnly);
-				if (ImGui::BeginDragDropTarget())
+				if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
 				{
-					if (auto payload = ImGui::AcceptDragDropPayload("File"); payload)
-					{
-						blueprint->set_super(Path::reverse(std::wstring((wchar_t*)payload->Data)));
-						unsaved = true;
-					}
-					ImGui::EndDragDropTarget();
-				}
-				ImGui::SameLine();
-				if (ImGui::Button(graphics::font_icon_str("location-crosshairs"_h).c_str()))
-					project_window.ping(Path::get(blueprint->super_filename));
-				ImGui::SameLine();
-				if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
-				{
-					blueprint->set_super(L"");
+					blueprint->set_super(Path::reverse(std::wstring((wchar_t*)payload->Data)));
 					unsaved = true;
 				}
-
-				if (blueprint_instance->built_frame < blueprint->dirty_frame)
-					blueprint_instance->build();
+				ImGui::EndDragDropTarget();
 			}
+			ImGui::SameLine();
+			if (ImGui::Button(graphics::font_icon_str("location-crosshairs"_h).c_str()))
+				project_window.ping(Path::get(blueprint->super_filename));
+			ImGui::SameLine();
+			if (ImGui::Button(graphics::font_icon_str("xmark"_h).c_str()))
+			{
+				blueprint->set_super(L"");
+				unsaved = true;
+			}
+
+			if (blueprint_instance->built_frame < blueprint->dirty_frame)
+				blueprint_instance->build();
+
 			if (ImGui::CollapsingHeader("Enums:"))
 			{
-				ImGui::PushID("bp_enums");
-				static int selected_enum = -1;
-				if (ImGui::BeginListBox("##enums"))
+				if (ImGui::BeginTable("bp_enums", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollX | ImGuiTableFlags_NoSavedSettings,
+					(vec2)ImGui::GetContentRegionAvail() - vec2(8.f, 24.f)))
 				{
+					ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableSetupColumn("Items", ImGuiTableColumnFlags_WidthFixed, 300.f);
+					ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableHeadersRow();
+
 					for (auto i = 0; i < blueprint->enums.size(); i++)
 					{
-						if (ImGui::Selectable(blueprint->enums[i].name.c_str(), selected_enum == i))
-							selected_enum = i;
-					}
-					ImGui::EndListBox();
-				}
-				selected_enum = min(selected_enum, (int)blueprint->enums.size() - 1);
+						auto& e = blueprint->enums[i];
 
-				if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
+						ImGui::TableNextRow();
+
+						ImGui::PushID(i);
+
+						ImGui::TableSetColumnIndex(0);
+						auto name = e.name;
+						ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 4.f);
+						ImGui::InputText("##name", &name);
+						if (ImGui::IsItemDeactivatedAfterEdit())
+						{
+							add_event([this, i, name]() {
+								auto& e = blueprint->enums[i];
+								auto old_name_hash = e.name_hash;
+								blueprint->alter_enum(old_name_hash, name, e.items);
+								if (blueprint->is_static)
+									app.change_bp_references(0, old_name_hash, 0, 0, sh(name.c_str()), 0);
+								return false;
+							});
+							unsaved = true;
+						}
+
+						ImGui::TableSetColumnIndex(1);
+						if (ImGui::BeginTable("bp_enum_items", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
+						{
+							ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 50.f);
+							ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthFixed, 160.f);
+							ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 50.f);
+							ImGui::TableHeadersRow();
+
+							for (auto j = 0; j < e.items.size(); j++)
+							{
+								auto& ei = e.items[j];
+
+								ImGui::TableNextRow();
+
+								ImGui::PushID(j);
+
+								ImGui::TableSetColumnIndex(0);
+								auto item_name = ei.name;
+								ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 4.f);
+								ImGui::InputText("##item_name", &item_name);
+								if (ImGui::IsItemDeactivatedAfterEdit())
+								{
+									add_event([this, i, j, item_name]() {
+										auto& e = blueprint->enums[i];
+										auto items = e.items;
+										auto& ei = items[j];
+										ei.name = item_name;
+										ei.name_hash = sh(item_name.c_str());
+										blueprint->alter_enum(e.name_hash, e.name, items);
+										return false;
+									});
+									unsaved = true;
+								}
+
+								ImGui::TableSetColumnIndex(1);
+								auto value = ei.value;
+								ImGui::DragInt("##item_value", &value);
+								if (ImGui::IsItemDeactivatedAfterEdit())
+								{
+									add_event([this, i, j, value]() {
+										auto& e = blueprint->enums[i];
+										auto items = e.items;
+										auto& ei = items[j];
+										ei.value = value;
+										blueprint->alter_enum(e.name_hash, e.name, items);
+										return false;
+									});
+									unsaved = true;
+								}
+
+								ImGui::TableSetColumnIndex(2);
+								ImGui::Button(graphics::font_icon_str("bars"_h).c_str());
+								if (ImGui::BeginDragDropSource())
+								{
+									ImGui::SetDragDropPayload("Enum Item", &j, sizeof(int));
+									ImGui::TextUnformatted(ei.name.c_str());
+									ImGui::EndDragDropSource();
+								}
+								if (ImGui::BeginDragDropTarget())
+								{
+									if (auto payload = ImGui::AcceptDragDropPayload("Enum Item"); payload)
+									{
+										auto idx = *(int*)payload->Data;
+										add_event([this, idx, i, j]() {
+											auto& items = blueprint->enums[i].items;
+											if (idx != j)
+											{
+												if (idx < j)
+													std::rotate(items.begin() + idx, items.begin() + idx + 1, items.begin() + j + 1);
+												else
+													std::rotate(items.begin() + j, items.begin() + idx, items.begin() + idx + 1);
+											}
+											return false;
+										});
+										unsaved = true;
+									}
+									ImGui::EndDragDropTarget();
+								}
+								ImGui::SameLine();
+								if (ImGui::Button(graphics::font_icon_str("trash"_h).c_str()))
+								{
+									add_event([this, i, j]() {
+										auto& e = blueprint->enums[i];
+										auto items = e.items;
+										items.erase(items.begin() + j);
+										blueprint->alter_enum(e.name_hash, e.name, items);
+										return false;
+									});
+									unsaved = true;
+								}
+
+								ImGui::PopID();
+							}
+
+							ImGui::EndTable();
+						}
+
+						if (ImGui::Button("New"))
+						{
+							auto item_name = get_unique_name("new_item", [&](const std::string& name) {
+								for (auto& v : e.items)
+								{
+									if (v.name == name)
+										return true;
+								}
+								return false;
+							});
+							add_event([this, i, item_name]() {
+								auto& e = blueprint->enums[i];
+								auto items = e.items;
+								items.push_back({ item_name, sh(item_name.c_str()), 0 });
+								blueprint->alter_enum(e.name_hash, e.name, items);
+								return false;
+							});
+							unsaved = true;
+						}
+
+						ImGui::TableSetColumnIndex(2);
+						ImGui::Button(graphics::font_icon_str("bars"_h).c_str());
+						if (ImGui::BeginDragDropSource())
+						{
+							ImGui::SetDragDropPayload("Enum", &i, sizeof(int));
+							ImGui::TextUnformatted(e.name.c_str());
+							ImGui::EndDragDropSource();
+						}
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (auto payload = ImGui::AcceptDragDropPayload("Enum"); payload)
+							{
+								auto idx = *(int*)payload->Data;
+								add_event([this, idx, i]() {
+									auto& enums = blueprint->enums;
+									if (idx != i)
+									{
+										if (idx < i)
+											std::rotate(enums.begin() + idx, enums.begin() + idx + 1, enums.begin() + i + 1);
+										else
+											std::rotate(enums.begin() + i, enums.begin() + idx, enums.begin() + idx + 1);
+									}
+									return false;
+								});
+								unsaved = true;
+							}
+							ImGui::EndDragDropTarget();
+						}
+						ImGui::SameLine();
+						if (ImGui::Button(graphics::font_icon_str("trash"_h).c_str()))
+						{
+							auto name_hash = e.name_hash;
+							add_event([this, name_hash]() {
+								blueprint->remove_enum(name_hash);
+								return false;
+							});
+							unsaved = true;
+						}
+
+						ImGui::PopID();
+					}
+
+					ImGui::EndTable();
+				}
+
+				if (ImGui::Button("New"))
 				{
 					auto name = get_unique_name("new_enum", [&](const std::string& name) {
 						for (auto& v : blueprint->enums)
@@ -1162,359 +1320,376 @@ void BlueprintView::on_draw()
 						}
 						return false;
 					});
-					blueprint->add_enum(name, {});
-					selected_enum = blueprint->enums.size() - 1;
+					add_event([this, name]() {
+						blueprint->add_enum(name, {});
+						return false;
+					});
 					unsaved = true;
 				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
-				{
-					if (selected_enum != -1)
-					{
-						blueprint->remove_enum(blueprint->enums[selected_enum].name_hash);
-						if (blueprint->enums.empty() || selected_enum >= blueprint->enums.size())
-							selected_enum = -1;
-						unsaved = true;
-					}
-				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
-				{
-					if (selected_enum > 0)
-					{
-						std::swap(blueprint->enums[selected_enum], blueprint->enums[selected_enum - 1]);
-						selected_enum--;
-						unsaved = true;
-					}
-				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
-				{
-					if (selected_enum != -1 && selected_enum < blueprint->enums.size() - 1)
-					{
-						std::swap(blueprint->enums[selected_enum], blueprint->enums[selected_enum + 1]);
-						selected_enum++;
-						unsaved = true;
-					}
-				}
-
-				if (selected_enum != -1)
-				{
-					auto& e = blueprint->enums[selected_enum];
-					auto items = e.items;
-
-					auto name = e.name;
-					auto old_name_hash = e.name_hash;
-					ImGui::InputText("Enum Name", &name);
-					if (ImGui::IsItemDeactivatedAfterEdit())
-					{
-						blueprint->alter_enum(e.name_hash, name, e.items);
-						if (blueprint->is_static)
-							app.change_bp_references(0, old_name_hash, 0, 0, sh(name.c_str()), 0);
-						unsaved = true;
-					}
-
-					ImGui::PushID("bp_enum_items");
-
-					static int selected_enum_item = -1;
-					if (ImGui::BeginListBox("##enum_items"))
-					{
-						for (auto i = 0; i < e.items.size(); i++)
-						{
-							if (ImGui::Selectable(e.items[i].name.c_str(), selected_enum_item == i))
-								selected_enum_item = i;
-						}
-						ImGui::EndListBox();
-					}
-					selected_enum_item = min(selected_enum_item, (int)e.items.size() - 1);
-
-					if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
-					{
-						auto name = get_unique_name("new_item", [&](const std::string& name) {
-							for (auto& v : e.items)
-							{
-								if (v.name == name)
-									return true;
-							}
-							return false;
-						});
-						items.push_back({ name, sh(name.c_str()), 0});
-						blueprint->alter_enum(e.name_hash, e.name, items);
-						selected_enum_item = items.size() - 1;
-						unsaved = true;
-					}
-					ImGui::SameLine();
-					if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
-					{
-						if (selected_enum_item != -1)
-						{
-							auto old_item_hash = items[selected_enum_item].name_hash;
-							items.erase(items.begin() + selected_enum_item);
-							blueprint->alter_enum(e.name_hash, e.name, items);
-							if (blueprint->is_static)
-								app.change_bp_references(old_item_hash, e.name_hash, 0, 0, e.name_hash, 0);
-							if (items.empty() || selected_enum_item >= items.size())
-								selected_enum_item = -1;
-							unsaved = true;
-						}
-					}
-					ImGui::SameLine();
-					if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
-					{
-						if (selected_enum_item > 0)
-						{
-							std::swap(items[selected_enum_item], items[selected_enum_item - 1]);
-							e.items = items;
-							selected_enum_item--;
-							unsaved = true;
-						}
-					}
-					ImGui::SameLine();
-					if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
-					{
-						if (selected_enum_item != -1 && selected_enum_item < items.size() - 1)
-						{
-							std::swap(items[selected_enum_item], items[selected_enum_item + 1]);
-							e.items = items;
-							selected_enum_item++;
-							unsaved = true;
-						}
-					}
-
-					if (selected_enum_item != -1)
-					{
-						auto& item = items[selected_enum_item];
-						auto old_item_hash = item.name_hash;
-
-						auto name = item.name;
-						ImGui::InputText("Item Name", &name);
-						if (ImGui::IsItemDeactivatedAfterEdit())
-						{
-							item.name = name;
-							item.name_hash = sh(name.c_str());
-							blueprint->alter_enum(e.name_hash, e.name, items);
-							if (blueprint->is_static)
-								app.change_bp_references(old_item_hash, e.name_hash, 0, sh(name.c_str()), e.name_hash, 0);
-							unsaved = true;
-						}
-						ImGui::InputInt("Item Value", &item.value);
-						if (ImGui::IsItemDeactivatedAfterEdit())
-						{
-							blueprint->alter_enum(e.name_hash, e.name, items);
-							if (blueprint->is_static)
-								app.change_bp_references(old_item_hash, e.name_hash, 0, sh(name.c_str()), e.name_hash, 0);
-							unsaved = true;
-						}
-					}
-
-					ImGui::PopID();
-				}
-
-				ImGui::PopID();
-
-				if (blueprint_instance->built_frame < blueprint->dirty_frame)
-					blueprint_instance->build();
 			}
 			if (ImGui::CollapsingHeader("Structs:"))
 			{
-				ImGui::PushID("bp_structs");
-				static int selected_struct = -1;
-				if (ImGui::BeginListBox("##structs"))
+				if (ImGui::BeginTable("bp_structs", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollX | ImGuiTableFlags_NoSavedSettings,
+					(vec2)ImGui::GetContentRegionAvail() - vec2(8.f, 24.f)))
 				{
+					ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableSetupColumn("Variables", ImGuiTableColumnFlags_WidthFixed, 300.f);
+					ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableHeadersRow();
+
 					for (auto i = 0; i < blueprint->structs.size(); i++)
 					{
-						if (ImGui::Selectable(blueprint->structs[i].name.c_str(), selected_struct == i))
-							selected_struct = i;
-					}
-					ImGui::EndListBox();
-				}
-				selected_struct = min(selected_struct, (int)blueprint->structs.size() - 1);
+						auto& s = blueprint->structs[i];
 
-				if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
+						ImGui::TableNextRow();
+
+						ImGui::PushID(i);
+
+						ImGui::TableSetColumnIndex(0);
+						auto name = s.name;
+						ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 4.f);
+						ImGui::InputText("##name", &name);
+						if (ImGui::IsItemDeactivatedAfterEdit())
+						{
+							add_event([this, i, name]() {
+								auto& s = blueprint->structs[i];
+								auto old_name_hash = s.name_hash;
+								blueprint->alter_struct(old_name_hash, name, s.variables);
+								if (blueprint->is_static)
+									app.change_bp_references(0, old_name_hash, 0, 0, sh(name.c_str()), 0);
+								return false;
+							});
+							unsaved = true;
+						}
+
+						ImGui::TableSetColumnIndex(1);
+						if (ImGui::BeginTable("bp_struct_variables", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings))
+						{
+							ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 50.f);
+							ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 80.f);
+							ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 80.f);
+							ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 50.f);
+							ImGui::TableHeadersRow();
+
+							for (auto j = 0; j < s.variables.size(); j++)
+							{
+								auto& vi = s.variables[j];
+
+								ImGui::TableNextRow();
+
+								ImGui::PushID(j);
+
+								ImGui::TableSetColumnIndex(0);
+								auto var_name = vi.name;
+								ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 4.f);
+								ImGui::InputText("##var_name", &var_name);
+								if (ImGui::IsItemDeactivatedAfterEdit())
+								{
+									add_event([this, i, j, var_name]() {
+										auto& s = blueprint->structs[i];
+										auto vars = s.variables;
+										auto& vi = vars[j];
+										vi.name = var_name;
+										vi.name_hash = sh(var_name.c_str());
+										blueprint->alter_struct(s.name_hash, s.name, vars);
+										return false;
+									});
+									unsaved = true;
+								}
+
+								ImGui::TableSetColumnIndex(1);
+								if (ImGui::BeginCombo("##type", ti_str(vi.type).c_str()))
+								{
+									if (auto type = show_types_menu(); type)
+									{
+										add_event([this, i, j, type]() {
+											auto& s = blueprint->structs[i];
+											auto vars = s.variables;
+											auto& vi = vars[j];
+											vi.type = type;
+											blueprint->alter_struct(s.name_hash, s.name, vars);
+											return false;
+										});
+										unsaved = true;
+									}
+									ImGui::EndCombo();
+								}
+
+								ImGui::TableSetColumnIndex(2);
+								ImGui::Button(graphics::font_icon_str("bars"_h).c_str());
+								if (ImGui::BeginDragDropSource())
+								{
+									ImGui::SetDragDropPayload("Struct Var", &j, sizeof(int));
+									ImGui::TextUnformatted(vi.name.c_str());
+									ImGui::EndDragDropSource();
+								}
+								if (ImGui::BeginDragDropTarget())
+								{
+									if (auto payload = ImGui::AcceptDragDropPayload("Struct Var"); payload)
+									{
+										auto idx = *(int*)payload->Data;
+										add_event([this, idx, i, j]() {
+											auto& vars = blueprint->structs[i].variables;
+											if (idx != j)
+											{
+												if (idx < j)
+													std::rotate(vars.begin() + idx, vars.begin() + idx + 1, vars.begin() + j + 1);
+												else
+													std::rotate(vars.begin() + j, vars.begin() + idx, vars.begin() + idx + 1);
+											}
+											return false;
+										});
+										unsaved = true;
+									}
+									ImGui::EndDragDropTarget();
+								}
+								ImGui::SameLine();
+								if (ImGui::Button(graphics::font_icon_str("trash"_h).c_str()))
+								{
+									add_event([this, i, j]() {
+										auto& s = blueprint->structs[i];
+										auto vars = s.variables;
+										vars.erase(vars.begin() + j);
+										blueprint->alter_struct(s.name_hash, s.name, vars);
+										return false;
+									});
+									unsaved = true;
+								}
+
+								ImGui::PopID();
+							}
+
+							ImGui::EndTable();
+						}
+
+						if (ImGui::Button("New"))
+						{
+							auto var_name = get_unique_name("new_var", [&](const std::string& name) {
+								for (auto& v : s.variables)
+								{
+									if (v.name == name)
+										return true;
+								}
+								return false;
+							});
+							add_event([this, i, var_name]() {
+								auto& s = blueprint->structs[i];
+								auto vars = s.variables;
+								vars.push_back({ var_name, sh(var_name.c_str()), TypeInfo::get<float>() });
+								blueprint->alter_struct(s.name_hash, s.name, vars);
+								return false;
+							});
+							unsaved = true;
+						}
+
+						ImGui::TableSetColumnIndex(2);
+						ImGui::Button(graphics::font_icon_str("bars"_h).c_str());
+						if (ImGui::BeginDragDropSource())
+						{
+							ImGui::SetDragDropPayload("Struct", &i, sizeof(int));
+							ImGui::TextUnformatted(s.name.c_str());
+							ImGui::EndDragDropSource();
+						}
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (auto payload = ImGui::AcceptDragDropPayload("Struct"); payload)
+							{
+								auto idx = *(int*)payload->Data;
+								add_event([this, idx, i]() {
+									auto& structs = blueprint->structs;
+									if (idx != i)
+									{
+										if (idx < i)
+											std::rotate(structs.begin() + idx, structs.begin() + idx + 1, structs.begin() + i + 1);
+										else
+											std::rotate(structs.begin() + i, structs.begin() + idx, structs.begin() + idx + 1);
+									}
+									return false;
+								});
+								unsaved = true;
+							}
+							ImGui::EndDragDropTarget();
+						}
+						ImGui::SameLine();
+						if (ImGui::Button(graphics::font_icon_str("trash"_h).c_str()))
+						{
+							auto name_hash = s.name_hash;
+							add_event([this, name_hash]() {
+								blueprint->remove_struct(name_hash);
+								return false;
+							});
+							unsaved = true;
+						}
+
+						ImGui::PopID();
+					}
+
+					ImGui::EndTable();
+				}
+
+				if (ImGui::Button("New"))
 				{
 					auto name = get_unique_name("new_struct", [&](const std::string& name) {
-						for (auto& v : blueprint->structs)
+						for (auto& s : blueprint->structs)
 						{
-							if (v.name == name)
+							if (s.name == name)
 								return true;
 						}
 						return false;
 					});
-					blueprint->add_struct(name, {});
-					selected_struct = blueprint->structs.size() - 1;
+					add_event([this, name]() {
+						blueprint->add_struct(name, {});
+						return false;
+					});
 					unsaved = true;
 				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
-				{
-					if (selected_struct != -1)
-					{
-						blueprint->remove_struct(blueprint->structs[selected_struct].name_hash);
-						if (blueprint->structs.empty() || selected_struct >= blueprint->structs.size())
-							selected_struct = -1;
-						unsaved = true;
-					}
-				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
-				{
-					if (selected_struct > 0)
-					{
-						std::swap(blueprint->structs[selected_struct], blueprint->structs[selected_struct - 1]);
-						selected_struct--;
-						unsaved = true;
-					}
-				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
-				{
-					if (selected_struct != -1 && selected_struct < blueprint->structs.size() - 1)
-					{
-						std::swap(blueprint->structs[selected_struct], blueprint->structs[selected_struct + 1]);
-						selected_struct++;
-						unsaved = true;
-					}
-				}
-
-				if (selected_struct != -1)
-				{
-					auto& s = blueprint->structs[selected_struct];
-					auto variables = s.variables;
-
-					auto name = s.name;
-					auto old_name_hash = s.name_hash;
-					ImGui::InputText("Struct Name", &name);
-					if (ImGui::IsItemDeactivatedAfterEdit())
-					{
-						blueprint->alter_struct(s.name_hash, name, s.variables);
-						if (blueprint->is_static)
-							app.change_bp_references(0, old_name_hash, 0, 0, sh(name.c_str()), 0);
-						unsaved = true;
-					}
-
-					ImGui::PushID("bp_struct_variables");
-
-					static int selected_struct_variable = -1;
-					if (ImGui::BeginListBox("##struct_variables"))
-					{
-						for (auto i = 0; i < s.variables.size(); i++)
-						{
-							if (ImGui::Selectable(s.variables[i].name.c_str(), selected_struct_variable == i))
-								selected_struct_variable = i;
-						}
-						ImGui::EndListBox();
-					}
-					selected_struct_variable = min(selected_struct_variable, (int)s.variables.size() - 1);
-
-					if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
-					{
-						auto name = get_unique_name("new_variable", [&](const std::string& name) {
-							for (auto& v : s.variables)
-							{
-								if (v.name == name)
-									return true;
-							}
-							return false;
-						});
-						variables.push_back({ name, sh(name.c_str()), TypeInfo::get<float>() });
-						blueprint->alter_struct(s.name_hash, s.name, variables);
-						selected_struct_variable = variables.size() - 1;
-						unsaved = true;
-					}
-					ImGui::SameLine();
-					if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
-					{
-						if (selected_struct_variable != -1)
-						{
-							auto old_item_hash = variables[selected_struct_variable].name_hash;
-							variables.erase(variables.begin() + selected_struct_variable);
-							blueprint->alter_struct(s.name_hash, s.name, variables);
-							if (blueprint->is_static)
-								app.change_bp_references(old_item_hash, s.name_hash, 0, 0, s.name_hash, 0);
-							if (variables.empty() || selected_struct_variable >= variables.size())
-								selected_struct_variable = -1;
-							unsaved = true;
-						}
-					}
-					ImGui::SameLine();
-					if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
-					{
-						if (selected_struct_variable > 0)
-						{
-							std::swap(variables[selected_struct_variable], variables[selected_struct_variable - 1]);
-							s.variables = variables;
-							selected_struct_variable--;
-							unsaved = true;
-						}
-					}
-					ImGui::SameLine();
-					if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
-					{
-						if (selected_struct_variable != -1 && selected_struct_variable < variables.size() - 1)
-						{
-							std::swap(variables[selected_struct_variable], variables[selected_struct_variable + 1]);
-							s.variables = variables;
-							selected_struct_variable++;
-							unsaved = true;
-						}
-					}
-
-					if (selected_struct_variable != -1)
-					{
-						auto& variable = variables[selected_struct_variable];
-						auto old_variable_hash = variable.name_hash;
-
-						auto name = variable.name;
-						ImGui::InputText("Variable Name", &name);
-						if (ImGui::IsItemDeactivatedAfterEdit())
-						{
-							variable.name = name;
-							variable.name_hash = sh(name.c_str());
-							blueprint->alter_struct(s.name_hash, s.name, variables);
-							if (blueprint->is_static)
-								app.change_bp_references(old_variable_hash, s.name_hash, 0, sh(name.c_str()), s.name_hash, 0);
-							unsaved = true;
-						}
-						if (ImGui::BeginCombo("Variable Type", ti_str(variable.type).c_str()))
-						{
-							if (auto type = show_types_menu(); type)
-							{
-								variable.type = type;
-								blueprint->alter_struct(s.name_hash, s.name, variables);
-								if (blueprint->is_static)
-									app.change_bp_references(old_variable_hash, s.name_hash, 0, sh(name.c_str()), s.name_hash, 0);
-								unsaved = true;
-							}
-
-							ImGui::EndCombo();
-						}
-					}
-
-					ImGui::PopID();
-				}
-
-				ImGui::PopID();
-
-				if (blueprint_instance->built_frame < blueprint->dirty_frame)
-					blueprint_instance->build();
 			}
 			if (ImGui::CollapsingHeader("Variables:"))
 			{
-				ImGui::PushID("bp_variables");
-				static int selected_variable = -1;
-				ImGui::SetNextItemWidth(150.f);
-				if (ImGui::BeginListBox("##variables"))
+				if (ImGui::BeginTable("bp_variables", 5, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollX | ImGuiTableFlags_NoSavedSettings,
+					(vec2)ImGui::GetContentRegionAvail() - vec2(8.f, 24.f)))
 				{
+					ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableSetupColumn("Flags", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableSetupColumn("Data", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableSetupColumn("Actions", ImGuiTableColumnFlags_WidthFixed, 100.f);
+					ImGui::TableHeadersRow();
+
 					for (auto i = 0; i < blueprint->variables.size(); i++)
 					{
-						if (ImGui::Selectable(blueprint->variables[i].name.c_str(), selected_variable == i))
-							selected_variable = i;
-					}
-					ImGui::EndListBox();
-				}
-				selected_variable = min(selected_variable, (int)blueprint->variables.size() - 1);
+						auto& v = blueprint->variables[i];
 
-				if (ImGui::SmallButton(graphics::font_icon_str("plus"_h).c_str()))
+						ImGui::TableNextRow();
+
+						ImGui::PushID(i);
+
+						ImGui::TableSetColumnIndex(0);
+						auto name = v.name;
+						ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 4.f);
+						ImGui::InputText("##name", &name);
+						if (ImGui::IsItemDeactivatedAfterEdit())
+						{
+							add_event([this, i, name]() {
+								auto& v = blueprint->variables[i];
+								auto old_name_hash = v.name_hash;
+								blueprint->alter_variable(nullptr, old_name_hash, name, v.type);
+								if (blueprint->is_static)
+									app.change_bp_references(old_name_hash, blueprint->name_hash, 0, sh(name.c_str()), blueprint->name_hash, 0);
+								return false;
+							});
+							unsaved = true;
+						}
+
+						ImGui::TableSetColumnIndex(1);
+						{
+							auto ti = (TypeInfo_Enum*)TypeInfo::get<BlueprintVariableFlags>();
+							auto ei = ti->ei;
+							auto value = v.flags;
+							ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 4.f);
+							if (ImGui::BeginCombo("##flags", ti->serialize(&value).c_str()))
+							{
+								for (auto& ii : ei->items)
+								{
+									bool selected = (value & ii.value);
+									if (ImGui::Selectable(ii.name.c_str(), selected))
+									{
+										if (selected)
+											(int&)value &= ~ii.value;
+										else
+											(int&)value |= ii.value;
+										add_event([this, i, value]() {
+											auto& v = blueprint->variables[i];
+											v.flags = value;
+											return false;
+										});
+									}
+								}
+								ImGui::EndCombo();
+							}
+						}
+
+						ImGui::TableSetColumnIndex(2);
+						ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 4.f);
+						if (ImGui::BeginCombo("##type", ti_str(v.type).c_str()))
+						{
+							if (auto type = show_types_menu(); type)
+							{
+								add_event([this, i, type]() {
+									auto& v = blueprint->variables[i];
+									auto old_name_hash = v.name_hash;
+									blueprint->alter_variable(nullptr, old_name_hash, "", type);
+									if (blueprint->is_static)
+										app.change_bp_references(old_name_hash, blueprint->name_hash, 0, old_name_hash, blueprint->name_hash, 0);
+									return false;
+								});
+								unsaved = true;
+							}
+							ImGui::EndCombo();
+						}
+
+						ImGui::TableSetColumnIndex(3);
+						if (debugging_group)
+						{
+							auto it = debugging_group->instance->variables.find(v.name_hash);
+							if (it != debugging_group->instance->variables.end())
+							{
+								ImGui::SameLine();
+								ImGui::TextUnformatted(get_value_str(it->second.type, it->second.data).c_str());
+							}
+						}
+						else
+						{
+							if (manipulate_value(v.type, v.data))
+								unsaved = true;
+						}
+
+						ImGui::TableSetColumnIndex(4);
+						ImGui::Button(graphics::font_icon_str("bars"_h).c_str());
+						if (ImGui::BeginDragDropSource())
+						{
+							ImGui::SetDragDropPayload("Variable", &i, sizeof(int));
+							ImGui::TextUnformatted(v.name.c_str());
+							ImGui::EndDragDropSource();
+						}
+						if (ImGui::BeginDragDropTarget())
+						{
+							if (auto payload = ImGui::AcceptDragDropPayload("Variable"); payload)
+							{
+								auto idx = *(int*)payload->Data;
+								add_event([this, idx, i]() {
+									auto& vars = blueprint->variables;
+									if (idx != i)
+									{
+										if (idx < i)
+											std::rotate(vars.begin() + idx, vars.begin() + idx + 1, vars.begin() + i + 1);
+										else
+											std::rotate(vars.begin() + i, vars.begin() + idx, vars.begin() + idx + 1);
+									}
+									return false;
+								});
+								unsaved = true;
+							}
+							ImGui::EndDragDropTarget();
+						}
+						ImGui::SameLine();
+						if (ImGui::Button(graphics::font_icon_str("trash"_h).c_str()))
+						{
+							auto name_hash = v.name_hash;
+							add_event([this, name_hash]() {
+								blueprint->remove_variable(nullptr, name_hash);
+								return false;
+							});
+							unsaved = true;
+						}
+
+						ImGui::PopID();
+					}
+
+					ImGui::EndTable();
+				}
+
+				if (ImGui::Button("New"))
 				{
 					auto name = get_unique_name("new_variable", [&](const std::string& name) {
 						for (auto& v : blueprint->variables)
@@ -1524,113 +1699,18 @@ void BlueprintView::on_draw()
 						}
 						return false;
 					});
-					blueprint->add_variable(nullptr, name, TypeInfo::get<float>());
-					selected_variable = blueprint->variables.size() - 1;
+					add_event([this, name]() {
+						blueprint->add_variable(nullptr, name, TypeInfo::get<float>());
+						return false;
+					});
 					unsaved = true;
 				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("minus"_h).c_str()))
-				{
-					if (selected_variable != -1)
-					{
-						blueprint->remove_variable(nullptr, blueprint->variables[selected_variable].name_hash);
-						if (blueprint->variables.empty() || selected_variable >= blueprint->variables.size())
-							selected_variable = -1;
-						ax::NodeEditor::ClearSelection();
-						unsaved = true;
-					}
-				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("arrow-up"_h).c_str()))
-				{
-					if (selected_variable > 0)
-					{
-						std::swap(blueprint->variables[selected_variable], blueprint->variables[selected_variable - 1]);
-						selected_variable--;
-						unsaved = true;
-					}
-				}
-				ImGui::SameLine();
-				if (ImGui::SmallButton(graphics::font_icon_str("arrow-down"_h).c_str()))
-				{
-					if (selected_variable != -1 && selected_variable < blueprint->variables.size() - 1)
-					{
-						std::swap(blueprint->variables[selected_variable], blueprint->variables[selected_variable + 1]);
-						selected_variable++;
-						unsaved = true;
-					}
-				}
-				if (selected_variable != -1)
-				{
-					auto& var = blueprint->variables[selected_variable];
-
-					auto name = var.name;
-					auto old_name_hash = var.name_hash;
-					ImGui::InputText("Name", &name);
-					if (ImGui::IsItemDeactivatedAfterEdit())
-					{
-						blueprint->alter_variable(nullptr, var.name_hash, name, var.type);
-						if (blueprint->is_static)
-							app.change_bp_references(old_name_hash, blueprint->name_hash, 0, sh(name.c_str()), blueprint->name_hash, 0);
-						ax::NodeEditor::ClearSelection();
-						unsaved = true;
-					}
-					{
-						auto ti = (TypeInfo_Enum*)TypeInfo::get<BlueprintVariableFlags>();
-						auto ei = ti->ei;
-						if (ImGui::BeginCombo("Flags", ti->serialize(&var.flags).c_str()))
-						{
-							for (auto& ii : ei->items)
-							{
-								bool selected = (var.flags & ii.value);
-								if (ImGui::Selectable(ii.name.c_str(), selected))
-								{
-									if (selected)
-										(int&)var.flags &= ~ii.value;
-									else
-										(int&)var.flags |= ii.value;
-								}
-							}
-							ImGui::EndCombo();
-						}
-					}
-					ImGui::SetNextItemWidth(200.f);
-					if (ImGui::BeginCombo("Type", ti_str(var.type).c_str()))
-					{
-						if (auto type = show_types_menu(); type)
-						{
-							blueprint->alter_variable(nullptr, var.name_hash, "", type);
-							if (blueprint->is_static)
-								app.change_bp_references(old_name_hash, blueprint->name_hash, 0, old_name_hash, blueprint->name_hash, 0);
-							ax::NodeEditor::ClearSelection();
-							unsaved = true;
-						}
-
-						ImGui::EndCombo();
-					}
-
-					ImGui::TextUnformatted("Value");
-					if (debugging_group)
-					{
-						auto it = debugging_group->instance->variables.find(var.name_hash);
-						if (it != debugging_group->instance->variables.end())
-						{
-							ImGui::SameLine();
-							ImGui::TextUnformatted(get_value_str(it->second.type, it->second.data).c_str());
-						}
-					}
-					else
-					{
-						if (manipulate_value(var.type, var.data))
-							unsaved = true;
-					}
-				}
-				ImGui::PopID();
-
-				if (blueprint_instance->built_frame < blueprint->dirty_frame)
-					blueprint_instance->build();
 			}
-
+			if (ImGui::CollapsingHeader("Group Options:"))
+			{
+				if (ImGui::Checkbox("responsive", &group->responsive))
+					unsaved = true;
+			}
 			if (ImGui::CollapsingHeader("Group Variables:"))
 			{
 				ImGui::PushID("group_variables");
@@ -3004,7 +3084,7 @@ void BlueprintView::on_draw()
 					if (!new_node_block)
 						new_node_block = hovered_block;
 
-					ImGui::SetKeyboardFocusHere();
+					//ImGui::SetKeyboardFocusHere();
 					ImGui::InputText("##Filter", &add_node_filter);
 					ImGui::SameLine();
 					ImGui::ToolButton("C", &add_node_filter_match_case);
@@ -3530,157 +3610,16 @@ void BlueprintView::on_draw()
 						if (add_node_filter.empty())
 							ImGui::EndMenu();
 					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Standard"))
+					for (auto l : blueprint_window.node_libraries)
 					{
-						header = "Standard";
-						for (auto& t : standard_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Extern"))
-					{
-						header = "Extern";
-						for (auto& t : extern_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Noise"))
-					{
-						header = "Noise";
-						for (auto& t : noise_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Texture"))
-					{
-						header = "Texture";
-						for (auto& t : texture_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Geometry"))
-					{
-						header = "Geometry";
-						for (auto& t : geometry_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Entity"))
-					{
-						header = "Entity";
-						for (auto& t : entity_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Message"))
-					{
-						header = "Message";
-						for (auto& t : message_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Animation"))
-					{
-						header = "Animation";
-						for (auto& t : animation_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Tween"))
-					{
-						header = "Tween";
-						for (auto& t : tween_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Camera"))
-					{
-						header = "Camera";
-						for (auto& t : camera_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Navigation"))
-					{
-						header = "Navigation";
-						for (auto& t : navigation_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Colliding"))
-					{
-						header = "Colliding";
-						for (auto& t : colliding_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Procedural"))
-					{
-						header = "Procedural";
-						for (auto& t : procedural_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Input"))
-					{
-						header = "Input";
-						for (auto& t : input_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Renderer"))
-					{
-						header = "Renderer";
-						for (auto& t : renderer_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Primitive"))
-					{
-						header = "Primitive";
-						for (auto& t : primitive_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("HUD"))
-					{
-						header = "HUD";
-						for (auto& t : hud_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Audio"))
-					{
-						header = "Audio";
-						for (auto& t : audio_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
-					}
-					if (!add_node_filter.empty() || ImGui::BeginMenu("Resource"))
-					{
-						header = "Resource";
-						for (auto& t : resource_library->node_templates)
-							show_node_library_template(t);
-						if (add_node_filter.empty())
-							ImGui::EndMenu();
+						if (!add_node_filter.empty() || ImGui::BeginMenu(l->name.c_str()))
+						{
+							header = l->name;
+							for (auto& t : standard_library->node_templates)
+								show_node_library_template(t);
+							if (add_node_filter.empty())
+								ImGui::EndMenu();
+						}
 					}
 
 					ImGui::EndPopup();
@@ -3880,44 +3819,25 @@ void BlueprintWindow::init()
 {
 	if (node_libraries.empty())
 	{
-		standard_library = BlueprintNodeLibrary::get(L"standard");
-		extern_library = BlueprintNodeLibrary::get(L"extern");
-		noise_library = BlueprintNodeLibrary::get(L"graphics::noise");
-		texture_library = BlueprintNodeLibrary::get(L"graphics::texture");
-		geometry_library = BlueprintNodeLibrary::get(L"graphics::geometry");
-		entity_library = BlueprintNodeLibrary::get(L"universe::entity");
-		message_library = BlueprintNodeLibrary::get(L"universe::message");
-		animation_library = BlueprintNodeLibrary::get(L"universe::animation");
-		tween_library = BlueprintNodeLibrary::get(L"universe::tween");
-		camera_library = BlueprintNodeLibrary::get(L"universe::camera");
-		navigation_library = BlueprintNodeLibrary::get(L"universe::navigation");
-		colliding_library = BlueprintNodeLibrary::get(L"universe::colliding");
-		procedural_library = BlueprintNodeLibrary::get(L"universe::procedural");
-		input_library = BlueprintNodeLibrary::get(L"universe::input");
-		renderer_library = BlueprintNodeLibrary::get(L"universe::renderer");
-		primitive_library = BlueprintNodeLibrary::get(L"universe::primitive");
-		hud_library = BlueprintNodeLibrary::get(L"universe::HUD");
-		audio_library = BlueprintNodeLibrary::get(L"universe::audio");
-		resource_library = BlueprintNodeLibrary::get(L"universe::resource");
-		node_libraries.push_back(standard_library);
-		node_libraries.push_back(extern_library);
-		node_libraries.push_back(noise_library);
-		node_libraries.push_back(texture_library);
-		node_libraries.push_back(geometry_library);
-		node_libraries.push_back(entity_library);
-		node_libraries.push_back(message_library);
-		node_libraries.push_back(animation_library);
-		node_libraries.push_back(tween_library);
-		node_libraries.push_back(camera_library);
-		node_libraries.push_back(navigation_library);
-		node_libraries.push_back(colliding_library);
-		node_libraries.push_back(procedural_library);
-		node_libraries.push_back(input_library);
-		node_libraries.push_back(renderer_library);
-		node_libraries.push_back(primitive_library);
-		node_libraries.push_back(hud_library);
-		node_libraries.push_back(audio_library);
-		node_libraries.push_back(resource_library);
+		node_libraries.push_back(standard_library = BlueprintNodeLibrary::get(L"standard"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"extern"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"graphics::noise"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"graphics::texture"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"graphics::geometry"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"universe::entity"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"universe::message"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"universe::animation"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"universe::tween"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"universe::camera"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"universe::navigation"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"universe::colliding"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"universe::procedural"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"universe::input"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"universe::renderer"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"universe::primitive"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"universe::HUD"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"universe::audio"));
+		node_libraries.push_back(BlueprintNodeLibrary::get(L"universe::resource"));
 	}
 }
 

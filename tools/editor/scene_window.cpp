@@ -429,7 +429,14 @@ void SceneView::on_draw()
 		ImGui::Image(render_target.get(), render_target_extent);
 		auto p0 = ImGui::GetItemRectMin();
 		auto p1 = ImGui::GetItemRectMax();
-		app.input->offset = p0;
+
+		auto viewport = ImGui::GetWindowViewport();
+		auto window = (graphics::WindowPtr)viewport->PlatformUserData;
+		if (window)
+		{
+			app.input->offset = (vec2)p0 - (vec2)window->native->pos;
+			app.input->bind_window(window->native);
+		}
 
 		bool gizmo_using = false;
 		if (overlays.use_gizmos)

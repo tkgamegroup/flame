@@ -43,6 +43,8 @@ namespace flame
 			return !kbtn[key] && kbtn_duration[key] == 0.f;
 		}
 
+		virtual void bind_window(NativeWindowPtr w) = 0;
+
 		struct Instance
 		{
 			virtual sInputPtr operator()() = 0;

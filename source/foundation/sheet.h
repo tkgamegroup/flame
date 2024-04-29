@@ -42,10 +42,11 @@ namespace flame
 		virtual void clear_rows() = 0;
 		virtual void insert_column(const std::string& name, TypeInfo* type, int idx = -1, const std::string& default_value = "") = 0;
 		virtual void alter_column(uint idx, const std::string& new_name, TypeInfo* new_type, const std::string& new_default_value = "") = 0;
-		virtual void reorder_columns(uint target_column_index, int new_index) = 0;
+		virtual void reorder_columns(uint target_index, int new_index) = 0;
 		virtual void remove_column(uint idx) = 0;
 		virtual void insert_row(int idx = -1) = 0;
 		virtual void remove_row(uint idx) = 0;
+		virtual void reorder_rows(uint target_index, int new_index) = 0;
 
 		virtual void save(const std::filesystem::path& path = L"") = 0;
 

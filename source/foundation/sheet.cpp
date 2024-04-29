@@ -77,27 +77,27 @@ namespace flame
 		}
 	}
 
-	void SheetPrivate::reorder_columns(uint target_column_index, int new_index)
+	void SheetPrivate::reorder_columns(uint target_index, int new_index)
 	{
-		assert(target_column_index < columns.size());
+		assert(target_index < columns.size());
 		assert(new_index < columns.size());
 
-		if (target_column_index != new_index)
+		if (target_index != new_index)
 		{
-			if (target_column_index < new_index)
-				std::rotate(columns.begin() + target_column_index, columns.begin() + target_column_index + 1, columns.begin() + new_index + 1);
+			if (target_index < new_index)
+				std::rotate(columns.begin() + target_index, columns.begin() + target_index + 1, columns.begin() + new_index + 1);
 			else
-				std::rotate(columns.begin() + new_index, columns.begin() + target_column_index, columns.begin() + target_column_index + 1);
+				std::rotate(columns.begin() + new_index, columns.begin() + target_index, columns.begin() + target_index + 1);
 			columns_map.clear();
 			for (auto i = 0; i < columns.size(); i++)
 				columns_map[columns[i].name_hash] = i;
 
 			for (auto& r : rows)
 			{
-				if (target_column_index < new_index)
-					std::rotate(r.datas.begin() + target_column_index, r.datas.begin() + target_column_index + 1, r.datas.begin() + new_index + 1);
+				if (target_index < new_index)
+					std::rotate(r.datas.begin() + target_index, r.datas.begin() + target_index + 1, r.datas.begin() + new_index + 1);
 				else
-					std::rotate(r.datas.begin() + new_index, r.datas.begin() + target_column_index, r.datas.begin() + target_column_index + 1);
+					std::rotate(r.datas.begin() + new_index, r.datas.begin() + target_index, r.datas.begin() + target_index + 1);
 			}
 		}
 	}
@@ -143,6 +143,20 @@ namespace flame
 			columns[i].type->destroy(row.datas[i]);
 
 		rows.erase(rows.begin() + idx);
+	}
+
+	void SheetPrivate::reorder_rows(uint target_index, int new_index)
+	{
+		assert(target_index < rows.size());
+		assert(new_index < rows.size());
+
+		if (target_index != new_index)
+		{
+			if (target_index < new_index)
+				std::rotate(rows.begin() + target_index, rows.begin() + target_index + 1, rows.begin() + new_index + 1);
+			else
+				std::rotate(rows.begin() + new_index, rows.begin() + target_index, rows.begin() + target_index + 1);
+		}
 	}
 
 	void SheetPrivate::save(const std::filesystem::path& path)

@@ -353,7 +353,7 @@ namespace flame
 			});
 			native_window->mouse_scroll_listeners.add([](int scroll) {
 				ImGuiIO& io = ImGui::GetIO();
-				io.AddMouseWheelEvent(scroll / WHEEL_DELTA, 0.f);
+				io.AddMouseWheelEvent(0.f, scroll);
 			});
 			native_window->key_listeners.add([](KeyboardKey key, bool down) {
 				ImGuiIO& io = ImGui::GetIO();

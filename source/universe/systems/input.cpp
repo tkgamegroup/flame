@@ -9,32 +9,46 @@ namespace flame
 {
 	sInputPrivate::sInputPrivate()
 	{
-		auto main_window = graphics::Window::get_list().front();
-		auto native_widnow = main_window->native;
-
-		native_widnow->mouse_listeners.add([this](MouseButton btn, bool down) {
-			mbtn_temp[btn] = down;
-		}, "input_system"_h);
-		native_widnow->mouse_move_listeners.add([this](const ivec2& pos) {
-			mpos_temp = (vec2)pos - offset;
-		}, "input_system"_h);
-		native_widnow->mouse_scroll_listeners.add([this](int scroll) {
-			mscr_temp = scroll;
-		}, "input_system"_h);
-		native_widnow->key_listeners.add([this](KeyboardKey key, bool down) {
-			kbtn_temp[key] = down;
-		}, "input_system"_h);
+		auto main_window = NativeWindow::list().front();
+		bind_window(main_window);
 	}
 
 	sInputPrivate::~sInputPrivate()
 	{
 		// will crash..
-		//auto main_window = graphics::Window::get_list().front();
-		//auto native_widnow = main_window->native;
+		// bind_window(nullptr);
+	}
 
-		//native_widnow->mouse_listeners.remove("input_system"_h);
-		//native_widnow->mouse_move_listeners.remove("input_system"_h);
-		//native_widnow->key_listeners.remove("input_system"_h);
+	void sInputPrivate::bind_window(NativeWindowPtr w)
+	{
+		if (bound_window == w)
+			return;
+
+		if (bound_window)
+		{
+			bound_window->mouse_listeners.remove("input_system"_h);
+			bound_window->mouse_move_listeners.remove("input_system"_h);
+			bound_window->mouse_scroll_listeners.remove("input_system"_h);
+			bound_window->key_listeners.remove("input_system"_h);
+		}
+
+		if (w)
+		{
+			w->mouse_listeners.add([this](MouseButton btn, bool down) {
+				mbtn_temp[btn] = down;
+			}, "input_system"_h);
+			w->mouse_move_listeners.add([this](const ivec2& pos) {
+				mpos_temp = (vec2)pos - offset;
+			}, "input_system"_h);
+			w->mouse_scroll_listeners.add([this](int scroll) {
+				mscr_temp = scroll;
+			}, "input_system"_h);
+			w->key_listeners.add([this](KeyboardKey key, bool down) {
+				kbtn_temp[key] = down;
+			}, "input_system"_h);
+		}
+
+		bound_window = w;
 	}
 
 	void sInputPrivate::update()
