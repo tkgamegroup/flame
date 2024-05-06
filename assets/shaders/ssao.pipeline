@@ -54,6 +54,7 @@ void main()
     vec3 rand_vec = sample_noises[
         (int(gl_FragCoord.y) % NOISE_CY) * NOISE_CX
         + int(gl_FragCoord.x) % NOISE_CX].xyz;
+
     vec3 tangent = normalize(rand_vec - normal * dot(rand_vec, normal));
     vec3 bitangent = cross(tangent, normal);
 
@@ -70,6 +71,7 @@ void main()
 
         float z = texture(img_dep, tap.xy).x;
         z = -linear_depth(camera.zNear, camera.zFar, z * 2.0 - 1.0);
+
         float range_check = smoothstep(0.0, 1.0, pc.radius / abs(frag_pos.z - z));
         ao += (z >= pos.z + pc.bias ? 1.0 : 0.0) * range_check;
     }

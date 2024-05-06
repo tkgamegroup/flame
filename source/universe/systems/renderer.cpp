@@ -128,6 +128,9 @@ namespace flame
 	graphics::GraphicsPipelinePtr				pl_down_sample_depth;
 	graphics::GraphicsPipelinePtr				pl_up_sample_depth;
 	graphics::GraphicsPipelinePtr				pl_outline_pp;
+	graphics::ComputePipelinePtr				pl_ssao;
+	graphics::ComputePipelinePtr				pl_ao_blur;
+	graphics::ComputePipelinePtr				pl_ao_comp;
 	graphics::ComputePipelinePtr				pl_luma_hist;
 	graphics::ComputePipelinePtr				pl_luma_avg;
 	graphics::GraphicsPipelinePtr				pl_bloom_bright;
