@@ -27,7 +27,7 @@ namespace flame
 			ImagePtr main_img = nullptr;
 			std::unique_ptr<DescriptorSetT> main_ds;
 
-			CanvasPrivate();
+			CanvasPrivate(bool hdr);
 			~CanvasPrivate();
 
 			void create_renderpass(Format format);

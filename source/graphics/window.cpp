@@ -124,6 +124,7 @@ namespace flame
 				{
 					images[i].reset(ImagePrivate::create(device, format, uvec3(size, 1), native_images[i]));
 					cb->image_barrier(images[i].get(), {}, ImageLayoutPresent);
+					device->set_object_debug_name(images[i].get(), "Window" + str(i));
 				}
 				cb.excute();
 			}

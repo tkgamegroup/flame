@@ -51,7 +51,7 @@ namespace flame
 				}data;
 			};
 
-			WindowPtr bound_window;
+			WindowPtr bound_window = nullptr;
 			std::vector<ImageViewPtr> iv_tars;
 			std::vector<FramebufferPtr> fb_tars;
 			bool clear_framebuffer = true;
@@ -92,7 +92,7 @@ namespace flame
 
 			struct Create
 			{
-				virtual CanvasPtr operator()() = 0;
+				virtual CanvasPtr operator()(bool hdr = false) = 0;
 			};
 			FLAME_GRAPHICS_API static Create& create;
 		};

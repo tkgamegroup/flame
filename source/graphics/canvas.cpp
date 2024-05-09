@@ -29,9 +29,9 @@ namespace flame
 			return ret;
 		}
 
-		CanvasPrivate::CanvasPrivate()
+		CanvasPrivate::CanvasPrivate(bool hdr)
 		{
-			create_renderpass(Format_R8G8B8A8_UNORM);
+			create_renderpass(hdr ? Format_R16G16B16A16_SFLOAT : Format_R8G8B8A8_UNORM);
 
 			std::string rp_define = "rp=" + str(rp);
 			std::vector<std::string> stencil_write_defines = { "stencil_test=true", "stencil_op=" + TypeInfo::serialize_t(StencilOpReplace), "color_mask=" + TypeInfo::serialize_t(ColorComponentNone), "frag:ALPHA_TEST" };
@@ -689,9 +689,9 @@ namespace flame
 
 		struct CanvasCreate : Canvas::Create
 		{
-			CanvasPtr operator()() override
+			CanvasPtr operator()(bool hdr) override
 			{
-				return new CanvasPrivate();
+				return new CanvasPrivate(hdr);
 			}
 		}Canvas_create;
 		Canvas::Create& Canvas::create = Canvas_create;

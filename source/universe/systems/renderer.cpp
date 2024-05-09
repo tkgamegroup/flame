@@ -483,12 +483,6 @@ namespace flame
 	{
 		targets = _targets;
 
-		if (canvas)
-		{
-			canvas->set_targets(targets);
-			canvas->clear_framebuffer = false;
-		}
-
 		if (targets.empty())
 			return;
 
@@ -589,6 +583,12 @@ namespace flame
 			img_pickup.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
 			img_dep_pickup.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
 			fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
+		}
+
+		if (canvas)
+		{
+			auto iv = img_dst->get_view();
+			canvas->set_targets({ &iv, 1 });
 		}
 	}
 
@@ -890,7 +890,10 @@ namespace flame
 		ret->camera = camera;
 		ret->final_layout = final_layout;
 		if (need_canvas)
-			ret->canvas = graphics::Canvas::create();
+		{
+			ret->canvas = graphics::Canvas::create(true);
+			ret->canvas->clear_framebuffer = false;
+		}
 		if (need_pickup)
 		{
 			ret->img_pickup.reset(graphics::Image::create(graphics::Format_R8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferSrc));
@@ -3200,6 +3203,9 @@ namespace flame
 						render_element(t->canvas, first_element);
 				}
 				cb->end_debug_label();
+
+				cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutAttachment);
+				t->canvas->render(0, cb);
 			}
 
 			cb->image_barrier(img, iv->sub, graphics::ImageLayoutAttachment);
@@ -3210,9 +3216,6 @@ namespace flame
 			cb->draw(3, 1, 0, 0);
 			cb->end_renderpass();
 			cb->image_barrier(img, iv->sub, t->final_layout);
-
-			if (t->canvas)
-				t->canvas->render(tar_idx, cb);
 
 			first = false;
 		}
