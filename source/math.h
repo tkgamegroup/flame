@@ -179,6 +179,12 @@ namespace flame
 		ang_diff = angle_diff(ang0, angle_xz(d));
 	}
 
+	inline vec2 arc_point(const vec2& center, float angle, float radius)
+	{
+		auto rad = radians(angle);
+		return center + vec2(cos(rad) * radius, sin(rad) * radius);
+	}
+
 	inline float triangle_area(const vec2& a, const vec2& b, const vec2& c)
 	{
 		return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)) / 2.f;

@@ -32,7 +32,7 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto rect = sRenderer::instance()->hud_get_rect();
+				auto rect = sRenderer::instance()->hud_item_rect();
 				*(vec2*)outputs[0].data = rect.a;
 			}
 		);
@@ -47,7 +47,7 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto rect = sRenderer::instance()->hud_get_rect();
+				auto rect = sRenderer::instance()->hud_item_rect();
 				*(vec2*)outputs[0].data = vec2(rect.b.x, rect.a.y);
 			}
 		);
@@ -62,7 +62,7 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto rect = sRenderer::instance()->hud_get_rect();
+				auto rect = sRenderer::instance()->hud_item_rect();
 				*(vec2*)outputs[0].data = vec2(rect.a.x, rect.b.y);
 			}
 		);
@@ -77,7 +77,7 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto rect = sRenderer::instance()->hud_get_rect();
+				auto rect = sRenderer::instance()->hud_item_rect();
 				*(vec2*)outputs[0].data = rect.b;
 			}
 		);

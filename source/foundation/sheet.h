@@ -39,6 +39,31 @@ namespace flame
 			return it->second;
 		}
 
+		template<class T>
+		T get_as(Row& row, uint name)
+		{
+			auto column_idx = find_column(name);
+			if (column_idx == -1)
+				return T(0);
+			return *(T*)row.datas[column_idx];
+		}
+
+		std::string get_as_str(Row& row, uint name)
+		{
+			auto column_idx = find_column(name);
+			if (column_idx == -1)
+				return "";
+			return *(std::string*)row.datas[column_idx];
+		}
+
+		std::wstring get_as_wstr(Row& row, uint name)
+		{
+			auto column_idx = find_column(name);
+			if (column_idx == -1)
+				return L"";
+			return *(std::wstring*)row.datas[column_idx];
+		}
+
 		virtual void clear_rows() = 0;
 		virtual void insert_column(const std::string& name, TypeInfo* type, int idx = -1, const std::string& default_value = "") = 0;
 		virtual void alter_column(uint idx, const std::string& new_name, TypeInfo* new_type, const std::string& new_default_value = "") = 0;

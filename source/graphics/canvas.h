@@ -79,8 +79,13 @@ namespace flame
 			virtual void begin_stencil_compare() = 0;
 			virtual void end_stencil_compare() = 0;
 
+			virtual DrawVert* stroke(float thickness, const cvec4& col, bool closed) = 0;
+			virtual DrawVert* fill(const cvec4& col) = 0;
+
 			virtual DrawVert*	add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col) = 0;
 			virtual DrawVert*	add_rect_filled(const vec2& a, const vec2& b, const cvec4& col) = 0;
+			virtual DrawVert*	add_rect_rotated(const vec2& a, const vec2& b, float thickness, const cvec4& col, float angle) = 0;
+			virtual DrawVert*	add_rect_filled_rotated(const vec2& a, const vec2& b, const cvec4& col, float angle) = 0;
 			virtual DrawVert*	add_circle(const vec2& p, float radius, float thickness, const cvec4& col) = 0;
 			virtual DrawVert*	add_circle_filled(const vec2& p, float radius, const cvec4& col) = 0;
 			virtual void		add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness = 0.f, float border = 0.f) = 0;

@@ -2770,6 +2770,36 @@ void InspectorView::on_draw()
 
 						view_image(image, &view_swizzle, &view_sampler, &view_level, &view_layer, &view_zoom, &view_range_min, &view_range_max);
 					}
+					if (ImGui::CollapsingHeader("Slice Image"))
+					{
+						static int cx = 1;
+						static int cy = 1;
+
+						ImGui::InputInt("CX", &cx);
+						ImGui::InputInt("CY", &cy);
+
+						if (ImGui::Button("Slice"))
+						{
+							auto dst_dir = path;
+							dst_dir += "_slices";
+							if (!std::filesystem::exists(dst_dir))
+								std::filesystem::create_directories(dst_dir);
+
+							auto original_bmp = Bitmap::create(path);
+							auto slice_size = original_bmp->extent / uvec2(cx, cy);
+							for (auto y = 0; y < cy; y++)
+							{
+								for (auto x = 0; x < cx; x++)
+								{
+									auto slice = Bitmap::create(slice_size, original_bmp->chs);
+									original_bmp->copy_to(slice, slice_size, ivec2(x, y) * ivec2(slice_size), ivec2(0));
+									slice->save(dst_dir / (wstr(x) + wstr(y) + L".png"));
+									delete slice;
+								}
+							}
+							delete original_bmp;
+						}
+					}
 				}
 			}
 			else if (ext == L".fmat")

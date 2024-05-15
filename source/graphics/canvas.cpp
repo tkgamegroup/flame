@@ -18,7 +18,7 @@ namespace flame
 			auto& ret = precompute_circles[idx];
 			if (ret.empty())
 			{
-				ret.resize(idx + 4);
+				ret.resize(idx + 8);
 				auto s = 1.f / (float)ret.size() * 2.f * pi<float>();
 				for (auto i = 0; i < ret.size(); i++)
 				{
@@ -452,6 +452,34 @@ namespace flame
 		{
 			path_rect(a, b);
 			return fill(col);
+		}
+
+		Canvas::DrawVert* CanvasPrivate::add_rect_rotated(const vec2& a, const vec2& b, float thickness, const cvec4& col, float angle)
+		{
+			path_rect(a, b);
+			auto verts = stroke(thickness, col, true);
+			auto c = (a + b) * 0.5f;
+			auto r = rotate(mat3(1.f), radians(angle));
+			for (auto i = 0; i < 4; i++)
+			{
+				auto& vtx = verts[i];
+				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
+			}
+			return verts;
+		}
+
+		Canvas::DrawVert* CanvasPrivate::add_rect_filled_rotated(const vec2& a, const vec2& b, const cvec4& col, float angle)
+		{
+			path_rect(a, b);
+			auto verts = fill(col);
+			auto c = (a + b) * 0.5f;
+			auto r = rotate(mat3(1.f), radians(angle));
+			for (auto i = 0; i < 4; i++)
+			{
+				auto& vtx = verts[i];
+				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
+			}
+			return verts;
 		}
 
 		Canvas::DrawVert* CanvasPrivate::add_circle(const vec2& p, float radius, float thickness, const cvec4& col)

@@ -240,7 +240,8 @@ namespace flame
 		void hud_begin(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, const vec4& border) override;
 		void hud_end() override;
 		void hud_set_cursor(const vec2& pos) override;
-		Rect hud_get_rect() const override;
+		Rect hud_hud_rect() const override;
+		Rect hud_item_rect() const override;
 		vec2 hud_screen_size() const override;
 		void hud_push_style(HudStyleVar var, const vec2& value) override;
 		void hud_pop_style(HudStyleVar var) override;

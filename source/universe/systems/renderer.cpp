@@ -3676,7 +3676,15 @@ namespace flame
 			layout.rect.b = max(layout.rect.b, pos);
 	}
 
-	Rect sRendererPrivate::hud_get_rect() const
+	Rect sRendererPrivate::hud_hud_rect() const
+	{
+		if (huds.empty())
+			return Rect(0.f, 0.f, 0.f, 0.f);
+		auto& hud = huds.back();
+		return Rect(hud.pos, hud.pos + hud.size);
+	}
+
+	Rect sRendererPrivate::hud_item_rect() const
 	{
 		return hud_last_rect;
 	}

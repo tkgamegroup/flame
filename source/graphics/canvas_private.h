@@ -48,11 +48,13 @@ namespace flame
 			void path_rect(const vec2& a, const vec2& b);
 			DrawVert* stroke_path(DrawCmd& cmd, float thickness, const cvec4& col, bool closed);
 			DrawVert* fill_path(DrawCmd& cmd, const cvec4& col);
-			DrawVert* stroke(float thickness, const cvec4& col, bool closed);
-			DrawVert* fill(const cvec4& col);
+			DrawVert* stroke(float thickness, const cvec4& col, bool closed) override;
+			DrawVert* fill(const cvec4& col) override;
 
 			DrawVert*	add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col) override;
 			DrawVert*	add_rect_filled(const vec2& a, const vec2& b, const cvec4& col) override;
+			DrawVert*	add_rect_rotated(const vec2& a, const vec2& b, float thickness, const cvec4& col, float angle) override;
+			DrawVert*	add_rect_filled_rotated(const vec2& a, const vec2& b, const cvec4& col, float angle) override;
 			DrawVert*	add_circle(const vec2& p, float radius, float thickness, const cvec4& col) override;
 			DrawVert*	add_circle_filled(const vec2& p, float radius, const cvec4& col) override;
 			void		add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness, float border) override;

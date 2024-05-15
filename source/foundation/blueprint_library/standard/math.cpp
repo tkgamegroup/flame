@@ -1395,8 +1395,8 @@ namespace flame
 				auto c = *(vec3*)inputs[0].data;
 				auto a = *(float*)inputs[1].data;
 				auto r = *(float*)inputs[2].data;
-				auto rad = radians(a);
-				*(vec3*)outputs[0].data = c + vec3(cos(rad) * r, 0.f, sin(rad) * r);
+				auto res = arc_point(c, a, r);
+				*(vec3*)outputs[0].data = vec3(res.x, 0.f, res.y);
 			}
 		);
 
