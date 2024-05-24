@@ -274,6 +274,65 @@ namespace flame
 		return false;
 	}
 
+	template <uint N>
+	inline void make_line_strips(const vec<N, float>& pt0, const vec<N, float>& pt1, std::vector<vec<N, float>>& strips)
+	{
+		constexpr auto SEPARATOR = std::numeric_limits<float>::quiet_NaN();
+
+		auto it0 = std::find_if(strips.begin(), strips.end(), [&](const auto& i) {
+			return distance(i, pt0) < 0.01f;
+		});
+		auto it1 = std::find_if(strips.begin(), strips.end(), [&](const auto& i) {
+			return distance(i, pt1) < 0.01f;
+		});
+
+		if (it0 != strips.end() && it1 != strips.end())
+		{
+			if (it1 == strips.begin())
+				strips.push_back(strips[0]);
+			else
+			{
+				auto n = 0;
+				for (auto it = it1; it != strips.end(); it++)
+				{
+					if (isnan(it->x))
+						break;
+					n++;
+				}
+
+				auto copied = std::vector<vec<N, float>>(it1, it1 + n);
+				{
+					auto b = it1;
+					auto e = it1 + n;
+					if (b != strips.begin())
+					{
+						if (isnan((*(b - 1)).x))
+							b = b - 1;
+					}
+					strips.erase(b, e);
+				}
+				it0 = std::find_if(strips.begin(), strips.end(), [&](const auto& i) {
+					return distance(i, pt0) < 0.01f;
+				});
+				if (it0 == strips.end())
+					int cut = 1; // why?
+				else
+					strips.insert(it0 + 1, copied.begin(), copied.end());
+			}
+		}
+		else if (it0 != strips.end())
+			strips.emplace(it0 + 1, pt1);
+		else if (it1 != strips.end())
+			strips.emplace(it1, pt0);
+		else
+		{
+			if (!strips.empty())
+				strips.push_back(vec<N, float>(SEPARATOR));
+			strips.push_back(pt0);
+			strips.push_back(pt1);
+		}
+	}
+
 	inline vec3 smooth_damp(const vec3& current, const vec3& _target, vec3& current_velocity, float smooth_time, float max_speed, float delta_time)
 	{
 		auto target = _target;

@@ -33,7 +33,8 @@ namespace flame
 			ActionDisable,
 			ActionPlayAnimation,
 			ActionKill,
-			ActionCallback
+			ActionCallback,
+			ActionBpCallback
 		};
 
 		enum ActionDirection
@@ -63,11 +64,16 @@ namespace flame
 		struct Animation
 		{
 			TweenType type;
-			EntityPtr renderer_host = nullptr;
+			EntityPtr renderer_entity = nullptr;
 			BlueprintInstanceGroupPtr renderer = nullptr;
 			std::vector<RendererData> renderer_datas;
+			vec3* pos_data = nullptr; 
+			vec3* eul_data = nullptr; 
+			vec3* scl_data = nullptr; 
+			float* alpha_data = nullptr;
 			Target curr_target;
 
+			std::vector<std::function<void()>> callbacks;
 			TypeInfo*	custom_data_type = nullptr;
 			void*		custom_data = nullptr;
 			std::list<Track> tracks;
@@ -92,7 +98,8 @@ namespace flame
 		sTweenPrivate();
 
 		uint begin() override;
-		uint begin(EntityPtr renderer_parent, BlueprintInstanceGroupPtr renderer, uint target_count) override;
+		uint begin(vec3* pos_data, vec3* eul_data, vec3* scl_data, float* alpha_data) override;
+		uint begin(EntityPtr host, BlueprintInstanceGroupPtr renderer, uint target_count) override;
 		void set_target(uint id, EntityPtr e) override;
 		void set_target(uint id, uint idx) override;
 		void set_custom_data(uint id, TypeInfo* type, void* data) override;
@@ -115,6 +122,7 @@ namespace flame
 		void disable(uint id) override;
 		void play_animation(uint id, uint name) override;
 		void kill(uint id) override;
+		void set_callback(uint id, const std::function<void()>& callback) override;
 		void set_callback(uint id, BlueprintInstanceGroupPtr callback) override;
 
 		void clear() override;

@@ -17,8 +17,8 @@ namespace flame
 	{
 		if (custom_data)
 			custom_data_type->destroy(custom_data);
-		if (renderer_host)
-			renderer_host->remove_from_parent();
+		if (renderer_entity)
+			renderer_entity->remove_from_parent();
 	}
 
 	sTweenPrivate::Action& sTweenPrivate::Animation::new_action(float duration)
@@ -86,7 +86,12 @@ namespace flame
 				if (auto node = a.target.e->get_component<cNode>(); node)
 					(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = node->pos;
 			}
-			else if (type == TweenGui)
+			else if (type == TweenData)
+			{
+				if (pos_data)
+					(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = *pos_data;
+			}
+			else if (type == TweenCustomRenderer)
 				(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = renderer_datas[a.target.idx].pos;
 			break;
 		case ActionRotate:
@@ -95,7 +100,12 @@ namespace flame
 				if (auto node = a.target.e->get_component<cNode>(); node)
 					(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = node->get_eul();
 			}
-			else if (type == TweenGui)
+			else if (type == TweenData)
+			{
+				if (eul_data)
+					(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = *eul_data;
+			}
+			else if (type == TweenCustomRenderer)
 				(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = renderer_datas[a.target.idx].eul;
 			break;
 		case ActionScale:
@@ -104,7 +114,12 @@ namespace flame
 				if (auto node = a.target.e->get_component<cNode>(); node)
 					(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = node->scl;
 			}
-			else if (type == TweenGui)
+			else if (type == TweenData)
+			{
+				if (scl_data)
+					(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = *scl_data;
+			}
+			else if (type == TweenCustomRenderer)
 				(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = renderer_datas[a.target.idx].scl;
 			break;
 		case ActionObjectColor:
@@ -131,7 +146,12 @@ namespace flame
 			}
 			break;
 		case ActionAlpha:
-			if (type == TweenGui)
+			if (type == TweenData)
+			{
+				if (alpha_data)
+					(a.dir == ActionForward ? a.v0.f[0] : a.v1.f[0]) = *alpha_data;
+			}
+			else if (type == TweenCustomRenderer)
 				(a.dir == ActionForward ? a.v0.f[0] : a.v1.f[0]) = renderer_datas[a.target.idx].alpha;
 			break;
 		}
@@ -153,11 +173,27 @@ namespace flame
 		return id;
 	}
 
-	uint sTweenPrivate::begin(EntityPtr renderer_parent, BlueprintInstanceGroupPtr renderer, uint target_count)
+	uint sTweenPrivate::begin(vec3* pos_data = nullptr, vec3* eul_data = nullptr, vec3* scl_data = nullptr, float* alpha_data = nullptr)
 	{
 		auto id = next_id++;
 		auto a = new Animation;
-		a->type = TweenGui;
+		a->type = TweenData;
+		a->curr_target.idx = 0;
+		a->tracks.emplace_back();
+		a->curr_track = a->tracks.begin();
+		a->pos_data = pos_data;
+		a->eul_data = eul_data;
+		a->scl_data = scl_data;
+		a->alpha_data = alpha_data;
+		staging_animations.emplace(id, a);
+		return id;
+	}
+
+	uint sTweenPrivate::begin(EntityPtr host, BlueprintInstanceGroupPtr renderer, uint target_count)
+	{
+		auto id = next_id++;
+		auto a = new Animation;
+		a->type = TweenCustomRenderer;
 		a->curr_target.idx = 0;
 		a->tracks.emplace_back();
 		a->curr_track = a->tracks.begin();
@@ -165,8 +201,8 @@ namespace flame
 		a->renderer_datas.resize(target_count);
 		staging_animations.emplace(id, a);
 
-		auto host = Entity::create();
-		auto ins = host->add_component<cBpInstance>();
+		auto e = Entity::create();
+		auto ins = e->add_component<cBpInstance>();
 		ins->callbacks.add([a](uint name) {
 			if (name == "on_gui"_h)
 			{
@@ -185,8 +221,8 @@ namespace flame
 				ins->call(g, inputs, {});
 			}
 		});
-		a->renderer_host = host;
-		renderer_parent->add_child(host);
+		a->renderer_entity = e;
+		host->add_child(e);
 
 		return id;
 	}
@@ -422,12 +458,24 @@ namespace flame
 		}
 	}
 
+	void sTweenPrivate::set_callback(uint id, const std::function<void()>& callback)
+	{
+		if (auto it = staging_animations.find(id); it != staging_animations.end())
+		{
+			auto& ani = *it->second;
+			auto& a = ani.new_action(0.f);
+			a.type = ActionCallback;
+			a.v1.i[0] = ani.callbacks.size();
+			ani.callbacks.push_back(callback);
+		}
+	}
+
 	void sTweenPrivate::set_callback(uint id, BlueprintInstanceGroupPtr callback)
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
 			auto& a = it->second->new_action(0.f);
-			a.type = ActionCallback;
+			a.type = ActionBpCallback;
 			a.v1.p = callback;
 		}
 	}
@@ -462,7 +510,12 @@ namespace flame
 								if (auto node = a.target.e->get_component<cNode>(); node)
 									node->set_pos(a.v1.f.xyz);
 							}
-							else if (ani->type == TweenGui)
+							else if (ani->type == TweenData)
+							{
+								if (ani->pos_data)
+									*ani->pos_data = a.v1.f.xyz;
+							}
+							else if (ani->type == TweenCustomRenderer)
 								ani->renderer_datas[a.target.idx].pos = a.v1.f.xyz;
 							break;
 						case ActionRotate:
@@ -471,7 +524,12 @@ namespace flame
 								if (auto node = a.target.e->get_component<cNode>(); node)
 									node->set_eul(a.v1.f.xyz());
 							}
-							else if (ani->type == TweenGui)
+							else if (ani->type == TweenData)
+							{
+								if (ani->eul_data)
+									*ani->eul_data = a.v1.f.xyz;
+							}
+							else if (ani->type == TweenCustomRenderer)
 								ani->renderer_datas[a.target.idx].eul = a.v1.f.xyz();
 							break;
 						case ActionScale:
@@ -480,7 +538,12 @@ namespace flame
 								if (auto node = a.target.e->get_component<cNode>(); node)
 									node->set_scl(a.v1.f.xyz);
 							}
-							else if (ani->type == TweenGui)
+							else if (ani->type == TweenData)
+							{
+								if (ani->scl_data)
+									*ani->scl_data = a.v1.f.xyz;
+							}
+							else if (ani->type == TweenCustomRenderer)
 								ani->renderer_datas[a.target.idx].scl = a.v1.f.xyz;
 							break;
 						case ActionObjectColor:
@@ -502,7 +565,12 @@ namespace flame
 							}
 							break;
 						case ActionAlpha:
-							if (ani->type == TweenGui)
+							if (ani->type == TweenData)
+							{
+								if (ani->alpha_data)
+									*ani->alpha_data = a.v1.f[0];
+							}
+							else if (ani->type == TweenCustomRenderer)
 								ani->renderer_datas[a.target.idx].alpha = a.v1.f[0];
 							break;
 						case ActionEnable:
@@ -525,6 +593,12 @@ namespace flame
 								sGraveyard::instance()->add(a.target.e);
 							break;
 						case ActionCallback:
+						{
+							auto idx = a.v1.i[0];
+							ani->callbacks[idx]();
+						}
+							break;
+						case ActionBpCallback:
 						{
 							auto g = (BlueprintInstanceGroupPtr)a.v1.p;
 							auto bp_ins = g->instance;
@@ -554,7 +628,12 @@ namespace flame
 								if (auto node = a.target.e->get_component<cNode>(); node)
 									node->set_pos(mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration));
 							}
-							else if (ani->type == TweenGui)
+							else if (ani->type == TweenData)
+							{
+								if (ani->pos_data)
+									*ani->pos_data = mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration);
+							}
+							else if (ani->type == TweenCustomRenderer)
 								ani->renderer_datas[a.target.idx].pos = mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration);
 							break;
 						case ActionRotate:
@@ -563,7 +642,12 @@ namespace flame
 								if (auto node = a.target.e->get_component<cNode>(); node)
 									node->set_eul(mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration));
 							}
-							else if (ani->type == TweenGui)
+							else if (ani->type == TweenData)
+							{
+								if (ani->eul_data)
+									*ani->eul_data = mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration);
+							}
+							else if (ani->type == TweenCustomRenderer)
 								ani->renderer_datas[a.target.idx].eul = mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration);
 							break;
 						case ActionScale:
@@ -572,7 +656,12 @@ namespace flame
 								if (auto node = a.target.e->get_component<cNode>(); node)
 									node->set_scl(mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration));
 							}
-							else if (ani->type == TweenGui)
+							else if (ani->type == TweenData)
+							{
+								if (ani->scl_data)
+									*ani->scl_data = mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration);
+							}
+							else if (ani->type == TweenCustomRenderer)
 								ani->renderer_datas[a.target.idx].scl = mix(a.v0.f.xyz(), a.v1.f.xyz(), (ani->time - a.start_time) / a.duration);
 							break;
 						case ActionObjectColor:
@@ -596,7 +685,12 @@ namespace flame
 							}
 							break;
 						case ActionAlpha:
-							if (ani->type == TweenGui)
+							if (ani->type == TweenData)
+							{
+								if (ani->alpha_data)
+									*ani->alpha_data = mix(a.v0.f[0], a.v1.f[0], (ani->time - a.start_time) / a.duration);
+							}
+							else if (ani->type == TweenCustomRenderer)
 								ani->renderer_datas[a.target.idx].alpha = mix(a.v0.f[0], a.v1.f[0], (ani->time - a.start_time) / a.duration);
 							break;
 						}

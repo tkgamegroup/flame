@@ -51,9 +51,9 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				if (auto parent = *(EntityPtr*)inputs[0].data; parent)
 				{
-					if (auto renderer_host = *(EntityPtr*)inputs[1].data; renderer_host)
+					if (auto renderer_entity = *(EntityPtr*)inputs[1].data; renderer_entity)
 					{
-						if (auto ins = renderer_host->get_component<cBpInstance>(); ins && ins->bp_ins)
+						if (auto ins = renderer_entity->get_component<cBpInstance>(); ins && ins->bp_ins)
 						{
 							auto instance = ins->bp_ins;
 							if (auto group = instance->find_group(*(uint*)inputs[2].data); group)

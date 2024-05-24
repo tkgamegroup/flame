@@ -7,13 +7,15 @@ namespace flame
 	enum TweenType
 	{
 		TweenEntity,
-		TweenGui
+		TweenData,
+		TweenCustomRenderer
 	};
 
 	struct sTween : System
 	{
 		virtual uint begin() = 0;
-		virtual uint begin(EntityPtr renderer_parent, BlueprintInstanceGroupPtr renderer, uint target_count) = 0;
+		virtual uint begin(vec3* pos_data, vec3* eul_data, vec3* scl_data, float* alpha_data) = 0;
+		virtual uint begin(EntityPtr host, BlueprintInstanceGroupPtr renderer, uint target_count) = 0;
 		virtual void set_target(uint id, EntityPtr e) = 0;
 		virtual void set_target(uint id, uint idx) = 0;
 		virtual void set_custom_data(uint id, TypeInfo* type, void* data) = 0;
@@ -36,6 +38,7 @@ namespace flame
 		virtual void disable(uint id) = 0;
 		virtual void play_animation(uint id, uint name) = 0;
 		virtual void kill(uint id) = 0;
+		virtual void set_callback(uint id, const std::function<void()>& callback) = 0;
 		virtual void set_callback(uint id, BlueprintInstanceGroupPtr callback) = 0;
 
 		virtual void clear() = 0;
