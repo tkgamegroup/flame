@@ -196,6 +196,10 @@ namespace flame
 
 		CanvasPrivate::DrawVert* CanvasPrivate::stroke_path(DrawCmd& cmd, float thickness, const cvec4& col, bool closed)
 		{
+			int n_pts = path.size();
+			if (n_pts < 2)
+				return nullptr;
+
 			auto get_normal = [](const vec2& p1, const vec2& p2) {
 				auto d = normalize(p2 - p1);
 				return vec2(d.y, -d.x);
@@ -205,7 +209,6 @@ namespace flame
 			vec2 last_normal = first_normal;
 			thickness *= 0.5f;
 
-			int n_pts = path.size();
 			std::vector<DrawVert> vertices;
 			std::vector<uint> indices;
 			{
@@ -314,6 +317,9 @@ namespace flame
 		CanvasPrivate::DrawVert* CanvasPrivate::fill_path(DrawCmd& cmd, const cvec4& col)
 		{
 			int n_pts = path.size();
+			if (n_pts < 3)
+				return nullptr;
+
 			std::vector<DrawVert> vertices;
 			std::vector<uint> indices;
 			{
@@ -534,9 +540,9 @@ namespace flame
 			}
 		}
 
-		Canvas::DrawVert* CanvasPrivate::add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col)
+		Canvas::DrawVert* CanvasPrivate::add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, SamplerPtr sp)
 		{
-			auto& cmd = get_blit_cmd(view->get_shader_read_src(nullptr));
+			auto& cmd = get_blit_cmd(view->get_shader_read_src(sp));
 
 			path_rect(a, b);
 			auto verts = fill_path(cmd, tint_col);
@@ -548,7 +554,7 @@ namespace flame
 			return verts;
 		}
 
-		Canvas::DrawVert* CanvasPrivate::add_image_stretched(ImageViewPtr iv, const vec2& p0, const vec2& p1, const vec4& uvs, const vec4& border, const vec4& border_uvs, const cvec4& tint_col)
+		Canvas::DrawVert* CanvasPrivate::add_image_stretched(ImageViewPtr iv, const vec2& p0, const vec2& p1, const vec4& uvs, const vec4& border, const vec4& border_uvs, const cvec4& tint_col, SamplerPtr sp)
 		{
 			Canvas::DrawVert* ret = nullptr;
 
@@ -556,23 +562,23 @@ namespace flame
 			{
 				auto uv0 = uvs.xy(); auto uv1 = uvs.zw();
 				ret = // get the pointer to the first vertex
-				add_image(iv, vec2(p0.x + border.x, p0.y), vec2(p1.x - border.z, p0.y + border.y), vec4(mix(uv0, uv1, vec2(border_uvs.x, 0.f)), mix(uv0, uv1, vec2(border_uvs.z, border_uvs.y))), tint_col); // top border
-				add_image(iv, vec2(p0.x + border.x, p1.y - border.w), vec2(p1.x - border.z, p1.y), vec4(mix(uv0, uv1, vec2(border_uvs.x, border_uvs.w)), mix(uv0, uv1, vec2(border_uvs.w, 1.f))), tint_col); // bottom border
-				add_image(iv, vec2(p0.x, p0.y + border.y), vec2(p0.x + border.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(0.f, border_uvs.y)), mix(uv0, uv1, vec2(border_uvs.x, border_uvs.w))), tint_col); // left border
-				add_image(iv, vec2(p1.x - border.z, p0.y + border.y), vec2(p1.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(border_uvs.w, border_uvs.y)), mix(uv0, uv1, vec2(1.f, border_uvs.w))), tint_col); // right border
-				add_image(iv, vec2(p0.x, p0.y), vec2(p0.x + border.x, p0.y + border.y), vec4(mix(uv0, uv1, vec2(0.f, 0.f)), mix(uv0, uv1, vec2(border_uvs.x, border_uvs.y))), tint_col); // left-top corner
-				add_image(iv, vec2(p1.x - border.z, p0.y), vec2(p1.x, p0.y + border.y), vec4(mix(uv0, uv1, vec2(border_uvs.w, 0.f)), mix(uv0, uv1, vec2(1.f, border_uvs.y))), tint_col); // right-top corner
-				add_image(iv, vec2(p0.x, p1.y - border.w), vec2(p0.x + border.x, p1.y), vec4(mix(uv0, uv1, vec2(0.f, border_uvs.w)), mix(uv0, uv1, vec2(border_uvs.x, 1.f))), tint_col); // left-bottom corner
-				add_image(iv, vec2(p1.x - border.z, p1.y - border.w), vec2(p1.x, p1.y), vec4(mix(uv0, uv1, vec2(border_uvs.w, border_uvs.w)), mix(uv0, uv1, vec2(1.f, 1.f))), tint_col); // right-bottom corner
-				add_image(iv, vec2(p0.x + border.x, p0.y + border.y), vec2(p1.x - border.z, p1.y - border.w), vec4(mix(uv0, uv1, vec2(border_uvs.x, border_uvs.y)), mix(uv0, uv1, vec2(border_uvs.z, border_uvs.w))), tint_col); // middle
+				add_image(iv, vec2(p0.x + border.x, p0.y), vec2(p1.x - border.z, p0.y + border.y), vec4(mix(uv0, uv1, vec2(border_uvs.x, 0.f)), mix(uv0, uv1, vec2(border_uvs.z, border_uvs.y))), tint_col, sp); // top border
+				add_image(iv, vec2(p0.x + border.x, p1.y - border.w), vec2(p1.x - border.z, p1.y), vec4(mix(uv0, uv1, vec2(border_uvs.x, border_uvs.w)), mix(uv0, uv1, vec2(border_uvs.w, 1.f))), tint_col, sp); // bottom border
+				add_image(iv, vec2(p0.x, p0.y + border.y), vec2(p0.x + border.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(0.f, border_uvs.y)), mix(uv0, uv1, vec2(border_uvs.x, border_uvs.w))), tint_col, sp); // left border
+				add_image(iv, vec2(p1.x - border.z, p0.y + border.y), vec2(p1.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(border_uvs.w, border_uvs.y)), mix(uv0, uv1, vec2(1.f, border_uvs.w))), tint_col, sp); // right border
+				add_image(iv, vec2(p0.x, p0.y), vec2(p0.x + border.x, p0.y + border.y), vec4(mix(uv0, uv1, vec2(0.f, 0.f)), mix(uv0, uv1, vec2(border_uvs.x, border_uvs.y))), tint_col, sp); // left-top corner
+				add_image(iv, vec2(p1.x - border.z, p0.y), vec2(p1.x, p0.y + border.y), vec4(mix(uv0, uv1, vec2(border_uvs.w, 0.f)), mix(uv0, uv1, vec2(1.f, border_uvs.y))), tint_col, sp); // right-top corner
+				add_image(iv, vec2(p0.x, p1.y - border.w), vec2(p0.x + border.x, p1.y), vec4(mix(uv0, uv1, vec2(0.f, border_uvs.w)), mix(uv0, uv1, vec2(border_uvs.x, 1.f))), tint_col, sp); // left-bottom corner
+				add_image(iv, vec2(p1.x - border.z, p1.y - border.w), vec2(p1.x, p1.y), vec4(mix(uv0, uv1, vec2(border_uvs.w, border_uvs.w)), mix(uv0, uv1, vec2(1.f, 1.f))), tint_col, sp); // right-bottom corner
+				add_image(iv, vec2(p0.x + border.x, p0.y + border.y), vec2(p1.x - border.z, p1.y - border.w), vec4(mix(uv0, uv1, vec2(border_uvs.x, border_uvs.y)), mix(uv0, uv1, vec2(border_uvs.z, border_uvs.w))), tint_col, sp); // middle
 			}
 
 			return ret;
 		}
 
-		Canvas::DrawVert* CanvasPrivate::add_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle)
+		Canvas::DrawVert* CanvasPrivate::add_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle, SamplerPtr sp)
 		{
-			auto& cmd = get_blit_cmd(view->get_shader_read_src(nullptr));
+			auto& cmd = get_blit_cmd(view->get_shader_read_src(sp));
 
 			path_rect(a, b);
 			auto verts = fill_path(cmd, tint_col);
@@ -599,6 +605,18 @@ namespace flame
 				vtx.pos = vec2(r * vec3(vtx.pos - c, 1.f)) + c;
 				vtx.uv = uvs.zy;
 			}
+			return verts;
+		}
+
+		Canvas::DrawVert* CanvasPrivate::add_image_polygon(ImageViewPtr view, const std::vector<vec2>& pts, const std::vector<vec2>& uvs, const cvec4& tint_col, SamplerPtr sp)
+		{
+			auto& cmd = get_blit_cmd(view->get_shader_read_src(sp));
+
+			path = pts;
+			auto verts = fill_path(cmd, tint_col);
+			path.clear();
+			for (auto i = 0; i < pts.size(); i++)
+				verts[i].uv = uvs[i];
 			return verts;
 		}
 
