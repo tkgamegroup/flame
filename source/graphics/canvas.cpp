@@ -506,6 +506,7 @@ namespace flame
 
 		vec2 CanvasPrivate::calc_text_size(FontAtlasPtr font_atlas, uint font_size, std::wstring_view str)
 		{
+			font_atlas = font_atlas ? font_atlas : default_font_atlas;
 			auto scale = font_atlas->get_scale(font_size);
 			auto p = vec2(0.f);
 			auto max_x = 0.f;

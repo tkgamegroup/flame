@@ -17,6 +17,7 @@
 #include <glm/gtx/matrix_transform_2d.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/color_space.hpp>
+#include <glm/gtx/easing.hpp>
 
 using namespace glm;
 

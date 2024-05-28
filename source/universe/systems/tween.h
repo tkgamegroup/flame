@@ -11,6 +11,41 @@ namespace flame
 		TweenCustomRenderer
 	};
 
+	enum Ease
+	{
+		EaseLinear,
+		EaseInSine,
+		EaseOutSine,
+		EaseInOutSine,
+		EaseInQuad,
+		EaseOutQuad,
+		EaseInOutQuad,
+		EaseInCubic,
+		EaseOutCubic,
+		EaseInOutCubic,
+		EaseInQuart,
+		EaseOutQuart,
+		EaseInOutQuart,
+		EaseInQuint,
+		EaseOutQuint,
+		EaseInOutQuint,
+		EaseInExpo,
+		EaseOutExpo,
+		EaseInOutExpo,
+		EaseInCirc,
+		EaseOutCirc,
+		EaseInOutCirc,
+		EaseInBack,
+		EaseOutBack,
+		EaseInOutBack,
+		EaseInElastic,
+		EaseOutElastic,
+		EaseInOutElastic,
+		EaseInBounce,
+		EaseOutBounce,
+		EaseInOutBounce
+	};
+
 	struct sTween : System
 	{
 		virtual uint begin() = 0;
@@ -34,6 +69,7 @@ namespace flame
 		virtual void light_color_from(uint id, const vec4& col, float duration) = 0;
 		virtual void alpha_to(uint id, float alpha, float duration) = 0;
 		virtual void alpha_from(uint id, float alpha, float duration) = 0;
+		virtual void set_ease(uint id, Ease ease) = 0;
 		virtual void enable(uint id) = 0;
 		virtual void disable(uint id) = 0;
 		virtual void play_animation(uint id, uint name) = 0;

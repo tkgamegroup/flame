@@ -51,6 +51,7 @@ namespace flame
 			float end_time;
 			ActionType type;
 			ActionDirection dir;
+			Ease ease = EaseLinear;
 			float duration;
 			lVariant v0, v1;
 		};
@@ -118,6 +119,7 @@ namespace flame
 		void light_color_from(uint id, const vec4& col, float duration) override;
 		void alpha_to(uint id, float alpha, float duration) override;
 		void alpha_from(uint id, float alpha, float duration) override;
+		void set_ease(uint id, Ease ease) override;
 		void enable(uint id) override;
 		void disable(uint id) override;
 		void play_animation(uint id, uint name) override;
