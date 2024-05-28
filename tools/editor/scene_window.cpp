@@ -1087,7 +1087,7 @@ void SceneView::on_draw()
 								if (auto p = camera->world_to_screen(b.center(), &clip_pos); all(lessThan(clip_pos, vec3(+1.f))) && all(greaterThan(clip_pos, vec3(-1.f))))
 								{
 									auto text = std::format(L"({}) - ({})\n{}", wstr(b.a), wstr(b.b), wstr(b.b - b.a));
-									canvas->add_text(nullptr, 18, p, text, cvec4(255));
+									canvas->draw_text(nullptr, 18, p, text, cvec4(255));
 								}
 							}
 						}

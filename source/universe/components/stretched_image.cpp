@@ -24,7 +24,7 @@ namespace flame
 			{
 				auto p0 = element->global_pos0();
 				auto p1 = element->global_pos1();
-				canvas->add_image_stretched(image->get_view(), p0, p1, vec4(0.f, 0.f, 1.f, 1.f), border, border_uvs, tint_col);
+				canvas->draw_image_stretched(image->get_view(), p0, p1, vec4(0.f, 0.f, 1.f, 1.f), border, border_uvs, tint_col);
 			}
 		}, "stretched_image"_h);
 	}

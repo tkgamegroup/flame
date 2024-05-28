@@ -448,19 +448,19 @@ namespace flame
 			new_cmd.data.stencil_state = stencil_state;
 		}
 		
-		Canvas::DrawVert* CanvasPrivate::add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col)
+		Canvas::DrawVert* CanvasPrivate::draw_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col)
 		{
 			path_rect(a, b);
 			return stroke(thickness, col, true);
 		}
 
-		Canvas::DrawVert* CanvasPrivate::add_rect_filled(const vec2& a, const vec2& b, const cvec4& col)
+		Canvas::DrawVert* CanvasPrivate::draw_rect_filled(const vec2& a, const vec2& b, const cvec4& col)
 		{
 			path_rect(a, b);
 			return fill(col);
 		}
 
-		Canvas::DrawVert* CanvasPrivate::add_rect_rotated(const vec2& a, const vec2& b, float thickness, const cvec4& col, float angle)
+		Canvas::DrawVert* CanvasPrivate::draw_rect_rotated(const vec2& a, const vec2& b, float thickness, const cvec4& col, float angle)
 		{
 			path_rect(a, b);
 			auto verts = stroke(thickness, col, true);
@@ -474,7 +474,7 @@ namespace flame
 			return verts;
 		}
 
-		Canvas::DrawVert* CanvasPrivate::add_rect_filled_rotated(const vec2& a, const vec2& b, const cvec4& col, float angle)
+		Canvas::DrawVert* CanvasPrivate::draw_rect_filled_rotated(const vec2& a, const vec2& b, const cvec4& col, float angle)
 		{
 			path_rect(a, b);
 			auto verts = fill(col);
@@ -488,7 +488,7 @@ namespace flame
 			return verts;
 		}
 
-		Canvas::DrawVert* CanvasPrivate::add_circle(const vec2& p, float radius, float thickness, const cvec4& col)
+		Canvas::DrawVert* CanvasPrivate::draw_circle(const vec2& p, float radius, float thickness, const cvec4& col)
 		{
 			path = get_precompute_circle(radius);
 			for (auto& pt : path)
@@ -496,7 +496,7 @@ namespace flame
 			return stroke(thickness, col, true);
 		}
 
-		Canvas::DrawVert* CanvasPrivate::add_circle_filled(const vec2& p, float radius, const cvec4& col)
+		Canvas::DrawVert* CanvasPrivate::draw_circle_filled(const vec2& p, float radius, const cvec4& col)
 		{
 			path = get_precompute_circle(radius);
 			for (auto& pt : path)
@@ -504,7 +504,28 @@ namespace flame
 			return fill(col);
 		}
 
-		void CanvasPrivate::add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness, float border)
+		vec2 CanvasPrivate::calc_text_size(FontAtlasPtr font_atlas, uint font_size, std::wstring_view str)
+		{
+			auto scale = font_atlas->get_scale(font_size);
+			auto p = vec2(0.f);
+			auto max_x = 0.f;
+			for (auto ch : str)
+			{
+				if (ch == L'\n')
+				{
+					p.y += font_size;
+					p.x = 0.f;
+					continue;
+				}
+
+				auto& g = font_atlas->get_glyph(ch, font_size);
+				p.x += g.advance * scale;
+				max_x = max(max_x, p.x);
+			}
+			return vec2(max_x, p.y + font_size);
+		}
+
+		void CanvasPrivate::draw_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness, float border)
 		{
 			font_atlas = font_atlas ? font_atlas : default_font_atlas;
 			thickness = clamp(thickness, -1.f, +1.f);
@@ -513,7 +534,7 @@ namespace flame
 			auto ds = font_atlas == default_font_atlas ? main_ds.get() : font_atlas->view->get_shader_read_src(nullptr);
 			auto& cmd = font_atlas->type == FontAtlasBitmap ? get_blit_cmd(ds) : get_sdf_cmd(ds, scale, thickness, border);
 
-			auto p = pos;
+			auto p = pos; vec2 sz(0.f);
 			for (auto ch : str)
 			{
 				if (ch == L'\n')
@@ -540,7 +561,7 @@ namespace flame
 			}
 		}
 
-		Canvas::DrawVert* CanvasPrivate::add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, SamplerPtr sp)
+		Canvas::DrawVert* CanvasPrivate::draw_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, SamplerPtr sp)
 		{
 			auto& cmd = get_blit_cmd(view->get_shader_read_src(sp));
 
@@ -554,7 +575,7 @@ namespace flame
 			return verts;
 		}
 
-		Canvas::DrawVert* CanvasPrivate::add_image_stretched(ImageViewPtr iv, const vec2& p0, const vec2& p1, const vec4& uvs, const vec4& border, const vec4& border_uvs, const cvec4& tint_col, SamplerPtr sp)
+		Canvas::DrawVert* CanvasPrivate::draw_image_stretched(ImageViewPtr iv, const vec2& p0, const vec2& p1, const vec4& uvs, const vec4& border, const vec4& border_uvs, const cvec4& tint_col, SamplerPtr sp)
 		{
 			Canvas::DrawVert* ret = nullptr;
 
@@ -562,21 +583,21 @@ namespace flame
 			{
 				auto uv0 = uvs.xy(); auto uv1 = uvs.zw();
 				ret = // get the pointer to the first vertex
-				add_image(iv, vec2(p0.x + border.x, p0.y), vec2(p1.x - border.z, p0.y + border.y), vec4(mix(uv0, uv1, vec2(border_uvs.x, 0.f)), mix(uv0, uv1, vec2(border_uvs.z, border_uvs.y))), tint_col, sp); // top border
-				add_image(iv, vec2(p0.x + border.x, p1.y - border.w), vec2(p1.x - border.z, p1.y), vec4(mix(uv0, uv1, vec2(border_uvs.x, border_uvs.w)), mix(uv0, uv1, vec2(border_uvs.w, 1.f))), tint_col, sp); // bottom border
-				add_image(iv, vec2(p0.x, p0.y + border.y), vec2(p0.x + border.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(0.f, border_uvs.y)), mix(uv0, uv1, vec2(border_uvs.x, border_uvs.w))), tint_col, sp); // left border
-				add_image(iv, vec2(p1.x - border.z, p0.y + border.y), vec2(p1.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(border_uvs.w, border_uvs.y)), mix(uv0, uv1, vec2(1.f, border_uvs.w))), tint_col, sp); // right border
-				add_image(iv, vec2(p0.x, p0.y), vec2(p0.x + border.x, p0.y + border.y), vec4(mix(uv0, uv1, vec2(0.f, 0.f)), mix(uv0, uv1, vec2(border_uvs.x, border_uvs.y))), tint_col, sp); // left-top corner
-				add_image(iv, vec2(p1.x - border.z, p0.y), vec2(p1.x, p0.y + border.y), vec4(mix(uv0, uv1, vec2(border_uvs.w, 0.f)), mix(uv0, uv1, vec2(1.f, border_uvs.y))), tint_col, sp); // right-top corner
-				add_image(iv, vec2(p0.x, p1.y - border.w), vec2(p0.x + border.x, p1.y), vec4(mix(uv0, uv1, vec2(0.f, border_uvs.w)), mix(uv0, uv1, vec2(border_uvs.x, 1.f))), tint_col, sp); // left-bottom corner
-				add_image(iv, vec2(p1.x - border.z, p1.y - border.w), vec2(p1.x, p1.y), vec4(mix(uv0, uv1, vec2(border_uvs.w, border_uvs.w)), mix(uv0, uv1, vec2(1.f, 1.f))), tint_col, sp); // right-bottom corner
-				add_image(iv, vec2(p0.x + border.x, p0.y + border.y), vec2(p1.x - border.z, p1.y - border.w), vec4(mix(uv0, uv1, vec2(border_uvs.x, border_uvs.y)), mix(uv0, uv1, vec2(border_uvs.z, border_uvs.w))), tint_col, sp); // middle
+				draw_image(iv, vec2(p0.x + border.x, p0.y), vec2(p1.x - border.z, p0.y + border.y), vec4(mix(uv0, uv1, vec2(border_uvs.x, 0.f)), mix(uv0, uv1, vec2(border_uvs.z, border_uvs.y))), tint_col, sp); // top border
+				draw_image(iv, vec2(p0.x + border.x, p1.y - border.w), vec2(p1.x - border.z, p1.y), vec4(mix(uv0, uv1, vec2(border_uvs.x, border_uvs.w)), mix(uv0, uv1, vec2(border_uvs.w, 1.f))), tint_col, sp); // bottom border
+				draw_image(iv, vec2(p0.x, p0.y + border.y), vec2(p0.x + border.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(0.f, border_uvs.y)), mix(uv0, uv1, vec2(border_uvs.x, border_uvs.w))), tint_col, sp); // left border
+				draw_image(iv, vec2(p1.x - border.z, p0.y + border.y), vec2(p1.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(border_uvs.w, border_uvs.y)), mix(uv0, uv1, vec2(1.f, border_uvs.w))), tint_col, sp); // right border
+				draw_image(iv, vec2(p0.x, p0.y), vec2(p0.x + border.x, p0.y + border.y), vec4(mix(uv0, uv1, vec2(0.f, 0.f)), mix(uv0, uv1, vec2(border_uvs.x, border_uvs.y))), tint_col, sp); // left-top corner
+				draw_image(iv, vec2(p1.x - border.z, p0.y), vec2(p1.x, p0.y + border.y), vec4(mix(uv0, uv1, vec2(border_uvs.w, 0.f)), mix(uv0, uv1, vec2(1.f, border_uvs.y))), tint_col, sp); // right-top corner
+				draw_image(iv, vec2(p0.x, p1.y - border.w), vec2(p0.x + border.x, p1.y), vec4(mix(uv0, uv1, vec2(0.f, border_uvs.w)), mix(uv0, uv1, vec2(border_uvs.x, 1.f))), tint_col, sp); // left-bottom corner
+				draw_image(iv, vec2(p1.x - border.z, p1.y - border.w), vec2(p1.x, p1.y), vec4(mix(uv0, uv1, vec2(border_uvs.w, border_uvs.w)), mix(uv0, uv1, vec2(1.f, 1.f))), tint_col, sp); // right-bottom corner
+				draw_image(iv, vec2(p0.x + border.x, p0.y + border.y), vec2(p1.x - border.z, p1.y - border.w), vec4(mix(uv0, uv1, vec2(border_uvs.x, border_uvs.y)), mix(uv0, uv1, vec2(border_uvs.z, border_uvs.w))), tint_col, sp); // middle
 			}
 
 			return ret;
 		}
 
-		Canvas::DrawVert* CanvasPrivate::add_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle, SamplerPtr sp)
+		Canvas::DrawVert* CanvasPrivate::draw_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle, SamplerPtr sp)
 		{
 			auto& cmd = get_blit_cmd(view->get_shader_read_src(sp));
 
@@ -608,7 +629,7 @@ namespace flame
 			return verts;
 		}
 
-		Canvas::DrawVert* CanvasPrivate::add_image_polygon(ImageViewPtr view, const std::vector<vec2>& pts, const std::vector<vec2>& uvs, const cvec4& tint_col, SamplerPtr sp)
+		Canvas::DrawVert* CanvasPrivate::draw_image_polygon(ImageViewPtr view, const std::vector<vec2>& pts, const std::vector<vec2>& uvs, const cvec4& tint_col, SamplerPtr sp)
 		{
 			auto& cmd = get_blit_cmd(view->get_shader_read_src(sp));
 

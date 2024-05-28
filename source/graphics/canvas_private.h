@@ -51,17 +51,18 @@ namespace flame
 			DrawVert* stroke(float thickness, const cvec4& col, bool closed) override;
 			DrawVert* fill(const cvec4& col) override;
 
-			DrawVert*	add_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col) override;
-			DrawVert*	add_rect_filled(const vec2& a, const vec2& b, const cvec4& col) override;
-			DrawVert*	add_rect_rotated(const vec2& a, const vec2& b, float thickness, const cvec4& col, float angle) override;
-			DrawVert*	add_rect_filled_rotated(const vec2& a, const vec2& b, const cvec4& col, float angle) override;
-			DrawVert*	add_circle(const vec2& p, float radius, float thickness, const cvec4& col) override;
-			DrawVert*	add_circle_filled(const vec2& p, float radius, const cvec4& col) override;
-			void		add_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness, float border) override;
-			DrawVert*	add_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, SamplerPtr) override;
-			DrawVert*	add_image_stretched(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const vec4& border, const vec4& border_uvs, const cvec4& tint_col, SamplerPtr) override;
-			DrawVert*	add_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle, SamplerPtr) override;
-			DrawVert*	add_image_polygon(ImageViewPtr view, const std::vector<vec2>& pts, const std::vector<vec2>& uvs, const cvec4& tint_col, SamplerPtr) override;
+			DrawVert*	draw_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col) override;
+			DrawVert*	draw_rect_filled(const vec2& a, const vec2& b, const cvec4& col) override;
+			DrawVert*	draw_rect_rotated(const vec2& a, const vec2& b, float thickness, const cvec4& col, float angle) override;
+			DrawVert*	draw_rect_filled_rotated(const vec2& a, const vec2& b, const cvec4& col, float angle) override;
+			DrawVert*	draw_circle(const vec2& p, float radius, float thickness, const cvec4& col) override;
+			DrawVert*	draw_circle_filled(const vec2& p, float radius, const cvec4& col) override;
+			vec2		calc_text_size(FontAtlasPtr font_atlas, uint font_size, std::wstring_view str) override;
+			void		draw_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness, float border) override;
+			DrawVert*	draw_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, SamplerPtr) override;
+			DrawVert*	draw_image_stretched(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const vec4& border, const vec4& border_uvs, const cvec4& tint_col, SamplerPtr) override;
+			DrawVert*	draw_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle, SamplerPtr) override;
+			DrawVert*	draw_image_polygon(ImageViewPtr view, const std::vector<vec2>& pts, const std::vector<vec2>& uvs, const cvec4& tint_col, SamplerPtr) override;
 
 			void render(int idx, CommandBufferPtr cb) override;
 		};

@@ -9,9 +9,9 @@ namespace flame
 	{
 		drawers.add([this](graphics::CanvasPtr canvas) {
 			if (background_col.a > 0)
-				canvas->add_rect_filled(global_pos0(), global_pos1(), background_col);
+				canvas->draw_rect_filled(global_pos0(), global_pos1(), background_col);
 			if (frame_col.a > 0)
-				canvas->add_rect(global_pos0(), global_pos1(), frame_thickness, frame_col);
+				canvas->draw_rect(global_pos0(), global_pos1(), frame_thickness, frame_col);
 		});
 	}
 

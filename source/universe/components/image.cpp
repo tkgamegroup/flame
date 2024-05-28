@@ -23,9 +23,9 @@ namespace flame
 			if (image)
 			{
 				if (angle == 0.f)
-					canvas->add_image(image->get_view(), element->global_pos0(), element->global_pos1(), vec4(0.f, 0.f, 1.f, 1.f), tint_col);
+					canvas->draw_image(image->get_view(), element->global_pos0(), element->global_pos1(), vec4(0.f, 0.f, 1.f, 1.f), tint_col);
 				else
-					canvas->add_image_rotated(image->get_view(), element->global_pos0(), element->global_pos1(), vec4(0.f, 0.f, 1.f, 1.f), tint_col, angle);
+					canvas->draw_image_rotated(image->get_view(), element->global_pos0(), element->global_pos1(), vec4(0.f, 0.f, 1.f, 1.f), tint_col, angle);
 			}
 		}, "image"_h);
 	}

@@ -3556,13 +3556,13 @@ namespace flame
 
 		if (!image.view)
 		{
-			hud.bg_verts = canvas->add_rect_filled(vec2(0.f), vec2(100.f), hud.color); // 100 for temporary size
+			hud.bg_verts = canvas->draw_rect_filled(vec2(0.f), vec2(100.f), hud.color); // 100 for temporary size
 			hud.bg_vert_count = 4;
 		}
 		else
 		{
 			auto size = (vec2)image.view->image->extent.xy() * (image.uvs.zw() - image.uvs.xy());
-			hud.bg_verts = canvas->add_image_stretched(image.view, vec2(0.f), vec2(border.xy() + border.zw()) + vec2(1.f), image.uvs, border, image.border_uvs, hud.color);
+			hud.bg_verts = canvas->draw_image_stretched(image.view, vec2(0.f), vec2(border.xy() + border.zw()) + vec2(1.f), image.uvs, border, image.border_uvs, hud.color);
 			hud.bg_vert_count = 9 * 4;
 		}
 		if ((pivot.x != 0.f || pivot.y != 0.f) && auto_sizing)
@@ -3812,34 +3812,13 @@ namespace flame
 		return rect;
 	}
 
-	static vec2 calc_text_size(graphics::FontAtlasPtr font_atlas, uint font_size, std::wstring_view str)
-	{
-		auto scale = font_atlas->get_scale(font_size);
-		auto p = vec2(0.f);
-		auto max_x = 0.f;
-		for (auto ch : str)
-		{
-			if (ch == L'\n')
-			{
-				p.y += font_size;
-				p.x = 0.f;
-				continue;
-			}
-
-			auto& g = font_atlas->get_glyph(ch, font_size);
-			p.x += g.advance * scale;
-			max_x = max(max_x, p.x);
-		}
-		return vec2(max_x, p.y + font_size);
-	}
-
 	void sRendererPrivate::hud_text(std::wstring_view text, uint font_size, const cvec4& col)
 	{
 		auto canvas = render_tasks.front()->canvas;
 
-		auto sz = calc_text_size(canvas->default_font_atlas, font_size, text);
+		auto sz = canvas->calc_text_size(canvas->default_font_atlas, font_size, text);
 		auto rect = hud_add_rect(sz);
-		canvas->add_text(canvas->default_font_atlas, font_size, rect.a, text, col, 0.5f, 0.2f);
+		canvas->draw_text(canvas->default_font_atlas, font_size, rect.a, text, col, 0.5f, 0.2f);
 	}
 
 	void sRendererPrivate::hud_rect(const vec2& size, const cvec4& col)
@@ -3849,7 +3828,7 @@ namespace flame
 		auto alpha = hud_style_vars[HudStyleVarAlpha].top().x;
 
 		auto rect = hud_add_rect(size);
-		canvas->add_rect_filled(rect.a, rect.b, cvec4(col.xyz(), col.a * alpha));
+		canvas->draw_rect_filled(rect.a, rect.b, cvec4(col.xyz(), col.a * alpha));
 	}
 
 	void sRendererPrivate::hud_image(const vec2& size, const graphics::ImageDesc& image, const cvec4& col)
@@ -3859,7 +3838,7 @@ namespace flame
 		auto alpha = hud_style_vars[HudStyleVarAlpha].top().x;
 
 		auto rect = hud_add_rect(size);
-		canvas->add_image(image.view, rect.a, rect.b, image.uvs, cvec4(col.xyz(), col.a * alpha));
+		canvas->draw_image(image.view, rect.a, rect.b, image.uvs, cvec4(col.xyz(), col.a * alpha));
 	}
 
 	void sRendererPrivate::hud_image_stretched(const vec2& size, const graphics::ImageDesc& image, const vec4& border, const cvec4& col)
@@ -3869,7 +3848,7 @@ namespace flame
 		auto alpha = hud_style_vars[HudStyleVarAlpha].top().x;
 
 		auto rect = hud_add_rect(size);
-		canvas->add_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, cvec4(col.xyz(), col.a * alpha));
+		canvas->draw_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, cvec4(col.xyz(), col.a * alpha));
 	}
 
 	void sRendererPrivate::hud_image_rotated(const vec2& size, const graphics::ImageDesc& image, const cvec4& col, float angle)
@@ -3879,7 +3858,7 @@ namespace flame
 		auto alpha = hud_style_vars[HudStyleVarAlpha].top().x;
 
 		auto rect = hud_add_rect(size);
-		canvas->add_image_rotated(image.view, rect.a, rect.b, image.uvs, cvec4(col.xyz(), col.a * alpha), angle);
+		canvas->draw_image_rotated(image.view, rect.a, rect.b, image.uvs, cvec4(col.xyz(), col.a * alpha), angle);
 	}
 
 	bool sRendererPrivate::hud_button(std::wstring_view label, uint font_size)
@@ -3888,7 +3867,7 @@ namespace flame
 		auto input = sInput::instance();
 
 		vec4 border(2.f);
-		auto sz = calc_text_size(canvas->default_font_atlas, font_size, label);
+		auto sz = canvas->calc_text_size(canvas->default_font_atlas, font_size, label);
 		sz += border.xy() + border.zw();
 
 		auto rect = hud_add_rect(sz);
@@ -3901,8 +3880,8 @@ namespace flame
 
 			input->mouse_used = true;
 		}
-		canvas->add_rect_filled(rect.a, rect.b, state == 0 ? cvec4(35, 69, 109, 255) : cvec4(66, 150, 250, 255));
-		canvas->add_text(canvas->default_font_atlas, font_size, rect.a + border.xy(), label, cvec4(255), 0.5f, 0.2f);
+		canvas->draw_rect_filled(rect.a, rect.b, state == 0 ? cvec4(35, 69, 109, 255) : cvec4(66, 150, 250, 255));
+		canvas->draw_text(canvas->default_font_atlas, font_size, rect.a + border.xy(), label, cvec4(255), 0.5f, 0.2f);
 		return state == 2;
 	}
 
@@ -3927,12 +3906,12 @@ namespace flame
 		if (image.view)
 		{
 			if (border.x > 0.f || border.y > 0.f || border.z > 0.f || border.w > 0.f)
-				canvas->add_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, state == 0 ? cvec4(255) : cvec4(200));
+				canvas->draw_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, state == 0 ? cvec4(255) : cvec4(200));
 			else
-				canvas->add_image(image.view, rect.a, rect.b, image.uvs, state == 0 ? cvec4(255) : cvec4(200));
+				canvas->draw_image(image.view, rect.a, rect.b, image.uvs, state == 0 ? cvec4(255) : cvec4(200));
 		}
 		else
-			canvas->add_rect_filled(rect.a, rect.b, state == 0 ? cvec4(35, 69, 109, 255) : cvec4(66, 150, 250, 255));
+			canvas->draw_rect_filled(rect.a, rect.b, state == 0 ? cvec4(35, 69, 109, 255) : cvec4(66, 150, 250, 255));
 		return state == 2;
 	}
 
@@ -3942,7 +3921,7 @@ namespace flame
 		auto alpha = hud_style_vars[HudStyleVarAlpha].top().x;
 
 		auto rect = hud_last_rect;
-		canvas->add_rect(rect.a, rect.b, thickness, cvec4(col.xyz(), col.a * alpha));
+		canvas->draw_rect(rect.a, rect.b, thickness, cvec4(col.xyz(), col.a * alpha));
 	}
 
 	bool sRendererPrivate::hud_item_hovered()

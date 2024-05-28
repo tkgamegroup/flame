@@ -14,7 +14,7 @@ namespace flame
 	{
 		element->drawers.add([this](graphics::CanvasPtr canvas) {
 			if (!text.empty() && col.a > 0)
-				canvas->add_text(font_atlas, font_size, element->global_pos0(), text, col, thickness, border);
+				canvas->draw_text(font_atlas, font_size, element->global_pos0(), text, col, thickness, border);
 		}, "text"_h);
 	}
 
