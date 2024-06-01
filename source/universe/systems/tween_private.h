@@ -6,15 +6,32 @@ namespace flame
 {
 	struct sTweenPrivate : sTween
 	{
-		struct RendererData
+		union Target
 		{
-			vec3  pos = vec3(0.f);
-			vec3  eul = vec3(0.f);
-			vec3  scl = vec3(1.f);
-			float alpha = 1.f;
+			struct
+			{
+				vec3*	pos;
+				vec3*	eul; 
+				vec3*	scl; 
+				float*	alpha;
+			}_3d;
+			struct
+			{
+				vec2*	pos;
+				float*	ang;
+				vec2*	scl;
+				float*	alpha;
+			}_2d;
+			struct 
+			{
+				vec3  pos;
+				vec3  eul;
+				vec3  scl;
+				float alpha;
+			}renderer_data;
 		};
 
-		union Target
+		union CurrentTarget
 		{
 			EntityPtr e;
 			uint idx;
@@ -45,7 +62,7 @@ namespace flame
 
 		struct Action
 		{
-			Target target;
+			CurrentTarget target;
 
 			float start_time;
 			float end_time;
@@ -64,19 +81,15 @@ namespace flame
 
 		struct Animation
 		{
-			TweenType type;
-			EntityPtr renderer_entity = nullptr;
-			BlueprintInstanceGroupPtr renderer = nullptr;
-			std::vector<RendererData> renderer_datas;
-			vec3* pos_data = nullptr; 
-			vec3* eul_data = nullptr; 
-			vec3* scl_data = nullptr; 
-			float* alpha_data = nullptr;
-			Target curr_target;
+			TweenType							type;
+			std::vector<Target>					targets;
+			CurrentTarget						curr_target;
+			EntityPtr							bp_renderer_entity = nullptr;
+			BlueprintInstanceGroupPtr			bp_renderer_group = nullptr;
+			std::vector<std::function<void()>>	callbacks;
+			TypeInfo*							custom_data_type = nullptr;
+			void*								custom_data = nullptr;
 
-			std::vector<std::function<void()>> callbacks;
-			TypeInfo*	custom_data_type = nullptr;
-			void*		custom_data = nullptr;
 			std::list<Track> tracks;
 
 			// building
@@ -99,8 +112,11 @@ namespace flame
 		sTweenPrivate();
 
 		uint begin() override;
-		uint begin(vec3* pos_data, vec3* eul_data, vec3* scl_data, float* alpha_data) override;
-		uint begin(EntityPtr host, BlueprintInstanceGroupPtr renderer, uint target_count) override;
+		uint begin_3d_targets(uint targets_count) override;
+		uint begin_2d_targets(uint targets_count) override;
+		uint begin_bp_custom_renderer(EntityPtr host, BlueprintInstanceGroupPtr renderer, uint targets_count) override;
+		void setup_3d_target(uint id, uint idx, vec3* pos, vec3* eul, vec3* scl, float* alpha) override;
+		void setup_2d_target(uint id, uint idx, vec2* pos, float* ang, vec2* scl, float* alpha) override;
 		void set_target(uint id, EntityPtr e) override;
 		void set_target(uint id, uint idx) override;
 		void set_custom_data(uint id, TypeInfo* type, void* data) override;

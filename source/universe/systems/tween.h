@@ -7,8 +7,9 @@ namespace flame
 	enum TweenType
 	{
 		TweenEntity,
-		TweenData,
-		TweenCustomRenderer
+		Tween3DTargets,
+		Tween2DTargets,
+		TweenBpCustomRenderer
 	};
 
 	enum Ease
@@ -49,8 +50,11 @@ namespace flame
 	struct sTween : System
 	{
 		virtual uint begin() = 0;
-		virtual uint begin(vec3* pos_data, vec3* eul_data, vec3* scl_data, float* alpha_data) = 0;
-		virtual uint begin(EntityPtr host, BlueprintInstanceGroupPtr renderer, uint target_count) = 0;
+		virtual uint begin_3d_targets(uint targets_count) = 0;
+		virtual uint begin_2d_targets(uint targets_count) = 0;
+		virtual uint begin_bp_custom_renderer(EntityPtr host, BlueprintInstanceGroupPtr renderer, uint targets_count) = 0;
+		virtual void setup_3d_target(uint id, uint idx, vec3* pos, vec3* eul, vec3* scl, float* alpha) = 0;
+		virtual void setup_2d_target(uint id, uint idx, vec2* pos, float* ang, vec2* scl, float* alpha) = 0;
 		virtual void set_target(uint id, EntityPtr e) = 0;
 		virtual void set_target(uint id, uint idx) = 0;
 		virtual void set_custom_data(uint id, TypeInfo* type, void* data) = 0;
@@ -58,11 +62,27 @@ namespace flame
 		virtual void newline(uint id) = 0;
 		virtual void wait(uint id, float time) = 0;
 		virtual void move_to(uint id, const vec3& pos, float duration) = 0;
+		inline void move_to(uint id, const vec2& pos, float duration)
+		{
+			move_to(id, vec3(pos, 0.f), duration);
+		}
 		virtual void move_from(uint id, const vec3& pos, float duration) = 0;
+		inline void move_from(uint id, const vec2& pos, float duration)
+		{
+			move_from(id, vec3(pos, 0.f), duration);
+		}
 		virtual void rotate_to(uint id, const vec3& eul, float duration) = 0;
 		virtual void rotate_from(uint id, const vec3& eul, float duration) = 0;
 		virtual void scale_to(uint id, const vec3& scl, float duration) = 0;
+		inline void scale_to(uint id, const vec2& scl, float duration)
+		{
+			scale_to(id, vec3(scl, 0.f), duration);
+		}
 		virtual void scale_from(uint id, const vec3& scl, float duration) = 0;
+		inline void scale_from(uint id, const vec2& scl, float duration)
+		{
+			scale_from(id, vec3(scl, 0.f), duration);
+		}
 		virtual void object_color_to(uint id, const cvec4& col, float duration) = 0;
 		virtual void object_color_from(uint id, const cvec4& col, float duration) = 0;
 		virtual void light_color_to(uint id, const vec4& col, float duration) = 0;

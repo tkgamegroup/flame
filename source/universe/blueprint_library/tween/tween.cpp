@@ -59,7 +59,7 @@ namespace flame
 							if (auto group = instance->find_group(*(uint*)inputs[2].data); group)
 							{
 								auto count = *(uint*)inputs[3].data;
-								auto id = sTween::instance()->begin(parent, group, count);
+								auto id = sTween::instance()->begin_bp_custom_renderer(parent, group, count);
 								*(uint*)outputs[0].data = id;
 							}
 							else
