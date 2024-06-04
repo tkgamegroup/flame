@@ -218,7 +218,7 @@ namespace flame
 	{
 		auto id = next_id++;
 		auto a = new Animation;
-		a->type = Tween3DTargets;
+		a->type = Tween2DTargets;
 		a->targets.resize(targets_count);
 		a->curr_target.idx = 0;
 		a->tracks.emplace_back();
