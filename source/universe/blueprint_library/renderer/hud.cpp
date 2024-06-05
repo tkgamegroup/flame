@@ -295,12 +295,12 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				sRenderer::instance()->hud_push_style(HudStyleVarScaling, *(vec2*)inputs[0].data);
+				sRenderer::instance()->hud_push_style_var(HudStyleVarScaling, *(vec2*)inputs[0].data);
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sRenderer::instance()->hud_pop_style(HudStyleVarScaling);
+				sRenderer::instance()->hud_pop_style_var(HudStyleVarScaling);
 			}
 		);
 
@@ -316,12 +316,12 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				sRenderer::instance()->hud_push_style(HudStyleVarAlpha, vec2(*(float*)inputs[0].data));
+				sRenderer::instance()->hud_push_style_var(HudStyleVarAlpha, vec2(*(float*)inputs[0].data));
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sRenderer::instance()->hud_pop_style(HudStyleVarAlpha);
+				sRenderer::instance()->hud_pop_style_var(HudStyleVarAlpha);
 			}
 		);
 

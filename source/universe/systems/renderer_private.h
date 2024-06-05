@@ -122,6 +122,7 @@ namespace flame
 		std::vector<ParticlesDraw> particles_draws;
 
 		std::vector<std::stack<vec2>> hud_style_vars;
+		std::vector<std::stack<cvec4>> hud_style_colors;
 		std::vector<Hud> huds;
 		Rect hud_last_rect;
 
@@ -243,8 +244,10 @@ namespace flame
 		Rect hud_hud_rect() const override;
 		Rect hud_item_rect() const override;
 		vec2 hud_screen_size() const override;
-		void hud_push_style(HudStyleVar var, const vec2& value) override;
-		void hud_pop_style(HudStyleVar var) override;
+		void hud_push_style_var(HudStyleVar idx, const vec2& value) override;
+		void hud_pop_style_var(HudStyleVar idx) override;
+		void hud_push_style_color(HudStyleColor idx, const cvec4& color) override;
+		void hud_pop_style_color(HudStyleColor idx) override;
 		void hud_begin_layout(HudLayoutType type, const vec2& size, const vec2& item_spacing, const vec4& border) override;
 		void hud_end_layout() override;
 		void hud_new_line() override;

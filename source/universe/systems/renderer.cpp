@@ -876,6 +876,10 @@ namespace flame
 		hud_style_vars.resize(HudStyleVarCount);
 		hud_style_vars[HudStyleVarScaling].push(vec2(1.f));
 		hud_style_vars[HudStyleVarAlpha].push(vec2(1.f));
+
+		hud_style_colors.resize(HudStyleColorCount);
+		hud_style_colors[HudStyleColorButton].push(cvec4(35, 69, 109, 255));
+		hud_style_colors[HudStyleColorButtonHovered].push(cvec4(66, 150, 250, 255));
 	}
 
 	sRendererPrivate::~sRendererPrivate()
@@ -3696,14 +3700,24 @@ namespace flame
 		return canvas->size;
 	}
 
-	void sRendererPrivate::hud_push_style(HudStyleVar var, const vec2& value)
+	void sRendererPrivate::hud_push_style_var(HudStyleVar idx, const vec2& value)
 	{
-		hud_style_vars[var].push(value);
+		hud_style_vars[idx].push(value);
 	}
 
-	void sRendererPrivate::hud_pop_style(HudStyleVar var)
+	void sRendererPrivate::hud_pop_style_var(HudStyleVar idx)
 	{
-		hud_style_vars[var].pop();
+		hud_style_vars[idx].pop();
+	}
+
+	void sRendererPrivate::hud_push_style_color(HudStyleColor idx, const cvec4& color)
+	{
+		hud_style_colors[idx].push(color);
+	}
+
+	void sRendererPrivate::hud_pop_style_color(HudStyleColor idx)
+	{
+		hud_style_colors[idx].pop();
 	}
 
 	void sRendererPrivate::hud_begin_layout(HudLayoutType type, const vec2& size, const vec2& item_spacing, const vec4& border)
@@ -3880,7 +3894,7 @@ namespace flame
 
 			input->mouse_used = true;
 		}
-		canvas->draw_rect_filled(rect.a, rect.b, state == 0 ? cvec4(35, 69, 109, 255) : cvec4(66, 150, 250, 255));
+		canvas->draw_rect_filled(rect.a, rect.b, state == 0 ? hud_style_colors[HudStyleColorButton].top() : hud_style_colors[HudStyleColorButtonHovered].top());
 		canvas->draw_text(canvas->default_font_atlas, font_size, rect.a + border.xy(), label, cvec4(255), 0.5f, 0.2f);
 		return state == 2;
 	}
@@ -3911,7 +3925,7 @@ namespace flame
 				canvas->draw_image(image.view, rect.a, rect.b, image.uvs, state == 0 ? cvec4(255) : cvec4(200));
 		}
 		else
-			canvas->draw_rect_filled(rect.a, rect.b, state == 0 ? cvec4(35, 69, 109, 255) : cvec4(66, 150, 250, 255));
+			canvas->draw_rect_filled(rect.a, rect.b, state == 0 ? hud_style_colors[HudStyleColorButton].top() : hud_style_colors[HudStyleColorButtonHovered].top());
 		return state == 2;
 	}
 

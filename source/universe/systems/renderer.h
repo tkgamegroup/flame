@@ -54,6 +54,13 @@ namespace flame
 		HudStyleVarCount
 	};
 
+	enum HudStyleColor
+	{
+		HudStyleColorButton,
+		HudStyleColorButtonHovered,
+		HudStyleColorCount
+	};
+
 	struct RenderTask
 	{
 		RenderMode mode = RenderModeShaded;
@@ -374,8 +381,10 @@ namespace flame
 		virtual Rect hud_hud_rect() const = 0;
 		virtual Rect hud_item_rect() const = 0;
 		virtual vec2 hud_screen_size() const = 0;
-		virtual void hud_push_style(HudStyleVar var, const vec2& value) = 0;
-		virtual void hud_pop_style(HudStyleVar var) = 0;
+		virtual void hud_push_style_var(HudStyleVar idx, const vec2& value) = 0;
+		virtual void hud_pop_style_var(HudStyleVar idx) = 0;
+		virtual void hud_push_style_color(HudStyleColor idx, const cvec4& color) = 0;
+		virtual void hud_pop_style_color(HudStyleColor idx) = 0;
 		virtual void hud_begin_layout(HudLayoutType type, const vec2& size = vec2(0.f), const vec2& item_spacing = vec2(2.f), const vec4& border = vec4(0.f)) = 0;
 		virtual void hud_end_layout() = 0;
 		virtual void hud_new_line() = 0;
@@ -414,13 +423,13 @@ namespace flame
 		}
 		virtual bool hud_button(std::wstring_view label, uint font_size = 24) = 0;
 		virtual bool hud_image_button(const vec2& size, const graphics::ImageDesc& image = {}, const vec4& border = vec4(0.f)) = 0;
-		inline void hud_image_button(const vec2& size, graphics::ImagePtr image, const vec4& border = vec4(0.f))
+		inline bool hud_image_button(const vec2& size, graphics::ImagePtr image, const vec4& border = vec4(0.f))
 		{
 			graphics::ImageDesc desc;
 			desc.view = image->get_view();
 			desc.uvs = vec4(0.f, 0.f, 1.f, 1.f);
 			desc.border_uvs = vec4(0.f);
-			hud_image_button(size, desc, border);
+			return hud_image_button(size, desc, border);
 		}
 		virtual void hud_stroke_item(float thickness = 1.f, const cvec4& col = cvec4(255)) = 0;
 		virtual bool hud_item_hovered() = 0;
