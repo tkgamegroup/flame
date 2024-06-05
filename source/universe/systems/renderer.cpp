@@ -3666,6 +3666,18 @@ namespace flame
 		huds.pop_back();
 	}
 
+	vec2 sRendererPrivate::hud_get_cursor()
+	{
+		if (huds.empty())
+			return vec2(-1.f);
+		auto& hud = huds.back();
+		if (hud.layouts.empty())
+			return vec2(-1.f);
+		auto& layout = hud.layouts.back();
+
+		return layout.cursor;
+	}
+
 	void sRendererPrivate::hud_set_cursor(const vec2& pos)
 	{
 		if (huds.empty())

@@ -377,6 +377,7 @@ namespace flame
 		virtual void hud_begin(const vec2& pos, const vec2& size = vec2(0.f) /* 0 size means auto layout */, const cvec4& col = cvec4(0, 0, 0, 255), const vec2& pivot = vec2(0.f),
 			const graphics::ImageDesc& image = {}, const vec4& border = vec4(4.f)) = 0;
 		virtual void hud_end() = 0;
+		virtual vec2 hud_get_cursor() = 0;
 		virtual void hud_set_cursor(const vec2& pos) = 0;
 		virtual Rect hud_hud_rect() const = 0;
 		virtual Rect hud_item_rect() const = 0;
