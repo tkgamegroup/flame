@@ -217,32 +217,6 @@ namespace flame
 			}
 		);
 
-		library->add_template("Tween Newline", "", BlueprintNodeFlagNone,
-			{
-				{
-					.name = "ID",
-					.allowed_types = { TypeInfo::get<uint>() }
-				}
-			},
-			{
-				{
-					.name = "ID",
-					.allowed_types = { TypeInfo::get<uint>() }
-				}
-			},
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto id = *(uint*)inputs[0].data;
-				if (id != 0)
-				{
-					sTween::instance()->newline(id);
-
-					*(uint*)outputs[0].data = id;
-				}
-				else
-					*(uint*)outputs[0].data = 0;
-			}
-		);
-
 		library->add_template("Tween Wait", "", BlueprintNodeFlagNone,
 			{
 				{

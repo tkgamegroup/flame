@@ -23,49 +23,6 @@ namespace flame
 
 	sTweenPrivate::Action& sTweenPrivate::Animation::new_action(float duration)
 	{
-		if (newline)
-		{
-			auto& last_t = *curr_track;
-			auto start_time = last_t.actions.empty() ? 0.f : last_t.actions.back().start_time;
-
-			curr_track++;
-			if (curr_track == tracks.end())
-			{
-				tracks.emplace_back();
-				curr_track = tracks.end();
-				curr_track--;
-			}
-			newline = false;
-
-			auto& t = *curr_track;
-			if (t.duration < start_time)
-			{
-				auto& a = t.actions.emplace_back();
-				a.duration = start_time - t.duration;
-				a.start_time = t.duration;
-				a.end_time = a.start_time + a.duration;
-				t.duration += a.duration;
-			}
-		}
-		else
-		{
-			curr_track = tracks.begin();
-			auto& t = *curr_track;
-
-			auto max_duration = 0.f;
-			for (auto& t : tracks)
-				max_duration = std::max(max_duration, t.duration);
-
-			if (t.duration < max_duration)
-			{
-				auto& a = t.actions.emplace_back();
-				a.duration = max_duration - t.duration;
-				a.start_time = t.duration;
-				a.end_time = a.start_time + a.duration;
-				t.duration += a.duration;
-			}
-		}
-
 		auto& t = *curr_track;
 		auto& a = t.actions.emplace_back();
 		a.target = curr_target;
@@ -332,12 +289,6 @@ namespace flame
 		}
 	}
 
-	void sTweenPrivate::newline(uint id)
-	{
-		if (auto it = staging_animations.find(id); it != staging_animations.end())
-			it->second->newline = true;
-	}
-
 	void sTweenPrivate::wait(uint id, float time)
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
@@ -545,6 +496,39 @@ namespace flame
 			auto& a = it->second->new_action(0.f);
 			a.type = ActionBpCallback;
 			a.v1.p = callback;
+		}
+	}
+
+	void sTweenPrivate::set_channel(uint id, uint ch, bool sync_last_action, bool sync_to_begin)
+	{
+		if (auto it = staging_animations.find(id); it != staging_animations.end())
+		{
+			auto& ani = *it->second;
+			auto start_time = 0.f;
+			auto& last_t = *ani.curr_track;
+			if (sync_last_action)
+			{
+				if (!last_t.actions.empty())
+				{
+					auto& last_a = last_t.actions.back();
+					if (sync_to_begin)
+						start_time = last_a.start_time;
+					else
+						start_time = last_a.start_time + last_a.duration;
+				}
+			}
+			if (ani.tracks.size() <= ch)
+				ani.tracks.resize(ch + 1);
+			ani.curr_track = ani.tracks.begin() + ch;
+			auto& t = *ani.curr_track;
+			if (t.duration < start_time)
+			{
+				auto& a = t.actions.emplace_back();
+				a.duration = start_time - t.duration;
+				a.start_time = t.duration;
+				a.end_time = a.start_time + a.duration;
+				t.duration += a.duration;
+			}
 		}
 	}
 
@@ -901,7 +885,7 @@ namespace flame
 							if (tar.alpha)
 								*tar.alpha = mix(a.v0.f[0], a.v1.f[0], t);
 						}
-						else if (ani->type == Tween3DTargets)
+						else if (ani->type == Tween2DTargets)
 						{
 							auto& tar = ani->targets[a.target.idx]._2d;
 							if (tar.alpha)

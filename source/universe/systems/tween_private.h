@@ -90,11 +90,10 @@ namespace flame
 			TypeInfo*							custom_data_type = nullptr;
 			void*								custom_data = nullptr;
 
-			std::list<Track> tracks;
+			std::vector<Track> tracks;
 
 			// building
-			std::list<Track>::iterator curr_track;
-			bool newline = false;
+			std::vector<Track>::iterator curr_track;
 
 			// running
 			float time;
@@ -121,7 +120,6 @@ namespace flame
 		void set_target(uint id, uint idx) override;
 		void set_custom_data(uint id, TypeInfo* type, void* data) override;
 		void end(uint id) override;
-		void newline(uint id) override;
 		void wait(uint id, float time) override;
 		void move_to(uint id, const vec3& pos, float duration) override;
 		void move_from(uint id, const vec3& pos, float duration) override;
@@ -142,6 +140,8 @@ namespace flame
 		void kill(uint id) override;
 		void set_callback(uint id, const std::function<void()>& callback) override;
 		void set_callback(uint id, BlueprintInstanceGroupPtr callback) override;
+
+		void set_channel(uint id, uint ch, bool sync_last_action, bool sync_to_begin = true) override;
 
 		void clear() override;
 

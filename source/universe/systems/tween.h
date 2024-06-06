@@ -59,7 +59,6 @@ namespace flame
 		virtual void set_target(uint id, uint idx) = 0;
 		virtual void set_custom_data(uint id, TypeInfo* type, void* data) = 0;
 		virtual void end(uint id) = 0;
-		virtual void newline(uint id) = 0;
 		virtual void wait(uint id, float time) = 0;
 		virtual void move_to(uint id, const vec3& pos, float duration) = 0;
 		inline void move_to(uint id, const vec2& pos, float duration)
@@ -96,6 +95,8 @@ namespace flame
 		virtual void kill(uint id) = 0;
 		virtual void set_callback(uint id, const std::function<void()>& callback) = 0;
 		virtual void set_callback(uint id, BlueprintInstanceGroupPtr callback) = 0;
+
+		virtual void set_channel(uint id, uint ch, bool sync_last_action = true, bool sync_to_begin = true) = 0;
 
 		virtual void clear() = 0;
 
