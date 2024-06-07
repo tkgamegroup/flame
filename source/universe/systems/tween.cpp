@@ -510,7 +510,17 @@ namespace flame
 			{
 				if (!last_t.actions.empty())
 				{
-					auto& last_a = last_t.actions.back();
+					auto last_it = last_t.actions.rbegin();
+					while (last_it->type == ActionCallback || last_it->type == ActionBpCallback)
+					{
+						last_it++;
+						if (last_it == last_t.actions.rend())
+						{
+							last_it = last_t.actions.rbegin();
+							break;
+						}
+					}
+					auto& last_a = *last_it;
 					if (sync_to_begin)
 						start_time = last_a.start_time;
 					else
