@@ -50,11 +50,12 @@ namespace flame
 	struct sTween : System
 	{
 		virtual uint begin() = 0;
-		virtual uint begin_3d_targets(uint targets_count) = 0;
-		virtual uint begin_2d_targets(uint targets_count) = 0;
+		virtual uint begin_3d_targets() = 0;
+		virtual uint begin_2d_targets() = 0;
 		virtual uint begin_bp_custom_renderer(EntityPtr host, BlueprintInstanceGroupPtr renderer, uint targets_count) = 0;
-		virtual void setup_3d_target(uint id, uint idx, vec3* pos, vec3* eul, vec3* scl, float* alpha) = 0;
-		virtual void setup_2d_target(uint id, uint idx, vec2* pos, float* ang, vec2* scl, float* alpha) = 0;
+		virtual void add_3d_target(uint id, vec3* pos, vec3* eul, vec3* scl, float* alpha) = 0;
+		virtual void add_2d_target(uint id, vec2* pos, float* ang, vec2* scl, float* alpha) = 0;
+		virtual void add_int_target(uint id, int* val) = 0;
 		virtual void set_target(uint id, EntityPtr e) = 0;
 		virtual void set_target(uint id, uint idx) = 0;
 		virtual void set_custom_data(uint id, TypeInfo* type, void* data) = 0;
@@ -88,6 +89,8 @@ namespace flame
 		virtual void light_color_from(uint id, const vec4& col, float duration) = 0;
 		virtual void alpha_to(uint id, float alpha, float duration) = 0;
 		virtual void alpha_from(uint id, float alpha, float duration) = 0;
+		virtual void int_val_to(uint id, int val, float duration) = 0;
+		virtual void int_val_from(uint id, int val, float duration) = 0;
 		virtual void set_ease(uint id, Ease ease) = 0;
 		virtual void enable(uint id) = 0;
 		virtual void disable(uint id) = 0;
@@ -96,7 +99,8 @@ namespace flame
 		virtual void set_callback(uint id, const std::function<void()>& callback) = 0;
 		virtual void set_callback(uint id, BlueprintInstanceGroupPtr callback) = 0;
 
-		virtual void set_channel(uint id, uint ch, bool sync_last_action = true, bool sync_to_begin = true) = 0;
+		virtual float get_time(uint id) = 0;
+		virtual void set_channel(uint id, uint ch, float time) = 0;
 
 		virtual void clear() = 0;
 

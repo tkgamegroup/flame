@@ -9,6 +9,7 @@
 #include "systems/scene.h"
 #include "systems/input.h"
 #include "systems/renderer.h"
+#include "systems/hud.h"
 #include "systems/audio.h"
 #include "systems/graveyard.h"
 
@@ -19,6 +20,7 @@ struct UniverseApplication : GraphicsApplication
 	sInputPtr		input;
 	sScenePtr		scene;
 	sRendererPtr	renderer;
+	sHudPtr			hud;
 	sAudioPtr		audio;
 	sGraveyardPtr	graveyard;
 
@@ -34,6 +36,7 @@ struct UniverseApplication : GraphicsApplication
 		scene		= (sScenePtr)world->add_system<sScene>();
 		input		= (sInputPtr)world->add_system<sInput>();
 		renderer	= (sRendererPtr)world->add_system<sRenderer>();
+		hud			= (sHudPtr)world->add_system<sHud>();
 		audio		= (sAudioPtr)world->add_system<sAudio>();
 		graveyard	= (sGraveyardPtr)world->add_system<sGraveyard>();
 	}

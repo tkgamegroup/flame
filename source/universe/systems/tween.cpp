@@ -139,6 +139,13 @@ namespace flame
 			else if (type == TweenBpCustomRenderer)
 				(a.dir == ActionForward ? a.v0.f[0] : a.v1.f[0]) = targets[a.target.idx].renderer_data.alpha;
 			break;
+		case ActionIntVal:
+		{
+			auto& tar = targets[a.target.idx];
+			if (tar.val.i)
+				(a.dir == ActionForward ? a.v0.i[0] : a.v1.i[0]) = *tar.val.i;
+		}
+			break;
 		}
 	}
 
@@ -158,12 +165,11 @@ namespace flame
 		return id;
 	}
 
-	uint sTweenPrivate::begin_3d_targets(uint targets_count)
+	uint sTweenPrivate::begin_3d_targets()
 	{
 		auto id = next_id++;
 		auto a = new Animation;
 		a->type = Tween3DTargets;
-		a->targets.resize(targets_count);
 		a->curr_target.idx = 0;
 		a->tracks.emplace_back();
 		a->curr_track = a->tracks.begin();
@@ -171,12 +177,11 @@ namespace flame
 		return id;
 	}
 
-	uint sTweenPrivate::begin_2d_targets(uint targets_count)
+	uint sTweenPrivate::begin_2d_targets()
 	{
 		auto id = next_id++;
 		auto a = new Animation;
 		a->type = Tween2DTargets;
-		a->targets.resize(targets_count);
 		a->curr_target.idx = 0;
 		a->tracks.emplace_back();
 		a->curr_track = a->tracks.begin();
@@ -222,23 +227,39 @@ namespace flame
 		return id;
 	}
 
-	void sTweenPrivate::setup_3d_target(uint id, uint idx, vec3* pos, vec3* eul, vec3* scl, float* alpha)
+	void sTweenPrivate::add_3d_target(uint id, vec3* pos, vec3* eul, vec3* scl, float* alpha)
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
 			auto a = it->second.get();
-			assert(a->targets.size() > idx);
-			a->targets[idx]._3d = { .pos = pos, .eul = eul, .scl = scl, .alpha = alpha };
+			auto& t = a->targets.emplace_back();
+			t._3d.pos = pos;
+			t._3d.eul = eul;
+			t._3d.scl = scl;
+			t._3d.alpha = alpha;
 		}
 	}
 
-	void sTweenPrivate::setup_2d_target(uint id, uint idx, vec2* pos, float* ang, vec2* scl, float* alpha)
+	void sTweenPrivate::add_2d_target(uint id, vec2* pos, float* ang, vec2* scl, float* alpha)
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
 			auto a = it->second.get();
-			assert(a->targets.size() > idx);
-			a->targets[idx]._2d = { .pos = pos, .ang = ang, .scl = scl, .alpha = alpha };
+			auto& t = a->targets.emplace_back();
+			t._2d.pos = pos;
+			t._2d.ang = ang;
+			t._2d.scl = scl;
+			t._2d.alpha = alpha;
+		}
+	}
+
+	void sTweenPrivate::add_int_target(uint id, int* val)
+	{
+		if (auto it = staging_animations.find(id); it != staging_animations.end())
+		{
+			auto a = it->second.get();
+			auto& t = a->targets.emplace_back();
+			t.val.i = val;
 		}
 	}
 
@@ -430,6 +451,28 @@ namespace flame
 		}
 	}
 
+	void sTweenPrivate::int_val_to(uint id, int val, float duration)
+	{
+		if (auto it = staging_animations.find(id); it != staging_animations.end())
+		{
+			auto& a = it->second->new_action(duration);
+			a.type = ActionIntVal;
+			a.dir = ActionForward;
+			a.v0.i[0] = val;
+		}
+	}
+
+	void sTweenPrivate::int_val_from(uint id, int val, float duration)
+	{
+		if (auto it = staging_animations.find(id); it != staging_animations.end())
+		{
+			auto& a = it->second->new_action(duration);
+			a.type = ActionIntVal;
+			a.dir = ActionBackward;
+			a.v0.i[0] = val;
+		}
+	}
+
 	void sTweenPrivate::set_ease(uint id, Ease ease)
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
@@ -499,42 +542,26 @@ namespace flame
 		}
 	}
 
-	void sTweenPrivate::set_channel(uint id, uint ch, bool sync_last_action, bool sync_to_begin)
+	float sTweenPrivate::get_time(uint id)
+	{
+		if (auto it = staging_animations.find(id); it != staging_animations.end())
+			return it->second->curr_track->duration;
+		return 0.f;
+	}
+
+	void sTweenPrivate::set_channel(uint id, uint ch, float time)
 	{
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
 			auto& ani = *it->second;
-			auto start_time = 0.f;
-			auto& last_t = *ani.curr_track;
-			if (sync_last_action)
-			{
-				if (!last_t.actions.empty())
-				{
-					auto last_it = last_t.actions.rbegin();
-					while (last_it->type == ActionCallback || last_it->type == ActionBpCallback)
-					{
-						last_it++;
-						if (last_it == last_t.actions.rend())
-						{
-							last_it = last_t.actions.rbegin();
-							break;
-						}
-					}
-					auto& last_a = *last_it;
-					if (sync_to_begin)
-						start_time = last_a.start_time;
-					else
-						start_time = last_a.start_time + last_a.duration;
-				}
-			}
 			if (ani.tracks.size() <= ch)
 				ani.tracks.resize(ch + 1);
 			ani.curr_track = ani.tracks.begin() + ch;
 			auto& t = *ani.curr_track;
-			if (t.duration < start_time)
+			if (t.duration < time)
 			{
 				auto& a = t.actions.emplace_back();
-				a.duration = start_time - t.duration;
+				a.duration = time - t.duration;
 				a.start_time = t.duration;
 				a.end_time = a.start_time + a.duration;
 				t.duration += a.duration;
@@ -662,6 +689,13 @@ namespace flame
 							}
 							else if (ani->type == TweenBpCustomRenderer)
 								ani->targets[a.target.idx].renderer_data.alpha = a.v1.f[0];
+							break;
+						case ActionIntVal:
+						{
+							auto& tar = ani->targets[a.target.idx];
+							if (tar.val.i)
+								*tar.val.i = a.v1.i[0];
+						}
 							break;
 						case ActionEnable:
 							if (ani->type == TweenEntity)
@@ -903,6 +937,13 @@ namespace flame
 						}
 						else if (ani->type == TweenBpCustomRenderer)
 							ani->targets[a.target.idx].renderer_data.alpha = mix(a.v0.f[0], a.v1.f[0], t);
+						break;
+					case ActionIntVal:
+					{
+						auto& tar = ani->targets[a.target.idx];
+						if (tar.val.i)
+							*tar.val.i = mix(a.v0.i[0], a.v1.i[0], t);
+					}
 						break;
 					}
 				}

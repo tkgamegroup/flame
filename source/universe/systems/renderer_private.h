@@ -86,33 +86,6 @@ namespace flame
 		uint vtx_cnt;
 	};
 
-	struct HudLayout
-	{
-		HudLayoutType type;
-		Rect rect;
-		vec2 cursor;
-		vec2 pivot;
-		vec2 item_spacing;
-		vec4 border;
-		vec2 item_max;
-		bool auto_size;
-	};
-
-	struct Hud
-	{
-		vec2 pos;
-		vec2 size;
-		cvec4 color;
-		vec2 pivot;
-		vec4 border;
-		bool stencil;
-		graphics::Canvas::DrawVert* bg_verts;
-		uint bg_vert_count;
-		int translate_cmd_idx;
-
-		std::vector<HudLayout> layouts;
-	};
-
 	struct sRendererPrivate : sRenderer
 	{
 		bool mark_clear_pipelines = false;
@@ -120,11 +93,6 @@ namespace flame
 		std::vector<OutlineDrawGroup> outline_groups;
 		std::vector<PrimitivesDraw> primitives_draws;
 		std::vector<ParticlesDraw> particles_draws;
-
-		std::vector<std::stack<vec2>> hud_style_vars;
-		std::vector<std::stack<cvec4>> hud_style_colors;
-		std::vector<Hud> huds;
-		Rect hud_last_rect;
 
 		sRendererPrivate(int); // dummy for reflection
 		sRendererPrivate();
@@ -234,39 +202,6 @@ namespace flame
 		cElementPtr pick_up_2d(const uvec2& screen_pos) override;
 		std::vector<vec3> transform_feedback(cNodePtr node) override;
 		graphics::ImagePtr get_image(uint name) override;
-
-		HudLayout& hud_add_layout(HudLayoutType type);
-		void hud_finish_layout(HudLayout& layout);
-
-		void hud_begin(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, const vec4& border) override;
-		void hud_end() override;
-		vec2 hud_get_cursor() override;
-		void hud_set_cursor(const vec2& pos) override;
-		Rect hud_hud_rect() const override;
-		Rect hud_item_rect() const override;
-		vec2 hud_screen_size() const override;
-		void hud_push_style_var(HudStyleVar idx, const vec2& value) override;
-		void hud_pop_style_var(HudStyleVar idx) override;
-		void hud_push_style_color(HudStyleColor idx, const cvec4& color) override;
-		void hud_pop_style_color(HudStyleColor idx) override;
-		void hud_begin_layout(HudLayoutType type, const vec2& size, const vec2& item_spacing, const vec4& border) override;
-		void hud_end_layout() override;
-		void hud_new_line() override;
-		void hud_begin_stencil_write() override;
-		void hud_end_stencil_write() override;
-		void hud_begin_stencil_compare() override;
-		void hud_end_stencil_compare() override;
-		Rect hud_add_rect(const vec2& sz);
-		void hud_rect(const vec2& size, const cvec4& col) override;
-		void hud_text(std::wstring_view text, uint font_size, const cvec4& col) override;
-		void hud_image(const vec2& size, const graphics::ImageDesc& image, const cvec4& col) override;
-		void hud_image_stretched(const vec2& size, const graphics::ImageDesc& image, const vec4& border, const cvec4& col) override;
-		void hud_image_rotated(const vec2& size, const graphics::ImageDesc& image, const cvec4& col, float angle) override;
-		bool hud_button(std::wstring_view label, uint font_size) override;
-		bool hud_image_button(const vec2& size, const graphics::ImageDesc& image, const vec4& border) override;
-		void hud_stroke_item(float thickness, const cvec4& col) override;
-		bool hud_item_hovered() override;
-		bool hud_item_clicked() override;
 
 		void send_debug_string(const std::string& str) override;
 	};

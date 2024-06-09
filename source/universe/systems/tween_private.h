@@ -29,6 +29,10 @@ namespace flame
 				vec3  scl;
 				float alpha;
 			}renderer_data;
+			struct
+			{
+				int* i;
+			}val;
 		};
 
 		union CurrentTarget
@@ -46,6 +50,7 @@ namespace flame
 			ActionObjectColor,
 			ActionLightColor,
 			ActionAlpha,
+			ActionIntVal,
 			ActionEnable,
 			ActionDisable,
 			ActionPlayAnimation,
@@ -111,11 +116,12 @@ namespace flame
 		sTweenPrivate();
 
 		uint begin() override;
-		uint begin_3d_targets(uint targets_count) override;
-		uint begin_2d_targets(uint targets_count) override;
+		uint begin_3d_targets() override;
+		uint begin_2d_targets() override;
 		uint begin_bp_custom_renderer(EntityPtr host, BlueprintInstanceGroupPtr renderer, uint targets_count) override;
-		void setup_3d_target(uint id, uint idx, vec3* pos, vec3* eul, vec3* scl, float* alpha) override;
-		void setup_2d_target(uint id, uint idx, vec2* pos, float* ang, vec2* scl, float* alpha) override;
+		void add_3d_target(uint id, vec3* pos, vec3* eul, vec3* scl, float* alpha) override;
+		void add_2d_target(uint id, vec2* pos, float* ang, vec2* scl, float* alpha) override;
+		void add_int_target(uint id, int* val) override;
 		void set_target(uint id, EntityPtr e) override;
 		void set_target(uint id, uint idx) override;
 		void set_custom_data(uint id, TypeInfo* type, void* data) override;
@@ -133,6 +139,8 @@ namespace flame
 		void light_color_from(uint id, const vec4& col, float duration) override;
 		void alpha_to(uint id, float alpha, float duration) override;
 		void alpha_from(uint id, float alpha, float duration) override;
+		void int_val_to(uint id, int val, float duration) override;
+		void int_val_from(uint id, int val, float duration) override;
 		void set_ease(uint id, Ease ease) override;
 		void enable(uint id) override;
 		void disable(uint id) override;
@@ -141,7 +149,8 @@ namespace flame
 		void set_callback(uint id, const std::function<void()>& callback) override;
 		void set_callback(uint id, BlueprintInstanceGroupPtr callback) override;
 
-		void set_channel(uint id, uint ch, bool sync_last_action, bool sync_to_begin = true) override;
+		float get_time(uint id) override;
+		void set_channel(uint id, uint ch, float time) override;
 
 		void clear() override;
 

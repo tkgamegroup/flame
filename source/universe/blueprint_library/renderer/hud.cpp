@@ -1,7 +1,7 @@
 #include "../../../foundation/blueprint.h"
 #include "../../../foundation/typeinfo.h"
 #include "../../entity_private.h"
-#include "../../systems/renderer_private.h"
+#include "../../systems/hud_private.h"
 
 namespace flame
 {
@@ -18,7 +18,7 @@ namespace flame
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto pos = *(vec2*)inputs[0].data;
-				sRenderer::instance()->hud_set_cursor(pos);
+				sHud::instance()->set_cursor(pos);
 			}
 		);
 
@@ -32,7 +32,7 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto rect = sRenderer::instance()->hud_item_rect();
+				auto rect = sHud::instance()->item_rect();
 				*(vec2*)outputs[0].data = rect.a;
 			}
 		);
@@ -47,7 +47,7 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto rect = sRenderer::instance()->hud_item_rect();
+				auto rect = sHud::instance()->item_rect();
 				*(vec2*)outputs[0].data = vec2(rect.b.x, rect.a.y);
 			}
 		);
@@ -62,7 +62,7 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto rect = sRenderer::instance()->hud_item_rect();
+				auto rect = sHud::instance()->item_rect();
 				*(vec2*)outputs[0].data = vec2(rect.a.x, rect.b.y);
 			}
 		);
@@ -77,7 +77,7 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				auto rect = sRenderer::instance()->hud_item_rect();
+				auto rect = sHud::instance()->item_rect();
 				*(vec2*)outputs[0].data = rect.b;
 			}
 		);
@@ -92,7 +92,7 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				*(vec2*)outputs[0].data = sRenderer::instance()->hud_screen_size();
+				*(vec2*)outputs[0].data = sHud::instance()->screen_size();
 			}
 		);
 
@@ -106,7 +106,7 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				*(float*)outputs[0].data = sRenderer::instance()->hud_screen_size().x;
+				*(float*)outputs[0].data = sHud::instance()->screen_size().x;
 			}
 		);
 
@@ -120,7 +120,7 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				*(float*)outputs[0].data = sRenderer::instance()->hud_screen_size().y;
+				*(float*)outputs[0].data = sHud::instance()->screen_size().y;
 			}
 		);
 
@@ -164,12 +164,12 @@ namespace flame
 				auto& image = *(graphics::ImageDesc*)inputs[4].data;
 				auto border = *(vec4*)inputs[5].data;
 
-				sRenderer::instance()->hud_begin(pos, size, col, pivot, image, border);
+				sHud::instance()->begin(pos, size, col, pivot, image, border);
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sRenderer::instance()->hud_end();
+				sHud::instance()->end();
 			}
 		);
 
@@ -198,12 +198,12 @@ namespace flame
 				auto size = *(vec2*)inputs[0].data;
 				auto item_spacing = *(vec2*)inputs[1].data;
 				auto border = *(vec4*)inputs[2].data;
-				sRenderer::instance()->hud_begin_layout(HudVertical, size, item_spacing, border);
+				sHud::instance()->begin_layout(HudVertical, size, item_spacing, border);
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sRenderer::instance()->hud_end_layout();
+				sHud::instance()->end_layout();
 			}
 		);
 
@@ -232,12 +232,12 @@ namespace flame
 				auto size = *(vec2*)inputs[0].data;
 				auto item_spacing = *(vec2*)inputs[1].data;
 				auto border = *(vec4*)inputs[2].data;
-				sRenderer::instance()->hud_begin_layout(HudHorizontal, size, item_spacing, border);
+				sHud::instance()->begin_layout(HudHorizontal, size, item_spacing, border);
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sRenderer::instance()->hud_end_layout();
+				sHud::instance()->end_layout();
 			}
 		);
 
@@ -247,7 +247,7 @@ namespace flame
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sRenderer::instance()->hud_new_line();
+				sHud::instance()->new_line();
 			}
 		);
 
@@ -258,12 +258,12 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				sRenderer::instance()->hud_begin_stencil_write();
+				sHud::instance()->begin_stencil_write();
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sRenderer::instance()->hud_end_stencil_write();
+				sHud::instance()->end_stencil_write();
 			}
 		);
 
@@ -274,12 +274,12 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				sRenderer::instance()->hud_begin_stencil_compare();
+				sHud::instance()->begin_stencil_compare();
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sRenderer::instance()->hud_end_stencil_compare();
+				sHud::instance()->end_stencil_compare();
 			}
 		);
 
@@ -295,12 +295,12 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				sRenderer::instance()->hud_push_style_var(HudStyleVarScaling, *(vec2*)inputs[0].data);
+				sHud::instance()->push_style_var(HudStyleVarScaling, *(vec2*)inputs[0].data);
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sRenderer::instance()->hud_pop_style_var(HudStyleVarScaling);
+				sHud::instance()->pop_style_var(HudStyleVarScaling);
 			}
 		);
 
@@ -316,12 +316,12 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				sRenderer::instance()->hud_push_style_var(HudStyleVarAlpha, vec2(*(float*)inputs[0].data));
+				sHud::instance()->push_style_var(HudStyleVarAlpha, vec2(*(float*)inputs[0].data));
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sRenderer::instance()->hud_pop_style_var(HudStyleVarAlpha);
+				sHud::instance()->pop_style_var(HudStyleVarAlpha);
 			}
 		);
 
@@ -343,7 +343,7 @@ namespace flame
 				auto size = *(vec2*)inputs[0].data;
 				auto col = *(cvec4*)inputs[1].data;
 
-				sRenderer::instance()->hud_rect(size, col);
+				sHud::instance()->rect(size, col);
 			}
 		);
 
@@ -371,7 +371,7 @@ namespace flame
 				auto font_size = *(uint*)inputs[1].data;
 				auto col = *(cvec4*)inputs[2].data;
 
-				sRenderer::instance()->hud_text(text, font_size, col);
+				sHud::instance()->text(text, font_size, col);
 			}
 		);
 
@@ -398,7 +398,7 @@ namespace flame
 				auto& image = *(graphics::ImageDesc*)inputs[1].data;
 				auto col = *(cvec4*)inputs[2].data;
 				if (image.view)
-					sRenderer::instance()->hud_image(size, image, col);
+					sHud::instance()->image(size, image, col);
 			}
 		);
 
@@ -430,7 +430,7 @@ namespace flame
 				auto border = *(vec4*)inputs[2].data;
 				auto col = *(cvec4*)inputs[3].data;
 				if (image.view)
-					sRenderer::instance()->hud_image_stretched(size, image, border, col);
+					sHud::instance()->image_stretched(size, image, border, col);
 			}
 		);
 
@@ -462,7 +462,7 @@ namespace flame
 				auto col = *(cvec4*)inputs[2].data;
 				auto angle = *(float*)inputs[3].data;
 				if (image.view)
-					sRenderer::instance()->hud_image_rotated(size, image, col, angle);
+					sHud::instance()->image_rotated(size, image, col, angle);
 			}
 		);
 
@@ -484,7 +484,7 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto& label = *(std::wstring*)inputs[0].data;
 				auto font_size = *(uint*)inputs[1].data;
-				auto clicked = sRenderer::instance()->hud_button(label, font_size);
+				auto clicked = sHud::instance()->button(label, font_size);
 
 				execution.block->max_execute_times =  clicked ? 1 : 0;
 			}
@@ -512,7 +512,7 @@ namespace flame
 				auto size = *(vec2*)inputs[0].data;
 				auto& image = *(graphics::ImageDesc*)inputs[1].data;
 				auto border = *(vec4*)inputs[2].data;
-				auto clicked = sRenderer::instance()->hud_image_button(size, image, border);
+				auto clicked = sHud::instance()->image_button(size, image, border);
 
 				execution.block->max_execute_times = clicked ? 1 : 0;
 			}
@@ -535,7 +535,7 @@ namespace flame
 				auto thickness = *(float*)inputs[0].data;
 				auto col = *(cvec4*)inputs[1].data;
 
-				sRenderer::instance()->hud_stroke_item(thickness, col);
+				sHud::instance()->stroke_item(thickness, col);
 			}
 		);
 
@@ -549,7 +549,7 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				*(bool*)outputs[0].data = sRenderer::instance()->hud_item_hovered();
+				*(bool*)outputs[0].data = sHud::instance()->item_hovered();
 			}
 		);
 
@@ -563,7 +563,7 @@ namespace flame
 				}
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				*(bool*)outputs[0].data = sRenderer::instance()->hud_item_clicked();
+				*(bool*)outputs[0].data = sHud::instance()->item_clicked();
 			}
 		);
 	}
