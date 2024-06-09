@@ -458,7 +458,7 @@ namespace flame
 			auto& a = it->second->new_action(duration);
 			a.type = ActionIntVal;
 			a.dir = ActionForward;
-			a.v0.i[0] = val;
+			a.v1.i[0] = val;
 		}
 	}
 
