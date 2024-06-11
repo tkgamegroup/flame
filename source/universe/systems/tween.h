@@ -59,7 +59,7 @@ namespace flame
 		virtual void set_target(uint id, EntityPtr e) = 0;
 		virtual void set_target(uint id, uint idx) = 0;
 		virtual void set_custom_data(uint id, TypeInfo* type, void* data) = 0;
-		virtual void end(uint id) = 0;
+		virtual float end(uint id) = 0;
 		virtual void wait(uint id, float time) = 0;
 		virtual void move_to(uint id, const vec3& pos, float duration) = 0;
 		inline void move_to(uint id, const vec2& pos, float duration)

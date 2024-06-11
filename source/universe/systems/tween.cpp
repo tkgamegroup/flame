@@ -294,8 +294,9 @@ namespace flame
 		}
 	}
 
-	void sTweenPrivate::end(uint id)
+	float sTweenPrivate::end(uint id)
 	{
+		auto total_time = 0.f;
 		if (auto it = staging_animations.find(id); it != staging_animations.end())
 		{
 			auto a = it->second.release();
@@ -304,10 +305,12 @@ namespace flame
 			{
 				if (!t.actions.empty())
 					a->action_get_start_value(t.actions.front());
+				total_time = max(total_time, t.duration);
 			}
 			animations.emplace_back(a);
 			staging_animations.erase(it);
 		}
+		return total_time;
 	}
 
 	void sTweenPrivate::wait(uint id, float time)

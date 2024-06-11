@@ -125,7 +125,7 @@ namespace flame
 		void set_target(uint id, EntityPtr e) override;
 		void set_target(uint id, uint idx) override;
 		void set_custom_data(uint id, TypeInfo* type, void* data) override;
-		void end(uint id) override;
+		float end(uint id) override;
 		void wait(uint id, float time) override;
 		void move_to(uint id, const vec3& pos, float duration) override;
 		void move_from(uint id, const vec3& pos, float duration) override;
