@@ -38,9 +38,16 @@ namespace flame
 		}
 	}
 
-	void sHudPrivate::begin(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, const vec4& border)
+	void sHudPrivate::begin(uint id, const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, const vec4& border, bool is_modal)
 	{
 		auto& hud = huds.emplace_back();
+		hud.id = id;
+
+		if (is_modal)
+		{
+			current_modal = id;
+			modal_frames = 2;
+		}
 
 		auto scaling = style_vars[HudStyleVarScaling].top();
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
@@ -385,6 +392,9 @@ namespace flame
 
 	bool sHudPrivate::button(std::wstring_view label, uint font_size)
 	{
+		if (huds.empty())
+			return false;
+		auto& hud = huds.back();
 		auto input = sInput::instance();
 
 		vec4 border(2.f);
@@ -393,13 +403,16 @@ namespace flame
 
 		auto rect = add_rect(sz);
 		auto state = 0;
-		if (rect.contains(input->mpos))
+		if (!current_modal || hud.id == current_modal)
 		{
-			state = 1;
-			if (input->mpressed(Mouse_Left))
-				state = 2;
+			if (rect.contains(input->mpos))
+			{
+				state = 1;
+				if (input->mpressed(Mouse_Left))
+					state = 2;
 
-			input->mouse_used = true;
+				input->mouse_used = true;
+			}
 		}
 		canvas->draw_rect_filled(rect.a, rect.b, state == 0 ? style_colors[HudStyleColorButton].top() : style_colors[HudStyleColorButtonHovered].top());
 		canvas->draw_text(canvas->default_font_atlas, font_size, rect.a + border.xy(), label, cvec4(255), 0.5f, 0.2f);
@@ -408,6 +421,9 @@ namespace flame
 
 	bool sHudPrivate::image_button(const vec2& size, const graphics::ImageDesc& image, const vec4& border)
 	{
+		if (huds.empty())
+			return false;
+		auto& hud = huds.back();
 		auto input = sInput::instance();
 
 		auto sz = size;
@@ -415,13 +431,16 @@ namespace flame
 
 		auto rect = add_rect(sz);
 		auto state = 0;
-		if (rect.contains(input->mpos))
+		if (!current_modal || hud.id == current_modal)
 		{
-			state = 1;
-			if (input->mpressed(Mouse_Left))
-				state = 2;
+			if (rect.contains(input->mpos))
+			{
+				state = 1;
+				if (input->mpressed(Mouse_Left))
+					state = 2;
 
-			input->mouse_used = true;
+				input->mouse_used = true;
+			}
 		}
 		if (image.view)
 		{
@@ -445,18 +464,35 @@ namespace flame
 
 	bool sHudPrivate::item_hovered()
 	{
+		if (huds.empty())
+			return false;
+		auto& hud = huds.back();
+
+		if (current_modal && hud.id != current_modal)
+			return false;
 		return last_rect.contains(sInput::instance()->mpos);
 	}
 
 	bool sHudPrivate::item_clicked()
 	{
+		if (huds.empty())
+			return false;
+		auto& hud = huds.back();
 		auto input = sInput::instance();
 
+		if (current_modal && hud.id != current_modal)
+			return false;
 		return last_rect.contains(sInput::instance()->mpos) && input->mpressed(Mouse_Left);
 	}
 
 	void sHudPrivate::update()
 	{
+		if (modal_frames > 0)
+		{
+			modal_frames--;
+			if (modal_frames == 0)
+				current_modal = 0;
+		}
 	}
 
 	static sHudPtr _instance = nullptr;

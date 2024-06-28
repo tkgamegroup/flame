@@ -127,6 +127,10 @@ namespace flame
 		library->add_template("Hud", "", BlueprintNodeFlagNone,
 			{
 				{
+					.name = "ID_hash",
+					.allowed_types = { TypeInfo::get<std::string>() }
+				},
+				{
 					.name = "Pos",
 					.allowed_types = { TypeInfo::get<vec2>() }
 				},
@@ -157,14 +161,15 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto pos = *(vec2*)inputs[0].data;
-				auto size = *(vec2*)inputs[1].data;
-				auto col = *(cvec4*)inputs[2].data;
-				auto pivot = *(vec2*)inputs[3].data;
-				auto& image = *(graphics::ImageDesc*)inputs[4].data;
-				auto border = *(vec4*)inputs[5].data;
+				auto id = *(uint*)inputs[0].data;
+				auto pos = *(vec2*)inputs[1].data;
+				auto size = *(vec2*)inputs[2].data;
+				auto col = *(cvec4*)inputs[3].data;
+				auto pivot = *(vec2*)inputs[4].data;
+				auto& image = *(graphics::ImageDesc*)inputs[5].data;
+				auto border = *(vec4*)inputs[6].data;
 
-				sHud::instance()->begin(pos, size, col, pivot, image, border);
+				sHud::instance()->begin(id, pos, size, col, pivot, image, border, false);
 
 				execution.block->max_execute_times = 1;
 			},

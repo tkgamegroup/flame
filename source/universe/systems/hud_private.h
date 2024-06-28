@@ -20,6 +20,7 @@ namespace flame
 
 	struct Hud
 	{
+		uint id;
 		vec2 pos;
 		vec2 size;
 		cvec4 color;
@@ -40,12 +41,15 @@ namespace flame
 		std::vector<Hud> huds;
 		Rect last_rect;
 
+		uint current_modal = 0;
+		uint modal_frames = 0;
+
 		sHudPrivate();
 
 		HudLayout& add_layout(HudLayoutType type);
 		void finish_layout(HudLayout& layout);
 
-		void begin(const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, const vec4& border) override;
+		void begin(uint id, const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, const vec4& border, bool is_modal) override;
 		void end() override;
 		vec2 get_cursor() override;
 		void set_cursor(const vec2& pos) override;
