@@ -1030,17 +1030,26 @@ namespace flame
 		return ret;
 	}
 
-	inline std::string get_display_name(const std::string& name)
+	template<class CH>
+	std::basic_string<CH> get_display_name(const std::basic_string<CH>& name)
 	{
-		auto ret = name;
-		ret[0] = toupper(ret[0]);
-		for (auto i = 0; i < ret.size() - 1; i++)
+		std::basic_string<CH> ret;
+		ret += toupper(name[0]);
+		for (auto i = 1; i < name.size(); i++)
 		{
-			if (ret[i] == '_')
+			if (name[i] == '_')
 			{
-				ret[i] = ' ';
-				ret[i + 1] = toupper(ret[i + 1]);
+				ret += ' ';
+				ret += toupper(name[i + 1]);
+				i++;
 			}
+			else if (isupper(name[i]) && isalpha(name[i - 1]))
+			{
+				ret += ' ';
+				ret += name[i];
+			}
+			else
+				ret += name[i];
 		}
 		return ret;
 	}

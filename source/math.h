@@ -130,6 +130,22 @@ namespace flame
 		return sign(a) * min(abs(a), abs(b));
 	}
 
+	template<typename T>
+	T weighted_random(const std::vector<std::pair<T, uint>>& cands)
+	{
+		int sum_of_weight = 0;
+		for (int i = 0; i < cands.size(); i++) {
+			sum_of_weight += cands[i].second;
+		}
+		int rnd = linearRand(0, sum_of_weight - 1);
+		for (int i = 0; i < cands.size(); i++)
+		{
+			if (rnd < cands[i].second)
+				return cands[i].first;
+			rnd -= cands[i].second;
+		}
+	}
+
 	inline float cross2(const vec2& a, const vec2& b)
 	{
 		return a.x * b.y - a.y * b.x;
