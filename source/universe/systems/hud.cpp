@@ -485,6 +485,11 @@ namespace flame
 		return last_rect.contains(sInput::instance()->mpos) && input->mpressed(Mouse_Left);
 	}
 
+	bool sHudPrivate::is_modal()
+	{
+		return current_modal != 0;
+	}
+
 	void sHudPrivate::update()
 	{
 		if (modal_frames > 0)

@@ -79,6 +79,8 @@ namespace flame
 		bool item_hovered() override;
 		bool item_clicked() override;
 
+		bool is_modal() override;
+
 		void update() override;
 	};
 }

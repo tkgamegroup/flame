@@ -92,6 +92,8 @@ namespace flame
 		virtual bool item_hovered() = 0;
 		virtual bool item_clicked() = 0;
 
+		virtual bool is_modal() = 0;
+
 		struct Instance
 		{
 			virtual sHudPtr operator()() = 0;
