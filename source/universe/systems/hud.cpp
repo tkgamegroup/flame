@@ -10,6 +10,7 @@ namespace flame
 		style_vars[HudStyleVarAlpha].push(vec2(1.f));
 
 		style_colors.resize(HudStyleColorCount);
+		style_colors[HudStyleColorTextBg].push(cvec4(0, 0, 0, 0));
 		style_colors[HudStyleColorButton].push(cvec4(35, 69, 109, 255));
 		style_colors[HudStyleColorButtonHovered].push(cvec4(66, 150, 250, 255));
 	}
@@ -348,9 +349,11 @@ namespace flame
 
 	void sHudPrivate::text(std::wstring_view text, uint font_size, const cvec4& col)
 	{
-
 		auto sz = canvas->calc_text_size(canvas->default_font_atlas, font_size, text);
 		auto rect = add_rect(sz);
+		auto bg_col = style_colors[HudStyleColorTextBg].top();
+		if (bg_col.a > 0)
+			canvas->draw_rect_filled(rect.a, rect.b, bg_col);
 		canvas->draw_text(canvas->default_font_atlas, font_size, rect.a, text, col, 0.5f, 0.2f);
 	}
 

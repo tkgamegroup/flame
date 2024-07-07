@@ -20,6 +20,7 @@ namespace flame
 
 	enum HudStyleColor
 	{
+		HudStyleColorTextBg,
 		HudStyleColorButton,
 		HudStyleColorButtonHovered,
 		HudStyleColorCount
