@@ -2413,7 +2413,7 @@ void App::package_project()
 		return;
 	}
 
-	build_project();
+	//build_project();
 
 	auto package_path = project_path / L"out";
 	if (!std::filesystem::exists(package_path))
@@ -2421,6 +2421,15 @@ void App::package_project()
 	std::filesystem::remove_all(package_path);
 	std::filesystem::create_directories(project_path / L"out/flame");
 	std::filesystem::create_directories(project_path / L"out/assets");
+
+	if (auto dll_path = std::filesystem::path(L"C:/Windows/System32/ucrtbased.dll"); std::filesystem::exists(dll_path))
+		std::filesystem::copy(dll_path, package_path / L"ucrtbased.dll");
+	if (auto dll_path = std::filesystem::path(L"C:/Windows/System32/OpenAL32.dll"); std::filesystem::exists(dll_path))
+		std::filesystem::copy(dll_path, package_path / L"OpenAL32.dll");
+
+	auto vs_path = get_special_path("Visual Studio Installation Location");
+	if (auto debug_crt_path = vs_path / L"VC\\Redist\\MSVC\\14.40.33807\\debug_nonredist\\x64\\Microsoft.VC143.DebugCRT"; std::filesystem::exists(debug_crt_path))
+		std::filesystem::copy(debug_crt_path, package_path, std::filesystem::copy_options::recursive);
 
 	for (auto& it : std::filesystem::directory_iterator(project_path / L"bin/debug"))
 	{

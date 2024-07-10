@@ -505,11 +505,14 @@ namespace flame
 			else
 			{
 				auto flame_path = getenv("FLAME_PATH");
-				assert(flame_path);
-				std::filesystem::path engine_path = flame_path;
-				engine_path.make_preferred();
-				engine_path /= L"assets";
-				Path::set_root(L"flame", engine_path);
+				//assert(flame_path);
+				if (flame_path)
+				{
+					std::filesystem::path engine_path = flame_path;
+					engine_path.make_preferred();
+					engine_path /= L"assets";
+					Path::set_root(L"flame", engine_path);
+				}
 			}
 
 			add_event([]() {
