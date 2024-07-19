@@ -19,6 +19,8 @@ An ECS 3D-Game-Engine.
 
 - SHA1 https://github.com/vog/sha1
 
+- Curl https://github.com/curl/curl
+
 - GLI https://github.com/g-truc/gli
 
 - NVTT https://developer.nvidia.com/gpu-accelerated-texture-compression
@@ -53,7 +55,9 @@ An ECS 3D-Game-Engine.
 
 *Now we only support windows*
 
-*You need Python3, CMake and Visual Studio*
+*You need Python3, CMake Vcpkg, and Visual Studio*
+
+*Make sure you have Vulkan 1.3 and above*
 
 *Make sure you check C++ ATL (x86 & x64) in C++ destop development tab and check C++ ATL (x86 & x64) for lastest v143 in individual components tab in Visual Studio's Tools and Features*
 

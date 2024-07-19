@@ -200,37 +200,37 @@ namespace flame
 			SUS::replace_all(ret, "Private", "");
 			SUS::strip_char(ret, ' ');
 
-			if (SUS::strip_head_if(ret, "glm::vec<2,int,3>"))
+			if (SUS::strip_head_if(ret, "glm::vec<2,int,0>"))
 				ret = "glm::ivec2" + ret;
-			else if (SUS::strip_head_if(ret, "glm::vec<3,int,3>"))
+			else if (SUS::strip_head_if(ret, "glm::vec<3,int,0>"))
 				ret = "glm::ivec3" + ret;
-			else if (SUS::strip_head_if(ret, "glm::vec<4,int,3>"))
+			else if (SUS::strip_head_if(ret, "glm::vec<4,int,0>"))
 				ret = "glm::ivec4" + ret;
-			else if (SUS::strip_head_if(ret, "glm::vec<2,uint,3>"))
+			else if (SUS::strip_head_if(ret, "glm::vec<2,uint,0>"))
 				ret = "glm::uvec2" + ret;
-			else if (SUS::strip_head_if(ret, "glm::vec<3,uint,3>"))
+			else if (SUS::strip_head_if(ret, "glm::vec<3,uint,0>"))
 				ret = "glm::uvec3" + ret;
-			else if (SUS::strip_head_if(ret, "glm::vec<4,uint,3>"))
+			else if (SUS::strip_head_if(ret, "glm::vec<4,uint,0>"))
 				ret = "glm::uvec4" + ret;
-			else if (SUS::strip_head_if(ret, "glm::vec<2,uchar,3>"))
+			else if (SUS::strip_head_if(ret, "glm::vec<2,uchar,0>"))
 				ret = "glm::cvec2" + ret;
-			else if (SUS::strip_head_if(ret, "glm::vec<3,uchar,3>"))
+			else if (SUS::strip_head_if(ret, "glm::vec<3,uchar,0>"))
 				ret = "glm::cvec3" + ret;
-			else if (SUS::strip_head_if(ret, "glm::vec<4,uchar,3>"))
+			else if (SUS::strip_head_if(ret, "glm::vec<4,uchar,0>"))
 				ret = "glm::cvec4" + ret;
-			else if (SUS::strip_head_if(ret, "glm::vec<2,float,3>"))
+			else if (SUS::strip_head_if(ret, "glm::vec<2,float,0>"))
 				ret = "glm::vec2" + ret;
-			else if (SUS::strip_head_if(ret, "glm::vec<3,float,3>"))
+			else if (SUS::strip_head_if(ret, "glm::vec<3,float,0>"))
 				ret = "glm::vec3" + ret;
-			else if (SUS::strip_head_if(ret, "glm::vec<4,float,3>"))
+			else if (SUS::strip_head_if(ret, "glm::vec<4,float,0>"))
 				ret = "glm::vec4" + ret;
-			else if (SUS::strip_head_if(ret, "glm::mat<2,2,float,3>"))
+			else if (SUS::strip_head_if(ret, "glm::mat<2,2,float,0>"))
 				ret = "glm::mat2" + ret;
-			else if (SUS::strip_head_if(ret, "glm::mat<3,3,float,3>"))
+			else if (SUS::strip_head_if(ret, "glm::mat<3,3,float,0>"))
 				ret = "glm::mat3" + ret;
-			else if (SUS::strip_head_if(ret, "glm::mat<4,4,float,3>"))
+			else if (SUS::strip_head_if(ret, "glm::mat<4,4,float,0>"))
 				ret = "glm::mat4" + ret;
-			else if (SUS::strip_head_if(ret, "glm::qua<float,3>"))
+			else if (SUS::strip_head_if(ret, "glm::qua<float,0>"))
 				ret = "glm::quat" + ret;
 			else if (SUS::strip_head_if(ret, "flame::Curve<1>"))
 				ret = "flame::Curve1" + ret;

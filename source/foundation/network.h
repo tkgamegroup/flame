@@ -58,6 +58,7 @@ namespace flame
 		};
 
 		// timeout: second
-		FLAME_FOUNDATION_API void board_cast(uint port, const std::string& msg, uint timeout, const std::function<void(const char* ip, const std::string& msg)>& on_message);
+		FLAME_FOUNDATION_API void broadcast(uint port, const std::string& msg, uint timeout, const std::function<void(const char* ip, const std::string& msg)>& on_message);
+		FLAME_FOUNDATION_API std::string download_html(const std::string& address);
 	}
 }

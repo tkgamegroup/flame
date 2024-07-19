@@ -532,10 +532,15 @@ namespace flame
 			temp << std::endl;
 			temp.close();
 
+			std::filesystem::path glslc_path;
 			auto vk_sdk_path = getenv("VK_SDK_PATH");
-			if (!vk_sdk_path)
+			if (vk_sdk_path)
+				glslc_path = std::format(L"{}/Bin/glslc.exe", s2w(vk_sdk_path));
+			else
+				glslc_path = L"glslc.exe";
+			if (!std::filesystem::exists(glslc_path))
 			{
-				printf("cannot find VulkanSDK\n");
+				printf("cannot find shader compiler\n");
 				return false;
 			}
 
@@ -555,7 +560,7 @@ namespace flame
 			std::filesystem::remove(L"temp.spv");
 
 			std::string errors;
-			exec(std::format(L"{}/Bin/glslc.exe", s2w(vk_sdk_path)), std::format(L" --target-env=vulkan{} -fshader-stage={} -I \"{}\" {} -o temp.spv", 
+			exec(glslc_path, std::format(L" --target-env=vulkan{} -fshader-stage={} -I \"{}\" {} -o temp.spv",
 				use_mesh_shader ? L"1.3" : L"1.2", get_stage_str(stage), src_path.parent_path().wstring(), temp_path.wstring()), &errors);
 			if (!std::filesystem::exists(L"temp.spv"))
 			{

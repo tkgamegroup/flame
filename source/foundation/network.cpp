@@ -8,6 +8,10 @@
 #include <sha1.hpp>
 #endif
 
+#ifdef USE_CURL
+#include <curl/curl.h>
+#endif
+
 namespace flame
 {
 	namespace network
@@ -712,7 +716,7 @@ namespace flame
 		}FrameSyncServer_create;
 		FrameSyncServer::Create& FrameSyncServer::create = FrameSyncServer_create;
 
-		void board_cast(uint port, uint size, void* data, uint timeout, const std::function<void(const char* ip, const std::string& msg)>& on_message)
+		void broadcast(uint port, uint size, void* data, uint timeout, const std::function<void(const char* ip, const std::string& msg)>& on_message)
 		{
 			int res;
 
@@ -755,6 +759,37 @@ namespace flame
 					on_message(inet_ntoa(address.sin_addr), { buf, (size_t)res });
 				}
 			}).detach();
+		}
+
+		static bool curl_inited = false;
+
+		size_t curl_get(void* ptr, size_t size, size_t nmemb, void* stream)
+		{
+			auto& str = *(std::string*)stream;
+			str += std::string((char*)ptr, (char*)ptr + nmemb);
+			return nmemb;
+		}
+
+		std::string download_html(const std::string& address)
+		{
+			if (!curl_inited)
+			{
+				curl_global_init(CURL_GLOBAL_ALL);
+				curl_inited = true;
+			}
+
+			std::string ret;
+
+			auto curl_handle = curl_easy_init();
+			curl_easy_setopt(curl_handle, CURLOPT_URL, address.c_str());
+			curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, curl_get);
+			curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, &ret);
+			//curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 1L);
+			//curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1L);
+			curl_easy_perform(curl_handle);
+			curl_easy_cleanup(curl_handle);
+
+			return ret;
 		}
 	}
 }

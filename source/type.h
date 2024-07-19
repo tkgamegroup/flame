@@ -42,7 +42,7 @@ namespace flame
 	struct type_list {};
 
 	template <typename T, std::size_t N>
-	constexpr std::size_t countof(T const (&)[N])
+	constexpr std::size_t count_of(T const (&)[N])
 	{
 		return N;
 	}
