@@ -2426,6 +2426,14 @@ void App::package_project()
 		std::filesystem::copy(dll_path, package_path / L"ucrtbased.dll");
 	if (auto dll_path = std::filesystem::path(L"C:/Windows/System32/OpenAL32.dll"); std::filesystem::exists(dll_path))
 		std::filesystem::copy(dll_path, package_path / L"OpenAL32.dll");
+	if (auto dll_path = std::filesystem::path(L"C:/Windows/System32/vulkan-1.dll"); std::filesystem::exists(dll_path))
+		std::filesystem::copy(dll_path, package_path / L"vulkan-1.dll");
+	if (auto vk_sdk_path = getenv("VK_SDK_PATH"); vk_sdk_path)
+	{
+		std::filesystem::path glslc_path = std::format(L"{}/Bin/glslc.exe", s2w(vk_sdk_path));
+		if (std::filesystem::exists(glslc_path))
+			std::filesystem::copy(glslc_path, package_path / L"glslc.exe");
+	}
 
 	auto vs_path = get_special_path("Visual Studio Installation Location");
 	if (auto debug_crt_path = vs_path / L"VC\\Redist\\MSVC\\14.40.33807\\debug_nonredist\\x64\\Microsoft.VC143.DebugCRT"; std::filesystem::exists(debug_crt_path))
@@ -2436,8 +2444,8 @@ void App::package_project()
 		if (it.is_regular_file())
 		{
 			auto ext = it.path().extension();
-			if (ext == L".dll" || ext == L".exe" || ext == L".pdb" || ext == L".typeinfo")
-				std::filesystem::copy_file(it.path(), package_path / it.path().filename());
+			if (ext == L".dll" || ext == L".exe" /*|| ext == L".pdb"*/ || ext == L".typeinfo")
+				std::filesystem::copy_file(it.path(), package_path / it.path().filename(), std::filesystem::copy_options::overwrite_existing);
 		}
 	}
 	if (auto flame_path = getenv("FLAME_PATH"); flame_path)

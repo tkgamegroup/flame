@@ -533,8 +533,7 @@ namespace flame
 			temp.close();
 
 			std::filesystem::path glslc_path;
-			auto vk_sdk_path = getenv("VK_SDK_PATH");
-			if (vk_sdk_path)
+			if (auto vk_sdk_path = getenv("VK_SDK_PATH"); vk_sdk_path)
 				glslc_path = std::format(L"{}/Bin/glslc.exe", s2w(vk_sdk_path));
 			else
 				glslc_path = L"glslc.exe";
