@@ -642,7 +642,7 @@ namespace flame
 			return verts;
 		}
 
-		void CanvasPrivate::render(int idx, CommandBufferPtr cb)
+		void CanvasPrivate::render(int idx, CommandBufferPtr cb, const vec2& translate, const vec2& scaling)
 		{
 			if (idx < 0 || iv_tars.empty())
 			{
@@ -673,8 +673,8 @@ namespace flame
 			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
 			cb->bind_index_buffer(buf_idx.buf.get(), IndiceTypeUint);
 			cb->bind_pipeline(pl);
-			prm.pc.mark_dirty_c("translate"_h).as<vec2>() = vec2(0.f);
-			prm.pc.mark_dirty_c("scale"_h).as<vec2>() = 2.f / vp.b;
+			prm.pc.mark_dirty_c("translate"_h).as<vec2>() = translate;
+			prm.pc.mark_dirty_c("scale"_h).as<vec2>() = scaling * 2.f / vp.b;
 			prm.push_constant(cb);
 			auto last_pl = pl;
 			auto idx_off = 0;

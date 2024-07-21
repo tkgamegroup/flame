@@ -13,7 +13,7 @@ namespace flame
 		root->global_enable = true;
 	}
 
-	System* WorldPrivate::add_system(uint hash)
+	System* WorldPrivate::add_system(uint hash, int pos)
 	{
 		auto ui = find_udt(hash);
 		if (!ui)
@@ -52,9 +52,16 @@ namespace flame
 		s->world = this;
 
 		system_map.emplace(s->type_hash, s);
-		systems.emplace_back(s);
+		systems.emplace(systems.begin() + (pos == -1 ? (int)systems.size() : pos), s);
 
 		return s;
+	}
+
+	void WorldPrivate::add_system_p(System* s, int pos)
+	{
+		s->world = this;
+		system_map.emplace(s->type_hash, s);
+		systems.emplace(systems.begin() + (pos == -1 ? (int)systems.size() : pos), s);
 	}
 
 	void WorldPrivate::remove_system(uint hash, bool destroy)

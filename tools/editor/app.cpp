@@ -704,7 +704,6 @@ void App::init()
 	input->transfer_events = false;
 	always_render = false;
 	renderer->add_render_task(RenderModeCameraLight, nullptr, nullptr, {}, graphics::ImageLayoutShaderReadOnly);
-	hud->canvas = renderer->render_tasks.front()->canvas;
 
 	auto root = world->root.get();
 	root->add_component<cNode>();

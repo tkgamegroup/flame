@@ -10,8 +10,8 @@ namespace flame
 		WorldPtr world = nullptr;
 		bool enable = true;
 
-		uint n_strong_ref = 0;
-		uint update_times = 0;
+		ushort n_ref = 0;
+		ushort update_times = 0;
 
 		virtual ~System() {}
 

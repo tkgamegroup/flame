@@ -96,7 +96,7 @@ namespace flame
 			virtual DrawVert*	draw_image_polygon(ImageViewPtr view, const std::vector<vec2>& pts, const std::vector<vec2>& uvs, const cvec4& tint_col = cvec4(255), SamplerPtr sp = nullptr) = 0;
 
 
-			virtual void render(int idx, CommandBufferPtr cb) = 0;
+			virtual void render(int idx, CommandBufferPtr cb, const vec2& translate = vec2(0.f), const vec2& scaling = vec2(1.f)) = 0;
 
 			struct Create
 			{

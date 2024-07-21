@@ -1,3 +1,5 @@
+#include "../../foundation/window.h"
+#include "../../graphics/window.h"
 #include "hud_private.h"
 #include "input_private.h"
 
@@ -37,6 +39,13 @@ namespace flame
 				layout.rect.b -= layout.item_spacing * scaling;
 			layout.rect.b += (layout.border.xy() + layout.border.zw()) * scaling;
 		}
+	}
+
+	void sHudPrivate::bind_window(graphics::WindowPtr window)
+	{
+		bound_window = window;
+		if (canvas)
+			canvas->bind_window(window);
 	}
 
 	void sHudPrivate::begin(uint id, const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, const vec4& border, bool is_modal)
@@ -493,6 +502,14 @@ namespace flame
 		return current_modal != 0;
 	}
 
+	void sHudPrivate::start()
+	{
+		canvas = graphics::Canvas::create();
+		canvas->clear_framebuffer = false;
+		if (bound_window)
+			canvas->bind_window(bound_window);
+	}
+
 	void sHudPrivate::update()
 	{
 		if (modal_frames > 0)
@@ -501,6 +518,11 @@ namespace flame
 			if (modal_frames == 0)
 				current_modal = 0;
 		}
+	}
+
+	void sHudPrivate::render(int idx, graphics::CommandBufferPtr cb)
+	{
+		canvas->render(idx, cb);
 	}
 
 	static sHudPtr _instance = nullptr;

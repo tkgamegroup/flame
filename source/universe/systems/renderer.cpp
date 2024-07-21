@@ -2169,7 +2169,7 @@ namespace flame
 				buf_camera.child("fovy"_h).as<float>() = camera->fovy;
 				buf_camera.child("tan_hf_fovy"_h).as<float>() = tan(radians(camera->fovy * 0.5f));
 				buf_camera.child("viewport"_h).as<vec2>() = ext;
-				buf_camera.child("coord"_h).as<vec3>() = camera->node->global_pos();
+				buf_camera.child("coord"_h).as<vec3>() = camera->view_mat_inv[3];
 				buf_camera.child("front"_h).as<vec3>() = -camera->view_mat_inv[2];
 				buf_camera.child("right"_h).as<vec3>() = camera->view_mat_inv[0];
 				buf_camera.child("up"_h).as<vec3>() = camera->view_mat_inv[1];
@@ -3193,6 +3193,23 @@ namespace flame
 
 			if (t->canvas)
 			{
+				auto camera_element = camera->element;
+				auto translate = vec2(0.f);
+				auto scaling = vec2(1.f);
+				if (camera_element)
+				{
+					translate = -camera_element->global_pos0();
+					scaling = camera_element->global_scl();
+					auto view = ext / scaling;
+					if (camera->restrict_lt != camera->restrict_rb)
+					{
+						auto pos = camera_element->pos;
+						pos = clamp(pos, camera->restrict_lt + camera->pivot * view, camera->restrict_rb - (1.f - camera->pivot) * view);
+						camera_element->set_pos(pos);
+					}
+					if (camera->pivot.x != 0.f || camera->pivot.y != 0.f)
+						translate += camera->pivot * view;
+				}
 				cb->begin_debug_label("Elements");
 				{
 					if (auto first_element = sScene::instance()->first_element; first_element)
@@ -3201,7 +3218,9 @@ namespace flame
 				cb->end_debug_label();
 
 				cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutAttachment);
-				t->canvas->render(0, cb);
+				t->canvas->render(0, cb, translate, scaling);
+				camera->translate_2d = translate;
+				camera->scaling_2d = scaling;
 			}
 
 			cb->image_barrier(img, iv->sub, graphics::ImageLayoutAttachment);

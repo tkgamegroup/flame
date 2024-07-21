@@ -52,18 +52,21 @@ namespace flame
 
 	void cCameraPrivate::update_matrices()
 	{
-		view_mat_inv = mat3(node->g_qut);
-		view_mat_inv[3] = vec4(node->global_pos(), 1.f);
-		view_mat = inverse(view_mat_inv);
+		if (node)
+		{
+			view_mat_inv = mat3(node->g_qut);
+			view_mat_inv[3] = vec4(node->global_pos(), 1.f);
+			view_mat = inverse(view_mat_inv);
 
-		proj_mat = perspective(radians(fovy), aspect, zNear, zFar);
-		proj_mat[1][1] *= -1.f;
+			proj_mat = perspective(radians(fovy), aspect, zNear, zFar);
+			proj_mat[1][1] *= -1.f;
 
-		proj_mat_inv = inverse(proj_mat);
+			proj_mat_inv = inverse(proj_mat);
 
-		proj_view_mat = proj_mat * view_mat;
-		proj_view_mat_inv = inverse(proj_view_mat);
-		frustum = Frustum(proj_view_mat_inv);
+			proj_view_mat = proj_mat * view_mat;
+			proj_view_mat_inv = inverse(proj_view_mat);
+			frustum = Frustum(proj_view_mat_inv);
+		}
 	}
 
 	struct cCameraCreate : cCamera::Create

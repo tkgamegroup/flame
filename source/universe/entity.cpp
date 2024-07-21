@@ -99,8 +99,10 @@ namespace flame
 		}
 
 		std::vector<std::pair<Component*, uint>> require_comps;
+		std::map<std::string, std::vector<std::tuple<TypeInfo*, Component*, uint>>> optional_require_comps;
 		for (auto& vi : ui->variables)
 		{
+			std::string val;
 			if (vi.metas.get("auto_requires"_h))
 			{
 				if (vi.type->tag == TagPU)
@@ -118,8 +120,7 @@ namespace flame
 				auto ok = false;
 				if (vi.type->tag == TagPU)
 				{
-					auto comp = get_component_h(sh(vi.type->name.c_str()));
-					if (comp)
+					if (auto comp = get_component_h(sh(vi.type->name.c_str())); comp)
 					{
 						require_comps.emplace_back(comp, vi.offset);
 						ok = true;
@@ -130,6 +131,40 @@ namespace flame
 					printf("cannot add component: %s requires %s, which doesn't exist\n", ui->name.c_str(), vi.type->name.c_str());
 					return nullptr;
 				}
+			}
+			else if (vi.metas.get("optional_requires"_h, &val))
+			{
+				if (vi.type->tag == TagPU)
+				{
+					auto comp = get_component_h(sh(vi.type->name.c_str()));
+					optional_require_comps[val].emplace_back(vi.type, comp, vi.offset);
+				}
+			}
+		}
+
+		for (auto& kv : optional_require_comps)
+		{
+			auto ok = false;
+			for (auto& p : kv.second)
+			{
+				if (std::get<1>(p))
+				{
+					ok = true;
+					break;
+				}
+			}
+
+			if (!ok)
+			{
+				std::string names;
+				for (auto& p : kv.second)
+				{
+					if (!names.empty())
+						names += ',';
+					names += std::get<0>(p)->name;
+				}
+				printf("cannot add component: %s requires one of %s, which doesn't exist\n", ui->name.c_str(), names.c_str());
+				return nullptr;
 			}
 		}
 
@@ -156,10 +191,22 @@ namespace flame
 		c->type_hash = hash;
 		c->entity = this;
 
-		for (auto _c : require_comps)
+		for (auto& _c : require_comps)
 		{
 			_c.first->ref++;
 			*(void**)((char*)c + _c.second) = _c.first;
+		}
+
+		for (auto& kv : optional_require_comps)
+		{
+			for (auto& p : kv.second)
+			{
+				if (std::get<1>(p))
+				{
+					std::get<1>(p)->ref++;
+					*(void**)((char*)c + std::get<2>(p)) = std::get<1>(p);
+				}
+			}
 		}
 
 		c->on_init();
@@ -173,6 +220,21 @@ namespace flame
 			c->on_active();
 
 		return c;
+	}
+
+	void EntityPrivate::add_component_p(Component* comp)
+	{
+		comp->entity = this;
+
+		comp->on_init();
+
+		for (auto& _c : components)
+			_c->on_component_added(comp);
+
+		components.emplace_back(comp);
+
+		if (global_enable && comp->enable)
+			comp->on_active();
 	}
 
 	bool EntityPrivate::remove_component_h(uint hash)

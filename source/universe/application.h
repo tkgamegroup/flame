@@ -39,12 +39,15 @@ struct UniverseApplication : GraphicsApplication
 		hud			= (sHudPtr)world->add_system<sHud>();
 		audio		= (sAudioPtr)world->add_system<sAudio>();
 		graveyard	= (sGraveyardPtr)world->add_system<sGraveyard>();
+
+		((sHud*)hud)->bind_window(main_window);
 	}
 
 	virtual void on_render()
 	{
 		GraphicsApplication::on_render();
 		((sRenderer*)renderer)->render(command_buffer.get());
+		((sHud*)hud)->render(main_window->swapchain->image_index, command_buffer.get());
 	}
 
 	bool on_update() override

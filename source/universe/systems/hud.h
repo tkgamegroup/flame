@@ -31,6 +31,8 @@ namespace flame
 	{
 		graphics::CanvasPtr canvas = nullptr;
 
+		virtual void bind_window(graphics::WindowPtr window) = 0;
+
 		virtual void begin(uint id, const vec2& pos, const vec2& size = vec2(0.f) /* 0 size means auto layout */, const cvec4& col = cvec4(0, 0, 0, 255), const vec2& pivot = vec2(0.f),
 			const graphics::ImageDesc& image = {}, const vec4& border = vec4(4.f), bool is_modal = false) = 0;
 		virtual void end() = 0;
@@ -94,6 +96,8 @@ namespace flame
 		virtual bool item_clicked() = 0;
 
 		virtual bool is_modal() = 0;
+
+		virtual void render(int idx, graphics::CommandBufferPtr cb) = 0;
 
 		struct Instance
 		{

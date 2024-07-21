@@ -36,6 +36,8 @@ namespace flame
 
 	struct sHudPrivate : sHud
 	{
+		graphics::WindowPtr bound_window = nullptr;
+
 		std::vector<std::stack<vec2>> style_vars;
 		std::vector<std::stack<cvec4>> style_colors;
 		std::vector<Hud> huds;
@@ -48,6 +50,8 @@ namespace flame
 
 		HudLayout& add_layout(HudLayoutType type);
 		void finish_layout(HudLayout& layout);
+
+		void bind_window(graphics::WindowPtr window) override;
 
 		void begin(uint id, const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, const vec4& border, bool is_modal) override;
 		void end() override;
@@ -81,6 +85,8 @@ namespace flame
 
 		bool is_modal() override;
 
+		void start() override;
 		void update() override;
+		void render(int idx, graphics::CommandBufferPtr cb) override;
 	};
 }

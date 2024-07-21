@@ -95,9 +95,13 @@ namespace flame
 		vec2 global_pos0() { return transform[2]; }
 		vec2 global_pos1() { return transform * vec3(ext, 1.f); }
 		virtual vec2 global_scl() = 0;
-		inline bool contains(const vec2& p)
+		inline bool contains(const vec2& p, const vec2& translate = vec2(0.f), const vec2& scale = vec2(1.f))
 		{
-			return Rect(global_pos0(), global_pos1()).contains(p);
+			auto p0 = global_pos0();
+			auto p1 = global_pos1();
+			p0 = (p0 + translate) * scale;
+			p1 = (p1 + translate) * scale;
+			return Rect(p0, p1).contains(p);
 		}
 
 		virtual void mark_transform_dirty() = 0;

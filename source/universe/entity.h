@@ -136,6 +136,7 @@ namespace flame
 		{
 			return (T*)add_component_h(th<T>());
 		}
+		virtual void add_component_p(Component* comp) = 0;
 		virtual bool remove_component_h(uint hash) = 0;
 		template<typename T>
 		inline bool remove_component()
@@ -153,6 +154,20 @@ namespace flame
 				((Entity*)parent)->remove_child((EntityPtr)this, destroy);
 		}
 		virtual void remove_all_children(bool destroy = true) = 0;
+
+		inline EntityPtr first_child() const
+		{
+			if (children.empty())
+				return nullptr;
+			return children.front().get();
+		}
+
+		inline EntityPtr last_child() const
+		{
+			if (children.empty())
+				return nullptr;
+			return children.back().get();
+		}
 
 		inline int find_child_i(std::string_view name) const
 		{

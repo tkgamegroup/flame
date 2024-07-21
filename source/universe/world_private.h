@@ -10,7 +10,8 @@ namespace flame
 	{
 		WorldPrivate();
 
-		System* add_system(uint hash) override;
+		System* add_system(uint hash, int pos = -1) override;
+		void add_system_p(System* system, int pos = -1) override;
 		void remove_system(uint hash, bool destroy) override;
 
 		void update() override;

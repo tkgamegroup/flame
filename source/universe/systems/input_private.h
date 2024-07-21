@@ -6,6 +6,8 @@ namespace flame
 {
 	struct sInputPrivate : sInput
 	{
+		cCameraPtr camera = nullptr;
+
 		vec2 drag_pos = vec2(0.f);
 		bool mbtn_temp[MouseButton_Count] = {};
 		vec2 mpos_temp = vec2(0.f);
@@ -17,7 +19,9 @@ namespace flame
 		sInputPrivate();
 		~sInputPrivate();
 
+		void dispatcher_events();
 		void bind_window(NativeWindowPtr w) override;
+		void start() override;
 		void update() override;
 	};
 }

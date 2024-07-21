@@ -64,7 +64,7 @@ namespace flame
 			DrawVert*	draw_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle, SamplerPtr) override;
 			DrawVert*	draw_image_polygon(ImageViewPtr view, const std::vector<vec2>& pts, const std::vector<vec2>& uvs, const cvec4& tint_col, SamplerPtr) override;
 
-			void render(int idx, CommandBufferPtr cb) override;
+			void render(int idx, CommandBufferPtr cb, const vec2& translate = vec2(0.f), const vec2& scaling = vec2(1.f)) override;
 		};
 	}
 }
