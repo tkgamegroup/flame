@@ -1328,6 +1328,16 @@ namespace flame
 		}
 	}
 
+	void sScenePrivate::set_world2d_contact_listener(const std::function<void(EntityPtr A, EntityPtr B)>& listener)
+	{
+		if (world2d)
+		{
+			world2d->set_contact_listener([listener](physics::Body2dPtr bodyA, physics::Body2dPtr bodyB) {
+				listener(((cBody2dPtr)bodyA->user_data)->entity, ((cBody2dPtr)bodyB->user_data)->entity);
+			});
+		}
+	}
+
 	void sScenePrivate::update()
 	{
 		first_node = nullptr;

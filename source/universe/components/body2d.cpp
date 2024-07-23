@@ -5,6 +5,12 @@ namespace flame
 {
 	std::vector<cBody2dPtr> bodies2d;
 
+	cBody2dPrivate::~cBody2dPrivate()
+	{
+		if (body)
+			delete body;
+	}
+
 	vec2 cBody2dPrivate::get_velocity()
 	{
 		if (body)

@@ -43,6 +43,7 @@ namespace flame
 		void navmesh_load(const std::filesystem::path& filename) override;
 		void draw_debug_primitives() override;
 		void query_world2d(const vec2& lt, const vec2& rb, const std::function<void(EntityPtr e)>& callback) override;
+		void set_world2d_contact_listener(const std::function<void(EntityPtr A, EntityPtr B)>& listener) override;
 
 		void update() override;
 	};

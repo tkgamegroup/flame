@@ -17,6 +17,13 @@ namespace flame
 				body->angle = angle;
 			}
 		}
+
+		void ContactListener::BeginContact(b2Contact* contact)
+		{
+			auto bodyA = (Body2dPtr)contact->GetFixtureA()->GetBody()->GetUserData().pointer;
+			auto bodyB = (Body2dPtr)contact->GetFixtureB()->GetBody()->GetUserData().pointer;
+			func(bodyA, bodyB);
+		}
 		
 		struct QueryCallback : b2QueryCallback 
 		{
@@ -38,6 +45,12 @@ namespace flame
 			QueryCallback cb;
 			cb.callback = callback;
 			b2_world.QueryAABB(&cb, aabb);
+		}
+
+		void World2dPrivate::set_contact_listener(const std::function<void(Body2dPtr bodyA, Body2dPtr bodyB)>& listener)
+		{
+			contact_listener.func = listener;
+			b2_world.SetContactListener(&contact_listener);
 		}
 
 		struct World2dCreate : World2d::Create

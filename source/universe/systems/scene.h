@@ -33,6 +33,8 @@ namespace flame
 		virtual void				draw_debug_primitives() = 0;
 		// Reflect
 		virtual void				query_world2d(const vec2& lt, const vec2& rb, const std::function<void(EntityPtr e)>& callback) = 0;
+		// Reflect
+		virtual void				set_world2d_contact_listener(const std::function<void(EntityPtr A, EntityPtr B)>& listener) = 0;
 
 		struct Instance
 		{

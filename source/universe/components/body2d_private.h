@@ -11,6 +11,8 @@ namespace flame
 	{
 		physics::Body2dPtr body = nullptr;
 
+		~cBody2dPrivate();
+
 		vec2 get_velocity() override;
 		void set_velocity(const vec2& vel) override;
 		void upload_pos() override;
