@@ -1437,16 +1437,18 @@ namespace flame
 				if (bd->body)
 					break;
 				auto pos = bd->element->pos;
+				bd->body = physics::Body2d::create(world2d, bd->type, pos);
+				physics::Shape2d shape;
 				switch (bd->shape_type)
 				{
 				case physics::ShapeBox:
-					bd->body = physics::Body2d::create_box(world2d, bd->type, pos, bd->hf_ext, bd->density, bd->friction);
+					shape.as_box(vec2(0.f), bd->hf_ext);
 					break;
 				case physics::ShapeCircle:
-					bd->body = physics::Body2d::create_circle(world2d, bd->type, pos, bd->radius, bd->density, bd->friction);
+					shape.as_circle(vec2(0.f), bd->radius);
 					break;
 				}
-				assert(bd->body);
+				bd->body->add_shape(shape, bd->density, bd->friction, bd->collide_bit, bd->collide_mask);
 				bd->body->user_data = bd;
 				bd->mass = bd->body->get_mass();
 			}

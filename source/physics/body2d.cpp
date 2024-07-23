@@ -21,6 +21,30 @@ namespace flame
 			}
 		}
 
+		void Body2dPrivate::add_shape(const Shape2d& shape, float density, float friction, ushort collide_bit, ushort collide_mask)
+		{
+			b2PolygonShape box_shape;
+			b2CircleShape circle_shape;
+			b2FixtureDef fixture_def;
+			switch (shape.type)
+			{
+			case ShapeBox:
+				box_shape.SetAsBox(shape.data.box.hf_ext.x, shape.data.box.hf_ext.y, b2Vec2(shape.data.box.center.x, shape.data.box.center.y), 0.f);
+				fixture_def.shape = &box_shape;
+				break;
+			case ShapeCircle:
+				circle_shape.m_p.Set(shape.data.circle.center.x, shape.data.circle.center.y);
+				circle_shape.m_radius = shape.data.circle.radius;
+				fixture_def.shape = &circle_shape;
+				break;
+			}
+			fixture_def.density = density;
+			fixture_def.friction = friction;
+			fixture_def.filter.categoryBits = collide_bit;
+			fixture_def.filter.maskBits = collide_mask;
+			b2_body->CreateFixture(&fixture_def);
+		}
+
 		float Body2dPrivate::get_mass()
 		{
 			if (b2_body)
@@ -38,6 +62,12 @@ namespace flame
 			return vec2(0.f);
 		}
 
+		void Body2dPrivate::set_velocity(const vec2& vel)
+		{
+			if (b2_body)
+				b2_body->SetLinearVelocity(b2Vec2(vel.x, vel.y));
+		}
+
 		void Body2dPrivate::set_pos(const vec2& pos)
 		{
 			if (b2_body)
@@ -50,9 +80,9 @@ namespace flame
 				b2_body->ApplyForceToCenter(b2Vec2(force.x, force.y), true);
 		}
 
-		struct Body2dCreateBox : Body2d::CreateBox
+		struct Body2dCreate : Body2d::Create
 		{
-			Body2dPtr operator()(World2dPtr world, BodyType type, const vec2& pos, const vec2& hf_ext, float density, float friction) override
+			Body2dPtr operator()(World2dPtr world, BodyType type, const vec2& pos) override
 			{
 				auto ret = new Body2dPrivate(world);
 				b2BodyDef body_def;
@@ -60,42 +90,11 @@ namespace flame
 				body_def.position.Set(pos.x, pos.y);
 				ret->b2_body = world->b2_world.CreateBody(&body_def);
 				ret->b2_body->GetUserData().pointer = (uint64)ret;
-				b2PolygonShape shape;
-				shape.SetAsBox(hf_ext.x, hf_ext.y);
-				b2FixtureDef fixture_def;
-				fixture_def.shape = &shape;
-				fixture_def.density = density;
-				fixture_def.friction = friction;
-				ret->b2_body->CreateFixture(&fixture_def);
-				ret->pos = vec2(body_def.position.x, body_def.position.y);
+				ret->pos = pos;
 				ret->angle = body_def.angle;
 				return ret;
 			}
-		}Body2d_create_box;
-		Body2d::CreateBox& Body2d::create_box = Body2d_create_box;
-
-		struct Body2dCreateCircle : Body2d::CreateCircle
-		{
-			Body2dPtr operator()(World2dPtr world, BodyType type, const vec2& pos, float radius, float density, float friction) override
-			{
-				auto ret = new Body2dPrivate(world);
-				b2BodyDef body_def;
-				body_def.type = to_backend(type);
-				body_def.position.Set(pos.x, pos.y);
-				ret->b2_body = world->b2_world.CreateBody(&body_def);
-				ret->b2_body->GetUserData().pointer = (uint64)ret;
-				b2CircleShape shape;
-				shape.m_radius = radius;
-				b2FixtureDef fixture_def;
-				fixture_def.shape = &shape;
-				fixture_def.density = density;
-				fixture_def.friction = friction;
-				ret->b2_body->CreateFixture(&fixture_def);
-				ret->pos = vec2(body_def.position.x, body_def.position.y);
-				ret->angle = body_def.angle;
-				return ret;
-			}
-		}Body2d_create_circle;
-		Body2d::CreateCircle& Body2d::create_circle = Body2d_create_circle;
+		}Body2d_create;
+		Body2d::Create& Body2d::create = Body2d_create;
 	}
 }

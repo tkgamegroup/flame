@@ -12,6 +12,12 @@ namespace flame
 		return vec2(0.f);
 	}
 
+	void cBody2dPrivate::set_velocity(const vec2& vel)
+	{
+		if (body)
+			body->set_velocity(vel);
+	}
+
 	void cBody2dPrivate::upload_pos()
 	{
 		if (body)
