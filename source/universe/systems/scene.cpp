@@ -10,6 +10,7 @@
 #include "../components/volume_private.h"
 #include "../components/nav_agent_private.h"
 #include "../components/nav_obstacle_private.h"
+#include "../components/body2d_private.h"
 #include "../octree.h"
 #include "../draw_data.h"
 #include "scene_private.h"
@@ -76,6 +77,10 @@ namespace flame
 	sScenePrivate::sScenePrivate()
 	{
 		octree = new OctNode(999999999.f, vec3(0.f));
+
+#ifdef USE_PHYSICS_MODULE
+		world2d = physics::World2d::create();
+#endif
 	}
 
 	sScenePrivate::~sScenePrivate()
@@ -191,6 +196,7 @@ namespace flame
 			update_element_transform(layout, c.get(), mark_dirty);
 	}
 
+#ifdef USE_RECASTNAV
 	namespace navmesh_gen_detail
 	{
 		struct MyTileCacheAllocator : dtTileCacheAlloc
@@ -500,6 +506,7 @@ namespace flame
 			return n;
 		}
 	}
+#endif
 
 	void sScenePrivate::navmesh_generate(const std::vector<EntityPtr>& nodes, float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle, float cell_size, float cell_height, float tile_size)
 	{
@@ -1311,6 +1318,16 @@ namespace flame
 		}
 	}
 
+	void sScenePrivate::query_world2d(const vec2& lt, const vec2& rb, const std::function<void(EntityPtr e)>& callback)
+	{
+		if (world2d)
+		{
+			world2d->query(lt, rb, [&](physics::Body2dPtr bd) {
+				callback(((cBody2dPtr)bd->user_data)->entity);
+			});
+		}
+	}
+
 	void sScenePrivate::update()
 	{
 		first_node = nullptr;
@@ -1408,6 +1425,33 @@ namespace flame
 			}
 
 			dt_tile_cache->update(delta_time, dt_nav_mesh);
+		}
+#endif
+
+#ifdef USE_PHYSICS_MODULE
+		if (world2d)
+		{
+			for (auto i = (int)bodies2d.size() - 1; i >= 0; i--)
+			{
+				auto bd = bodies2d[i];
+				if (bd->body)
+					break;
+				auto pos = bd->element->pos;
+				switch (bd->shape_type)
+				{
+				case physics::ShapeBox:
+					bd->body = physics::Body2d::create_box(world2d, bd->type, pos, bd->hf_ext, bd->density, bd->friction);
+					break;
+				case physics::ShapeCircle:
+					bd->body = physics::Body2d::create_circle(world2d, bd->type, pos, bd->radius, bd->density, bd->friction);
+					break;
+				}
+				assert(bd->body);
+				bd->body->user_data = bd;
+				bd->mass = bd->body->get_mass();
+			}
+
+			world2d->step();
 		}
 #endif
 	}

@@ -36,4 +36,5 @@ endif()
 
 add_subdirectory(graphics)
 add_subdirectory(audio)
+add_subdirectory(physics)
 add_subdirectory(universe)

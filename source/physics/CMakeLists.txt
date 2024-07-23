@@ -1,0 +1,17 @@
+if(USE_PHYSX OR USE_BOX2D)
+	set(USE_PHYSICS_MODULE ON PARENT_SCOPE)
+	file(GLOB source_files "*.h*" "*.c*")
+	add_library(flame_physics SHARED ${source_files})
+	set_target_properties(flame_physics PROPERTIES FOLDER "flame")
+	target_compile_definitions(flame_physics PRIVATE FLAME_PHYSICS_MODULE)
+	target_link_libraries(flame_physics flame_foundation)
+	target_link_libraries(flame_physics box2d::box2d)
+
+	generate_typeinfo(flame_physics "enum starts_with flame::physics::")
+
+	file(GLOB headers "*.h*")
+	list(FILTER headers EXCLUDE REGEX ".*_private[.]h$")
+	file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/include/flame/physics")
+	add_custom_command(TARGET flame_physics PRE_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/include/flame/physics")
+	add_custom_command(TARGET flame_physics PRE_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${headers} "${CMAKE_SOURCE_DIR}/include/flame/physics")
+endif()

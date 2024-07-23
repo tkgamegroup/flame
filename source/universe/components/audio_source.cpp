@@ -1,9 +1,5 @@
 #include "audio_source_private.h"
 #include "node_private.h"
-#if USE_AUDIO_MODULE
-#include "../../audio/buffer.h"
-#include "../../audio/source.h"
-#endif
 
 namespace flame
 {

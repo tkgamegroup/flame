@@ -18,12 +18,17 @@ bool dt_init_nav_query();
 bool dt_init_crowd();
 #endif
 
+#ifdef USE_PHYSICS_MODULE
+#include "../../physics/world2d.h"
+#endif
+
 namespace flame
 {
 	struct sScenePrivate : sScene
 	{
-	#ifdef USE_RECASTNAV
-	#endif
+#ifdef USE_PHYSICS_MODULE
+		physics::World2dPtr world2d = nullptr;
+#endif
 
 		sScenePrivate();
 		~sScenePrivate();
@@ -37,6 +42,7 @@ namespace flame
 		void navmesh_save(const std::filesystem::path& filename) override;
 		void navmesh_load(const std::filesystem::path& filename) override;
 		void draw_debug_primitives() override;
+		void query_world2d(const vec2& lt, const vec2& rb, const std::function<void(EntityPtr e)>& callback) override;
 
 		void update() override;
 	};

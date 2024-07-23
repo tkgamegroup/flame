@@ -42,7 +42,7 @@ namespace flame
 
 		virtual void set_target(const vec3& pos) = 0;
 		virtual void stop() = 0;
-		virtual void update_pos() = 0;
+		virtual void upload_pos() = 0;
 
 		struct Create
 		{

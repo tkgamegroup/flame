@@ -30,7 +30,9 @@ namespace flame
 		// Reflect
 		virtual void				navmesh_load(const std::filesystem::path& filename) = 0;
 		// Reflect
-		virtual void draw_debug_primitives() = 0;
+		virtual void				draw_debug_primitives() = 0;
+		// Reflect
+		virtual void				query_world2d(const vec2& lt, const vec2& rb, const std::function<void(EntityPtr e)>& callback) = 0;
 
 		struct Instance
 		{

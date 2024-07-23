@@ -1,6 +1,10 @@
 #pragma once
 
 #include "audio_source.h"
+#if USE_AUDIO_MODULE
+#include "../../audio/buffer.h"
+#include "../../audio/source.h"
+#endif
 
 namespace flame
 {

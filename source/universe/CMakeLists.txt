@@ -14,7 +14,7 @@ if(USE_UNIVERSE_MODULE)
 	if(USE_PHYSICS_MODULE)
 		target_compile_definitions(flame_universe PRIVATE USE_PHYSICS_MODULE)
 		target_link_libraries(flame_universe PRIVATE flame_physics)
-	endif()
+	endif() 
 
 	if(USE_RECASTNAV)
 		target_compile_definitions(flame_universe PRIVATE USE_RECASTNAV)

@@ -123,6 +123,17 @@ if op != 4:
 			
 	# (Optional)
 	if op != 3:
+		print("== library box2d ==")
+		ok = True
+		if op == 2:
+			print("Install Box2d ? y/n")
+			ok = input() == "y"
+		if ok:
+			os.system("vcpkg install box2d")
+		print("====\n")
+			
+	# (Optional)
+	if op != 3:
 		print("== library recastnavigation ==")
 		ok = True
 		if op == 2:

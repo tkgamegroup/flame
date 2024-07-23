@@ -61,7 +61,7 @@ namespace flame
 		}
 	}
 
-	void cNavAgentPrivate::update_pos()
+	void cNavAgentPrivate::upload_pos()
 	{
 #ifdef USE_RECASTNAV
 		if (dt_id != -1 && dt_crowd)
@@ -82,7 +82,7 @@ namespace flame
 
 	void cNavAgentPrivate::on_inactive()
 	{
-		std::erase_if(nav_agents, [&](const auto& ag) {
+		std::erase_if(nav_agents, [&](const auto ag) {
 			return ag == this;
 		});
 #ifdef USE_RECASTNAV
