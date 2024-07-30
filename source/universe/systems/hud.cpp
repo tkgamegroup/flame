@@ -13,8 +13,8 @@ namespace flame
 
 		style_colors.resize(HudStyleColorCount);
 		style_colors[HudStyleColorTextBg].push(cvec4(0, 0, 0, 0));
-		style_colors[HudStyleColorButton].push(cvec4(35, 69, 109, 255));
-		style_colors[HudStyleColorButtonHovered].push(cvec4(66, 150, 250, 255));
+		style_colors[HudStyleColorButton].push(cvec4(71, 71, 71, 255));
+		style_colors[HudStyleColorButtonHovered].push(cvec4(155, 155, 155, 255));
 	}
 
 	HudLayout& sHudPrivate::add_layout(HudLayoutType type)

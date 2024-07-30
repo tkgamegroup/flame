@@ -207,7 +207,7 @@ ProjectView::ProjectView(const std::string& name) :
 		{
 			app.open_prefab(path);
 			auto sv = scene_window.first_view();
-			if (sv->imgui_window)
+			if (sv && sv->imgui_window)
 				ImGui::FocusWindow((ImGuiWindow*)sv->imgui_window);
 		}
 		else if (ext == L".h" || ext == L".cpp")

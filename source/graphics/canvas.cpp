@@ -488,19 +488,25 @@ namespace flame
 			return verts;
 		}
 
-		Canvas::DrawVert* CanvasPrivate::draw_circle(const vec2& p, float radius, float thickness, const cvec4& col)
+		Canvas::DrawVert* CanvasPrivate::draw_circle(const vec2& p, float radius, float thickness, const cvec4& col, float begin, float end)
 		{
-			path = get_precompute_circle(radius);
-			for (auto& pt : path)
-				pt = p + pt * radius;
-			return stroke(thickness, col, true);
+			auto& circle = get_precompute_circle(radius);
+			auto ib = int(circle.size() * clamp(begin, 0.f, 1.f));
+			auto ie = int(circle.size() * clamp(end, 0.f, 1.f));
+			path.resize(ie - ib);
+			for (auto i = 0; i < path.size(); i++)
+				path[i] = p + circle[ib + i] * radius;
+			return stroke(thickness, col, (begin == 0.f && end == 1.f));
 		}
 
-		Canvas::DrawVert* CanvasPrivate::draw_circle_filled(const vec2& p, float radius, const cvec4& col)
+		Canvas::DrawVert* CanvasPrivate::draw_circle_filled(const vec2& p, float radius, const cvec4& col, float begin, float end)
 		{
-			path = get_precompute_circle(radius);
-			for (auto& pt : path)
-				pt = p + pt * radius;
+			auto& circle = get_precompute_circle(radius);
+			auto ib = int(circle.size() * clamp(begin, 0.f, 1.f));
+			auto ie = int(circle.size() * clamp(end, 0.f, 1.f));
+			path.resize(ie - ib);
+			for (auto i = 0; i < path.size(); i++)
+				path[i] = p + circle[ib + i] * radius;
 			return fill(col);
 		}
 
@@ -630,11 +636,11 @@ namespace flame
 			return verts;
 		}
 
-		Canvas::DrawVert* CanvasPrivate::draw_image_polygon(ImageViewPtr view, const std::vector<vec2>& pts, const std::vector<vec2>& uvs, const cvec4& tint_col, SamplerPtr sp)
+		Canvas::DrawVert* CanvasPrivate::draw_image_polygon(ImageViewPtr view, std::span<vec2> pts, std::span<vec2> uvs, const cvec4& tint_col, SamplerPtr sp)
 		{
 			auto& cmd = get_blit_cmd(view->get_shader_read_src(sp));
 
-			path = pts;
+			path.assign_range(pts);
 			auto verts = fill_path(cmd, tint_col);
 			path.clear();
 			for (auto i = 0; i < pts.size(); i++)

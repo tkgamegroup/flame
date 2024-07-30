@@ -22,10 +22,19 @@ namespace flame
 		element->drawers.add([this](graphics::CanvasPtr canvas) {
 			if (image)
 			{
-				if (angle == 0.f)
+				if (!element->tilted)
 					canvas->draw_image(image->get_view(), element->global_pos0(), element->global_pos1(), vec4(0.f, 0.f, 1.f, 1.f), tint_col);
 				else
-					canvas->draw_image_rotated(image->get_view(), element->global_pos0(), element->global_pos1(), vec4(0.f, 0.f, 1.f, 1.f), tint_col, angle);
+				{
+					vec2 pts[4];
+					element->fill_pts(pts);
+					vec2 uvs[4];
+					uvs[0] = vec2(0.f, 0.f);
+					uvs[1] = vec2(1.f, 0.f);
+					uvs[2] = vec2(1.f, 1.f);
+					uvs[3] = vec2(0.f, 1.f);
+					canvas->draw_image_polygon(image->get_view(), pts, uvs, tint_col);
+				}
 			}
 		}, "image"_h);
 	}
@@ -84,15 +93,6 @@ namespace flame
 		tint_col = col;
 		element->mark_drawing_dirty();
 		data_changed("tint_col"_h);
-	}
-
-	void cImagePrivate::set_angle(float v)
-	{
-		if (angle == v)
-			return;
-		angle = v;
-		element->mark_drawing_dirty();
-		data_changed("angle"_h);
 	}
 
 	struct cImageCreate : cImage::Create

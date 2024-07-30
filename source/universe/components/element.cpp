@@ -8,10 +8,31 @@ namespace flame
 	void cElementPrivate::on_init()
 	{
 		drawers.add([this](graphics::CanvasPtr canvas) {
-			if (background_col.a > 0)
-				canvas->draw_rect_filled(global_pos0(), global_pos1(), background_col);
-			if (frame_col.a > 0)
-				canvas->draw_rect(global_pos0(), global_pos1(), frame_thickness, frame_col);
+			if (!tilted)
+			{
+				if (background_col.a > 0)
+					canvas->draw_rect_filled(global_pos0(), global_pos1(), background_col);
+				if (frame_col.a > 0)
+					canvas->draw_rect(global_pos0(), global_pos1(), frame_thickness, frame_col);
+			}
+			else
+			{
+				if (background_col.a > 0 || frame_col.a > 0)
+				{
+					vec2 pts[4];
+					fill_pts(pts);
+					if (background_col.a > 0)
+					{
+						canvas->path.assign_range(pts);
+						canvas->fill(background_col);
+					}
+					if (frame_col.a > 0)
+					{
+						canvas->path.assign_range(pts);
+						canvas->stroke(frame_thickness, frame_col, true);
+					}
+				}
+			}
 		});
 	}
 
@@ -27,7 +48,10 @@ namespace flame
 	void cElementPrivate::set_global_pos(const vec2& pos)
 	{
 		if (auto pelement = entity->get_parent_component<cElementT>(); pelement)
-			set_pos(pos - pelement->global_pos0());
+		{
+			auto gscl = pelement->global_scl();
+			set_pos((pos - pelement->global_pos()) / (gscl == vec2(0.f) ? 1.f : 0.f));
+		}
 		else
 			set_pos(pos);
 	}
@@ -50,6 +74,15 @@ namespace flame
 		}
 		else
 			set_ext(ext);
+	}
+
+	void cElementPrivate::set_ang(float a)
+	{
+		if (ang == a)
+			return;
+		ang = a;
+		mark_transform_dirty();
+		data_changed("ang"_h);
 	}
 
 	void cElementPrivate::set_scl(const vec2& s)
@@ -164,12 +197,20 @@ namespace flame
 
 		mat3 m;
 		if (auto pelement = entity->get_parent_component<cElementT>(); pelement)
+		{
 			m = pelement->transform;
+			tilted = pelement->tilted;
+		}
 		else
+		{
 			m = mat3(1.f);
+			tilted = false;
+		}
 		m = translate(m, pos - pivot * ext);
+		m = rotate(m, radians(ang));
 		m = scale(m, scl);
 		transform = m;
+		tilted |= ang != 0.f;
 
 		data_changed("transform"_h);
 		transform_dirty = false;
@@ -186,9 +227,9 @@ namespace flame
 			elements.push_back(e);
 			e = e->entity->get_parent_component<cElementT>();
 		}
-		std::reverse(elements.begin(), elements.end());
-		for (auto e : elements)
+		for (auto it = elements.rbegin(); it != elements.rend(); it++)
 		{
+			auto e = *it;
 			e->transform_dirty = true;
 			e->update_transform();
 			e->mark_transform_dirty(); // remark dirty

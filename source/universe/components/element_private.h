@@ -14,6 +14,7 @@ namespace flame
 		void set_global_pos(const vec2& pos) override;
 		void set_ext(const vec2& ext) override;
 		void set_global_ext(const vec2& ext) override;
+		void set_ang(float a) override;
 		void set_scl(const vec2& scl) override;
 
 		void set_background_col(const cvec4& col) override;

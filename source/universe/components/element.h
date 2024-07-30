@@ -46,6 +46,15 @@ namespace flame
 		virtual void set_global_ext(const vec2& ext) = 0;
 
 		// Reflect
+		float ang = 0.f;
+		// Reflect
+		virtual void set_ang(float a) = 0;
+		inline void add_ang(float a)
+		{
+			set_ang(ang + a);
+		}
+
+		// Reflect
 		vec2 scl = vec2(1.f);
 		// Reflect
 		virtual void set_scl(const vec2& s) = 0;
@@ -92,8 +101,17 @@ namespace flame
 		virtual void set_margin(const vec4& margin) = 0;
 
 		mat3x2 transform;
-		vec2 global_pos0() { return transform[2]; }
-		vec2 global_pos1() { return transform * vec3(ext, 1.f); }
+		bool tilted = false;
+		inline vec2 global_pos0() { return transform[2]; }
+		inline vec2 global_pos1() { return transform * vec3(ext, 1.f); }
+		inline vec2 global_pos() { return mix(global_pos0(), global_pos1(), pivot); }
+		inline void fill_pts(vec2* pts) 
+		{
+			pts[0] = transform * vec3(vec2(0.f, 0.f), 1.f);
+			pts[1] = transform * vec3(vec2(ext.x, 0.f), 1.f);
+			pts[2] = transform * vec3(vec2(ext.x, ext.y), 1.f);
+			pts[3] = transform * vec3(vec2(0.f, ext.y), 1.f);
+		}
 		virtual vec2 global_scl() = 0;
 		inline bool contains(const vec2& p, const vec2& translate = vec2(0.f), const vec2& scale = vec2(1.f))
 		{

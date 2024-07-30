@@ -72,7 +72,15 @@ namespace flame
 			move_from(id, vec3(pos, 0.f), duration);
 		}
 		virtual void rotate_to(uint id, const vec3& eul, float duration) = 0;
+		inline void rotate_to(uint id, float ang, float duration)
+		{
+			rotate_to(id, vec3(ang, 0.f, 0.f), duration);
+		}
 		virtual void rotate_from(uint id, const vec3& eul, float duration) = 0;
+		inline void rotate_from(uint id, float ang, float duration)
+		{
+			rotate_from(id, vec3(ang, 0.f, 0.f), duration);
+		}
 		virtual void scale_to(uint id, const vec3& scl, float duration) = 0;
 		inline void scale_to(uint id, const vec2& scl, float duration)
 		{

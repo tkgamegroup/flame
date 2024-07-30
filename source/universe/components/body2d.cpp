@@ -53,6 +53,7 @@ namespace flame
 		if (body)
 		{
 			element->set_pos(body->pos);
+			element->set_ang(body->angle);
 		}
 	}
 

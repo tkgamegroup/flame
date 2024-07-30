@@ -1,6 +1,7 @@
 #include "../../foundation/blueprint.h"
 #include "../entity_private.h"
 #include "../components/node_private.h"
+#include "../components/element_private.h"
 #include "../components/mesh_private.h"
 #include "../components/skinned_mesh_private.h"
 #include "../components/animator_private.h"
@@ -42,6 +43,8 @@ namespace flame
 			{
 				if (auto node = a.target.e->get_component<cNode>(); node)
 					(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = node->pos;
+				else if (auto element = a.target.e->get_component<cElement>(); element)
+					(a.dir == ActionForward ? a.v0.f.xy : a.v1.f.xy) = element->pos;
 			}
 			else if (type == Tween3DTargets)
 			{
@@ -63,6 +66,8 @@ namespace flame
 			{
 				if (auto node = a.target.e->get_component<cNode>(); node)
 					(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = node->get_eul();
+				else if (auto element = a.target.e->get_component<cElement>(); element)
+					(a.dir == ActionForward ? a.v0.f.x : a.v1.f.x) = element->ang;
 			}
 			else if (type == Tween3DTargets)
 			{
@@ -84,6 +89,8 @@ namespace flame
 			{
 				if (auto node = a.target.e->get_component<cNode>(); node)
 					(a.dir == ActionForward ? a.v0.f.xyz : a.v1.f.xyz) = node->scl;
+				else if (auto element = a.target.e->get_component<cElement>(); element)
+					(a.dir == ActionForward ? a.v0.f.xy : a.v1.f.xy) = element->scl;
 			}
 			else if (type == Tween3DTargets)
 			{
@@ -601,6 +608,8 @@ namespace flame
 							{
 								if (auto node = a.target.e->get_component<cNode>(); node)
 									node->set_pos(a.v1.f.xyz);
+								else if (auto element = a.target.e->get_component<cElement>(); element)
+									element->set_pos(a.v1.f.xy);
 							}
 							else if (ani->type == Tween3DTargets)
 							{
@@ -621,7 +630,9 @@ namespace flame
 							if (ani->type == TweenEntity)
 							{
 								if (auto node = a.target.e->get_component<cNode>(); node)
-									node->set_eul(a.v1.f.xyz());
+									node->set_eul(a.v1.f.xyz);
+								else if (auto element = a.target.e->get_component<cElement>(); element)
+									element->set_ang(a.v1.f.x);
 							}
 							else if (ani->type == Tween3DTargets)
 							{
@@ -643,6 +654,8 @@ namespace flame
 							{
 								if (auto node = a.target.e->get_component<cNode>(); node)
 									node->set_scl(a.v1.f.xyz);
+								else if (auto element = a.target.e->get_component<cElement>(); element)
+									element->set_scl(a.v1.f.xy);
 							}
 							else if (ani->type == Tween3DTargets)
 							{
@@ -847,6 +860,8 @@ namespace flame
 						{
 							if (auto node = a.target.e->get_component<cNode>(); node)
 								node->set_pos(mix(a.v0.f.xyz(), a.v1.f.xyz(), t));
+							else if (auto element = a.target.e->get_component<cElement>(); element)
+								element->set_pos(mix(a.v0.f.xy(), a.v1.f.xy(), t));
 						}
 						else if (ani->type == Tween3DTargets)
 						{
@@ -868,6 +883,8 @@ namespace flame
 						{
 							if (auto node = a.target.e->get_component<cNode>(); node)
 								node->set_eul(mix(a.v0.f.xyz(), a.v1.f.xyz(), t));
+							else if (auto element = a.target.e->get_component<cElement>(); element)
+								element->set_ang(mix(a.v0.f.x, a.v1.f.x, t));
 						}
 						else if (ani->type == Tween3DTargets)
 						{
@@ -889,6 +906,8 @@ namespace flame
 						{
 							if (auto node = a.target.e->get_component<cNode>(); node)
 								node->set_scl(mix(a.v0.f.xyz(), a.v1.f.xyz(), t));
+							else if (auto element = a.target.e->get_component<cElement>(); element)
+								element->set_scl(mix(a.v0.f.xy(), a.v1.f.xy(), t));
 						}
 						else if (ani->type == Tween3DTargets)
 						{
