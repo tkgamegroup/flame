@@ -139,22 +139,8 @@ namespace flame
 					.allowed_types = { TypeInfo::get<vec2>() }
 				},
 				{
-					.name = "Col",
-					.allowed_types = { TypeInfo::get<cvec4>() },
-					.default_value = "200,200,200,255"
-				},
-				{
 					.name = "Pivot",
 					.allowed_types = { TypeInfo::get<vec2>() }
-				},
-				{
-					.name = "Image",
-					.allowed_types = { TypeInfo::get<graphics::ImageDesc>() }
-				},
-				{
-					.name = "Border",
-					.allowed_types = { TypeInfo::get<vec4>() },
-					.default_value = "4,4,4,4"
 				}
 			},
 			{
@@ -164,12 +150,9 @@ namespace flame
 				auto id = *(uint*)inputs[0].data;
 				auto pos = *(vec2*)inputs[1].data;
 				auto size = *(vec2*)inputs[2].data;
-				auto col = *(cvec4*)inputs[3].data;
-				auto pivot = *(vec2*)inputs[4].data;
-				auto& image = *(graphics::ImageDesc*)inputs[5].data;
-				auto border = *(vec4*)inputs[6].data;
+				auto pivot = *(vec2*)inputs[3].data;
 
-				sHud::instance()->begin(id, pos, size, col, pivot, image, border, false);
+				sHud::instance()->begin(id, pos, size, pivot, false);
 
 				execution.block->max_execute_times = 1;
 			},
@@ -184,16 +167,6 @@ namespace flame
 					.name = "Size",
 					.allowed_types = { TypeInfo::get<vec2>() },
 					.default_value = "0,0"
-				},
-				{
-					.name = "Item Spacing",
-					.allowed_types = { TypeInfo::get<vec2>() },
-					.default_value = "2,2"
-				},
-				{
-					.name = "Border",
-					.allowed_types = { TypeInfo::get<vec4>() },
-					.default_value = "0,0,0,0"
 				}
 			},
 			{
@@ -201,9 +174,7 @@ namespace flame
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto size = *(vec2*)inputs[0].data;
-				auto item_spacing = *(vec2*)inputs[1].data;
-				auto border = *(vec4*)inputs[2].data;
-				sHud::instance()->begin_layout(HudVertical, size, item_spacing, border);
+				sHud::instance()->begin_layout(HudVertical, size);
 
 				execution.block->max_execute_times = 1;
 			},
@@ -218,16 +189,6 @@ namespace flame
 					.name = "Size",
 					.allowed_types = { TypeInfo::get<vec2>() },
 					.default_value = "0,0"
-				},
-				{
-					.name = "Item Spacing",
-					.allowed_types = { TypeInfo::get<vec2>() },
-					.default_value = "2,2"
-				},
-				{
-					.name = "Border",
-					.allowed_types = { TypeInfo::get<vec4>() },
-					.default_value = "0,0,0,0"
 				}
 			},
 			{
@@ -235,9 +196,7 @@ namespace flame
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto size = *(vec2*)inputs[0].data;
-				auto item_spacing = *(vec2*)inputs[1].data;
-				auto border = *(vec4*)inputs[2].data;
-				sHud::instance()->begin_layout(HudHorizontal, size, item_spacing, border);
+				sHud::instance()->begin_layout(HudHorizontal, size);
 
 				execution.block->max_execute_times = 1;
 			},
@@ -292,7 +251,7 @@ namespace flame
 			{
 				{
 					.name = "Scaling",
-					.allowed_types = { TypeInfo::get<vec2>() },
+					.allowed_types = { TypeInfo::get<vec4>() },
 					.default_value = "1,1"
 				}
 			},
@@ -300,7 +259,7 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				sHud::instance()->push_style_var(HudStyleVarScaling, *(vec2*)inputs[0].data);
+				sHud::instance()->push_style_var(HudStyleVarScaling, *(vec4*)inputs[0].data);
 
 				execution.block->max_execute_times = 1;
 			},
@@ -321,7 +280,7 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				sHud::instance()->push_style_var(HudStyleVarAlpha, vec2(*(float*)inputs[0].data));
+				sHud::instance()->push_style_var(HudStyleVarAlpha, vec4(*(float*)inputs[0].data, 0.f, 0.f, 0.f));
 
 				execution.block->max_execute_times = 1;
 			},
@@ -357,26 +316,14 @@ namespace flame
 				{
 					.name = "Text",
 					.allowed_types = { TypeInfo::get<std::wstring>() }
-				},
-				{
-					.name = "Font Size",
-					.allowed_types = { TypeInfo::get<uint>() },
-					.default_value = "24"
-				},
-				{
-					.name = "Col",
-					.allowed_types = { TypeInfo::get<cvec4>() },
-					.default_value = "255,255,255,255"
 				}
 			},
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto& text = *(std::wstring*)inputs[0].data;
-				auto font_size = *(uint*)inputs[1].data;
-				auto col = *(cvec4*)inputs[2].data;
 
-				sHud::instance()->text(text, font_size, col);
+				sHud::instance()->text(text);
 			}
 		);
 
@@ -389,11 +336,6 @@ namespace flame
 				{
 					.name = "Image",
 					.allowed_types = { TypeInfo::get<graphics::ImageDesc>() }
-				},
-				{
-					.name = "Col",
-					.allowed_types = { TypeInfo::get<cvec4>() },
-					.default_value = "255,255,255,255"
 				}
 			},
 			{
@@ -401,9 +343,8 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto size = *(vec2*)inputs[0].data;
 				auto& image = *(graphics::ImageDesc*)inputs[1].data;
-				auto col = *(cvec4*)inputs[2].data;
 				if (image.view)
-					sHud::instance()->image(size, image, col);
+					sHud::instance()->image(size, image);
 			}
 		);
 
@@ -416,15 +357,6 @@ namespace flame
 				{
 					.name = "Image",
 					.allowed_types = { TypeInfo::get<graphics::ImageDesc>() }
-				},
-				{
-					.name = "Border",
-					.allowed_types = { TypeInfo::get<vec4>() }
-				},
-				{
-					.name = "Col",
-					.allowed_types = { TypeInfo::get<cvec4>() },
-					.default_value = "255,255,255,255"
 				}
 			},
 			{
@@ -432,10 +364,8 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto size = *(vec2*)inputs[0].data;
 				auto& image = *(graphics::ImageDesc*)inputs[1].data;
-				auto border = *(vec4*)inputs[2].data;
-				auto col = *(cvec4*)inputs[3].data;
 				if (image.view)
-					sHud::instance()->image_stretched(size, image, border, col);
+					sHud::instance()->image_stretched(size, image);
 			}
 		);
 
@@ -450,11 +380,6 @@ namespace flame
 					.allowed_types = { TypeInfo::get<graphics::ImageDesc>() }
 				},
 				{
-					.name = "Col",
-					.allowed_types = { TypeInfo::get<cvec4>() },
-					.default_value = "255,255,255,255"
-				},
-				{
 					.name = "Angle",
 					.allowed_types = { TypeInfo::get<float>() }
 				}
@@ -464,10 +389,9 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto size = *(vec2*)inputs[0].data;
 				auto& image = *(graphics::ImageDesc*)inputs[1].data;
-				auto col = *(cvec4*)inputs[2].data;
-				auto angle = *(float*)inputs[3].data;
+				auto angle = *(float*)inputs[2].data;
 				if (image.view)
-					sHud::instance()->image_rotated(size, image, col, angle);
+					sHud::instance()->image_rotated(size, image, angle);
 			}
 		);
 
@@ -476,11 +400,6 @@ namespace flame
 				{
 					.name = "Label",
 					.allowed_types = { TypeInfo::get<std::wstring>() }
-				},
-				{
-					.name = "Font Size",
-					.allowed_types = { TypeInfo::get<uint>() },
-					.default_value = "24"
 				}
 			},
 			{
@@ -488,38 +407,9 @@ namespace flame
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto& label = *(std::wstring*)inputs[0].data;
-				auto font_size = *(uint*)inputs[1].data;
-				auto clicked = sHud::instance()->button(label, font_size);
+				auto clicked = sHud::instance()->button(label);
 
 				execution.block->max_execute_times =  clicked ? 1 : 0;
-			}
-		);
-
-		library->add_template("Hud Image Button", "", BlueprintNodeFlagHorizontalOutputs,
-			{ 
-				{
-					.name = "Size",
-					.allowed_types = { TypeInfo::get<vec2>() }
-				},
-				{
-					.name = "Image",
-					.allowed_types = { TypeInfo::get<graphics::ImageDesc>() }
-				},
-				{
-					.name = "Border",
-					.allowed_types = { TypeInfo::get<vec4>() }
-				}
-			},
-			{
-			},
-			true,
-			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				auto size = *(vec2*)inputs[0].data;
-				auto& image = *(graphics::ImageDesc*)inputs[1].data;
-				auto border = *(vec4*)inputs[2].data;
-				auto clicked = sHud::instance()->image_button(size, image, border);
-
-				execution.block->max_execute_times = clicked ? 1 : 0;
 			}
 		);
 

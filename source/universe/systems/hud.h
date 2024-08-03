@@ -33,10 +33,10 @@ namespace flame
 		HudStyleColorWindowBackground,
 		HudStyleColorWindowFrame,
 		HudStyleColorText,
+		HudStyleColorTextDisabled,
 		HudStyleColorImage,
 		HudStyleColorButton,
 		HudStyleColorButtonHovered,
-		HudStyleColorButtonDisabled,
 
 		HudStyleColorCount
 	};
@@ -56,8 +56,7 @@ namespace flame
 
 		virtual void bind_window(graphics::WindowPtr window) = 0;
 
-		virtual void begin(uint id, const vec2& pos, const vec2& size = vec2(0.f) /* (0,0) means auto size */, const cvec4& bg_col = cvec4(0, 0, 0, 255), const vec2& pivot = vec2(0.f),
-			const graphics::ImageDesc& image = {}, const vec4& border = vec4(4.f), bool is_modal = false) = 0;
+		virtual void begin(uint id, const vec2& pos, const vec2& size = vec2(0.f) /* (0,0) means auto size */, const vec2& pivot = vec2(0.f), bool is_modal = false) = 0;
 		virtual void begin_popup() = 0;
 		virtual void end() = 0;
 
@@ -74,12 +73,14 @@ namespace flame
 		virtual bool item_clicked() = 0;
 		virtual bool is_modal() = 0;
 		// styles:
-		virtual void push_style_var(HudStyleVar idx, const vec2& value) = 0;
+		virtual void push_style_var(HudStyleVar idx, const vec4& value) = 0;
 		virtual void pop_style_var(HudStyleVar idx) = 0;
 		virtual void push_style_color(HudStyleColor idx, const cvec4& color) = 0;
 		virtual void pop_style_color(HudStyleColor idx) = 0;
+		virtual void push_style_image(HudStyleImage idx, const graphics::ImageDesc& image) = 0;
+		virtual void pop_style_image(HudStyleImage idx) = 0;
 		// layout:
-		virtual void begin_layout(HudLayoutType type, const vec2& size = vec2(0.f), const vec2& item_spacing = vec2(2.f), const vec4& border = vec4(0.f)) = 0;
+		virtual void begin_layout(HudLayoutType type, const vec2& size = vec2(0.f)) = 0;
 		virtual void end_layout() = 0;
 		virtual void newline() = 0;
 		// stencil:
@@ -89,18 +90,15 @@ namespace flame
 		virtual void end_stencil_compare() = 0;
 		// basic:
 		virtual void rect(const vec2& size, const cvec4& col) = 0;
-		virtual void text(std::wstring_view text, uint font_size = 24, const cvec4& col = cvec4(255)) = 0;
+		virtual void text(std::wstring_view text) = 0;
 		// images:
-		virtual void image(const vec2& size, const graphics::ImageDesc& img, const cvec4& col = cvec4(255)) = 0;
-		virtual void image_stretched(const vec2& size, const graphics::ImageDesc& img, const vec4& border = vec4(0.f), const cvec4& col = cvec4(255)) = 0;
-		virtual void image_rotated(const vec2& size, const graphics::ImageDesc& img, const cvec4& col, float angle) = 0;
-		virtual void image_text(const graphics::ImageDesc& img, std::wstring_view text, bool reverse, uint font_size = 24, const cvec4& txt_col = cvec4(255), const cvec4& img_col = cvec4(255), float gap = 2.f) = 0;
+		virtual void image(const vec2& size, const graphics::ImageDesc& image) = 0;
+		virtual void image_stretched(const vec2& size, const graphics::ImageDesc& image) = 0;
+		virtual void image_rotated(const vec2& size, const graphics::ImageDesc& image, float angle) = 0;
 		// buttons:
-		virtual bool button(std::wstring_view label, uint font_size = 24) = 0;
-		virtual bool image_button(const vec2& size, const graphics::ImageDesc& img, const vec4& border = vec4(0.f)) = 0;
-		virtual bool image_text_button(const graphics::ImageDesc& img, std::wstring_view label, bool reverse, uint font_size = 24, float gap = 2.f) = 0;
+		virtual bool button(std::wstring_view label) = 0;
 		// misc:
-		virtual void progress_bar(const vec2& size, float progress, const cvec4& col, const cvec4& bg_col, std::wstring_view label = L"", uint font_size = 24, const cvec4& txt_col = cvec4(255)) = 0;
+		virtual void progress_bar(const vec2& size, float progress, const cvec4& color, const cvec4& background_color, std::wstring_view label = L"") = 0;
 
 		virtual void render(int idx, graphics::CommandBufferPtr cb) = 0;
 

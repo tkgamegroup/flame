@@ -6,6 +6,12 @@ namespace flame
 {
 	namespace graphics
 	{
+		enum
+		{
+			ICON_BEGIN = 0xE000,
+			ICON_END = 0xF8FF,
+		};
+
 		struct Canvas
 		{
 			enum StencilState
@@ -69,7 +75,9 @@ namespace flame
 			virtual void set_targets(std::span<ImageViewPtr> targets) = 0;
 			virtual void bind_window(WindowPtr window) = 0;
 
-			virtual void reset() = 0;
+			virtual void register_icon(wchar_t code, const graphics::ImageDesc& image) = 0;
+
+			virtual void reset_drawing() = 0;
 
 			virtual uint set_translate(const vec2& translate) = 0; // return: cmd idx
 			virtual void push_scissor(const Rect& rect) = 0;
@@ -89,7 +97,7 @@ namespace flame
 			virtual DrawVert*	draw_circle(const vec2& p, float radius, float thickness = 1.f, const cvec4& col = cvec4(255), float begin = 0.f, float end = 1.f) = 0;
 			virtual DrawVert*	draw_circle_filled(const vec2& p, float radius, const cvec4& col = cvec4(255), float begin = 0.f, float end = 1.f) = 0;
 			virtual vec2		calc_text_size(FontAtlasPtr font_atlas, uint font_size, std::wstring_view str) = 0;
-			virtual void		draw_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col = cvec4(255), float thickness = 0.f, float border = 0.f) = 0;
+			virtual void		draw_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col = cvec4(255), float thickness = 0.f, float border = 0.f, const vec2& scl = vec2(1.f)) = 0;
 			virtual DrawVert*	draw_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs = vec4(0.f, 0.f, 1.f, 1.f), const cvec4& tint_col = cvec4(255), SamplerPtr sp = nullptr) = 0;
 			virtual DrawVert*	draw_image_stretched(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs = vec4(0.f, 0.f, 1.f, 1.f), const vec4& border = vec4(0.f), const vec4& border_uvs = vec4(0.f, 0.f, 1.f, 1.f), const cvec4& tint_col = cvec4(255), SamplerPtr sp = nullptr) = 0;
 			virtual DrawVert*	draw_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs = vec4(0.f, 0.f, 1.f, 1.f), const cvec4& tint_col = cvec4(255), float angle = 0, SamplerPtr sp = nullptr) = 0;

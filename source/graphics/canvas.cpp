@@ -77,7 +77,7 @@ namespace flame
 			main_ds->set_image_i(0, 0, main_img->get_view({}, { SwizzleOne, SwizzleOne, SwizzleOne, SwizzleR }), Sampler::get(FilterNearest, FilterNearest, false, AddressClampToEdge));
 			main_ds->update();
 
-			reset();
+			reset_drawing();
 		}
 
 		CanvasPrivate::~CanvasPrivate()
@@ -104,7 +104,7 @@ namespace flame
 
 			size = targets.empty() ? vec2(0.f) : (vec2)targets[0]->image->extent.xy();
 
-			reset();
+			reset_drawing();
 			fb_tars.clear();
 
 			if (size.x <= 0.f && size.y <= 0.f)
@@ -143,7 +143,17 @@ namespace flame
 			set_targets(ivs);
 		}
 
-		void CanvasPrivate::reset()
+		void CanvasPrivate::register_icon(wchar_t code, const graphics::ImageDesc& image)
+		{
+			if (code < ICON_BEGIN || code > ICON_END)
+				return;
+			auto idx = code - ICON_BEGIN;
+			if (idx >= icons.size())
+				icons.resize(idx + 1);
+			icons[idx] = image;
+		}
+
+		void CanvasPrivate::reset_drawing()
 		{
 			while (!scissor_stack.empty())
 				scissor_stack.pop();
@@ -510,41 +520,62 @@ namespace flame
 		vec2 CanvasPrivate::calc_text_size(FontAtlasPtr font_atlas, uint font_size, std::wstring_view str)
 		{
 			font_atlas = font_atlas ? font_atlas : default_font_atlas;
-			auto scale = font_atlas->get_scale(font_size);
+			auto font_scale = font_atlas->get_scale(font_size);
 			auto p = vec2(0.f);
 			auto max_x = 0.f;
 			for (auto ch : str)
 			{
 				if (ch == L'\n')
 				{
-					p.y += font_size;
+					p.y += font_size * font_scale;
 					p.x = 0.f;
+					continue;
+				}
+				if (ch >= ICON_BEGIN)
+				{
+					p.x += font_size * font_scale;
+					max_x = max(max_x, p.x);
 					continue;
 				}
 
 				auto& g = font_atlas->get_glyph(ch, font_size);
-				p.x += g.advance * scale;
+				p.x += g.advance * font_scale;
 				max_x = max(max_x, p.x);
 			}
 			return vec2(max_x, p.y + font_size);
 		}
 
-		void CanvasPrivate::draw_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness, float border)
+		void CanvasPrivate::draw_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness, float border, const vec2& scl)
 		{
 			font_atlas = font_atlas ? font_atlas : default_font_atlas;
-			thickness = clamp(thickness, -1.f, +1.f);
-			border = clamp(border, 0.f, 0.25f);
-			auto scale = font_atlas->get_scale(font_size);
+			auto font_scale = font_atlas->get_scale(font_size);
+			auto scale = font_scale * scl;
 			auto ds = font_atlas == default_font_atlas ? main_ds.get() : font_atlas->view->get_shader_read_src(nullptr);
-			auto& cmd = font_atlas->type == FontAtlasBitmap ? get_blit_cmd(ds) : get_sdf_cmd(ds, scale, thickness, border);
+			auto& cmd = font_atlas->type == FontAtlasBitmap ? get_blit_cmd(ds) : 
+				get_sdf_cmd(ds, font_scale, clamp(thickness, -1.f, +1.f), clamp(border, 0.f, 0.25f));
 
 			auto p = pos; vec2 sz(0.f);
 			for (auto ch : str)
 			{
 				if (ch == L'\n')
 				{
-					p.y += font_size;
+					p.y += font_size * scale.y;
 					p.x = pos.x;
+					continue;
+				}
+				if (ch >= ICON_BEGIN)
+				{
+					auto idx = ch - ICON_BEGIN;
+					auto& img = icons[idx];
+					auto s = vec2(font_size) * scale;
+					path_rect(p, p + s);
+					auto& cmd = get_blit_cmd(img.view->get_shader_read_src(nullptr));
+					auto verts = fill_path(cmd, cvec4(255, 255, 255, col.a));
+					path.clear();
+					verts[0].uv = img.uvs.xy;
+					verts[1].uv = img.uvs.xw;
+					verts[2].uv = img.uvs.zw;
+					verts[3].uv = img.uvs.zy;
 					continue;
 				}
 
@@ -561,7 +592,7 @@ namespace flame
 				verts[2].uv = g.uv.zw;
 				verts[3].uv = g.uv.zy;
 
-				p.x += g.advance * scale;
+				p.x += g.advance * scale.x;
 			}
 		}
 
@@ -649,7 +680,7 @@ namespace flame
 		{
 			if (idx < 0 || iv_tars.empty())
 			{
-				reset();
+				reset_drawing();
 				return;
 			}
 
@@ -755,7 +786,7 @@ namespace flame
 			cb->end_renderpass();
 			cb->end_debug_label();
 
-			reset();
+			reset_drawing();
 		}
 
 		struct CanvasCreate : Canvas::Create
