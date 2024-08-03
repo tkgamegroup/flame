@@ -12,14 +12,14 @@ namespace flame
 		style_vars[HudStyleVarAlpha].push(vec2(1.f));
 
 		style_colors.resize(HudStyleColorCount);
-		style_colors[HudStyleColorTextBg].push(cvec4(0, 0, 0, 0));
+		style_colors[HudStyleColorBackground].push(cvec4(0, 0, 0, 0));
 		style_colors[HudStyleColorButton].push(cvec4(71, 71, 71, 255));
 		style_colors[HudStyleColorButtonHovered].push(cvec4(155, 155, 155, 255));
 	}
 
 	HudLayout& sHudPrivate::add_layout(HudLayoutType type)
 	{
-		auto& hud = huds.back();
+		auto& hud = *last_hud;
 		auto pos = hud.layouts.back().cursor;
 		auto& layout = hud.layouts.emplace_back();
 		layout.type = type;
@@ -47,11 +47,23 @@ namespace flame
 		if (canvas)
 			canvas->bind_window(window);
 	}
-
-	void sHudPrivate::begin(uint id, const vec2& pos, const vec2& size, const cvec4& col, const vec2& pivot, const graphics::ImageDesc& image, const vec4& border, bool is_modal)
+	
+	uint fhash(float x)
 	{
-		auto& hud = huds.emplace_back();
+		union
+		{
+			float f;
+			uint u;
+		};
+		f = x;
+		return u;
+	}
+
+	void sHudPrivate::begin(uint id, const vec2& pos, const vec2& size, const cvec4& bg_col, const vec2& pivot, const graphics::ImageDesc& image, const vec4& border, bool is_modal)
+	{
+		auto& hud = huds[id];
 		hud.id = id;
+		last_hud = &hud;
 
 		if (is_modal)
 		{
@@ -68,10 +80,12 @@ namespace flame
 			hud.pos.x += canvas->size.x;
 		if (pos.y < 0.f)
 			hud.pos.y += canvas->size.y;
-		hud.size = size * scaling;
-		if (!auto_sizing)
-			hud.pos -= hud.size * pivot;
-		hud.color = col;
+		if (auto_sizing)
+			hud.size = hud.suggested_size;
+		else
+			hud.size = size * scaling;
+		hud.pos -= hud.size * pivot;
+		hud.color = bg_col;
 		hud.color.a *= alpha;
 		hud.pivot = pivot;
 		hud.border = border * vec4(scaling, scaling);
@@ -84,117 +98,40 @@ namespace flame
 		layout.auto_size = auto_sizing;
 
 		if (!image.view)
-		{
-			hud.bg_verts = canvas->draw_rect_filled(vec2(0.f), vec2(100.f), hud.color); // 100 for temporary size
-			hud.bg_vert_count = 4;
-		}
+			canvas->draw_rect_filled(hud.pos, hud.pos + hud.size, hud.color);
 		else
-		{
-			auto size = (vec2)image.view->image->extent.xy() * (image.uvs.zw() - image.uvs.xy());
-			hud.bg_verts = canvas->draw_image_stretched(image.view, vec2(0.f), vec2(border.xy() + border.zw()) + vec2(1.f), image.uvs, border, image.border_uvs, hud.color);
-			hud.bg_vert_count = 9 * 4;
-		}
-		if ((pivot.x != 0.f || pivot.y != 0.f) && auto_sizing)
-			hud.translate_cmd_idx = canvas->set_translate(vec2(0.f));
-		else
-			hud.translate_cmd_idx = -1;
+			canvas->draw_image_stretched(image.view, hud.pos, hud.pos + hud.size, image.uvs, border, image.border_uvs, hud.color);
+	}
+
+	void sHudPrivate::begin_popup()
+	{
+
 	}
 
 	void sHudPrivate::end()
 	{
 		if (huds.empty())
 			return;
-		auto& hud = huds.back();
-		if (hud.layouts.empty())
-			return;
-		auto& layout = hud.layouts[0];
-
-		auto input = sInput::instance();
-
-		finish_layout(layout);
-		if (layout.auto_size)
-			hud.size = layout.rect.size() + hud.border.xy() + hud.border.zw();
-
-		if (hud.translate_cmd_idx != -1)
+		auto& hud = *last_hud;
+		if (!hud.layouts.empty())
 		{
-			auto translate = -hud.size * hud.pivot;
-			hud.pos += translate;
-			canvas->draw_cmds[hud.translate_cmd_idx].data.translate = translate;
-			canvas->set_translate(vec2(0.f));
+			auto& layout = hud.layouts[0];
+
+			finish_layout(layout);
+			if (layout.auto_size)
+				hud.suggested_size = layout.rect.size() + hud.border.xy() + hud.border.zw();
 		}
 
-		if (hud.bg_verts)
-		{
-			if (hud.bg_vert_count <= 4)
-			{
-				auto scl = hud.size / 100.f; // 100 is temporary size
-				for (auto i = 0; i < hud.bg_vert_count; i++)
-					hud.bg_verts[i].pos = hud.bg_verts[i].pos * scl + hud.pos;
-			}
-			else // is a stretched image
-			{
-				auto sz = hud.size - hud.bg_verts[1].pos;
-				// hud.bg_verts[0] stays the same
-				// hud.bg_verts[1] stays the same
-				hud.bg_verts[2].pos.x += sz.x - 1.f;
-				hud.bg_verts[3].pos.x += sz.x - 1.f;
-
-				hud.bg_verts[4].pos.y += sz.y - 1.f;
-				hud.bg_verts[5].pos.y += sz.y - 1.f;
-				hud.bg_verts[6].pos += sz - 1.f;
-				hud.bg_verts[7].pos += sz - 1.f;
-
-				// hud.bg_verts[8] stays the same
-				hud.bg_verts[9].pos.y += sz.y - 1.f;
-				hud.bg_verts[10].pos.y += sz.y - 1.f;
-				// hud.bg_verts[11] stays the same
-
-				hud.bg_verts[12].pos.x += sz.x - 1.f;
-				hud.bg_verts[13].pos += sz - 1.f;
-				hud.bg_verts[14].pos += sz - 1.f;
-				hud.bg_verts[15].pos.x += sz.x - 1.f;
-
-				// hud.bg_verts[16] stays the same
-				// hud.bg_verts[17] stays the same
-				// hud.bg_verts[18] stays the same
-				// hud.bg_verts[19] stays the same
-
-				hud.bg_verts[20].pos.x += sz.x - 1.f;
-				hud.bg_verts[21].pos.x += sz.x - 1.f;
-				hud.bg_verts[22].pos.x += sz.x - 1.f;
-				hud.bg_verts[23].pos.x += sz.x - 1.f;
-
-				hud.bg_verts[24].pos.y += sz.y - 1.f;
-				hud.bg_verts[25].pos.y += sz.y - 1.f;
-				hud.bg_verts[26].pos.y += sz.y - 1.f;
-				hud.bg_verts[27].pos.y += sz.y - 1.f;
-
-				hud.bg_verts[28].pos += sz - 1.f;
-				hud.bg_verts[29].pos += sz - 1.f;
-				hud.bg_verts[30].pos += sz - 1.f;
-				hud.bg_verts[31].pos += sz - 1.f;
-
-				// hud.bg_verts[32] stays the same
-				hud.bg_verts[33].pos.y += sz.y - 1.f;
-				hud.bg_verts[34].pos += sz - 1.f;
-				hud.bg_verts[35].pos.x += sz.x - 1.f;
-
-				for (auto i = 0; i < hud.bg_vert_count; i++)
-					hud.bg_verts[i].pos += hud.pos;
-			}
-		}
 		Rect rect(hud.pos, hud.pos + hud.size);
 		if (hud.color.a > 0 && rect.contains(input->mpos))
 			input->mouse_used = true;
-
-		huds.pop_back();
 	}
 
 	vec2 sHudPrivate::get_cursor()
 	{
 		if (huds.empty())
 			return vec2(-1.f);
-		auto& hud = huds.back();
+		auto& hud = *last_hud;
 		if (hud.layouts.empty())
 			return vec2(-1.f);
 		auto& layout = hud.layouts.back();
@@ -206,7 +143,7 @@ namespace flame
 	{
 		if (huds.empty())
 			return;
-		auto& hud = huds.back();
+		auto& hud = *last_hud;
 		if (hud.layouts.empty())
 			return;
 		auto& layout = hud.layouts.back();
@@ -220,7 +157,7 @@ namespace flame
 	{
 		if (huds.empty())
 			return Rect(0.f, 0.f, 0.f, 0.f);
-		auto& hud = huds.back();
+		auto& hud = *last_hud;
 		return Rect(hud.pos, hud.pos + hud.size);
 	}
 
@@ -229,9 +166,39 @@ namespace flame
 		return last_rect;
 	}
 
-	vec2 sHudPrivate::screen_size() const
+	void sHudPrivate::stroke_item(float thickness, const cvec4& col)
 	{
-		return canvas->size;
+		auto alpha = style_vars[HudStyleVarAlpha].top().x;
+
+		auto rect = last_rect;
+		canvas->draw_rect(rect.a, rect.b, thickness, cvec4(col.xyz(), col.a * alpha));
+	}
+
+	bool sHudPrivate::item_hovered()
+	{
+		if (huds.empty())
+			return false;
+		auto& hud = *last_hud;
+
+		if (current_modal && hud.id != current_modal)
+			return false;
+		return last_rect.contains(sInput::instance()->mpos);
+	}
+
+	bool sHudPrivate::item_clicked()
+	{
+		if (huds.empty())
+			return false;
+		auto& hud = *last_hud;
+
+		if (current_modal && hud.id != current_modal)
+			return false;
+		return last_rect.contains(sInput::instance()->mpos) && input->mpressed(Mouse_Left);
+	}
+
+	bool sHudPrivate::is_modal()
+	{
+		return current_modal != 0;
 	}
 
 	void sHudPrivate::push_style_var(HudStyleVar idx, const vec2& value)
@@ -273,7 +240,7 @@ namespace flame
 	{
 		if (huds.empty())
 			return;
-		auto& hud = huds.back();
+		auto& hud = *last_hud;
 		auto& layout = hud.layouts.back();
 		finish_layout(layout);
 		auto size = layout.rect.size();
@@ -281,11 +248,11 @@ namespace flame
 		add_rect(size);
 	}
 
-	void sHudPrivate::new_line()
+	void sHudPrivate::newline()
 	{
 		if (huds.empty())
 			return;
-		auto& hud = huds.back();
+		auto& hud = *last_hud;
 		if (hud.layouts.empty())
 			return;
 		auto& layout = hud.layouts.back();
@@ -325,7 +292,7 @@ namespace flame
 	{
 		if (huds.empty())
 			return Rect();
-		auto& hud = huds.back();
+		auto& hud = *last_hud;
 		if (hud.layouts.empty())
 			return Rect();
 		auto& layout = hud.layouts.back();
@@ -360,7 +327,7 @@ namespace flame
 	{
 		auto sz = canvas->calc_text_size(canvas->default_font_atlas, font_size, text);
 		auto rect = add_rect(sz);
-		auto bg_col = style_colors[HudStyleColorTextBg].top();
+		auto bg_col = style_colors[HudStyleColorBackground].top();
 		if (bg_col.a > 0)
 			canvas->draw_rect_filled(rect.a, rect.b, bg_col);
 		canvas->draw_text(canvas->default_font_atlas, font_size, rect.a, text, col, 0.5f, 0.2f);
@@ -368,7 +335,6 @@ namespace flame
 
 	void sHudPrivate::rect(const vec2& size, const cvec4& col)
 	{
-		auto input = sInput::instance();
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
 
 		auto rect = add_rect(size);
@@ -377,7 +343,6 @@ namespace flame
 
 	void sHudPrivate::image(const vec2& size, const graphics::ImageDesc& image, const cvec4& col)
 	{
-		auto input = sInput::instance();
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
 
 		auto rect = add_rect(size);
@@ -386,7 +351,6 @@ namespace flame
 
 	void sHudPrivate::image_stretched(const vec2& size, const graphics::ImageDesc& image, const vec4& border, const cvec4& col)
 	{
-		auto input = sInput::instance();
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
 
 		auto rect = add_rect(size);
@@ -395,19 +359,41 @@ namespace flame
 
 	void sHudPrivate::image_rotated(const vec2& size, const graphics::ImageDesc& image, const cvec4& col, float angle)
 	{
-		auto input = sInput::instance();
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
 
 		auto rect = add_rect(size);
 		canvas->draw_image_rotated(image.view, rect.a, rect.b, image.uvs, cvec4(col.xyz(), col.a * alpha), angle);
 	}
 
+	void sHudPrivate::image_text(const graphics::ImageDesc& image, std::wstring_view text, bool reverse, uint font_size, const cvec4& txt_col, const cvec4& img_col, float gap)
+	{
+		auto alpha = style_vars[HudStyleVarAlpha].top().x;
+
+		auto sz = canvas->calc_text_size(canvas->default_font_atlas, font_size, text);
+		auto img_sz = sz.y;
+		sz.x += sz.y + gap;
+
+		auto rect = add_rect(sz);
+		auto bg_col = style_colors[HudStyleColorBackground].top();
+		if (bg_col.a > 0)
+			canvas->draw_rect_filled(rect.a, rect.b, bg_col);
+		if (!reverse)
+		{
+			canvas->draw_image(image.view, rect.a, rect.a + vec2(img_sz), image.uvs, cvec4(img_col.xyz(), img_col.a * alpha));
+			canvas->draw_text(canvas->default_font_atlas, font_size, rect.a + vec2(img_sz + gap, 0.f), text, txt_col, 0.5f, 0.2f);
+		}
+		else
+		{
+			canvas->draw_text(canvas->default_font_atlas, font_size, rect.a, text, txt_col, 0.5f, 0.2f);
+			canvas->draw_image(image.view, rect.b - vec2(img_sz), rect.b, image.uvs, cvec4(img_col.xyz(), img_col.a * alpha));
+		}
+	}
+
 	bool sHudPrivate::button(std::wstring_view label, uint font_size)
 	{
 		if (huds.empty())
 			return false;
-		auto& hud = huds.back();
-		auto input = sInput::instance();
+		auto& hud = *last_hud;
 
 		vec4 border(2.f);
 		auto sz = canvas->calc_text_size(canvas->default_font_atlas, font_size, label);
@@ -435,8 +421,7 @@ namespace flame
 	{
 		if (huds.empty())
 			return false;
-		auto& hud = huds.back();
-		auto input = sInput::instance();
+		auto& hud = *last_hud;
 
 		auto sz = size;
 		sz += border.xy() + border.zw();
@@ -466,40 +451,62 @@ namespace flame
 		return state == 2;
 	}
 
-	void sHudPrivate::stroke_item(float thickness, const cvec4& col)
+	bool sHudPrivate::image_text_button(const graphics::ImageDesc& image, std::wstring_view label, bool reverse, uint font_size, float gap)
 	{
+		if (huds.empty())
+			return false;
+		auto& hud = *last_hud;
+
+		vec4 border(2.f);
+		auto sz = canvas->calc_text_size(canvas->default_font_atlas, font_size, label);
+		auto img_sz = sz.y;
+		sz.x += img_sz + gap;
+		sz += border.xy() + border.zw();
+
+		auto rect = add_rect(sz);
+		auto state = 0;
+		if (!current_modal || hud.id == current_modal)
+		{
+			if (rect.contains(input->mpos))
+			{
+				state = 1;
+				if (input->mpressed(Mouse_Left))
+					state = 2;
+
+				input->mouse_used = true;
+			}
+		}
+		canvas->draw_rect_filled(rect.a, rect.b, state == 0 ? style_colors[HudStyleColorButton].top() : style_colors[HudStyleColorButtonHovered].top());
+		rect.a += border.xy();
+		rect.b -= border.zw();
+		if (!reverse)
+		{
+			canvas->draw_image(image.view, rect.a, rect.a + vec2(img_sz), image.uvs, cvec4(255));
+			canvas->draw_text(canvas->default_font_atlas, font_size, rect.a + vec2(img_sz + gap, 0.f), label, cvec4(255), 0.5f, 0.2f);
+		}
+		else
+		{
+			canvas->draw_text(canvas->default_font_atlas, font_size, rect.a, label, cvec4(255), 0.5f, 0.2f);
+			canvas->draw_image(image.view, rect.b - vec2(img_sz), rect.b, image.uvs, cvec4(255));
+		}
+	}
+
+	void sHudPrivate::progress_bar(const vec2& size, float progress, const cvec4& col, const cvec4& bg_col, std::wstring_view label, uint font_size, const cvec4& txt_col)
+	{
+		if (huds.empty())
+			return;
+		auto& hud = *last_hud;
+
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
 
-		auto rect = last_rect;
-		canvas->draw_rect(rect.a, rect.b, thickness, cvec4(col.xyz(), col.a * alpha));
-	}
-
-	bool sHudPrivate::item_hovered()
-	{
-		if (huds.empty())
-			return false;
-		auto& hud = huds.back();
-
-		if (current_modal && hud.id != current_modal)
-			return false;
-		return last_rect.contains(sInput::instance()->mpos);
-	}
-
-	bool sHudPrivate::item_clicked()
-	{
-		if (huds.empty())
-			return false;
-		auto& hud = huds.back();
-		auto input = sInput::instance();
-
-		if (current_modal && hud.id != current_modal)
-			return false;
-		return last_rect.contains(sInput::instance()->mpos) && input->mpressed(Mouse_Left);
-	}
-
-	bool sHudPrivate::is_modal()
-	{
-		return current_modal != 0;
+		auto rect = add_rect(size);
+		canvas->draw_rect_filled(rect.a, rect.b, cvec4(bg_col.xyz(), bg_col.a * alpha));
+		canvas->draw_rect_filled(rect.a, vec2(mix(rect.a.x, rect.b.x, progress), rect.b.y), cvec4(col.xyz(), col.a * alpha));
+		if (!label.empty())
+		{
+			auto sz = canvas->calc_text_size(canvas->default_font_atlas, font_size, label);
+			canvas->draw_text(canvas->default_font_atlas, font_size, (rect.a + rect.b) * 0.5f - sz * 0.5f, label, cvec4(txt_col.xyz(), txt_col.a * alpha), 0.5f, 0.2f);
+		}
 	}
 
 	void sHudPrivate::start()
@@ -508,6 +515,7 @@ namespace flame
 		canvas->clear_framebuffer = false;
 		if (bound_window)
 			canvas->bind_window(bound_window);
+		input = sInput::instance();
 	}
 
 	void sHudPrivate::update()

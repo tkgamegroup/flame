@@ -6,6 +6,17 @@ namespace flame
 {
 	namespace graphics
 	{
+		enum FontAtlasType
+		{
+			FontAtlasBitmap,
+			FontAtlasSDF
+		};
+
+		enum
+		{
+			SDF_FONT_SIZE = 32U
+		};
+
 		// Reflect
 		struct FontAtlas
 		{
@@ -18,13 +29,15 @@ namespace flame
 			virtual ~FontAtlas() {}
 
 			virtual const Glyph& get_glyph(wchar_t unicode, uint font_size) = 0;
-			inline void init_latin_glyphs(uint font_size)
-			{
-				for (auto ch = 0x0020; ch <= 0x00FF; ch++)
-					get_glyph(ch, font_size);
-			}
 
-			virtual float get_scale(uint font_size) = 0;
+			inline float get_scale(uint font_size)
+			{
+				if (type == FontAtlasBitmap)
+					return 1.f;
+				if (type == FontAtlasSDF)
+					return (float)font_size / (float)SDF_FONT_SIZE;
+				return 1.f;
+			}
 
 			struct Get
 			{

@@ -463,12 +463,6 @@ namespace flame
 			DynamicStateStencilReference
 		};
 
-		enum FontAtlasType
-		{
-			FontAtlasBitmap,
-			FontAtlasSDF
-		};
-
 		enum class RenderQueue
 		{
 			Opaque,

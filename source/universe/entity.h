@@ -107,6 +107,18 @@ namespace flame
 		}
 
 		template<typename T>
+		inline T* get_base_component() const
+		{
+			for (auto& c : components)
+			{
+				auto res = dynamic_cast<T*>(c.get());
+				if (res)
+					return (T*)res;
+			}
+			return nullptr;
+		}
+
+		template<typename T>
 		inline T* get_parent_component() const
 		{
 			return parent ? ((Entity*)parent)->get_component<T>() : nullptr;

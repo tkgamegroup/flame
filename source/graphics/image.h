@@ -130,6 +130,15 @@ namespace flame
 
 			virtual ~Image() {}
 
+			ImageDesc desc()
+			{
+				ImageDesc ret;
+				ret.view = get_view();
+				ret.uvs = vec4(0.f, 0.f, 1.f, 1.f);
+				ret.border_uvs = vec4(0.f);
+				return ret;
+			}
+
 			virtual ImageLayout get_layout(const ImageSub& sub = {}) = 0;
 			virtual ImageViewPtr get_view(const ImageSub& sub = {}, const ImageSwizzle& swizzle = {}, bool cube = false) = 0;
 			virtual DescriptorSetPtr get_shader_read_src(uint base_level = 0, uint base_layer = 0, SamplerPtr sp = nullptr, const ImageSwizzle& swizzle = {}) = 0;
@@ -178,6 +187,15 @@ namespace flame
 			ImagePtr image;
 			ImageSub sub;
 			ImageSwizzle swizzle;
+
+			ImageDesc desc() const
+			{
+				ImageDesc ret;
+				ret.view = (ImageViewPtr)this;
+				ret.uvs = vec4(0.f, 0.f, 1.f, 1.f);
+				ret.border_uvs = vec4(0.f);
+				return ret;
+			}
 
 			virtual DescriptorSetPtr get_shader_read_src(SamplerPtr sp = nullptr) = 0;
 		};

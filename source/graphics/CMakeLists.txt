@@ -18,6 +18,7 @@ target_link_libraries		(flame_graphics PRIVATE spirv-cross-reflect)
 target_link_libraries		(flame_graphics PRIVATE spirv-cross-cpp)
 
 if(USE_MSDFGEN)
+	target_compile_definitions(flame_graphics PRIVATE USE_MSDFGEN)
 	target_link_libraries(flame_graphics PRIVATE msdfgen::msdfgen-full)
 else()
 	message(STATUS "graphics module: msdfgen is required for sdf fonts")

@@ -462,6 +462,12 @@ namespace flame
 			b = max(b, oth.b);
 		}
 
+		void offset(const vec2& p)
+		{
+			a += p;
+			b += p;
+		}
+
 		bool contains(const vec2& p) const
 		{
 			return p.x > a.x && p.x < b.x &&

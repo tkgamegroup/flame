@@ -68,10 +68,7 @@ namespace flame
 			prm.init(pl->layout, graphics::PipelineGraphics);
 			buf_vtx.create(sizeof(DrawVert), 360000);
 			buf_idx.create(240000);
-			const auto font_size = 14;
 			default_font_atlas = FontAtlas::get({ L"flame\\fonts\\OpenSans-Regular.ttf" });
-			default_font_atlas->get_glyph(0, font_size); // get empty slot at first place to allow embed a white pixel in it
-			default_font_atlas->init_latin_glyphs(font_size);
 			main_img = default_font_atlas->image.get();
 			main_img->set_staging_pixel(0, 0, 0, 0, vec4(1.f));
 			main_img->upload_staging_pixels(0, 0, 1, 1, 0, 0);

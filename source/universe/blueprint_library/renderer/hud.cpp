@@ -246,13 +246,13 @@ namespace flame
 			}
 		);
 
-		library->add_template("Hud New Line", "", BlueprintNodeFlagNone,
+		library->add_template("Hud Newline", "", BlueprintNodeFlagNone,
 			{
 			},
 			{
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sHud::instance()->new_line();
+				sHud::instance()->newline();
 			}
 		);
 
