@@ -50,13 +50,11 @@ namespace flame
 
 	void sHudPrivate::finish_layout(HudLayout& layout)
 	{
-		auto scaling = style_vars[HudStyleVarScaling].top().xy();
-
 		if (layout.auto_size)
 		{
 			if (layout.rect.b.x > layout.rect.a.x && layout.rect.b.y > layout.rect.a.y)
-				layout.rect.b -= layout.spacing * scaling;
-			layout.rect.b += (layout.border.xy() + layout.border.zw()) * scaling;
+				layout.rect.b -= layout.spacing;
+			layout.rect.b += (layout.border.xy() + layout.border.zw());
 		}
 	}
 
@@ -94,6 +92,8 @@ namespace flame
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
 		auto border = style_vars[HudStyleVarWindowBorder].top();
 		border *= vec4(scaling, scaling);
+		auto spacing = style_vars[HudStyleVarSpacing].top().xy();
+		spacing *= scaling;
 		auto color = style_colors[HudStyleColorWindowBackground].top();
 		auto& image = style_images[HudStyleImageWindowBackground].top();
 		color.a *= alpha;
@@ -115,6 +115,8 @@ namespace flame
 		auto& layout = hud.layouts.emplace_back();
 		layout.type = HudVertical;
 		layout.rect.a = layout.rect.b = hud.pos + hud.border.xy();
+		layout.spacing = spacing;
+		layout.border = border;
 		layout.cursor = layout.rect.a;
 		layout.auto_size = auto_sizing;
 
@@ -253,10 +255,10 @@ namespace flame
 	void sHudPrivate::begin_layout(HudLayoutType type, const vec2& size)
 	{
 		auto scaling = style_vars[HudStyleVarScaling].top().xy();
-		auto spacing = style_vars[HudStyleVarSpacing].top().xy();
-		spacing *= scaling;
 		auto border = style_vars[HudStyleVarBorder].top();
 		border *= vec4(scaling, scaling);
+		auto spacing = style_vars[HudStyleVarSpacing].top().xy();
+		spacing *= scaling;
 
 		auto& layout = add_layout(type);
 		if (size.x != 0.f || size.y != 0.f)
@@ -332,7 +334,6 @@ namespace flame
 
 		auto scaling = style_vars[HudStyleVarScaling].top().xy();
 		auto spacing = layout.spacing;
-		spacing *= scaling;
 		auto size = _sz;
 		size *= scaling;
 

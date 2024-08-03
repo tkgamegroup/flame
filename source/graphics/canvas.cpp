@@ -554,6 +554,14 @@ namespace flame
 			auto& cmd = font_atlas->type == FontAtlasBitmap ? get_blit_cmd(ds) : 
 				get_sdf_cmd(ds, font_scale, clamp(thickness, -1.f, +1.f), clamp(border, 0.f, 0.25f));
 
+			struct DrawIcon
+			{
+				vec2 p0;
+				vec2 p1;
+				int icon_idx;
+			};
+			std::vector<DrawIcon> draw_icons;
+
 			auto p = pos; vec2 sz(0.f);
 			for (auto ch : str)
 			{
@@ -568,14 +576,11 @@ namespace flame
 					auto idx = ch - ICON_BEGIN;
 					auto& img = icons[idx];
 					auto s = vec2(font_size) * scale;
-					path_rect(p, p + s);
-					auto& cmd = get_blit_cmd(img.view->get_shader_read_src(nullptr));
-					auto verts = fill_path(cmd, cvec4(255, 255, 255, col.a));
-					path.clear();
-					verts[0].uv = img.uvs.xy;
-					verts[1].uv = img.uvs.xw;
-					verts[2].uv = img.uvs.zw;
-					verts[3].uv = img.uvs.zy;
+					auto& di = draw_icons.emplace_back();
+					di.p0 = p;
+					di.p1 = p + s;
+					di.icon_idx = idx;
+					p.x += font_size * scale.x;
 					continue;
 				}
 
@@ -593,6 +598,19 @@ namespace flame
 				verts[3].uv = g.uv.zy;
 
 				p.x += g.advance * scale.x;
+			}
+
+			for (auto& di : draw_icons)
+			{
+				path_rect(di.p0, di.p1);
+				auto& img = icons[di.icon_idx];
+				auto& cmd = get_blit_cmd(img.view->get_shader_read_src(nullptr));
+				auto verts = fill_path(cmd, cvec4(255, 255, 255, col.a));
+				path.clear();
+				verts[0].uv = img.uvs.xy;
+				verts[1].uv = img.uvs.xw;
+				verts[2].uv = img.uvs.zw;
+				verts[3].uv = img.uvs.zy;
 			}
 		}
 
