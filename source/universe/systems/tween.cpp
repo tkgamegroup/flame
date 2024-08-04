@@ -160,6 +160,10 @@ namespace flame
 	{
 	}
 
+	sTweenPrivate::sTweenPrivate(int)
+	{
+	}
+
 	uint sTweenPrivate::begin()
 	{
 		auto id = next_id++;
@@ -989,8 +993,6 @@ namespace flame
 	{
 		sTweenPtr operator()() override
 		{
-			if (_instance == nullptr)
-				_instance = new sTweenPrivate();
 			return _instance;
 		}
 	}sTween_instance;
@@ -1001,7 +1003,7 @@ namespace flame
 		sTweenPtr operator()(WorldPtr w) override
 		{
 			if (!w)
-				return nullptr;
+				return new sTweenPrivate(0);
 
 			assert(!_instance);
 			_instance = new sTweenPrivate();

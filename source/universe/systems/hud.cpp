@@ -36,6 +36,10 @@ namespace flame
 		style_images[HudStyleImageWindowBackground].emplace();
 	}
 
+	sHudPrivate::sHudPrivate(int)
+	{
+	}
+
 	HudLayout& sHudPrivate::add_layout(HudLayoutType type)
 	{
 		auto& hud = *last_hud;
@@ -526,7 +530,7 @@ namespace flame
 		sHudPtr operator()(WorldPtr w) override
 		{
 			if (!w)
-				return new sHudPrivate();
+				return new sHudPrivate(0);
 
 			assert(!_instance);
 

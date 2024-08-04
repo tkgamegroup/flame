@@ -10,7 +10,7 @@ if(USE_UNIVERSE_MODULE)
 		target_compile_definitions(flame_universe PRIVATE USE_AUDIO_MODULE)
 		target_link_libraries(flame_universe PRIVATE flame_audio)
 	endif()
-
+	
 	if(USE_PHYSICS_MODULE)
 		target_compile_definitions(flame_universe PRIVATE USE_PHYSICS_MODULE)
 		target_link_libraries(flame_universe PRIVATE flame_physics)

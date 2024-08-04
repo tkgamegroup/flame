@@ -11,7 +11,7 @@ namespace flame
 		cElementPtr element = nullptr;
 
 		// Reflect
-		bool auto_size = true;
+		bool auto_size = false;
 		// Reflect
 		virtual void set_auto_size(bool v) = 0;
 

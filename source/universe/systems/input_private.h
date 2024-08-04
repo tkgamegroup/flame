@@ -17,6 +17,7 @@ namespace flame
 		NativeWindowPtr bound_window = nullptr;
 
 		sInputPrivate();
+		sInputPrivate(int); // dummy
 		~sInputPrivate();
 
 		void dispatcher_events();

@@ -14,9 +14,12 @@ namespace flame
 #endif
 	}
 
+	sAudioPrivate::sAudioPrivate(int)
+	{
+	}
+
 	sAudioPrivate::~sAudioPrivate()
 	{
-
 	}
 
 	void sAudioPrivate::play_once(const std::filesystem::path& path)
@@ -58,7 +61,7 @@ namespace flame
 		sAudioPtr operator()(WorldPtr w) override
 		{
 			if (!w)
-				return nullptr;
+				return new sAudioPrivate(0);
 
 			assert(!_instance);
 			_instance = new sAudioPrivate();

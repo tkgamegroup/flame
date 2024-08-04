@@ -9,6 +9,7 @@ namespace flame
 		std::vector<std::pair<float, EntityPtr>> entities;
 
 		sGraveyardPrivate();
+		sGraveyardPrivate(int); // dummy
 
 		void set_duration(float v) override;
 

@@ -31,6 +31,7 @@ namespace flame
 #endif
 
 		sScenePrivate();
+		sScenePrivate(int); // dummy
 		~sScenePrivate();
 
 		void navmesh_generate(const std::vector<EntityPtr>& nodes, float agent_radius, float agent_height, float walkable_climb, float walkable_slope_angle, float cell_size, float cell_height, float tile_size) override;

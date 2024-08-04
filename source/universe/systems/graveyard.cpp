@@ -7,6 +7,10 @@ namespace flame
 	{
 	}
 
+	sGraveyardPrivate::sGraveyardPrivate(int)
+	{
+	}
+
 	void sGraveyardPrivate::set_duration(float v)
 	{
 		if (duration == v)
@@ -61,7 +65,7 @@ namespace flame
 		sGraveyardPtr operator()(WorldPtr w) override
 		{
 			if (!w)
-				return nullptr;
+				return new sGraveyardPrivate(0);
 
 			assert(!_instance);
 			_instance = new sGraveyardPrivate();

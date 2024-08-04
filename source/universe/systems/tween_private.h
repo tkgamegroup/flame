@@ -114,6 +114,7 @@ namespace flame
 		std::vector<std::unique_ptr<Animation>> animations;
 
 		sTweenPrivate();
+		sTweenPrivate(int); // dummy
 
 		uint begin() override;
 		uint begin_3d_targets() override;

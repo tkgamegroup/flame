@@ -28,6 +28,10 @@ namespace flame
 		bind_window(main_window);
 	}
 
+	sInputPrivate::sInputPrivate(int)
+	{
+	}
+
 	sInputPrivate::~sInputPrivate()
 	{
 		// will crash..
@@ -300,7 +304,7 @@ namespace flame
 		sInputPtr operator()(WorldPtr w) override
 		{
 			if (!w)
-				return nullptr;
+				return new sInputPrivate(0);
 
 			assert(!_instance);
 			_instance = new sInputPrivate();

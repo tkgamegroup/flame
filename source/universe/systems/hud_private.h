@@ -45,6 +45,7 @@ namespace flame
 		uint modal_frames = 0;
 
 		sHudPrivate();
+		sHudPrivate(int); // dummy
 
 		HudLayout& add_layout(HudLayoutType type);
 		void finish_layout(HudLayout& layout);

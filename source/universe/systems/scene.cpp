@@ -83,6 +83,10 @@ namespace flame
 #endif
 	}
 
+	sScenePrivate::sScenePrivate(int)
+	{
+	}
+
 	sScenePrivate::~sScenePrivate()
 	{
 #ifdef USE_RECASTNAV
@@ -1484,7 +1488,7 @@ namespace flame
 		sScenePtr operator()(WorldPtr w) override
 		{
 			if (!w)
-				return nullptr;
+				return new sScenePrivate(0);
 
 			assert(!_instance);
 			_instance = new sScenePrivate();

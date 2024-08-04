@@ -94,8 +94,8 @@ namespace flame
 		std::vector<PrimitivesDraw> primitives_draws;
 		std::vector<ParticlesDraw> particles_draws;
 
-		sRendererPrivate(int); // dummy for reflection
 		sRendererPrivate();
+		sRendererPrivate(int); // dummy
 		~sRendererPrivate();
 
 		RenderTaskPtr add_render_task(RenderMode mode, cCameraPtr camera, graphics::WindowPtr window = nullptr,
