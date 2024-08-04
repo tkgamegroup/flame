@@ -6,11 +6,12 @@ namespace flame
 {
 	namespace graphics
 	{
-		enum
-		{
-			ICON_BEGIN = 0xE000,
-			ICON_END = 0xF8FF,
-		};
+		inline wchar_t CH_COLOR_BEGIN = 0xE000;
+		inline wchar_t CH_COLOR_END = 0xE100;
+		inline wchar_t CH_SIZE_BEGIN = 0xE101;
+		inline wchar_t CH_SIZE_END = 0xE200;
+		inline wchar_t CH_ICON_BEGIN = 0xE201;
+		inline wchar_t CH_ICON_END = 0xF8FF;
 
 		struct Canvas
 		{
@@ -55,7 +56,7 @@ namespace flame
 					}sdf;
 					StencilState stencil_state;
 				}data;
-			};
+			};  
 
 			WindowPtr bound_window = nullptr;
 			std::vector<ImageViewPtr> iv_tars;
@@ -75,7 +76,9 @@ namespace flame
 			virtual void set_targets(std::span<ImageViewPtr> targets) = 0;
 			virtual void bind_window(WindowPtr window) = 0;
 
-			virtual void register_icon(wchar_t code, const graphics::ImageDesc& image) = 0;
+			virtual void register_ch_color(wchar_t code, const cvec4& coloror) = 0;
+			virtual void register_ch_size(wchar_t code, uint size) = 0;
+			virtual void register_ch_icon(wchar_t code, const graphics::ImageDesc& image) = 0;
 
 			virtual void reset_drawing() = 0;
 
@@ -87,17 +90,17 @@ namespace flame
 			virtual void begin_stencil_compare() = 0;
 			virtual void end_stencil_compare() = 0;
 
-			virtual DrawVert* stroke(float thickness, const cvec4& col, bool closed) = 0;
-			virtual DrawVert* fill(const cvec4& col) = 0;
+			virtual DrawVert* stroke(float thickness, const cvec4& color, bool closed) = 0;
+			virtual DrawVert* fill(const cvec4& color) = 0;
 
-			virtual DrawVert*	draw_rect(const vec2& a, const vec2& b, float thickness = 1.f, const cvec4& col = cvec4(255)) = 0;
-			virtual DrawVert*	draw_rect_filled(const vec2& a, const vec2& b, const cvec4& col = cvec4(255)) = 0;
-			virtual DrawVert*	draw_rect_rotated(const vec2& a, const vec2& b, float thickness = 1.f, const cvec4& col = cvec4(255), float angle = 0) = 0;
-			virtual DrawVert*	draw_rect_filled_rotated(const vec2& a, const vec2& b, const cvec4& col = cvec4(255), float angle = 0) = 0;
-			virtual DrawVert*	draw_circle(const vec2& p, float radius, float thickness = 1.f, const cvec4& col = cvec4(255), float begin = 0.f, float end = 1.f) = 0;
-			virtual DrawVert*	draw_circle_filled(const vec2& p, float radius, const cvec4& col = cvec4(255), float begin = 0.f, float end = 1.f) = 0;
+			virtual DrawVert*	draw_rect(const vec2& a, const vec2& b, float thickness = 1.f, const cvec4& color = cvec4(255)) = 0;
+			virtual DrawVert*	draw_rect_filled(const vec2& a, const vec2& b, const cvec4& color = cvec4(255)) = 0;
+			virtual DrawVert*	draw_rect_rotated(const vec2& a, const vec2& b, float thickness = 1.f, const cvec4& color = cvec4(255), float angle = 0) = 0;
+			virtual DrawVert*	draw_rect_filled_rotated(const vec2& a, const vec2& b, const cvec4& color = cvec4(255), float angle = 0) = 0;
+			virtual DrawVert*	draw_circle(const vec2& p, float radius, float thickness = 1.f, const cvec4& color = cvec4(255), float begin = 0.f, float end = 1.f) = 0;
+			virtual DrawVert*	draw_circle_filled(const vec2& p, float radius, const cvec4& color = cvec4(255), float begin = 0.f, float end = 1.f) = 0;
 			virtual vec2		calc_text_size(FontAtlasPtr font_atlas, uint font_size, std::wstring_view str) = 0;
-			virtual void		draw_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col = cvec4(255), float thickness = 0.f, float border = 0.f, const vec2& scl = vec2(1.f)) = 0;
+			virtual void		draw_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& color = cvec4(255), float thickness = 0.f, float border = 0.f, const vec2& scl = vec2(1.f)) = 0;
 			virtual DrawVert*	draw_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs = vec4(0.f, 0.f, 1.f, 1.f), const cvec4& tint_col = cvec4(255), SamplerPtr sp = nullptr) = 0;
 			virtual DrawVert*	draw_image_stretched(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs = vec4(0.f, 0.f, 1.f, 1.f), const vec4& border = vec4(0.f), const vec4& border_uvs = vec4(0.f, 0.f, 1.f, 1.f), const cvec4& tint_col = cvec4(255), SamplerPtr sp = nullptr) = 0;
 			virtual DrawVert*	draw_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs = vec4(0.f, 0.f, 1.f, 1.f), const cvec4& tint_col = cvec4(255), float angle = 0, SamplerPtr sp = nullptr) = 0;

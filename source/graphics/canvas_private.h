@@ -27,7 +27,9 @@ namespace flame
 			ImagePtr main_img = nullptr;
 			std::unique_ptr<DescriptorSetT> main_ds;
 
-			std::vector<graphics::ImageDesc> icons;
+			std::vector<cvec4> ch_colors;
+			std::vector<uint> ch_sizes;
+			std::vector<graphics::ImageDesc> ch_icons;
 
 			CanvasPrivate(bool hdr);
 			~CanvasPrivate();
@@ -36,7 +38,9 @@ namespace flame
 			void set_targets(std::span<ImageViewPtr> targets) override;
 			void bind_window(WindowPtr window) override;
 
-			void register_icon(wchar_t code, const graphics::ImageDesc& image) override;
+			void register_ch_color(wchar_t code, const const cvec4& coloror) override;
+			void register_ch_size(wchar_t code, uint size) override;
+			void register_ch_icon(wchar_t code, const graphics::ImageDesc& image) override;
 
 			void reset_drawing() override;
 			DrawCmd& get_blit_cmd(DescriptorSetPtr ds);
@@ -51,19 +55,19 @@ namespace flame
 			void end_stencil_compare() override;
 
 			void path_rect(const vec2& a, const vec2& b);
-			DrawVert* stroke_path(DrawCmd& cmd, float thickness, const cvec4& col, bool closed);
-			DrawVert* fill_path(DrawCmd& cmd, const cvec4& col);
-			DrawVert* stroke(float thickness, const cvec4& col, bool closed) override;
-			DrawVert* fill(const cvec4& col) override;
+			DrawVert* stroke_path(DrawCmd& cmd, float thickness, const const cvec4& color, bool closed);
+			DrawVert* fill_path(DrawCmd& cmd, const const cvec4& color);
+			DrawVert* stroke(float thickness, const const cvec4& color, bool closed) override;
+			DrawVert* fill(const const cvec4& color) override;
 
-			DrawVert*	draw_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col) override;
-			DrawVert*	draw_rect_filled(const vec2& a, const vec2& b, const cvec4& col) override;
-			DrawVert*	draw_rect_rotated(const vec2& a, const vec2& b, float thickness, const cvec4& col, float angle) override;
-			DrawVert*	draw_rect_filled_rotated(const vec2& a, const vec2& b, const cvec4& col, float angle) override;
-			DrawVert*	draw_circle(const vec2& p, float radius, float thickness, const cvec4& col, float begin, float end) override;
-			DrawVert*	draw_circle_filled(const vec2& p, float radius, const cvec4& col, float begin, float end ) override;
+			DrawVert*	draw_rect(const vec2& a, const vec2& b, float thickness, const const cvec4& color) override;
+			DrawVert*	draw_rect_filled(const vec2& a, const vec2& b, const const cvec4& color) override;
+			DrawVert*	draw_rect_rotated(const vec2& a, const vec2& b, float thickness, const const cvec4& color, float angle) override;
+			DrawVert*	draw_rect_filled_rotated(const vec2& a, const vec2& b, const const cvec4& color, float angle) override;
+			DrawVert*	draw_circle(const vec2& p, float radius, float thickness, const const cvec4& color, float begin, float end) override;
+			DrawVert*	draw_circle_filled(const vec2& p, float radius, const const cvec4& color, float begin, float end ) override;
 			vec2		calc_text_size(FontAtlasPtr font_atlas, uint font_size, std::wstring_view str) override;
-			void		draw_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness, float border, const vec2& scl) override;
+			void		draw_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const const cvec4& color, float thickness, float border, const vec2& scl) override;
 			DrawVert*	draw_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, SamplerPtr) override;
 			DrawVert*	draw_image_stretched(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const vec4& border, const vec4& border_uvs, const cvec4& tint_col, SamplerPtr) override;
 			DrawVert*	draw_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle, SamplerPtr) override;

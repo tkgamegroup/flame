@@ -37,6 +37,8 @@ namespace flame
 		HudStyleColorImage,
 		HudStyleColorButton,
 		HudStyleColorButtonHovered,
+		HudStyleColorButtonActive,
+		HudStyleColorButtonDisabled,
 
 		HudStyleColorCount
 	};
@@ -79,6 +81,8 @@ namespace flame
 		virtual void pop_style_color(HudStyleColor idx) = 0;
 		virtual void push_style_image(HudStyleImage idx, const graphics::ImageDesc& image) = 0;
 		virtual void pop_style_image(HudStyleImage idx) = 0;
+		virtual void push_enable(bool v) = 0;
+		virtual void pop_enable() = 0;
 		// layout:
 		virtual void begin_layout(HudLayoutType type, const vec2& size = vec2(0.f)) = 0;
 		virtual void end_layout() = 0;

@@ -23,17 +23,21 @@ namespace flame
 		style_colors.resize(HudStyleColorCount);
 		style_colors[HudStyleColorBackground].push(cvec4(0, 0, 0, 0));
 		style_colors[HudStyleColorFrame].push(cvec4(255, 255, 255, 255));
-		style_colors[HudStyleColorWindowBackground].push(cvec4(50, 50, 50, 255));
+		style_colors[HudStyleColorWindowBackground].push(cvec4(20, 20, 20, 255));
 		style_colors[HudStyleColorWindowFrame].push(cvec4(255, 255, 255, 255));
 		style_colors[HudStyleColorText].push(cvec4(255, 255, 255, 255));
-		style_colors[HudStyleColorTextDisabled].push(cvec4(70, 70, 70, 255));
+		style_colors[HudStyleColorTextDisabled].push(cvec4(84, 84, 84, 255));
 		style_colors[HudStyleColorImage].push(cvec4(255, 255, 255, 255));
-		style_colors[HudStyleColorButton].push(cvec4(71, 71, 71, 255));
-		style_colors[HudStyleColorButtonHovered].push(cvec4(155, 155, 155, 255));
+		style_colors[HudStyleColorButton].push(cvec4(46, 46, 46, 255));
+		style_colors[HudStyleColorButtonHovered].push(cvec4(61, 61, 61, 255));
+		style_colors[HudStyleColorButtonActive].push(cvec4(100, 100, 100, 255));
+		style_colors[HudStyleColorButtonDisabled].push(cvec4(46, 46, 46, 255));
 
 		style_images.resize(HudStyleImageCount);
 		style_images[HudStyleImageBackground].emplace();
 		style_images[HudStyleImageWindowBackground].emplace();
+
+		enables.push(true);
 	}
 
 	sHudPrivate::sHudPrivate(int)
@@ -99,8 +103,8 @@ namespace flame
 		auto spacing = style_vars[HudStyleVarSpacing].top().xy();
 		spacing *= scaling;
 		auto color = style_colors[HudStyleColorWindowBackground].top();
-		auto& image = style_images[HudStyleImageWindowBackground].top();
 		color.a *= alpha;
+		auto& image = style_images[HudStyleImageWindowBackground].top();
 		auto auto_sizing = size.x == 0.f && size.y == 0.f;
 
 		hud.pos = pos;
@@ -136,7 +140,51 @@ namespace flame
 
 	void sHudPrivate::begin_popup()
 	{
+		auto id = "popup"_h;
+		auto& hud = huds[id];
+		hud.id = id;
+		last_hud = &hud;
+		
+		auto scaling = style_vars[HudStyleVarScaling].top().xy();
+		auto alpha = style_vars[HudStyleVarAlpha].top().x;
+		auto border = style_vars[HudStyleVarWindowBorder].top();
+		border *= vec4(scaling, scaling);
+		auto spacing = style_vars[HudStyleVarSpacing].top().xy();
+		spacing *= scaling;
+		auto color = style_colors[HudStyleColorWindowBackground].top();
+		color.a *= alpha;
+		auto& image = style_images[HudStyleImageWindowBackground].top();
 
+		hud.pos = input->mpos + vec2(16.f, 0.f);
+		hud.size = hud.suggested_size;
+		auto pivot = vec2(0.f);
+		if (hud.pos.x + hud.size.x > canvas->size.x)
+		{
+			hud.pos = input->mpos + vec2(-4.f, 0.f);
+			pivot.x = 1.f;
+		}
+		if (hud.pos.y + hud.size.y > canvas->size.y)
+			pivot.y = 1.f;
+		hud.pos -= hud.size * pivot;
+		hud.border = border;
+
+		hud.layouts.clear();
+		auto& layout = hud.layouts.emplace_back();
+		layout.type = HudVertical;
+		layout.rect.a = layout.rect.b = hud.pos + hud.border.xy();
+		layout.spacing = spacing;
+		layout.border = border;
+		layout.cursor = layout.rect.a;
+		layout.auto_size = true;
+
+		Rect rect(hud.pos, hud.pos + hud.size);
+		if (!image.view)
+			canvas->draw_rect_filled(rect.a, rect.b, color);
+		else
+			canvas->draw_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, color);
+
+		if (color.a > 0 && rect.contains(input->mpos))
+			input->mouse_used = true;
 	}
 
 	void sHudPrivate::end()
@@ -254,6 +302,16 @@ namespace flame
 	void sHudPrivate::pop_style_image(HudStyleImage idx)
 	{
 		style_images[idx].pop();
+	}
+
+	void sHudPrivate::push_enable(bool v)
+	{
+		enables.push(v);
+	}
+
+	void sHudPrivate::pop_enable()
+	{
+		enables.pop();
 	}
 
 	void sHudPrivate::begin_layout(HudLayoutType type, const vec2& size)
@@ -434,34 +492,43 @@ namespace flame
 		auto font_size = style_vars[HudStyleVarFontSize].top().x;
 		auto border = style_vars[HudStyleVarBorder].top();
 		border *= vec4(scaling, scaling);
+		auto enable = enables.top();
 
 		auto sz = canvas->calc_text_size(canvas->default_font_atlas, font_size, label);
 		sz += border.xy() + border.zw();
 
 		auto rect = add_rect(sz);
 		auto state = 0;
-		if (!current_modal || hud.id == current_modal)
+		auto pressed = false;
+		if (enable)
 		{
-			if (rect.contains(input->mpos))
+			if (!current_modal || hud.id == current_modal)
 			{
-				state = 1;
-				if (input->mpressed(Mouse_Left))
-					state = 2;
+				if (rect.contains(input->mpos))
+				{
+					state = 1;
+					if (input->mbtn[Mouse_Left])
+						state = 2;
+					if (input->mreleased(Mouse_Left))
+						pressed = true;
 
-				input->mouse_used = true;
+					input->mouse_used = true;
+				}
 			}
 		}
+		else
+			state = 3;
 
-		auto color = state == 0 ? style_colors[HudStyleColorButton].top() : style_colors[HudStyleColorButtonHovered].top();
+		auto color = style_colors[HudStyleColorButton + state].top();
 		color.a *= alpha;
-		auto text_color = style_colors[HudStyleColorText].top();
+		auto text_color = style_colors[enable ? HudStyleColorText : HudStyleColorTextDisabled].top();
 		text_color.a *= alpha;
 
 		if (color.a > 0)
 			canvas->draw_rect_filled(rect.a, rect.b, color);
 		if (text_color.a > 0)
 			canvas->draw_text(canvas->default_font_atlas, font_size, rect.a + border.xy(), label, text_color, 0.5f, 0.2f, scaling);
-		return state == 2;
+		return enable && pressed;
 	}
 
 	void sHudPrivate::progress_bar(const vec2& size, float progress, const cvec4& color, const cvec4& background_color, std::wstring_view label)

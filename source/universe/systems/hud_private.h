@@ -37,6 +37,7 @@ namespace flame
 		std::vector<std::stack<vec4>>					style_vars;
 		std::vector<std::stack<cvec4>>					style_colors;
 		std::vector<std::stack<graphics::ImageDesc>>	style_images;
+		std::stack<bool>								enables;
 		std::unordered_map<uint, Hud> huds;
 		Hud* last_hud = nullptr;
 		Rect last_rect;
@@ -69,6 +70,8 @@ namespace flame
 		void pop_style_color(HudStyleColor idx) override;
 		void push_style_image(HudStyleImage idx, const graphics::ImageDesc& image) override;
 		void pop_style_image(HudStyleImage idx) override;
+		void push_enable(bool v) override;
+		void pop_enable() override;
 		void begin_layout(HudLayoutType type, const vec2& size) override;
 		void end_layout() override;
 		void newline() override;

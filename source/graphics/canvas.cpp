@@ -143,14 +143,34 @@ namespace flame
 			set_targets(ivs);
 		}
 
-		void CanvasPrivate::register_icon(wchar_t code, const graphics::ImageDesc& image)
+		void CanvasPrivate::register_ch_color(wchar_t code, const cvec4& color)
 		{
-			if (code < ICON_BEGIN || code > ICON_END)
+			if (code < CH_COLOR_BEGIN || code >= CH_COLOR_END)
 				return;
-			auto idx = code - ICON_BEGIN;
-			if (idx >= icons.size())
-				icons.resize(idx + 1);
-			icons[idx] = image;
+			auto idx = code - CH_COLOR_BEGIN;
+			if (idx >= ch_colors.size())
+				ch_colors.resize(idx + 1);
+			ch_colors[idx] = color;
+		}
+
+		void CanvasPrivate::register_ch_size(wchar_t code, uint size)
+		{
+			if (code < CH_SIZE_BEGIN || code >= CH_SIZE_END)
+				return;
+			auto idx = code - CH_SIZE_BEGIN;
+			if (idx >= ch_sizes.size())
+				ch_sizes.resize(idx + 1);
+			ch_sizes[idx] = size;
+		}
+
+		void CanvasPrivate::register_ch_icon(wchar_t code, const graphics::ImageDesc& image)
+		{
+			if (code < CH_ICON_BEGIN || code >= CH_ICON_END)
+				return;
+			auto idx = code - CH_ICON_BEGIN;
+			if (idx >= ch_icons.size())
+				ch_icons.resize(idx + 1);
+			ch_icons[idx] = image;
 		}
 
 		void CanvasPrivate::reset_drawing()
@@ -201,7 +221,7 @@ namespace flame
 			path.push_back(vec2(b.x, a.y));
 		}
 
-		CanvasPrivate::DrawVert* CanvasPrivate::stroke_path(DrawCmd& cmd, float thickness, const cvec4& col, bool closed)
+		CanvasPrivate::DrawVert* CanvasPrivate::stroke_path(DrawCmd& cmd, float thickness, const cvec4& color, bool closed)
 		{
 			int n_pts = path.size();
 			if (n_pts < 2)
@@ -222,13 +242,13 @@ namespace flame
 				auto& v = vertices.emplace_back();
 				v.pos = path[0] + first_normal * thickness;
 				v.uv = vec2(0.f);
-				v.col = col;
+				v.col = color;
 			}
 			{
 				auto& v = vertices.emplace_back();
 				v.pos = path[0] - first_normal * thickness;
 				v.uv = vec2(0.f);
-				v.col = col;
+				v.col = color;
 			}
 
 			for (auto i = 1; i < n_pts - 1; i++)
@@ -243,13 +263,13 @@ namespace flame
 					auto& v = vertices.emplace_back();
 					v.pos = path[i] + n * t;
 					v.uv = vec2(0.f);
-					v.col = col;
+					v.col = color;
 				}
 				{
 					auto& v = vertices.emplace_back();
 					v.pos = path[i] - n * t;
 					v.uv = vec2(0.f);
-					v.col = col;
+					v.col = color;
 				}
 
 				indices.push_back(vtx_off - 2);
@@ -265,13 +285,13 @@ namespace flame
 				auto& v = vertices.emplace_back();
 				v.pos = path[n_pts - 1] + last_normal * thickness;
 				v.uv = vec2(0.f);
-				v.col = col;
+				v.col = color;
 			}
 			{
 				auto& v = vertices.emplace_back();
 				v.pos = path[n_pts - 1] - last_normal * thickness;
 				v.uv = vec2(0.f);
-				v.col = col;
+				v.col = color;
 			}
 			indices.push_back(vtx_off - 2);
 			indices.push_back(vtx_off - 1);
@@ -321,7 +341,7 @@ namespace flame
 			return &buf_vtx.item_t<DrawVert>(buf_vtx_off);
 		}
 
-		CanvasPrivate::DrawVert* CanvasPrivate::fill_path(DrawCmd& cmd, const cvec4& col)
+		CanvasPrivate::DrawVert* CanvasPrivate::fill_path(DrawCmd& cmd, const cvec4& color)
 		{
 			int n_pts = path.size();
 			if (n_pts < 3)
@@ -333,13 +353,13 @@ namespace flame
 				auto& v = vertices.emplace_back();
 				v.pos = path[0];
 				v.uv = vec2(0.f);
-				v.col = col;
+				v.col = color;
 			}
 			{
 				auto& v = vertices.emplace_back();
 				v.pos = path[1];
 				v.uv = vec2(0.f);
-				v.col = col;
+				v.col = color;
 			}
 			for (auto i = 0; i < n_pts - 2; i++)
 			{
@@ -348,7 +368,7 @@ namespace flame
 					auto& v = vertices.emplace_back();
 					v.pos = path[i + 2];
 					v.uv = vec2(0.f);
-					v.col = col;
+					v.col = color;
 				}
 
 				indices.push_back(0); 
@@ -364,18 +384,18 @@ namespace flame
 			return &buf_vtx.item_t<DrawVert>(buf_vtx_off);
 		}
 
-		Canvas::DrawVert* CanvasPrivate::stroke(float thickness, const cvec4& col, bool closed)
+		Canvas::DrawVert* CanvasPrivate::stroke(float thickness, const cvec4& color, bool closed)
 		{
 			auto& cmd = get_blit_cmd(main_ds.get());
-			auto verts = stroke_path(cmd, thickness, col, closed);
+			auto verts = stroke_path(cmd, thickness, color, closed);
 			path.clear();
 			return verts;
 		}
 
-		Canvas::DrawVert* CanvasPrivate::fill(const cvec4& col)
+		Canvas::DrawVert* CanvasPrivate::fill(const cvec4& color)
 		{
 			auto& cmd = get_blit_cmd(main_ds.get());
-			auto verts = fill_path(cmd, col);
+			auto verts = fill_path(cmd, color);
 			path.clear();
 			return verts;
 		}
@@ -455,22 +475,22 @@ namespace flame
 			new_cmd.data.stencil_state = stencil_state;
 		}
 		
-		Canvas::DrawVert* CanvasPrivate::draw_rect(const vec2& a, const vec2& b, float thickness, const cvec4& col)
+		Canvas::DrawVert* CanvasPrivate::draw_rect(const vec2& a, const vec2& b, float thickness, const cvec4& color)
 		{
 			path_rect(a, b);
-			return stroke(thickness, col, true);
+			return stroke(thickness, color, true);
 		}
 
-		Canvas::DrawVert* CanvasPrivate::draw_rect_filled(const vec2& a, const vec2& b, const cvec4& col)
+		Canvas::DrawVert* CanvasPrivate::draw_rect_filled(const vec2& a, const vec2& b, const cvec4& color)
 		{
 			path_rect(a, b);
-			return fill(col);
+			return fill(color);
 		}
 
-		Canvas::DrawVert* CanvasPrivate::draw_rect_rotated(const vec2& a, const vec2& b, float thickness, const cvec4& col, float angle)
+		Canvas::DrawVert* CanvasPrivate::draw_rect_rotated(const vec2& a, const vec2& b, float thickness, const cvec4& color, float angle)
 		{
 			path_rect(a, b);
-			auto verts = stroke(thickness, col, true);
+			auto verts = stroke(thickness, color, true);
 			auto c = (a + b) * 0.5f;
 			auto r = rotate(mat3(1.f), radians(angle));
 			for (auto i = 0; i < 4; i++)
@@ -481,10 +501,10 @@ namespace flame
 			return verts;
 		}
 
-		Canvas::DrawVert* CanvasPrivate::draw_rect_filled_rotated(const vec2& a, const vec2& b, const cvec4& col, float angle)
+		Canvas::DrawVert* CanvasPrivate::draw_rect_filled_rotated(const vec2& a, const vec2& b, const cvec4& color, float angle)
 		{
 			path_rect(a, b);
-			auto verts = fill(col);
+			auto verts = fill(color);
 			auto c = (a + b) * 0.5f;
 			auto r = rotate(mat3(1.f), radians(angle));
 			for (auto i = 0; i < 4; i++)
@@ -495,7 +515,7 @@ namespace flame
 			return verts;
 		}
 
-		Canvas::DrawVert* CanvasPrivate::draw_circle(const vec2& p, float radius, float thickness, const cvec4& col, float begin, float end)
+		Canvas::DrawVert* CanvasPrivate::draw_circle(const vec2& p, float radius, float thickness, const cvec4& color, float begin, float end)
 		{
 			auto& circle = get_precompute_circle(radius);
 			auto ib = int(circle.size() * clamp(begin, 0.f, 1.f));
@@ -503,10 +523,10 @@ namespace flame
 			path.resize(ie - ib);
 			for (auto i = 0; i < path.size(); i++)
 				path[i] = p + circle[ib + i] * radius;
-			return stroke(thickness, col, (begin == 0.f && end == 1.f));
+			return stroke(thickness, color, (begin == 0.f && end == 1.f));
 		}
 
-		Canvas::DrawVert* CanvasPrivate::draw_circle_filled(const vec2& p, float radius, const cvec4& col, float begin, float end)
+		Canvas::DrawVert* CanvasPrivate::draw_circle_filled(const vec2& p, float radius, const cvec4& color, float begin, float end)
 		{
 			auto& circle = get_precompute_circle(radius);
 			auto ib = int(circle.size() * clamp(begin, 0.f, 1.f));
@@ -514,12 +534,18 @@ namespace flame
 			path.resize(ie - ib);
 			for (auto i = 0; i < path.size(); i++)
 				path[i] = p + circle[ib + i] * radius;
-			return fill(col);
+			return fill(color);
 		}
 
-		vec2 CanvasPrivate::calc_text_size(FontAtlasPtr font_atlas, uint font_size, std::wstring_view str)
+		vec2 CanvasPrivate::calc_text_size(FontAtlasPtr font_atlas, uint _font_size, std::wstring_view str)
 		{
 			font_atlas = font_atlas ? font_atlas : default_font_atlas;
+
+			std::vector<uint> sizes;
+			sizes.push_back(_font_size);
+
+			auto font_size = sizes.back();
+
 			auto font_scale = font_atlas->get_scale(font_size);
 			auto p = vec2(0.f);
 			auto max_x = 0.f;
@@ -531,7 +557,24 @@ namespace flame
 					p.x = 0.f;
 					continue;
 				}
-				if (ch >= ICON_BEGIN)
+				if (ch >= CH_COLOR_BEGIN && ch <= CH_COLOR_END)
+					continue;
+				if (ch >= CH_SIZE_BEGIN && ch < CH_SIZE_END)
+				{
+					auto idx = ch - CH_SIZE_BEGIN;
+					sizes.push_back(ch_sizes[idx]);
+					font_size = sizes.back();
+					font_scale = font_atlas->get_scale(font_size);
+					continue;
+				}
+				if (ch == CH_SIZE_END)
+				{
+					sizes.pop_back();
+					font_size = sizes.back();
+					font_scale = font_atlas->get_scale(font_size);
+					continue;
+				}
+				if (ch >= CH_ICON_BEGIN && ch <= CH_ICON_END)
 				{
 					p.x += font_size * font_scale;
 					max_x = max(max_x, p.x);
@@ -545,22 +588,33 @@ namespace flame
 			return vec2(max_x, p.y + font_size);
 		}
 
-		void CanvasPrivate::draw_text(FontAtlasPtr font_atlas, uint font_size, const vec2& pos, std::wstring_view str, const cvec4& col, float thickness, float border, const vec2& scl)
+		void CanvasPrivate::draw_text(FontAtlasPtr font_atlas, uint _font_size, const vec2& pos, std::wstring_view str, const cvec4& _color, float thickness, float border, const vec2& scl)
 		{
 			font_atlas = font_atlas ? font_atlas : default_font_atlas;
-			auto font_scale = font_atlas->get_scale(font_size);
-			auto scale = font_scale * scl;
 			auto ds = font_atlas == default_font_atlas ? main_ds.get() : font_atlas->view->get_shader_read_src(nullptr);
-			auto& cmd = font_atlas->type == FontAtlasBitmap ? get_blit_cmd(ds) : 
-				get_sdf_cmd(ds, font_scale, clamp(thickness, -1.f, +1.f), clamp(border, 0.f, 0.25f));
 
 			struct DrawIcon
 			{
 				vec2 p0;
 				vec2 p1;
 				int icon_idx;
+				cvec4 color;
 			};
+			std::vector<cvec4> colors;
+			std::vector<uint> sizes;
 			std::vector<DrawIcon> draw_icons;
+			colors.push_back(_color);
+			sizes.push_back(_font_size);
+
+			auto color = colors.back();
+			auto font_size = sizes.back();
+
+			auto font_scale = font_atlas->get_scale(font_size);
+			auto scale = font_scale * scl;
+			auto get_cmd = [&]()->DrawCmd& {
+				return font_atlas->type == FontAtlasBitmap ? get_blit_cmd(ds) : get_sdf_cmd(ds, font_scale, clamp(thickness, -1.f, +1.f), clamp(border, 0.f, 0.25f));
+			};
+			auto& cmd = get_cmd();
 
 			auto p = pos; vec2 sz(0.f);
 			for (auto ch : str)
@@ -571,15 +625,48 @@ namespace flame
 					p.x = pos.x;
 					continue;
 				}
-				if (ch >= ICON_BEGIN)
+				if (ch >= CH_COLOR_BEGIN && ch < CH_COLOR_END)
 				{
-					auto idx = ch - ICON_BEGIN;
-					auto& img = icons[idx];
+					auto idx = ch - CH_COLOR_BEGIN;
+					colors.push_back(ch_colors[idx]);
+					color = colors.back();
+					continue;
+				}
+				if (ch == CH_COLOR_END)
+				{
+					colors.pop_back();
+					color = colors.back();
+					continue;
+				}
+				if (ch >= CH_SIZE_BEGIN && ch < CH_SIZE_END)
+				{
+					auto idx = ch - CH_SIZE_BEGIN;
+					sizes.push_back(ch_sizes[idx]);
+					font_size = sizes.back();
+					font_scale = font_atlas->get_scale(font_size);
+					scale = font_scale * scl;
+					cmd = get_cmd();
+					continue;
+				}
+				if (ch == CH_SIZE_END)
+				{
+					sizes.pop_back();
+					font_size = sizes.back();
+					font_scale = font_atlas->get_scale(font_size);
+					scale = font_scale * scl;
+					cmd = get_cmd();
+					continue;
+				}
+				if (ch >= CH_ICON_BEGIN && ch < CH_ICON_END)
+				{
+					auto idx = ch - CH_ICON_BEGIN;
+					auto& img = ch_icons[idx];
 					auto s = vec2(font_size) * scale;
 					auto& di = draw_icons.emplace_back();
 					di.p0 = p;
 					di.p1 = p + s;
 					di.icon_idx = idx;
+					di.color = color;
 					p.x += font_size * scale.x;
 					continue;
 				}
@@ -590,7 +677,7 @@ namespace flame
 				s.y *= -1.f;
 
 				path_rect(o, o + s);
-				auto verts = fill_path(cmd, col);
+				auto verts = fill_path(cmd, color);
 				path.clear();
 				verts[0].uv = g.uv.xy;
 				verts[1].uv = g.uv.xw;
@@ -603,9 +690,9 @@ namespace flame
 			for (auto& di : draw_icons)
 			{
 				path_rect(di.p0, di.p1);
-				auto& img = icons[di.icon_idx];
+				auto& img = ch_icons[di.icon_idx];
 				auto& cmd = get_blit_cmd(img.view->get_shader_read_src(nullptr));
-				auto verts = fill_path(cmd, cvec4(255, 255, 255, col.a));
+				auto verts = fill_path(cmd, di.color);
 				path.clear();
 				verts[0].uv = img.uvs.xy;
 				verts[1].uv = img.uvs.xw;
