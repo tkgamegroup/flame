@@ -100,6 +100,7 @@ namespace flame
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
 		auto border = style_vars[HudStyleVarWindowBorder].top();
 		border *= vec4(scaling, scaling);
+		auto frame = style_vars[HudStyleVarWindowFrame].top().x;
 		auto spacing = style_vars[HudStyleVarSpacing].top().xy();
 		spacing *= scaling;
 		auto color = style_colors[HudStyleColorWindowBackground].top();
@@ -130,9 +131,23 @@ namespace flame
 
 		Rect rect(hud.pos, hud.pos + hud.size);
 		if (!image.view)
-			canvas->draw_rect_filled(rect.a, rect.b, color);
+		{
+			if (color.a > 0)
+				canvas->draw_rect_filled(rect.a, rect.b, color);
+		}
 		else
-			canvas->draw_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, color);
+		{
+			if (color.a > 0)
+				canvas->draw_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, color);
+		}
+
+		if (frame > 0.f)
+		{
+			auto color = style_colors[HudStyleColorWindowFrame].top();
+			color.a *= alpha;
+			if (color.a > 0)
+				canvas->draw_rect(rect.a, rect.b, frame, color);
+		}
 
 		if (color.a > 0 && rect.contains(input->mpos))
 			input->mouse_used = true;
@@ -149,6 +164,7 @@ namespace flame
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
 		auto border = style_vars[HudStyleVarWindowBorder].top();
 		border *= vec4(scaling, scaling);
+		auto frame = style_vars[HudStyleVarWindowFrame].top().x;
 		auto spacing = style_vars[HudStyleVarSpacing].top().xy();
 		spacing *= scaling;
 		auto color = style_colors[HudStyleColorWindowBackground].top();
@@ -179,9 +195,23 @@ namespace flame
 
 		Rect rect(hud.pos, hud.pos + hud.size);
 		if (!image.view)
-			canvas->draw_rect_filled(rect.a, rect.b, color);
+		{
+			if (color.a > 0)
+				canvas->draw_rect_filled(rect.a, rect.b, color);
+		}
 		else
-			canvas->draw_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, color);
+		{
+			if (color.a > 0)
+				canvas->draw_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, color);
+		}
+
+		if (frame > 0.f)
+		{
+			auto color = style_colors[HudStyleColorWindowFrame].top();
+			color.a *= alpha;
+			if (color.a > 0)
+				canvas->draw_rect(rect.a, rect.b, frame, color);
+		}
 
 		if (color.a > 0 && rect.contains(input->mpos))
 			input->mouse_used = true;
