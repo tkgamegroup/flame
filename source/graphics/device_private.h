@@ -27,8 +27,8 @@ namespace flame
 			VkDevice vk_device;
 
 			IDXGIFactory4* dxgi_factory = nullptr;
-			ID3D12Device* d12_device = nullptr;
-			uint d12_rtv_off = 0;
+			ID3D12Device* d3d12_device = nullptr;
+			uint d3d12_rtv_off = 0;
 
 			~DevicePrivate();
 

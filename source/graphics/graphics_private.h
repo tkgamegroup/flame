@@ -139,6 +139,27 @@ namespace flame
 			}
 		}
 
+		inline DXGI_FORMAT to_dx(Format f)
+		{
+			switch (f)
+			{
+			case Format_R32_SFLOAT:
+				return DXGI_FORMAT_R32_FLOAT;
+			case Format_R32G32_SFLOAT:
+				return DXGI_FORMAT_R32G32_FLOAT;
+			case Format_R32G32B32_SFLOAT:
+				return DXGI_FORMAT_R32G32B32_FLOAT;
+			case Format_R32G32B32A32_SFLOAT:
+				return DXGI_FORMAT_R32G32B32A32_FLOAT;
+			case Format_R8G8B8A8_UNORM:
+				return DXGI_FORMAT_R8G8B8A8_UNORM;
+			case Format_B8G8R8A8_UNORM:
+				return DXGI_FORMAT_B8G8R8A8_UNORM;
+			default:
+				assert(0);
+			}
+		}
+
 		inline Format from_backend(VkFormat f)
 		{
 			switch (f)
@@ -606,6 +627,36 @@ namespace flame
 			}
 		}
 
+		inline D3D12_PRIMITIVE_TOPOLOGY_TYPE to_dx(PrimitiveTopology t)
+		{
+			switch (t)
+			{
+			case PrimitiveTopologyPointList:
+				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+			case PrimitiveTopologyLineList:
+				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+			//case PrimitiveTopologyLineStrip: // TODO: unsupported
+			//	return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+			case PrimitiveTopologyTriangleList:
+				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+			//case PrimitiveTopologyTriangleStrip: // TODO: unsupported
+			//	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+			//case PrimitiveTopologyTriangleFan: // TODO: unsupported
+			//	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
+			//case PrimitiveTopologyLineListWithAdjacency: // TODO: unsupported
+			//	return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
+			//case PrimitiveTopologyLineStripWithAdjacency: // TODO: unsupported
+			//	return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
+			//case PrimitiveTopologyTriangleListWithAdjacency: // TODO: unsupported
+			//	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
+			//case PrimitiveTopologyTriangleStripWithAdjacency: // TODO: unsupported
+			//	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
+			case PrimitiveTopologyPatchList:
+				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+			}
+			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
+		}
+
 		inline VkPolygonMode to_vk(PolygonMode m)
 		{
 			switch (m)
@@ -616,6 +667,19 @@ namespace flame
 				return VK_POLYGON_MODE_LINE;
 			case PolygonModePoint:
 				return VK_POLYGON_MODE_POINT;
+			}
+		}
+
+		inline D3D12_FILL_MODE to_dx(PolygonMode m)
+		{
+			switch (m)
+			{
+			case PolygonModeFill:
+				return D3D12_FILL_MODE_SOLID;
+			case PolygonModeLine:
+				return D3D12_FILL_MODE_WIREFRAME;
+			case PolygonModePoint:
+				return D3D12_FILL_MODE_SOLID; // TODO: not supported?
 			}
 		}
 
@@ -637,6 +701,27 @@ namespace flame
 				return VK_COMPARE_OP_NOT_EQUAL;
 			case CompareOpAlways:
 				return VK_COMPARE_OP_ALWAYS;
+			}
+		}
+
+		inline D3D12_COMPARISON_FUNC to_dx(CompareOp o)
+		{
+			switch (o)
+			{
+			case CompareOpLess:
+				return D3D12_COMPARISON_FUNC_LESS;
+			case CompareOpLessOrEqual:
+				return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+			case CompareOpGreater:
+				return D3D12_COMPARISON_FUNC_GREATER;
+			case CompareOpGreaterOrEqual:
+				return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+			case CompareOpEqual:
+				return D3D12_COMPARISON_FUNC_EQUAL;
+			case CompareOpNotEqual:
+				return D3D12_COMPARISON_FUNC_NOT_EQUAL;
+			case CompareOpAlways:
+				return D3D12_COMPARISON_FUNC_ALWAYS;
 			}
 		}
 
@@ -663,6 +748,29 @@ namespace flame
 			}
 		}
 
+		inline D3D12_STENCIL_OP to_dx(StencilOp o)
+		{
+			switch (o)
+			{
+			case StencilOpKeep:
+				return D3D12_STENCIL_OP_KEEP;
+			case StencilOpZero:
+				return D3D12_STENCIL_OP_ZERO;
+			case StencilOpReplace:
+				return D3D12_STENCIL_OP_REPLACE;
+			case StencilOpIncrementAndClamp:
+				return D3D12_STENCIL_OP_INCR_SAT;
+			case StencilOpDecrementAndClamp:
+				return D3D12_STENCIL_OP_DECR_SAT;
+			case StencilOpInvert:
+				return D3D12_STENCIL_OP_INVERT;
+			case StencilOpIncrementAndWrap:
+				return D3D12_STENCIL_OP_INCR;
+			case StencilOpDecrementAndWrap:
+				return D3D12_STENCIL_OP_DECR;
+			}
+		}
+
 		inline VkCullModeFlagBits to_vk(CullMode m)
 		{
 			switch (m)
@@ -675,6 +783,21 @@ namespace flame
 				return VK_CULL_MODE_BACK_BIT;
 			case CullModeFrontAndback:
 				return VK_CULL_MODE_FRONT_AND_BACK;
+			}
+		}
+
+		inline D3D12_CULL_MODE to_dx(CullMode m)
+		{
+			switch (m)
+			{
+			case CullModeNone:
+				return D3D12_CULL_MODE_NONE;
+			case CullModeFront:
+				return D3D12_CULL_MODE_FRONT;
+			case CullModeBack:
+				return D3D12_CULL_MODE_BACK;
+			case CullModeFrontAndback:
+				return D3D12_CULL_MODE_FRONT; // TODO: not supported?
 			}
 		}
 

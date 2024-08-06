@@ -10,6 +10,8 @@ using namespace graphics;
 
 struct App : GraphicsApplication 
 {
+	graphics::GraphicsPipelinePtr pl = nullptr;
+
 	void on_render() override
 	{
 		//for (auto& s : stars)
@@ -32,6 +34,43 @@ struct App : GraphicsApplication
 		command_buffer->end_renderpass();
 	}
 }app;
+
+auto pl_str = R"^^^(
+layout
+  @pll
+shaders
+  @vert
+ ---
+  @frag
+renderpass
+  {rp}
+
+@pll
+
+@
+
+@vert
+void main()
+{
+	vec2 vs[] = {
+		vec2(0.5, 0.0),
+		vec2(0.0, 1.0),
+		vec2(1.0, 0.5)
+	};
+	vec2 v = vs[gl_VertexIndex];
+	gl_Position = vec4(v * 2.0 - 1.0, 1.0, 1.0);
+}
+@
+
+@frag
+layout (location = 0) out vec4 o_col;
+
+void main()
+{
+	o_col = vec4(0.4, 0.7, 0.9, 1.0);
+}
+@
+)^^^";
 
 //auto pl_str = R"^^^(
 //layout
@@ -163,7 +202,7 @@ struct App : GraphicsApplication
 
 int entry(int argc, char** args)
 {
-	app.create("Graphics Test", uvec2(500, 500), WindowStyleFrame, true, true);
+	app.create("Graphics Test", uvec2(500, 500), WindowStyleFrame, false, true);
 	//app.main_window->native->resize_listeners.add([](const uvec2& size) {
 	//	projector.set(size, 45.f, 1.f, 4.f);
 	//});
@@ -173,7 +212,7 @@ int entry(int argc, char** args)
 	//for (auto& s : stars)
 	//	s.p.z = linearRand(0.f, 1.f) * (projector.zFar - projector.zNear) + projector.zNear;
 
-	//pl = GraphicsPipeline::create(pl_str, { "rp=" + str(Renderpass::get(L"flame\\shaders\\color.rp", { "col_fmt=" + TypeInfo::serialize_t(graphics::Swapchain::format) })) });
+	app.pl = GraphicsPipeline::create(pl_str, { "rp=" + str(Renderpass::get(L"flame\\shaders\\color.rp", { "col_fmt=" + TypeInfo::serialize_t(graphics::Swapchain::format) })) });
 	//vtx_buf.create(pl->vi_ui(), stars.size() * 6);
 
 	app.run();

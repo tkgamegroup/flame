@@ -859,8 +859,8 @@ namespace flame
 			check_vk_result(vkFreeDescriptorSets(device->vk_device, pool->vk_descriptor_pool, 1, &vk_descriptor_set));
 			unregister_object(vk_descriptor_set);
 
-			if (d12_descriptor_heap)
-				d12_descriptor_heap->Release();
+			if (d3d12_descriptor_heap)
+				d3d12_descriptor_heap->Release();
 		}
 
 		void DescriptorSetPrivate::set_buffer_i(uint binding, uint index, BufferPtr buf, uint offset, uint range)
@@ -998,7 +998,7 @@ namespace flame
 					desc.NumDescriptors = ret->reses.size();
 					desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 					desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-					check_dx_result(device->d12_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ret->d12_descriptor_heap)));
+					check_dx_result(device->d3d12_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ret->d3d12_descriptor_heap)));
 				}
 
 				return ret;
@@ -1018,6 +1018,9 @@ namespace flame
 
 			vkDestroyPipelineLayout(device->vk_device, vk_pipeline_layout, nullptr);
 			unregister_object(vk_pipeline_layout);
+
+			if (d3d12_signature)
+				d3d12_signature->Release();
 		}
 
 		PipelineLayoutPtr PipelineLayoutPrivate::load_from_res(const std::filesystem::path& filename)
@@ -1097,6 +1100,35 @@ namespace flame
 
 				check_vk_result(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &ret->vk_pipeline_layout));
 				register_object(ret->vk_pipeline_layout, "Pipeline Layout", ret);
+
+				{
+					D3D12_ROOT_SIGNATURE_DESC signature_desc;
+					std::vector<D3D12_ROOT_PARAMETER> parameters;
+					for (auto i = 0; i < dsls.size(); i++)
+					{
+						auto dsl = dsls[i];
+						for (auto j = 0; j < dsl->bindings.size(); j++)
+						{
+							auto& binding = dsl->bindings[j];
+							D3D12_ROOT_PARAMETER parameter;
+
+							parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+						}
+					}
+					signature_desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
+					signature_desc.pParameters = parameters.data();
+					signature_desc.NumParameters = parameters.size();
+					signature_desc.pStaticSamplers = nullptr;
+					signature_desc.NumStaticSamplers = 0;
+					ID3DBlob* signature = nullptr;
+					ID3DBlob* error = nullptr;
+					D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error); // wtf?
+					device->d3d12_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&ret->d3d12_signature));
+					if (signature)
+						signature->Release();
+					if (error)
+						error->Release();
+				}
 
 				return ret;
 			}
@@ -1232,6 +1264,10 @@ namespace flame
 			shader_info.pCode = (uint*)data_soup.soup.data();
 			check_vk_result(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &ret->vk_module));
 			register_object(ret->vk_module, "Shader", ret);
+
+			{
+				ret->d3d12_byte_code.assign((char*)data_soup.soup.data(), data_soup.soup.size());
+			}
 
 			return ret;
 		}
@@ -1598,7 +1634,8 @@ namespace flame
 			{
 				if (!s.second.segment.empty())
 				{
-					s.second.segment = "#include \"" + layout_source.path.string() + "\"\n\n" + s.second.segment;
+					if (!layout_source.path.empty())
+						s.second.segment = "#include \"" + layout_source.path.string() + "\"\n\n" + s.second.segment;
 					std::sort(s.second.defines.begin(), s.second.defines.end());
 					info.shaders.push_back(Shader::create(s.first, s.second.segment, s.second.defines,
 						!filename.empty() ? filename.wstring() + (L"!" + get_stage_str(s.first) + defines_to_hash_str(s.second.defines) + L".res") : L"!" + wstr(create_id) + L".res", filename));
@@ -1606,7 +1643,8 @@ namespace flame
 				else if (!s.second.path.empty())
 				{
 					// load shader here so we can include the pll
-					s.second.defines.push_back("__add_line__=#include \"" + layout_source.path.string() + "\"");
+					if (!layout_source.path.empty())
+						s.second.defines.push_back("__add_line__=#include \"" + layout_source.path.string() + "\"");
 					std::sort(s.second.defines.begin(), s.second.defines.end());
 					info.shaders.push_back(Shader::get(s.first, s.second.path, s.second.defines));
 				}
@@ -1700,6 +1738,9 @@ namespace flame
 				vkDestroyPipeline(device->vk_device, v.second, nullptr);
 				unregister_object(v.second);
 			}
+
+			if (d3d12_pipeline)
+				d3d12_pipeline->Release();
 		}
 
 		VkPipeline GraphicsPipelinePrivate::get_dynamic_pipeline(RenderpassPtr rp, uint sp)
@@ -1988,6 +2029,78 @@ namespace flame
 
 				check_vk_result(vkCreateGraphicsPipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
 				register_object(ret->vk_pipeline, "Pipeline", ret);
+
+				{
+					D3D12_GRAPHICS_PIPELINE_STATE_DESC desc = {};
+					std::vector<D3D12_INPUT_ELEMENT_DESC> dx_input_elements;
+					for (auto i = 0; i < info.vertex_buffers.size(); i++)
+					{
+						auto& buf = info.vertex_buffers[i];
+						auto offset = 0;
+						for (auto j = 0; j < buf.attributes.size(); j++)
+						{
+							auto& src_att = buf.attributes[j];
+							D3D12_INPUT_ELEMENT_DESC element;
+							element.SemanticName = "ATTRIBUTE";
+							element.SemanticIndex = src_att.location;
+							element.Format = to_dx(src_att.format);
+							element.InputSlot = i;
+							if (src_att.offset != -1)
+								offset = src_att.offset;
+							element.AlignedByteOffset = offset;
+							offset += format_size(src_att.format);
+							element.InputSlotClass = buf.rate == VertexInputRateVertex ?
+								D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA : D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA;
+							element.InstanceDataStepRate = 0; // TOOD: use the stride of input buffer
+							dx_input_elements.push_back(element);
+						}
+					}
+					desc.InputLayout.pInputElementDescs = dx_input_elements.data();
+					desc.InputLayout.NumElements = dx_input_elements.size();
+					desc.pRootSignature = info.layout->d3d12_signature;
+					for (auto i = 0; i < info.shaders.size(); i++)
+					{
+						auto& shader = info.shaders[i];
+						switch (shader->type)
+						{
+						case ShaderStageVert:
+							desc.VS.pShaderBytecode = shader->d3d12_byte_code.data();
+							desc.VS.BytecodeLength = shader->d3d12_byte_code.size();
+							break;
+						case ShaderStageFrag:
+							desc.PS.pShaderBytecode = shader->d3d12_byte_code.data();
+							desc.PS.BytecodeLength = shader->d3d12_byte_code.size();
+							break;
+						}
+					}
+					desc.RasterizerState.FillMode = to_dx(info.polygon_mode);
+					desc.RasterizerState.CullMode = to_dx(info.cull_mode);
+					desc.RasterizerState.FrontCounterClockwise = true;
+					desc.RasterizerState.DepthBias = 0;
+					desc.RasterizerState.DepthBiasClamp = 0.f;
+					desc.RasterizerState.SlopeScaledDepthBias = 0.f;
+					desc.RasterizerState.DepthClipEnable = false;
+					desc.RasterizerState.MultisampleEnable = info.sample_count != SampleCount_1;
+					desc.RasterizerState.AntialiasedLineEnable = false; // TODO: dx can do that?
+					desc.RasterizerState.ForcedSampleCount = 0; // TODO: unknown..
+					desc.DepthStencilState.DepthEnable = info.depth_test;
+					desc.DepthStencilState.DepthWriteMask = info.depth_write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+					desc.DepthStencilState.DepthFunc = to_dx(info.depth_compare_op);
+					desc.DepthStencilState.StencilEnable = info.stencil_test;
+					desc.DepthStencilState.StencilReadMask = 0xff;
+					desc.DepthStencilState.StencilWriteMask = 0xff;
+					desc.DepthStencilState.FrontFace.StencilFunc = to_dx(info.stencil_compare_op);
+					desc.DepthStencilState.FrontFace.StencilFailOp = to_dx(info.stencil_op);
+					desc.DepthStencilState.FrontFace.StencilDepthFailOp = to_dx(info.stencil_op);
+					desc.DepthStencilState.FrontFace.StencilPassOp = to_dx(info.stencil_op);
+					desc.DepthStencilState.BackFace = desc.DepthStencilState.FrontFace;
+					desc.PrimitiveTopologyType = to_dx(info.primitive_topology);
+					desc.SampleMask = 0xffffffff;
+					desc.NumRenderTargets = 1; // TODO: fix
+					desc.RTVFormats[0] = to_dx(info.renderpass->attachments[0].format); // TODO: fix
+					desc.SampleDesc.Count = 1;
+					check_dx_result(device->d3d12_device->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&ret->d3d12_pipeline)));
+				}
 
 				return ret;
 			}

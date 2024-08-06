@@ -26,15 +26,15 @@ namespace flame
 			vkDestroyCommandPool(device->vk_device, vk_command_pool, nullptr);
 			unregister_object(vk_command_pool);
 
-			if (d12_command_allocator)
-				d12_command_allocator->Release();
+			if (d3d12_command_allocator)
+				d3d12_command_allocator->Release();
 		}
 
 		void CommandPoolPrivate::reset()
 		{
 			vkResetCommandPool(device->vk_device, vk_command_pool, VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
 
-			//d12_command_allocator->Reset();
+			//d3d12_command_allocator->Reset();
 		}
 
 		struct CommandPoolGet : CommandPool::Get
@@ -69,7 +69,7 @@ namespace flame
 				register_object(ret->vk_command_pool, "Command Buffer Pool", ret);
 
 				{
-					device->d12_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&ret->d12_command_allocator));
+					device->d3d12_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&ret->d3d12_command_allocator));
 				}
 
 				return ret;
@@ -85,8 +85,8 @@ namespace flame
 			vkDestroyQueryPool(device->vk_device, vk_query_pool, nullptr);
 			unregister_object(vk_command_buffer);
 
-			if (d12_command_list)
-				d12_command_list->Release();
+			if (d3d12_command_list)
+				d3d12_command_list->Release();
 		}
 
 		void CommandBufferPrivate::begin(bool once)
@@ -126,7 +126,7 @@ namespace flame
 			}
 
 			{
-				check_dx_result(d12_command_list->Reset(pool->d12_command_allocator, nullptr));
+				check_dx_result(d3d12_command_list->Reset(pool->d3d12_command_allocator, nullptr));
 			}
 		}
 
@@ -157,27 +157,27 @@ namespace flame
 						D3D12_RESOURCE_BARRIER barrier;
 						barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 						barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-						barrier.Transition.pResource = img->d12_resource;
+						barrier.Transition.pResource = img->d3d12_resource;
 						barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 						barrier.Transition.StateBefore = to_dx(ly.layout, img->format);
 						barrier.Transition.StateAfter = to_dx(att.initia_layout, img->format);
-						d12_command_list->ResourceBarrier(1, &barrier);
+						d3d12_command_list->ResourceBarrier(1, &barrier);
 					}
 
 					if (att.load_op == AttachmentLoadClear)
 					{
 						D3D12_CPU_DESCRIPTOR_HANDLE rtv;
-						rtv = curr_fb->d12_targets_heap->GetCPUDescriptorHandleForHeapStart();
-						rtv.ptr += i * device->d12_rtv_off;
+						rtv = curr_fb->d3d12_targets_heap->GetCPUDescriptorHandleForHeapStart();
+						rtv.ptr += i * device->d3d12_rtv_off;
 						if (att.format >= Format_Depth_Begin && att.format <= Format_Depth_End)
-							/*d12_command_list->ClearDepthStencilView()*/; // TODO
+							/*d3d12_command_list->ClearDepthStencilView()*/; // TODO
 						else
 						{
 							vec4 color = cvs[i];
 							color.r = 1.f - color.r;
 							color.g = 1.f - color.g;
 							color.b = 1.f - color.b;
-							d12_command_list->ClearRenderTargetView(rtv, &color[0], 0, nullptr);
+							d3d12_command_list->ClearRenderTargetView(rtv, &color[0], 0, nullptr);
 						}
 					}
 				}
@@ -228,11 +228,11 @@ namespace flame
 							D3D12_RESOURCE_BARRIER barrier;
 							barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 							barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-							barrier.Transition.pResource = img->d12_resource;
+							barrier.Transition.pResource = img->d3d12_resource;
 							barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 							barrier.Transition.StateBefore = to_dx(ly.layout, img->format);
 							barrier.Transition.StateAfter = to_dx(att.final_layout, img->format);
-							d12_command_list->ResourceBarrier(1, &barrier);
+							d3d12_command_list->ResourceBarrier(1, &barrier);
 						}
 					}
 
@@ -552,16 +552,16 @@ namespace flame
 			{
 				auto old_state = to_dx(old_layout, img->format);
 				auto new_state = to_dx(new_layout, img->format);
-				if (new_state != old_state && img->d12_resource) // TODO: there should be a d12_resource
+				if (new_state != old_state && img->d3d12_resource) // TODO: there should be a d3d12_resource
 				{
 					D3D12_RESOURCE_BARRIER barrier;
 					barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
 					barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-					barrier.Transition.pResource = img->d12_resource;
+					barrier.Transition.pResource = img->d3d12_resource;
 					barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 					barrier.Transition.StateBefore = to_dx(old_layout, img->format);
 					barrier.Transition.StateAfter = to_dx(new_layout, img->format);
-					d12_command_list->ResourceBarrier(1, &barrier);
+					d3d12_command_list->ResourceBarrier(1, &barrier);
 				}
 			}
 		}
@@ -749,7 +749,7 @@ namespace flame
 			check_vk_result(vkEndCommandBuffer(vk_command_buffer));
 
 			{
-				check_dx_result(d12_command_list->Close());
+				check_dx_result(d3d12_command_list->Close());
 			}
 		}
 
@@ -784,8 +784,8 @@ namespace flame
 				register_object(ret->vk_command_buffer, "Command Buffer", ret);
 
 				{
-					check_dx_result(device->d12_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, pool->d12_command_allocator, nullptr, IID_PPV_ARGS(&ret->d12_command_list)));
-					check_dx_result(ret->d12_command_list->Close());
+					check_dx_result(device->d3d12_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, pool->d3d12_command_allocator, nullptr, IID_PPV_ARGS(&ret->d3d12_command_list)));
+					check_dx_result(ret->d3d12_command_list->Close());
 				}
 
 				ret->begin();
@@ -800,8 +800,8 @@ namespace flame
 		{
 			if (app_exiting) return;
 
-			if (d12_queue)
-				d12_queue->Release();
+			if (d3d12_queue)
+				d3d12_queue->Release();
 		}
 
 		void QueuePrivate::wait_idle()
@@ -814,8 +814,8 @@ namespace flame
 #ifdef USE_D3D12
 			for (auto i = 0; i < commandbuffers.size(); i++)
 			{
-				ID3D12CommandList* list[] = { commandbuffers[i]->d12_command_list };
-				d12_queue->ExecuteCommandLists(1, list);
+				ID3D12CommandList* list[] = { commandbuffers[i]->d3d12_command_list };
+				d3d12_queue->ExecuteCommandLists(1, list);
 			}
 #elif USE_VULKAN
 			std::vector<VkCommandBuffer> vk_cbs;
@@ -854,7 +854,7 @@ namespace flame
 			if (signal_fence)
 			{
 #ifdef USE_D3D12
-				d12_queue->Signal(signal_fence->d12_fence, 1);
+				d3d12_queue->Signal(signal_fence->d3d12_fence, 1);
 #elif USE_VULKAN
 #endif
 				signal_fence->value = 1;
@@ -866,7 +866,7 @@ namespace flame
 #ifdef USE_D3D12
 			for (auto i = 0; i < swapchains.size(); i++)
 			{
-				swapchains[i]->d12_swapchain->Present(1, 0); // TODO: no any waiting for the completion of the commands?
+				swapchains[i]->d3d12_swapchain->Present(1, 0); // TODO: no any waiting for the completion of the commands?
 			}
 #elif USE_VULKAN
 			std::vector<VkSemaphore> vk_wait_smps;
@@ -924,7 +924,7 @@ namespace flame
 					desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 					desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-					auto res = device->d12_device->CreateCommandQueue(&desc, IID_PPV_ARGS(&ret->d12_queue));
+					auto res = device->d3d12_device->CreateCommandQueue(&desc, IID_PPV_ARGS(&ret->d3d12_queue));
 				}
 
 				return ret;
@@ -987,8 +987,8 @@ namespace flame
 			vkDestroyFence(device->vk_device, vk_fence, nullptr);
 			unregister_object(vk_fence);
 
-			if (d12_fence)
-				d12_fence->Release();
+			if (d3d12_fence)
+				d3d12_fence->Release();
 		}
 
 		void FencePrivate::wait(bool auto_reset)
@@ -996,10 +996,10 @@ namespace flame
 			if (value > 0)
 			{
 #ifdef USE_D3D12
-				if (d12_fence->GetCompletedValue() != value)
+				if (d3d12_fence->GetCompletedValue() != value)
 				{
-					check_dx_result(d12_fence->SetEventOnCompletion(value, d12_event));
-					WaitForSingleObject(d12_event, 0xffffffff);
+					check_dx_result(d3d12_fence->SetEventOnCompletion(value, d3d12_event));
+					WaitForSingleObject(d3d12_event, 0xffffffff);
 				}
 #elif USE_VULKAN
 				check_vk_result(vkWaitForFences(device->vk_device, 1, &vk_fence, true, UINT64_MAX));
@@ -1032,8 +1032,8 @@ namespace flame
 				register_object(ret->vk_fence, "Fence", ret);
 
 				{
-					check_dx_result(device->d12_device->CreateFence(ret->value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&ret->d12_fence)));
-					ret->d12_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+					check_dx_result(device->d3d12_device->CreateFence(ret->value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&ret->d3d12_fence)));
+					ret->d3d12_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 				}
 
 				return ret;

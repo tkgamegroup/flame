@@ -81,8 +81,8 @@ namespace flame
 			if (vk_instance)
 				vkDestroyInstance(vk_instance, nullptr);
 
-			if (d12_device)
-				d12_device->Release();
+			if (d3d12_device)
+				d3d12_device->Release();
 			if (dxgi_factory)
 				dxgi_factory->Release();
 		}
@@ -212,8 +212,8 @@ namespace flame
 				{
 					IDXGIAdapter* warp_adapter = nullptr;
 					check_dx_result(ret->dxgi_factory->EnumWarpAdapter(IID_PPV_ARGS(&warp_adapter)));
-					check_dx_result(D3D12CreateDevice(warp_adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&ret->d12_device)));
-					ret->d12_rtv_off = ret->d12_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+					check_dx_result(D3D12CreateDevice(warp_adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&ret->d3d12_device)));
+					ret->d3d12_rtv_off = ret->d3d12_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 					warp_adapter->Release();
 				}
 

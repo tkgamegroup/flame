@@ -37,7 +37,7 @@ namespace flame
 			if (images.empty())
 				return -1;
 			//check_vk_result(vkAcquireNextImageKHR(device->vk_device, vk_swapchain, UINT64_MAX, image_avalible->vk_semaphore, VK_NULL_HANDLE, &image_index));
-			image_index = d12_swapchain->GetCurrentBackBufferIndex();
+			image_index = d3d12_swapchain->GetCurrentBackBufferIndex();
 
 			return image_index;
 		}
@@ -134,12 +134,12 @@ namespace flame
 					desc.SampleDesc.Count = 1;
 
 					IDXGISwapChain1* swapchain = nullptr;
-					check_dx_result(device->dxgi_factory->CreateSwapChainForHwnd(Queue::get()->d12_queue, (HWND)window->get_hwnd(),
+					check_dx_result(device->dxgi_factory->CreateSwapChainForHwnd(Queue::get()->d3d12_queue, (HWND)window->get_hwnd(),
 						&desc, nullptr, nullptr, &swapchain));
-					d12_swapchain = (IDXGISwapChain3*)swapchain;
+					d3d12_swapchain = (IDXGISwapChain3*)swapchain;
 
 					for (auto i = 0; i < image_count; i++)
-						check_dx_result(d12_swapchain->GetBuffer(i, IID_PPV_ARGS(&images[i]->d12_resource)));
+						check_dx_result(d3d12_swapchain->GetBuffer(i, IID_PPV_ARGS(&images[i]->d3d12_resource)));
 
 				}
 

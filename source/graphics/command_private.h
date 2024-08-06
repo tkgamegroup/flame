@@ -13,7 +13,7 @@ namespace flame
 		struct CommandPoolPrivate : CommandPool
 		{
 			VkCommandPool vk_command_pool;
-			ID3D12CommandAllocator* d12_command_allocator = nullptr;
+			ID3D12CommandAllocator* d3d12_command_allocator = nullptr;
 
 			~CommandPoolPrivate();
 
@@ -35,7 +35,7 @@ namespace flame
 			VkCommandBuffer vk_command_buffer;
 			VkQueryPool vk_query_pool = nullptr;
 
-			ID3D12GraphicsCommandList* d12_command_list = nullptr;
+			ID3D12GraphicsCommandList* d3d12_command_list = nullptr;
 
 			~CommandBufferPrivate();
 
@@ -82,7 +82,7 @@ namespace flame
 		struct QueuePrivate : Queue
 		{
 			VkQueue vk_queue;
-			ID3D12CommandQueue* d12_queue = nullptr;
+			ID3D12CommandQueue* d3d12_queue = nullptr;
 
 			~QueuePrivate();
 
@@ -109,8 +109,8 @@ namespace flame
 		{
 			uint value = 0;
 			VkFence vk_fence = 0;
-			ID3D12Fence* d12_fence = nullptr;
-			HANDLE d12_event = 0;
+			ID3D12Fence* d3d12_fence = nullptr;
+			HANDLE d3d12_event = 0;
 
 			~FencePrivate();
 

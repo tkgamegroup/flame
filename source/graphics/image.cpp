@@ -43,8 +43,8 @@ namespace flame
 			unregister_object(vk_image);
 			unregister_object(vk_memory);
 
-			if (d12_resource)
-				d12_resource->Release();
+			if (d3d12_resource)
+				d3d12_resource->Release();
 		}
 
 		void ImagePrivate::initialize()

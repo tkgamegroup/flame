@@ -48,7 +48,7 @@ namespace flame
 
 			DescriptorPoolPtr pool;
 			VkDescriptorSet vk_descriptor_set;
-			ID3D12DescriptorHeap* d12_descriptor_heap = nullptr;
+			ID3D12DescriptorHeap* d3d12_descriptor_heap = nullptr;
 
 			std::vector<std::vector<Res>> reses;
 			std::vector<std::pair<uint, uint>> buf_updates;
@@ -66,6 +66,8 @@ namespace flame
 			TypeInfoDataBase db;
 			VkPipelineLayout vk_pipeline_layout;
 
+			ID3D12RootSignature* d3d12_signature = nullptr;
+
 			~PipelineLayoutPrivate();
 
 			static PipelineLayoutPtr load_from_res(const std::filesystem::path& filename);
@@ -75,6 +77,7 @@ namespace flame
 		{
 			TypeInfoDataBase db;
 			VkShaderModule vk_module = 0;
+			std::string d3d12_byte_code;
 
 			ShaderPrivate();
 			~ShaderPrivate();
@@ -88,6 +91,7 @@ namespace flame
 		struct GraphicsPipelinePrivate : GraphicsPipeline
 		{
 			VkPipeline vk_pipeline;
+			ID3D12PipelineState* d3d12_pipeline = nullptr;
 
 			std::unordered_map<RenderpassPtr, VkPipeline> renderpass_variants;
 

@@ -231,8 +231,8 @@ namespace flame
 			vkDestroyFramebuffer(device->vk_device, vk_framebuffer, nullptr);
 			unregister_object(vk_framebuffer);
 
-			if (d12_targets_heap)
-				d12_targets_heap->Release();
+			if (d3d12_targets_heap)
+				d3d12_targets_heap->Release();
 		}
 
 		struct FramebufferCreate : Framebuffer::Create
@@ -269,12 +269,12 @@ namespace flame
 					desc.NumDescriptors = views.size();
 					desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 					desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-					check_dx_result(device->d12_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ret->d12_targets_heap)));
-					auto pdescriptor = ret->d12_targets_heap->GetCPUDescriptorHandleForHeapStart();
-					auto off = device->d12_rtv_off;
+					check_dx_result(device->d3d12_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ret->d3d12_targets_heap)));
+					auto pdescriptor = ret->d3d12_targets_heap->GetCPUDescriptorHandleForHeapStart();
+					auto off = device->d3d12_rtv_off;
 					for (auto i = 0; i < views.size(); i++)
 					{
-						device->d12_device->CreateRenderTargetView(views[i]->image->d12_resource, nullptr/*TODO*/, pdescriptor);
+						device->d3d12_device->CreateRenderTargetView(views[i]->image->d3d12_resource, nullptr/*TODO*/, pdescriptor);
 						pdescriptor.ptr += off;
 					}
 				}
