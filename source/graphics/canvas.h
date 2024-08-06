@@ -78,7 +78,7 @@ namespace flame
 
 			virtual void register_ch_color(wchar_t code, const cvec4& coloror) = 0;
 			virtual void register_ch_size(wchar_t code, uint size) = 0;
-			virtual void register_ch_icon(wchar_t code, const graphics::ImageDesc& image) = 0;
+			virtual void register_ch_icon(wchar_t code, const ImageDesc& image) = 0;
 
 			virtual void reset_drawing() = 0;
 

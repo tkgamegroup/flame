@@ -18,6 +18,7 @@ namespace flame
 		struct FramebufferPrivate : Framebuffer
 		{
 			VkFramebuffer vk_framebuffer;
+			ID3D12DescriptorHeap* d12_targets_heap = nullptr;
 
 			~FramebufferPrivate();
 		};

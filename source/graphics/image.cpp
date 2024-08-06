@@ -42,6 +42,9 @@ namespace flame
 			}
 			unregister_object(vk_image);
 			unregister_object(vk_memory);
+
+			if (d12_resource)
+				d12_resource->Release();
 		}
 
 		void ImagePrivate::initialize()
@@ -129,10 +132,10 @@ namespace flame
 			info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			info.flags = 0;
 			info.pNext = nullptr;
-			info.components.r = to_backend(swizzle.r);
-			info.components.g = to_backend(swizzle.g);
-			info.components.b = to_backend(swizzle.b);
-			info.components.a = to_backend(swizzle.a);
+			info.components.r = to_vk(swizzle.r);
+			info.components.g = to_vk(swizzle.g);
+			info.components.b = to_vk(swizzle.b);
+			info.components.a = to_vk(swizzle.a);
 			info.image = vk_image;
 			if (cube)
 			{
@@ -145,14 +148,14 @@ namespace flame
 				info.viewType = VK_IMAGE_VIEW_TYPE_3D;
 			else
 				info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			info.format = to_backend(format);
-			info.subresourceRange.aspectMask = to_backend_flags<ImageAspectFlags>(aspect_from_format(format));
+			info.format = to_vk(format);
+			info.subresourceRange.aspectMask = to_vk_flags<ImageAspectFlags>(aspect_from_format(format));
 			info.subresourceRange.baseMipLevel = sub.base_level;
 			info.subresourceRange.levelCount = sub.level_count;
 			info.subresourceRange.baseArrayLayer = sub.base_layer;
 			info.subresourceRange.layerCount = sub.layer_count;
 
-			chk_res(vkCreateImageView(device->vk_device, &info, nullptr, &iv->vk_image_view));
+			check_vk_result(vkCreateImageView(device->vk_device, &info, nullptr, &iv->vk_image_view));
 			register_object(iv->vk_image_view, "Image View", iv);
 
 			views.emplace(key, iv);
@@ -654,13 +657,13 @@ namespace flame
 
 				imageInfo.pNext = nullptr;
 				imageInfo.imageType = image_type;
-				imageInfo.format = to_backend(format);
+				imageInfo.format = to_vk(format);
 				imageInfo.extent.width = extent.x;
 				imageInfo.extent.height = extent.y;
 				imageInfo.extent.depth = extent.z;
 				imageInfo.mipLevels = ret->n_levels;
 				imageInfo.arrayLayers = ret->n_layers;
-				imageInfo.samples = to_backend(sample_count);
+				imageInfo.samples = to_vk(sample_count);
 				imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 				imageInfo.usage = from_backend_flags(usage, format, sample_count);
 				imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -668,7 +671,7 @@ namespace flame
 				imageInfo.pQueueFamilyIndices = nullptr;
 				imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-				chk_res(vkCreateImage(device->vk_device, &imageInfo, nullptr, &ret->vk_image));
+				check_vk_result(vkCreateImage(device->vk_device, &imageInfo, nullptr, &ret->vk_image));
 
 				VkMemoryRequirements memRequirements;
 				vkGetImageMemoryRequirements(device->vk_device, ret->vk_image, &memRequirements);
@@ -679,8 +682,8 @@ namespace flame
 				allocInfo.allocationSize = memRequirements.size;
 				allocInfo.memoryTypeIndex = device->find_memory_type(memRequirements.memoryTypeBits, MemoryPropertyDevice);
 
-				chk_res(vkAllocateMemory(device->vk_device, &allocInfo, nullptr, &ret->vk_memory));
-				chk_res(vkBindImageMemory(device->vk_device, ret->vk_image, ret->vk_memory, 0));
+				check_vk_result(vkAllocateMemory(device->vk_device, &allocInfo, nullptr, &ret->vk_memory));
+				check_vk_result(vkBindImageMemory(device->vk_device, ret->vk_image, ret->vk_memory, 0));
 				register_object(ret->vk_image, "Image", ret);
 				register_object(ret->vk_memory, "Image Memory", ret);
 
@@ -1001,14 +1004,14 @@ namespace flame
 
 			VkSamplerCreateInfo info = {};
 			info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-			info.magFilter = to_backend(mag_filter);
-			info.minFilter = to_backend(min_filter);
+			info.magFilter = to_vk(mag_filter);
+			info.minFilter = to_vk(min_filter);
 			info.mipmapMode = linear_mipmap ? VK_SAMPLER_MIPMAP_MODE_LINEAR : VK_SAMPLER_MIPMAP_MODE_NEAREST;
-			info.addressModeU = info.addressModeV = info.addressModeW = to_backend(address_mode);
+			info.addressModeU = info.addressModeV = info.addressModeW = to_vk(address_mode);
 			info.maxAnisotropy = 1.f;
 			info.maxLod = VK_LOD_CLAMP_NONE;
 			info.compareOp = VK_COMPARE_OP_ALWAYS;
-			info.borderColor = to_backend(border_color);
+			info.borderColor = to_vk(border_color);
 			if (border_color == BorderColorCustom)
 			{
 				static VkSamplerCustomBorderColorCreateInfoEXT vk_custom_border;
@@ -1020,7 +1023,7 @@ namespace flame
 				info.pNext = &vk_custom_border;
 			}
 
-			chk_res(vkCreateSampler(device->vk_device, &info, nullptr, &ret));
+			check_vk_result(vkCreateSampler(device->vk_device, &info, nullptr, &ret));
 			register_object(ret, "Sampler", ret);
 
 			return ret;

@@ -4,6 +4,9 @@
 #include "graphics.h"
 
 #define NOMINMAX
+#include <d3d12.h>
+#include <dxgi1_6.h>
+
 #include <vulkan/vulkan.h>
 #undef INFINITE
 
@@ -15,7 +18,7 @@ namespace flame
 {
 	namespace graphics
 	{
-		inline void chk_res(VkResult res)
+		inline void check_vk_result(VkResult res)
 		{
 			if (res != VK_SUCCESS)
 			{
@@ -31,10 +34,26 @@ namespace flame
 			}
 		}
 
-		template<typename T>
-		VkFlags to_backend_flags(uint);
+		inline void check_dx_result(HRESULT res)
+		{
+			if (FAILED(res))
+			{
+				printf("=======================\n");
+				printf("graphics error: %d\n", res);
+				printf("STACK TRACE:\n");
+				auto frames = get_call_frames();
+				auto frames_infos = get_call_frames_infos(frames);
+				for (auto& info : frames_infos)
+					printf("%s() %s:%d\n", info.function.c_str(), info.file.c_str(), info.lineno);
+				printf("=======================\n");
+				assert(0);
+			}
+		}
 
-		inline VkFormat to_backend(Format f)
+		template<typename T>
+		VkFlags to_vk_flags(uint);
+
+		inline VkFormat to_vk(Format f)
 		{
 			switch (f)
 			{
@@ -156,7 +175,7 @@ namespace flame
 		}
 
 		template<>
-		inline VkFlags to_backend_flags<MemoryPropertyFlags>(uint p)
+		inline VkFlags to_vk_flags<MemoryPropertyFlags>(uint p)
 		{
 			VkMemoryPropertyFlags ret = 0;
 			if (p & MemoryPropertyDevice)
@@ -168,7 +187,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkSampleCountFlagBits to_backend(SampleCount s)
+		inline VkSampleCountFlagBits to_vk(SampleCount s)
 		{
 			switch (s)
 			{
@@ -187,7 +206,7 @@ namespace flame
 			}
 		}
 
-		inline VkShaderStageFlagBits to_backend(ShaderStageFlags t)
+		inline VkShaderStageFlagBits to_vk(ShaderStageFlags t)
 		{
 			switch (t)
 			{
@@ -214,7 +233,7 @@ namespace flame
 		}
 
 		template<>
-		inline VkFlags to_backend_flags<ShaderStageFlags>(uint t)
+		inline VkFlags to_vk_flags<ShaderStageFlags>(uint t)
 		{
 			VkShaderStageFlags ret = 0;
 			if (t & ShaderStageVert)
@@ -238,7 +257,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkDescriptorType to_backend(DescriptorType t)
+		inline VkDescriptorType to_vk(DescriptorType t)
 		{
 			switch (t)
 			{
@@ -253,7 +272,7 @@ namespace flame
 			}
 		}
 
-		inline VkPipelineBindPoint to_backend(PipelineType t)
+		inline VkPipelineBindPoint to_vk(PipelineType t)
 		{
 			switch (t)
 			{
@@ -267,7 +286,7 @@ namespace flame
 		}
 
 		template<>
-		inline VkFlags to_backend_flags<BufferUsageFlags>(uint u)
+		inline VkFlags to_vk_flags<BufferUsageFlags>(uint u)
 		{
 			VkBufferUsageFlags ret = 0;
 			if (u & BufferUsageTransferSrc)
@@ -316,12 +335,10 @@ namespace flame
 			return ret;
 		}
 
-		inline VkImageLayout to_backend(ImageLayout l, Format fmt)
+		inline VkImageLayout to_vk(ImageLayout l, Format fmt)
 		{
 			switch (l)
 			{
-			case ImageLayoutUndefined:
-				return VK_IMAGE_LAYOUT_UNDEFINED;
 			case ImageLayoutAttachment:
 				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
 					return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -343,8 +360,33 @@ namespace flame
 			return VK_IMAGE_LAYOUT_UNDEFINED;
 		}
 
+		inline D3D12_RESOURCE_STATES to_dx(ImageLayout l, Format fmt)
+		{
+			switch (l)
+			{
+			case ImageLayoutAttachment:
+				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
+					return D3D12_RESOURCE_STATE_RENDER_TARGET;
+				else
+					return D3D12_RESOURCE_STATE_DEPTH_WRITE | D3D12_RESOURCE_STATE_DEPTH_READ; // TODO: is it true?
+			case ImageLayoutShaderReadOnly:
+				return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE/*D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE*/; // TOOD: wtf?
+			//case ImageLayoutShaderStorage:
+			//	return VK_IMAGE_LAYOUT_GENERAL; // TODO
+			case ImageLayoutTransferSrc:
+				return D3D12_RESOURCE_STATE_COPY_SOURCE; // TODO: is it true?
+			case ImageLayoutTransferDst:
+				return D3D12_RESOURCE_STATE_COPY_DEST; // TODO: is it true?
+			case ImageLayoutPresent:
+				return D3D12_RESOURCE_STATE_PRESENT;
+			case ImageLayoutGeneral:
+				return D3D12_RESOURCE_STATE_COMMON; // TOOD: is it true?
+			}
+			return D3D12_RESOURCE_STATE_COMMON; // TOOD: is it true?
+		}
+
 		template<>
-		inline VkFlags to_backend_flags<ImageAspectFlags>(uint a)
+		inline VkFlags to_vk_flags<ImageAspectFlags>(uint a)
 		{
 			VkImageAspectFlags ret = 0;
 			if (a & ImageAspectColor)
@@ -356,7 +398,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkComponentSwizzle to_backend(Swizzle s)
+		inline VkComponentSwizzle to_vk(Swizzle s)
 		{
 			switch (s)
 			{
@@ -377,7 +419,7 @@ namespace flame
 			}
 		}
 
-		inline VkFilter to_backend(Filter f)
+		inline VkFilter to_vk(Filter f)
 		{
 			switch (f)
 			{
@@ -388,7 +430,7 @@ namespace flame
 			}
 		}
 
-		inline VkSamplerAddressMode to_backend(AddressMode m)
+		inline VkSamplerAddressMode to_vk(AddressMode m)
 		{
 			switch (m)
 			{
@@ -401,7 +443,7 @@ namespace flame
 			}
 		}
 
-		inline VkBorderColor to_backend(BorderColor c)
+		inline VkBorderColor to_vk(BorderColor c)
 		{
 			switch (c)
 			{
@@ -419,7 +461,7 @@ namespace flame
 		}
 
 		template<>
-		inline VkFlags to_backend_flags<AccessFlags>(uint a)
+		inline VkFlags to_vk_flags<AccessFlags>(uint a)
 		{
 			VkAccessFlags ret = 0;
 			if (a & AccessIndirectCommandRead)
@@ -460,7 +502,7 @@ namespace flame
 		}
 
 		template<>
-		inline VkFlags to_backend_flags<PipelineStageFlags>(uint s)
+		inline VkFlags to_vk_flags<PipelineStageFlags>(uint s)
 		{
 			VkPipelineStageFlags ret = 0;
 			if (s & PipelineStageTop)
@@ -500,7 +542,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkAttachmentLoadOp to_backend(AttachmentLoadOp op)
+		inline VkAttachmentLoadOp to_vk(AttachmentLoadOp op)
 		{
 			switch (op)
 			{
@@ -513,7 +555,7 @@ namespace flame
 			}
 		}
 
-		inline VkAttachmentStoreOp to_backend(AttachmentStoreOp op)
+		inline VkAttachmentStoreOp to_vk(AttachmentStoreOp op)
 		{
 			switch (op)
 			{
@@ -524,7 +566,7 @@ namespace flame
 			}
 		}
 
-		inline VkVertexInputRate to_backend(VertexInputRate r)
+		inline VkVertexInputRate to_vk(VertexInputRate r)
 		{
 			switch (r)
 			{
@@ -535,7 +577,7 @@ namespace flame
 			}
 		}
 
-		inline VkPrimitiveTopology to_backend(PrimitiveTopology t)
+		inline VkPrimitiveTopology to_vk(PrimitiveTopology t)
 		{
 			switch (t)
 			{
@@ -564,7 +606,7 @@ namespace flame
 			}
 		}
 
-		inline VkPolygonMode to_backend(PolygonMode m)
+		inline VkPolygonMode to_vk(PolygonMode m)
 		{
 			switch (m)
 			{
@@ -577,7 +619,7 @@ namespace flame
 			}
 		}
 
-		inline VkCompareOp to_backend(CompareOp o)
+		inline VkCompareOp to_vk(CompareOp o)
 		{
 			switch (o)
 			{
@@ -598,7 +640,7 @@ namespace flame
 			}
 		}
 
-		inline VkStencilOp to_backend(StencilOp o)
+		inline VkStencilOp to_vk(StencilOp o)
 		{
 			switch (o)
 			{
@@ -621,7 +663,7 @@ namespace flame
 			}
 		}
 
-		inline VkCullModeFlagBits to_backend(CullMode m)
+		inline VkCullModeFlagBits to_vk(CullMode m)
 		{
 			switch (m)
 			{
@@ -636,7 +678,7 @@ namespace flame
 			}
 		}
 
-		inline VkBlendFactor to_backend(BlendFactor f)
+		inline VkBlendFactor to_vk(BlendFactor f)
 		{
 			switch (f)
 			{
@@ -681,7 +723,7 @@ namespace flame
 			}
 		}
 
-		inline VkBlendOp to_backend(BlendOp o)
+		inline VkBlendOp to_vk(BlendOp o)
 		{
 			switch (o)
 			{
@@ -699,7 +741,7 @@ namespace flame
 		}
 
 		template<>
-		inline VkFlags to_backend_flags<VkColorComponentFlags>(uint c)
+		inline VkFlags to_vk_flags<VkColorComponentFlags>(uint c)
 		{
 			VkColorComponentFlags ret = 0;
 			if (c & ColorComponentR)
@@ -713,7 +755,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkDynamicState to_backend(DynamicState s)
+		inline VkDynamicState to_vk(DynamicState s)
 		{
 			switch (s)
 			{

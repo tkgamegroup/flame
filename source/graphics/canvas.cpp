@@ -65,7 +65,7 @@ namespace flame
 				defines.insert(defines.end(), stencil_compare_defines.begin(), stencil_compare_defines.end());
 				pl_sdf_stencil_compare = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", defines);
 			}
-			prm.init(pl->layout, graphics::PipelineGraphics);
+			prm.init(pl->layout, PipelineGraphics);
 			buf_vtx.create(sizeof(DrawVert), 360000);
 			buf_idx.create(240000);
 			default_font_atlas = FontAtlas::get({ L"flame\\fonts\\OpenSans-Regular.ttf" });
@@ -130,14 +130,14 @@ namespace flame
 			create_renderpass(Swapchain::format);
 
 			window->native->resize_listeners.add([this](const uvec2& sz) {
-				graphics::Queue::get()->wait_idle();
+				Queue::get()->wait_idle();
 				iv_tars.clear();
-				std::vector<graphics::ImageViewPtr> ivs;
+				std::vector<ImageViewPtr> ivs;
 				for (auto& i : bound_window->swapchain->images)
 					ivs.push_back(i->get_view());
 				set_targets(ivs);
 			});
-			std::vector<graphics::ImageViewPtr> ivs;
+			std::vector<ImageViewPtr> ivs;
 			for (auto& i : window->swapchain->images)
 				ivs.push_back(i->get_view());
 			set_targets(ivs);
@@ -163,7 +163,7 @@ namespace flame
 			ch_sizes[idx] = size;
 		}
 
-		void CanvasPrivate::register_ch_icon(wchar_t code, const graphics::ImageDesc& image)
+		void CanvasPrivate::register_ch_icon(wchar_t code, const ImageDesc& image)
 		{
 			if (code < CH_ICON_BEGIN || code >= CH_ICON_END)
 				return;

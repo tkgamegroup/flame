@@ -74,6 +74,19 @@ namespace flame
 			return VK_FALSE;
 		}
 
+		DevicePrivate::~DevicePrivate()
+		{
+			if (vk_device)
+				vkDestroyDevice(vk_device, nullptr);
+			if (vk_instance)
+				vkDestroyInstance(vk_instance, nullptr);
+
+			if (d12_device)
+				d12_device->Release();
+			if (dxgi_factory)
+				dxgi_factory->Release();
+		}
+
 		bool DevicePrivate::get_config(uint hash, uint & value)
 		{
 			if (auto it = configs.find(hash); it != configs.end())
@@ -84,7 +97,7 @@ namespace flame
 			return false;
 		}
 
-		static void _set_object_debug_name(VkDevice vk_device, void* backend_obj, VkObjectType type, const std::string& name)
+		static void vk_set_object_debug_name(VkDevice vk_device, void* backend_obj, VkObjectType type, const std::string& name)
 		{
 			VkDebugUtilsObjectNameInfoEXT info = {};
 			info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
@@ -96,17 +109,17 @@ namespace flame
 
 		void DevicePrivate::set_object_debug_name(BufferPtr obj, const std::string& name)
 		{
-			_set_object_debug_name(vk_device, obj->vk_buffer, VK_OBJECT_TYPE_BUFFER, name);
+			vk_set_object_debug_name(vk_device, obj->vk_buffer, VK_OBJECT_TYPE_BUFFER, name);
 		}
 
 		void DevicePrivate::set_object_debug_name(ImagePtr obj, const std::string& name)
 		{
-			_set_object_debug_name(vk_device, obj->vk_image, VK_OBJECT_TYPE_IMAGE, name);
+			vk_set_object_debug_name(vk_device, obj->vk_image, VK_OBJECT_TYPE_IMAGE, name);
 		}
 
-		uint DevicePrivate::find_memory_type(uint type_filter, MemoryPropertyFlags properties)
+		uint DevicePrivate::find_memory_type(uint type_filter, MemoryPropertyFlags properties) const
 		{
-			auto p = to_backend_flags<MemoryPropertyFlags>(properties);
+			auto p = to_vk_flags<MemoryPropertyFlags>(properties);
 			for (uint i = 0; i < vk_mem_props.memoryTypeCount; i++)
 			{
 				if ((type_filter & (1 << i)) && (vk_mem_props.memoryTypes[i].propertyFlags & p) == p)
@@ -165,11 +178,13 @@ namespace flame
 				instance_info.ppEnabledExtensionNames = required_instance_extensions.empty() ? nullptr : required_instance_extensions.data();
 				instance_info.enabledLayerCount = required_instance_layers.size();
 				instance_info.ppEnabledLayerNames = required_instance_layers.empty() ? nullptr : required_instance_layers.data();
-				chk_res(vkCreateInstance(&instance_info, nullptr, &ret->vk_instance));
+				check_vk_result(vkCreateInstance(&instance_info, nullptr, &ret->vk_instance));
 
 				vkCmdBeginDebugUtilsLabel = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetInstanceProcAddr(ret->vk_instance, "vkCmdBeginDebugUtilsLabelEXT");
 				vkCmdEndDebugUtilsLabel = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(ret->vk_instance, "vkCmdEndDebugUtilsLabelEXT");
 				vkSetDebugUtilsObjectName = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(ret->vk_instance, "vkSetDebugUtilsObjectNameEXT");
+
+				auto dxgi_flags = 0;
 
 				if (debug)
 				{
@@ -181,15 +196,32 @@ namespace flame
 					info.pUserData = nullptr;
 
 					VkDebugReportCallbackEXT callback;
-					chk_res(((PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(ret->vk_instance, "vkCreateDebugReportCallbackEXT"))
+					check_vk_result(((PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(ret->vk_instance, "vkCreateDebugReportCallbackEXT"))
 						(ret->vk_instance, &info, nullptr, &callback));
+
+					{
+						ID3D12Debug* debug_controller = nullptr;
+						check_dx_result(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller)));
+						debug_controller->EnableDebugLayer();
+						dxgi_flags |= DXGI_CREATE_FACTORY_DEBUG;
+						debug_controller->Release();
+					}
+				}
+
+				check_dx_result(CreateDXGIFactory2(dxgi_flags, IID_PPV_ARGS(&ret->dxgi_factory)));
+				{
+					IDXGIAdapter* warp_adapter = nullptr;
+					check_dx_result(ret->dxgi_factory->EnumWarpAdapter(IID_PPV_ARGS(&warp_adapter)));
+					check_dx_result(D3D12CreateDevice(warp_adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&ret->d12_device)));
+					ret->d12_rtv_off = ret->d12_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+					warp_adapter->Release();
 				}
 
 				count = 0;
 				std::vector<VkPhysicalDevice> physical_devices;
-				chk_res(vkEnumeratePhysicalDevices(ret->vk_instance, &count, nullptr));
+				check_vk_result(vkEnumeratePhysicalDevices(ret->vk_instance, &count, nullptr));
 				physical_devices.resize(count);
-				chk_res(vkEnumeratePhysicalDevices(ret->vk_instance, &count, physical_devices.data()));
+				check_vk_result(vkEnumeratePhysicalDevices(ret->vk_instance, &count, physical_devices.data()));
 				auto physical_device = physical_devices[0];
 				ret->vk_physical_device = physical_device;
 
@@ -328,7 +360,7 @@ namespace flame
 				device_info.queueCreateInfoCount = queue_infos.size();
 				device_info.enabledExtensionCount = required_device_extensions.size();
 				device_info.ppEnabledExtensionNames = required_device_extensions.data();
-				chk_res(vkCreateDevice(physical_device, &device_info, nullptr, &ret->vk_device));
+				check_vk_result(vkCreateDevice(physical_device, &device_info, nullptr, &ret->vk_device));
 				printf("vulkan: device created\n");
 
 				if (use_mesh_shader)
@@ -358,3 +390,4 @@ namespace flame
 	}
 }
 
+;

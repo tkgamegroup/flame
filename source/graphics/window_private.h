@@ -11,6 +11,7 @@ namespace flame
 		{
 			VkSurfaceKHR vk_surface = 0;
 			VkSwapchainKHR vk_swapchain = 0;
+			IDXGISwapChain3* d12_swapchain = nullptr;
 
 			~SwapchainPrivate();
 

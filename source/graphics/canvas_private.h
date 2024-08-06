@@ -29,7 +29,7 @@ namespace flame
 
 			std::vector<cvec4> ch_colors;
 			std::vector<uint> ch_sizes;
-			std::vector<graphics::ImageDesc> ch_icons;
+			std::vector<ImageDesc> ch_icons;
 
 			CanvasPrivate(bool hdr);
 			~CanvasPrivate();
@@ -40,7 +40,7 @@ namespace flame
 
 			void register_ch_color(wchar_t code, const const cvec4& coloror) override;
 			void register_ch_size(wchar_t code, uint size) override;
-			void register_ch_icon(wchar_t code, const graphics::ImageDesc& image) override;
+			void register_ch_icon(wchar_t code, const ImageDesc& image) override;
 
 			void reset_drawing() override;
 			DrawCmd& get_blit_cmd(DescriptorSetPtr ds);

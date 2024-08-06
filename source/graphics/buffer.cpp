@@ -33,12 +33,12 @@ namespace flame
 			buffer_info.flags = 0;
 			buffer_info.pNext = nullptr;
 			buffer_info.size = size;
-			buffer_info.usage = to_backend_flags<BufferUsageFlags>(usage);
+			buffer_info.usage = to_vk_flags<BufferUsageFlags>(usage);
 			buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 			buffer_info.queueFamilyIndexCount = 0;
 			buffer_info.pQueueFamilyIndices = nullptr;
 
-			chk_res(vkCreateBuffer(device->vk_device, &buffer_info, nullptr, &vk_buffer));
+			check_vk_result(vkCreateBuffer(device->vk_device, &buffer_info, nullptr, &vk_buffer));
 
 			VkMemoryRequirements mem_requirements;
 			vkGetBufferMemoryRequirements(device->vk_device, vk_buffer, &mem_requirements);
@@ -51,8 +51,8 @@ namespace flame
 			alloc_info.allocationSize = mem_requirements.size;
 			alloc_info.memoryTypeIndex = device->find_memory_type(mem_requirements.memoryTypeBits, mem_prop);
 
-			chk_res(vkAllocateMemory(device->vk_device, &alloc_info, nullptr, &vk_memory));
-			chk_res(vkBindBufferMemory(device->vk_device, vk_buffer, vk_memory, 0));
+			check_vk_result(vkAllocateMemory(device->vk_device, &alloc_info, nullptr, &vk_memory));
+			check_vk_result(vkBindBufferMemory(device->vk_device, vk_buffer, vk_memory, 0));
 			register_object(vk_buffer, "Buffer", this);
 			register_object(vk_memory, "Buffer Memory", this);
 		}
@@ -74,7 +74,7 @@ namespace flame
 				return;
 			if (_size == 0)
 				_size = size;
-			chk_res(vkMapMemory(device->vk_device, vk_memory, offset, _size, 0, &mapped));
+			check_vk_result(vkMapMemory(device->vk_device, vk_memory, offset, _size, 0, &mapped));
 			return;
 		}
 
@@ -95,7 +95,7 @@ namespace flame
 			range.memory = vk_memory;
 			range.offset = 0;
 			range.size = VK_WHOLE_SIZE;
-			chk_res(vkFlushMappedMemoryRanges(device->vk_device, 1, &range));
+			check_vk_result(vkFlushMappedMemoryRanges(device->vk_device, 1, &range));
 		}
 
 		void BufferPrivate::recreate(uint new_size)

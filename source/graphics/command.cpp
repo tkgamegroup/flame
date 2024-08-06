@@ -25,6 +25,16 @@ namespace flame
 
 			vkDestroyCommandPool(device->vk_device, vk_command_pool, nullptr);
 			unregister_object(vk_command_pool);
+
+			if (d12_command_allocator)
+				d12_command_allocator->Release();
+		}
+
+		void CommandPoolPrivate::reset()
+		{
+			vkResetCommandPool(device->vk_device, vk_command_pool, VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
+
+			//d12_command_allocator->Reset();
 		}
 
 		struct CommandPoolGet : CommandPool::Get
@@ -55,8 +65,12 @@ namespace flame
 				info.pNext = nullptr;
 				info.queueFamilyIndex = queue_family_idx;
 
-				chk_res(vkCreateCommandPool(device->vk_device, &info, nullptr, &ret->vk_command_pool));
+				check_vk_result(vkCreateCommandPool(device->vk_device, &info, nullptr, &ret->vk_command_pool));
 				register_object(ret->vk_command_pool, "Command Buffer Pool", ret);
+
+				{
+					device->d12_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&ret->d12_command_allocator));
+				}
 
 				return ret;
 			}
@@ -70,6 +84,9 @@ namespace flame
 			vkFreeCommandBuffers(device->vk_device, pool->vk_command_pool, 1, &vk_command_buffer);
 			vkDestroyQueryPool(device->vk_device, vk_query_pool, nullptr);
 			unregister_object(vk_command_buffer);
+
+			if (d12_command_list)
+				d12_command_list->Release();
 		}
 
 		void CommandBufferPrivate::begin(bool once)
@@ -88,7 +105,7 @@ namespace flame
 			info.flags = once ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 			info.pInheritanceInfo = nullptr;
 
-			chk_res(vkBeginCommandBuffer(vk_command_buffer, &info));
+			check_vk_result(vkBeginCommandBuffer(vk_command_buffer, &info));
 
 			if (want_executed_time)
 			{
@@ -107,6 +124,10 @@ namespace flame
 				vkCmdResetQueryPool(vk_command_buffer, vk_query_pool, 0, 2);
  				vkCmdWriteTimestamp(vk_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, vk_query_pool, 0);
 			}
+
+			{
+				check_dx_result(d12_command_list->Reset(pool->d12_command_allocator, nullptr));
+			}
 		}
 
 		void CommandBufferPrivate::begin_renderpass(RenderpassPtr rp, FramebufferPtr fb, const vec4* cvs)
@@ -122,11 +143,46 @@ namespace flame
 				auto& att = curr_rp->attachments[i];
 				auto layout = att.initia_layout;
 				auto iv = curr_fb->views[i];
+				auto img = iv->image;
 				auto& sub = iv->sub;
 				auto& ly = iv->image->levels[sub.base_level].layers[sub.base_layer];
 				if (layout != ImageLayoutUndefined && layout != ly.layout)
 					printf("begin renderpass: image layout mismatch, please review your commandbuffer\n");
-				ly.layout = att.final_layout;
+
+				{
+					auto old_state = to_dx(ly.layout, img->format);
+					auto new_state = to_dx(att.initia_layout, img->format);
+					if (new_state != old_state) // TODO: use a call to image_barrier
+					{
+						D3D12_RESOURCE_BARRIER barrier;
+						barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+						barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+						barrier.Transition.pResource = img->d12_resource;
+						barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+						barrier.Transition.StateBefore = to_dx(ly.layout, img->format);
+						barrier.Transition.StateAfter = to_dx(att.initia_layout, img->format);
+						d12_command_list->ResourceBarrier(1, &barrier);
+					}
+
+					if (att.load_op == AttachmentLoadClear)
+					{
+						D3D12_CPU_DESCRIPTOR_HANDLE rtv;
+						rtv = curr_fb->d12_targets_heap->GetCPUDescriptorHandleForHeapStart();
+						rtv.ptr += i * device->d12_rtv_off;
+						if (att.format >= Format_Depth_Begin && att.format <= Format_Depth_End)
+							/*d12_command_list->ClearDepthStencilView()*/; // TODO
+						else
+						{
+							vec4 color = cvs[i];
+							color.r = 1.f - color.r;
+							color.g = 1.f - color.g;
+							color.b = 1.f - color.b;
+							d12_command_list->ClearRenderTargetView(rtv, &color[0], 0, nullptr);
+						}
+					}
+				}
+
+				ly.layout = att.initia_layout;
 			}
 
 			VkRenderPassBeginInfo info;
@@ -154,6 +210,36 @@ namespace flame
 
 		void CommandBufferPrivate::end_renderpass()
 		{
+			{
+				for (auto i = 0; i < curr_fb->views.size(); i++)
+				{
+					auto& att = curr_rp->attachments[i];
+					auto layout = att.final_layout;
+					auto iv = curr_fb->views[i];
+					auto img = iv->image;
+					auto& sub = iv->sub;
+					auto& ly = iv->image->levels[sub.base_level].layers[sub.base_layer];
+
+					{
+						auto old_state = to_dx(ly.layout, img->format);
+						auto new_state = to_dx(att.final_layout, img->format);
+						if (new_state != old_state) // TODO: use a call to image_barrier
+						{
+							D3D12_RESOURCE_BARRIER barrier;
+							barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+							barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+							barrier.Transition.pResource = img->d12_resource;
+							barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+							barrier.Transition.StateBefore = to_dx(ly.layout, img->format);
+							barrier.Transition.StateAfter = to_dx(att.final_layout, img->format);
+							d12_command_list->ResourceBarrier(1, &barrier);
+						}
+					}
+
+					ly.layout = att.final_layout;
+				}
+			}
+
 			curr_sp = -1;
 			vkCmdEndRenderPass(vk_command_buffer);
 		}
@@ -202,7 +288,7 @@ namespace flame
 			auto vk_pl = curr_gpl->vk_pipeline;
 			if (curr_gpl->dynamic_renderpass && curr_rp != curr_gpl->renderpass)
 				vk_pl = curr_gpl->get_dynamic_pipeline(curr_rp, curr_sp);
-			vkCmdBindPipeline(vk_command_buffer, to_backend(curr_plt), vk_pl);
+			vkCmdBindPipeline(vk_command_buffer, to_vk(curr_plt), vk_pl);
 		}
 
 		void CommandBufferPrivate::bind_pipeline(ComputePipelinePtr pl)
@@ -214,7 +300,7 @@ namespace flame
 			curr_gpl = nullptr;
 			curr_cpl = pl;
 
-			vkCmdBindPipeline(vk_command_buffer, to_backend(curr_plt), curr_cpl->vk_pipeline);
+			vkCmdBindPipeline(vk_command_buffer, to_vk(curr_plt), curr_cpl->vk_pipeline);
 		}
 
 		void CommandBufferPrivate::bind_descriptor_sets(uint idx, std::span<DescriptorSetPtr> dss)
@@ -252,7 +338,7 @@ namespace flame
 			auto i = 0;
 			for (auto d : dss)
 				vk_sets[i++] = d->vk_descriptor_set;
-			vkCmdBindDescriptorSets(vk_command_buffer, to_backend(curr_plt), curr_pll->vk_pipeline_layout, idx, vk_sets.size(), vk_sets.data(), 0, nullptr);
+			vkCmdBindDescriptorSets(vk_command_buffer, to_vk(curr_plt), curr_pll->vk_pipeline_layout, idx, vk_sets.size(), vk_sets.data(), 0, nullptr);
 		}
 
 		void CommandBufferPrivate::bind_vertex_buffer(BufferPtr buf, uint id)
@@ -268,7 +354,7 @@ namespace flame
 
 		void CommandBufferPrivate::push_constant(uint offset, uint size, const void* data)
 		{
-			vkCmdPushConstants(vk_command_buffer, curr_pll->vk_pipeline_layout, to_backend_flags<ShaderStageFlags>(ShaderStageAll), offset, size, data);
+			vkCmdPushConstants(vk_command_buffer, curr_pll->vk_pipeline_layout, to_vk_flags<ShaderStageFlags>(ShaderStageAll), offset, size, data);
 		}
 
 		void CommandBufferPrivate::draw(uint count, uint instance_count, uint first_vertex, uint first_instance)
@@ -306,8 +392,8 @@ namespace flame
 			VkBufferMemoryBarrier barrier;
 			barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
 			barrier.pNext = nullptr;
-			barrier.srcAccessMask = to_backend_flags<AccessFlags>(src_access);
-			barrier.dstAccessMask = to_backend_flags<AccessFlags>(dst_access);
+			barrier.srcAccessMask = to_vk_flags<AccessFlags>(src_access);
+			barrier.dstAccessMask = to_vk_flags<AccessFlags>(dst_access);
 			barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			barrier.buffer = buf->vk_buffer;
@@ -329,7 +415,7 @@ namespace flame
 
 			}
 
-			vkCmdPipelineBarrier(vk_command_buffer, to_backend_flags<PipelineStageFlags>(src_stage), to_backend_flags<PipelineStageFlags>(dst_stage),
+			vkCmdPipelineBarrier(vk_command_buffer, to_vk_flags<PipelineStageFlags>(src_stage), to_vk_flags<PipelineStageFlags>(dst_stage),
 				0, 0, nullptr, 1, &barrier, 0, nullptr);
 		}
 
@@ -418,14 +504,14 @@ namespace flame
 			VkImageMemoryBarrier barrier;
 			barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 			barrier.pNext = nullptr;
-			barrier.srcAccessMask = to_backend_flags<AccessFlags>(src_access);
-			barrier.dstAccessMask = to_backend_flags<AccessFlags>(dst_access);
-			barrier.oldLayout = to_backend(old_layout, img->format);
-			barrier.newLayout = to_backend(new_layout, img->format);
+			barrier.srcAccessMask = to_vk_flags<AccessFlags>(src_access);
+			barrier.dstAccessMask = to_vk_flags<AccessFlags>(dst_access);
+			barrier.oldLayout = to_vk(old_layout, img->format);
+			barrier.newLayout = to_vk(new_layout, img->format);
 			barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			barrier.image = img->vk_image;
-			barrier.subresourceRange.aspectMask = to_backend_flags<ImageAspectFlags>(aspect_from_format(img->format));
+			barrier.subresourceRange.aspectMask = to_vk_flags<ImageAspectFlags>(aspect_from_format(img->format));
 			barrier.subresourceRange.baseMipLevel = sub.base_level;
 			barrier.subresourceRange.levelCount = sub.level_count;
 			barrier.subresourceRange.baseArrayLayer = sub.base_layer;
@@ -460,11 +546,27 @@ namespace flame
 				}
 			}
 
-			vkCmdPipelineBarrier(vk_command_buffer, to_backend_flags<PipelineStageFlags>(src_stage), to_backend_flags<PipelineStageFlags>(dst_stage),
+			vkCmdPipelineBarrier(vk_command_buffer, to_vk_flags<PipelineStageFlags>(src_stage), to_vk_flags<PipelineStageFlags>(dst_stage),
 				0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+			{
+				auto old_state = to_dx(old_layout, img->format);
+				auto new_state = to_dx(new_layout, img->format);
+				if (new_state != old_state && img->d12_resource) // TODO: there should be a d12_resource
+				{
+					D3D12_RESOURCE_BARRIER barrier;
+					barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+					barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+					barrier.Transition.pResource = img->d12_resource;
+					barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+					barrier.Transition.StateBefore = to_dx(old_layout, img->format);
+					barrier.Transition.StateAfter = to_dx(new_layout, img->format);
+					d12_command_list->ResourceBarrier(1, &barrier);
+				}
+			}
 		}
 
-		VkBufferCopy to_backend(const BufferCopy& src)
+		VkBufferCopy to_vk(const BufferCopy& src)
 		{
 			VkBufferCopy ret = {};
 			ret.srcOffset = src.src_off;
@@ -473,7 +575,7 @@ namespace flame
 			return ret;
 		}
 
-		VkImageCopy to_backend(const ImageCopy& src, VkImageAspectFlags aspect)
+		VkImageCopy to_vk(const ImageCopy& src, VkImageAspectFlags aspect)
 		{
 			VkImageCopy ret = {};
 			ret.srcSubresource.aspectMask = aspect;
@@ -496,7 +598,7 @@ namespace flame
 			return ret;
 		}
 
-		VkBufferImageCopy to_backend(const BufferImageCopy& src, VkImageAspectFlags aspect)
+		VkBufferImageCopy to_vk(const BufferImageCopy& src, VkImageAspectFlags aspect)
 		{
 			VkBufferImageCopy ret = {};
 			ret.bufferOffset = src.buf_off;
@@ -513,7 +615,7 @@ namespace flame
 			return ret;
 		}
 
-		VkImageBlit to_backend(const ImageBlit& src)
+		VkImageBlit to_vk(const ImageBlit& src)
 		{
 			VkImageBlit ret = {};
 			ret.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -535,39 +637,39 @@ namespace flame
 		{
 			std::vector<VkBufferCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
-				vk_copies[i] = to_backend(copies[i]);
+				vk_copies[i] = to_vk(copies[i]);
 			vkCmdCopyBuffer(vk_command_buffer, src->vk_buffer, dst->vk_buffer, vk_copies.size(), vk_copies.data());
 		}
 
 		void CommandBufferPrivate::copy_image(ImagePtr src, ImagePtr dst, std::span<ImageCopy> copies)
 		{
-			auto aspect = to_backend_flags<ImageAspectFlags>(aspect_from_format(src->format));
+			auto aspect = to_vk_flags<ImageAspectFlags>(aspect_from_format(src->format));
 
 			std::vector<VkImageCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
-				vk_copies[i] = to_backend(copies[i], aspect);
+				vk_copies[i] = to_vk(copies[i], aspect);
 			vkCmdCopyImage(vk_command_buffer, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->vk_image,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_copies.size(), vk_copies.data());
 		}
 
 		void CommandBufferPrivate::copy_buffer_to_image(BufferPtr src, ImagePtr dst, std::span<BufferImageCopy> copies)
 		{
-			auto aspect = to_backend_flags<ImageAspectFlags>(aspect_from_format(dst->format));
+			auto aspect = to_vk_flags<ImageAspectFlags>(aspect_from_format(dst->format));
 
 			std::vector<VkBufferImageCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
-				vk_copies[i] = to_backend(copies[i], aspect);
+				vk_copies[i] = to_vk(copies[i], aspect);
 			vkCmdCopyBufferToImage(vk_command_buffer, src->vk_buffer, dst->vk_image,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, vk_copies.size(), vk_copies.data());
 		}
 
 		void CommandBufferPrivate::copy_image_to_buffer(ImagePtr src, BufferPtr dst, std::span<BufferImageCopy> copies)
 		{
-			auto aspect = to_backend_flags<ImageAspectFlags>(aspect_from_format(src->format));
+			auto aspect = to_vk_flags<ImageAspectFlags>(aspect_from_format(src->format));
 
 			std::vector<VkBufferImageCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
-				vk_copies[i] = to_backend(copies[i], aspect);
+				vk_copies[i] = to_vk(copies[i], aspect);
 			vkCmdCopyImageToBuffer(vk_command_buffer, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->vk_buffer, vk_copies.size(), vk_copies.data());
 		}
 
@@ -575,9 +677,9 @@ namespace flame
 		{
 			std::vector<VkImageBlit> vk_blits(blits.size());
 			for (auto i = 0; i < vk_blits.size(); i++)
-				vk_blits[i] = to_backend(blits[i]);
+				vk_blits[i] = to_vk(blits[i]);
 			vkCmdBlitImage(vk_command_buffer, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src->vk_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
-				vk_blits.size(), vk_blits.data(), to_backend(filter));
+				vk_blits.size(), vk_blits.data(), to_vk(filter));
 		}
 
 		void CommandBufferPrivate::clear_color_image(ImagePtr img, const ImageSub& sub, const vec4& color)
@@ -644,7 +746,11 @@ namespace flame
 			if (want_executed_time)
 				vkCmdWriteTimestamp(vk_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, vk_query_pool, 1);
 
-			chk_res(vkEndCommandBuffer(vk_command_buffer));
+			check_vk_result(vkEndCommandBuffer(vk_command_buffer));
+
+			{
+				check_dx_result(d12_command_list->Close());
+			}
 		}
 
 		void CommandBufferPrivate::calc_executed_time()
@@ -674,8 +780,13 @@ namespace flame
 				info.commandPool = pool->vk_command_pool;
 				info.commandBufferCount = 1;
 
-				chk_res(vkAllocateCommandBuffers(device->vk_device, &info, &ret->vk_command_buffer));
+				check_vk_result(vkAllocateCommandBuffers(device->vk_device, &info, &ret->vk_command_buffer));
 				register_object(ret->vk_command_buffer, "Command Buffer", ret);
+
+				{
+					check_dx_result(device->d12_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, pool->d12_command_allocator, nullptr, IID_PPV_ARGS(&ret->d12_command_list)));
+					check_dx_result(ret->d12_command_list->Close());
+				}
 
 				ret->begin();
 				ret->end();
@@ -685,13 +796,28 @@ namespace flame
 		}CommandBuffer_create;
 		CommandBuffer::Create& CommandBuffer::create = CommandBuffer_create;
 
+		QueuePrivate::~QueuePrivate()
+		{
+			if (app_exiting) return;
+
+			if (d12_queue)
+				d12_queue->Release();
+		}
+
 		void QueuePrivate::wait_idle()
 		{
-			chk_res(vkQueueWaitIdle(vk_queue));
+			check_vk_result(vkQueueWaitIdle(vk_queue));
 		}
 
 		void QueuePrivate::submit(std::span<CommandBufferPtr> commandbuffers, std::span<SemaphorePtr> wait_semaphores, std::span<SemaphorePtr> signal_semaphores, FencePtr signal_fence)
 		{
+#ifdef USE_D3D12
+			for (auto i = 0; i < commandbuffers.size(); i++)
+			{
+				ID3D12CommandList* list[] = { commandbuffers[i]->d12_command_list };
+				d12_queue->ExecuteCommandLists(1, list);
+			}
+#elif USE_VULKAN
 			std::vector<VkCommandBuffer> vk_cbs;
 			vk_cbs.resize(commandbuffers.size());
 			for (auto i = 0; i < vk_cbs.size(); i++)
@@ -721,13 +847,28 @@ namespace flame
 			info.signalSemaphoreCount = vk_signal_smps.size();
 			info.pSignalSemaphores = vk_signal_smps.data();
 
-			chk_res(vkQueueSubmit(vk_queue, 1, &info, signal_fence ? signal_fence->vk_fence : nullptr));
+			check_vk_result(vkQueueSubmit(vk_queue, 1, &info, signal_fence ? signal_fence->vk_fence : nullptr));
+#endif
+
+
 			if (signal_fence)
+			{
+#ifdef USE_D3D12
+				d12_queue->Signal(signal_fence->d12_fence, 1);
+#elif USE_VULKAN
+#endif
 				signal_fence->value = 1;
+			}
 		}
 
 		void QueuePrivate::present(std::span<SwapchainPtr> swapchains, std::span<SemaphorePtr> wait_semaphores)
 		{
+#ifdef USE_D3D12
+			for (auto i = 0; i < swapchains.size(); i++)
+			{
+				swapchains[i]->d12_swapchain->Present(1, 0); // TODO: no any waiting for the completion of the commands?
+			}
+#elif USE_VULKAN
 			std::vector<VkSemaphore> vk_wait_smps;
 			vk_wait_smps.resize(wait_semaphores.size());
 			for (auto i = 0; i < vk_wait_smps.size(); i++)
@@ -750,7 +891,8 @@ namespace flame
 			info.swapchainCount = vk_scs.size();
 			info.pSwapchains = vk_scs.data();
 			info.pImageIndices = indices.data();
-			chk_res(vkQueuePresentKHR(vk_queue, &info));
+			//check_vk_result(vkQueuePresentKHR(vk_queue, &info));
+#endif
 		}
 
 		struct QueueGet : Queue::Get
@@ -777,6 +919,14 @@ namespace flame
 
 				vkGetDeviceQueue(device->vk_device, queue_family_idx, 0, &ret->vk_queue);
 
+				{
+					D3D12_COMMAND_QUEUE_DESC desc = {};
+					desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+					desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+
+					auto res = device->d12_device->CreateCommandQueue(&desc, IID_PPV_ARGS(&ret->d12_queue));
+				}
+
 				return ret;
 			}
 		}Queue_create;
@@ -798,7 +948,7 @@ namespace flame
 
 				VkSemaphoreCreateInfo info = {};
 				info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-				chk_res(vkCreateSemaphore(device->vk_device, &info, nullptr, &ret->vk_semaphore));
+				check_vk_result(vkCreateSemaphore(device->vk_device, &info, nullptr, &ret->vk_semaphore));
 				register_object(ret->vk_semaphore, "Semaphore", ret);
 
 				return ret;
@@ -822,7 +972,7 @@ namespace flame
 
 				VkEventCreateInfo info = {};
 				info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
-				chk_res(vkCreateEvent(device->vk_device, &info, nullptr, &ret->vk_event));
+				check_vk_result(vkCreateEvent(device->vk_device, &info, nullptr, &ret->vk_event));
 				register_object(ret->vk_event, "Event", ret);
 
 				return ret;
@@ -836,16 +986,30 @@ namespace flame
 
 			vkDestroyFence(device->vk_device, vk_fence, nullptr);
 			unregister_object(vk_fence);
+
+			if (d12_fence)
+				d12_fence->Release();
 		}
 
 		void FencePrivate::wait(bool auto_reset)
 		{
 			if (value > 0)
 			{
-				chk_res(vkWaitForFences(device->vk_device, 1, &vk_fence, true, UINT64_MAX));
+#ifdef USE_D3D12
+				if (d12_fence->GetCompletedValue() != value)
+				{
+					check_dx_result(d12_fence->SetEventOnCompletion(value, d12_event));
+					WaitForSingleObject(d12_event, 0xffffffff);
+				}
+#elif USE_VULKAN
+				check_vk_result(vkWaitForFences(device->vk_device, 1, &vk_fence, true, UINT64_MAX));
+#endif
 				if (auto_reset)
 				{
-					chk_res(vkResetFences(device->vk_device, 1, &vk_fence));
+#ifdef USE_D3D12
+#elif USE_VULKAN
+					check_vk_result(vkResetFences(device->vk_device, 1, &vk_fence));
+#endif
 					value = 0;
 				}
 			}
@@ -864,8 +1028,13 @@ namespace flame
 					info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 					ret->value = 1;
 				}
-				chk_res(vkCreateFence(device->vk_device, &info, nullptr, &ret->vk_fence));
+				check_vk_result(vkCreateFence(device->vk_device, &info, nullptr, &ret->vk_fence));
 				register_object(ret->vk_fence, "Fence", ret);
+
+				{
+					check_dx_result(device->d12_device->CreateFence(ret->value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&ret->d12_fence)));
+					ret->d12_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+				}
 
 				return ret;
 			}

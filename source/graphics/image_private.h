@@ -11,6 +11,7 @@ namespace flame
 		{
 			VkImage vk_image = 0;
 			VkDeviceMemory vk_memory = 0;
+			ID3D12Resource* d12_resource = nullptr;
 			std::map<uint64, std::unique_ptr<ImageViewPrivate>> views;
 			std::map<uint64, std::unique_ptr<DescriptorSetPrivate>> read_dss;
 			std::map<uint64, std::unique_ptr<FramebufferPrivate>> write_fbs;

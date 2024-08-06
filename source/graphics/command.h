@@ -10,6 +10,8 @@ namespace flame
 		{
 			virtual ~CommandPool() {}
 
+			virtual void reset() = 0;
+
 			struct Get
 			{
 				virtual CommandPoolPtr operator()(QueueFamily family = QueueGraphics) = 0;

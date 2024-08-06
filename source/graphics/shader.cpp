@@ -718,7 +718,7 @@ namespace flame
 				descriptor_pool_info.poolSizeCount = countof(descriptor_pool_sizes);
 				descriptor_pool_info.pPoolSizes = descriptor_pool_sizes;
 				descriptor_pool_info.maxSets = 128;
-				chk_res(vkCreateDescriptorPool(device->vk_device, &descriptor_pool_info, nullptr, &ret->vk_descriptor_pool));
+				check_vk_result(vkCreateDescriptorPool(device->vk_device, &descriptor_pool_info, nullptr, &ret->vk_descriptor_pool));
 				register_object(ret->vk_descriptor_pool, "Descriptor Pool", ret);
 
 				return ret;
@@ -774,9 +774,9 @@ namespace flame
 					auto& dst = vk_bindings[i];
 
 					dst.binding = i;
-					dst.descriptorType = to_backend(src.type);
+					dst.descriptorType = to_vk(src.type);
 					dst.descriptorCount = max(1U, src.count);
-					dst.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
+					dst.stageFlags = to_vk_flags<ShaderStageFlags>(ShaderStageAll);
 					dst.pImmutableSamplers = nullptr;
 
 					ret->bindings_map[sh(src.name.c_str())] = i;
@@ -789,7 +789,7 @@ namespace flame
 				info.bindingCount = vk_bindings.size();
 				info.pBindings = vk_bindings.data();
 
-				chk_res(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &ret->vk_descriptor_set_layout));
+				check_vk_result(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &ret->vk_descriptor_set_layout));
 				register_object(ret->vk_descriptor_set_layout, "Descriptor Set Layout", ret);
 
 				return ret;
@@ -856,8 +856,11 @@ namespace flame
 
 			layout->ref--;
 
-			chk_res(vkFreeDescriptorSets(device->vk_device, pool->vk_descriptor_pool, 1, &vk_descriptor_set));
+			check_vk_result(vkFreeDescriptorSets(device->vk_device, pool->vk_descriptor_pool, 1, &vk_descriptor_set));
 			unregister_object(vk_descriptor_set);
+
+			if (d12_descriptor_heap)
+				d12_descriptor_heap->Release();
 		}
 
 		void DescriptorSetPrivate::set_buffer_i(uint binding, uint index, BufferPtr buf, uint offset, uint range)
@@ -922,7 +925,7 @@ namespace flame
 				wrt.dstSet = vk_descriptor_set;
 				wrt.dstBinding = u.first;
 				wrt.dstArrayElement = u.second;
-				wrt.descriptorType = to_backend(layout->bindings[u.first].type);
+				wrt.descriptorType = to_vk(layout->bindings[u.first].type);
 				wrt.descriptorCount = 1;
 				wrt.pBufferInfo = &info;
 				wrt.pImageInfo = nullptr;
@@ -948,7 +951,7 @@ namespace flame
 				wrt.dstSet = vk_descriptor_set;
 				wrt.dstBinding = u.first;
 				wrt.dstArrayElement = u.second;
-				wrt.descriptorType = to_backend(type);
+				wrt.descriptorType = to_vk(type);
 				wrt.descriptorCount = 1;
 				wrt.pBufferInfo = nullptr;
 				wrt.pImageInfo = &info;
@@ -987,8 +990,16 @@ namespace flame
 				info.descriptorSetCount = 1;
 				info.pSetLayouts = &layout->vk_descriptor_set_layout;
 
-				chk_res(vkAllocateDescriptorSets(device->vk_device, &info, &ret->vk_descriptor_set));
+				check_vk_result(vkAllocateDescriptorSets(device->vk_device, &info, &ret->vk_descriptor_set));
 				register_object(ret->vk_descriptor_set, "Descriptor Set", ret);
+
+				{
+					D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+					desc.NumDescriptors = ret->reses.size();
+					desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+					desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+					check_dx_result(device->d12_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ret->d12_descriptor_heap)));
+				}
 
 				return ret;
 			}
@@ -1073,7 +1084,7 @@ namespace flame
 				VkPushConstantRange vk_pushconstant_range;
 				vk_pushconstant_range.offset = 0;
 				vk_pushconstant_range.size = push_constant_size;
-				vk_pushconstant_range.stageFlags = to_backend_flags<ShaderStageFlags>(ShaderStageAll);
+				vk_pushconstant_range.stageFlags = to_vk_flags<ShaderStageFlags>(ShaderStageAll);
 
 				VkPipelineLayoutCreateInfo info;
 				info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -1084,7 +1095,7 @@ namespace flame
 				info.pushConstantRangeCount = push_constant_size > 0 ? 1 : 0;
 				info.pPushConstantRanges = push_constant_size > 0 ? &vk_pushconstant_range : nullptr;
 
-				chk_res(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &ret->vk_pipeline_layout));
+				check_vk_result(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &ret->vk_pipeline_layout));
 				register_object(ret->vk_pipeline_layout, "Pipeline Layout", ret);
 
 				return ret;
@@ -1219,7 +1230,7 @@ namespace flame
 			shader_info.pNext = nullptr;
 			shader_info.codeSize = data_soup.soup.size();
 			shader_info.pCode = (uint*)data_soup.soup.data();
-			chk_res(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &ret->vk_module));
+			check_vk_result(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &ret->vk_module));
 			register_object(ret->vk_module, "Shader", ret);
 
 			return ret;
@@ -1773,7 +1784,7 @@ namespace flame
 					dst.pNext = nullptr;
 					dst.pSpecializationInfo = nullptr;
 					dst.pName = "main";
-					dst.stage = to_backend(shader->type);
+					dst.stage = to_vk(shader->type);
 					dst.module = shader->vk_module;
 				}
 
@@ -1794,10 +1805,10 @@ namespace flame
 							offset = src_att.offset;
 						dst_att.offset = offset;
 						offset += format_size(src_att.format);
-						dst_att.format = to_backend(src_att.format);
+						dst_att.format = to_vk(src_att.format);
 						vk_vi_attributes.push_back(dst_att);
 					}
-					dst_buf.inputRate = to_backend(src_buf.rate);
+					dst_buf.inputRate = to_vk(src_buf.rate);
 					dst_buf.stride = src_buf.stride ? src_buf.stride : offset;
 				}
 
@@ -1814,7 +1825,7 @@ namespace flame
 				assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 				assembly_state.flags = 0;
 				assembly_state.pNext = nullptr;
-				assembly_state.topology = to_backend(info.primitive_topology);
+				assembly_state.topology = to_vk(info.primitive_topology);
 				assembly_state.primitiveRestartEnable = VK_FALSE;
 
 				VkPipelineTessellationStateCreateInfo tess_state;
@@ -1852,8 +1863,8 @@ namespace flame
 				raster_state.flags = 0;
 				raster_state.depthClampEnable = info.depth_clamp;
 				raster_state.rasterizerDiscardEnable = info.rasterizer_discard;
-				raster_state.polygonMode = to_backend(info.polygon_mode);
-				raster_state.cullMode = to_backend(info.cull_mode);
+				raster_state.polygonMode = to_vk(info.polygon_mode);
+				raster_state.cullMode = to_vk(info.cull_mode);
 				raster_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 				raster_state.depthBiasEnable = VK_FALSE;
 				raster_state.depthBiasConstantFactor = 0.f;
@@ -1868,10 +1879,10 @@ namespace flame
 				if (info.sample_count == SampleCount_1)
 				{
 					auto& res_atts = info.renderpass->subpasses[info.subpass_index].color_resolve_attachments;
-					multisample_state.rasterizationSamples = to_backend(!res_atts.empty() ? info.renderpass->attachments[res_atts[0]].sample_count : SampleCount_1);
+					multisample_state.rasterizationSamples = to_vk(!res_atts.empty() ? info.renderpass->attachments[res_atts[0]].sample_count : SampleCount_1);
 				}
 				else
-					multisample_state.rasterizationSamples = to_backend(info.sample_count);
+					multisample_state.rasterizationSamples = to_vk(info.sample_count);
 				multisample_state.sampleShadingEnable = VK_FALSE;
 				multisample_state.minSampleShading = 0.f;
 				multisample_state.pSampleMask = nullptr;
@@ -1884,15 +1895,15 @@ namespace flame
 				depth_stencil_state.pNext = nullptr;
 				depth_stencil_state.depthTestEnable = info.depth_test;
 				depth_stencil_state.depthWriteEnable = info.depth_write;
-				depth_stencil_state.depthCompareOp = to_backend(info.depth_compare_op);
+				depth_stencil_state.depthCompareOp = to_vk(info.depth_compare_op);
 				depth_stencil_state.depthBoundsTestEnable = VK_FALSE;
 				depth_stencil_state.minDepthBounds = 0;
 				depth_stencil_state.maxDepthBounds = 0;
 				depth_stencil_state.stencilTestEnable = info.stencil_test;
-				depth_stencil_state.front.compareOp = to_backend(info.stencil_compare_op);
-				depth_stencil_state.front.passOp = to_backend(info.stencil_op);
-				depth_stencil_state.front.failOp = to_backend(info.stencil_op);
-				depth_stencil_state.front.depthFailOp = to_backend(info.stencil_op);
+				depth_stencil_state.front.compareOp = to_vk(info.stencil_compare_op);
+				depth_stencil_state.front.passOp = to_vk(info.stencil_op);
+				depth_stencil_state.front.failOp = to_vk(info.stencil_op);
+				depth_stencil_state.front.depthFailOp = to_vk(info.stencil_op);
 				depth_stencil_state.front.compareMask = 0xff;
 				depth_stencil_state.front.writeMask = 0xff;
 				depth_stencil_state.front.reference = 1;
@@ -1902,13 +1913,13 @@ namespace flame
 				for (auto& a : vk_blend_attachment_states)
 				{
 					a.blendEnable = VK_FALSE;
-					a.srcColorBlendFactor = to_backend(BlendFactorZero);
-					a.dstColorBlendFactor = to_backend(BlendFactorZero);
-					a.colorBlendOp = to_backend(BlendOpAdd);
-					a.srcAlphaBlendFactor = to_backend(BlendFactorZero);
-					a.dstAlphaBlendFactor = to_backend(BlendFactorZero);
-					a.alphaBlendOp = to_backend(BlendOpAdd);
-					a.colorWriteMask = to_backend_flags<VkColorComponentFlags>(ColorComponentAll);
+					a.srcColorBlendFactor = to_vk(BlendFactorZero);
+					a.dstColorBlendFactor = to_vk(BlendFactorZero);
+					a.colorBlendOp = to_vk(BlendOpAdd);
+					a.srcAlphaBlendFactor = to_vk(BlendFactorZero);
+					a.dstAlphaBlendFactor = to_vk(BlendFactorZero);
+					a.alphaBlendOp = to_vk(BlendOpAdd);
+					a.colorWriteMask = to_vk_flags<VkColorComponentFlags>(ColorComponentAll);
 				}
 				if (vk_blend_attachment_states.size() >= info.blend_options.size())
 				{
@@ -1917,13 +1928,13 @@ namespace flame
 						auto& src = i < info.blend_options.size() ? info.blend_options[i] : BlendOption();
 						auto& dst = vk_blend_attachment_states[i];
 						dst.blendEnable = src.enable;
-						dst.srcColorBlendFactor = to_backend(src.src_color);
-						dst.dstColorBlendFactor = to_backend(src.dst_color);
-						dst.colorBlendOp = to_backend(src.color_op);
-						dst.srcAlphaBlendFactor = to_backend(src.src_alpha);
-						dst.dstAlphaBlendFactor = to_backend(src.dst_alpha);
-						dst.alphaBlendOp = to_backend(src.alpha_op);
-						dst.colorWriteMask = to_backend_flags<VkColorComponentFlags>(src.color_write_mask);
+						dst.srcColorBlendFactor = to_vk(src.src_color);
+						dst.dstColorBlendFactor = to_vk(src.dst_color);
+						dst.colorBlendOp = to_vk(src.color_op);
+						dst.srcAlphaBlendFactor = to_vk(src.src_alpha);
+						dst.dstAlphaBlendFactor = to_vk(src.dst_alpha);
+						dst.alphaBlendOp = to_vk(src.alpha_op);
+						dst.colorWriteMask = to_vk_flags<VkColorComponentFlags>(src.color_write_mask);
 					}
 				}
 
@@ -1941,7 +1952,7 @@ namespace flame
 				blend_state.pAttachments = vk_blend_attachment_states.data();
 
 				for (auto i = 0; i < info.dynamic_states.size(); i++)
-					vk_dynamic_states.push_back(to_backend((DynamicState)info.dynamic_states[i]));
+					vk_dynamic_states.push_back(to_vk((DynamicState)info.dynamic_states[i]));
 				if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_VIEWPORT) == vk_dynamic_states.end())
 					vk_dynamic_states.push_back(VK_DYNAMIC_STATE_VIEWPORT);
 				if (std::find(vk_dynamic_states.begin(), vk_dynamic_states.end(), VK_DYNAMIC_STATE_SCISSOR) == vk_dynamic_states.end())
@@ -1975,7 +1986,7 @@ namespace flame
 				pipeline_info.basePipelineHandle = 0;
 				pipeline_info.basePipelineIndex = 0;
 
-				chk_res(vkCreateGraphicsPipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
+				check_vk_result(vkCreateGraphicsPipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
 				register_object(ret->vk_pipeline, "Pipeline", ret);
 
 				return ret;
@@ -2067,14 +2078,14 @@ namespace flame
 				pipeline_info.stage.pNext = nullptr;
 				pipeline_info.stage.pSpecializationInfo = nullptr;
 				pipeline_info.stage.pName = "main";
-				pipeline_info.stage.stage = to_backend(ShaderStageComp);
+				pipeline_info.stage.stage = to_vk(ShaderStageComp);
 				pipeline_info.stage.module = info.shaders[0]->vk_module;
 
 				pipeline_info.basePipelineHandle = 0;
 				pipeline_info.basePipelineIndex = 0;
 				pipeline_info.layout = info.layout->vk_pipeline_layout;
 
-				chk_res(vkCreateComputePipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
+				check_vk_result(vkCreateComputePipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
 				register_object(ret->vk_pipeline, "Pipeline", ret);
 
 				return ret;

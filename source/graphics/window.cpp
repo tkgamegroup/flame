@@ -36,7 +36,8 @@ namespace flame
 		{
 			if (images.empty())
 				return -1;
-			chk_res(vkAcquireNextImageKHR(device->vk_device, vk_swapchain, UINT64_MAX, image_avalible->vk_semaphore, VK_NULL_HANDLE, &image_index));
+			//check_vk_result(vkAcquireNextImageKHR(device->vk_device, vk_swapchain, UINT64_MAX, image_avalible->vk_semaphore, VK_NULL_HANDLE, &image_index));
+			image_index = d12_swapchain->GetCurrentBackBufferIndex();
 
 			return image_index;
 		}
@@ -62,13 +63,13 @@ namespace flame
 			auto size = window->size;
 			if (size.x != 0U || size.y != 0U)
 			{
-				auto image_count = 3U;
+				const auto suggested_image_count = 3U;
 
 				VkWin32SurfaceCreateInfoKHR surface_info = {};
 				surface_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 				surface_info.hinstance = (HINSTANCE)get_hinst();
 				surface_info.hwnd = (HWND)window->get_hwnd();
-				chk_res(vkCreateWin32SurfaceKHR(device->vk_instance, &surface_info, nullptr, &vk_surface));
+				check_vk_result(vkCreateWin32SurfaceKHR(device->vk_instance, &surface_info, nullptr, &vk_surface));
 
 				VkBool32 surface_supported;
 				vkGetPhysicalDeviceSurfaceSupportKHR(device->vk_physical_device, 0, vk_surface, &surface_supported);
@@ -98,7 +99,7 @@ namespace flame
 				VkSwapchainCreateInfoKHR swapchain_info = {};
 				swapchain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 				swapchain_info.surface = vk_surface;
-				swapchain_info.minImageCount = image_count;
+				swapchain_info.minImageCount = suggested_image_count;
 				swapchain_info.imageFormat = surface_formats[0].format;
 				swapchain_info.imageColorSpace = surface_formats[0].colorSpace;
 				swapchain_info.imageExtent.width = size.x;
@@ -110,19 +111,41 @@ namespace flame
 				swapchain_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 				swapchain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
 				swapchain_info.clipped = true;
-				chk_res(vkCreateSwapchainKHR(device->vk_device, &swapchain_info, nullptr, &vk_swapchain));
+				check_vk_result(vkCreateSwapchainKHR(device->vk_device, &swapchain_info, nullptr, &vk_swapchain));
 				register_object(vk_swapchain, "Swapchain", this);
 
-				std::vector<VkImage> native_images;
+				std::vector<VkImage> native_images; uint image_count;
 				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, nullptr);
 				native_images.resize(image_count);
 				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, native_images.data());
 
-				InstanceCommandBuffer cb;
 				images.resize(image_count);
 				for (auto i = 0; i < image_count; i++)
-				{
 					images[i].reset(ImagePrivate::create(device, format, uvec3(size, 1), native_images[i]));
+
+				{
+					DXGI_SWAP_CHAIN_DESC1 desc = {};
+					desc.BufferCount = suggested_image_count;
+					desc.Width = size.x;
+					desc.Height = size.y;
+					desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+					desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+					desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+					desc.SampleDesc.Count = 1;
+
+					IDXGISwapChain1* swapchain = nullptr;
+					check_dx_result(device->dxgi_factory->CreateSwapChainForHwnd(Queue::get()->d12_queue, (HWND)window->get_hwnd(),
+						&desc, nullptr, nullptr, &swapchain));
+					d12_swapchain = (IDXGISwapChain3*)swapchain;
+
+					for (auto i = 0; i < image_count; i++)
+						check_dx_result(d12_swapchain->GetBuffer(i, IID_PPV_ARGS(&images[i]->d12_resource)));
+
+				}
+
+				InstanceCommandBuffer cb;
+				for (auto i = 0; i < image_count; i++)
+				{
 					cb->image_barrier(images[i].get(), {}, ImageLayoutPresent);
 					device->set_object_debug_name(images[i].get(), "Window" + str(i));
 				}

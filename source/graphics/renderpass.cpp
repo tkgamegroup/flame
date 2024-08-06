@@ -36,14 +36,14 @@ namespace flame
 
 					dst = {};
 					dst.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;
-					dst.format = to_backend(src.format);
-					dst.samples = to_backend(src.sample_count);
-					dst.loadOp = to_backend(src.load_op);
+					dst.format = to_vk(src.format);
+					dst.samples = to_vk(src.sample_count);
+					dst.loadOp = to_vk(src.load_op);
 					dst.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 					if ((src.format >= Format_Stencil_Begin && src.format <= Format_Stencil_End) ||
 						(src.format >= Format_DepthStencil_Begin && src.format <= Format_DepthStencil_End))
 					{
-						dst.stencilLoadOp = to_backend(src.load_op);
+						dst.stencilLoadOp = to_vk(src.load_op);
 						dst.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
 					}
 					else
@@ -51,14 +51,14 @@ namespace flame
 						dst.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 						dst.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 					}
-					dst.initialLayout = to_backend(src.initia_layout, src.format);
-					dst.finalLayout = to_backend(src.final_layout, src.format);
+					dst.initialLayout = to_vk(src.initia_layout, src.format);
+					dst.finalLayout = to_vk(src.final_layout, src.format);
 
 					if (src.load_op == AttachmentLoadDontCare && replace_dont_care_to_load)
 					{
-						dst.loadOp = to_backend(AttachmentLoadLoad);
-						dst.initialLayout = to_backend(ImageLayoutAttachment, src.format);
-						dst.finalLayout = to_backend(ImageLayoutAttachment, src.format);
+						dst.loadOp = to_vk(AttachmentLoadLoad);
+						dst.initialLayout = to_vk(ImageLayoutAttachment, src.format);
+						dst.finalLayout = to_vk(ImageLayoutAttachment, src.format);
 					}
 				}
 
@@ -170,7 +170,7 @@ namespace flame
 				create_info.dependencyCount = vk_deps.size();
 				create_info.pDependencies = vk_deps.data();
 
-				chk_res(vkCreateRenderPass2(device->vk_device, &create_info, nullptr, &ret->vk_renderpass));
+				check_vk_result(vkCreateRenderPass2(device->vk_device, &create_info, nullptr, &ret->vk_renderpass));
 				register_object(ret->vk_renderpass, "Renderpass", ret);
 
 				return ret;
@@ -230,6 +230,9 @@ namespace flame
 
 			vkDestroyFramebuffer(device->vk_device, vk_framebuffer, nullptr);
 			unregister_object(vk_framebuffer);
+
+			if (d12_targets_heap)
+				d12_targets_heap->Release();
 		}
 
 		struct FramebufferCreate : Framebuffer::Create
@@ -256,10 +259,26 @@ namespace flame
 				create_info.attachmentCount = vk_views.size();
 				create_info.pAttachments = vk_views.data();
 
-				chk_res(vkCreateFramebuffer(device->vk_device, &create_info, nullptr, &ret->vk_framebuffer));
+				check_vk_result(vkCreateFramebuffer(device->vk_device, &create_info, nullptr, &ret->vk_framebuffer));
 				register_object(ret->vk_framebuffer, "Framebuffer", ret);
 
 				ret->views.assign(views.begin(), views.end());
+
+				{
+					D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+					desc.NumDescriptors = views.size();
+					desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+					desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+					check_dx_result(device->d12_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ret->d12_targets_heap)));
+					auto pdescriptor = ret->d12_targets_heap->GetCPUDescriptorHandleForHeapStart();
+					auto off = device->d12_rtv_off;
+					for (auto i = 0; i < views.size(); i++)
+					{
+						device->d12_device->CreateRenderTargetView(views[i]->image->d12_resource, nullptr/*TODO*/, pdescriptor);
+						pdescriptor.ptr += off;
+					}
+				}
+
 				return ret;
 			}
 		}Framebuffer_create;

@@ -48,6 +48,7 @@ namespace flame
 
 			DescriptorPoolPtr pool;
 			VkDescriptorSet vk_descriptor_set;
+			ID3D12DescriptorHeap* d12_descriptor_heap = nullptr;
 
 			std::vector<std::vector<Res>> reses;
 			std::vector<std::pair<uint, uint>> buf_updates;
