@@ -897,7 +897,7 @@ namespace flame
 			return !line().empty();
 		}
 
-		inline bool read_block(const std::string& beg_mark, const std::string& end_mark = "[EMPTY_LINE]")
+		inline bool read_block(std::string_view beg_mark, std::string_view end_mark = "[EMPTY_LINE]")
 		{
 			lines.clear();
 			anchor = -1;
@@ -916,7 +916,7 @@ namespace flame
 			}
 			if (!end_mark.empty())
 			{
-				auto exit_when_empty = end_mark == "[EMPTY_LINE]";
+				auto exit_when_empty = (end_mark == "[EMPTY_LINE]");
 				while (true)
 				{
 					if (stream.eof())

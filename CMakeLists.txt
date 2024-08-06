@@ -98,9 +98,10 @@ endif()
 
 find_package(spirv_cross_core CONFIG REQUIRED)
 find_package(spirv_cross_glsl CONFIG REQUIRED)
+find_package(spirv_cross_hlsl CONFIG REQUIRED)
 find_package(spirv_cross_reflect CONFIG REQUIRED)
 find_package(spirv_cross_cpp CONFIG REQUIRED)
-if(NOT spirv_cross_core_FOUND OR NOT spirv_cross_glsl_FOUND OR NOT spirv_cross_reflect_FOUND OR NOT spirv_cross_cpp_FOUND)
+if(NOT spirv_cross_core_FOUND OR NOT spirv_cross_glsl_FOUND OR NOT spirv_cross_reflect_FOUND OR NOT spirv_cross_cpp_FOUND OR (RENDERING_BACKEND STREQUAL "D3D12" AND NOT spirv_cross_hlsl_FOUND))
 	message(SEND_ERROR "required SPIRV-Cross is invalid")
 endif()
 

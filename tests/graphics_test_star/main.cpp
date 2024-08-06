@@ -23,10 +23,13 @@ struct App : GraphicsApplication
 		//vtx_buf.upload(command_buffer);
 		//vtx_buf.buf_top = vtx_buf.stag_top = 0;
 
-		auto vp = Rect(vec2(0), main_window->native->size);
+		auto dst = main_window->swapchain->current_image();
+		auto vp = Rect(vec2(0), (vec2)dst->extent);
 		command_buffer->set_viewport_and_scissor(vp);
 		auto cv = vec4(0.4f, 0.4f, 0.58f, 1.f);
-		command_buffer->begin_renderpass(nullptr, main_window->swapchain->current_image()->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), &cv);
+		command_buffer->begin_renderpass(nullptr, dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), &cv);
+		command_buffer->bind_pipeline(pl);
+		command_buffer->draw(3, 1, 0, 0);
 		//command_buffer->bind_vertex_buffer(vtx_buf.buf.get(), 0);
 		//command_buffer->bind_pipeline(pl);
 		//command_buffer->push_constant_t(vec4(2.f / vp.b, vec2(-1)));
@@ -44,6 +47,10 @@ shaders
   @frag
 renderpass
   {rp}
+cull_mode
+  None
+depth_test
+  false
 
 @pll
 
@@ -212,7 +219,7 @@ int entry(int argc, char** args)
 	//for (auto& s : stars)
 	//	s.p.z = linearRand(0.f, 1.f) * (projector.zFar - projector.zNear) + projector.zNear;
 
-	app.pl = GraphicsPipeline::create(pl_str, { "rp=" + str(Renderpass::get(L"flame\\shaders\\color.rp", { "col_fmt=" + TypeInfo::serialize_t(graphics::Swapchain::format) })) });
+	app.pl = GraphicsPipeline::create(pl_str, { "rp=" + str(Renderpass::get(L"flame\\shaders\\color.rp", { "col_fmt=R8G8B8A8_UNORM" })) });
 	//vtx_buf.create(pl->vi_ui(), stars.size() * 6);
 
 	app.run();

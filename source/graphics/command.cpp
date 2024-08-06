@@ -138,6 +138,11 @@ namespace flame
 				curr_rp = curr_fb->renderpass;
 			curr_sp = 0;
 
+			{
+				auto handle = curr_fb->d3d12_targets_heap->GetCPUDescriptorHandleForHeapStart();
+				d3d12_command_list->OMSetRenderTargets(curr_fb->views.size(), &handle, true, nullptr); // TODO: deal with the depth attachment case
+			}
+
 			for (auto i = 0; i < curr_fb->views.size(); i++)
 			{
 				auto& att = curr_rp->attachments[i];
@@ -151,7 +156,7 @@ namespace flame
 
 				{
 					auto old_state = to_dx(ly.layout, img->format);
-					auto new_state = to_dx(att.initia_layout, img->format);
+					auto new_state = to_dx(ImageLayoutAttachment, img->format);
 					if (new_state != old_state) // TODO: use a call to image_barrier
 					{
 						D3D12_RESOURCE_BARRIER barrier;
@@ -159,8 +164,8 @@ namespace flame
 						barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 						barrier.Transition.pResource = img->d3d12_resource;
 						barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-						barrier.Transition.StateBefore = to_dx(ly.layout, img->format);
-						barrier.Transition.StateAfter = to_dx(att.initia_layout, img->format);
+						barrier.Transition.StateBefore = old_state;
+						barrier.Transition.StateAfter = new_state;
 						d3d12_command_list->ResourceBarrier(1, &barrier);
 					}
 
@@ -221,7 +226,7 @@ namespace flame
 					auto& ly = iv->image->levels[sub.base_level].layers[sub.base_layer];
 
 					{
-						auto old_state = to_dx(ly.layout, img->format);
+						auto old_state = to_dx(ImageLayoutAttachment, img->format);
 						auto new_state = to_dx(att.final_layout, img->format);
 						if (new_state != old_state) // TODO: use a call to image_barrier
 						{
@@ -230,8 +235,8 @@ namespace flame
 							barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 							barrier.Transition.pResource = img->d3d12_resource;
 							barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-							barrier.Transition.StateBefore = to_dx(ly.layout, img->format);
-							barrier.Transition.StateAfter = to_dx(att.final_layout, img->format);
+							barrier.Transition.StateBefore = old_state;
+							barrier.Transition.StateAfter = new_state;
 							d3d12_command_list->ResourceBarrier(1, &barrier);
 						}
 					}
@@ -254,6 +259,17 @@ namespace flame
 			vp.width = max(rect.b.x - rect.a.x, 1.f);
 			vp.height = max(rect.b.y - rect.a.y, 1.f);
 			vkCmdSetViewport(vk_command_buffer, 0, 1, &vp);
+
+			{
+				D3D12_VIEWPORT vp;
+				vp.MinDepth = 0.f;
+				vp.MaxDepth = 1.f;
+				vp.TopLeftX = rect.a.x;
+				vp.TopLeftY = rect.a.y;
+				vp.Width = max(rect.b.x - rect.a.x, 1.f);
+				vp.Height = max(rect.b.y - rect.a.y, 1.f);
+				d3d12_command_list->RSSetViewports(1, &vp);
+			}
 		}
 
 		void CommandBufferPrivate::set_scissor(const Rect& rect)
@@ -264,6 +280,15 @@ namespace flame
 			sc.extent.width = max(0.f, rect.b.x - rect.a.x);
 			sc.extent.height = max(0.f, rect.b.y - rect.a.y);
 			vkCmdSetScissor(vk_command_buffer, 0, 1, &sc);
+
+			{
+				D3D12_RECT sc;
+				sc.left = max(0.f, rect.a.x);
+				sc.top = max(0.f, rect.a.y);
+				sc.right = max(0.f, rect.b.x);
+				sc.bottom = max(0.f, rect.b.y);
+				d3d12_command_list->RSSetScissorRects(1, &sc);
+			}
 		}
 
 		void CommandBufferPrivate::bind_pipeline_layout(PipelineLayoutPtr pll, PipelineType plt)
@@ -289,6 +314,17 @@ namespace flame
 			if (curr_gpl->dynamic_renderpass && curr_rp != curr_gpl->renderpass)
 				vk_pl = curr_gpl->get_dynamic_pipeline(curr_rp, curr_sp);
 			vkCmdBindPipeline(vk_command_buffer, to_vk(curr_plt), vk_pl);
+
+			{
+				d3d12_command_list->SetGraphicsRootSignature(pl->layout->d3d12_signature);
+				d3d12_command_list->SetPipelineState(pl->d3d12_pipeline);
+				D3D12_PRIMITIVE_TOPOLOGY pt = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+				switch (curr_gpl->primitive_topology)
+				{
+				case PrimitiveTopologyTriangleList: pt = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST; break;
+				}
+				d3d12_command_list->IASetPrimitiveTopology(pt);
+			}
 		}
 
 		void CommandBufferPrivate::bind_pipeline(ComputePipelinePtr pl)
@@ -360,6 +396,10 @@ namespace flame
 		void CommandBufferPrivate::draw(uint count, uint instance_count, uint first_vertex, uint first_instance)
 		{
 			vkCmdDraw(vk_command_buffer, count, instance_count, first_vertex, first_instance);
+
+			{
+				d3d12_command_list->DrawInstanced(count, instance_count, first_vertex, first_instance);
+			}
 		}
 
 		void CommandBufferPrivate::draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance)
@@ -559,8 +599,8 @@ namespace flame
 					barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 					barrier.Transition.pResource = img->d3d12_resource;
 					barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-					barrier.Transition.StateBefore = to_dx(old_layout, img->format);
-					barrier.Transition.StateAfter = to_dx(new_layout, img->format);
+					barrier.Transition.StateBefore = old_state;
+					barrier.Transition.StateAfter = new_state;
 					d3d12_command_list->ResourceBarrier(1, &barrier);
 				}
 			}

@@ -11,6 +11,10 @@
 #include "shader_private.h"
 
 #include <spirv_glsl.hpp>
+#include <spirv_hlsl.hpp>
+#if USE_D3D12
+#include <d3dcompiler.h>
+#endif
 
 namespace flame
 {
@@ -571,52 +575,87 @@ namespace flame
 				return false;
 			}
 			printf(" - done\n");
-			std::filesystem::remove(L"temp.glsl");
+			std::filesystem::remove(temp_path);
 
 			DataSoup spv;
+			DataSoup dxbc;
+
 			spv.load(L"temp.spv");
 			std::filesystem::remove(L"temp.spv");
 
 			TypeInfoDataBase db;
-			auto spv_compiler = spirv_cross::CompilerGLSL((uint*)spv.soup.data(), spv.soup.size() / sizeof(uint));
-			auto spv_resources = spv_compiler.get_shader_resources();
+			auto glsl_compiler = spirv_cross::CompilerGLSL((uint*)spv.soup.data(), spv.soup.size() / sizeof(uint));
+			auto shader_resources = glsl_compiler.get_shader_resources();
+
+#if USE_D3D12
+			{
+				if (stage & ShaderStageAll)
+				{
+					auto hlsl_compiler = spirv_cross::CompilerHLSL((uint*)spv.soup.data(), spv.soup.size() / sizeof(uint));
+					auto options = hlsl_compiler.get_hlsl_options();
+					options.shader_model = 50;
+					hlsl_compiler.set_hlsl_options(options);
+					auto hlsl_str = hlsl_compiler.compile();
+					auto target_str = "";
+					switch (stage)
+					{
+					case ShaderStageVert: target_str = "vs_5_0"; break;
+					case ShaderStageFrag: target_str = "ps_5_0"; break;
+					}
+					ID3DBlob* compiled_byte_code = nullptr;
+					ID3DBlob* error_msgs = nullptr;
+					check_dx_result(D3DCompile(hlsl_str.data(), hlsl_str.size(), nullptr, nullptr, nullptr, "main", target_str, 0, 0, &compiled_byte_code, &error_msgs));
+					if (compiled_byte_code)
+					{
+						dxbc.soup.resize(compiled_byte_code->GetBufferSize());
+						memcpy(dxbc.soup.data(), compiled_byte_code->GetBufferPointer(), dxbc.soup.size());
+						compiled_byte_code->Release();
+					}
+					if (error_msgs)
+					{
+						printf("%s\n", (char*)error_msgs->GetBufferPointer());
+						error_msgs->Release();
+					}
+				}
+			}
+#endif
 
 			if (stage == ShaderDsl || stage == ShaderPll)
 			{
 				std::vector<DescriptorBinding> bindings;
 
 				auto get_binding = [&](spirv_cross::Resource& r, DescriptorType type) {
-					get_shader_type(spv_compiler, r.base_type_id, db);
+					get_shader_type(glsl_compiler, r.base_type_id, db);
 
-					auto binding = spv_compiler.get_decoration(r.id, spv::DecorationBinding);
+					auto binding = glsl_compiler.get_decoration(r.id, spv::DecorationBinding);
 					if (bindings.size() <= binding)
 						bindings.resize(binding + 1);
 
 					auto& b = bindings[binding];
 					b.type = type;
-					auto& spv_type = spv_compiler.get_type(r.type_id);
+					auto& spv_type = glsl_compiler.get_type(r.type_id);
 					b.count = spv_type.array.empty() ? 1 : spv_type.array[0];
 					if (is_one_of(type, { DescriptorUniformBuffer, DescriptorStorageBuffer }))
-						b.name = spv_compiler.get_name(r.base_type_id);
+						b.name = glsl_compiler.get_name(r.base_type_id);
 					else
 						b.name = r.name;
 				};
 
-				for (auto& r : spv_resources.uniform_buffers)
+				for (auto& r : shader_resources.uniform_buffers)
 					get_binding(r, DescriptorUniformBuffer);
-				for (auto& r : spv_resources.storage_buffers)
+				for (auto& r : shader_resources.storage_buffers)
 					get_binding(r, DescriptorStorageBuffer);
-				for (auto& r : spv_resources.sampled_images)
+				for (auto& r : shader_resources.sampled_images)
 					get_binding(r, DescriptorSampledImage);
-				for (auto& r : spv_resources.storage_images)
+				for (auto& r : shader_resources.storage_images)
 					get_binding(r, DescriptorStorageImage);
 
 				dst << "dsl:" << std::endl;
 				serialize_text(&bindings, dst);
 				dst << std::endl;
 
-				if (!spv_resources.push_constant_buffers.empty())
-					get_shader_type(spv_compiler, spv_resources.push_constant_buffers[0].base_type_id, db);
+				if (!shader_resources.push_constant_buffers.empty())
+					get_shader_type(glsl_compiler, shader_resources.push_constant_buffers[0].base_type_id, db);
 			}
 			else
 			{
@@ -624,6 +663,9 @@ namespace flame
 				{
 					dst << "spv:" << std::endl;
 					spv.save(dst);
+
+					dst << "dxbc:" << std::endl;
+					dxbc.save(dst);
 				}
 
 				if (stage == ShaderStageVert || stage == ShaderVi)
@@ -631,10 +673,10 @@ namespace flame
 					UdtInfo ui;
 					ui.name = "Input";
 					std::vector<std::tuple<TypeInfo*, std::string, uint>> attributes;
-					for (auto& r : spv_resources.stage_inputs)
+					for (auto& r : shader_resources.stage_inputs)
 					{
-						auto location = spv_compiler.get_decoration(r.id, spv::DecorationLocation);
-						auto ti = get_shader_type(spv_compiler, r.base_type_id, db);
+						auto location = glsl_compiler.get_decoration(r.id, spv::DecorationLocation);
+						auto ti = get_shader_type(glsl_compiler, r.base_type_id, db);
 						if (ti == TypeInfo::get<vec4>())
 						{
 							if (r.name.ends_with("_col") || r.name.ends_with("_color"))
@@ -1115,7 +1157,7 @@ namespace flame
 							parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 						}
 					}
-					signature_desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
+					signature_desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 					signature_desc.pParameters = parameters.data();
 					signature_desc.NumParameters = parameters.size();
 					signature_desc.pStaticSamplers = nullptr;
@@ -1243,10 +1285,13 @@ namespace flame
 			LineReader res(file);
 
 			TypeInfoDataBase db;
-			DataSoup data_soup;
+			DataSoup spv;
+			DataSoup dxbc;
 
 			res.read_block("spv:");
-			data_soup.load(res);
+			spv.load(res);
+			res.read_block("dxbc:");
+			dxbc.load(res);
 			res.read_block("typeinfo:");
 			db.load_from_string(res.to_string());
 			file.close();
@@ -1260,13 +1305,13 @@ namespace flame
 			shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			shader_info.flags = 0;
 			shader_info.pNext = nullptr;
-			shader_info.codeSize = data_soup.soup.size();
-			shader_info.pCode = (uint*)data_soup.soup.data();
+			shader_info.codeSize = spv.soup.size();
+			shader_info.pCode = (uint*)spv.soup.data();
 			check_vk_result(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &ret->vk_module));
 			register_object(ret->vk_module, "Shader", ret);
 
 			{
-				ret->d3d12_byte_code.assign((char*)data_soup.soup.data(), data_soup.soup.size());
+				ret->d3d12_byte_code.assign((char*)dxbc.soup.data(), dxbc.soup.size());
 			}
 
 			return ret;
@@ -2099,6 +2144,7 @@ namespace flame
 					desc.NumRenderTargets = 1; // TODO: fix
 					desc.RTVFormats[0] = to_dx(info.renderpass->attachments[0].format); // TODO: fix
 					desc.SampleDesc.Count = 1;
+					desc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 					check_dx_result(device->d3d12_device->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&ret->d3d12_pipeline)));
 				}
 
