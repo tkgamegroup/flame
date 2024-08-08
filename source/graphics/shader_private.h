@@ -10,15 +10,24 @@ namespace flame
 	{
 		struct DescriptorPoolPrivate : DescriptorPool
 		{
-			VkDescriptorPool vk_descriptor_pool;
+#if USE_D3D12
+			ID3D12DescriptorHeap* d3d12_srv_heap = nullptr;
+			SparseRanges d3d12_srv_free_list;
+			ID3D12DescriptorHeap* d3d12_sp_heap = nullptr;
+			SparseRanges d3d12_sp_free_list;
+#elif USE_VULKAN
+			VkDescriptorPool vk_descriptor_pool = 0;
+#endif
 
 			~DescriptorPoolPrivate();
 		};
 
 		struct DescriptorSetLayoutPrivate : DescriptorSetLayout
 		{
+#if USE_VULKAN
+			VkDescriptorSetLayout vk_descriptor_set_layout = 0;
+#endif
 			TypeInfoDataBase db;
-			VkDescriptorSetLayout vk_descriptor_set_layout;
 
 			~DescriptorSetLayoutPrivate();
 
@@ -29,15 +38,15 @@ namespace flame
 		{
 			struct BufRes
 			{
-				void* vk_buf;
+				BufferPtr buf;
 				uint offset;
 				uint range;
 			};
 
 			struct ImgRes
 			{
-				void* vk_iv;
-				void* vk_sp;
+				ImageViewPtr iv;
+				SamplerPtr sp;
 			};
 
 			union Res
@@ -46,9 +55,19 @@ namespace flame
 				ImgRes i;
 			};
 
+#if USE_D3D12
+			int d3d12_rtv_off = -1;
+			uint d3d12_rtv_num = 0;
+			D3D12_CPU_DESCRIPTOR_HANDLE d3d12_srv_cpu_handle;
+			D3D12_GPU_DESCRIPTOR_HANDLE d3d12_srv_gpu_handle;
+			int d3d12_sp_off = -1;
+			uint d3d12_sp_num = 0;
+			D3D12_CPU_DESCRIPTOR_HANDLE d3d12_sp_cpu_handle;
+			D3D12_GPU_DESCRIPTOR_HANDLE d3d12_sp_gpu_handle;
+#elif USE_VULKAN
+			VkDescriptorSet vk_descriptor_set = 0;
+#endif
 			DescriptorPoolPtr pool;
-			VkDescriptorSet vk_descriptor_set;
-			ID3D12DescriptorHeap* d3d12_descriptor_heap = nullptr;
 
 			std::vector<std::vector<Res>> reses;
 			std::vector<std::pair<uint, uint>> buf_updates;
@@ -63,10 +82,12 @@ namespace flame
 
 		struct PipelineLayoutPrivate : PipelineLayout
 		{
+#if USE_D3D12
+			ID3D12RootSignature* d3d12_root_signature = nullptr;
+#elif USE_VULKAN
+			VkPipelineLayout vk_pipeline_layout = 0;
+#endif
 			TypeInfoDataBase db;
-			VkPipelineLayout vk_pipeline_layout;
-
-			ID3D12RootSignature* d3d12_signature = nullptr;
 
 			~PipelineLayoutPrivate();
 
@@ -75,9 +96,12 @@ namespace flame
 
 		struct ShaderPrivate : Shader
 		{
-			TypeInfoDataBase db;
+#if USE_D3D12
+			std::string dxbc;
+#elif USE_VULKAN
 			VkShaderModule vk_module = 0;
-			std::string d3d12_byte_code;
+#endif
+			TypeInfoDataBase db;
 
 			ShaderPrivate();
 			~ShaderPrivate();
@@ -90,20 +114,28 @@ namespace flame
 
 		struct GraphicsPipelinePrivate : GraphicsPipeline
 		{
-			VkPipeline vk_pipeline;
+#if USE_D3D12
 			ID3D12PipelineState* d3d12_pipeline = nullptr;
-
+#elif USE_VULKAN
+			VkPipeline vk_pipeline = 0;
 			std::unordered_map<RenderpassPtr, VkPipeline> renderpass_variants;
+#endif
 
 			GraphicsPipelinePrivate();
 			~GraphicsPipelinePrivate();
+#if USE_VULKAN
 			VkPipeline get_dynamic_pipeline(RenderpassPtr rp, uint sp);
+#endif
 			void recreate() override;
 		};
 
 		struct ComputePipelinePrivate : ComputePipeline
 		{
-			VkPipeline vk_pipeline;
+#if USE_D3D12
+			ID3D12PipelineState* d3d12_pipeline = nullptr;
+#elif USE_VULKAN
+			VkPipeline vk_pipeline = 0;
+#endif
 
 			~ComputePipelinePrivate();
 		};

@@ -43,125 +43,6 @@ namespace flame
 			}
 		};
 
-		struct SparseSlots
-		{
-			uint capacity;
-			std::deque<uint> free_slots;
-
-			void init(uint _capacity)
-			{
-				capacity = _capacity;
-				free_slots.resize(capacity);
-				std::iota(free_slots.begin(), free_slots.end(), 0);
-			}
-
-			inline int get_free_item()
-			{
-				if (free_slots.empty())
-					return -1;
-				auto ret = free_slots.front();
-				free_slots.pop_front();
-				return ret;
-			}
-
-			inline void release_item(uint id)
-			{
-				free_slots.push_back(id);
-			}
-		};
-
-		struct SparseRanges
-		{
-			uint capacity;
-			std::vector<std::pair<uint, uint>> free_spaces;
-
-			void init(uint _capacity)
-			{
-				capacity = _capacity;
-				free_spaces.clear();
-				free_spaces.emplace_back(0, capacity);
-			}
-
-			inline int get_free_space(uint size)
-			{
-				for (uint i = 0; i < free_spaces.size(); ++i)
-				{
-					auto& fs = free_spaces[i];
-					if (fs.second >= size)
-					{
-						auto ret = fs.first;
-						fs.first += size;
-						fs.second -= size;
-						if (fs.second == 0)
-							free_spaces.erase(free_spaces.begin() + i);
-						return ret;
-					}
-				}
-				return -1;
-			}
-
-			inline void releases_space(uint off, uint size)
-			{
-				for (uint i = 0; i < free_spaces.size(); ++i)
-				{
-					auto& fs = free_spaces[i];
-					if (fs.first + fs.second == off)
-					{
-						fs.second += size;
-						if (i + 1 < free_spaces.size() && fs.first + fs.second == free_spaces[i + 1].first)
-						{
-							fs.second += free_spaces[i + 1].second;
-							free_spaces.erase(free_spaces.begin() + i + 1);
-						}
-						return;
-					}
-					if (off + size == fs.first)
-					{
-						fs.first -= size;
-						fs.second += size;
-						if (i > 0 && free_spaces[i - 1].first + free_spaces[i - 1].second == fs.first)
-						{
-							free_spaces[i - 1].second += fs.second;
-							free_spaces.erase(free_spaces.begin() + i);
-						}
-						return;
-					}
-					if (off < fs.first)
-					{
-						free_spaces.insert(free_spaces.begin() + i, { off, size });
-						return;
-					}
-				}
-				free_spaces.emplace_back(off, size);
-			}
-		};
-
-		constexpr inline AccessFlags u2a(BufferUsageFlags u)
-		{
-			if (u & BufferUsageVertex)
-				return AccessVertexAttributeRead;
-			if (u & BufferUsageIndex)
-				return AccessIndexRead;
-			if (u & BufferUsageIndirect)
-				return AccessIndirectCommandRead;
-			if (u & BufferUsageUniform)
-				return AccessShaderRead;
-			if (u & BufferUsageStorage)
-				return AccessShaderRead | AccessShaderWrite;
-			return AccessNone;
-		}
-
-		constexpr inline PipelineStageFlags u2s(BufferUsageFlags u)
-		{
-			if (u & BufferUsageVertex)
-				return PipelineStageVertexInput;
-			if (u & BufferUsageIndex)
-				return PipelineStageVertexInput;
-			if (u & BufferUsageIndirect)
-				return PipelineStageDrawIndirect;
-			return PipelineStageAllCommand;
-		}
-
 		struct VirtualObjectWithDirtyRegions : VirtualObject
 		{
 			std::vector<std::pair<uint, uint>>	dirty_regions;
@@ -358,7 +239,7 @@ namespace flame
 
 			void release(uint off, uint size)
 			{
-				sparse_ranges.releases_space(off, size);
+				sparse_ranges.release_space(off, size);
 			}
 
 			void upload(CommandBufferPtr cb)
@@ -432,7 +313,7 @@ namespace flame
 
 			void release(uint off, uint size)
 			{
-				sparse_ranges.releases_space(off, size);
+				sparse_ranges.release_space(off, size);
 			}
 
 			void upload(CommandBufferPtr cb)

@@ -9,9 +9,12 @@ namespace flame
 	{
 		struct ImagePrivate : Image
 		{
+#if USE_D3D12
+			ID3D12Resource* d3d12_resource = nullptr;
+#elif USE_VULKAN
 			VkImage vk_image = 0;
 			VkDeviceMemory vk_memory = 0;
-			ID3D12Resource* d3d12_resource = nullptr;
+#endif
 			std::map<uint64, std::unique_ptr<ImageViewPrivate>> views;
 			std::map<uint64, std::unique_ptr<DescriptorSetPrivate>> read_dss;
 			std::map<uint64, std::unique_ptr<FramebufferPrivate>> write_fbs;
@@ -21,7 +24,7 @@ namespace flame
 			void initialize();
 
 			ImageLayout get_layout(const ImageSub& sub = {}) override;
-			ImageViewPtr get_view(const ImageSub& sub = {}, const ImageSwizzle& swizzle = {}, bool cube = false) override;
+			ImageViewPtr get_view(const ImageSub& sub = {}, const ImageSwizzle& swizzle = {}, bool is_cube = false) override;
 			DescriptorSetPtr get_shader_read_src(uint base_level = 0, uint base_layer = 0, SamplerPtr sp = nullptr, const ImageSwizzle& swizzle = {}) override;
 			FramebufferPtr get_shader_write_dst(uint base_level = 0, uint base_layer = 0, AttachmentLoadOp load_op = AttachmentLoadDontCare) override;
 
@@ -39,12 +42,14 @@ namespace flame
 
 			void save(const std::filesystem::path& filename, bool compress) override;
 
-			static ImagePtr create(DevicePtr device, Format format, const uvec3& extent, VkImage native);
+			static ImagePtr create(DevicePtr device, Format format, const uvec3& extent, void* native);
 		};
 
 		struct ImageViewPrivate : ImageView
 		{
-			VkImageView vk_image_view;
+#if USE_VULKAN
+			VkImageView vk_image_view = 0;
+#endif
 
 			~ImageViewPrivate();
 
@@ -66,9 +71,16 @@ namespace flame
 
 		struct SamplerPrivate : Sampler
 		{
-			VkSampler vk_sampler;
+#if USE_D3D12
+			ID3D12DescriptorHeap* d3d12_heap = nullptr;
+#elif USE_VULKAN
+			VkSampler vk_sampler = 0;
+#endif
 
 			~SamplerPrivate();
+#if USE_D3D12
+			void copy_to(D3D12_CPU_DESCRIPTOR_HANDLE dst);
+#endif
 		};
 
 		struct ImageAtlasPrivate : ImageAtlas

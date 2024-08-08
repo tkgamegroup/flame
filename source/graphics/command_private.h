@@ -7,13 +7,17 @@ namespace flame
 {
 	namespace graphics
 	{
-		extern PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabel;
-		extern PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabel;
+#if USE_D3D12
+#elif USE_VULKAN
+#endif
 
 		struct CommandPoolPrivate : CommandPool
 		{
-			VkCommandPool vk_command_pool;
+#if USE_D3D12
 			ID3D12CommandAllocator* d3d12_command_allocator = nullptr;
+#elif USE_VULKAN
+			VkCommandPool vk_command_pool = 0;
+#endif
 
 			~CommandPoolPrivate();
 
@@ -32,10 +36,12 @@ namespace flame
 			RenderpassPtr curr_rp = nullptr;
 			int curr_sp = -1;
 
-			VkCommandBuffer vk_command_buffer;
-			VkQueryPool vk_query_pool = nullptr;
-
+#if USE_D3D12
 			ID3D12GraphicsCommandList* d3d12_command_list = nullptr;
+#elif USE_VULKAN
+			VkCommandBuffer vk_command_buffer = 0;
+			VkQueryPool vk_query_pool = 0;
+#endif
 
 			~CommandBufferPrivate();
 
@@ -81,8 +87,11 @@ namespace flame
 
 		struct QueuePrivate : Queue
 		{
-			VkQueue vk_queue;
+#if USE_D3D12
 			ID3D12CommandQueue* d3d12_queue = nullptr;
+#elif USE_VULKAN
+			VkQueue vk_queue = 0;
+#endif
 
 			~QueuePrivate();
 
@@ -93,24 +102,35 @@ namespace flame
 
 		struct SemaphorePrivate : Semaphore
 		{
-			VkSemaphore vk_semaphore;
+#if USE_D3D12
+
+#elif USE_VULKAN
+			VkSemaphore vk_semaphore = 0;
+#endif
 
 			~SemaphorePrivate();
 		};
 
 		struct EventPrivate : Event
 		{
-			VkEvent vk_event;
+#if USE_D3D12
+
+#elif USE_VULKAN
+			VkEvent vk_event = 0;
+#endif
 
 			~EventPrivate();
 		};
 
 		struct FencePrivate : Fence
 		{
-			uint value = 0;
-			VkFence vk_fence = 0;
+#if USE_D3D12
 			ID3D12Fence* d3d12_fence = nullptr;
 			HANDLE d3d12_event = 0;
+#elif USE_VULKAN
+			VkFence vk_fence = 0;
+#endif
+			uint value = 0;
 
 			~FencePrivate();
 

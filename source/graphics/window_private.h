@@ -9,9 +9,12 @@ namespace flame
 	{
 		struct SwapchainPrivate : Swapchain
 		{
+#if USE_D3D12
+			IDXGISwapChain3* d3d12_swapchain = nullptr;
+#elif USE_VULKAN
 			VkSurfaceKHR vk_surface = 0;
 			VkSwapchainKHR vk_swapchain = 0;
-			IDXGISwapChain3* d3d12_swapchain = nullptr;
+#endif
 
 			~SwapchainPrivate();
 

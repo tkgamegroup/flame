@@ -7,7 +7,12 @@
 #include "gui.h"
 #include "blueprint_library/library.h"
 
+#if USE_VULKAN
+PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectName = nullptr;
 PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasks = nullptr;
+PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabel = nullptr;
+PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabel = nullptr;
+#endif
 
 namespace flame
 {

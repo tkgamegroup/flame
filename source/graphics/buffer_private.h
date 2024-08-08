@@ -9,8 +9,12 @@ namespace flame
 	{
 		struct BufferPrivate : Buffer
 		{
+#if USE_D3D12
+			ID3D12Resource* d3d12_resource = nullptr;
+#elif USE_VULKAN
 			VkBuffer vk_buffer;
 			VkDeviceMemory vk_memory;
+#endif
 
 			BufferPrivate();
 			~BufferPrivate();

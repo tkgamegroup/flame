@@ -35,6 +35,10 @@ namespace flame
 				return i == this;
 			});
 
+#if USE_D3D12
+			d3d12_resource->Release();
+			unregister_object(d3d12_resource);
+#elif USE_VULKAN
 			if (vk_memory != 0)
 			{
 				vkFreeMemory(device->vk_device, vk_memory, nullptr);
@@ -42,9 +46,7 @@ namespace flame
 			}
 			unregister_object(vk_image);
 			unregister_object(vk_memory);
-
-			if (d3d12_resource)
-				d3d12_resource->Release();
+#endif
 		}
 
 		void ImagePrivate::initialize()
@@ -103,7 +105,7 @@ namespace flame
 			return ret;
 		}
 
-		ImageViewPtr ImagePrivate::get_view(const ImageSub& sub, const ImageSwizzle& swizzle, bool cube)
+		ImageViewPtr ImagePrivate::get_view(const ImageSub& sub, const ImageSwizzle& swizzle, bool is_cube)
 		{
 			uint64 key;
 			{
@@ -127,7 +129,9 @@ namespace flame
 			iv->image = this;
 			iv->sub = sub;
 			iv->swizzle = swizzle;
+			iv->is_cube = is_cube;
 
+#if USE_VULKAN
 			VkImageViewCreateInfo info;
 			info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 			info.flags = 0;
@@ -137,7 +141,7 @@ namespace flame
 			info.components.b = to_vk(swizzle.b);
 			info.components.a = to_vk(swizzle.a);
 			info.image = vk_image;
-			if (cube)
+			if (is_cube)
 			{
 				assert(sub.base_layer == 0 && sub.layer_count == 6);
 				info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
@@ -157,6 +161,7 @@ namespace flame
 
 			check_vk_result(vkCreateImageView(device->vk_device, &info, nullptr, &iv->vk_image_view));
 			register_object(iv->vk_image_view, "Image View", iv);
+#endif
 
 			views.emplace(key, iv);
 			return iv;
@@ -633,14 +638,9 @@ namespace flame
 				if (additional_usage_transfer)
 					usage = usage | ImageUsageTransferSrc | ImageUsageTransferDst;
 
-				VkImageCreateInfo imageInfo;
-				imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-				imageInfo.flags = 0;
-				if (layers == (uint)-6)
-				{
-					imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+				auto is_cube = (layers == (uint)-6);
+				if (is_cube)
 					layers = 6;
-				}
 
 				auto ret = new ImagePrivate;
 				ret->format = format;
@@ -651,12 +651,56 @@ namespace flame
 				ret->extent = extent;
 				ret->initialize();
 
-				auto image_type = VK_IMAGE_TYPE_2D;
-				if (extent.z > 1)
-					image_type = VK_IMAGE_TYPE_3D;
-
+#if USE_D3D12
+				D3D12_HEAP_PROPERTIES heap_properties = {};
+				heap_properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+				heap_properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_NOT_AVAILABLE;
+				heap_properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+				heap_properties.CreationNodeMask = 1;
+				heap_properties.VisibleNodeMask = 1;
+				D3D12_RESOURCE_DESC desc = {};
+				desc.Dimension = extent.z > 1 ? D3D12_RESOURCE_DIMENSION_TEXTURE3D : D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+				desc.Alignment = 0;
+				desc.Width = extent.x;
+				desc.Height = extent.y;
+				desc.DepthOrArraySize = extent.z;
+				desc.Format = to_dx(format);
+				switch (sample_count)
+				{
+				case SampleCount_2:
+					desc.SampleDesc.Count = 2;
+					desc.SampleDesc.Quality = 1;
+					break;
+				case SampleCount_4:
+					desc.SampleDesc.Count = 4;
+					desc.SampleDesc.Quality = 1;
+					break;
+				case SampleCount_8:
+					desc.SampleDesc.Count = 8;
+					desc.SampleDesc.Quality = 1;
+					break;
+				case SampleCount_16:
+					desc.SampleDesc.Count = 16;
+					desc.SampleDesc.Quality = 1;
+					break;
+				default:
+					desc.SampleDesc.Count = 1;
+					desc.SampleDesc.Quality = 0;
+				}
+				desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+				desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+				device->d3d12_device->CreateCommittedResource(&heap_properties, D3D12_HEAP_FLAG_NONE, &desc, to_dx_flags(usage, format, sample_count), nullptr, IID_PPV_ARGS(&ret->d3d12_resource));
+#elif USE_VULKAN
+				VkImageCreateInfo imageInfo;
+				imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+				imageInfo.flags = is_cube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 				imageInfo.pNext = nullptr;
-				imageInfo.imageType = image_type;
+				if (layers == (uint)-6)
+				{
+					imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+					layers = 6;
+				}
+				imageInfo.imageType = extent.z > 1 ? VK_IMAGE_TYPE_3D : VK_IMAGE_TYPE_2D;
 				imageInfo.format = to_vk(format);
 				imageInfo.extent.width = extent.x;
 				imageInfo.extent.height = extent.y;
@@ -686,6 +730,7 @@ namespace flame
 				check_vk_result(vkBindImageMemory(device->vk_device, ret->vk_image, ret->vk_memory, 0));
 				register_object(ret->vk_image, "Image", ret);
 				register_object(ret->vk_memory, "Image Memory", ret);
+#endif
 
 				return ret;
 			}
@@ -932,15 +977,20 @@ namespace flame
 		}Image_release;
 		Image::Release& Image::release = Image_release;
 
-		ImagePtr ImagePrivate::create(DevicePtr device, Format format, const uvec3& extent, VkImage native)
+		ImagePtr ImagePrivate::create(DevicePtr device, Format format, const uvec3& extent, void* native)
 		{
 			auto ret = new ImagePrivate;
 
 			ret->format = format;
 			ret->extent = extent;
 			ret->initialize();
-			ret->vk_image = native;
+#if USE_D3D12
+			ret->d3d12_resource = (ID3D12Resource*)native;
+			register_object(ret->d3d12_resource, "Image", ret);
+#elif USE_VULKAN
+			ret->vk_image = (VkImage)native;
 			register_object(ret->vk_image, "Image", ret);
+#endif
 
 			return ret;
 		}
@@ -949,8 +999,10 @@ namespace flame
 		{
 			if (app_exiting) return;
 
+#if USE_VULKAN
 			vkDestroyImageView(device->vk_device, vk_image_view, nullptr);
 			unregister_object(vk_image_view);
+#endif
 		}
 
 		DescriptorSetPtr ImageViewPrivate::get_shader_read_src(SamplerPtr sp)
@@ -994,10 +1046,87 @@ namespace flame
 		{
 			if (app_exiting) return;
 
+#if USE_VULKAN
 			vkDestroySampler(device->vk_device, vk_sampler, nullptr);
 			unregister_object(vk_sampler);
+#endif
 		}
 
+		void SamplerPrivate::copy_to(D3D12_CPU_DESCRIPTOR_HANDLE dst)
+		{
+			auto n = 1U;
+			auto handle = d3d12_heap->GetCPUDescriptorHandleForHeapStart();
+			device->d3d12_device->CopyDescriptors(1, &dst, &n, 1, &handle, &n, D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+		}
+
+#if USE_D3D12
+		void create_dx_sampler(ID3D12DescriptorHeap* heap, Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode, BorderColor border_color, float custom_border_color = 1.f)
+		{
+			D3D12_SAMPLER_DESC desc_sp = {};
+			desc_sp.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+			if (linear_mipmap)
+			{
+				if (min_filter == FilterNearest && mag_filter == FilterNearest)
+					desc_sp.Filter = D3D12_FILTER_MIN_MAG_POINT_MIP_LINEAR;
+				else if (min_filter == FilterLinear && mag_filter == FilterNearest)
+					desc_sp.Filter = D3D12_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+				else if (min_filter == FilterNearest && mag_filter == FilterLinear)
+					desc_sp.Filter = D3D12_FILTER_MIN_POINT_MAG_MIP_LINEAR;
+				else
+					desc_sp.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+			}
+			else
+			{
+				if (min_filter == FilterNearest && mag_filter == FilterNearest)
+					desc_sp.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+				else if (min_filter == FilterLinear && mag_filter == FilterNearest)
+					desc_sp.Filter = D3D12_FILTER_MIN_LINEAR_MAG_MIP_POINT;
+				else if (min_filter == FilterNearest && mag_filter == FilterLinear)
+					desc_sp.Filter = D3D12_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
+				else
+					desc_sp.Filter = D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+			}
+			switch (address_mode)
+			{
+			case AddressClampToEdge:
+				desc_sp.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+				break;
+			case AddressClampToBorder:
+				desc_sp.AddressU = D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+				break;
+			case AddressRepeat:
+				desc_sp.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+				break;
+			}
+			desc_sp.AddressV = desc_sp.AddressU;
+			desc_sp.AddressW = desc_sp.AddressU;
+			desc_sp.MipLODBias = 0;
+			desc_sp.MaxAnisotropy = 0;
+			desc_sp.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+			switch (border_color)
+			{
+			case BorderColorBlack:
+				desc_sp.BorderColor[0] = 0; desc_sp.BorderColor[1] = 0; desc_sp.BorderColor[2] = 0; desc_sp.BorderColor[3] = 1;
+				break;
+			case BorderColorWhite:
+				desc_sp.BorderColor[0] = 1; desc_sp.BorderColor[1] = 1; desc_sp.BorderColor[2] = 1; desc_sp.BorderColor[3] = 1;
+				break;
+			case BorderColorTransparentBlack:
+				desc_sp.BorderColor[0] = 0; desc_sp.BorderColor[1] = 0; desc_sp.BorderColor[2] = 0; desc_sp.BorderColor[3] = 0;
+				break;
+			case BorderColorTransparentWhite:
+				desc_sp.BorderColor[0] = 1; desc_sp.BorderColor[1] = 1; desc_sp.BorderColor[2] = 1; desc_sp.BorderColor[3] = 0;
+				break;
+			case BorderColorCustom:
+				desc_sp.BorderColor[0] = custom_border_color; desc_sp.BorderColor[1] = custom_border_color; desc_sp.BorderColor[2] = custom_border_color; desc_sp.BorderColor[3] = custom_border_color;
+				break;
+			}
+			desc_sp.MinLOD = 0.0f;
+			desc_sp.MaxLOD = D3D12_FLOAT32_MAX;
+			auto handle = heap->GetCPUDescriptorHandleForHeapStart();
+			device->d3d12_device->CreateSampler(&desc_sp, handle);
+		}
+#elif USE_VULKAN
 		VkSampler create_vk_sampler(Filter mag_filter, Filter min_filter, bool linear_mipmap, AddressMode address_mode, BorderColor border_color, float custom_border_color = 1.f)
 		{
 			VkSampler ret;
@@ -1028,6 +1157,7 @@ namespace flame
 
 			return ret;
 		}
+#endif
 
 		struct SamplerCreate : Sampler::Create
 		{
@@ -1040,7 +1170,16 @@ namespace flame
 				ret->address_mode = address_mode;
 				ret->border_color = BorderColorCustom;
 
+#if USE_D3D12
+				D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
+				heap_desc.NumDescriptors = 1;
+				heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+				heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+				device->d3d12_device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&ret->d3d12_heap));
+				create_dx_sampler(ret->d3d12_heap, mag_filter, min_filter, linear_mipmap, address_mode, BorderColorCustom, custom_border_color);
+#elif USE_VULKAN
 				ret->vk_sampler = create_vk_sampler(mag_filter, min_filter, linear_mipmap, address_mode, BorderColorCustom, custom_border_color);
+#endif
 
 				return ret;
 			}
@@ -1064,7 +1203,16 @@ namespace flame
 				ret->address_mode = address_mode;
 				ret->border_color = border_color;
 
+#if USE_D3D12
+				D3D12_DESCRIPTOR_HEAP_DESC heap_desc = {};
+				heap_desc.NumDescriptors = 1;
+				heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+				heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+				device->d3d12_device->CreateDescriptorHeap(&heap_desc, IID_PPV_ARGS(&ret->d3d12_heap));
+				create_dx_sampler(ret->d3d12_heap, mag_filter, min_filter, linear_mipmap, address_mode, BorderColorCustom);
+#elif USE_VULKAN
 				ret->vk_sampler = create_vk_sampler(mag_filter, min_filter, linear_mipmap, address_mode, border_color);
+#endif
 
 				shared_samplers.emplace_back(ret);
 				return ret;

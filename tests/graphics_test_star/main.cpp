@@ -53,10 +53,40 @@ depth_test
   false
 
 @pll
+layout (set = 1, binding = 1) uniform sampler2D sky_map;
 
+layout (set = 1, binding = 2) uniform Camera
+{
+	float zNear;
+	float zFar;
+	float fovy;
+	float tan_hf_fovy;
+
+	vec2 viewport;
+	
+	vec3 coord;
+	vec3 front;
+	vec3 right;
+	vec3 up;
+
+	mat4 view;
+	mat4 view_inv;
+	mat4 last_view;
+	mat4 proj;
+	mat4 proj_inv;
+	mat4 proj_view;
+	mat4 proj_view_inv;
+	
+	vec4 frustum_planes[6];
+
+	float time;
+}camera;
+
+layout (set = 1, binding = 3) uniform sampler2D sky_map2;
 @
 
 @vert
+
 void main()
 {
 	vec2 vs[] = {
@@ -70,6 +100,7 @@ void main()
 @
 
 @frag
+
 layout (location = 0) out vec4 o_col;
 
 void main()

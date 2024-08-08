@@ -81,7 +81,6 @@ struct GraphicsApplication : Application
 		render_frames--;
 
 		render_fence->wait();
-		graphics::CommandPool::get()->reset();
 
 		command_buffer->calc_executed_time();
 		//printf("%lfms\n", (double)command_buffer->last_executed_time / (double)1000000);

@@ -140,7 +140,7 @@ namespace flame
 			}
 
 			virtual ImageLayout get_layout(const ImageSub& sub = {}) = 0;
-			virtual ImageViewPtr get_view(const ImageSub& sub = {}, const ImageSwizzle& swizzle = {}, bool cube = false) = 0;
+			virtual ImageViewPtr get_view(const ImageSub& sub = {}, const ImageSwizzle& swizzle = {}, bool is_cube = false) = 0;
 			virtual DescriptorSetPtr get_shader_read_src(uint base_level = 0, uint base_layer = 0, SamplerPtr sp = nullptr, const ImageSwizzle& swizzle = {}) = 0;
 			virtual FramebufferPtr get_shader_write_dst(uint base_level = 0, uint base_layer = 0, AttachmentLoadOp load_op = AttachmentLoadDontCare) = 0;
 
@@ -187,6 +187,7 @@ namespace flame
 			ImagePtr image;
 			ImageSub sub;
 			ImageSwizzle swizzle;
+			bool is_cube = false;
 
 			ImageDesc desc() const
 			{

@@ -3,37 +3,26 @@
 #include "../foundation/system.h"
 #include "graphics.h"
 
+#if USE_D3D12
 #define NOMINMAX
 #include <d3d12.h>
 #include <dxgi1_6.h>
-
+#elif USE_VULKAN
 #include <vulkan/vulkan.h>
 #undef INFINITE
-
+extern PFN_vkCmdBeginDebugUtilsLabelEXT vkCmdBeginDebugUtilsLabel;
+extern PFN_vkCmdEndDebugUtilsLabelEXT vkCmdEndDebugUtilsLabel;
 typedef void(VKAPI_PTR* PFN_vkCmdDrawMeshTasksEXT)(VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
-
 extern PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasks;
+extern PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectName;
+#endif
 
 namespace flame
 {
 	namespace graphics
 	{
-		inline void check_vk_result(VkResult res)
-		{
-			if (res != VK_SUCCESS)
-			{
-				printf("=======================\n");
-				printf("graphics error: %d\n", res);
-				printf("STACK TRACE:\n");
-				auto frames = get_call_frames();
-				auto frames_infos = get_call_frames_infos(frames);
-				for (auto& info : frames_infos)
-					printf("%s() %s:%d\n", info.function.c_str(), info.file.c_str(), info.lineno);
-				printf("=======================\n");
-				assert(0);
-			}
-		}
 
+#if USE_D3D12
 		inline void check_dx_result(HRESULT res)
 		{
 			if (FAILED(res))
@@ -51,93 +40,7 @@ namespace flame
 		}
 
 		template<typename T>
-		VkFlags to_vk_flags(uint);
-
-		inline VkFormat to_vk(Format f)
-		{
-			switch (f)
-			{
-				case Format_R8_UNORM:
-					return VK_FORMAT_R8_UNORM;
-				case Format_R16_UNORM:
-					return VK_FORMAT_R16_UNORM;
-				case Format_R16_SFLOAT:
-					return VK_FORMAT_R16_SFLOAT;
-				case Format_R32_SFLOAT:
-					return VK_FORMAT_R32_SFLOAT;
-				case Format_R32G32_SFLOAT:
-					return VK_FORMAT_R32G32_SFLOAT;
-				case Format_R32G32B32_SFLOAT:
-					return VK_FORMAT_R32G32B32_SFLOAT;
-				case Format_R8G8B8A8_UNORM:
-					return VK_FORMAT_R8G8B8A8_UNORM;
-				case Format_R8G8B8A8_SRGB:
-					return VK_FORMAT_R8G8B8A8_SRGB;
-				case Format_B8G8R8A8_UNORM:
-					return VK_FORMAT_B8G8R8A8_UNORM;
-				case Format_B8G8R8A8_SRGB:
-					return VK_FORMAT_B8G8R8A8_SRGB;
-				case Format_A2R10G10B10_UNORM:
-					return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
-				case Format_A2R10G10B10_SNORM:
-					return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
-				case Format_R16G16B16A16_UNORM:
-					return VK_FORMAT_R16G16B16A16_UNORM;
-				case Format_R16G16B16A16_SFLOAT:
-					return VK_FORMAT_R16G16B16A16_SFLOAT;
-				case Format_R32G32B32A32_SFLOAT:
-					return VK_FORMAT_R32G32B32A32_SFLOAT;
-				case Format_R32G32B32A32_INT:
-					return VK_FORMAT_R32G32B32A32_SINT;
-				case Format_B10G11R11_UFLOAT:
-					return VK_FORMAT_B10G11R11_UFLOAT_PACK32;
-				case Format_BC1_RGB_UNORM:
-					return VK_FORMAT_BC1_RGB_UNORM_BLOCK;
-				case Format_BC1_RGB_SRGB:
-					return VK_FORMAT_BC1_RGB_SRGB_BLOCK;
-				case Format_BC1_RGBA_UNORM:
-					return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
-				case Format_BC1_RGBA_SRGB:
-					return VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
-				case Format_BC2_UNORM:
-					return VK_FORMAT_BC2_UNORM_BLOCK;
-				case Format_BC2_SRGB:
-					return VK_FORMAT_BC2_SRGB_BLOCK;
-				case Format_BC3_UNORM:
-					return VK_FORMAT_BC3_UNORM_BLOCK;
-				case Format_BC3_SRGB:
-					return VK_FORMAT_BC3_SRGB_BLOCK;
-				case Format_BC4_UNORM:
-					return VK_FORMAT_BC4_UNORM_BLOCK;
-				case Format_BC4_SNORM:
-					return VK_FORMAT_BC4_SNORM_BLOCK;
-				case Format_BC5_UNORM:
-					return VK_FORMAT_BC5_UNORM_BLOCK;
-				case Format_BC5_SNORM:
-					return VK_FORMAT_BC5_SNORM_BLOCK;
-				case Format_BC6H_UFLOAT:
-					return VK_FORMAT_BC6H_UFLOAT_BLOCK;
-				case Format_BC6H_SFLOAT:
-					return VK_FORMAT_BC6H_SFLOAT_BLOCK;
-				case Format_BC7_UNORM:
-					return VK_FORMAT_BC7_UNORM_BLOCK;
-				case Format_BC7_SRGB:
-					return VK_FORMAT_BC7_SRGB_BLOCK;
-				case Format_RGBA_ETC2:
-					return VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK;
-				case Format_Stencil8:
-					return VK_FORMAT_S8_UINT;
-				case Format_Depth16:
-					return VK_FORMAT_D16_UNORM;
-				case Format_Depth32:
-					return VK_FORMAT_D32_SFLOAT;
-				case Format_Depth24Stencil8:
-					return VK_FORMAT_D24_UNORM_S8_UINT;
-
-				default:
-					assert(0);
-			}
-		}
+		uint to_dx_flags(uint);
 
 		inline DXGI_FORMAT to_dx(Format f)
 		{
@@ -160,36 +63,296 @@ namespace flame
 			}
 		}
 
-		inline Format from_backend(VkFormat f)
+		template<>
+		inline uint to_dx_flags<BufferUsageFlags>(uint u)
 		{
-			switch (f)
+			uint ret = 0;
+			if (u & BufferUsageTransferSrc)
+				ret |= D3D12_RESOURCE_STATE_COPY_SOURCE;
+			if (u & BufferUsageTransferDst)
+				ret |= D3D12_RESOURCE_STATE_COPY_DEST;
+			if (u & BufferUsageUniform)
+				ret |= D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+			if (u & BufferUsageStorage)
+				ret |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			if (u & BufferUsageVertex)
+				ret |= D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+			if (u & BufferUsageIndex)
+				ret |= D3D12_RESOURCE_STATE_INDEX_BUFFER;
+			if (u & BufferUsageIndirect)
+				ret |= D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT;
+			return ret;
+		}
+
+		inline D3D12_RESOURCE_STATES to_dx_flags(uint u, Format fmt = Format_Undefined, SampleCount sc = SampleCount_1)
+		{
+			D3D12_RESOURCE_STATES ret = D3D12_RESOURCE_STATE_COMMON;
+			if (u & ImageUsageTransferSrc)
+				ret |= D3D12_RESOURCE_STATE_COPY_SOURCE;
+			if (u & ImageUsageTransferDst)
+				ret |= D3D12_RESOURCE_STATE_COPY_DEST;
+			if (u & ImageUsageSampled)
+				ret |= D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
+			if (u & ImageUsageStorage)
+				ret |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+			if (u & ImageUsageAttachment)
 			{
-				case VK_FORMAT_B8G8R8A8_UNORM:
-					return Format_B8G8R8A8_UNORM;
-				case VK_FORMAT_B8G8R8A8_SRGB:
-					return Format_B8G8R8A8_SRGB;
-				default:
-					assert(0);
+				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
+					ret |= D3D12_RESOURCE_STATE_STREAM_OUT;
+				else
+					ret |= (D3D12_RESOURCE_STATE_DEPTH_WRITE | D3D12_RESOURCE_STATE_DEPTH_READ);
+				if (sc != SampleCount_1 && !(fmt >= Format_Depth_Begin && fmt <= Format_Depth_End))
+				{
+					ret |= D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
+					ret = ret & ~D3D12_RESOURCE_STATE_COPY_SOURCE;
+					ret = ret & ~D3D12_RESOURCE_STATE_COPY_DEST;
+					ret = ret & ~D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
+					ret = ret & ~D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+				}
+			}
+			return ret;
+		}
+
+		inline D3D12_RESOURCE_STATES to_dx(ImageLayout l, Format fmt)
+		{
+			switch (l)
+			{
+			case ImageLayoutAttachment:
+				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
+					return D3D12_RESOURCE_STATE_RENDER_TARGET;
+				else
+					return D3D12_RESOURCE_STATE_DEPTH_WRITE | D3D12_RESOURCE_STATE_DEPTH_READ; // TODO: is it true?
+			case ImageLayoutShaderReadOnly:
+				return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE/*D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE*/; // TOOD: wtf?
+				//case ImageLayoutShaderStorage:
+				//	return VK_IMAGE_LAYOUT_GENERAL; // TODO
+			case ImageLayoutTransferSrc:
+				return D3D12_RESOURCE_STATE_COPY_SOURCE; // TODO: is it true?
+			case ImageLayoutTransferDst:
+				return D3D12_RESOURCE_STATE_COPY_DEST; // TODO: is it true?
+			case ImageLayoutPresent:
+				return D3D12_RESOURCE_STATE_PRESENT;
+			case ImageLayoutGeneral:
+				return D3D12_RESOURCE_STATE_COMMON; // TOOD: is it true?
+			}
+			return D3D12_RESOURCE_STATE_COMMON; // TOOD: is it true?
+		}
+
+		inline D3D12_FILL_MODE to_dx(PolygonMode m)
+		{
+			switch (m)
+			{
+			case PolygonModeFill:
+				return D3D12_FILL_MODE_SOLID;
+			case PolygonModeLine:
+				return D3D12_FILL_MODE_WIREFRAME;
+			case PolygonModePoint:
+				return D3D12_FILL_MODE_SOLID; // TODO: not supported?
 			}
 		}
 
-		inline uint format_size(Format f)
+		inline D3D12_COMPARISON_FUNC to_dx(CompareOp o)
+		{
+			switch (o)
+			{
+			case CompareOpLess:
+				return D3D12_COMPARISON_FUNC_LESS;
+			case CompareOpLessOrEqual:
+				return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+			case CompareOpGreater:
+				return D3D12_COMPARISON_FUNC_GREATER;
+			case CompareOpGreaterOrEqual:
+				return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+			case CompareOpEqual:
+				return D3D12_COMPARISON_FUNC_EQUAL;
+			case CompareOpNotEqual:
+				return D3D12_COMPARISON_FUNC_NOT_EQUAL;
+			case CompareOpAlways:
+				return D3D12_COMPARISON_FUNC_ALWAYS;
+			}
+		}
+
+		inline D3D12_STENCIL_OP to_dx(StencilOp o)
+		{
+			switch (o)
+			{
+			case StencilOpKeep:
+				return D3D12_STENCIL_OP_KEEP;
+			case StencilOpZero:
+				return D3D12_STENCIL_OP_ZERO;
+			case StencilOpReplace:
+				return D3D12_STENCIL_OP_REPLACE;
+			case StencilOpIncrementAndClamp:
+				return D3D12_STENCIL_OP_INCR_SAT;
+			case StencilOpDecrementAndClamp:
+				return D3D12_STENCIL_OP_DECR_SAT;
+			case StencilOpInvert:
+				return D3D12_STENCIL_OP_INVERT;
+			case StencilOpIncrementAndWrap:
+				return D3D12_STENCIL_OP_INCR;
+			case StencilOpDecrementAndWrap:
+				return D3D12_STENCIL_OP_DECR;
+			}
+		}
+
+		inline D3D12_CULL_MODE to_dx(CullMode m)
+		{
+			switch (m)
+			{
+			case CullModeNone:
+				return D3D12_CULL_MODE_NONE;
+			case CullModeFront:
+				return D3D12_CULL_MODE_FRONT;
+			case CullModeBack:
+				return D3D12_CULL_MODE_BACK;
+			case CullModeFrontAndback:
+				return D3D12_CULL_MODE_FRONT; // TODO: not supported?
+			}
+		}
+
+		inline D3D12_PRIMITIVE_TOPOLOGY_TYPE to_dx(PrimitiveTopology t)
+		{
+			switch (t)
+			{
+			case PrimitiveTopologyPointList:
+				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+			case PrimitiveTopologyLineList:
+				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+				//case PrimitiveTopologyLineStrip: // TODO: unsupported
+				//	return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+			case PrimitiveTopologyTriangleList:
+				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+				//case PrimitiveTopologyTriangleStrip: // TODO: unsupported
+				//	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+				//case PrimitiveTopologyTriangleFan: // TODO: unsupported
+				//	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
+				//case PrimitiveTopologyLineListWithAdjacency: // TODO: unsupported
+				//	return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
+				//case PrimitiveTopologyLineStripWithAdjacency: // TODO: unsupported
+				//	return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
+				//case PrimitiveTopologyTriangleListWithAdjacency: // TODO: unsupported
+				//	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
+				//case PrimitiveTopologyTriangleStripWithAdjacency: // TODO: unsupported
+				//	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
+			case PrimitiveTopologyPatchList:
+				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+			}
+			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
+		}
+#elif USE_VULKAN
+		inline void check_vk_result(VkResult res)
+		{
+			if (res != VK_SUCCESS)
+			{
+				printf("=======================\n");
+				printf("graphics error: %d\n", res);
+				printf("STACK TRACE:\n");
+				auto frames = get_call_frames();
+				auto frames_infos = get_call_frames_infos(frames);
+				for (auto& info : frames_infos)
+					printf("%s() %s:%d\n", info.function.c_str(), info.file.c_str(), info.lineno);
+				printf("=======================\n");
+				assert(0);
+			}
+		}
+
+		template<typename T>
+		VkFlags to_vk_flags(uint);
+
+		inline VkFormat to_vk(Format f)
 		{
 			switch (f)
 			{
 			case Format_R8_UNORM:
-				return 1;
-			case Format_R32_UINT: case Format_R32_SFLOAT:
-				return 4;
+				return VK_FORMAT_R8_UNORM;
+			case Format_R16_UNORM:
+				return VK_FORMAT_R16_UNORM;
+			case Format_R16_SFLOAT:
+				return VK_FORMAT_R16_SFLOAT;
+			case Format_R32_SFLOAT:
+				return VK_FORMAT_R32_SFLOAT;
 			case Format_R32G32_SFLOAT:
-				return 8;
+				return VK_FORMAT_R32G32_SFLOAT;
 			case Format_R32G32B32_SFLOAT:
-				return 12;
+				return VK_FORMAT_R32G32B32_SFLOAT;
 			case Format_R8G8B8A8_UNORM:
-				return 4;
+				return VK_FORMAT_R8G8B8A8_UNORM;
+			case Format_R8G8B8A8_SRGB:
+				return VK_FORMAT_R8G8B8A8_SRGB;
+			case Format_B8G8R8A8_UNORM:
+				return VK_FORMAT_B8G8R8A8_UNORM;
+			case Format_B8G8R8A8_SRGB:
+				return VK_FORMAT_B8G8R8A8_SRGB;
+			case Format_A2R10G10B10_UNORM:
+				return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+			case Format_A2R10G10B10_SNORM:
+				return VK_FORMAT_A2B10G10R10_SNORM_PACK32;
+			case Format_R16G16B16A16_UNORM:
+				return VK_FORMAT_R16G16B16A16_UNORM;
+			case Format_R16G16B16A16_SFLOAT:
+				return VK_FORMAT_R16G16B16A16_SFLOAT;
 			case Format_R32G32B32A32_SFLOAT:
+				return VK_FORMAT_R32G32B32A32_SFLOAT;
 			case Format_R32G32B32A32_INT:
-				return 16;
+				return VK_FORMAT_R32G32B32A32_SINT;
+			case Format_B10G11R11_UFLOAT:
+				return VK_FORMAT_B10G11R11_UFLOAT_PACK32;
+			case Format_BC1_RGB_UNORM:
+				return VK_FORMAT_BC1_RGB_UNORM_BLOCK;
+			case Format_BC1_RGB_SRGB:
+				return VK_FORMAT_BC1_RGB_SRGB_BLOCK;
+			case Format_BC1_RGBA_UNORM:
+				return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+			case Format_BC1_RGBA_SRGB:
+				return VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
+			case Format_BC2_UNORM:
+				return VK_FORMAT_BC2_UNORM_BLOCK;
+			case Format_BC2_SRGB:
+				return VK_FORMAT_BC2_SRGB_BLOCK;
+			case Format_BC3_UNORM:
+				return VK_FORMAT_BC3_UNORM_BLOCK;
+			case Format_BC3_SRGB:
+				return VK_FORMAT_BC3_SRGB_BLOCK;
+			case Format_BC4_UNORM:
+				return VK_FORMAT_BC4_UNORM_BLOCK;
+			case Format_BC4_SNORM:
+				return VK_FORMAT_BC4_SNORM_BLOCK;
+			case Format_BC5_UNORM:
+				return VK_FORMAT_BC5_UNORM_BLOCK;
+			case Format_BC5_SNORM:
+				return VK_FORMAT_BC5_SNORM_BLOCK;
+			case Format_BC6H_UFLOAT:
+				return VK_FORMAT_BC6H_UFLOAT_BLOCK;
+			case Format_BC6H_SFLOAT:
+				return VK_FORMAT_BC6H_SFLOAT_BLOCK;
+			case Format_BC7_UNORM:
+				return VK_FORMAT_BC7_UNORM_BLOCK;
+			case Format_BC7_SRGB:
+				return VK_FORMAT_BC7_SRGB_BLOCK;
+			case Format_RGBA_ETC2:
+				return VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK;
+			case Format_Stencil8:
+				return VK_FORMAT_S8_UINT;
+			case Format_Depth16:
+				return VK_FORMAT_D16_UNORM;
+			case Format_Depth32:
+				return VK_FORMAT_D32_SFLOAT;
+			case Format_Depth24Stencil8:
+				return VK_FORMAT_D24_UNORM_S8_UINT;
+
+			default:
+				assert(0);
+			}
+		}
+
+		inline Format from_backend(VkFormat f)
+		{
+			switch (f)
+			{
+			case VK_FORMAT_B8G8R8A8_UNORM:
+				return Format_B8G8R8A8_UNORM;
+			case VK_FORMAT_B8G8R8A8_SRGB:
+				return Format_B8G8R8A8_SRGB;
 			default:
 				assert(0);
 			}
@@ -297,12 +460,12 @@ namespace flame
 		{
 			switch (t)
 			{
-				case PipelineNone:
-					return VkPipelineBindPoint(-1);
-				case PipelineGraphics:
-					return VK_PIPELINE_BIND_POINT_GRAPHICS;
-				case PipelineCompute:
-					return VK_PIPELINE_BIND_POINT_COMPUTE;
+			case PipelineNone:
+				return VkPipelineBindPoint(-1);
+			case PipelineGraphics:
+				return VK_PIPELINE_BIND_POINT_GRAPHICS;
+			case PipelineCompute:
+				return VK_PIPELINE_BIND_POINT_COMPUTE;
 			}
 		}
 
@@ -327,7 +490,7 @@ namespace flame
 			return ret;
 		}
 
-		inline VkImageUsageFlags from_backend_flags(ImageUsageFlags u, Format fmt = Format_Undefined, SampleCount sc = SampleCount_1)
+		inline VkImageUsageFlags to_vk_flags(ImageUsageFlags u, Format fmt = Format_Undefined, SampleCount sc = SampleCount_1)
 		{
 			VkImageUsageFlags ret = 0;
 			if (u & ImageUsageTransferSrc)
@@ -379,31 +542,6 @@ namespace flame
 				return VK_IMAGE_LAYOUT_GENERAL;
 			}
 			return VK_IMAGE_LAYOUT_UNDEFINED;
-		}
-
-		inline D3D12_RESOURCE_STATES to_dx(ImageLayout l, Format fmt)
-		{
-			switch (l)
-			{
-			case ImageLayoutAttachment:
-				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
-					return D3D12_RESOURCE_STATE_RENDER_TARGET;
-				else
-					return D3D12_RESOURCE_STATE_DEPTH_WRITE | D3D12_RESOURCE_STATE_DEPTH_READ; // TODO: is it true?
-			case ImageLayoutShaderReadOnly:
-				return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE/*D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE*/; // TOOD: wtf?
-			//case ImageLayoutShaderStorage:
-			//	return VK_IMAGE_LAYOUT_GENERAL; // TODO
-			case ImageLayoutTransferSrc:
-				return D3D12_RESOURCE_STATE_COPY_SOURCE; // TODO: is it true?
-			case ImageLayoutTransferDst:
-				return D3D12_RESOURCE_STATE_COPY_DEST; // TODO: is it true?
-			case ImageLayoutPresent:
-				return D3D12_RESOURCE_STATE_PRESENT;
-			case ImageLayoutGeneral:
-				return D3D12_RESOURCE_STATE_COMMON; // TOOD: is it true?
-			}
-			return D3D12_RESOURCE_STATE_COMMON; // TOOD: is it true?
 		}
 
 		template<>
@@ -627,36 +765,6 @@ namespace flame
 			}
 		}
 
-		inline D3D12_PRIMITIVE_TOPOLOGY_TYPE to_dx(PrimitiveTopology t)
-		{
-			switch (t)
-			{
-			case PrimitiveTopologyPointList:
-				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-			case PrimitiveTopologyLineList:
-				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
-			//case PrimitiveTopologyLineStrip: // TODO: unsupported
-			//	return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-			case PrimitiveTopologyTriangleList:
-				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-			//case PrimitiveTopologyTriangleStrip: // TODO: unsupported
-			//	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-			//case PrimitiveTopologyTriangleFan: // TODO: unsupported
-			//	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
-			//case PrimitiveTopologyLineListWithAdjacency: // TODO: unsupported
-			//	return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
-			//case PrimitiveTopologyLineStripWithAdjacency: // TODO: unsupported
-			//	return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
-			//case PrimitiveTopologyTriangleListWithAdjacency: // TODO: unsupported
-			//	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
-			//case PrimitiveTopologyTriangleStripWithAdjacency: // TODO: unsupported
-			//	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
-			case PrimitiveTopologyPatchList:
-				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
-			}
-			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
-		}
-
 		inline VkPolygonMode to_vk(PolygonMode m)
 		{
 			switch (m)
@@ -667,19 +775,6 @@ namespace flame
 				return VK_POLYGON_MODE_LINE;
 			case PolygonModePoint:
 				return VK_POLYGON_MODE_POINT;
-			}
-		}
-
-		inline D3D12_FILL_MODE to_dx(PolygonMode m)
-		{
-			switch (m)
-			{
-			case PolygonModeFill:
-				return D3D12_FILL_MODE_SOLID;
-			case PolygonModeLine:
-				return D3D12_FILL_MODE_WIREFRAME;
-			case PolygonModePoint:
-				return D3D12_FILL_MODE_SOLID; // TODO: not supported?
 			}
 		}
 
@@ -701,27 +796,6 @@ namespace flame
 				return VK_COMPARE_OP_NOT_EQUAL;
 			case CompareOpAlways:
 				return VK_COMPARE_OP_ALWAYS;
-			}
-		}
-
-		inline D3D12_COMPARISON_FUNC to_dx(CompareOp o)
-		{
-			switch (o)
-			{
-			case CompareOpLess:
-				return D3D12_COMPARISON_FUNC_LESS;
-			case CompareOpLessOrEqual:
-				return D3D12_COMPARISON_FUNC_LESS_EQUAL;
-			case CompareOpGreater:
-				return D3D12_COMPARISON_FUNC_GREATER;
-			case CompareOpGreaterOrEqual:
-				return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-			case CompareOpEqual:
-				return D3D12_COMPARISON_FUNC_EQUAL;
-			case CompareOpNotEqual:
-				return D3D12_COMPARISON_FUNC_NOT_EQUAL;
-			case CompareOpAlways:
-				return D3D12_COMPARISON_FUNC_ALWAYS;
 			}
 		}
 
@@ -748,29 +822,6 @@ namespace flame
 			}
 		}
 
-		inline D3D12_STENCIL_OP to_dx(StencilOp o)
-		{
-			switch (o)
-			{
-			case StencilOpKeep:
-				return D3D12_STENCIL_OP_KEEP;
-			case StencilOpZero:
-				return D3D12_STENCIL_OP_ZERO;
-			case StencilOpReplace:
-				return D3D12_STENCIL_OP_REPLACE;
-			case StencilOpIncrementAndClamp:
-				return D3D12_STENCIL_OP_INCR_SAT;
-			case StencilOpDecrementAndClamp:
-				return D3D12_STENCIL_OP_DECR_SAT;
-			case StencilOpInvert:
-				return D3D12_STENCIL_OP_INVERT;
-			case StencilOpIncrementAndWrap:
-				return D3D12_STENCIL_OP_INCR;
-			case StencilOpDecrementAndWrap:
-				return D3D12_STENCIL_OP_DECR;
-			}
-		}
-
 		inline VkCullModeFlagBits to_vk(CullMode m)
 		{
 			switch (m)
@@ -783,21 +834,6 @@ namespace flame
 				return VK_CULL_MODE_BACK_BIT;
 			case CullModeFrontAndback:
 				return VK_CULL_MODE_FRONT_AND_BACK;
-			}
-		}
-
-		inline D3D12_CULL_MODE to_dx(CullMode m)
-		{
-			switch (m)
-			{
-			case CullModeNone:
-				return D3D12_CULL_MODE_NONE;
-			case CullModeFront:
-				return D3D12_CULL_MODE_FRONT;
-			case CullModeBack:
-				return D3D12_CULL_MODE_BACK;
-			case CullModeFrontAndback:
-				return D3D12_CULL_MODE_FRONT; // TODO: not supported?
 			}
 		}
 
@@ -900,6 +936,28 @@ namespace flame
 				return VK_DYNAMIC_STATE_STENCIL_WRITE_MASK;
 			case DynamicStateStencilReference:
 				return VK_DYNAMIC_STATE_STENCIL_REFERENCE;
+			}
+		}
+#endif
+		inline uint format_size(Format f)
+		{
+			switch (f)
+			{
+			case Format_R8_UNORM:
+				return 1;
+			case Format_R32_UINT: case Format_R32_SFLOAT:
+				return 4;
+			case Format_R32G32_SFLOAT:
+				return 8;
+			case Format_R32G32B32_SFLOAT:
+				return 12;
+			case Format_R8G8B8A8_UNORM:
+				return 4;
+			case Format_R32G32B32A32_SFLOAT:
+			case Format_R32G32B32A32_INT:
+				return 16;
+			default:
+				assert(0);
 			}
 		}
 

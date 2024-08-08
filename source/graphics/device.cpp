@@ -9,10 +9,12 @@ namespace flame
 {
 	namespace graphics
 	{
-		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectName = nullptr;
-
 		DevicePtr device = nullptr;
 
+
+#if USE_D3D12
+
+#elif USE_VULKAN
 		VkBool32 VKAPI_PTR report_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64_t object,
 			size_t location, int32_t messageCode, const char* pLayerPrefix, const char* pMessage, void* pUserData)
 		{
@@ -73,18 +75,17 @@ namespace flame
 
 			return VK_FALSE;
 		}
+#endif
 
 		DevicePrivate::~DevicePrivate()
 		{
-			if (vk_device)
-				vkDestroyDevice(vk_device, nullptr);
-			if (vk_instance)
-				vkDestroyInstance(vk_instance, nullptr);
-
-			if (d3d12_device)
-				d3d12_device->Release();
-			if (dxgi_factory)
-				dxgi_factory->Release();
+#if USE_D3D12
+			d3d12_device->Release();
+			dxgi_factory->Release();
+#elif USE_VULKAN
+			vkDestroyDevice(vk_device, nullptr);
+			vkDestroyInstance(vk_instance, nullptr);
+#endif
 		}
 
 		bool DevicePrivate::get_config(uint hash, uint & value)
@@ -97,6 +98,10 @@ namespace flame
 			return false;
 		}
 
+
+#if USE_D3D12
+
+#elif USE_VULKAN
 		static void vk_set_object_debug_name(VkDevice vk_device, void* backend_obj, VkObjectType type, const std::string& name)
 		{
 			VkDebugUtilsObjectNameInfoEXT info = {};
@@ -106,17 +111,28 @@ namespace flame
 			info.pObjectName = name.c_str();
 			vkSetDebugUtilsObjectName(vk_device, &info);
 		}
+#endif
 
 		void DevicePrivate::set_object_debug_name(BufferPtr obj, const std::string& name)
 		{
+#if USE_D3D12
+
+#elif USE_VULKAN
 			vk_set_object_debug_name(vk_device, obj->vk_buffer, VK_OBJECT_TYPE_BUFFER, name);
+#endif
 		}
 
 		void DevicePrivate::set_object_debug_name(ImagePtr obj, const std::string& name)
 		{
+#if USE_D3D12
+
+#elif USE_VULKAN
 			vk_set_object_debug_name(vk_device, obj->vk_image, VK_OBJECT_TYPE_IMAGE, name);
+#endif
 		}
 
+
+#if USE_VULKAN
 		uint DevicePrivate::find_memory_type(uint type_filter, MemoryPropertyFlags properties) const
 		{
 			auto p = to_vk_flags<MemoryPropertyFlags>(properties);
@@ -127,6 +143,7 @@ namespace flame
 			}
 			return -1;
 		}
+#endif
 
 		struct DeviceCreate : Device::Create
 		{
@@ -139,12 +156,67 @@ namespace flame
 
 				uint u;
 				bool use_mesh_shader = false;
-#if defined(VK_VERSION_1_3) && VK_HEADER_VERSION >= 231
+#if USE_VULKAN && defined(VK_VERSION_1_3) && VK_HEADER_VERSION >= 231
 				use_mesh_shader = ret->get_config("mesh_shader"_h, u) ? u == 1 : true;
 #else
 				ret->configs["mesh_shader"_h] = 0;
 #endif
 
+#if USE_D3D12
+				auto dxgi_flags = 0;
+				if (debug)
+				{
+					ID3D12Debug* debug_controller = nullptr;
+					check_dx_result(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller)));
+					debug_controller->EnableDebugLayer();
+					dxgi_flags |= DXGI_CREATE_FACTORY_DEBUG;
+					debug_controller->Release();
+				}
+
+				check_dx_result(CreateDXGIFactory2(dxgi_flags, IID_PPV_ARGS(&ret->dxgi_factory)));
+
+				IDXGIAdapter1* adapter = nullptr;
+				IDXGIFactory6* factory6 = nullptr;
+				if (SUCCEEDED(ret->dxgi_factory->QueryInterface(IID_PPV_ARGS(&factory6))))
+				{
+					for (auto i = 0; SUCCEEDED(factory6->EnumAdapterByGpuPreference(i, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter))); i++)
+					{
+						DXGI_ADAPTER_DESC1 desc;
+						adapter->GetDesc1(&desc);
+
+						if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+							continue;
+
+						if (SUCCEEDED(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr)))
+							break;
+					}
+				}
+				if (factory6)
+					factory6->Release();
+
+				if (!adapter)
+				{
+					for (UINT i = 0; SUCCEEDED(ret->dxgi_factory->EnumAdapters1(i, &adapter)); i++)
+					{
+						DXGI_ADAPTER_DESC1 desc;
+						adapter->GetDesc1(&desc);
+
+						if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+							continue;
+
+						if (SUCCEEDED(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, _uuidof(ID3D12Device), nullptr)))
+							break;
+					}
+				}
+
+				check_dx_result(ret->dxgi_factory->EnumWarpAdapter(IID_PPV_ARGS(&adapter)));
+				check_dx_result(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&ret->d3d12_device)));
+				ret->d3d12_rtv_size = ret->d3d12_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+				ret->d3d12_dsv_size = ret->d3d12_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+				ret->d3d12_srv_size = ret->d3d12_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				ret->d3d12_sp_size = ret->d3d12_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+				adapter->Release();
+#elif USE_VULKAN
 				uint32_t count;
 				vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);
 				std::vector<VkExtensionProperties> instance_extensions(count);
@@ -184,8 +256,6 @@ namespace flame
 				vkCmdEndDebugUtilsLabel = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetInstanceProcAddr(ret->vk_instance, "vkCmdEndDebugUtilsLabelEXT");
 				vkSetDebugUtilsObjectName = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(ret->vk_instance, "vkSetDebugUtilsObjectNameEXT");
 
-				auto dxgi_flags = 0;
-
 				if (debug)
 				{
 					VkDebugReportCallbackCreateInfoEXT info;
@@ -198,23 +268,6 @@ namespace flame
 					VkDebugReportCallbackEXT callback;
 					check_vk_result(((PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(ret->vk_instance, "vkCreateDebugReportCallbackEXT"))
 						(ret->vk_instance, &info, nullptr, &callback));
-
-					{
-						ID3D12Debug* debug_controller = nullptr;
-						check_dx_result(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller)));
-						debug_controller->EnableDebugLayer();
-						dxgi_flags |= DXGI_CREATE_FACTORY_DEBUG;
-						debug_controller->Release();
-					}
-				}
-
-				check_dx_result(CreateDXGIFactory2(dxgi_flags, IID_PPV_ARGS(&ret->dxgi_factory)));
-				{
-					IDXGIAdapter* warp_adapter = nullptr;
-					check_dx_result(ret->dxgi_factory->EnumWarpAdapter(IID_PPV_ARGS(&warp_adapter)));
-					check_dx_result(D3D12CreateDevice(warp_adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&ret->d3d12_device)));
-					ret->d3d12_rtv_off = ret->d3d12_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-					warp_adapter->Release();
 				}
 
 				count = 0;
@@ -254,7 +307,7 @@ namespace flame
 				vkGetPhysicalDeviceFeatures(physical_device, &ret->vk_features);
 				vkGetPhysicalDeviceMemoryProperties(physical_device, &ret->vk_mem_props);
 				vkGetPhysicalDeviceProperties2(physical_device, &ret->vk_props);
-				
+
 				printf("gpu: %s\n", ret->vk_props.properties.deviceName);
 				printf("max pushconst size: %d\n", (int)ret->vk_props.properties.limits.maxPushConstantsSize);
 
@@ -364,16 +417,18 @@ namespace flame
 				printf("vulkan: device created\n");
 
 				if (use_mesh_shader)
-				{
 					vkCmdDrawMeshTasks = (PFN_vkCmdDrawMeshTasksEXT)vkGetDeviceProcAddr(ret->vk_device, "vkCmdDrawMeshTasksEXT");
-				}
 
-				device = ret;
-				descriptorset_pool.reset(DescriptorPool::create());
 				graphics_command_pool.reset(graphics_queue_index != -1 ? CommandPool::create(graphics_queue_index) : nullptr);
 				transfer_command_pool.reset(transfer_queue_index != -1 ? CommandPool::create(transfer_queue_index) : nullptr);
 				graphics_queue.reset(graphics_queue_index != -1 ? QueuePrivate::create(graphics_queue_index) : nullptr);
 				transfer_queue.reset(transfer_queue_index != -1 ? QueuePrivate::create(transfer_queue_index) : nullptr);
+#endif
+
+				device = ret;
+				descriptorset_pool.reset(DescriptorPool::create());
+				graphics_command_pool.reset(CommandPool::create(0));
+				graphics_queue.reset(QueuePrivate::create(0));
 				return ret;
 			}
 		}Device_create;

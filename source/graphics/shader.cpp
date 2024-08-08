@@ -587,58 +587,26 @@ namespace flame
 			auto glsl_compiler = spirv_cross::CompilerGLSL((uint*)spv.soup.data(), spv.soup.size() / sizeof(uint));
 			auto shader_resources = glsl_compiler.get_shader_resources();
 
-#if USE_D3D12
-			{
-				if (stage & ShaderStageAll)
-				{
-					auto hlsl_compiler = spirv_cross::CompilerHLSL((uint*)spv.soup.data(), spv.soup.size() / sizeof(uint));
-					auto options = hlsl_compiler.get_hlsl_options();
-					options.shader_model = 50;
-					hlsl_compiler.set_hlsl_options(options);
-					auto hlsl_str = hlsl_compiler.compile();
-					auto target_str = "";
-					switch (stage)
-					{
-					case ShaderStageVert: target_str = "vs_5_0"; break;
-					case ShaderStageFrag: target_str = "ps_5_0"; break;
-					}
-					ID3DBlob* compiled_byte_code = nullptr;
-					ID3DBlob* error_msgs = nullptr;
-					check_dx_result(D3DCompile(hlsl_str.data(), hlsl_str.size(), nullptr, nullptr, nullptr, "main", target_str, 0, 0, &compiled_byte_code, &error_msgs));
-					if (compiled_byte_code)
-					{
-						dxbc.soup.resize(compiled_byte_code->GetBufferSize());
-						memcpy(dxbc.soup.data(), compiled_byte_code->GetBufferPointer(), dxbc.soup.size());
-						compiled_byte_code->Release();
-					}
-					if (error_msgs)
-					{
-						printf("%s\n", (char*)error_msgs->GetBufferPointer());
-						error_msgs->Release();
-					}
-				}
-			}
-#endif
-
 			if (stage == ShaderDsl || stage == ShaderPll)
 			{
-				std::vector<DescriptorBinding> bindings;
+				std::vector<DescriptorBinding> descriptor_bindings;
 
 				auto get_binding = [&](spirv_cross::Resource& r, DescriptorType type) {
 					get_shader_type(glsl_compiler, r.base_type_id, db);
 
 					auto binding = glsl_compiler.get_decoration(r.id, spv::DecorationBinding);
-					if (bindings.size() <= binding)
-						bindings.resize(binding + 1);
+					auto set = glsl_compiler.get_decoration(r.id, spv::DecorationDescriptorSet);
+					if (descriptor_bindings.size() <= binding)
+						descriptor_bindings.resize(binding + 1);
 
-					auto& b = bindings[binding];
-					b.type = type;
+					auto& dst = descriptor_bindings[binding];
+					dst.type = type;
 					auto& spv_type = glsl_compiler.get_type(r.type_id);
-					b.count = spv_type.array.empty() ? 1 : spv_type.array[0];
+					dst.count = spv_type.array.empty() ? 1 : spv_type.array[0];
 					if (is_one_of(type, { DescriptorUniformBuffer, DescriptorStorageBuffer }))
-						b.name = glsl_compiler.get_name(r.base_type_id);
+						dst.name = glsl_compiler.get_name(r.base_type_id);
 					else
-						b.name = r.name;
+						dst.name = r.name;
 				};
 
 				for (auto& r : shader_resources.uniform_buffers)
@@ -651,7 +619,7 @@ namespace flame
 					get_binding(r, DescriptorStorageImage);
 
 				dst << "dsl:" << std::endl;
-				serialize_text(&bindings, dst);
+				serialize_text(&descriptor_bindings, dst);
 				dst << std::endl;
 
 				if (!shader_resources.push_constant_buffers.empty())
@@ -661,6 +629,40 @@ namespace flame
 			{
 				if (stage & ShaderStageAll)
 				{
+#if USE_D3D12
+					{
+						auto hlsl_compiler = spirv_cross::CompilerHLSL((uint*)spv.soup.data(), spv.soup.size() / sizeof(uint));
+						auto options = hlsl_compiler.get_hlsl_options();
+						options.shader_model = 60;
+						hlsl_compiler.set_hlsl_options(options);
+
+						auto hlsl_str = hlsl_compiler.compile();
+						auto target_str = "";
+						switch (stage)
+						{
+						case ShaderStageVert: target_str = "vs_5_1"; break;
+						case ShaderStageFrag: target_str = "ps_5_1"; break;
+						}
+						ID3DBlob* compiled_byte_code = nullptr;
+						ID3DBlob* error_msgs = nullptr;
+						if FAILED(D3DCompile(hlsl_str.data(), hlsl_str.size(), nullptr, nullptr, nullptr, "main", target_str, 0, 0, &compiled_byte_code, &error_msgs))
+						{
+							if (error_msgs)
+							{
+								printf("%s\n", (char*)error_msgs->GetBufferPointer());
+								error_msgs->Release();
+							}
+							assert(0);
+						}
+						if (compiled_byte_code)
+						{
+							dxbc.soup.resize(compiled_byte_code->GetBufferSize());
+							memcpy(dxbc.soup.data(), compiled_byte_code->GetBufferPointer(), dxbc.soup.size());
+							compiled_byte_code->Release();
+						}
+					}
+#endif
+
 					dst << "spv:" << std::endl;
 					spv.save(dst);
 
@@ -726,8 +728,13 @@ namespace flame
 		{
 			if (app_exiting) return;
 
+#if USE_D3D12
+			d3d12_srv_heap->Release();
+			d3d12_sp_heap->Release();
+#elif USE_VULKAN
 			vkDestroyDescriptorPool(device->vk_device, vk_descriptor_pool, nullptr);
 			unregister_object(vk_descriptor_pool);
+#endif
 		}
 
 		struct DescriptorPoolCurrent : DescriptorPool::Current
@@ -746,6 +753,27 @@ namespace flame
 			{
 				auto ret = new DescriptorPoolPrivate;
 
+#if USE_D3D12
+				{
+					const auto max_num = 1024;
+					D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+					desc.NumDescriptors = max_num;
+					desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+					desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+					check_dx_result(device->d3d12_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ret->d3d12_srv_heap)));
+					ret->d3d12_srv_free_list.init(1024);
+				}
+
+				{
+					const auto max_num = 128;
+					D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+					desc.NumDescriptors = max_num;
+					desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+					desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+					check_dx_result(device->d3d12_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ret->d3d12_sp_heap)));
+					ret->d3d12_sp_free_list.init(max_num);
+				}
+#elif USE_VULKAN
 				VkDescriptorPoolSize descriptor_pool_sizes[] = {
 					{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 16 },
 					{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32 },
@@ -762,6 +790,7 @@ namespace flame
 				descriptor_pool_info.maxSets = 128;
 				check_vk_result(vkCreateDescriptorPool(device->vk_device, &descriptor_pool_info, nullptr, &ret->vk_descriptor_pool));
 				register_object(ret->vk_descriptor_pool, "Descriptor Pool", ret);
+#endif
 
 				return ret;
 			}
@@ -772,8 +801,10 @@ namespace flame
 		{
 			if (app_exiting) return;
 
+#if USE_VULKAN
 			vkDestroyDescriptorSetLayout(device->vk_device, vk_descriptor_set_layout, nullptr);
 			unregister_object(vk_descriptor_set_layout);
+#endif
 		}
 
 		DescriptorSetLayoutPtr DescriptorSetLayoutPrivate::load_from_res(const std::filesystem::path& filename)
@@ -809,6 +840,7 @@ namespace flame
 				auto ret = new DescriptorSetLayoutPrivate;
 				ret->bindings.assign(bindings.begin(), bindings.end());
 
+#if USE_VULKAN
 				std::vector<VkDescriptorSetLayoutBinding> vk_bindings(bindings.size());
 				for (auto i = 0; i < bindings.size(); i++)
 				{
@@ -833,6 +865,7 @@ namespace flame
 
 				check_vk_result(vkCreateDescriptorSetLayout(device->vk_device, &info, nullptr, &ret->vk_descriptor_set_layout));
 				register_object(ret->vk_descriptor_set_layout, "Descriptor Set Layout", ret);
+#endif
 
 				return ret;
 			}
@@ -898,11 +931,14 @@ namespace flame
 
 			layout->ref--;
 
+#if USE_D3D12
+			pool->d3d12_srv_free_list.release_space(d3d12_rtv_off, d3d12_rtv_num);
+			if (d3d12_rtv_off != -1)
+				pool->d3d12_sp_free_list.release_space(d3d12_rtv_off, d3d12_sp_num);
+#elif USE_VULKAN
 			check_vk_result(vkFreeDescriptorSets(device->vk_device, pool->vk_descriptor_pool, 1, &vk_descriptor_set));
 			unregister_object(vk_descriptor_set);
-
-			if (d3d12_descriptor_heap)
-				d3d12_descriptor_heap->Release();
+#endif
 		}
 
 		void DescriptorSetPrivate::set_buffer_i(uint binding, uint index, BufferPtr buf, uint offset, uint range)
@@ -911,10 +947,10 @@ namespace flame
 				return;
 
 			auto& res = reses[binding][index].b;
-			if (res.vk_buf == buf->vk_buffer && res.offset == offset && res.range == range)
+			if (res.buf == buf && res.offset == offset && res.range == range)
 				return;
 
-			res.vk_buf = buf->vk_buffer;
+			res.buf = buf;
 			res.offset = offset;
 			res.range = range == 0 ? buf->size : range;
 
@@ -930,11 +966,11 @@ namespace flame
 				sp = Sampler::get(FilterLinear, FilterLinear, true, AddressClampToEdge);
 
 			auto& res = reses[binding][index].i;
-			if (res.vk_iv == iv->vk_image_view && res.vk_sp == sp->vk_sampler)
+			if (res.iv == iv && res.sp == sp)
 				return;
 
-			res.vk_iv = iv->vk_image_view;
-			res.vk_sp = sp->vk_sampler;
+			res.iv = iv;
+			res.sp = sp;
 
 			img_updates.emplace_back(binding, index);
 		}
@@ -944,6 +980,77 @@ namespace flame
 			if (buf_updates.empty() && img_updates.empty())
 				return;
 
+#if USE_D3D12
+			for (auto& u : buf_updates)
+			{
+				auto& binding = layout->bindings[u.first];
+				auto& res = reses[u.first][u.second];
+				auto buf = res.b.buf;
+				auto handle = d3d12_srv_cpu_handle;
+				handle.ptr += u.first * device->d3d12_srv_size;
+				if (binding.type = DescriptorUniformBuffer)
+				{
+					D3D12_CONSTANT_BUFFER_VIEW_DESC desc = {};
+					desc.BufferLocation = buf->d3d12_resource->GetGPUVirtualAddress();
+					desc.SizeInBytes = buf->size;
+					device->d3d12_device->CreateConstantBufferView(&desc, handle);
+				}
+				else
+				{
+					D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
+					desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+					desc.Format = DXGI_FORMAT_UNKNOWN;
+					desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+					desc.Buffer.NumElements = 1; // TODO: get array size from reflection
+					desc.Buffer.StructureByteStride = buf->size;
+					desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+					device->d3d12_device->CreateShaderResourceView(buf->d3d12_resource, &desc, handle);
+				}
+			}
+			for (auto& u : img_updates)
+			{
+				auto& binding = layout->bindings[u.first];
+				auto& res = reses[u.first][u.second];
+				auto iv = res.i.iv;
+				auto img = iv->image;
+				auto handle = d3d12_srv_cpu_handle;
+				handle.ptr += u.first * device->d3d12_srv_size;
+				auto handle_sp = d3d12_sp_cpu_handle;
+				handle_sp.ptr += u.first * device->d3d12_sp_size;
+				if (binding.type == DescriptorSampledImage)
+				{
+					D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
+					desc.Format = to_dx(img->format);
+					if (iv->is_cube)
+					{
+						desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+						desc.TextureCube.ResourceMinLODClamp = iv->sub.base_level;
+						desc.TextureCube.MipLevels = iv->sub.level_count;
+					}
+					else
+					{
+						if (iv->sub.layer_count > 1)
+						{
+							desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+							desc.Texture3D.ResourceMinLODClamp = iv->sub.base_level;
+							desc.Texture3D.MipLevels = iv->sub.level_count;
+						}
+						else
+						{
+							desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+							desc.Texture2D.ResourceMinLODClamp = iv->sub.base_level;
+							desc.Texture2D.MipLevels = iv->sub.level_count;
+						}
+					}
+					device->d3d12_device->CreateShaderResourceView(img->d3d12_resource, &desc, handle);
+					res.i.sp->copy_to(handle_sp);
+				}
+				else
+				{
+
+				}
+			}
+#elif USE_VULKAN
 			std::vector<VkDescriptorBufferInfo> vk_buf_infos;
 			std::vector<VkDescriptorImageInfo> vk_img_infos;
 			std::vector<VkWriteDescriptorSet> vk_writes;
@@ -957,7 +1064,7 @@ namespace flame
 				auto& res = reses[u.first][u.second];
 
 				auto& info = vk_buf_infos[i];
-				info.buffer = (VkBuffer)res.b.vk_buf;
+				info.buffer = (VkBuffer)res.b.buf->vk_buffer;
 				info.offset = res.b.offset;
 				info.range = res.b.range;
 
@@ -982,10 +1089,10 @@ namespace flame
 				auto type = layout->bindings[u.first].type;
 
 				auto& info = vk_img_infos[i];
-				info.imageView = (VkImageView)res.i.vk_iv;
+				info.imageView = (VkImageView)res.i.iv->vk_image_view;
 				info.imageLayout = type == DescriptorSampledImage ?
 					VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_GENERAL;
-				info.sampler = type == DescriptorSampledImage ? (VkSampler)res.i.vk_sp : nullptr;
+				info.sampler = type == DescriptorSampledImage ? (VkSampler)res.i.sp->vk_sampler : nullptr;
 
 				auto& wrt = vk_writes[idx];
 				wrt.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1002,10 +1109,11 @@ namespace flame
 				idx++;
 			}
 
+			vkUpdateDescriptorSets(device->vk_device, vk_writes.size(), vk_writes.data(), 0, nullptr);
+#endif
+
 			buf_updates.clear();
 			img_updates.clear();
-
-			vkUpdateDescriptorSets(device->vk_device, vk_writes.size(), vk_writes.data(), 0, nullptr);
 		}
 
 		struct DescriptorSetCreate : DescriptorSet::Create
@@ -1025,6 +1133,35 @@ namespace flame
 				for (auto i = 0; i < ret->reses.size(); i++)
 					ret->reses[i].resize(max(1U, layout->bindings[i].count));
 
+
+#if USE_D3D12
+				auto has_samplers = false;
+				for (auto& binding : layout->bindings)
+				{
+					if (binding.type == DescriptorSampledImage)
+					{
+						has_samplers = true;
+						break;
+					}
+				}
+				ret->d3d12_rtv_num = ret->reses.size();
+				ret->d3d12_rtv_off = pool->d3d12_srv_free_list.get_free_space(ret->d3d12_rtv_num);
+				assert(ret->d3d12_rtv_off != -1);
+				ret->d3d12_srv_cpu_handle = pool->d3d12_srv_heap->GetCPUDescriptorHandleForHeapStart();
+				ret->d3d12_srv_cpu_handle.ptr += ret->d3d12_rtv_off * device->d3d12_rtv_size;
+				ret->d3d12_srv_gpu_handle = pool->d3d12_srv_heap->GetGPUDescriptorHandleForHeapStart();
+				ret->d3d12_srv_gpu_handle.ptr += ret->d3d12_rtv_off * device->d3d12_rtv_size;
+				if (has_samplers)
+				{
+					ret->d3d12_sp_num = ret->reses.size();
+					ret->d3d12_sp_off = pool->d3d12_srv_free_list.get_free_space(ret->d3d12_sp_num);
+					assert(ret->d3d12_sp_off != -1);
+					ret->d3d12_sp_cpu_handle = pool->d3d12_sp_heap->GetCPUDescriptorHandleForHeapStart();
+					ret->d3d12_sp_cpu_handle.ptr += ret->d3d12_sp_off * device->d3d12_rtv_size;
+					ret->d3d12_sp_gpu_handle = pool->d3d12_sp_heap->GetGPUDescriptorHandleForHeapStart();
+					ret->d3d12_sp_gpu_handle.ptr += ret->d3d12_sp_off * device->d3d12_rtv_size;
+				}
+#elif USE_VULKAN
 				VkDescriptorSetAllocateInfo info;
 				info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 				info.pNext = nullptr;
@@ -1034,15 +1171,7 @@ namespace flame
 
 				check_vk_result(vkAllocateDescriptorSets(device->vk_device, &info, &ret->vk_descriptor_set));
 				register_object(ret->vk_descriptor_set, "Descriptor Set", ret);
-
-				{
-					D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-					desc.NumDescriptors = ret->reses.size();
-					desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-					desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-					check_dx_result(device->d3d12_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ret->d3d12_descriptor_heap)));
-				}
-
+#endif
 				return ret;
 			}
 		}DescriptorSet_create;
@@ -1058,11 +1187,13 @@ namespace flame
 					delete dsl;
 			}
 
+#if USE_D3D12
+			d3d12_root_signature->Release();
+			unregister_object(d3d12_root_signature);
+#elif USE_VULKAN
 			vkDestroyPipelineLayout(device->vk_device, vk_pipeline_layout, nullptr);
 			unregister_object(vk_pipeline_layout);
-
-			if (d3d12_signature)
-				d3d12_signature->Release();
+#endif
 		}
 
 		PipelineLayoutPtr PipelineLayoutPrivate::load_from_res(const std::filesystem::path& filename)
@@ -1121,6 +1252,84 @@ namespace flame
 				ret->dsls.assign(dsls.begin(), dsls.end());
 				ret->pc_sz = push_constant_size;
 
+
+#if USE_D3D12
+				D3D12_ROOT_SIGNATURE_DESC signature_desc;
+				std::vector<D3D12_ROOT_PARAMETER> root_parameters;
+				std::vector<std::vector<D3D12_DESCRIPTOR_RANGE>> descriptors;
+				descriptors.resize(dsls.size() * 2);
+				for (auto i = 0; i < dsls.size(); i++)
+				{
+					auto dsl = dsls[i];
+					D3D12_ROOT_PARAMETER srv_table;
+					srv_table.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+					srv_table.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+					D3D12_ROOT_PARAMETER sp_table;
+					sp_table.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+					sp_table.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+					for (auto j = 0; j < dsl->bindings.size(); j++)
+					{
+						auto& binding = dsl->bindings[j];
+						D3D12_DESCRIPTOR_RANGE range;
+						switch (binding.type)
+						{
+						case DescriptorUniformBuffer:
+							range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+							break;
+						case DescriptorStorageBuffer:
+							range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+							break;
+						case DescriptorSampledImage:
+							range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+							break;
+						case DescriptorStorageImage:
+							range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+							break;
+						}
+						range.RegisterSpace = i;
+						range.BaseShaderRegister = j;
+						range.NumDescriptors = 1;
+						range.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+						descriptors[i * 2 + 0].push_back(range);
+						if (binding.type == DescriptorSampledImage)
+						{
+							D3D12_DESCRIPTOR_RANGE range;
+							range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER;
+							range.RegisterSpace = i;
+							range.BaseShaderRegister = j;
+							range.NumDescriptors = 1;
+							range.OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+							descriptors[i * 2 + 1].push_back(range);
+						}
+					}
+					root_parameters.push_back(srv_table);
+					root_parameters.push_back(sp_table);
+				}
+				signature_desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+				signature_desc.pParameters = root_parameters.data();
+				signature_desc.NumParameters = root_parameters.size();
+				signature_desc.pStaticSamplers = nullptr;
+				signature_desc.NumStaticSamplers = 0;
+				for (auto i = 0; i < dsls.size(); i++)
+				{
+					auto& srv_table = root_parameters[i * 2 + 0];
+					srv_table.DescriptorTable.NumDescriptorRanges = descriptors[i * 2 + 0].size();
+					srv_table.DescriptorTable.pDescriptorRanges = descriptors[i * 2 + 0].data();
+					auto& sp_table = root_parameters[i * 2 + 1];
+					sp_table.DescriptorTable.NumDescriptorRanges = descriptors[i * 2 + 1].size();
+					sp_table.DescriptorTable.pDescriptorRanges = descriptors[i * 2 + 1].data();
+				}
+				ID3DBlob* signature = nullptr;
+				ID3DBlob* error = nullptr;
+				D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error); // wtf?
+				device->d3d12_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&ret->d3d12_root_signature));
+				if (signature)
+					signature->Release();
+				if (error)
+					error->Release();
+
+				register_object(ret->d3d12_root_signature, "Root Signature", ret);
+#elif USE_VULKAN
 				std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
 				vk_descriptor_set_layouts.resize(dsls.size());
 				for (auto i = 0; i < dsls.size(); i++)
@@ -1142,35 +1351,7 @@ namespace flame
 
 				check_vk_result(vkCreatePipelineLayout(device->vk_device, &info, nullptr, &ret->vk_pipeline_layout));
 				register_object(ret->vk_pipeline_layout, "Pipeline Layout", ret);
-
-				{
-					D3D12_ROOT_SIGNATURE_DESC signature_desc;
-					std::vector<D3D12_ROOT_PARAMETER> parameters;
-					for (auto i = 0; i < dsls.size(); i++)
-					{
-						auto dsl = dsls[i];
-						for (auto j = 0; j < dsl->bindings.size(); j++)
-						{
-							auto& binding = dsl->bindings[j];
-							D3D12_ROOT_PARAMETER parameter;
-
-							parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-						}
-					}
-					signature_desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-					signature_desc.pParameters = parameters.data();
-					signature_desc.NumParameters = parameters.size();
-					signature_desc.pStaticSamplers = nullptr;
-					signature_desc.NumStaticSamplers = 0;
-					ID3DBlob* signature = nullptr;
-					ID3DBlob* error = nullptr;
-					D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error); // wtf?
-					device->d3d12_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&ret->d3d12_signature));
-					if (signature)
-						signature->Release();
-					if (error)
-						error->Release();
-				}
+#endif
 
 				return ret;
 			}
@@ -1244,15 +1425,18 @@ namespace flame
 				return i == this;
 			});
 
+#if USE_VULKAN
 			if (vk_module)
 			{
 				vkDestroyShaderModule(device->vk_device, vk_module, nullptr);
 				unregister_object(vk_module);
 			}
+#endif
 		}
 
 		void ShaderPrivate::recreate()
 		{
+#if USE_VULKAN
 			if (!filename.empty() && get_file_length(filename) > 0)
 			{
 				auto res_path = filename;
@@ -1260,8 +1444,7 @@ namespace flame
 				res_path += L".res";
 				if (compile_shader(type, filename, defines, res_path))
 				{
-					auto new_sd = ShaderPrivate::load_from_res(res_path);
-					if (new_sd)
+					if (auto new_sd = ShaderPrivate::load_from_res(res_path); new_sd)
 					{
 						db = std::move(new_sd->db);
 						in_ui = new_sd->in_ui;
@@ -1275,6 +1458,7 @@ namespace flame
 					}
 				}
 			}
+#endif
 		}
 
 		ShaderPtr ShaderPrivate::load_from_res(const std::filesystem::path& filename)
@@ -1301,6 +1485,9 @@ namespace flame
 			ret->in_ui = find_udt("Input"_h, ret->db);
 			ret->out_ui = find_udt("Output"_h, ret->db);
 
+#if USE_D3D12
+			ret->dxbc.assign((char*)dxbc.soup.data(), dxbc.soup.size());
+#elif USE_VULKAN
 			VkShaderModuleCreateInfo shader_info;
 			shader_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 			shader_info.flags = 0;
@@ -1309,10 +1496,7 @@ namespace flame
 			shader_info.pCode = (uint*)spv.soup.data();
 			check_vk_result(vkCreateShaderModule(device->vk_device, &shader_info, nullptr, &ret->vk_module));
 			register_object(ret->vk_module, "Shader", ret);
-
-			{
-				ret->d3d12_byte_code.assign((char*)dxbc.soup.data(), dxbc.soup.size());
-			}
+#endif
 
 			return ret;
 		}
@@ -1773,6 +1957,9 @@ namespace flame
 					delete sd;
 			}
 
+#if USE_D3D12
+			d3d12_pipeline->Release();
+#elif USE_VULKAN
 			if (vk_pipeline)
 			{
 				vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
@@ -1783,11 +1970,10 @@ namespace flame
 				vkDestroyPipeline(device->vk_device, v.second, nullptr);
 				unregister_object(v.second);
 			}
-
-			if (d3d12_pipeline)
-				d3d12_pipeline->Release();
+#endif
 		}
 
+#if USE_VULKAN
 		VkPipeline GraphicsPipelinePrivate::get_dynamic_pipeline(RenderpassPtr rp, uint sp)
 		{
 			if (vk_pipeline && rp == renderpass)
@@ -1814,9 +2000,11 @@ namespace flame
 			renderpass_variants.emplace(rp, ret);
 			return ret;
 		}
+#endif
 
 		void GraphicsPipelinePrivate::recreate()
 		{
+#if USE_VULKAN
 			PipelineInfo info = *this;
 			GraphicsPipelinePtr new_pl = nullptr;
 			if (!filename.empty() && get_file_length(filename) > 0)
@@ -1844,6 +2032,7 @@ namespace flame
 				unregister_object(v.second);
 			}
 			renderpass_variants.clear();
+#endif
 		}
 
 		struct GraphicsPipelineCreate : GraphicsPipeline::Create
@@ -1853,6 +2042,79 @@ namespace flame
 				auto ret = new GraphicsPipelinePrivate;
 				*(PipelineInfo*)ret = info;
 
+#if USE_D3D12
+				D3D12_GRAPHICS_PIPELINE_STATE_DESC desc = {};
+				std::vector<D3D12_INPUT_ELEMENT_DESC> dx_input_elements;
+				for (auto i = 0; i < info.vertex_buffers.size(); i++)
+				{
+					auto& buf = info.vertex_buffers[i];
+					auto offset = 0;
+					for (auto j = 0; j < buf.attributes.size(); j++)
+					{
+						auto& src_att = buf.attributes[j];
+						D3D12_INPUT_ELEMENT_DESC element;
+						element.SemanticName = "ATTRIBUTE";
+						element.SemanticIndex = src_att.location;
+						element.Format = to_dx(src_att.format);
+						element.InputSlot = i;
+						if (src_att.offset != -1)
+							offset = src_att.offset;
+						element.AlignedByteOffset = offset;
+						offset += format_size(src_att.format);
+						element.InputSlotClass = buf.rate == VertexInputRateVertex ?
+							D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA : D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA;
+						element.InstanceDataStepRate = 0; // TOOD: use the stride of input buffer
+						dx_input_elements.push_back(element);
+					}
+				}
+				desc.InputLayout.pInputElementDescs = dx_input_elements.data();
+				desc.InputLayout.NumElements = dx_input_elements.size();
+				desc.pRootSignature = info.layout->d3d12_root_signature;
+				for (auto i = 0; i < info.shaders.size(); i++)
+				{
+					auto& shader = info.shaders[i];
+					switch (shader->type)
+					{
+					case ShaderStageVert:
+						desc.VS.pShaderBytecode = shader->dxbc.data();
+						desc.VS.BytecodeLength = shader->dxbc.size();
+						break;
+					case ShaderStageFrag:
+						desc.PS.pShaderBytecode = shader->dxbc.data();
+						desc.PS.BytecodeLength = shader->dxbc.size();
+						break;
+					}
+				}
+				desc.RasterizerState.FillMode = to_dx(info.polygon_mode);
+				desc.RasterizerState.CullMode = to_dx(info.cull_mode);
+				desc.RasterizerState.FrontCounterClockwise = true;
+				desc.RasterizerState.DepthBias = 0;
+				desc.RasterizerState.DepthBiasClamp = 0.f;
+				desc.RasterizerState.SlopeScaledDepthBias = 0.f;
+				desc.RasterizerState.DepthClipEnable = false;
+				desc.RasterizerState.MultisampleEnable = info.sample_count != SampleCount_1;
+				desc.RasterizerState.AntialiasedLineEnable = false; // TODO: dx can do that?
+				desc.RasterizerState.ForcedSampleCount = 0; // TODO: unknown..
+				desc.DepthStencilState.DepthEnable = info.depth_test;
+				desc.DepthStencilState.DepthWriteMask = info.depth_write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+				desc.DepthStencilState.DepthFunc = to_dx(info.depth_compare_op);
+				desc.DepthStencilState.StencilEnable = info.stencil_test;
+				desc.DepthStencilState.StencilReadMask = 0xff;
+				desc.DepthStencilState.StencilWriteMask = 0xff;
+				desc.DepthStencilState.FrontFace.StencilFunc = to_dx(info.stencil_compare_op);
+				desc.DepthStencilState.FrontFace.StencilFailOp = to_dx(info.stencil_op);
+				desc.DepthStencilState.FrontFace.StencilDepthFailOp = to_dx(info.stencil_op);
+				desc.DepthStencilState.FrontFace.StencilPassOp = to_dx(info.stencil_op);
+				desc.DepthStencilState.BackFace = desc.DepthStencilState.FrontFace;
+				desc.PrimitiveTopologyType = to_dx(info.primitive_topology);
+				desc.SampleMask = 0xffffffff;
+				desc.NumRenderTargets = 1; // TODO: fix
+				desc.RTVFormats[0] = to_dx(info.renderpass->attachments[0].format); // TODO: fix
+				desc.SampleDesc.Count = 1;
+				desc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+				check_dx_result(device->d3d12_device->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&ret->d3d12_pipeline)));
+				register_object(ret->d3d12_pipeline, "Pipeline", ret);
+#elif USE_VULKAN
 				std::vector<VkPipelineShaderStageCreateInfo> vk_stage_infos;
 				std::vector<VkVertexInputAttributeDescription> vk_vi_attributes;
 				std::vector<VkVertexInputBindingDescription> vk_vi_bindings;
@@ -2074,79 +2336,7 @@ namespace flame
 
 				check_vk_result(vkCreateGraphicsPipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
 				register_object(ret->vk_pipeline, "Pipeline", ret);
-
-				{
-					D3D12_GRAPHICS_PIPELINE_STATE_DESC desc = {};
-					std::vector<D3D12_INPUT_ELEMENT_DESC> dx_input_elements;
-					for (auto i = 0; i < info.vertex_buffers.size(); i++)
-					{
-						auto& buf = info.vertex_buffers[i];
-						auto offset = 0;
-						for (auto j = 0; j < buf.attributes.size(); j++)
-						{
-							auto& src_att = buf.attributes[j];
-							D3D12_INPUT_ELEMENT_DESC element;
-							element.SemanticName = "ATTRIBUTE";
-							element.SemanticIndex = src_att.location;
-							element.Format = to_dx(src_att.format);
-							element.InputSlot = i;
-							if (src_att.offset != -1)
-								offset = src_att.offset;
-							element.AlignedByteOffset = offset;
-							offset += format_size(src_att.format);
-							element.InputSlotClass = buf.rate == VertexInputRateVertex ?
-								D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA : D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA;
-							element.InstanceDataStepRate = 0; // TOOD: use the stride of input buffer
-							dx_input_elements.push_back(element);
-						}
-					}
-					desc.InputLayout.pInputElementDescs = dx_input_elements.data();
-					desc.InputLayout.NumElements = dx_input_elements.size();
-					desc.pRootSignature = info.layout->d3d12_signature;
-					for (auto i = 0; i < info.shaders.size(); i++)
-					{
-						auto& shader = info.shaders[i];
-						switch (shader->type)
-						{
-						case ShaderStageVert:
-							desc.VS.pShaderBytecode = shader->d3d12_byte_code.data();
-							desc.VS.BytecodeLength = shader->d3d12_byte_code.size();
-							break;
-						case ShaderStageFrag:
-							desc.PS.pShaderBytecode = shader->d3d12_byte_code.data();
-							desc.PS.BytecodeLength = shader->d3d12_byte_code.size();
-							break;
-						}
-					}
-					desc.RasterizerState.FillMode = to_dx(info.polygon_mode);
-					desc.RasterizerState.CullMode = to_dx(info.cull_mode);
-					desc.RasterizerState.FrontCounterClockwise = true;
-					desc.RasterizerState.DepthBias = 0;
-					desc.RasterizerState.DepthBiasClamp = 0.f;
-					desc.RasterizerState.SlopeScaledDepthBias = 0.f;
-					desc.RasterizerState.DepthClipEnable = false;
-					desc.RasterizerState.MultisampleEnable = info.sample_count != SampleCount_1;
-					desc.RasterizerState.AntialiasedLineEnable = false; // TODO: dx can do that?
-					desc.RasterizerState.ForcedSampleCount = 0; // TODO: unknown..
-					desc.DepthStencilState.DepthEnable = info.depth_test;
-					desc.DepthStencilState.DepthWriteMask = info.depth_write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
-					desc.DepthStencilState.DepthFunc = to_dx(info.depth_compare_op);
-					desc.DepthStencilState.StencilEnable = info.stencil_test;
-					desc.DepthStencilState.StencilReadMask = 0xff;
-					desc.DepthStencilState.StencilWriteMask = 0xff;
-					desc.DepthStencilState.FrontFace.StencilFunc = to_dx(info.stencil_compare_op);
-					desc.DepthStencilState.FrontFace.StencilFailOp = to_dx(info.stencil_op);
-					desc.DepthStencilState.FrontFace.StencilDepthFailOp = to_dx(info.stencil_op);
-					desc.DepthStencilState.FrontFace.StencilPassOp = to_dx(info.stencil_op);
-					desc.DepthStencilState.BackFace = desc.DepthStencilState.FrontFace;
-					desc.PrimitiveTopologyType = to_dx(info.primitive_topology);
-					desc.SampleMask = 0xffffffff;
-					desc.NumRenderTargets = 1; // TODO: fix
-					desc.RTVFormats[0] = to_dx(info.renderpass->attachments[0].format); // TODO: fix
-					desc.SampleDesc.Count = 1;
-					desc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-					check_dx_result(device->d3d12_device->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&ret->d3d12_pipeline)));
-				}
+#endif
 
 				return ret;
 			}
@@ -2216,8 +2406,13 @@ namespace flame
 		{
 			if (app_exiting) return;
 
+
+#if USE_D3D12
+			d3d12_pipeline->Release();
+#elif USE_VULKAN
 			vkDestroyPipeline(device->vk_device, vk_pipeline, nullptr);
 			unregister_object(vk_pipeline);
+#endif
 		}
 
 		struct ComputePipelineCreate : ComputePipeline::Create
@@ -2227,6 +2422,10 @@ namespace flame
 				auto ret = new ComputePipelinePrivate;
 				*(PipelineInfo*)ret = info;
 
+
+#if USE_D3D12
+
+#elif USE_VULKAN
 				VkComputePipelineCreateInfo pipeline_info;
 				pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
 				pipeline_info.pNext = nullptr;
@@ -2246,6 +2445,7 @@ namespace flame
 
 				check_vk_result(vkCreateComputePipelines(device->vk_device, 0, 1, &pipeline_info, nullptr, &ret->vk_pipeline));
 				register_object(ret->vk_pipeline, "Pipeline", ret);
+#endif
 
 				return ret;
 			}

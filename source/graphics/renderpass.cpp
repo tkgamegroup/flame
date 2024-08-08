@@ -8,14 +8,23 @@ namespace flame
 {
 	namespace graphics
 	{
+#if USE_D3D12
+		ID3D12DescriptorHeap* d3d12_rtv_heap = nullptr;
+		SparseRanges d3d12_rtv_free_list;
+		ID3D12DescriptorHeap* d3d12_dsv_heap = nullptr;
+		SparseRanges d3d12_dsv_free_list;
+#endif
+
 		std::vector<std::unique_ptr<RenderpassT>> loaded_renderpasses;
 
 		RenderpassPrivate::~RenderpassPrivate()
 		{
 			if (app_exiting) return;
 
+#if USE_VULKAN
 			vkDestroyRenderPass(device->vk_device, vk_renderpass, nullptr);
 			unregister_object(vk_renderpass);
+#endif
 		}
 
 		struct RenderpassCreate : Renderpass::Create
@@ -28,6 +37,7 @@ namespace flame
 				uint u;
 				auto replace_dont_care_to_load = device->get_config("replace_renderpass_attachment_dont_care_to_load"_h, u) ? u == 1 : false;
 
+#if USE_VULKAN
 				std::vector<VkAttachmentDescription2> vk_atts(info.attachments.size());
 				for (auto i = 0; i < info.attachments.size(); i++)
 				{
@@ -172,6 +182,7 @@ namespace flame
 
 				check_vk_result(vkCreateRenderPass2(device->vk_device, &create_info, nullptr, &ret->vk_renderpass));
 				register_object(ret->vk_renderpass, "Renderpass", ret);
+#endif
 
 				return ret;
 			}
@@ -228,11 +239,16 @@ namespace flame
 		{
 			if (app_exiting) return;
 
+#if USE_D3D12
+			if (d3d12_rtv_off != -1)
+				d3d12_rtv_free_list.release_space(d3d12_rtv_off, d3d12_rtv_num);
+			if (d3d12_dsv_off != -1)
+				d3d12_dsv_free_list.release_space(d3d12_dsv_off, 1);
+#elif USE_VULKAN
 			vkDestroyFramebuffer(device->vk_device, vk_framebuffer, nullptr);
 			unregister_object(vk_framebuffer);
+#endif
 
-			if (d3d12_targets_heap)
-				d3d12_targets_heap->Release();
 		}
 
 		struct FramebufferCreate : Framebuffer::Create
@@ -242,6 +258,65 @@ namespace flame
 				auto ret = new FramebufferPrivate;
 				ret->renderpass = renderpass;
 
+#if USE_D3D12
+				auto depth_stencil_attachment = -1;
+				for (auto i = 0; i < views.size(); i++)
+				{
+					auto format = views[i]->image->format;
+					if (format >= Format_Depth_Begin && format <= Format_Depth_End)
+					{
+						depth_stencil_attachment = i;
+						break;
+					}
+				}
+				ret->d3d12_rtv_num = views.size();
+				if (depth_stencil_attachment != -1)
+					ret->d3d12_rtv_num--;
+				if (ret->d3d12_rtv_num > 0)
+				{
+					if (!d3d12_rtv_heap)
+					{
+						const auto max_num = 1024;
+						D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+						desc.NumDescriptors = max_num;
+						desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+						desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+						check_dx_result(device->d3d12_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&d3d12_rtv_heap)));
+						d3d12_rtv_free_list.init(max_num);
+					}
+					ret->d3d12_rtv_off = d3d12_rtv_free_list.get_free_space(ret->d3d12_rtv_num);
+					assert(ret->d3d12_rtv_off != -1);
+					ret->d3d12_rtv_cpu_handle = d3d12_rtv_heap->GetCPUDescriptorHandleForHeapStart();
+					ret->d3d12_rtv_cpu_handle.ptr += ret->d3d12_rtv_off * device->d3d12_rtv_size;
+					auto handle = ret->d3d12_rtv_cpu_handle;
+					for (auto i = 0; i < views.size(); i++)
+					{
+						if (i == depth_stencil_attachment)
+							continue;
+						device->d3d12_device->CreateRenderTargetView(views[i]->image->d3d12_resource, nullptr/*TODO*/, handle);
+						handle.ptr += device->d3d12_rtv_size;
+					}
+				}
+				if (depth_stencil_attachment != -1)
+				{
+					if (!d3d12_dsv_heap)
+					{
+						const auto max_num = 128;
+						D3D12_DESCRIPTOR_HEAP_DESC desc = {};
+						desc.NumDescriptors = max_num;
+						desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+						desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+						check_dx_result(device->d3d12_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&d3d12_dsv_heap)));
+						d3d12_dsv_free_list.init(max_num);
+					}
+					ret->d3d12_dsv_off = d3d12_rtv_free_list.get_free_space(1);
+					assert(ret->d3d12_dsv_off != -1);
+					ret->d3d12_dsv_cpu_handle = d3d12_dsv_heap->GetCPUDescriptorHandleForHeapStart();
+					ret->d3d12_dsv_cpu_handle.ptr += ret->d3d12_dsv_off * device->d3d12_dsv_size;
+					auto handle = ret->d3d12_dsv_cpu_handle;
+					device->d3d12_device->CreateRenderTargetView(views[depth_stencil_attachment]->image->d3d12_resource, nullptr/*TODO*/, handle);
+				}
+#elif USE_VULKAN
 				std::vector<VkImageView> vk_views(views.size());
 				for (auto i = 0; i < views.size(); i++)
 					vk_views[i] = views[i]->vk_image_view;
@@ -261,23 +336,9 @@ namespace flame
 
 				check_vk_result(vkCreateFramebuffer(device->vk_device, &create_info, nullptr, &ret->vk_framebuffer));
 				register_object(ret->vk_framebuffer, "Framebuffer", ret);
+#endif
 
 				ret->views.assign(views.begin(), views.end());
-
-				{
-					D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-					desc.NumDescriptors = views.size();
-					desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-					desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-					check_dx_result(device->d3d12_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&ret->d3d12_targets_heap)));
-					auto pdescriptor = ret->d3d12_targets_heap->GetCPUDescriptorHandleForHeapStart();
-					auto off = device->d3d12_rtv_off;
-					for (auto i = 0; i < views.size(); i++)
-					{
-						device->d3d12_device->CreateRenderTargetView(views[i]->image->d3d12_resource, nullptr/*TODO*/, pdescriptor);
-						pdescriptor.ptr += off;
-					}
-				}
 
 				return ret;
 			}

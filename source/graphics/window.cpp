@@ -23,13 +23,14 @@ namespace flame
 				window->destroy_listeners.remove("swapchain"_h);
 			}
 
-			if (vk_swapchain)
-			{
-				vkDestroySwapchainKHR(device->vk_device, vk_swapchain, nullptr);
-				unregister_object(vk_swapchain);
-			}
-			if (vk_surface)
-				vkDestroySurfaceKHR(device->vk_instance, vk_surface, nullptr);
+#if USE_D3D12
+			d3d12_swapchain->Release();
+			unregister_object(d3d12_swapchain);
+#elif USE_VULKAN
+			vkDestroySwapchainKHR(device->vk_device, vk_swapchain, nullptr);
+			unregister_object(vk_swapchain);
+			vkDestroySurfaceKHR(device->vk_instance, vk_surface, nullptr);
+#endif
 		}
 
 		int SwapchainPrivate::acquire_image()
@@ -46,8 +47,39 @@ namespace flame
 		{
 			Queue::get()->wait_idle();
 
-			images.clear();
+			const auto suggested_image_count = 3U;
+			auto size = window->size;
 
+#if USE_D3D12
+			if (!d3d12_swapchain)
+			{
+				DXGI_SWAP_CHAIN_DESC1 desc = {};
+				desc.BufferCount = suggested_image_count;
+				desc.Width = size.x;
+				desc.Height = size.y;
+				desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+				desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+				desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+				desc.SampleDesc.Count = 1;
+
+				IDXGISwapChain1* swapchain = nullptr;
+				check_dx_result(device->dxgi_factory->CreateSwapChainForHwnd(Queue::get()->d3d12_queue, (HWND)window->get_hwnd(),
+					&desc, nullptr, nullptr, &swapchain));
+				d3d12_swapchain = (IDXGISwapChain3*)swapchain;
+
+				images.resize(desc.BufferCount);
+			}
+			else
+				d3d12_swapchain->ResizeBuffers(images.size(), size.x, size.y, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+
+			for (auto i = 0; i < images.size(); i++)
+			{
+				ID3D12Resource* resource;
+				check_dx_result(d3d12_swapchain->GetBuffer(i, IID_PPV_ARGS(&resource)));
+				images[i].reset(ImagePrivate::create(device, format, uvec3(size, 1), resource));
+			}
+#elif USE_VULKAN
+			images.clear();
 			if (vk_swapchain)
 			{
 				vkDestroySwapchainKHR(device->vk_device, vk_swapchain, nullptr);
@@ -60,11 +92,8 @@ namespace flame
 				vk_surface = nullptr;
 			}
 
-			auto size = window->size;
 			if (size.x != 0U || size.y != 0U)
 			{
-				const auto suggested_image_count = 3U;
-
 				VkWin32SurfaceCreateInfoKHR surface_info = {};
 				surface_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 				surface_info.hinstance = (HINSTANCE)get_hinst();
@@ -114,7 +143,8 @@ namespace flame
 				check_vk_result(vkCreateSwapchainKHR(device->vk_device, &swapchain_info, nullptr, &vk_swapchain));
 				register_object(vk_swapchain, "Swapchain", this);
 
-				std::vector<VkImage> native_images; uint image_count;
+				uint image_count = 0;
+				std::vector<VkImage> native_images;
 				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, nullptr);
 				native_images.resize(image_count);
 				vkGetSwapchainImagesKHR(device->vk_device, vk_swapchain, &image_count, native_images.data());
@@ -122,35 +152,14 @@ namespace flame
 				images.resize(image_count);
 				for (auto i = 0; i < image_count; i++)
 					images[i].reset(ImagePrivate::create(device, format, uvec3(size, 1), native_images[i]));
-
-				{
-					DXGI_SWAP_CHAIN_DESC1 desc = {};
-					desc.BufferCount = suggested_image_count;
-					desc.Width = size.x;
-					desc.Height = size.y;
-					desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-					desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-					desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-					desc.SampleDesc.Count = 1;
-
-					IDXGISwapChain1* swapchain = nullptr;
-					check_dx_result(device->dxgi_factory->CreateSwapChainForHwnd(Queue::get()->d3d12_queue, (HWND)window->get_hwnd(),
-						&desc, nullptr, nullptr, &swapchain));
-					d3d12_swapchain = (IDXGISwapChain3*)swapchain;
-
-					for (auto i = 0; i < image_count; i++)
-						check_dx_result(d3d12_swapchain->GetBuffer(i, IID_PPV_ARGS(&images[i]->d3d12_resource)));
-
-				}
-
+#endif
 				InstanceCommandBuffer cb;
-				for (auto i = 0; i < image_count; i++)
+				for (auto i = 0; i < images.size(); i++)
 				{
 					cb->image_barrier(images[i].get(), {}, ImageLayoutPresent);
 					device->set_object_debug_name(images[i].get(), "Window" + str(i));
 				}
 				cb.excute();
-			}
 		}
 
 		struct SwapchainCreate : Swapchain::Create
