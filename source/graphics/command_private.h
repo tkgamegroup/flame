@@ -88,6 +88,7 @@ namespace flame
 		struct QueuePrivate : Queue
 		{
 #if USE_D3D12
+			FencePtr idle_fence = nullptr;
 			ID3D12CommandQueue* d3d12_queue = nullptr;
 #elif USE_VULKAN
 			VkQueue vk_queue = 0;

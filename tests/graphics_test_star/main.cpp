@@ -3,6 +3,7 @@
 #include <flame/graphics/image.h>
 #include <flame/graphics/extension.h>
 #include <flame/graphics/shader.h>
+#include <flame/graphics/canvas.h>
 #include <flame/graphics/application.h>
 
 using namespace flame;
@@ -11,6 +12,8 @@ using namespace graphics;
 struct App : GraphicsApplication 
 {
 	graphics::GraphicsPipelinePtr pl = nullptr;
+	graphics::DescriptorSetPtr ds = nullptr;
+	CanvasPtr canvas = nullptr;
 
 	void on_render() override
 	{
@@ -29,6 +32,11 @@ struct App : GraphicsApplication
 		auto cv = vec4(0.4f, 0.4f, 0.58f, 1.f);
 		command_buffer->begin_renderpass(nullptr, dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), &cv);
 		command_buffer->bind_pipeline(pl);
+		command_buffer->bind_descriptor_set(0, ds);
+		command_buffer->push_constant_t(0.2f, 0);
+		command_buffer->push_constant_t(0.3f, 4);
+		command_buffer->push_constant_t(0.4f, 8);
+		command_buffer->push_constant_t(1.0f, 12);
 		command_buffer->draw(3, 1, 0, 0);
 		//command_buffer->bind_vertex_buffer(vtx_buf.buf.get(), 0);
 		//command_buffer->bind_pipeline(pl);
@@ -53,39 +61,31 @@ depth_test
   false
 
 @pll
-layout (set = 1, binding = 1) uniform sampler2D sky_map;
+layout (set = 0, binding = 0) uniform sampler2D map;
 
-layout (set = 1, binding = 2) uniform Camera
+layout(push_constant) uniform PushConstant
+{
+    float R;
+	float G;
+	float B;
+	float A;
+}pc;
+
+layout (set = 0, binding = 0) uniform Camera
 {
 	float zNear;
 	float zFar;
-	float fovy;
-	float tan_hf_fovy;
-
-	vec2 viewport;
-	
-	vec3 coord;
-	vec3 front;
-	vec3 right;
-	vec3 up;
 
 	mat4 view;
-	mat4 view_inv;
-	mat4 last_view;
 	mat4 proj;
-	mat4 proj_inv;
-	mat4 proj_view;
-	mat4 proj_view_inv;
-	
-	vec4 frustum_planes[6];
-
-	float time;
 }camera;
 
-layout (set = 1, binding = 3) uniform sampler2D sky_map2;
+layout (set = 1, binding = 3) uniform sampler2D map2;
 @
 
 @vert
+
+layout(location = 0) out vec2 o_uv;
 
 void main()
 {
@@ -95,20 +95,64 @@ void main()
 		vec2(1.0, 0.5)
 	};
 	vec2 v = vs[gl_VertexIndex];
+	o_uv = v;
 	gl_Position = vec4(v * 2.0 - 1.0, 1.0, 1.0);
 }
 @
 
 @frag
+layout(location = 0) in vec2 i_uv;
 
 layout (location = 0) out vec4 o_col;
 
 void main()
 {
-	o_col = vec4(0.4, 0.7, 0.9, 1.0);
+	o_col = vec4(texture(map, i_uv).rgb, 1.0);
 }
 @
 )^^^";
+
+/*
+cbuffer Camera : register(b0, space0)
+{
+	float camera_zNear : packoffset(c0);
+	float camera_zFar : packoffset(c0.y);
+	row_major float4x4 camera_view : packoffset(c1);
+	row_major float4x4 camera_proj : packoffset(c5);
+};
+
+cbuffer SPIRV_CROSS_RootConstant_pc : register(b0, space15)
+{
+	float2 pc_translate : packoffset(c0);
+	float2 pc_scale : packoffset(c0.z);
+	float4 pc_data : packoffset(c1);
+};
+Texture2D<float4> sky_map : register(t1, space1);
+SamplerState _sky_map_sampler : register(s1, space1);
+Texture2D<float4> sky_map2 : register(t3, space1);
+SamplerState _sky_map2_sampler : register(s3, space1);
+
+static float4 o_col;
+
+struct SPIRV_Cross_Output
+{
+	float4 o_col : SV_Target0;
+};
+
+void frag_main()
+{
+	o_col = float4(0.4000000059604644775390625f, 0.699999988079071044921875f, 0.89999997615814208984375f, 1.0f);
+}
+
+SPIRV_Cross_Output main()
+{
+	frag_main();
+	SPIRV_Cross_Output stage_output;
+	stage_output.o_col = o_col;
+	return stage_output;
+}
+
+*/
 
 //auto pl_str = R"^^^(
 //layout
@@ -250,7 +294,14 @@ int entry(int argc, char** args)
 	//for (auto& s : stars)
 	//	s.p.z = linearRand(0.f, 1.f) * (projector.zFar - projector.zNear) + projector.zNear;
 
+	//app.canvas = Canvas::create();
+	//app.canvas->bind_window(app.main_window);
+
 	app.pl = GraphicsPipeline::create(pl_str, { "rp=" + str(Renderpass::get(L"flame\\shaders\\color.rp", { "col_fmt=R8G8B8A8_UNORM" })) });
+	app.ds = DescriptorSet::create(nullptr, app.pl->layout->dsls.front());
+	auto img = graphics::Image::get(L"flame/icon.png");
+	app.ds->set_image_i(0, 0, img->get_view(), nullptr);
+	app.ds->update();
 	//vtx_buf.create(pl->vi_ui(), stars.size() * 6);
 
 	app.run();

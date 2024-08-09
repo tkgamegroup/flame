@@ -285,13 +285,16 @@ namespace flame
 				AdjustWindowRect(&rect, win32_styles, false);
 				final_size = uvec2(rect.right - rect.left, rect.bottom - rect.top);
 			}
-			ret->pos = ivec2(screen_size - final_size) / 2;
+			auto pos = ivec2(screen_size - final_size) / 2;
 			ret->hWnd = CreateWindowExA(win32_ex_styles, "flame_wnd", title.data(), win32_styles,
-				ret->pos.x, ret->pos.y, final_size.x, final_size.y, parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
-			ret->size = uvec2(1);
+				pos.x, pos.y, final_size.x, final_size.y, parent ? parent->hWnd : NULL, NULL, (HINSTANCE)get_hinst(), NULL);
 			//assert(IsWindowUnicode(ret->hWnd));
-			if (styles & WindowStyleMaximized)
-				ret->pos = ivec2(0);
+			{
+				RECT rect;
+				GetWindowRect(ret->hWnd, &rect);
+				ret->pos = ivec2(rect.left, rect.top);
+				ret->size = uvec2(rect.right - rect.left, rect.bottom - rect.top);
+			}
 			ret->adjust_rect();
 
 			SetWindowLongPtr(ret->hWnd, 0, (LONG_PTR)ret);

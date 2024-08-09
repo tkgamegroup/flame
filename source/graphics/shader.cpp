@@ -635,7 +635,12 @@ namespace flame
 						auto options = hlsl_compiler.get_hlsl_options();
 						options.shader_model = 60;
 						hlsl_compiler.set_hlsl_options(options);
-
+						spirv_cross::RootConstants root_constants;
+						root_constants.binding = 0;
+						root_constants.space = 15;
+						root_constants.start = 0;
+						root_constants.end = 256;
+						hlsl_compiler.set_root_constant_layouts({ root_constants });
 						auto hlsl_str = hlsl_compiler.compile();
 						auto target_str = "";
 						switch (stage)
@@ -1021,6 +1026,7 @@ namespace flame
 				{
 					D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
 					desc.Format = to_dx(img->format);
+					desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 					if (iv->is_cube)
 					{
 						desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
@@ -1305,11 +1311,6 @@ namespace flame
 					root_parameters.push_back(srv_table);
 					root_parameters.push_back(sp_table);
 				}
-				signature_desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-				signature_desc.pParameters = root_parameters.data();
-				signature_desc.NumParameters = root_parameters.size();
-				signature_desc.pStaticSamplers = nullptr;
-				signature_desc.NumStaticSamplers = 0;
 				for (auto i = 0; i < dsls.size(); i++)
 				{
 					auto& srv_table = root_parameters[i * 2 + 0];
@@ -1319,9 +1320,24 @@ namespace flame
 					sp_table.DescriptorTable.NumDescriptorRanges = descriptors[i * 2 + 1].size();
 					sp_table.DescriptorTable.pDescriptorRanges = descriptors[i * 2 + 1].data();
 				}
+				if (push_constant_size > 0)
+				{
+					D3D12_ROOT_PARAMETER parameter;
+					parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+					parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+					parameter.Constants.ShaderRegister = 0;
+					parameter.Constants.RegisterSpace = 15;
+					parameter.Constants.Num32BitValues = push_constant_size / 4;
+					root_parameters.push_back(parameter);
+				}
+				signature_desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+				signature_desc.pParameters = root_parameters.data();
+				signature_desc.NumParameters = root_parameters.size();
+				signature_desc.pStaticSamplers = nullptr;
+				signature_desc.NumStaticSamplers = 0;
 				ID3DBlob* signature = nullptr;
 				ID3DBlob* error = nullptr;
-				D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error); // wtf?
+				D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
 				device->d3d12_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&ret->d3d12_root_signature));
 				if (signature)
 					signature->Release();
@@ -2053,8 +2069,8 @@ namespace flame
 					{
 						auto& src_att = buf.attributes[j];
 						D3D12_INPUT_ELEMENT_DESC element;
-						element.SemanticName = "ATTRIBUTE";
-						element.SemanticIndex = src_att.location;
+						element.SemanticName = "TEXCOORD";
+						element.SemanticIndex = j;
 						element.Format = to_dx(src_att.format);
 						element.InputSlot = i;
 						if (src_att.offset != -1)

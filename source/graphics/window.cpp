@@ -48,7 +48,7 @@ namespace flame
 			Queue::get()->wait_idle();
 
 			const auto suggested_image_count = 3U;
-			auto size = window->size;
+			auto size = (ivec2)window->cl_rect.size();
 
 #if USE_D3D12
 			if (!d3d12_swapchain)

@@ -31,18 +31,15 @@ namespace flame
 #if USE_D3D12
 			D3D12_HEAP_PROPERTIES heap_properties = {};
 			if (mem_prop & MemoryPropertyDevice)
-			{
 				heap_properties.Type = D3D12_HEAP_TYPE_DEFAULT;
-				heap_properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_NOT_AVAILABLE;
-			}
 			else if (mem_prop & MemoryPropertyHost)
 			{
-				heap_properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
 				if (usage & BufferUsageTransferSrc)
 					heap_properties.Type = D3D12_HEAP_TYPE_UPLOAD;
-				if (usage & BufferUsageTransferDst)
+				else if (usage & BufferUsageTransferDst)
 					heap_properties.Type = D3D12_HEAP_TYPE_READBACK;
 			}
+			heap_properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
 			heap_properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 			heap_properties.CreationNodeMask = 1;
 			heap_properties.VisibleNodeMask = 1;
@@ -59,8 +56,7 @@ namespace flame
 			resource_desc.SampleDesc.Quality = 0;
 			resource_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 			resource_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
-			device->d3d12_device->CreateCommittedResource(&heap_properties, D3D12_HEAP_FLAG_NONE, &resource_desc, to_dx_flags(usage), nullptr, IID_PPV_ARGS(&d3d12_resource));
-
+			check_dx_result(device->d3d12_device->CreateCommittedResource(&heap_properties, D3D12_HEAP_FLAG_NONE, &resource_desc, to_dx(usage), nullptr, IID_PPV_ARGS(&d3d12_resource)));
 			register_object(d3d12_resource, "Buffer", this);
 #elif USE_VULKAN
 			VkBufferCreateInfo buffer_info;
@@ -116,7 +112,7 @@ namespace flame
 			if (_size == 0)
 				_size = size;
 #if USE_D3D12
-
+			check_dx_result(d3d12_resource->Map(0, nullptr, &mapped));
 #elif USE_VULKAN
 			check_vk_result(vkMapMemory(device->vk_device, vk_memory, offset, _size, 0, &mapped));
 #endif
@@ -128,7 +124,7 @@ namespace flame
 			if (mapped)
 			{
 #if USE_D3D12
-
+				d3d12_resource->Unmap(0, nullptr);
 #elif USE_VULKAN
 				vkUnmapMemory(device->vk_device, vk_memory);
 #endif

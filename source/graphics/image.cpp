@@ -654,7 +654,7 @@ namespace flame
 #if USE_D3D12
 				D3D12_HEAP_PROPERTIES heap_properties = {};
 				heap_properties.Type = D3D12_HEAP_TYPE_DEFAULT;
-				heap_properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_NOT_AVAILABLE;
+				heap_properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
 				heap_properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
 				heap_properties.CreationNodeMask = 1;
 				heap_properties.VisibleNodeMask = 1;
@@ -689,7 +689,25 @@ namespace flame
 				}
 				desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 				desc.Flags = D3D12_RESOURCE_FLAG_NONE;
-				device->d3d12_device->CreateCommittedResource(&heap_properties, D3D12_HEAP_FLAG_NONE, &desc, to_dx_flags(usage, format, sample_count), nullptr, IID_PPV_ARGS(&ret->d3d12_resource));
+				check_dx_result(device->d3d12_device->CreateCommittedResource(&heap_properties, D3D12_HEAP_FLAG_NONE, &desc, to_dx(usage, format, sample_count), nullptr, IID_PPV_ARGS(&ret->d3d12_resource)));
+				register_object(ret->d3d12_resource, "Image", this);
+
+				auto img_desc = ret->d3d12_resource->GetDesc();
+				for (auto i = 0; i < ret->n_layers; i++)
+				{
+					for (auto j = 0; j < ret->n_levels; j++)
+					{
+						auto sub_idx = (i * ret->n_levels) + j;
+						D3D12_PLACED_SUBRESOURCE_FOOTPRINT sub_footprint;
+						uint num_rows; uint64 row_size; uint64 required_size;
+						device->d3d12_device->GetCopyableFootprints(&img_desc, sub_idx, 1, 0, &sub_footprint, &num_rows, &row_size, &required_size);
+						ret->levels[j].pitch = sub_footprint.Footprint.RowPitch;
+						ret->levels[j].data_size = required_size;
+					}
+				}
+				ret->data_size = 0;
+				for (auto& l : ret->levels)
+					ret->data_size += l.data_size * ret->n_layers;
 #elif USE_VULKAN
 				VkImageCreateInfo imageInfo;
 				imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -849,18 +867,27 @@ namespace flame
 					}
 					assert(format != Format_Undefined);
 
-					ret = Image::create(format, ext, ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc | additional_usage,
+					ret = Image::create(format, ext, ImageUsageSampled | ImageUsageTransferDst | additional_usage,
 						levels, layers == 6 ? (uint)-6 : layers, SampleCount_1);
+#if USE_D3D12
+					for (auto& lv : ret->levels)
+					{
+						for (auto& ly : lv.layers)
+							ly.layout = ImageLayoutTransferDst;
+					}
+#endif
 
 					StagingBuffer sb(ret->data_size, nullptr);
 					InstanceCommandBuffer cb;
-					std::vector<BufferImageCopy> cpies;
+					std::vector<BufferImageCopy> copies;
 					auto dst = (char*)sb->mapped;
 					auto offset = 0;
 					for (auto i = 0; i < levels; i++)
 					{
-						auto size = gli_texture.size(i);
-						auto ext = gli_texture.extent(i);
+						auto size = ret->levels[i].data_size;
+						auto ext = ret->levels[i].extent;
+						auto src_pitch = image_pitch(ret->pixel_size * ext.x);
+						auto dst_pitch = ret->levels[i].pitch;
 						for (auto j = 0; j < layers; j++)
 						{
 							void* data;
@@ -868,20 +895,25 @@ namespace flame
 								data = gli_texture.data(0, j, i);
 							else
 								data = gli_texture.data(j, 0, i);
+#if USE_D3D12
+							for (auto l = 0; l < ext.y; l++)
+								memcpy(dst + offset + l * dst_pitch, (char*)data + l * src_pitch, src_pitch);
+#else
 							memcpy(dst + offset, data, size);
+#endif
 
 							BufferImageCopy cpy;
 							cpy.buf_off = offset;
-							cpy.img_ext = ext;
+							cpy.img_ext = uvec3(ext, 1);
 							cpy.img_sub.base_level = i;
 							cpy.img_sub.base_layer = j;
-							cpies.push_back(cpy);
+							copies.push_back(cpy);
 
 							offset += size;
 						}
 					}
 					cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutTransferDst);
-					cb->copy_buffer_to_image(sb.get(), ret, cpies);
+					cb->copy_buffer_to_image(sb.get(), ret, copies);
 					cb->image_barrier(ret, { 0, levels, 0, layers }, ImageLayoutShaderReadOnly);
 					cb.excute();
 				}
@@ -898,9 +930,24 @@ namespace flame
 					if (bmp->chs == 3)	bmp->change_format(4);
 
 					ret = Image::create(get_image_format(bmp->chs, bmp->bpp), uvec3(bmp->extent, 1),
-						ImageUsageSampled | ImageUsageTransferDst | ImageUsageTransferSrc | additional_usage, config.auto_mipmapping ? 0 : 1);
+						ImageUsageSampled | ImageUsageTransferDst | additional_usage, config.auto_mipmapping ? 0 : 1);
 
-					StagingBuffer sb(bmp->data_size, bmp->data);
+#if USE_D3D12
+					for (auto& lv : ret->levels)
+					{
+						for (auto& ly : lv.layers)
+							ly.layout = ImageLayoutTransferDst;
+					}
+
+					StagingBuffer sb(ret->data_size, nullptr);
+					auto ext = ret->levels[0].extent;
+					auto src_pitch = image_pitch(ret->pixel_size * ext.x);
+					auto dst_pitch = ret->levels[0].pitch;
+					for (auto l = 0; l < ext.y; l++)
+						memcpy((char*)sb->mapped + l * dst_pitch, (char*)bmp->data + l * src_pitch, src_pitch);
+#else
+					StagingBuffer sb(ret->data_size, bmp->data);
+#endif
 					InstanceCommandBuffer cb;
 					BufferImageCopy cpy;
 					cpy.img_ext = ret->extent;

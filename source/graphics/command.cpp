@@ -358,7 +358,8 @@ namespace flame
 			curr_cpl = pl;
 
 #if USE_D3D12
-
+			d3d12_command_list->SetComputeRootSignature(pl->layout->d3d12_root_signature);
+			d3d12_command_list->SetPipelineState(pl->d3d12_pipeline);
 #elif USE_VULKAN
 			vkCmdBindPipeline(vk_command_buffer, to_vk(curr_plt), curr_cpl->vk_pipeline);
 #endif
@@ -398,11 +399,21 @@ namespace flame
 #if USE_D3D12
 			for (auto i = 0; i < dss.size(); i++)
 			{
-				auto id = i + idx;
+				auto id = (i + idx) * 2;
 				if (dss[i]->d3d12_rtv_off != -1)
-					d3d12_command_list->SetGraphicsRootDescriptorTable(id * 2 + 0, dss[i]->d3d12_srv_gpu_handle);
+				{
+					if (curr_plt == PipelineGraphics)
+						d3d12_command_list->SetGraphicsRootDescriptorTable(id + 0, dss[i]->d3d12_srv_gpu_handle);
+					else
+						d3d12_command_list->SetComputeRootDescriptorTable(id + 0, dss[i]->d3d12_srv_gpu_handle);
+				}
 				if (dss[i]->d3d12_sp_off != -1)
-					d3d12_command_list->SetGraphicsRootDescriptorTable(id * 2 + 1, dss[i]->d3d12_sp_gpu_handle);
+				{
+					if (curr_plt == PipelineGraphics)
+						d3d12_command_list->SetGraphicsRootDescriptorTable(id + 1, dss[i]->d3d12_sp_gpu_handle);
+					else
+						d3d12_command_list->SetComputeRootDescriptorTable(id + 1, dss[i]->d3d12_sp_gpu_handle);
+				}
 			}
 #elif USE_VULKAN
 			std::vector<VkDescriptorSet> vk_sets(dss.size());
@@ -434,7 +445,11 @@ namespace flame
 		void CommandBufferPrivate::push_constant(uint offset, uint size, const void* data)
 		{
 #if USE_D3D12
-
+			auto idx = curr_pll->dsls.size() * 2;
+			if (curr_plt == PipelineGraphics)
+				d3d12_command_list->SetGraphicsRoot32BitConstants(idx, size / 4, data, offset / 4);
+			else
+				d3d12_command_list->SetComputeRoot32BitConstants(idx, size / 4, data, offset / 4);
 #elif USE_VULKAN
 			vkCmdPushConstants(vk_command_buffer, curr_pll->vk_pipeline_layout, to_vk_flags<ShaderStageFlags>(ShaderStageAll), offset, size, data);
 #endif
@@ -779,7 +794,31 @@ namespace flame
 		void CommandBufferPrivate::copy_buffer_to_image(BufferPtr src, ImagePtr dst, std::span<BufferImageCopy> copies)
 		{
 #if USE_D3D12
+			auto img_desc = dst->d3d12_resource->GetDesc();
+			for (auto& cpy : copies)
+			{
+				auto sub_idx = (cpy.img_sub.base_layer * dst->n_levels) + cpy.img_sub.base_level;
+				D3D12_PLACED_SUBRESOURCE_FOOTPRINT sub_footprint;
+				uint num_rows; uint64 row_size; uint64 required_size;
+				device->d3d12_device->GetCopyableFootprints(&img_desc, sub_idx, 1, cpy.buf_off, &sub_footprint, &num_rows, &row_size, &required_size);
 
+				D3D12_TEXTURE_COPY_LOCATION src_location;
+				src_location.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+				src_location.pResource = src->d3d12_resource;
+				src_location.PlacedFootprint = sub_footprint;
+				D3D12_TEXTURE_COPY_LOCATION dst_location;
+				dst_location.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+				dst_location.pResource = dst->d3d12_resource;
+				dst_location.SubresourceIndex = sub_idx;
+				D3D12_BOX box;
+				box.left = 0;
+				box.top = 0;
+				box.front = 0;
+				box.right = cpy.img_ext.x;
+				box.bottom = cpy.img_ext.y;
+				box.back = cpy.img_ext.z;
+				d3d12_command_list->CopyTextureRegion(&dst_location, cpy.img_off.x, cpy.img_off.y, cpy.img_off.z, &src_location, &box);
+			}
 #elif USE_VULKAN
 			auto aspect = to_vk_flags<ImageAspectFlags>(aspect_from_format(dst->format));
 
@@ -969,14 +1008,15 @@ namespace flame
 		{
 			if (app_exiting) return;
 
-			if (d3d12_queue)
-				d3d12_queue->Release();
+			d3d12_queue->Release();
 		}
 
 		void QueuePrivate::wait_idle()
 		{
 #if USE_D3D12
-
+			d3d12_queue->Signal(idle_fence->d3d12_fence, 1);
+			idle_fence->value = 1;
+			idle_fence->wait();
 #elif USE_VULKAN
 			check_vk_result(vkQueueWaitIdle(vk_queue));
 #endif
@@ -1095,7 +1135,8 @@ namespace flame
 				desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 				desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-				auto res = device->d3d12_device->CreateCommandQueue(&desc, IID_PPV_ARGS(&ret->d3d12_queue));
+				check_dx_result(device->d3d12_device->CreateCommandQueue(&desc, IID_PPV_ARGS(&ret->d3d12_queue)));
+				ret->idle_fence = Fence::create();
 #elif USE_VULKAN
 				vkGetDeviceQueue(device->vk_device, queue_family_idx, 0, &ret->vk_queue);
 #endif

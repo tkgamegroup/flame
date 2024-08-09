@@ -36,7 +36,7 @@ namespace flame
 		{
 			StagingBuffer(uint size, void* data = nullptr, BufferUsageFlags extra_usage = BufferUsageNone)
 			{
-				reset(Buffer::create(size, BufferUsageTransferSrc | BufferUsageTransferDst | extra_usage, MemoryPropertyHost | MemoryPropertyCoherent));
+				reset(Buffer::create(size, BufferUsageTransferSrc | extra_usage, MemoryPropertyHost | MemoryPropertyCoherent));
 				get()->map();
 				if (data)
 					memcpy(get()->mapped, data, size);

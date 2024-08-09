@@ -84,33 +84,26 @@ namespace flame
 			return ret;
 		}
 
-		inline D3D12_RESOURCE_STATES to_dx_flags(uint u, Format fmt = Format_Undefined, SampleCount sc = SampleCount_1)
+		inline D3D12_RESOURCE_STATES to_dx(uint u, Format fmt = Format_Undefined, SampleCount sc = SampleCount_1)
 		{
-			D3D12_RESOURCE_STATES ret = D3D12_RESOURCE_STATE_COMMON;
 			if (u & ImageUsageTransferSrc)
-				ret |= D3D12_RESOURCE_STATE_COPY_SOURCE;
+				return D3D12_RESOURCE_STATE_GENERIC_READ;
 			if (u & ImageUsageTransferDst)
-				ret |= D3D12_RESOURCE_STATE_COPY_DEST;
+				return D3D12_RESOURCE_STATE_COPY_DEST;
 			if (u & ImageUsageSampled)
-				ret |= D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
+				return D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
 			if (u & ImageUsageStorage)
-				ret |= D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+				return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 			if (u & ImageUsageAttachment)
 			{
 				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
-					ret |= D3D12_RESOURCE_STATE_STREAM_OUT;
+					return D3D12_RESOURCE_STATE_STREAM_OUT;
 				else
-					ret |= (D3D12_RESOURCE_STATE_DEPTH_WRITE | D3D12_RESOURCE_STATE_DEPTH_READ);
+					return (D3D12_RESOURCE_STATE_DEPTH_WRITE | D3D12_RESOURCE_STATE_DEPTH_READ);
 				if (sc != SampleCount_1 && !(fmt >= Format_Depth_Begin && fmt <= Format_Depth_End))
-				{
-					ret |= D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
-					ret = ret & ~D3D12_RESOURCE_STATE_COPY_SOURCE;
-					ret = ret & ~D3D12_RESOURCE_STATE_COPY_DEST;
-					ret = ret & ~D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
-					ret = ret & ~D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-				}
+					return D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
 			}
-			return ret;
+			return D3D12_RESOURCE_STATE_COMMON;
 		}
 
 		inline D3D12_RESOURCE_STATES to_dx(ImageLayout l, Format fmt)
