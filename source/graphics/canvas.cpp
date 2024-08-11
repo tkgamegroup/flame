@@ -800,13 +800,25 @@ namespace flame
 			cb->set_viewport_and_scissor(vp);
 			if (clear_framebuffer)
 			{
-				vec4 cvs[] = { vec4(0.4f, 0.4f, 0.58f, 1.f), vec4(0.f) };
+				vec4 cvs[] = { vec4(0.4f, 0.4f, 0.58f, 1.f), 
+#if USE_D3D12
+					vec4(1.f, 0.f, 0.f, 0.f)
+#else
+					vec4(0.f)
+#endif
+				};
 				cb->begin_renderpass(rp, fb_tars[idx], cvs);
 			}
 			else
 			{
 				cb->image_barrier(iv_tars[idx]->image, {}, ImageLayoutAttachment);
-				vec4 cvs[] = { vec4(0.f), vec4(0.f) };
+				vec4 cvs[] = { vec4(0.f),
+#if USE_D3D12
+					vec4(1.f, 0.f, 0.f, 0.f)
+#else
+					vec4(0.f)
+#endif
+				};
 				cb->begin_renderpass(rp_load, fb_tars[idx], cvs);
 			}
 			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);

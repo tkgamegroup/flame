@@ -1026,7 +1026,8 @@ namespace flame
 				{
 					D3D12_SHADER_RESOURCE_VIEW_DESC desc = {};
 					desc.Format = to_dx(img->format);
-					desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+					desc.Shader4ComponentMapping = to_dx(iv->swizzle);
+					iv->swizzle;
 					if (iv->is_cube)
 					{
 						desc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
@@ -1335,16 +1336,15 @@ namespace flame
 				signature_desc.NumParameters = root_parameters.size();
 				signature_desc.pStaticSamplers = nullptr;
 				signature_desc.NumStaticSamplers = 0;
-				ID3DBlob* signature = nullptr;
+				ID3DBlob* signature_blob = nullptr;
 				ID3DBlob* error = nullptr;
-				D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
-				device->d3d12_device->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&ret->d3d12_root_signature));
-				if (signature)
-					signature->Release();
+				D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1, &signature_blob, &error);
+				device->d3d12_device->CreateRootSignature(0, signature_blob->GetBufferPointer(), signature_blob->GetBufferSize(), IID_PPV_ARGS(&ret->d3d12_root_signature));
+				register_object(ret->d3d12_root_signature, "Root Signature", ret);
+				if (signature_blob)
+					signature_blob->Release();
 				if (error)
 					error->Release();
-
-				register_object(ret->d3d12_root_signature, "Root Signature", ret);
 #elif USE_VULKAN
 				std::vector<VkDescriptorSetLayout> vk_descriptor_set_layouts;
 				vk_descriptor_set_layouts.resize(dsls.size());
@@ -2109,7 +2109,7 @@ namespace flame
 				desc.RasterizerState.SlopeScaledDepthBias = 0.f;
 				desc.RasterizerState.DepthClipEnable = false;
 				desc.RasterizerState.MultisampleEnable = info.sample_count != SampleCount_1;
-				desc.RasterizerState.AntialiasedLineEnable = false; // TODO: dx can do that?
+				desc.RasterizerState.AntialiasedLineEnable = false;
 				desc.RasterizerState.ForcedSampleCount = 0; // TODO: unknown..
 				desc.DepthStencilState.DepthEnable = info.depth_test;
 				desc.DepthStencilState.DepthWriteMask = info.depth_write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
@@ -2124,10 +2124,36 @@ namespace flame
 				desc.DepthStencilState.BackFace = desc.DepthStencilState.FrontFace;
 				desc.PrimitiveTopologyType = to_dx(info.primitive_topology);
 				desc.SampleMask = 0xffffffff;
-				desc.NumRenderTargets = 1; // TODO: fix
-				desc.RTVFormats[0] = to_dx(info.renderpass->attachments[0].format); // TODO: fix
+				auto& subpass = info.renderpass->subpasses[info.subpass_index];
+				desc.NumRenderTargets = subpass.color_attachments.size();
+				for (auto i = 0; i < desc.NumRenderTargets; i++)
+				{
+					auto& bs = desc.BlendState.RenderTarget[i];
+					desc.RTVFormats[i] = to_dx(info.renderpass->attachments[subpass.color_attachments[i]].format);
+					bs.BlendEnable = false;
+					bs.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+				}
+				if (subpass.depth_stencil_attachment != -1)
+					desc.DSVFormat = to_dx(info.renderpass->attachments[subpass.depth_stencil_attachment].format);
 				desc.SampleDesc.Count = 1;
-				desc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+				desc.BlendState.AlphaToCoverageEnable = info.alpha_to_coverage;
+				if (!info.blend_options.empty())
+				{
+					for (auto i = 0; i < info.blend_options.size(); i++)
+					{
+						auto& bo = info.blend_options[i];
+						auto& bs = desc.BlendState.RenderTarget[i];
+						bs.BlendEnable = bo.enable;
+						bs.SrcBlend = to_dx(bo.src_color);
+						bs.SrcBlendAlpha = to_dx(bo.src_alpha);
+						bs.DestBlend = to_dx(bo.dst_color);
+						bs.DestBlendAlpha = to_dx(bo.dst_alpha);
+						bs.BlendOp = to_dx(bo.color_op);
+						bs.BlendOpAlpha = to_dx(bo.alpha_op);
+						bs.RenderTargetWriteMask = to_dx_flags<ColorComponentFlags>(bo.color_write_mask);
+						D3D12_BLEND;
+					}
+				}
 				check_dx_result(device->d3d12_device->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&ret->d3d12_pipeline)));
 				register_object(ret->d3d12_pipeline, "Pipeline", ret);
 #elif USE_VULKAN
@@ -2283,7 +2309,7 @@ namespace flame
 					a.srcAlphaBlendFactor = to_vk(BlendFactorZero);
 					a.dstAlphaBlendFactor = to_vk(BlendFactorZero);
 					a.alphaBlendOp = to_vk(BlendOpAdd);
-					a.colorWriteMask = to_vk_flags<VkColorComponentFlags>(ColorComponentAll);
+					a.colorWriteMask = to_vk_flags<ColorComponentFlags>(ColorComponentAll);
 				}
 				if (vk_blend_attachment_states.size() >= info.blend_options.size())
 				{
@@ -2298,7 +2324,7 @@ namespace flame
 						dst.srcAlphaBlendFactor = to_vk(src.src_alpha);
 						dst.dstAlphaBlendFactor = to_vk(src.dst_alpha);
 						dst.alphaBlendOp = to_vk(src.alpha_op);
-						dst.colorWriteMask = to_vk_flags<VkColorComponentFlags>(src.color_write_mask);
+						dst.colorWriteMask = to_vk_flags<ColorComponentFlags>(src.color_write_mask);
 					}
 				}
 

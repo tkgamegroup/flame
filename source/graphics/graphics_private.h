@@ -46,6 +46,8 @@ namespace flame
 		{
 			switch (f)
 			{
+			case Format_R8_UNORM:
+				return DXGI_FORMAT_R8_UNORM;
 			case Format_R32_SFLOAT:
 				return DXGI_FORMAT_R32_FLOAT;
 			case Format_R32G32_SFLOAT:
@@ -58,6 +60,8 @@ namespace flame
 				return DXGI_FORMAT_R8G8B8A8_UNORM;
 			case Format_B8G8R8A8_UNORM:
 				return DXGI_FORMAT_B8G8R8A8_UNORM;
+			case Format_Stencil8:
+				return DXGI_FORMAT_D24_UNORM_S8_UINT; // dx has no stencil only formats
 			default:
 				assert(0);
 			}
@@ -84,24 +88,16 @@ namespace flame
 			return ret;
 		}
 
-		inline D3D12_RESOURCE_STATES to_dx(uint u, Format fmt = Format_Undefined, SampleCount sc = SampleCount_1)
+		inline D3D12_RESOURCE_STATES to_dx(AccessFlags a)
 		{
-			if (u & ImageUsageTransferSrc)
-				return D3D12_RESOURCE_STATE_GENERIC_READ;
-			if (u & ImageUsageTransferDst)
-				return D3D12_RESOURCE_STATE_COPY_DEST;
-			if (u & ImageUsageSampled)
-				return D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
-			if (u & ImageUsageStorage)
-				return D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-			if (u & ImageUsageAttachment)
+			switch (a)
 			{
-				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
-					return D3D12_RESOURCE_STATE_STREAM_OUT;
-				else
-					return (D3D12_RESOURCE_STATE_DEPTH_WRITE | D3D12_RESOURCE_STATE_DEPTH_READ);
-				if (sc != SampleCount_1 && !(fmt >= Format_Depth_Begin && fmt <= Format_Depth_End))
-					return D3D12_RESOURCE_STATE_RESOLVE_SOURCE;
+			case AccessTransferWrite:
+				return D3D12_RESOURCE_STATE_COPY_DEST;
+			case AccessVertexAttributeRead:
+				return D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+			case AccessIndexRead:
+				return D3D12_RESOURCE_STATE_INDEX_BUFFER;
 			}
 			return D3D12_RESOURCE_STATE_COMMON;
 		}
@@ -114,21 +110,21 @@ namespace flame
 				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
 					return D3D12_RESOURCE_STATE_RENDER_TARGET;
 				else
-					return D3D12_RESOURCE_STATE_DEPTH_WRITE | D3D12_RESOURCE_STATE_DEPTH_READ; // TODO: is it true?
+					return D3D12_RESOURCE_STATE_DEPTH_WRITE; // TODO: is it true?
 			case ImageLayoutShaderReadOnly:
 				return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE/*D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE*/; // TOOD: wtf?
 				//case ImageLayoutShaderStorage:
 				//	return VK_IMAGE_LAYOUT_GENERAL; // TODO
 			case ImageLayoutTransferSrc:
-				return D3D12_RESOURCE_STATE_COPY_SOURCE; // TODO: is it true?
+				return D3D12_RESOURCE_STATE_COPY_SOURCE;
 			case ImageLayoutTransferDst:
-				return D3D12_RESOURCE_STATE_COPY_DEST; // TODO: is it true?
+				return D3D12_RESOURCE_STATE_COPY_DEST;
 			case ImageLayoutPresent:
 				return D3D12_RESOURCE_STATE_PRESENT;
 			case ImageLayoutGeneral:
-				return D3D12_RESOURCE_STATE_COMMON; // TOOD: is it true?
+				return D3D12_RESOURCE_STATE_GENERIC_READ;
 			}
-			return D3D12_RESOURCE_STATE_COMMON; // TOOD: is it true?
+			return D3D12_RESOURCE_STATE_COMMON;
 		}
 
 		inline D3D12_FILL_MODE to_dx(PolygonMode m)
@@ -231,6 +227,97 @@ namespace flame
 				return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
 			}
 			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
+		}
+
+		inline D3D12_BLEND to_dx(BlendFactor f)
+		{
+			switch (f)
+			{
+			case BlendFactorZero:
+				return D3D12_BLEND_ZERO;
+			case BlendFactorOne:
+				return D3D12_BLEND_ONE;
+			case BlendFactorSrcColor:
+				return D3D12_BLEND_SRC_COLOR;
+			case BlendFactorOneMinusSrcColor:
+				return D3D12_BLEND_INV_SRC_COLOR;
+			case BlendFactorDstColor:
+				return D3D12_BLEND_DEST_COLOR;
+			case BlendFactorOneMinusDstColor:
+				return D3D12_BLEND_INV_DEST_COLOR;
+			case BlendFactorSrcAlpha:
+				return D3D12_BLEND_SRC_ALPHA;
+			case BlendFactorOneMinusSrcAlpha:
+				return D3D12_BLEND_INV_SRC_ALPHA;
+			case BlendFactorDstAlpha:
+				return D3D12_BLEND_DEST_ALPHA;
+			case BlendFactorOneMinusDstAlpha:
+				return D3D12_BLEND_INV_DEST_ALPHA;
+			case BlendFactorSrc1Color:
+				return D3D12_BLEND_SRC1_COLOR;
+			case BlendFactorOneMinusSrc1Color:
+				return D3D12_BLEND_INV_SRC1_COLOR;
+			case BlendFactorSrc1Alpha:
+				return D3D12_BLEND_SRC1_ALPHA;
+			case BlendFactorOneMinusSrc1Alpha:
+				return D3D12_BLEND_INV_SRC1_ALPHA;
+			}
+		}
+
+		inline D3D12_BLEND_OP to_dx(BlendOp o)
+		{
+			switch (o)
+			{
+			case BlendOpAdd:
+				return D3D12_BLEND_OP_ADD;
+			case BlendOpSubtract:
+				return D3D12_BLEND_OP_SUBTRACT;
+			case BlendOpReverseSubtract:
+				return D3D12_BLEND_OP_REV_SUBTRACT;
+			case BlendOpMin:
+				return D3D12_BLEND_OP_MIN;
+			case BlendOpMax:
+				return D3D12_BLEND_OP_MAX;
+			}
+		}
+
+		template<>
+		inline uint to_dx_flags<ColorComponentFlags>(uint c)
+		{
+			uint ret = 0;
+			if (c & ColorComponentR)
+				ret |= D3D12_COLOR_WRITE_ENABLE_RED;
+			if (c & ColorComponentG)
+				ret |= D3D12_COLOR_WRITE_ENABLE_GREEN;
+			if (c & ColorComponentB)
+				ret |= D3D12_COLOR_WRITE_ENABLE_BLUE;
+			if (c & ColorComponentA)
+				ret |= D3D12_COLOR_WRITE_ENABLE_ALPHA;
+			return ret;
+		}
+
+		inline D3D12_SHADER_COMPONENT_MAPPING to_dx(Swizzle s)
+		{
+			switch (s)
+			{
+			case SwizzleZero:
+				return D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_0;
+			case SwizzleOne:
+				return D3D12_SHADER_COMPONENT_MAPPING_FORCE_VALUE_1;
+			case SwizzleR:
+				return D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_0;
+			case SwizzleG:
+				return D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_1;
+			case SwizzleB:
+				return D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_2;
+			case SwizzleA:
+				return D3D12_SHADER_COMPONENT_MAPPING_FROM_MEMORY_COMPONENT_3;
+			}
+		}
+
+		inline uint to_dx(const ImageSwizzle& swizzle)
+		{
+			return D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(to_dx(swizzle.r), to_dx(swizzle.g), to_dx(swizzle.b), to_dx(swizzle.a));
 		}
 #elif USE_VULKAN
 		inline void check_vk_result(VkResult res)
@@ -893,7 +980,7 @@ namespace flame
 		}
 
 		template<>
-		inline VkFlags to_vk_flags<VkColorComponentFlags>(uint c)
+		inline VkFlags to_vk_flags<ColorComponentFlags>(uint c)
 		{
 			VkColorComponentFlags ret = 0;
 			if (c & ColorComponentR)

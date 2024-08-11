@@ -34,6 +34,9 @@ namespace flame
 			ComputePipelinePtr curr_cpl = nullptr;
 			FramebufferPtr curr_fb = nullptr;
 			RenderpassPtr curr_rp = nullptr;
+#if USE_D3D12
+			BufferPtr peeding_vb = nullptr;
+#endif
 			int curr_sp = -1;
 
 #if USE_D3D12

@@ -689,7 +689,29 @@ namespace flame
 				}
 				desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 				desc.Flags = D3D12_RESOURCE_FLAG_NONE;
-				check_dx_result(device->d3d12_device->CreateCommittedResource(&heap_properties, D3D12_HEAP_FLAG_NONE, &desc, to_dx(usage, format, sample_count), nullptr, IID_PPV_ARGS(&ret->d3d12_resource)));
+				D3D12_CLEAR_VALUE cv; D3D12_CLEAR_VALUE* pcv = nullptr;
+				if (usage & ImageUsageAttachment)
+				{
+					if (format >= Format_Depth_Begin && format <= Format_Depth_End)
+					{
+						desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+						cv.Format = desc.Format;
+						cv.DepthStencil.Depth = 1.f;
+						cv.DepthStencil.Stencil = 0;
+						pcv = &cv;
+					}
+					else
+					{
+						desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
+						cv.Format = desc.Format;
+						cv.Color[0] = 0;
+						cv.Color[1] = 0;
+						cv.Color[2] = 0;
+						cv.Color[3] = 0;
+						pcv = &cv;
+					}
+				}
+				check_dx_result(device->d3d12_device->CreateCommittedResource(&heap_properties, D3D12_HEAP_FLAG_NONE, &desc, D3D12_RESOURCE_STATE_GENERIC_READ, pcv, IID_PPV_ARGS(&ret->d3d12_resource)));
 				register_object(ret->d3d12_resource, "Image", this);
 
 				auto img_desc = ret->d3d12_resource->GetDesc();
@@ -706,8 +728,12 @@ namespace flame
 					}
 				}
 				ret->data_size = 0;
-				for (auto& l : ret->levels)
-					ret->data_size += l.data_size * ret->n_layers;
+				for (auto& lv : ret->levels)
+				{
+					for (auto& ly : lv.layers)
+						ly.layout = ImageLayoutGeneral;
+					ret->data_size += lv.data_size * ret->n_layers;
+				}
 #elif USE_VULKAN
 				VkImageCreateInfo imageInfo;
 				imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

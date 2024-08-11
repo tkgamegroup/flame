@@ -256,6 +256,7 @@ namespace flame
 						copies.push_back(cpy);
 				}
 				dirty_regions.clear();
+				cb->buffer_barrier(buf.get(), u2a(BufferUsageVertex), AccessTransferWrite, u2s(BufferUsageVertex), PipelineStageTransfer);
 				if (!copies.empty())
 					cb->copy_buffer(stag.get(), buf.get(), copies);
 				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageVertex), PipelineStageTransfer, u2s(BufferUsageVertex));
@@ -330,6 +331,7 @@ namespace flame
 						copies.push_back(cpy);
 				}
 				dirty_regions.clear();
+				cb->buffer_barrier(buf.get(), u2a(BufferUsageIndex), AccessTransferWrite, u2s(BufferUsageIndex), PipelineStageTransfer);
 				if (!copies.empty())
 					cb->copy_buffer(stag.get(), buf.get(), copies);
 				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageIndex), PipelineStageTransfer, u2s(BufferUsageIndex));

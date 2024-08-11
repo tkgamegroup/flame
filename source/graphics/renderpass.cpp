@@ -309,12 +309,12 @@ namespace flame
 						check_dx_result(device->d3d12_device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&d3d12_dsv_heap)));
 						d3d12_dsv_free_list.init(max_num);
 					}
-					ret->d3d12_dsv_off = d3d12_rtv_free_list.get_free_space(1);
+					ret->d3d12_dsv_off = d3d12_dsv_free_list.get_free_space(1);
 					assert(ret->d3d12_dsv_off != -1);
 					ret->d3d12_dsv_cpu_handle = d3d12_dsv_heap->GetCPUDescriptorHandleForHeapStart();
 					ret->d3d12_dsv_cpu_handle.ptr += ret->d3d12_dsv_off * device->d3d12_dsv_size;
 					auto handle = ret->d3d12_dsv_cpu_handle;
-					device->d3d12_device->CreateRenderTargetView(views[depth_stencil_attachment]->image->d3d12_resource, nullptr/*TODO*/, handle);
+					device->d3d12_device->CreateDepthStencilView(views[depth_stencil_attachment]->image->d3d12_resource, nullptr/*TODO*/, handle);
 				}
 #elif USE_VULKAN
 				std::vector<VkImageView> vk_views(views.size());

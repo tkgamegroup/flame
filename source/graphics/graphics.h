@@ -94,10 +94,9 @@ namespace flame
 			Format_BC7_SRGB,
 			Format_RGBA_ETC2,
 
-			Format_Stencil8,
-
 			Format_Depth16,
 			Format_Depth32,
+			Format_Stencil8,
 			Format_Depth24Stencil8,
 
 			Format_Color_Begin = Format_R8_UNORM,

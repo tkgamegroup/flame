@@ -11,8 +11,7 @@ using namespace graphics;
 
 struct App : GraphicsApplication 
 {
-	graphics::GraphicsPipelinePtr pl = nullptr;
-	graphics::DescriptorSetPtr ds = nullptr;
+	//graphics::GraphicsPipelinePtr pl = nullptr;
 	CanvasPtr canvas = nullptr;
 
 	void on_render() override
@@ -26,23 +25,19 @@ struct App : GraphicsApplication
 		//vtx_buf.upload(command_buffer);
 		//vtx_buf.buf_top = vtx_buf.stag_top = 0;
 
-		auto dst = main_window->swapchain->current_image();
-		auto vp = Rect(vec2(0), (vec2)dst->extent);
-		command_buffer->set_viewport_and_scissor(vp);
-		auto cv = vec4(0.4f, 0.4f, 0.58f, 1.f);
-		command_buffer->begin_renderpass(nullptr, dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), &cv);
-		command_buffer->bind_pipeline(pl);
-		command_buffer->bind_descriptor_set(0, ds);
-		command_buffer->push_constant_t(0.2f, 0);
-		command_buffer->push_constant_t(0.3f, 4);
-		command_buffer->push_constant_t(0.4f, 8);
-		command_buffer->push_constant_t(1.0f, 12);
-		command_buffer->draw(3, 1, 0, 0);
-		//command_buffer->bind_vertex_buffer(vtx_buf.buf.get(), 0);
-		//command_buffer->bind_pipeline(pl);
-		//command_buffer->push_constant_t(vec4(2.f / vp.b, vec2(-1)));
-		//command_buffer->draw(stars.size() * 6, 1, 0, 0);
-		command_buffer->end_renderpass();
+		//auto dst = main_window->swapchain->current_image();
+		//auto vp = Rect(vec2(0), (vec2)dst->extent);
+		//command_buffer->set_viewport_and_scissor(vp);
+		//auto cv = vec4(0.4f, 0.4f, 0.58f, 1.f);
+		//command_buffer->begin_renderpass(nullptr, dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), &cv);
+
+		////command_buffer->bind_vertex_buffer(vtx_buf.buf.get(), 0);
+		////command_buffer->bind_pipeline(pl);
+		////command_buffer->push_constant_t(vec4(2.f / vp.b, vec2(-1)));
+		////command_buffer->draw(stars.size() * 6, 1, 0, 0);
+		//command_buffer->end_renderpass();
+		canvas->draw_rect_filled(vec2(0.f), vec2(100.f), cvec4(255));
+		canvas->render(main_window->swapchain->image_index, command_buffer.get());
 	}
 }app;
 
@@ -113,44 +108,56 @@ void main()
 )^^^";
 
 /*
-cbuffer Camera : register(b0, space0)
-{
-	float camera_zNear : packoffset(c0);
-	float camera_zFar : packoffset(c0.y);
-	row_major float4x4 camera_view : packoffset(c1);
-	row_major float4x4 camera_proj : packoffset(c5);
-};
-
 cbuffer SPIRV_CROSS_RootConstant_pc : register(b0, space15)
 {
-	float2 pc_translate : packoffset(c0);
-	float2 pc_scale : packoffset(c0.z);
-	float4 pc_data : packoffset(c1);
+    float2 pc_translate : packoffset(c0);
+    float2 pc_scale : packoffset(c0.z);
+    float4 pc_data : packoffset(c1);
 };
-Texture2D<float4> sky_map : register(t1, space1);
-SamplerState _sky_map_sampler : register(s1, space1);
-Texture2D<float4> sky_map2 : register(t3, space1);
-SamplerState _sky_map2_sampler : register(s3, space1);
+Texture2D<float4> image : register(t0, space0);
+SamplerState _image_sampler : register(s0, space0);
 
+static float4 gl_Position;
 static float4 o_col;
+static float4 i_col;
+static float2 o_uv;
+static float2 i_uv;
+static float2 i_pos;
+
+struct SPIRV_Cross_Input
+{
+    float2 i_pos : TEXCOORD0;
+    float2 i_uv : TEXCOORD1;
+    float4 i_col : TEXCOORD2;
+};
 
 struct SPIRV_Cross_Output
 {
-	float4 o_col : SV_Target0;
+    float4 o_col : TEXCOORD0;
+    float2 o_uv : TEXCOORD1;
+    float4 gl_Position : SV_Position;
 };
 
-void frag_main()
+void vert_main()
 {
-	o_col = float4(0.4000000059604644775390625f, 0.699999988079071044921875f, 0.89999997615814208984375f, 1.0f);
+    o_col = i_col;
+    o_uv = i_uv;
+    gl_Position = float4(((i_pos + pc_translate) * pc_scale) - 1.0f.xx, 0.0f, 1.0f);
 }
 
-SPIRV_Cross_Output main()
+SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)
 {
-	frag_main();
-	SPIRV_Cross_Output stage_output;
-	stage_output.o_col = o_col;
-	return stage_output;
+    i_col = stage_input.i_col;
+    i_uv = stage_input.i_uv;
+    i_pos = stage_input.i_pos;
+    vert_main();
+    SPIRV_Cross_Output stage_output;
+    stage_output.gl_Position = gl_Position;
+    stage_output.o_col = o_col;
+    stage_output.o_uv = o_uv;
+    return stage_output;
 }
+
 
 */
 
@@ -294,14 +301,11 @@ int entry(int argc, char** args)
 	//for (auto& s : stars)
 	//	s.p.z = linearRand(0.f, 1.f) * (projector.zFar - projector.zNear) + projector.zNear;
 
-	//app.canvas = Canvas::create();
-	//app.canvas->bind_window(app.main_window);
+	app.canvas = Canvas::create();
+	app.canvas->bind_window(app.main_window);
 
-	app.pl = GraphicsPipeline::create(pl_str, { "rp=" + str(Renderpass::get(L"flame\\shaders\\color.rp", { "col_fmt=R8G8B8A8_UNORM" })) });
-	app.ds = DescriptorSet::create(nullptr, app.pl->layout->dsls.front());
-	auto img = graphics::Image::get(L"flame/icon.png");
-	app.ds->set_image_i(0, 0, img->get_view(), nullptr);
-	app.ds->update();
+	//app.pl = GraphicsPipeline::create(pl_str, { "rp=" + str(Renderpass::get(L"flame\\shaders\\color.rp", { "col_fmt=R8G8B8A8_UNORM" })) });
+	//app.ds = DescriptorSet::create(nullptr, app.pl->layout->dsls.front());
 	//vtx_buf.create(pl->vi_ui(), stars.size() * 6);
 
 	app.run();

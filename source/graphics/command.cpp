@@ -339,6 +339,11 @@ namespace flame
 				pt = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST; 
 				break;
 			}
+			if (peeding_vb)
+			{
+				bind_vertex_buffer(peeding_vb, 0);
+				peeding_vb = nullptr;
+			}
 			d3d12_command_list->IASetPrimitiveTopology(pt);
 #elif USE_VULKAN
 			auto vk_pl = curr_gpl->vk_pipeline;
@@ -426,7 +431,16 @@ namespace flame
 		void CommandBufferPrivate::bind_vertex_buffer(BufferPtr buf, uint id)
 		{
 #if USE_D3D12
-
+			if (curr_gpl)
+			{
+				D3D12_VERTEX_BUFFER_VIEW view;
+				view.BufferLocation = buf->d3d12_resource->GetGPUVirtualAddress();
+				view.StrideInBytes = curr_gpl->vi_ui()->size;
+				view.SizeInBytes = buf->size;
+				d3d12_command_list->IASetVertexBuffers(0, 1, &view);
+			}
+			else
+				peeding_vb = buf;
 #elif USE_VULKAN
 			VkDeviceSize offset = 0;
 			vkCmdBindVertexBuffers(vk_command_buffer, id, 1, &buf->vk_buffer, &offset);
@@ -436,7 +450,11 @@ namespace flame
 		void CommandBufferPrivate::bind_index_buffer(BufferPtr buf, IndiceType t)
 		{
 #if USE_D3D12
-
+			D3D12_INDEX_BUFFER_VIEW view;
+			view.BufferLocation = buf->d3d12_resource->GetGPUVirtualAddress();
+			view.Format = t == IndiceTypeUint ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT;
+			view.SizeInBytes = buf->size;
+			d3d12_command_list->IASetIndexBuffer(&view);
 #elif USE_VULKAN
 			vkCmdBindIndexBuffer(vk_command_buffer, buf->vk_buffer, 0, t == IndiceTypeUint ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16);
 #endif
@@ -467,7 +485,7 @@ namespace flame
 		void CommandBufferPrivate::draw_indexed(uint count, uint first_index, int vertex_offset, uint instance_count, uint first_instance)
 		{
 #if USE_D3D12
-
+			d3d12_command_list->DrawIndexedInstanced(count, instance_count, first_index, vertex_offset, first_instance);
 #elif USE_VULKAN
 			vkCmdDrawIndexed(vk_command_buffer, count, instance_count, first_index, vertex_offset, first_instance);
 #endif
@@ -512,7 +530,19 @@ namespace flame
 		void CommandBufferPrivate::buffer_barrier(BufferPtr buf, AccessFlags src_access, AccessFlags dst_access, PipelineStageFlags src_stage, PipelineStageFlags dst_stage)
 		{
 #if USE_D3D12
-
+			auto old_state = to_dx(src_access);
+			auto new_state = to_dx(dst_access);
+			if (old_state != new_state)
+			{
+				D3D12_RESOURCE_BARRIER barrier;
+				barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+				barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+				barrier.Transition.pResource = buf->d3d12_resource;
+				barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+				barrier.Transition.StateBefore = old_state;
+				barrier.Transition.StateAfter = new_state;
+				d3d12_command_list->ResourceBarrier(1, &barrier);
+			}
 #elif USE_VULKAN
 			VkBufferMemoryBarrier barrier;
 			barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -568,7 +598,7 @@ namespace flame
 #if USE_D3D12
 			auto old_state = to_dx(old_layout, img->format);
 			auto new_state = to_dx(new_layout, img->format);
-			if (new_state != old_state && img->d3d12_resource) // TODO: there should be a d3d12_resource
+			if (new_state != old_state)
 			{
 				D3D12_RESOURCE_BARRIER barrier;
 				barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -767,7 +797,8 @@ namespace flame
 		void CommandBufferPrivate::copy_buffer(BufferPtr src, BufferPtr dst, std::span<BufferCopy> copies)
 		{
 #if USE_D3D12
-
+			for (auto& cpy : copies)
+				d3d12_command_list->CopyBufferRegion(dst->d3d12_resource, cpy.dst_off, src->d3d12_resource, cpy.src_off, cpy.size);
 #elif USE_VULKAN
 			std::vector<VkBufferCopy> vk_copies(copies.size());
 			for (auto i = 0; i < vk_copies.size(); i++)
@@ -798,14 +829,15 @@ namespace flame
 			for (auto& cpy : copies)
 			{
 				auto sub_idx = (cpy.img_sub.base_layer * dst->n_levels) + cpy.img_sub.base_level;
-				D3D12_PLACED_SUBRESOURCE_FOOTPRINT sub_footprint;
-				uint num_rows; uint64 row_size; uint64 required_size;
-				device->d3d12_device->GetCopyableFootprints(&img_desc, sub_idx, 1, cpy.buf_off, &sub_footprint, &num_rows, &row_size, &required_size);
-
 				D3D12_TEXTURE_COPY_LOCATION src_location;
 				src_location.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
 				src_location.pResource = src->d3d12_resource;
-				src_location.PlacedFootprint = sub_footprint;
+				src_location.PlacedFootprint.Offset = cpy.buf_off;
+				src_location.PlacedFootprint.Footprint.Format = to_dx(dst->format);
+				src_location.PlacedFootprint.Footprint.Width = cpy.img_ext.x;
+				src_location.PlacedFootprint.Footprint.Height = cpy.img_ext.y;
+				src_location.PlacedFootprint.Footprint.Depth = cpy.img_ext.z;
+				src_location.PlacedFootprint.Footprint.RowPitch = dst->levels[cpy.img_sub.base_level].pitch;
 				D3D12_TEXTURE_COPY_LOCATION dst_location;
 				dst_location.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 				dst_location.pResource = dst->d3d12_resource;
