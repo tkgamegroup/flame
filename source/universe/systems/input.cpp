@@ -230,8 +230,8 @@ namespace flame
 	void sInputPrivate::start()
 	{
 		auto renderer = sRenderer::instance();
-		if (!renderer->render_tasks.empty())
-			camera = renderer->render_tasks.front()->camera;
+		if (!renderer->render_targets.empty())
+			camera = renderer->render_targets.front()->camera;
 
 		{
 			auto i_pos = -1;

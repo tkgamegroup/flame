@@ -579,7 +579,7 @@ namespace flame
 					cb->set_viewport(Rect(0, 0, fb_width, fb_height));
 
 					cb->bind_pipeline(imgui_pl);
-					cb->bind_vertex_buffer(imgui_buf_vtx.buf.get(), 0);
+					cb->bind_vertex_buffer(imgui_buf_vtx.buf.get(), 0, sizeof(ImDrawVert));
 					cb->bind_index_buffer(imgui_buf_idx.buf.get(), sizeof(ImDrawIdx) == 2 ? IndiceTypeUshort : IndiceTypeUint);
 					cb->bind_descriptor_set(0, imgui_ds.get());
 					auto scale = 2.f / vec2(draw_data->DisplaySize.x, draw_data->DisplaySize.y);

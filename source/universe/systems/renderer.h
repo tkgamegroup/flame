@@ -8,6 +8,7 @@ namespace flame
 {
 	enum RenderMode
 	{
+		RenderMode2D, // only canvas
 		RenderModeSimple, // forward shading, no shadows, no post-processing
 		RenderModeShaded,
 		RenderModeCameraLight,
@@ -41,7 +42,7 @@ namespace flame
 		OutlineBox
 	};
 
-	struct RenderTask
+	struct RenderTarget
 	{
 		RenderMode mode = RenderModeShaded;
 		cCameraPtr camera = nullptr;
@@ -49,7 +50,7 @@ namespace flame
 		graphics::ImageLayout final_layout = graphics::ImageLayoutShaderReadOnly;
 		graphics::CanvasPtr canvas = nullptr;
 
-		virtual ~RenderTask() {}
+		virtual ~RenderTarget() {}
 		virtual vec2 target_extent() const = 0;
 		virtual void set_targets(const std::vector<graphics::ImageViewPtr>& targets) = 0;
 	};
@@ -93,18 +94,20 @@ namespace flame
 			uint ref = 0;
 		};
 
-		std::vector<std::unique_ptr<RenderTaskT>> render_tasks;
+		std::vector<std::unique_ptr<RenderTargetT>> render_targets;
 		bool dirty = false;
 
-		virtual RenderTaskPtr add_render_task(RenderMode mode, cCameraPtr camera, graphics::WindowPtr window = nullptr,
+		virtual RenderTargetPtr add_render_target(RenderMode mode, cCameraPtr camera, graphics::WindowPtr window = nullptr,
 			const std::vector<graphics::ImageViewPtr>& targets = {}, graphics::ImageLayout final_layout =
 			graphics::ImageLayoutShaderReadOnly, bool need_canvas = true, bool need_pickup = true) = 0;
-		virtual void remove_render_task(RenderTaskPtr task) = 0;
+		virtual void remove_render_target(RenderTargetPtr t) = 0;
 
 		// Reflect
-		virtual RenderMode get_render_mode() = 0; // first task's mode
+		virtual RenderMode get_render_mode() = 0; // first target's mode
 		// Reflect
-		virtual void set_render_mode(RenderMode mode) = 0; // first task's mode
+		virtual void set_render_mode(RenderMode mode) = 0; // first target's mode
+		// Reflect
+		virtual vec2 target_extent() const = 0; // first target's extent
 
 		// Reflect
 		graphics::ImageViewPtr sky_map = nullptr;

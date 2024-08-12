@@ -663,7 +663,8 @@ namespace flame
 				desc.Alignment = 0;
 				desc.Width = extent.x;
 				desc.Height = extent.y;
-				desc.DepthOrArraySize = extent.z;
+				desc.DepthOrArraySize = desc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D ? extent.z : ret->n_layers;
+				desc.MipLevels = ret->n_levels;
 				desc.Format = to_dx(format);
 				switch (sample_count)
 				{
@@ -959,12 +960,6 @@ namespace flame
 						ImageUsageSampled | ImageUsageTransferDst | additional_usage, config.auto_mipmapping ? 0 : 1);
 
 #if USE_D3D12
-					for (auto& lv : ret->levels)
-					{
-						for (auto& ly : lv.layers)
-							ly.layout = ImageLayoutTransferDst;
-					}
-
 					StagingBuffer sb(ret->data_size, nullptr);
 					auto ext = ret->levels[0].extent;
 					auto src_pitch = image_pitch(ret->pixel_size * ext.x);

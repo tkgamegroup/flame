@@ -10,7 +10,7 @@
 
 namespace flame
 {
-	struct RenderTaskPrivate : RenderTask
+	struct RenderTargetPrivate : RenderTarget
 	{
 		graphics::WindowPtr bound_window = nullptr;
 
@@ -98,13 +98,14 @@ namespace flame
 		sRendererPrivate(int); // dummy
 		~sRendererPrivate();
 
-		RenderTaskPtr add_render_task(RenderMode mode, cCameraPtr camera, graphics::WindowPtr window = nullptr,
+		RenderTargetPtr add_render_target(RenderMode mode, cCameraPtr camera, graphics::WindowPtr window = nullptr,
 			const std::vector<graphics::ImageViewPtr>& targets = {}, graphics::ImageLayout final_layout =
 			graphics::ImageLayoutShaderReadOnly, bool need_canvas = true, bool need_pickup = true) override;
-		void remove_render_task(RenderTaskPtr task) override;
+		void remove_render_target(RenderTargetPtr t) override;
 
 		RenderMode get_render_mode() override;
 		void set_render_mode(RenderMode mode) override;
+		vec2 target_extent() const override;
 
 		graphics::ImageViewPtr sky_map = nullptr;
 		graphics::ImageViewPtr sky_irr_map = nullptr;

@@ -13,6 +13,8 @@ renderpass
   {rp}
 cull_mode
   None
+depth_test
+  false
 depth_compare_op
   Always
 blend_options

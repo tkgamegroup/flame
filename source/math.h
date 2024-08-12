@@ -883,9 +883,14 @@ namespace flame
 	template<typename T>
 	concept basic_math_type = is_one_of_t<T>(basic_math_types());
 
-	inline uint image_pitch(uint b)
+	inline uint image_pitch(uint bytes, uint alignment)
 	{
-		return (uint)ceil((b / 4.f)) * 4U;
+		return (uint)ceil((bytes / (float)alignment)) * alignment;
+	}
+
+	inline uint image_pitch(uint bytes)
+	{
+		return image_pitch(bytes, 4);
 	}
 }
 

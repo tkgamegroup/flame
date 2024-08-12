@@ -9,5 +9,9 @@ void main()
 	};
 	vec2 v = vs[gl_VertexIndex];
 	o_uv = v;
-	gl_Position = vec4(v * 2.0 - 1.0, 1.0, 1.0);
+	vec2 p = v * 2.0 - 1.0;
+#ifdef FLIP_Y
+	p.y *= -1.0;
+#endif
+	gl_Position = vec4(p, 1.0, 1.0);
 }

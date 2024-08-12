@@ -34,9 +34,6 @@ namespace flame
 			ComputePipelinePtr curr_cpl = nullptr;
 			FramebufferPtr curr_fb = nullptr;
 			RenderpassPtr curr_rp = nullptr;
-#if USE_D3D12
-			BufferPtr peeding_vb = nullptr;
-#endif
 			int curr_sp = -1;
 
 #if USE_D3D12
@@ -58,7 +55,7 @@ namespace flame
 			void bind_pipeline(GraphicsPipelinePtr pl) override;
 			void bind_pipeline(ComputePipelinePtr pl) override;
 			void bind_descriptor_sets(uint idx, std::span<DescriptorSetPtr> dss) override;
-			void bind_vertex_buffer(BufferPtr buf, uint id) override;
+			void bind_vertex_buffer(BufferPtr buf, uint id, uint stride) override;
 			void bind_index_buffer(BufferPtr buf, IndiceType t) override;
 			void push_constant(uint offset, uint size, const void* data) override;
 			void draw(uint count, uint instance_count, uint first_vertex, uint first_instance) override;

@@ -8,6 +8,13 @@
 #include "window.h"
 #include "gui.h"
 
+struct GraphicsApplicationOptions
+{
+	bool use_gui = false;
+	bool graphics_debug = false;
+	std::vector<std::pair<uint, uint>> graphics_configs;
+};
+
 struct GraphicsApplication : Application
 {
 	graphics::WindowPtr main_window = nullptr;

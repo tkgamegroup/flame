@@ -308,6 +308,9 @@ namespace flame
 			temp_content += "\n";
 
 			std::vector<std::pair<std::string, std::string>> defines;
+#if USE_D3D12
+			defines.emplace_back("FLIP_Y", "");
+#endif
 			for (auto& d : _defines)
 			{
 				auto sp = SUS::split(d, '=');
@@ -844,6 +847,8 @@ namespace flame
 			{
 				auto ret = new DescriptorSetLayoutPrivate;
 				ret->bindings.assign(bindings.begin(), bindings.end());
+				for (auto i = 0; i < bindings.size(); i++)
+					ret->bindings_map[sh(bindings[i].name.c_str())] = i;
 
 #if USE_VULKAN
 				std::vector<VkDescriptorSetLayoutBinding> vk_bindings(bindings.size());
@@ -857,8 +862,6 @@ namespace flame
 					dst.descriptorCount = max(1U, src.count);
 					dst.stageFlags = to_vk_flags<ShaderStageFlags>(ShaderStageAll);
 					dst.pImmutableSamplers = nullptr;
-
-					ret->bindings_map[sh(src.name.c_str())] = i;
 				}
 
 				VkDescriptorSetLayoutCreateInfo info;
@@ -2128,32 +2131,22 @@ namespace flame
 				desc.NumRenderTargets = subpass.color_attachments.size();
 				for (auto i = 0; i < desc.NumRenderTargets; i++)
 				{
+					auto& bo = i >= info.blend_options.size() ? BlendOption() : info.blend_options[i];
 					auto& bs = desc.BlendState.RenderTarget[i];
 					desc.RTVFormats[i] = to_dx(info.renderpass->attachments[subpass.color_attachments[i]].format);
-					bs.BlendEnable = false;
-					bs.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+					bs.BlendEnable = bo.enable;
+					bs.SrcBlend = to_dx(bo.src_color);
+					bs.SrcBlendAlpha = to_dx(bo.src_alpha);
+					bs.DestBlend = to_dx(bo.dst_color);
+					bs.DestBlendAlpha = to_dx(bo.dst_alpha);
+					bs.BlendOp = to_dx(bo.color_op);
+					bs.BlendOpAlpha = to_dx(bo.alpha_op);
+					bs.RenderTargetWriteMask = to_dx_flags<ColorComponentFlags>(bo.color_write_mask);
 				}
 				if (subpass.depth_stencil_attachment != -1)
 					desc.DSVFormat = to_dx(info.renderpass->attachments[subpass.depth_stencil_attachment].format);
 				desc.SampleDesc.Count = 1;
 				desc.BlendState.AlphaToCoverageEnable = info.alpha_to_coverage;
-				if (!info.blend_options.empty())
-				{
-					for (auto i = 0; i < info.blend_options.size(); i++)
-					{
-						auto& bo = info.blend_options[i];
-						auto& bs = desc.BlendState.RenderTarget[i];
-						bs.BlendEnable = bo.enable;
-						bs.SrcBlend = to_dx(bo.src_color);
-						bs.SrcBlendAlpha = to_dx(bo.src_alpha);
-						bs.DestBlend = to_dx(bo.dst_color);
-						bs.DestBlendAlpha = to_dx(bo.dst_alpha);
-						bs.BlendOp = to_dx(bo.color_op);
-						bs.BlendOpAlpha = to_dx(bo.alpha_op);
-						bs.RenderTargetWriteMask = to_dx_flags<ColorComponentFlags>(bo.color_write_mask);
-						D3D12_BLEND;
-					}
-				}
 				check_dx_result(device->d3d12_device->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&ret->d3d12_pipeline)));
 				register_object(ret->d3d12_pipeline, "Pipeline", ret);
 #elif USE_VULKAN

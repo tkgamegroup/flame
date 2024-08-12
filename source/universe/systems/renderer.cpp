@@ -34,6 +34,7 @@ namespace flame
 	bool use_mesh_shader = false;
 
 	/* SHARED RESOURCES */
+	bool resources_initialized = false;
 	// Reses
 	std::vector<sRenderer::MatVar>	mat_vars;
 	std::vector<sRenderer::MeshRes>	mesh_reses;
@@ -403,12 +404,12 @@ namespace flame
 				continue;
 			if (!b.second.armature)
 			{
-				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+				cb->bind_vertex_buffer(buf_vtx.buf.get(), 0, buf_vtx.item_type->size);
 				cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
 			}
 			else
 			{
-				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+				cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0, buf_vtx_arm.item_type->size);
 				cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
 			}
 			cb->bind_pipeline(b.first);
@@ -416,70 +417,73 @@ namespace flame
 		}
 	}
 
-	void RenderTaskPrivate::init()
+	void RenderTargetPrivate::init()
 	{
-		prm_plain.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain.pll"), graphics::PipelineGraphics);
-
-		auto dsl_camera = graphics::DescriptorSetLayout::get(L"flame\\shaders\\camera.dsl");
-		buf_camera.create(graphics::BufferUsageUniform, dsl_camera->get_buf_ui("Camera"_h));
-		ds_camera.reset(graphics::DescriptorSet::create(nullptr, dsl_camera));
-		ds_camera->set_buffer("Camera"_h, 0, buf_camera.buf.get());
-		ds_camera->update();
-
-		auto dsl_target = graphics::DescriptorSetLayout::get(L"flame\\shaders\\target.dsl");
-		ds_target.reset(graphics::DescriptorSet::create(nullptr, dsl_target));
-
-		prm_fwd.init(pll_fwd, graphics::PipelineGraphics);
-		prm_fwd.set_ds("camera"_h, ds_camera.get());
-		prm_fwd.set_ds("instance"_h, ds_instance.get());
-		prm_fwd.set_ds("material"_h, ds_material.get());
-		prm_fwd.set_ds("lighting"_h, ds_lighting.get());
-		prm_fwd.set_ds("target"_h, ds_target.get());
-
-		if (mode != RenderModeSimple)
+		if (mode != RenderMode2D)
 		{
-			prm_gbuf.init(pll_gbuf, graphics::PipelineGraphics);
-			prm_gbuf.set_ds("camera"_h, ds_camera.get());
-			prm_gbuf.set_ds("instance"_h, ds_instance.get());
-			prm_gbuf.set_ds("material"_h, ds_material.get());
+			prm_plain.init(graphics::PipelineLayout::get(L"flame\\shaders\\plain\\plain.pll"), graphics::PipelineGraphics);
 
-			prm_deferred.init(pll_deferred, graphics::PipelineGraphics);
-			auto dsl_deferred = pll_deferred->dsls.back();
-			ds_deferred.reset(graphics::DescriptorSet::create(nullptr, dsl_deferred));
-			prm_deferred.set_ds("camera"_h, ds_camera.get());
-			prm_deferred.set_ds("material"_h, ds_material.get());
-			prm_deferred.set_ds("lighting"_h, ds_lighting.get());
-			prm_deferred.set_ds("target"_h, ds_target.get());
-			prm_deferred.set_ds(""_h, ds_deferred.get());
+			auto dsl_camera = graphics::DescriptorSetLayout::get(L"flame\\shaders\\camera.dsl");
+			buf_camera.create(graphics::BufferUsageUniform, dsl_camera->get_buf_ui("Camera"_h));
+			ds_camera.reset(graphics::DescriptorSet::create(nullptr, dsl_camera));
+			ds_camera->set_buffer("Camera"_h, 0, buf_camera.buf.get());
+			ds_camera->update();
 
-			prm_outline_pp.init(pl_outline_pp->layout, graphics::PipelineGraphics);
+			auto dsl_target = graphics::DescriptorSetLayout::get(L"flame\\shaders\\target.dsl");
+			ds_target.reset(graphics::DescriptorSet::create(nullptr, dsl_target));
 
-			prm_box.init(pl_down_sample->layout, graphics::PipelineGraphics);
-			prm_bloom.init(pl_bloom_bright->layout, graphics::PipelineGraphics);
-			prm_blur.init(pl_blur_h->layout, graphics::PipelineGraphics);
+			prm_fwd.init(pll_fwd, graphics::PipelineGraphics);
+			prm_fwd.set_ds("camera"_h, ds_camera.get());
+			prm_fwd.set_ds("instance"_h, ds_instance.get());
+			prm_fwd.set_ds("material"_h, ds_material.get());
+			prm_fwd.set_ds("lighting"_h, ds_lighting.get());
+			prm_fwd.set_ds("target"_h, ds_target.get());
 
-			prm_dof.init(pl_dof->layout, graphics::PipelineGraphics);
-			ds_dof.reset(graphics::DescriptorSet::create(nullptr, prm_dof.pll->dsls.back()));
-			prm_dof.set_ds(""_h, ds_dof.get());
-
-			prm_luma.init(pl_luma_hist->layout, graphics::PipelineCompute);
-			auto dsl_luma = prm_luma.pll->dsls.back();
-			if (!buf_luma.buf)
+			if (mode != RenderModeSimple)
 			{
-				buf_luma.create(graphics::BufferUsageStorage | graphics::BufferUsageTransferSrc,
-					dsl_luma->get_buf_ui("Luma"_h), graphics::BufferUsageTransferDst);
-			}
-			ds_luma.reset(graphics::DescriptorSet::create(nullptr, dsl_luma));
-			ds_luma->set_buffer("Luma"_h, 0, buf_luma.buf.get());
-			ds_luma->update();
-			prm_luma.set_ds(""_h, ds_luma.get());
+				prm_gbuf.init(pll_gbuf, graphics::PipelineGraphics);
+				prm_gbuf.set_ds("camera"_h, ds_camera.get());
+				prm_gbuf.set_ds("instance"_h, ds_instance.get());
+				prm_gbuf.set_ds("material"_h, ds_material.get());
 
-			prm_tone.init(pl_tone->layout, graphics::PipelineGraphics);
-			prm_fxaa.init(pl_fxaa->layout, graphics::PipelineGraphics);
+				prm_deferred.init(pll_deferred, graphics::PipelineGraphics);
+				auto dsl_deferred = pll_deferred->dsls.back();
+				ds_deferred.reset(graphics::DescriptorSet::create(nullptr, dsl_deferred));
+				prm_deferred.set_ds("camera"_h, ds_camera.get());
+				prm_deferred.set_ds("material"_h, ds_material.get());
+				prm_deferred.set_ds("lighting"_h, ds_lighting.get());
+				prm_deferred.set_ds("target"_h, ds_target.get());
+				prm_deferred.set_ds(""_h, ds_deferred.get());
+
+				prm_outline_pp.init(pl_outline_pp->layout, graphics::PipelineGraphics);
+
+				prm_box.init(pl_down_sample->layout, graphics::PipelineGraphics);
+				prm_bloom.init(pl_bloom_bright->layout, graphics::PipelineGraphics);
+				prm_blur.init(pl_blur_h->layout, graphics::PipelineGraphics);
+
+				prm_dof.init(pl_dof->layout, graphics::PipelineGraphics);
+				ds_dof.reset(graphics::DescriptorSet::create(nullptr, prm_dof.pll->dsls.back()));
+				prm_dof.set_ds(""_h, ds_dof.get());
+
+				prm_luma.init(pl_luma_hist->layout, graphics::PipelineCompute);
+				auto dsl_luma = prm_luma.pll->dsls.back();
+				if (!buf_luma.buf)
+				{
+					buf_luma.create(graphics::BufferUsageStorage | graphics::BufferUsageTransferSrc,
+						dsl_luma->get_buf_ui("Luma"_h), graphics::BufferUsageTransferDst);
+				}
+				ds_luma.reset(graphics::DescriptorSet::create(nullptr, dsl_luma));
+				ds_luma->set_buffer("Luma"_h, 0, buf_luma.buf.get());
+				ds_luma->update();
+				prm_luma.set_ds(""_h, ds_luma.get());
+
+				prm_tone.init(pl_tone->layout, graphics::PipelineGraphics);
+				prm_fxaa.init(pl_fxaa->layout, graphics::PipelineGraphics);
+			}
 		}
 	}
 
-	void RenderTaskPrivate::set_targets(const std::vector<graphics::ImageViewPtr>& _targets)
+	void RenderTargetPrivate::set_targets(const std::vector<graphics::ImageViewPtr>& _targets)
 	{
 		targets = _targets;
 
@@ -498,91 +502,94 @@ namespace flame
 		img_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
 		img_dst->filename = L"#img_dst";
 		graphics_device->set_object_debug_name(img_dst.get(), "Dst");
-		img_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 0));
-		img_dep->filename = L"#img_dep";
-		graphics_device->set_object_debug_name(img_dep.get(), "Dep");
-
-		if (mode != RenderModeSimple)
+		if (mode != RenderMode2D)
 		{
-			img_back0.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 0));
-			img_back0->filename = L"#img_back0";
-			graphics_device->set_object_debug_name(img_back0.get(), "Back0");
-			img_back1.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-			img_back1->filename = L"#img_back1";
-			graphics_device->set_object_debug_name(img_back1.get(), "Back1");
-		}
+			img_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 0));
+			img_dep->filename = L"#img_dep";
+			graphics_device->set_object_debug_name(img_dep.get(), "Dep");
 
-		img_dst_ms.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
-		img_dep_ms.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
-		if (mode != RenderModeSimple)
-		{
-			img_last_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
-			img_last_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-			img_gbufferA.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-			img_gbufferA->filename = L"#img_gbufferA";
-			graphics_device->set_object_debug_name(img_gbufferA.get(), "GBufferA");
-			img_gbufferB.reset(graphics::Image::create(graphics::Format_A2R10G10B10_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 0));
-			img_gbufferB->filename = L"#img_gbufferB";
-			graphics_device->set_object_debug_name(img_gbufferB.get(), "GBufferB");
-			img_gbufferC.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-			img_gbufferC->filename = L"#img_gbufferC";
-			graphics_device->set_object_debug_name(img_gbufferC.get(), "GBufferC");
-			img_gbufferD.reset(graphics::Image::create(graphics::Format_B10G11R11_UFLOAT, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
-			img_gbufferD->filename = L"#img_gbufferD";
-			graphics_device->set_object_debug_name(img_gbufferD.get(), "GBufferD");
-		}
-
-		if (mode != RenderModeSimple)
-			fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
-		fb_fwd_clear.reset(graphics::Framebuffer::create(rp_fwd_clear, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
-
-		if (mode != RenderModeSimple)
-			fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_gbufferA->get_view(), img_gbufferB->get_view(), img_gbufferC->get_view(), img_gbufferD->get_view(), img_dep->get_view() }));
-		fb_primitive.reset(graphics::Framebuffer::create(rp_primitive, { img_dst->get_view(), img_dep->get_view() }));
-
-		ds_target->set_image("img_dep"_h, 0, img_dep->get_view(), sp_nearest_dep);
-		if (mode != RenderModeSimple)
-		{
-			ds_target->set_image("img_last_dst"_h, 0, img_last_dst->get_view(), sp_nearest);
-			ds_target->set_image("img_last_dep"_h, 0, img_last_dep->get_view(), sp_nearest_dep);
-		}
-		else
-		{
-			ds_target->set_image("img_last_dst"_h, 0, img_black->get_view(), sp_nearest);
-			ds_target->set_image("img_last_dep"_h, 0, img_dummy_depth->get_view(), sp_nearest_dep);
-		}
-		ds_target->update();
-
-		if (mode != RenderModeSimple)
-		{
-			ds_deferred->set_image("img_gbufferA"_h, 0, img_gbufferA->get_view(), nullptr);
-			ds_deferred->set_image("img_gbufferB"_h, 0, img_gbufferB->get_view(), nullptr);
-			ds_deferred->set_image("img_gbufferC"_h, 0, img_gbufferC->get_view(), nullptr);
-			ds_deferred->set_image("img_gbufferD"_h, 0, img_gbufferD->get_view(), nullptr);
-			ds_deferred->update();
-
-			dss_outline_pp.resize(img_dep->n_levels);
-			for (auto i = 0; i < img_dep->n_levels; i++)
+			if (mode != RenderModeSimple)
 			{
-				dss_outline_pp[i].reset(graphics::DescriptorSet::create(nullptr, prm_outline_pp.pll->dsls.back()));
-				dss_outline_pp[i]->set_image("img_depth"_h, 0, img_dep->get_view({ (uint)i }), nullptr);
-				dss_outline_pp[i]->set_image("img_normal"_h, 0, img_gbufferB->get_view({ (uint)i }), nullptr);
-				dss_outline_pp[i]->update();
+				img_back0.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 0));
+				img_back0->filename = L"#img_back0";
+				graphics_device->set_object_debug_name(img_back0.get(), "Back0");
+				img_back1.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+				img_back1->filename = L"#img_back1";
+				graphics_device->set_object_debug_name(img_back1.get(), "Back1");
 			}
 
-			ds_dof->set_image("img_col"_h, 0, img_dst->get_view(), nullptr);
-			ds_dof->set_image("img_dep"_h, 0, img_dep->get_view(), nullptr);
-			ds_dof->update();
+			img_dst_ms.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
+			img_dep_ms.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment, 1, 1, sample_count));
+			if (mode != RenderModeSimple)
+			{
+				img_last_dst.reset(graphics::Image::create(col_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled | graphics::ImageUsageStorage));
+				img_last_dep.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+				img_gbufferA.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+				img_gbufferA->filename = L"#img_gbufferA";
+				graphics_device->set_object_debug_name(img_gbufferA.get(), "GBufferA");
+				img_gbufferB.reset(graphics::Image::create(graphics::Format_A2R10G10B10_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 0));
+				img_gbufferB->filename = L"#img_gbufferB";
+				graphics_device->set_object_debug_name(img_gbufferB.get(), "GBufferB");
+				img_gbufferC.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+				img_gbufferC->filename = L"#img_gbufferC";
+				graphics_device->set_object_debug_name(img_gbufferC.get(), "GBufferC");
+				img_gbufferD.reset(graphics::Image::create(graphics::Format_B10G11R11_UFLOAT, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageSampled));
+				img_gbufferD->filename = L"#img_gbufferD";
+				graphics_device->set_object_debug_name(img_gbufferD.get(), "GBufferD");
+			}
 
-			ds_luma->set_image("img_col"_h, 0, img_dst->get_view(), nullptr);
-			ds_luma->update();
-		}
+			if (mode != RenderModeSimple)
+				fb_fwd.reset(graphics::Framebuffer::create(rp_fwd, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
+			fb_fwd_clear.reset(graphics::Framebuffer::create(rp_fwd_clear, { img_dst_ms->get_view(), img_dep_ms->get_view(), img_dst->get_view(), img_dep->get_view() }));
 
-		if (img_pickup)
-		{
-			img_pickup.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
-			img_dep_pickup.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
-			fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
+			if (mode != RenderModeSimple)
+				fb_gbuf.reset(graphics::Framebuffer::create(rp_gbuf, { img_gbufferA->get_view(), img_gbufferB->get_view(), img_gbufferC->get_view(), img_gbufferD->get_view(), img_dep->get_view() }));
+			fb_primitive.reset(graphics::Framebuffer::create(rp_primitive, { img_dst->get_view(), img_dep->get_view() }));
+
+			ds_target->set_image("img_dep"_h, 0, img_dep->get_view(), sp_nearest_dep);
+			if (mode != RenderModeSimple)
+			{
+				ds_target->set_image("img_last_dst"_h, 0, img_last_dst->get_view(), sp_nearest);
+				ds_target->set_image("img_last_dep"_h, 0, img_last_dep->get_view(), sp_nearest_dep);
+			}
+			else
+			{
+				ds_target->set_image("img_last_dst"_h, 0, img_black->get_view(), sp_nearest);
+				ds_target->set_image("img_last_dep"_h, 0, img_dummy_depth->get_view(), sp_nearest_dep);
+			}
+			ds_target->update();
+
+			if (mode != RenderModeSimple)
+			{
+				ds_deferred->set_image("img_gbufferA"_h, 0, img_gbufferA->get_view(), nullptr);
+				ds_deferred->set_image("img_gbufferB"_h, 0, img_gbufferB->get_view(), nullptr);
+				ds_deferred->set_image("img_gbufferC"_h, 0, img_gbufferC->get_view(), nullptr);
+				ds_deferred->set_image("img_gbufferD"_h, 0, img_gbufferD->get_view(), nullptr);
+				ds_deferred->update();
+
+				dss_outline_pp.resize(img_dep->n_levels);
+				for (auto i = 0; i < img_dep->n_levels; i++)
+				{
+					dss_outline_pp[i].reset(graphics::DescriptorSet::create(nullptr, prm_outline_pp.pll->dsls.back()));
+					dss_outline_pp[i]->set_image("img_depth"_h, 0, img_dep->get_view({ (uint)i }), nullptr);
+					dss_outline_pp[i]->set_image("img_normal"_h, 0, img_gbufferB->get_view({ (uint)i }), nullptr);
+					dss_outline_pp[i]->update();
+				}
+
+				ds_dof->set_image("img_col"_h, 0, img_dst->get_view(), nullptr);
+				ds_dof->set_image("img_dep"_h, 0, img_dep->get_view(), nullptr);
+				ds_dof->update();
+
+				ds_luma->set_image("img_col"_h, 0, img_dst->get_view(), nullptr);
+				ds_luma->update();
+			}
+
+			if (img_pickup)
+			{
+				img_pickup.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
+				img_dep_pickup.reset(graphics::Image::create(dep_fmt, tar_ext, graphics::ImageUsageAttachment | graphics::ImageUsageTransferSrc));
+				fb_pickup.reset(graphics::Framebuffer::create(rp_col_dep, { img_pickup->get_view(), img_dep_pickup->get_view() }));
+			}
 		}
 
 		if (canvas)
@@ -592,7 +599,7 @@ namespace flame
 		}
 	}
 
-	vec2 RenderTaskPrivate::target_extent() const
+	vec2 RenderTargetPrivate::target_extent() const
 	{
 		if (targets.empty())
 			return vec2(0.f);
@@ -607,294 +614,304 @@ namespace flame
 
 	sRendererPrivate::sRendererPrivate()
 	{
-		auto graphics_device = graphics::Device::current();
-		static auto sp_trilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
-		static auto sp_shadow = graphics::Sampler::create(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder, std::numeric_limits<float>::max());
-
-		graphics::InstanceCommandBuffer cb;
-
-		img_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
-		graphics_device->set_object_debug_name(img_black.get(), "Black");
-		img_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
-		graphics_device->set_object_debug_name(img_white.get(), "White");
-		img_dummy_depth.reset(graphics::Image::create(graphics::Format_Depth16, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
-		img_cube_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1));
-		img_cube_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1));
-		img_black3D.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
-		img_white3D.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
-		img_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
-		img_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
-		img_dummy_depth->clear(vec4(1.f, 0.f, 0.f, 0.f), graphics::ImageLayoutShaderReadOnly);
-		img_cube_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
-		img_cube_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
-		img_black3D->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
-		img_white3D->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
-
-		rp_fwd = graphics::Renderpass::get(L"flame\\shaders\\forward.rp",
-			{ "col_fmt=" + TypeInfo::serialize_t(col_fmt),
-			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt),
-			  "sample_count=" + TypeInfo::serialize_t(sample_count) });
-		rp_fwd_clear = graphics::Renderpass::get(L"flame\\shaders\\forward.rp",
-			{ "col_fmt=" + TypeInfo::serialize_t(col_fmt),
-			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt),
-			  "sample_count=" + TypeInfo::serialize_t(sample_count),
-			  "load_op=" + TypeInfo::serialize_t(graphics::AttachmentLoadClear) });
-		rp_gbuf = graphics::Renderpass::get(L"flame\\shaders\\gbuffer.rp",
-			{ "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
-		rp_dst = graphics::Renderpass::get(L"flame\\shaders\\color.rp",
-			{ "col_fmt=" + TypeInfo::serialize_t(col_fmt) });
-		rp_dep = graphics::Renderpass::get(L"flame\\shaders\\depth.rp",
-			{ "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
-		rp_col_dep = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
-			{ "col_fmt=" + TypeInfo::serialize_t(graphics::Format_R8G8B8A8_UNORM),
-			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
-		rp_esm = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
-			{ "col_fmt=" + TypeInfo::serialize_t(esm_fmt),
-			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
-		rp_primitive = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
-			{ "col_fmt=" + TypeInfo::serialize_t(col_fmt),
-			  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt),
-			  "col_load_op=" + TypeInfo::serialize_t(graphics::AttachmentLoadLoad),
-			  "dep_load_op=" + TypeInfo::serialize_t(graphics::AttachmentLoadLoad),
-			  "col_initia_layout=" + TypeInfo::serialize_t(graphics::ImageLayoutAttachment), 
-			  "dep_initia_layout=" + TypeInfo::serialize_t(graphics::ImageLayoutAttachment) });
-
-		uint u;
-		use_mesh_shader = graphics_device->get_config("mesh_shader"_h, u) ? u == 1 : true;
-
-		auto dsl_instance = graphics::DescriptorSetLayout::get(L"flame\\shaders\\instance.dsl");
-		buf_instance.create(graphics::BufferUsageStorage, dsl_instance->get_buf_ui("Instance"_h));
-		mesh_instances.init(buf_instance.child_type<TI_A>("meshes"_h)->extent);
-		register_mesh_instance(-1);
-		armature_instances.init(buf_instance.child_type<TI_A>("armatures"_h)->extent);
-		register_armature_instance(-1);
-		terrain_instances.init(buf_instance.child_type<TI_A>("terrains"_h)->extent);
-		sdf_instances.init(buf_instance.child_type<TI_A>("sdfs"_h)->extent);
-		volume_instances.init(buf_instance.child_type<TI_A>("volumes"_h)->extent);
-		buf_marching_cubes_loopup.create(graphics::BufferUsageStorage, dsl_instance->get_buf_ui("MarchingCubesLookup"_h));
-		{
-			auto items = buf_marching_cubes_loopup.mark_dirty_c(0);
-			assert(sizeof(MarchingCubesLookup) == items.type->size);
-			auto p = items.data;
-			for (auto i = 0; i < 256; i++)
-			{
-				memcpy(p, &MarchingCubesLookup[i], sizeof(MarchingCubesLookupItem));
-				p += sizeof(MarchingCubesLookupItem);
-			}
-			buf_marching_cubes_loopup.upload(cb.get());
-		}
-		buf_transform_feedback.create(graphics::BufferUsageStorage | graphics::BufferUsageTransferSrc, dsl_instance->get_buf_ui("TransformFeedback"_h), graphics::BufferUsageTransferDst);
-		buf_transform_feedback.mark_dirty_c("vertex_count"_h).as<uint>() = 0;
-		buf_transform_feedback.upload(cb.get());
-		ds_instance.reset(graphics::DescriptorSet::create(nullptr, dsl_instance));
-		ds_instance->set_buffer("Instance"_h, 0, buf_instance.buf.get());
-		for (auto i = 0; i < terrain_instances.capacity; i++)
-		{
-			ds_instance->set_image("terrain_height_maps"_h, i, img_black->get_view(), sp_trilinear);
-			ds_instance->set_image("terrain_normal_maps"_h, i, img_black->get_view(), sp_trilinear);
-			ds_instance->set_image("terrain_tangent_maps"_h, i, img_black->get_view(), sp_trilinear);
-		}
-		ds_instance->set_buffer("MarchingCubesLookup"_h, 0, buf_marching_cubes_loopup.buf.get());
-		ds_instance->set_buffer("TransformFeedback"_h, 0, buf_transform_feedback.buf.get());
-		ds_instance->update();
-
-		auto dsl_material = graphics::DescriptorSetLayout::get(L"flame\\shaders\\material.dsl");
-		buf_material.create(graphics::BufferUsageStorage, dsl_material->get_buf_ui("Material"_h));
-		mat_vars.resize(buf_material.child_type<TI_A>("vars"_h)->extent);
-		mat_reses.resize(buf_material.child_type<TI_A>("infos"_h)->extent);
-		get_material_res(graphics::Material::get(L"default"), -1);
-		tex_reses.resize(dsl_material->get_binding("material_maps"_h).count);
-		ds_material.reset(graphics::DescriptorSet::create(nullptr, dsl_material));
-		ds_material->set_buffer("Material"_h, 0, buf_material.buf.get());
-		for (auto i = 0; i < tex_reses.size(); i++)
-			ds_material->set_image("material_maps"_h, i, img_black->get_view(), nullptr);
-		ds_material->update();
-
-		auto dsl_lighting = graphics::DescriptorSetLayout::get(L"flame\\shaders\\lighting.dsl");
-		ds_lighting.reset(graphics::DescriptorSet::create(nullptr, dsl_lighting));
-		buf_lighting.create(graphics::BufferUsageStorage, dsl_lighting->get_buf_ui("Lighting"_h));
-		buf_lighting.child("sky_intensity"_h).as<float>() = sky_intensity;
-		buf_lighting.child("fog_type"_h).as<int>() = (int)fog_type;
-		buf_lighting.child("fog_density"_h).as<float>() = fog_density;
-		buf_lighting.child("fog_start"_h).as<float>() = fog_start;
-		buf_lighting.child("fog_end"_h).as<float>() = fog_end;
-		buf_lighting.child("fog_base_height"_h).as<float>() = fog_base_height;
-		buf_lighting.child("fog_max_height"_h).as<float>() = fog_max_height;
-		buf_lighting.child("fog_color"_h).as<vec3>() = fog_color;
-		buf_lighting.child("csm_levels"_h).as<uint>() = csm_levels;
-		buf_lighting.child("esm_factor"_h).as<float>() = esm_factor;
-		buf_lighting.child("shadow_bleeding_reduction"_h).as<float>() = shadow_bleeding_reduction;
-		buf_lighting.child("shadow_darkening"_h).as<float>() = shadow_darkening;
-		buf_lighting.child("ssr_enable"_h).as<int>() = ssr_enable ? 1U : 0U;
-		buf_lighting.child("ssr_thickness"_h).as<float>() = ssr_thickness;
-		buf_lighting.child("ssr_max_distance"_h).as<float>() = ssr_max_distance;
-		buf_lighting.child("ssr_max_steps"_h).as<uint>() = ssr_max_steps;
-		buf_lighting.child("ssr_binary_search_steps"_h).as<uint>() = ssr_binary_search_steps;
-		buf_lighting.mark_dirty();
-		buf_lighting.upload(cb.get());
-		dir_lights.init(buf_lighting.child_type<TI_A>("dir_lights"_h)->extent);
-		pt_lights.init(buf_lighting.child_type<TI_A>("pt_lights"_h)->extent);
-		img_shadow_depth.reset(graphics::Image::create(dep_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment));
-		img_shadow_depth->filename = L"#img_shadow_depth";
-		graphics_device->set_object_debug_name(img_shadow_depth.get(), "Shadow Depth");
-		imgs_dir_shadow.resize(dsl_lighting->get_binding("dir_shadow_maps"_h).count);
-		for (auto i = 0; i < imgs_dir_shadow.size(); i++)
-		{
-			auto img = graphics::Image::create(esm_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels);
-			imgs_dir_shadow[i].reset(img);
-			img->filename = L"#img_dir_shadow" + wstr(i);
-			graphics_device->set_object_debug_name(img, "Directional Shadow " + str(i));
-			img->change_layout(graphics::ImageLayoutShaderReadOnly);
-		}
-		for (auto i = 0; i < imgs_dir_shadow.size(); i++)
-		{
-			auto img = imgs_dir_shadow[i].get();
-			for (auto ly = 0; ly < img->n_layers; ly++)
-				fbs_dir_shadow.emplace_back(graphics::Framebuffer::create(rp_esm, { img->get_view({ 0, 1, (uint)ly }), img_shadow_depth->get_view() }));
-		}
-		img_dir_shadow_back.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels));
-		imgs_pt_shadow.resize(dsl_lighting->get_binding("pt_shadow_maps"_h).count);
-		for (auto i = 0; i < imgs_pt_shadow.size(); i++)
-		{
-			auto img = graphics::Image::create(esm_fmt, uvec3(ShadowMapSize / 2U, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1);
-			imgs_pt_shadow[i].reset(img);
-			img->filename = L"#img_pt_shadow" + wstr(i);
-			graphics_device->set_object_debug_name(img, "Point Shadow " + str(i));
-			img->change_layout(graphics::ImageLayoutShaderReadOnly);
-		}
-		for (auto i = 0; i < imgs_pt_shadow.size(); i++)
-		{
-			auto img = imgs_pt_shadow[i].get();
-			for (auto ly = 0; ly < img->n_layers; ly++)
-				fbs_pt_shadow.emplace_back(graphics::Framebuffer::create(rp_esm, { img->get_view({ 0, 1, (uint)ly }), img_shadow_depth->get_view() }));
-		}
-		img_pt_shadow_back.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize / 2U, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1));
-		ds_lighting->set_buffer("Lighting"_h, 0, buf_lighting.buf.get());
-		for (auto i = 0; i < imgs_dir_shadow.size(); i++)
-			ds_lighting->set_image("dir_shadow_maps"_h, i, imgs_dir_shadow[i]->get_view({ 0, 1, 0, DirShadowMaxLevels }), sp_shadow);
-		for (auto i = 0; i < imgs_pt_shadow.size(); i++)
-			ds_lighting->set_image("pt_shadow_maps"_h, i, imgs_pt_shadow[i]->get_view({ 0, 1, 0, 6 }, {}, true), sp_shadow);
-		ds_lighting->set_image("sky_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }, {}, true), nullptr);
-		ds_lighting->set_image("sky_irr_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }, {}, true), nullptr);
-		ds_lighting->set_image("sky_rad_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }, {}, true), nullptr);
-		{
-			auto img = graphics::Image::get(L"flame\\brdf.dds");
-			ds_lighting->set_image("brdf_map"_h, 0, img ? img->get_view() : img_black->get_view(), nullptr);
-		}
-		ds_lighting->update();
-
-		buf_vtx.create(L"flame\\shaders\\mesh\\mesh.vi", {}, 1024 * 256 * 4);
-		buf_idx.create(1024 * 256 * 6);
-		buf_vtx_arm.create(L"flame\\shaders\\mesh\\mesh.vi", { "ARMATURE" }, 1024 * 128 * 4);
-		buf_idx_arm.create(1024 * 128 * 6);
-		buf_particles.create(L"flame\\shaders\\particle.vi", {}, 1024 * 128);
-		buf_primitives.create(L"flame\\shaders\\plain\\plain3d.vi", {}, 1024 * 256);
-
-		mesh_reses.resize(1024 * 8);
-
-		pl_point3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\point3d.pipeline", { "dc=true", "dt=false", "dw=false" });
-		pl_point3d_dt = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\point3d.pipeline", { "dt=true", "dw=false" });
-		pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dc=true", "dt=false", "dw=false" });
-		pl_line3d_dt = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dt=true", "dw=false" });
-		pl_line_strip3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dc=true", "pt=LineStrip", "dt=false", "dw=false" });
-		pl_line_strip3d_dt = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "pt=LineStrip", "dt=true", "dw=false" });
-		pl_triangle3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", { "dc=true", "dt=false", "dw=false" });
-		pl_triangle3d_dt = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", { "dt=true", "dw=false" });
-
-		pll_fwd = graphics::PipelineLayout::get(L"flame\\shaders\\forward.pll");
-		pll_gbuf = graphics::PipelineLayout::get(L"flame\\shaders\\gbuffer.pll");
-
-		pl_blit = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", {});
-		pl_blit_blend = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", { "be=true", "sbc=SrcAlpha", "dbc=OneMinusSrcAlpha" });
-		pl_blit_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", { "rp=" + str(rp_dep), "frag:DEPTH" });
-		pl_add = graphics::GraphicsPipeline::get(L"flame\\shaders\\add.pipeline", {});
-		pl_blend = graphics::GraphicsPipeline::get(L"flame\\shaders\\blend.pipeline", {});
-
-		pl_mesh_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "rp=" + str(rp_col_dep) });
-		pl_mesh_arm_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "rp=" + str(rp_col_dep), "vert:ARMATURE" });
-		pl_terrain_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep) });
-
-		if (use_mesh_shader)
-			pl_MC_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep) });
-
-		gbuffer_batcher.buf_idr.create(mesh_instances.capacity);
-		transparent_batcher.buf_idr.create(mesh_instances.capacity);
-		for (auto& s : dir_shadows)
-		{
-			for (auto i = 0; i < DirShadowMaxLevels; i++)
-				s.batcher[i].buf_idr.create(min(8192U, mesh_instances.capacity));
-		}
-
-		get_deferred_pipeline();
-
-		pl_down_sample = graphics::GraphicsPipeline::get(L"flame\\shaders\\box.pipeline", {});
-		pl_up_sample = graphics::GraphicsPipeline::get(L"flame\\shaders\\box.pipeline", { "be=true", "sbc=One", "dbc=One" });
-		pl_down_sample_depth = graphics::GraphicsPipeline::get(L"flame\\shaders\\box.pipeline", { "rp=" + str(rp_dep), "frag:DEPTH" });
-		pl_up_sample_depth = graphics::GraphicsPipeline::get(L"flame\\shaders\\box.pipeline", { "rp=" + str(rp_dep), "be=true", "sbc=One", "dbc=One", "frag:DEPTH" });
-
-		pl_outline_pp = graphics::GraphicsPipeline::get(L"flame\\shaders\\outline_pp.pipeline", { "rp=" + str(rp_dst) });
-
-		pl_bloom_bright = graphics::GraphicsPipeline::get(L"flame\\shaders\\bloom.pipeline", { "frag:BRIGHT_PASS" });
-
-		pl_blur_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\blur.pipeline", { "frag:HORIZONTAL" });
-		pl_blur_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\blur.pipeline", { "frag:VERTICAL" });
-		pl_blur_depth_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\blur.pipeline", { "rp=" + str(rp_dep), "frag:DEPTH", "frag:HORIZONTAL" });
-		pl_blur_depth_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\blur.pipeline", { "rp=" + str(rp_dep), "frag:DEPTH", "frag:VERTICAL" });
-		pl_blur_max_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\blur.pipeline", { "frag:MAX", "frag:HORIZONTAL" });
-		pl_blur_max_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\blur.pipeline", { "frag:MAX", "frag:VERTICAL" });
-
-		pl_luma_hist = graphics::ComputePipeline::get(L"flame\\shaders\\luma.pipeline", { "comp:HISTOGRAM_PASS" });
-		pl_luma_avg = graphics::ComputePipeline::get(L"flame\\shaders\\luma.pipeline", { "comp:AVERAGE_PASS" });
-
-		pl_dof = graphics::GraphicsPipeline::get(L"flame\\shaders\\dof.pipeline", { "rp=" + str(rp_dst) });
-		pl_tone = graphics::GraphicsPipeline::get(L"flame\\shaders\\tone.pipeline", {});
-		pl_fxaa = graphics::GraphicsPipeline::get(L"flame\\shaders\\fxaa.pipeline", {});
-
-		pl_mesh_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
-		pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
-			{ "rp=" + str(rp_col_dep),
-			  "vert:ARMATURE",
-			  "frag:PICKUP" });
-		pl_terrain_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
-		if (use_mesh_shader)
-		{
-			pl_MC_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
-			pl_MC_transform_feedback = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep), "rasterizer_discard=true", "mesh:TRANSFORM_FEEDBACK" });
-		}
-
-		camera_light_id = register_light_instance(LightDirectional, -1);
-		white_tex_id = get_texture_res(img_white->get_view(), nullptr, -1);
-		black_tex_id = get_texture_res(img_black->get_view(), nullptr, -1);
-		if (auto img = graphics::Image::get(L"flame\\random.png"); img)
-		{
-			rand_tex_id = get_texture_res(img->get_view(),
-				graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressRepeat), -1);
-		}
-
-		cb.excute();
 	}
 
 	sRendererPrivate::~sRendererPrivate()
 	{
 	}
 
-	RenderTaskPtr sRendererPrivate::add_render_task(RenderMode mode, cCameraPtr camera, graphics::WindowPtr window,
+	RenderTargetPtr sRendererPrivate::add_render_target(RenderMode mode, cCameraPtr camera, graphics::WindowPtr window,
 		const std::vector<graphics::ImageViewPtr>& targets, graphics::ImageLayout final_layout, bool need_canvas, bool need_pickup)
 	{
-		auto ret = new RenderTaskPrivate;
+		if (!resources_initialized)
+		{
+			auto graphics_device = graphics::Device::current();
+			static auto sp_trilinear = graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, true, graphics::AddressClampToEdge);
+			static auto sp_shadow = graphics::Sampler::create(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressClampToBorder, std::numeric_limits<float>::max());
+
+			pl_blit = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", {});
+
+			if (mode != RenderMode2D)
+			{
+				img_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
+				graphics_device->set_object_debug_name(img_black.get(), "Black");
+				img_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, 8));
+				graphics_device->set_object_debug_name(img_white.get(), "White");
+				img_dummy_depth.reset(graphics::Image::create(graphics::Format_Depth16, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
+				img_cube_black.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1));
+				img_cube_white.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1));
+				img_black3D.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
+				img_white3D.reset(graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(4, 4, 4), graphics::ImageUsageTransferDst | graphics::ImageUsageSampled));
+				img_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
+				img_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
+				img_dummy_depth->clear(vec4(1.f, 0.f, 0.f, 0.f), graphics::ImageLayoutShaderReadOnly);
+				img_cube_black->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
+				img_cube_white->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
+				img_black3D->clear(vec4(0.f), graphics::ImageLayoutShaderReadOnly);
+				img_white3D->clear(vec4(1.f), graphics::ImageLayoutShaderReadOnly);
+
+				rp_fwd = graphics::Renderpass::get(L"flame\\shaders\\forward.rp",
+					{ "col_fmt=" + TypeInfo::serialize_t(col_fmt),
+					  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt),
+					  "sample_count=" + TypeInfo::serialize_t(sample_count) });
+				rp_fwd_clear = graphics::Renderpass::get(L"flame\\shaders\\forward.rp",
+					{ "col_fmt=" + TypeInfo::serialize_t(col_fmt),
+					  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt),
+					  "sample_count=" + TypeInfo::serialize_t(sample_count),
+					  "load_op=" + TypeInfo::serialize_t(graphics::AttachmentLoadClear) });
+				rp_gbuf = graphics::Renderpass::get(L"flame\\shaders\\gbuffer.rp",
+					{ "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
+				rp_dst = graphics::Renderpass::get(L"flame\\shaders\\color.rp",
+					{ "col_fmt=" + TypeInfo::serialize_t(col_fmt) });
+				rp_dep = graphics::Renderpass::get(L"flame\\shaders\\depth.rp",
+					{ "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
+				rp_col_dep = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
+					{ "col_fmt=" + TypeInfo::serialize_t(graphics::Format_R8G8B8A8_UNORM),
+					  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
+				rp_esm = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
+					{ "col_fmt=" + TypeInfo::serialize_t(esm_fmt),
+					  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt) });
+				rp_primitive = graphics::Renderpass::get(L"flame\\shaders\\color_depth.rp",
+					{ "col_fmt=" + TypeInfo::serialize_t(col_fmt),
+					  "dep_fmt=" + TypeInfo::serialize_t(dep_fmt),
+					  "col_load_op=" + TypeInfo::serialize_t(graphics::AttachmentLoadLoad),
+					  "dep_load_op=" + TypeInfo::serialize_t(graphics::AttachmentLoadLoad),
+					  "col_initia_layout=" + TypeInfo::serialize_t(graphics::ImageLayoutAttachment),
+					  "dep_initia_layout=" + TypeInfo::serialize_t(graphics::ImageLayoutAttachment) });
+
+				uint u;
+				use_mesh_shader = graphics_device->get_config("mesh_shader"_h, u) ? u == 1 : true;
+
+				auto dsl_instance = graphics::DescriptorSetLayout::get(L"flame\\shaders\\instance.dsl");
+				buf_instance.create(graphics::BufferUsageStorage, dsl_instance->get_buf_ui("Instance"_h));
+				mesh_instances.init(buf_instance.child_type<TI_A>("meshes"_h)->extent);
+				register_mesh_instance(-1);
+				armature_instances.init(buf_instance.child_type<TI_A>("armatures"_h)->extent);
+				register_armature_instance(-1);
+				terrain_instances.init(buf_instance.child_type<TI_A>("terrains"_h)->extent);
+				sdf_instances.init(buf_instance.child_type<TI_A>("sdfs"_h)->extent);
+				volume_instances.init(buf_instance.child_type<TI_A>("volumes"_h)->extent);
+				buf_marching_cubes_loopup.create(graphics::BufferUsageStorage, dsl_instance->get_buf_ui("MarchingCubesLookup"_h));
+				{
+					auto items = buf_marching_cubes_loopup.mark_dirty_c(0);
+					assert(sizeof(MarchingCubesLookup) == items.type->size);
+					auto p = items.data;
+					for (auto i = 0; i < 256; i++)
+					{
+						memcpy(p, &MarchingCubesLookup[i], sizeof(MarchingCubesLookupItem));
+						p += sizeof(MarchingCubesLookupItem);
+					}
+					buf_marching_cubes_loopup.upload();
+				}
+				buf_transform_feedback.create(graphics::BufferUsageStorage | graphics::BufferUsageTransferSrc, dsl_instance->get_buf_ui("TransformFeedback"_h), graphics::BufferUsageTransferDst);
+				buf_transform_feedback.mark_dirty_c("vertex_count"_h).as<uint>() = 0;
+				buf_transform_feedback.upload();
+				ds_instance.reset(graphics::DescriptorSet::create(nullptr, dsl_instance));
+				ds_instance->set_buffer("Instance"_h, 0, buf_instance.buf.get());
+				for (auto i = 0; i < terrain_instances.capacity; i++)
+				{
+					ds_instance->set_image("terrain_height_maps"_h, i, img_black->get_view(), sp_trilinear);
+					ds_instance->set_image("terrain_normal_maps"_h, i, img_black->get_view(), sp_trilinear);
+					ds_instance->set_image("terrain_tangent_maps"_h, i, img_black->get_view(), sp_trilinear);
+				}
+				ds_instance->set_buffer("MarchingCubesLookup"_h, 0, buf_marching_cubes_loopup.buf.get());
+				ds_instance->set_buffer("TransformFeedback"_h, 0, buf_transform_feedback.buf.get());
+				ds_instance->update();
+
+				auto dsl_material = graphics::DescriptorSetLayout::get(L"flame\\shaders\\material.dsl");
+				buf_material.create(graphics::BufferUsageStorage, dsl_material->get_buf_ui("Material"_h));
+				mat_vars.resize(buf_material.child_type<TI_A>("vars"_h)->extent);
+				mat_reses.resize(buf_material.child_type<TI_A>("infos"_h)->extent);
+				get_material_res(graphics::Material::get(L"default"), -1);
+				tex_reses.resize(dsl_material->get_binding("material_maps"_h).count);
+				ds_material.reset(graphics::DescriptorSet::create(nullptr, dsl_material));
+				ds_material->set_buffer("Material"_h, 0, buf_material.buf.get());
+				for (auto i = 0; i < tex_reses.size(); i++)
+					ds_material->set_image("material_maps"_h, i, img_black->get_view(), nullptr);
+				ds_material->update();
+
+				auto dsl_lighting = graphics::DescriptorSetLayout::get(L"flame\\shaders\\lighting.dsl");
+				ds_lighting.reset(graphics::DescriptorSet::create(nullptr, dsl_lighting));
+				buf_lighting.create(graphics::BufferUsageStorage, dsl_lighting->get_buf_ui("Lighting"_h));
+				buf_lighting.child("sky_intensity"_h).as<float>() = sky_intensity;
+				buf_lighting.child("fog_type"_h).as<int>() = (int)fog_type;
+				buf_lighting.child("fog_density"_h).as<float>() = fog_density;
+				buf_lighting.child("fog_start"_h).as<float>() = fog_start;
+				buf_lighting.child("fog_end"_h).as<float>() = fog_end;
+				buf_lighting.child("fog_base_height"_h).as<float>() = fog_base_height;
+				buf_lighting.child("fog_max_height"_h).as<float>() = fog_max_height;
+				buf_lighting.child("fog_color"_h).as<vec3>() = fog_color;
+				buf_lighting.child("csm_levels"_h).as<uint>() = csm_levels;
+				buf_lighting.child("esm_factor"_h).as<float>() = esm_factor;
+				buf_lighting.child("shadow_bleeding_reduction"_h).as<float>() = shadow_bleeding_reduction;
+				buf_lighting.child("shadow_darkening"_h).as<float>() = shadow_darkening;
+				buf_lighting.child("ssr_enable"_h).as<int>() = ssr_enable ? 1U : 0U;
+				buf_lighting.child("ssr_thickness"_h).as<float>() = ssr_thickness;
+				buf_lighting.child("ssr_max_distance"_h).as<float>() = ssr_max_distance;
+				buf_lighting.child("ssr_max_steps"_h).as<uint>() = ssr_max_steps;
+				buf_lighting.child("ssr_binary_search_steps"_h).as<uint>() = ssr_binary_search_steps;
+				buf_lighting.mark_dirty();
+				buf_lighting.upload();
+				dir_lights.init(buf_lighting.child_type<TI_A>("dir_lights"_h)->extent);
+				pt_lights.init(buf_lighting.child_type<TI_A>("pt_lights"_h)->extent);
+				img_shadow_depth.reset(graphics::Image::create(dep_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment));
+				img_shadow_depth->filename = L"#img_shadow_depth";
+				graphics_device->set_object_debug_name(img_shadow_depth.get(), "Shadow Depth");
+				imgs_dir_shadow.resize(dsl_lighting->get_binding("dir_shadow_maps"_h).count);
+				for (auto i = 0; i < imgs_dir_shadow.size(); i++)
+				{
+					auto img = graphics::Image::create(esm_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels);
+					imgs_dir_shadow[i].reset(img);
+					img->filename = L"#img_dir_shadow" + wstr(i);
+					graphics_device->set_object_debug_name(img, "Directional Shadow " + str(i));
+					img->change_layout(graphics::ImageLayoutShaderReadOnly);
+				}
+				for (auto i = 0; i < imgs_dir_shadow.size(); i++)
+				{
+					auto img = imgs_dir_shadow[i].get();
+					for (auto ly = 0; ly < img->n_layers; ly++)
+						fbs_dir_shadow.emplace_back(graphics::Framebuffer::create(rp_esm, { img->get_view({ 0, 1, (uint)ly }), img_shadow_depth->get_view() }));
+				}
+				img_dir_shadow_back.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, DirShadowMaxLevels));
+				imgs_pt_shadow.resize(dsl_lighting->get_binding("pt_shadow_maps"_h).count);
+				for (auto i = 0; i < imgs_pt_shadow.size(); i++)
+				{
+					auto img = graphics::Image::create(esm_fmt, uvec3(ShadowMapSize / 2U, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1);
+					imgs_pt_shadow[i].reset(img);
+					img->filename = L"#img_pt_shadow" + wstr(i);
+					graphics_device->set_object_debug_name(img, "Point Shadow " + str(i));
+					img->change_layout(graphics::ImageLayoutShaderReadOnly);
+				}
+				for (auto i = 0; i < imgs_pt_shadow.size(); i++)
+				{
+					auto img = imgs_pt_shadow[i].get();
+					for (auto ly = 0; ly < img->n_layers; ly++)
+						fbs_pt_shadow.emplace_back(graphics::Framebuffer::create(rp_esm, { img->get_view({ 0, 1, (uint)ly }), img_shadow_depth->get_view() }));
+				}
+				img_pt_shadow_back.reset(graphics::Image::create(esm_fmt, uvec3(ShadowMapSize / 2U, 1), graphics::ImageUsageAttachment | graphics::ImageUsageSampled, 1, -6, graphics::SampleCount_1));
+				ds_lighting->set_buffer("Lighting"_h, 0, buf_lighting.buf.get());
+				for (auto i = 0; i < imgs_dir_shadow.size(); i++)
+					ds_lighting->set_image("dir_shadow_maps"_h, i, imgs_dir_shadow[i]->get_view({ 0, 1, 0, DirShadowMaxLevels }), sp_shadow);
+				for (auto i = 0; i < imgs_pt_shadow.size(); i++)
+					ds_lighting->set_image("pt_shadow_maps"_h, i, imgs_pt_shadow[i]->get_view({ 0, 1, 0, 6 }, {}, true), sp_shadow);
+				ds_lighting->set_image("sky_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }, {}, true), nullptr);
+				ds_lighting->set_image("sky_irr_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }, {}, true), nullptr);
+				ds_lighting->set_image("sky_rad_map"_h, 0, img_cube_black->get_view({ 0, 1, 0, 6 }, {}, true), nullptr);
+				{
+					auto img = graphics::Image::get(L"flame\\brdf.dds");
+					ds_lighting->set_image("brdf_map"_h, 0, img ? img->get_view() : img_black->get_view(), nullptr);
+				}
+				ds_lighting->update();
+
+				buf_vtx.create(L"flame\\shaders\\mesh\\mesh.vi", {}, 1024 * 256 * 4);
+				buf_idx.create(1024 * 256 * 6);
+				buf_vtx_arm.create(L"flame\\shaders\\mesh\\mesh.vi", { "ARMATURE" }, 1024 * 128 * 4);
+				buf_idx_arm.create(1024 * 128 * 6);
+				buf_particles.create(L"flame\\shaders\\particle.vi", {}, 1024 * 128);
+				buf_primitives.create(L"flame\\shaders\\plain\\plain3d.vi", {}, 1024 * 256);
+
+				mesh_reses.resize(1024 * 8);
+
+				pl_point3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\point3d.pipeline", { "dc=true", "dt=false", "dw=false" });
+				pl_point3d_dt = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\point3d.pipeline", { "dt=true", "dw=false" });
+				pl_line3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dc=true", "dt=false", "dw=false" });
+				pl_line3d_dt = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dt=true", "dw=false" });
+				pl_line_strip3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "dc=true", "pt=LineStrip", "dt=false", "dw=false" });
+				pl_line_strip3d_dt = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\line3d.pipeline", { "pt=LineStrip", "dt=true", "dw=false" });
+				pl_triangle3d = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", { "dc=true", "dt=false", "dw=false" });
+				pl_triangle3d_dt = graphics::GraphicsPipeline::get(L"flame\\shaders\\plain\\triangle3d.pipeline", { "dt=true", "dw=false" });
+
+				pll_fwd = graphics::PipelineLayout::get(L"flame\\shaders\\forward.pll");
+				pll_gbuf = graphics::PipelineLayout::get(L"flame\\shaders\\gbuffer.pll");
+
+				pl_blit_blend = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", { "be=true", "sbc=SrcAlpha", "dbc=OneMinusSrcAlpha" });
+				pl_blit_dep = graphics::GraphicsPipeline::get(L"flame\\shaders\\blit.pipeline", { "rp=" + str(rp_dep), "frag:DEPTH" });
+				pl_add = graphics::GraphicsPipeline::get(L"flame\\shaders\\add.pipeline", {});
+				pl_blend = graphics::GraphicsPipeline::get(L"flame\\shaders\\blend.pipeline", {});
+
+				pl_mesh_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "rp=" + str(rp_col_dep) });
+				pl_mesh_arm_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "rp=" + str(rp_col_dep), "vert:ARMATURE" });
+				pl_terrain_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep) });
+
+				if (use_mesh_shader)
+					pl_MC_plain = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep) });
+
+				gbuffer_batcher.buf_idr.create(mesh_instances.capacity);
+				transparent_batcher.buf_idr.create(mesh_instances.capacity);
+				for (auto& s : dir_shadows)
+				{
+					for (auto i = 0; i < DirShadowMaxLevels; i++)
+						s.batcher[i].buf_idr.create(min(8192U, mesh_instances.capacity));
+				}
+
+				get_deferred_pipeline();
+
+				pl_down_sample = graphics::GraphicsPipeline::get(L"flame\\shaders\\box.pipeline", {});
+				pl_up_sample = graphics::GraphicsPipeline::get(L"flame\\shaders\\box.pipeline", { "be=true", "sbc=One", "dbc=One" });
+				pl_down_sample_depth = graphics::GraphicsPipeline::get(L"flame\\shaders\\box.pipeline", { "rp=" + str(rp_dep), "frag:DEPTH" });
+				pl_up_sample_depth = graphics::GraphicsPipeline::get(L"flame\\shaders\\box.pipeline", { "rp=" + str(rp_dep), "be=true", "sbc=One", "dbc=One", "frag:DEPTH" });
+
+				pl_outline_pp = graphics::GraphicsPipeline::get(L"flame\\shaders\\outline_pp.pipeline", { "rp=" + str(rp_dst) });
+
+				pl_bloom_bright = graphics::GraphicsPipeline::get(L"flame\\shaders\\bloom.pipeline", { "frag:BRIGHT_PASS" });
+
+				pl_blur_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\blur.pipeline", { "frag:HORIZONTAL" });
+				pl_blur_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\blur.pipeline", { "frag:VERTICAL" });
+				pl_blur_depth_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\blur.pipeline", { "rp=" + str(rp_dep), "frag:DEPTH", "frag:HORIZONTAL" });
+				pl_blur_depth_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\blur.pipeline", { "rp=" + str(rp_dep), "frag:DEPTH", "frag:VERTICAL" });
+				pl_blur_max_h = graphics::GraphicsPipeline::get(L"flame\\shaders\\blur.pipeline", { "frag:MAX", "frag:HORIZONTAL" });
+				pl_blur_max_v = graphics::GraphicsPipeline::get(L"flame\\shaders\\blur.pipeline", { "frag:MAX", "frag:VERTICAL" });
+
+				pl_luma_hist = graphics::ComputePipeline::get(L"flame\\shaders\\luma.pipeline", { "comp:HISTOGRAM_PASS" });
+				pl_luma_avg = graphics::ComputePipeline::get(L"flame\\shaders\\luma.pipeline", { "comp:AVERAGE_PASS" });
+
+				pl_dof = graphics::GraphicsPipeline::get(L"flame\\shaders\\dof.pipeline", { "rp=" + str(rp_dst) });
+				pl_tone = graphics::GraphicsPipeline::get(L"flame\\shaders\\tone.pipeline", {});
+				pl_fxaa = graphics::GraphicsPipeline::get(L"flame\\shaders\\fxaa.pipeline", {});
+
+				pl_mesh_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
+				pl_mesh_arm_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\mesh\\mesh.pipeline",
+					{ "rp=" + str(rp_col_dep),
+					  "vert:ARMATURE",
+					  "frag:PICKUP" });
+				pl_terrain_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\terrain\\terrain.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
+				if (use_mesh_shader)
+				{
+					pl_MC_pickup = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep), "frag:PICKUP" });
+					pl_MC_transform_feedback = graphics::GraphicsPipeline::get(L"flame\\shaders\\volume\\marching_cubes.pipeline", { "rp=" + str(rp_col_dep), "rasterizer_discard=true", "mesh:TRANSFORM_FEEDBACK" });
+				}
+
+				camera_light_id = register_light_instance(LightDirectional, -1);
+				white_tex_id = get_texture_res(img_white->get_view(), nullptr, -1);
+				black_tex_id = get_texture_res(img_black->get_view(), nullptr, -1);
+				if (auto img = graphics::Image::get(L"flame\\random.png"); img)
+				{
+					rand_tex_id = get_texture_res(img->get_view(),
+						graphics::Sampler::get(graphics::FilterLinear, graphics::FilterLinear, false, graphics::AddressRepeat), -1);
+				}
+			}
+
+			resources_initialized = true;
+		}
+
+		auto ret = new RenderTargetPrivate;
 		ret->mode = mode;
 		ret->camera = camera;
 		ret->final_layout = final_layout;
 		if (need_canvas)
 		{
 			ret->canvas = graphics::Canvas::create(true);
-			ret->canvas->clear_framebuffer = false;
+			if (mode != RenderMode2D)
+				ret->canvas->clear_framebuffer = false;
 		}
-		if (need_pickup)
+		if (mode != RenderMode2D)
 		{
-			ret->img_pickup.reset(graphics::Image::create(graphics::Format_R8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferSrc));
-			ret->img_dep_pickup.reset(graphics::Image::create(graphics::Format_R8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferSrc));
-			ret->fence_pickup.reset(graphics::Fence::create(false));
+			if (need_pickup)
+			{
+				ret->img_pickup.reset(graphics::Image::create(graphics::Format_R8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferSrc));
+				ret->img_dep_pickup.reset(graphics::Image::create(graphics::Format_R8_UNORM, uvec3(4, 4, 1), graphics::ImageUsageTransferSrc));
+				ret->fence_pickup.reset(graphics::Fence::create(false));
+			}
 		}
 		ret->init();
 		if (window)
@@ -914,17 +931,17 @@ namespace flame
 		}
 		else
 			ret->set_targets(targets);
-		render_tasks.emplace_back(ret);
+		render_targets.emplace_back(ret);
 		return ret;
 	}
 
-	void sRendererPrivate::remove_render_task(RenderTaskPtr task)
+	void sRendererPrivate::remove_render_target(RenderTargetPtr t)
 	{
-		for (auto it = render_tasks.begin(); it != render_tasks.end(); it++)
+		for (auto it = render_targets.begin(); it != render_targets.end(); it++)
 		{
-			if (it->get() == task)
+			if (it->get() == t)
 			{
-				render_tasks.erase(it);
+				render_targets.erase(it);
 				return;
 			}
 		}
@@ -932,14 +949,21 @@ namespace flame
 
 	RenderMode sRendererPrivate::get_render_mode()
 	{
-		return render_tasks.empty() ? RenderModeShaded : render_tasks.front()->mode;
+		return render_targets.empty() ? RenderModeShaded : render_targets.front()->mode;
 	}
 
 	void sRendererPrivate::set_render_mode(RenderMode mode)
 	{
-		if (render_tasks.empty())
+		if (render_targets.empty())
 			return;
-		render_tasks.front()->mode = mode;
+		render_targets.front()->mode = mode;
+	}
+
+	vec2 sRendererPrivate::target_extent() const
+	{
+		if (render_targets.empty())
+			return vec2(0.f);
+		return render_targets.front()->target_extent();
 	}
 
 	void sRendererPrivate::set_sky_maps(graphics::ImageViewPtr _sky_map, graphics::ImageViewPtr _sky_irr_map, graphics::ImageViewPtr _sky_rad_map)
@@ -2120,7 +2144,7 @@ namespace flame
 		});
 
 		auto first = true;
-		for (auto& t : render_tasks)
+		for (auto& t : render_targets)
 		{
 			if (t->camera == INVALID_POINTER || t->targets.empty())
 				continue;
@@ -2142,609 +2166,489 @@ namespace flame
 			camera->aspect = ext.x / ext.y;
 			camera->update_matrices();
 
-			camera_culled_nodes.clear();
-			sScene::instance()->octree->get_within_frustum(camera->frustum, camera_culled_nodes);
-
-			draw_data.reset(PassInstance, 0);
-			for (auto& n : camera_culled_nodes)
-				n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
-
-			static auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
-
-			auto n_dir_lights = 0;
-			auto n_dir_shadows = 0;
-			auto n_pt_lights = 0;
-			auto n_pt_shadows = 0;
-
-			cb->begin_debug_label("Upload Buffers");
+			if (t->mode != RenderMode2D)
 			{
-				buf_vtx.upload(cb);
-				buf_idx.upload(cb);
-				buf_vtx_arm.upload(cb);
-				buf_idx_arm.upload(cb);
+				camera_culled_nodes.clear();
+				sScene::instance()->octree->get_within_frustum(camera->frustum, camera_culled_nodes);
 
-				auto& buf_camera = t->buf_camera;
-				buf_camera.child("zNear"_h).as<float>() = camera->zNear;
-				buf_camera.child("zFar"_h).as<float>() = camera->zFar;
-				buf_camera.child("fovy"_h).as<float>() = camera->fovy;
-				buf_camera.child("tan_hf_fovy"_h).as<float>() = tan(radians(camera->fovy * 0.5f));
-				buf_camera.child("viewport"_h).as<vec2>() = ext;
-				buf_camera.child("coord"_h).as<vec3>() = camera->view_mat_inv[3];
-				buf_camera.child("front"_h).as<vec3>() = -camera->view_mat_inv[2];
-				buf_camera.child("right"_h).as<vec3>() = camera->view_mat_inv[0];
-				buf_camera.child("up"_h).as<vec3>() = camera->view_mat_inv[1];
-				buf_camera.child("last_view"_h).as<mat4>() = buf_camera.child("view"_h).as<mat4>();
-				buf_camera.child("view"_h).as<mat4>() = camera->view_mat;
-				buf_camera.child("view_inv"_h).as<mat4>() = camera->view_mat_inv;
-				buf_camera.child("proj"_h).as<mat4>() = camera->proj_mat;
-				buf_camera.child("proj_inv"_h).as<mat4>() = camera->proj_mat_inv;
-				buf_camera.child("proj_view"_h).as<mat4>() = camera->proj_view_mat;
-				buf_camera.child("proj_view_inv"_h).as<mat4>() = camera->proj_view_mat_inv;
-				memcpy(buf_camera.child("frustum_planes"_h).data, camera->frustum.planes, sizeof(vec4) * 6);
-				buf_camera.child("time"_h).as<float>() = total_time;
-				buf_camera.mark_dirty();
-				buf_camera.upload(cb);
+				draw_data.reset(PassInstance, 0);
+				for (auto& n : camera_culled_nodes)
+					n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
 
-				buf_material.upload(cb);
+				static auto sp_nearest = graphics::Sampler::get(graphics::FilterNearest, graphics::FilterNearest, false, graphics::AddressClampToEdge);
 
-				if (mode == RenderModeShaded)
+				auto n_dir_lights = 0;
+				auto n_dir_shadows = 0;
+				auto n_pt_lights = 0;
+				auto n_pt_shadows = 0;
+
+				cb->begin_debug_label("Upload Buffers");
 				{
-					draw_data.reset(PassLight, 0);
-					for (auto& n : camera_culled_nodes)
+					buf_vtx.upload(cb);
+					buf_idx.upload(cb);
+					buf_vtx_arm.upload(cb);
+					buf_idx_arm.upload(cb);
+
+					auto& buf_camera = t->buf_camera;
+					buf_camera.child("zNear"_h).as<float>() = camera->zNear;
+					buf_camera.child("zFar"_h).as<float>() = camera->zFar;
+					buf_camera.child("fovy"_h).as<float>() = camera->fovy;
+					buf_camera.child("tan_hf_fovy"_h).as<float>() = tan(radians(camera->fovy * 0.5f));
+					buf_camera.child("viewport"_h).as<vec2>() = ext;
+					buf_camera.child("coord"_h).as<vec3>() = camera->view_mat_inv[3];
+					buf_camera.child("front"_h).as<vec3>() = -camera->view_mat_inv[2];
+					buf_camera.child("right"_h).as<vec3>() = camera->view_mat_inv[0];
+					buf_camera.child("up"_h).as<vec3>() = camera->view_mat_inv[1];
+					buf_camera.child("last_view"_h).as<mat4>() = buf_camera.child("view"_h).as<mat4>();
+					buf_camera.child("view"_h).as<mat4>() = camera->view_mat;
+					buf_camera.child("view_inv"_h).as<mat4>() = camera->view_mat_inv;
+					buf_camera.child("proj"_h).as<mat4>() = camera->proj_mat;
+					buf_camera.child("proj_inv"_h).as<mat4>() = camera->proj_mat_inv;
+					buf_camera.child("proj_view"_h).as<mat4>() = camera->proj_view_mat;
+					buf_camera.child("proj_view_inv"_h).as<mat4>() = camera->proj_view_mat_inv;
+					memcpy(buf_camera.child("frustum_planes"_h).data, camera->frustum.planes, sizeof(vec4) * 6);
+					buf_camera.child("time"_h).as<float>() = total_time;
+					buf_camera.mark_dirty();
+					buf_camera.upload(cb);
+
+					buf_material.upload(cb);
+
+					if (mode == RenderModeShaded)
 					{
-						n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
-						auto n_lights = n_dir_lights + n_pt_lights;
-						if (n_lights < draw_data.lights.size())
+						draw_data.reset(PassLight, 0);
+						for (auto& n : camera_culled_nodes)
 						{
-							for (auto i = n_lights; i < draw_data.lights.size(); i++)
+							n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+							auto n_lights = n_dir_lights + n_pt_lights;
+							if (n_lights < draw_data.lights.size())
 							{
-								auto& l = draw_data.lights[i];
-								switch (l.type)
+								for (auto i = n_lights; i < draw_data.lights.size(); i++)
 								{
-								case LightDirectional:
-									buf_lighting.mark_dirty_ci("dir_lights_list"_h, n_dir_lights).as<uint>() = l.ins_id;
-									if (l.cast_shadow)
+									auto& l = draw_data.lights[i];
+									switch (l.type)
 									{
-										if (n_dir_shadows < countof(dir_shadows))
+									case LightDirectional:
+										buf_lighting.mark_dirty_ci("dir_lights_list"_h, n_dir_lights).as<uint>() = l.ins_id;
+										if (l.cast_shadow)
 										{
-											auto idx = n_dir_shadows;
-											auto shadow_index = buf_lighting.child("dir_lights"_h).item(l.ins_id).child("shadow_index"_h);
-											shadow_index.as<int>() = idx;
-											buf_lighting.mark_dirty(shadow_index);
+											if (n_dir_shadows < countof(dir_shadows))
+											{
+												auto idx = n_dir_shadows;
+												auto shadow_index = buf_lighting.child("dir_lights"_h).item(l.ins_id).child("shadow_index"_h);
+												shadow_index.as<int>() = idx;
+												buf_lighting.mark_dirty(shadow_index);
 
-											auto& rot = dir_shadows[idx].rot;
-											rot = mat3(n.second->g_qut);
-											rot[2] *= -1.f;
+												auto& rot = dir_shadows[idx].rot;
+												rot = mat3(n.second->g_qut);
+												rot[2] *= -1.f;
 
-											n_dir_shadows++;
+												n_dir_shadows++;
+											}
 										}
-									}
-									n_dir_lights++;
-									break;
-								case LightPoint:
-									buf_lighting.mark_dirty_ci("pt_lights_list"_h, n_dir_lights).as<uint>() = l.ins_id;
-									if (l.cast_shadow)
-									{
-										if (n_pt_shadows < countof(pt_shadows))
+										n_dir_lights++;
+										break;
+									case LightPoint:
+										buf_lighting.mark_dirty_ci("pt_lights_list"_h, n_dir_lights).as<uint>() = l.ins_id;
+										if (l.cast_shadow)
 										{
+											if (n_pt_shadows < countof(pt_shadows))
+											{
 
+											}
 										}
+										n_pt_lights++;
+										break;
 									}
-									n_pt_lights++;
-									break;
 								}
 							}
 						}
+
+						buf_lighting.mark_dirty_c("dir_lights_count"_h).as<uint>() = n_dir_lights;
+						buf_lighting.mark_dirty_c("pt_lights_count"_h).as<uint>() = n_pt_lights;
 					}
-
-					buf_lighting.mark_dirty_c("dir_lights_count"_h).as<uint>() = n_dir_lights;
-					buf_lighting.mark_dirty_c("pt_lights_count"_h).as<uint>() = n_pt_lights;
-				}
-				else if (first && (mode == RenderModeCameraLight || mode == RenderModeSimple))
-				{
-					auto ins = buf_lighting.mark_dirty_ci("dir_lights"_h, camera_light_id);
-					ins.child("dir"_h).as<vec3>() = camera->view_mat_inv[2];
-					ins.child("color"_h).as<vec3>() = vec3(1.f);
-					ins.child("shadow_index"_h).as<int>() = -1;
-
-					buf_lighting.mark_dirty_ci("dir_lights_list"_h, 0).as<uint>() = camera_light_id;
-					buf_lighting.mark_dirty_c("dir_lights_count"_h).as<uint>() = 1;
-					buf_lighting.mark_dirty_c("pt_lights_count"_h).as<uint>() = 0;
-				}
-
-				buf_lighting.upload(cb);
-			}
-			cb->end_debug_label();
-
-			// occulder pass
-			if (mode == RenderModeShaded)
-			{
-				cb->begin_debug_label("Occulder Pass");
-
-				for (auto i = 0; i < DirShadowMaxCount; i++)
-				{
-					auto& s = dir_shadows[i];
-					for (auto j = 0; j < DirShadowMaxLevels; j++)
+					else if (first && (mode == RenderModeCameraLight || mode == RenderModeSimple))
 					{
-						for (auto& b : s.batcher[j].batches)
-							b.second.draw_indices.clear();
-					}
-				}
+						auto ins = buf_lighting.mark_dirty_ci("dir_lights"_h, camera_light_id);
+						ins.child("dir"_h).as<vec3>() = camera->view_mat_inv[2];
+						ins.child("color"_h).as<vec3>() = vec3(1.f);
+						ins.child("shadow_index"_h).as<int>() = -1;
 
-				if (shadow_distance > 0.f)
+						buf_lighting.mark_dirty_ci("dir_lights_list"_h, 0).as<uint>() = camera_light_id;
+						buf_lighting.mark_dirty_c("dir_lights_count"_h).as<uint>() = 1;
+						buf_lighting.mark_dirty_c("pt_lights_count"_h).as<uint>() = 0;
+					}
+
+					buf_lighting.upload(cb);
+				}
+				cb->end_debug_label();
+
+				// occulder pass
+				if (mode == RenderModeShaded)
 				{
-					auto zn = camera->zNear; auto zf = camera->zFar;
+					cb->begin_debug_label("Occulder Pass");
+
+					for (auto i = 0; i < DirShadowMaxCount; i++)
+					{
+						auto& s = dir_shadows[i];
+						for (auto j = 0; j < DirShadowMaxLevels; j++)
+						{
+							for (auto& b : s.batcher[j].batches)
+								b.second.draw_indices.clear();
+						}
+					}
+
+					if (shadow_distance > 0.f)
+					{
+						auto zn = camera->zNear; auto zf = camera->zFar;
+						for (auto i = 0; i < n_dir_shadows; i++)
+						{
+							auto& s = dir_shadows[i];
+							auto splits = vec4(zf);
+							auto shadow = buf_lighting.mark_dirty_ci("dir_shadows"_h, i);
+							auto mats = (mat4*)shadow.child("mats"_h).data;
+							for (auto lv = 0; lv < csm_levels; lv++)
+							{
+								auto n = lv / (float)csm_levels;
+								auto f = (lv + 1) / (float)csm_levels;
+								n = mix(zn, shadow_distance, n * n);
+								f = mix(zn, shadow_distance, f * f);
+								splits[lv] = f;
+
+								{
+									auto p = camera->proj_mat * vec4(0.f, 0.f, -n, 1.f);
+									n = p.z / p.w;
+								}
+								{
+									auto p = camera->proj_mat * vec4(0.f, 0.f, -f, 1.f);
+									f = p.z / p.w;
+								}
+								auto frustum_slice = Frustum::get_points(camera->proj_view_mat_inv, n, f);
+								if (csm_debug_capture_flag)
+								{
+									{
+										auto& prims = csm_debug_draws.emplace_back();
+										prims.type = PrimitiveQuadList;
+										prims.points = Frustum::points_to_quads(frustum_slice.data());
+										prims.color = cvec4(0, 127, 255, 190);
+										prims.depth_test = false;
+									}
+									{
+										auto& prims = csm_debug_draws.emplace_back();
+										prims.type = PrimitiveLineList;
+										prims.points = Frustum::points_to_lines(frustum_slice.data());
+										prims.color = cvec4(255, 255, 255, 255);
+										prims.depth_test = false;
+									}
+								}
+								auto b = AABB(frustum_slice, inverse(s.rot));
+								auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
+								auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
+								auto hf_zlen = (b.b.z - b.a.z) * 0.5f;
+								auto c = s.rot * b.center();
+
+								auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, 20000.f);
+								proj[1][1] *= -1.f;
+								auto view = lookAt(c - s.rot[2] * 10000.f, c, s.rot[1]);
+								auto proj_view = proj * view;
+
+								s.culled_nodes.clear();
+								sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
+								draw_data.reset(PassInstance, 0);
+								for (auto& n : s.culled_nodes)
+									n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+
+								auto z_min = 0.f;
+								auto z_max = 0.f;
+								auto n_mesh_draws = 0;
+								auto n_terrain_draws = 0;
+								auto n_MC_draws = 0;
+
+								draw_data.reset(PassOcculder, CateMesh | CateTerrain | CateMarchingCubes);
+								for (auto& n : s.culled_nodes)
+								{
+									n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+									if (draw_data.meshes.size() > n_mesh_draws)
+									{
+										for (auto& p : n.second->bounds.get_points())
+										{
+											auto d = dot(p - c, s.rot[2]);
+											z_min = min(d, z_min);
+											z_max = max(d, z_max);
+										}
+
+										n_mesh_draws = draw_data.meshes.size();
+									}
+									if (draw_data.terrains.size() > n_terrain_draws)
+									{
+										for (auto& p : n.second->bounds.get_points())
+										{
+											auto d = dot(p - c, s.rot[2]);
+											z_min = min(d, z_min);
+											z_max = max(d, z_max);
+										}
+
+										n_terrain_draws = draw_data.terrains.size();
+									}
+									if (draw_data.volumes.size() > n_MC_draws)
+									{
+										for (auto& p : n.second->bounds.get_points())
+										{
+											auto d = dot(p - c, s.rot[2]);
+											z_min = min(d, z_min);
+											z_max = max(d, z_max);
+										}
+
+										n_MC_draws = draw_data.volumes.size();
+									}
+								}
+								s.batcher[lv].collect(mode, draw_data, cb, "DEPTH_ONLY"_h);
+								s.draw_terrains[lv] = draw_data.terrains;
+								s.draw_MCs[lv] = draw_data.volumes;
+
+								proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, z_max - z_min);
+								proj[1][1] *= -1.f;
+								view = lookAt(c + s.rot[2] * z_min, c, s.rot[1]);
+								proj_view = proj * view;
+								mats[lv] = proj_view;
+								s.frustum = Frustum(inverse(proj_view));
+								if (csm_debug_capture_flag)
+								{
+									auto frustum_points = Frustum::get_points(inverse(proj_view));
+									{
+										Primitives prims;
+										prims.type = PrimitiveQuadList;
+										prims.points = Frustum::points_to_quads(frustum_points.data());
+										prims.color = cvec4(255, 127, 0, 190);
+										prims.depth_test = false;
+										csm_debug_draws.emplace(csm_debug_draws.begin(), prims);
+									}
+									{
+										auto& prims = csm_debug_draws.emplace_back();
+										prims.type = PrimitiveLineList;
+										prims.points = Frustum::points_to_lines(frustum_points.data());
+										prims.color = cvec4(255, 255, 255, 255);
+										prims.depth_test = false;
+									}
+									auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
+									vec3 pts[2];
+									pts[0] = c; pts[1] = c + s.rot[0] * hf_xlen;
+									{
+										auto& prims = csm_debug_draws.emplace_back();
+										prims.type = PrimitiveLineList;
+										prims.points = { pts[0], pts[1] };
+										prims.color = cvec4(255, 0, 0, 255);
+										prims.depth_test = false;
+									}
+									pts[0] = c; pts[1] = c + s.rot[1] * hf_ylen;
+									{
+										auto& prims = csm_debug_draws.emplace_back();
+										prims.type = PrimitiveLineList;
+										prims.points = { pts[0], pts[1] };
+										prims.color = cvec4(0, 255, 0, 255);
+										prims.depth_test = false;
+									}
+									pts[0] = c; pts[1] = c + s.rot[2] * (z_max - z_min) * 0.5f;
+									{
+										auto& prims = csm_debug_draws.emplace_back();
+										prims.type = PrimitiveLineList;
+										prims.points = { pts[0], pts[1] };
+										prims.color = cvec4(0, 0, 255, 255);
+										prims.depth_test = false;
+									}
+								}
+							}
+
+							shadow.child("splits"_h).as<vec4>() = splits;
+							shadow.child("far"_h).as<float>() = shadow_distance;
+						}
+
+						csm_debug_capture_flag = false;
+
+						for (auto i = 0; i < n_pt_shadows; i++)
+						{
+
+						}
+					}
+
+					buf_instance.upload(cb);
+
+					auto set_blur_args = [&](const vec2 img_size) {
+						t->prm_blur.pc.child("off"_h).as<int>() = -3;
+						t->prm_blur.pc.child("len"_h).as<int>() = 7;
+						t->prm_blur.pc.child("pxsz"_h).as<vec2>() = 1.f / img_size;
+						const auto len = 7;
+						memcpy(t->prm_blur.pc.child("weights"_h).data, get_gauss_blur_weights(len), sizeof(float) * len);
+						t->prm_blur.pc.mark_dirty();
+						t->prm_blur.push_constant(cb);
+						};
+
+					cb->set_viewport_and_scissor(Rect(vec2(0), ShadowMapSize));
 					for (auto i = 0; i < n_dir_shadows; i++)
 					{
 						auto& s = dir_shadows[i];
-						auto splits = vec4(zf);
-						auto shadow = buf_lighting.mark_dirty_ci("dir_shadows"_h, i);
-						auto mats = (mat4*)shadow.child("mats"_h).data;
-						for (auto lv = 0; lv < csm_levels; lv++)
+						for (auto lv = 0U; lv < csm_levels; lv++)
 						{
-							auto n = lv / (float)csm_levels;
-							auto f = (lv + 1) / (float)csm_levels;
-							n = mix(zn, shadow_distance, n * n);
-							f = mix(zn, shadow_distance, f * f);
-							splits[lv] = f;
-
-							{
-								auto p = camera->proj_mat * vec4(0.f, 0.f, -n, 1.f);
-								n = p.z / p.w;
-							}
-							{
-								auto p = camera->proj_mat * vec4(0.f, 0.f, -f, 1.f);
-								f = p.z / p.w;
-							}
-							auto frustum_slice = Frustum::get_points(camera->proj_view_mat_inv, n, f);
-							if (csm_debug_capture_flag)
-							{
-								{
-									auto& prims = csm_debug_draws.emplace_back();
-									prims.type = PrimitiveQuadList;
-									prims.points = Frustum::points_to_quads(frustum_slice.data());
-									prims.color = cvec4(0, 127, 255, 190);
-									prims.depth_test = false;
-								}
-								{
-									auto& prims = csm_debug_draws.emplace_back();
-									prims.type = PrimitiveLineList;
-									prims.points = Frustum::points_to_lines(frustum_slice.data());
-									prims.color = cvec4(255, 255, 255, 255);
-									prims.depth_test = false;
-								}
-							}
-							auto b = AABB(frustum_slice, inverse(s.rot));
-							auto hf_xlen = (b.b.x - b.a.x) * 0.5f;
-							auto hf_ylen = (b.b.y - b.a.y) * 0.5f;
-							auto hf_zlen = (b.b.z - b.a.z) * 0.5f;
-							auto c = s.rot * b.center();
-
-							auto proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, 20000.f);
-							proj[1][1] *= -1.f;
-							auto view = lookAt(c - s.rot[2] * 10000.f, c, s.rot[1]);
-							auto proj_view = proj * view;
-
-							s.culled_nodes.clear();
-							sScene::instance()->octree->get_within_frustum(inverse(proj_view), s.culled_nodes);
-							draw_data.reset(PassInstance, 0);
-							for (auto& n : s.culled_nodes)
-								n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
-
-							auto z_min = 0.f;
-							auto z_max = 0.f;
-							auto n_mesh_draws = 0;
-							auto n_terrain_draws = 0;
-							auto n_MC_draws = 0;
-
-							draw_data.reset(PassOcculder, CateMesh | CateTerrain | CateMarchingCubes);
-							for (auto& n : s.culled_nodes)
-							{
-								n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
-								if (draw_data.meshes.size() > n_mesh_draws)
-								{
-									for (auto& p : n.second->bounds.get_points())
-									{
-										auto d = dot(p - c, s.rot[2]);
-										z_min = min(d, z_min);
-										z_max = max(d, z_max);
-									}
-
-									n_mesh_draws = draw_data.meshes.size();
-								}
-								if (draw_data.terrains.size() > n_terrain_draws)
-								{
-									for (auto& p : n.second->bounds.get_points())
-									{
-										auto d = dot(p - c, s.rot[2]);
-										z_min = min(d, z_min);
-										z_max = max(d, z_max);
-									}
-
-									n_terrain_draws = draw_data.terrains.size();
-								}
-								if (draw_data.volumes.size() > n_MC_draws)
-								{
-									for (auto& p : n.second->bounds.get_points())
-									{
-										auto d = dot(p - c, s.rot[2]);
-										z_min = min(d, z_min);
-										z_max = max(d, z_max);
-									}
-
-									n_MC_draws = draw_data.volumes.size();
-								}
-							}
-							s.batcher[lv].collect(mode, draw_data, cb, "DEPTH_ONLY"_h);
-							s.draw_terrains[lv] = draw_data.terrains;
-							s.draw_MCs[lv] = draw_data.volumes;
-
-							proj = orthoRH(-hf_xlen, +hf_xlen, -hf_ylen, +hf_ylen, 0.f, z_max - z_min);
-							proj[1][1] *= -1.f;
-							view = lookAt(c + s.rot[2] * z_min, c, s.rot[1]);
-							proj_view = proj * view;
-							mats[lv] = proj_view;
-							s.frustum = Frustum(inverse(proj_view));
-							if (csm_debug_capture_flag)
-							{
-								auto frustum_points = Frustum::get_points(inverse(proj_view));
-								{
-									Primitives prims;
-									prims.type = PrimitiveQuadList;
-									prims.points = Frustum::points_to_quads(frustum_points.data());
-									prims.color = cvec4(255, 127, 0, 190);
-									prims.depth_test = false;
-									csm_debug_draws.emplace(csm_debug_draws.begin(), prims);
-								}
-								{
-									auto& prims = csm_debug_draws.emplace_back();
-									prims.type = PrimitiveLineList;
-									prims.points = Frustum::points_to_lines(frustum_points.data());
-									prims.color = cvec4(255, 255, 255, 255);
-									prims.depth_test = false;
-								}
-								auto c = (frustum_points[0] + frustum_points[6]) * 0.5f;
-								vec3 pts[2];
-								pts[0] = c; pts[1] = c + s.rot[0] * hf_xlen;
-								{
-									auto& prims = csm_debug_draws.emplace_back();
-									prims.type = PrimitiveLineList;
-									prims.points = { pts[0], pts[1] };
-									prims.color = cvec4(255, 0, 0, 255);
-									prims.depth_test = false;
-								}
-								pts[0] = c; pts[1] = c + s.rot[1] * hf_ylen;
-								{
-									auto& prims = csm_debug_draws.emplace_back();
-									prims.type = PrimitiveLineList;
-									prims.points = { pts[0], pts[1] };
-									prims.color = cvec4(0, 255, 0, 255);
-									prims.depth_test = false;
-								}
-								pts[0] = c; pts[1] = c + s.rot[2] * (z_max - z_min) * 0.5f;
-								{
-									auto& prims = csm_debug_draws.emplace_back();
-									prims.type = PrimitiveLineList;
-									prims.points = { pts[0], pts[1] };
-									prims.color = cvec4(0, 0, 255, 255);
-									prims.depth_test = false;
-								}
-							}
-						}
-
-						shadow.child("splits"_h).as<vec4>() = splits;
-						shadow.child("far"_h).as<float>() = shadow_distance;
-					}
-
-					csm_debug_capture_flag = false;
-
-					for (auto i = 0; i < n_pt_shadows; i++)
-					{
-
-					}
-				}
-
-				buf_instance.upload(cb);
-
-				auto set_blur_args = [&](const vec2 img_size) {
-					t->prm_blur.pc.child("off"_h).as<int>() = -3;
-					t->prm_blur.pc.child("len"_h).as<int>() = 7;
-					t->prm_blur.pc.child("pxsz"_h).as<vec2>() = 1.f / img_size;
-					const auto len = 7;
-					memcpy(t->prm_blur.pc.child("weights"_h).data, get_gauss_blur_weights(len), sizeof(float) * len);
-					t->prm_blur.pc.mark_dirty();
-					t->prm_blur.push_constant(cb);
-				};
-
-				cb->set_viewport_and_scissor(Rect(vec2(0), ShadowMapSize));
-				for (auto i = 0; i < n_dir_shadows; i++)
-				{
-					auto& s = dir_shadows[i];
-					for (auto lv = 0U; lv < csm_levels; lv++)
-					{
-						cb->begin_renderpass(nullptr, fbs_dir_shadow[i * DirShadowMaxLevels + lv].get(), { vec4(std::numeric_limits<float>::max(), 0.f, 0.f, 0.f), vec4(1.f, 0.f, 0.f, 0.f) });
-						t->prm_fwd.bind_dss(cb);
-						t->prm_fwd.pc.mark_dirty_c("i"_h).as<ivec4>() = ivec4(0, i, lv, 0);
-						t->prm_fwd.push_constant(cb);
-
-						s.batcher[lv].draw(cb);
-
-						for (auto& dt : s.draw_terrains[lv])
-						{
-							cb->bind_pipeline(get_material_pipeline(mode, mat_reses[dt.mat_id], "terrain"_h, 0, "DEPTH_ONLY"_h));
-							t->prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (dt.mat_id << 16) + dt.ins_id;
+							cb->begin_renderpass(nullptr, fbs_dir_shadow[i * DirShadowMaxLevels + lv].get(), { vec4(std::numeric_limits<float>::max(), 0.f, 0.f, 0.f), vec4(1.f, 0.f, 0.f, 0.f) });
+							t->prm_fwd.bind_dss(cb);
+							t->prm_fwd.pc.mark_dirty_c("i"_h).as<ivec4>() = ivec4(0, i, lv, 0);
 							t->prm_fwd.push_constant(cb);
-							cb->draw(4, dt.blocks.x * dt.blocks.y, 0, 0);
-						}
-						for (auto& dv : s.draw_MCs[lv])
-						{
-							cb->bind_pipeline(get_material_pipeline(mode, mat_reses[dv.mat_id], "marching_cubes"_h, 0, "DEPTH_ONLY"_h));
-							t->prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (dv.mat_id << 16) + dv.ins_id;
-							for (auto z = 0; z < dv.blocks.z; z++)
+
+							s.batcher[lv].draw(cb);
+
+							for (auto& dt : s.draw_terrains[lv])
 							{
-								for (auto y = 0; y < dv.blocks.y; y++)
+								cb->bind_pipeline(get_material_pipeline(mode, mat_reses[dt.mat_id], "terrain"_h, 0, "DEPTH_ONLY"_h));
+								t->prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (dt.mat_id << 16) + dt.ins_id;
+								t->prm_fwd.push_constant(cb);
+								cb->draw(4, dt.blocks.x * dt.blocks.y, 0, 0);
+							}
+							for (auto& dv : s.draw_MCs[lv])
+							{
+								cb->bind_pipeline(get_material_pipeline(mode, mat_reses[dv.mat_id], "marching_cubes"_h, 0, "DEPTH_ONLY"_h));
+								t->prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (dv.mat_id << 16) + dv.ins_id;
+								for (auto z = 0; z < dv.blocks.z; z++)
 								{
-									for (auto x = 0; x < dv.blocks.x; x++)
+									for (auto y = 0; y < dv.blocks.y; y++)
 									{
-										t->prm_fwd.pc.mark_dirty_c("offset"_h).as<vec3>() = vec3(x, y, z);
-										t->prm_fwd.push_constant(cb);
-										// 128 / 4 = 32
-										cb->draw_mesh_tasks(uvec3(32 * 32 * 32, 1, 1));
+										for (auto x = 0; x < dv.blocks.x; x++)
+										{
+											t->prm_fwd.pc.mark_dirty_c("offset"_h).as<vec3>() = vec3(x, y, z);
+											t->prm_fwd.push_constant(cb);
+											// 128 / 4 = 32
+											cb->draw_mesh_tasks(uvec3(32 * 32 * 32, 1, 1));
+										}
 									}
 								}
 							}
+
+							cb->end_renderpass();
 						}
-
-						cb->end_renderpass();
+						cb->image_barrier(imgs_dir_shadow[i].get(), { 0U, 1U, 0U, csm_levels }, graphics::ImageLayoutShaderReadOnly);
 					}
-					cb->image_barrier(imgs_dir_shadow[i].get(), { 0U, 1U, 0U, csm_levels }, graphics::ImageLayoutShaderReadOnly);
-				}
 
-				set_blur_args(vec2(ShadowMapSize));
-				for (auto i = 0; i < n_dir_shadows; i++)
-				{
-					for (auto lv = 0U; lv < csm_levels; lv++)
+					set_blur_args(vec2(ShadowMapSize));
+					for (auto i = 0; i < n_dir_shadows; i++)
 					{
-						cb->image_barrier(img_dir_shadow_back.get(), { 0U, 1U, lv, 1 }, graphics::ImageLayoutAttachment);
-						cb->begin_renderpass(nullptr, img_dir_shadow_back->get_shader_write_dst(0, lv));
-						cb->bind_pipeline(pl_blur_h);
-						cb->bind_descriptor_set(0, imgs_dir_shadow[i]->get_shader_read_src(0, lv));
-						cb->draw(3, 1, 0, 0);
-						cb->end_renderpass();
-
-						cb->image_barrier(img_dir_shadow_back.get(), { 0U, 1U, lv, 1 }, graphics::ImageLayoutShaderReadOnly);
-						cb->begin_renderpass(nullptr, imgs_dir_shadow[i]->get_shader_write_dst(0, lv));
-						cb->bind_pipeline(pl_blur_v);
-						cb->bind_descriptor_set(0, img_dir_shadow_back->get_shader_read_src(0, lv));
-						cb->draw(3, 1, 0, 0);
-						cb->end_renderpass();
-					}
-					cb->image_barrier(imgs_dir_shadow[i].get(), { 0U, 1U, 0U, csm_levels }, graphics::ImageLayoutShaderReadOnly);
-				}
-
-				cb->set_viewport_and_scissor(Rect(vec2(0), ShadowMapSize / 2U));
-
-				cb->end_debug_label();
-			}
-			else
-				buf_instance.upload(cb);
-
-			cb->set_viewport_and_scissor(Rect(vec2(0), ext));
-
-			if (mode == RenderModeShaded || mode == RenderModeCameraLight)
-			{
-				// deferred shading pass
-				cb->begin_debug_label("Deferred Shading");
-				{
-					for (auto& b : gbuffer_batcher.batches)
-						b.second.draw_indices.clear();
-					draw_data.reset(PassGBuffer, CateMesh | CateTerrain | CateSDF | CateMarchingCubes);
-					for (auto& n : camera_culled_nodes)
-					{
-						if (n.second->entity->layer & camera->layer)
-							n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
-					}
-					gbuffer_batcher.collect(mode, draw_data, cb);
-
-					cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutAttachment);
-					cb->set_viewport_and_scissor(Rect(vec2(0), ext));
-
-					cb->begin_debug_label("GBuffer Pass");
-					{
-						auto& prm_gbuf = t->prm_gbuf;
-
-						cb->begin_renderpass(nullptr, t->fb_gbuf.get(),
-							{ vec4(0.f, 0.f, 0.f, 0.f),
-							vec4(0.f, 0.f, 0.f, 0.f),
-							vec4(0.f, 0.f, 0.f, 0.f),
-							vec4(0.f, 0.f, 0.f, 0.f),
-							vec4(1.f, 0.f, 0.f, 0.f) });
-
-						t->prm_gbuf.bind_dss(cb);
-						gbuffer_batcher.draw(cb);
-
-						for (auto& t : draw_data.terrains)
+						for (auto lv = 0U; lv < csm_levels; lv++)
 						{
-							cb->bind_pipeline(get_material_pipeline(mode, mat_reses[t.mat_id], "terrain"_h, 0, 0));
-							prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (t.mat_id << 16) + t.ins_id;
-							prm_gbuf.push_constant(cb);
-							cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
-						}
-						for (auto& s : draw_data.sdfs)
-						{
-							cb->bind_pipeline(get_material_pipeline(mode, mat_reses[s.mat_id], "sdf"_h, 0, 0));
-							prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (s.mat_id << 16) + s.ins_id;
-							prm_gbuf.push_constant(cb);
-							cb->draw(3, 1, 0, 0);
-						}
-						for (auto& v : draw_data.volumes)
-						{
-							cb->bind_pipeline(get_material_pipeline(mode, mat_reses[v.mat_id], "marching_cubes"_h, 0, 0));
-							prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (v.mat_id << 16) + v.ins_id;
-							for (auto z = 0; z < v.blocks.z; z++)
-							{
-								for (auto y = 0; y < v.blocks.y; y++)
-								{
-									for (auto x = 0; x < v.blocks.x; x++)
-									{
-										prm_gbuf.pc.mark_dirty_c("offset"_h).as<vec3>() = (vec3(x, y, z));
-										prm_gbuf.push_constant(cb);
-										// 128 / 4 = 32
-										cb->draw_mesh_tasks(uvec3(32 * 32 * 32, 1, 1));
-									}
-								}
-							}
-						}
-
-						cb->end_renderpass();
-					}
-					cb->end_debug_label();
-
-					cb->image_barrier(t->img_last_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
-					cb->image_barrier(t->img_last_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
-
-					cb->image_barrier(t->img_gbufferA.get(), {}, graphics::ImageLayoutShaderReadOnly);
-					cb->image_barrier(t->img_gbufferB.get(), {}, graphics::ImageLayoutShaderReadOnly);
-					cb->image_barrier(t->img_gbufferC.get(), {}, graphics::ImageLayoutShaderReadOnly);
-					cb->image_barrier(t->img_gbufferD.get(), {}, graphics::ImageLayoutShaderReadOnly);
-					cb->image_barrier(t->img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
-					cb->begin_renderpass(nullptr, t->img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-					t->prm_deferred.bind_dss(cb);
-					cb->bind_pipeline(get_deferred_pipeline());
-					cb->draw(3, 1, 0, 0);
-					cb->end_renderpass();
-				}
-				cb->end_debug_label();
-
-			}
-
-			// forward pass
-			cb->begin_debug_label("Forward Shading");
-			{
-				if (mode == RenderModeShaded || mode == RenderModeCameraLight)
-				{
-					cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
-					cb->begin_renderpass(nullptr, t->img_dst_ms->get_shader_write_dst());
-					cb->bind_pipeline(pl_blit);
-					cb->bind_descriptor_set(0, t->img_dst->get_shader_read_src(0, 0, sp_nearest));
-					cb->draw(3, 1, 0, 0);
-					cb->end_renderpass();
-
-					cb->image_barrier(t->img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
-					cb->begin_renderpass(nullptr, t->img_dep_ms->get_shader_write_dst());
-					cb->bind_pipeline(pl_blit_dep);
-					cb->bind_descriptor_set(0, t->img_dep->get_shader_read_src(0, 0, sp_nearest));
-					cb->draw(3, 1, 0, 0);
-					cb->end_renderpass();
-
-					for (auto& b : transparent_batcher.batches)
-						b.second.draw_indices.clear();
-					draw_data.reset(PassForward, CateMesh | CateGrassField | CateParticle);
-					for (auto& n : camera_culled_nodes)
-					{
-						if (n.second->entity->layer & camera->layer)
-							n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
-					}
-					transparent_batcher.collect(mode, draw_data, cb);
-
-					for (auto& p : draw_data.particles)
-					{
-						auto off = buf_particles.add(nullptr, p.ptcs.size());
-						for (auto i = 0; i < p.ptcs.size(); i++)
-						{
-							auto& src = p.ptcs[i];
-							auto dst = buf_particles.item(off + i);
-							dst.child("i_pos0"_h).as<vec3>() = src.pos0;
-							dst.child("i_pos1"_h).as<vec3>() = src.pos1;
-							dst.child("i_pos2"_h).as<vec3>() = src.pos2;
-							dst.child("i_pos3"_h).as<vec3>() = src.pos3;
-							dst.child("i_uv"_h).as<vec4>() = src.uv;
-							dst.child("i_col"_h).as<cvec4>() = src.col;
-							dst.child("i_time"_h).as<float>() = src.time;
-						}
-						auto& ptd = particles_draws.emplace_back();
-						ptd.mat_id = p.mat_id;
-						ptd.vtx_off = off;
-						ptd.vtx_cnt = p.ptcs.size();
-					}
-					buf_particles.upload(cb);
-					buf_particles.reset();
-
-					cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutAttachment);
-					cb->image_barrier(t->img_dep.get(), {}, graphics::ImageLayoutAttachment);
-					cb->begin_renderpass(nullptr, t->fb_fwd.get());
-					t->prm_fwd.bind_dss(cb);
-
-					transparent_batcher.draw(cb);
-
-					for (auto& dt : draw_data.terrains)
-					{
-						cb->bind_pipeline(get_material_pipeline(mode, mat_reses[dt.mat_id], "grass_field"_h, 0, 0));
-						t->prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (dt.mat_id << 16) + dt.ins_id;
-						t->prm_fwd.push_constant(cb);
-						cb->draw(4, dt.blocks.x * dt.blocks.y, 0, 0);
-					}
-
-					if (post_processing_enable && outline_pp_enable)
-					{
-						cb->end_renderpass();
-
-						cb->begin_debug_label("Outline PP");
-						auto n_levels = min((uint)std::bit_width(outline_pp_width), t->img_dep->n_levels);
-						if (n_levels > 0)
-						{
-							auto img_normal = t->img_gbufferB.get();
-
-							for (auto i = 1; i < n_levels; i++)
-							{
-								cb->image_barrier(t->img_dep.get(), {(uint)i - 1, 1, 0, 1}, graphics::ImageLayoutShaderReadOnly);
-								cb->set_viewport(Rect(vec2(0.f), vec2(t->img_dep->levels[i].extent)));
-								cb->begin_renderpass(nullptr, t->img_dep->get_shader_write_dst(i));
-								cb->bind_pipeline(pl_down_sample_depth);
-								cb->bind_descriptor_set(0, t->img_dep->get_shader_read_src(i - 1));
-								t->prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_dep->levels[i - 1].extent);
-								t->prm_box.push_constant(cb);
-								cb->draw(3, 1, 0, 0);
-								cb->end_renderpass();
-
-								cb->image_barrier(img_normal, { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
-								cb->set_viewport(Rect(vec2(0.f), vec2(img_normal->levels[i].extent)));
-								cb->begin_renderpass(nullptr, img_normal->get_shader_write_dst(i));
-								cb->bind_pipeline(pl_down_sample);
-								cb->bind_descriptor_set(0, img_normal->get_shader_read_src(i - 1));
-								t->prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_normal->levels[i - 1].extent);
-								t->prm_box.push_constant(cb);
-								cb->draw(3, 1, 0, 0);
-								cb->end_renderpass();
-							}
-
-							cb->image_barrier(t->img_dep.get(), {n_levels - 1, 1, 0, 1}, graphics::ImageLayoutShaderReadOnly);
-							cb->image_barrier(img_normal, {n_levels - 1, 1, 0, 1}, graphics::ImageLayoutShaderReadOnly);
-
-							cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(n_levels - 1));
-							cb->bind_pipeline(pl_outline_pp);
-							t->prm_outline_pp.set_ds(""_h, t->dss_outline_pp[n_levels - 1].get());
-							t->prm_outline_pp.bind_dss(cb);
-							t->prm_outline_pp.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_dep->levels[n_levels - 1].extent);
-							t->prm_outline_pp.pc.mark_dirty_c("near"_h).as<float>() = camera->zNear;
-							t->prm_outline_pp.pc.mark_dirty_c("far"_h).as<float>() = camera->zFar;
-							t->prm_outline_pp.pc.mark_dirty_c("depth_scale"_h).as<float>() = outline_pp_depth_scale;
-							t->prm_outline_pp.pc.mark_dirty_c("normal_scale"_h).as<float>() = outline_pp_normal_scale;
-							t->prm_outline_pp.pc.mark_dirty_c("color"_h).as<vec3>() = outline_pp_color;
-							t->prm_outline_pp.push_constant(cb);
+							cb->image_barrier(img_dir_shadow_back.get(), { 0U, 1U, lv, 1 }, graphics::ImageLayoutAttachment);
+							cb->begin_renderpass(nullptr, img_dir_shadow_back->get_shader_write_dst(0, lv));
+							cb->bind_pipeline(pl_blur_h);
+							cb->bind_descriptor_set(0, imgs_dir_shadow[i]->get_shader_read_src(0, lv));
 							cb->draw(3, 1, 0, 0);
 							cb->end_renderpass();
 
-							cb->set_viewport(Rect(vec2(0), ext));
-							cb->image_barrier(t->img_back0.get(), {n_levels - 1}, graphics::ImageLayoutShaderReadOnly);
-							cb->begin_renderpass(nullptr, t->img_dst->get_shader_write_dst());
-							cb->bind_pipeline(pl_blit_blend);
-							cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(n_levels - 1));
+							cb->image_barrier(img_dir_shadow_back.get(), { 0U, 1U, lv, 1 }, graphics::ImageLayoutShaderReadOnly);
+							cb->begin_renderpass(nullptr, imgs_dir_shadow[i]->get_shader_write_dst(0, lv));
+							cb->bind_pipeline(pl_blur_v);
+							cb->bind_descriptor_set(0, img_dir_shadow_back->get_shader_read_src(0, lv));
 							cb->draw(3, 1, 0, 0);
+							cb->end_renderpass();
+						}
+						cb->image_barrier(imgs_dir_shadow[i].get(), { 0U, 1U, 0U, csm_levels }, graphics::ImageLayoutShaderReadOnly);
+					}
+
+					cb->set_viewport_and_scissor(Rect(vec2(0), ShadowMapSize / 2U));
+
+					cb->end_debug_label();
+				}
+				else
+					buf_instance.upload(cb);
+
+				cb->set_viewport_and_scissor(Rect(vec2(0), ext));
+
+				if (mode == RenderModeShaded || mode == RenderModeCameraLight)
+				{
+					// deferred shading pass
+					cb->begin_debug_label("Deferred Shading");
+					{
+						for (auto& b : gbuffer_batcher.batches)
+							b.second.draw_indices.clear();
+						draw_data.reset(PassGBuffer, CateMesh | CateTerrain | CateSDF | CateMarchingCubes);
+						for (auto& n : camera_culled_nodes)
+						{
+							if (n.second->entity->layer & camera->layer)
+								n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+						}
+						gbuffer_batcher.collect(mode, draw_data, cb);
+
+						cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutAttachment);
+						cb->set_viewport_and_scissor(Rect(vec2(0), ext));
+
+						cb->begin_debug_label("GBuffer Pass");
+						{
+							auto& prm_gbuf = t->prm_gbuf;
+
+							cb->begin_renderpass(nullptr, t->fb_gbuf.get(),
+								{ vec4(0.f, 0.f, 0.f, 0.f),
+								vec4(0.f, 0.f, 0.f, 0.f),
+								vec4(0.f, 0.f, 0.f, 0.f),
+								vec4(0.f, 0.f, 0.f, 0.f),
+								vec4(1.f, 0.f, 0.f, 0.f) });
+
+							t->prm_gbuf.bind_dss(cb);
+							gbuffer_batcher.draw(cb);
+
+							for (auto& t : draw_data.terrains)
+							{
+								cb->bind_pipeline(get_material_pipeline(mode, mat_reses[t.mat_id], "terrain"_h, 0, 0));
+								prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (t.mat_id << 16) + t.ins_id;
+								prm_gbuf.push_constant(cb);
+								cb->draw(4, t.blocks.x * t.blocks.y, 0, 0);
+							}
+							for (auto& s : draw_data.sdfs)
+							{
+								cb->bind_pipeline(get_material_pipeline(mode, mat_reses[s.mat_id], "sdf"_h, 0, 0));
+								prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (s.mat_id << 16) + s.ins_id;
+								prm_gbuf.push_constant(cb);
+								cb->draw(3, 1, 0, 0);
+							}
+							for (auto& v : draw_data.volumes)
+							{
+								cb->bind_pipeline(get_material_pipeline(mode, mat_reses[v.mat_id], "marching_cubes"_h, 0, 0));
+								prm_gbuf.pc.mark_dirty_c("index"_h).as<uint>() = (v.mat_id << 16) + v.ins_id;
+								for (auto z = 0; z < v.blocks.z; z++)
+								{
+									for (auto y = 0; y < v.blocks.y; y++)
+									{
+										for (auto x = 0; x < v.blocks.x; x++)
+										{
+											prm_gbuf.pc.mark_dirty_c("offset"_h).as<vec3>() = (vec3(x, y, z));
+											prm_gbuf.push_constant(cb);
+											// 128 / 4 = 32
+											cb->draw_mesh_tasks(uvec3(32 * 32 * 32, 1, 1));
+										}
+									}
+								}
+							}
+
 							cb->end_renderpass();
 						}
 						cb->end_debug_label();
 
+						cb->image_barrier(t->img_last_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						cb->image_barrier(t->img_last_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
+
+						cb->image_barrier(t->img_gbufferA.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						cb->image_barrier(t->img_gbufferB.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						cb->image_barrier(t->img_gbufferC.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						cb->image_barrier(t->img_gbufferD.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						cb->image_barrier(t->img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, t->img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+						t->prm_deferred.bind_dss(cb);
+						cb->bind_pipeline(get_deferred_pipeline());
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+					}
+					cb->end_debug_label();
+
+				}
+
+				// forward pass
+				cb->begin_debug_label("Forward Shading");
+				{
+					if (mode == RenderModeShaded || mode == RenderModeCameraLight)
+					{
 						cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
 						cb->begin_renderpass(nullptr, t->img_dst_ms->get_shader_write_dst());
 						cb->bind_pipeline(pl_blit);
@@ -2752,446 +2656,569 @@ namespace flame
 						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 
+						cb->image_barrier(t->img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, t->img_dep_ms->get_shader_write_dst());
+						cb->bind_pipeline(pl_blit_dep);
+						cb->bind_descriptor_set(0, t->img_dep->get_shader_read_src(0, 0, sp_nearest));
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+
+						for (auto& b : transparent_batcher.batches)
+							b.second.draw_indices.clear();
+						draw_data.reset(PassForward, CateMesh | CateGrassField | CateParticle);
+						for (auto& n : camera_culled_nodes)
+						{
+							if (n.second->entity->layer & camera->layer)
+								n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+						}
+						transparent_batcher.collect(mode, draw_data, cb);
+
+						for (auto& p : draw_data.particles)
+						{
+							auto off = buf_particles.add(nullptr, p.ptcs.size());
+							for (auto i = 0; i < p.ptcs.size(); i++)
+							{
+								auto& src = p.ptcs[i];
+								auto dst = buf_particles.item(off + i);
+								dst.child("i_pos0"_h).as<vec3>() = src.pos0;
+								dst.child("i_pos1"_h).as<vec3>() = src.pos1;
+								dst.child("i_pos2"_h).as<vec3>() = src.pos2;
+								dst.child("i_pos3"_h).as<vec3>() = src.pos3;
+								dst.child("i_uv"_h).as<vec4>() = src.uv;
+								dst.child("i_col"_h).as<cvec4>() = src.col;
+								dst.child("i_time"_h).as<float>() = src.time;
+							}
+							auto& ptd = particles_draws.emplace_back();
+							ptd.mat_id = p.mat_id;
+							ptd.vtx_off = off;
+							ptd.vtx_cnt = p.ptcs.size();
+						}
+						buf_particles.upload(cb);
+						buf_particles.reset();
+
 						cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutAttachment);
 						cb->image_barrier(t->img_dep.get(), {}, graphics::ImageLayoutAttachment);
 						cb->begin_renderpass(nullptr, t->fb_fwd.get());
 						t->prm_fwd.bind_dss(cb);
-					}
 
-					cb->bind_vertex_buffer(buf_particles.buf.get(), 0);
-					for (auto& ptd : particles_draws)
-					{
-						cb->bind_pipeline(get_material_pipeline(mode, mat_reses[ptd.mat_id], "particle"_h, 0, 0));
-						cb->draw(ptd.vtx_cnt, 1, ptd.vtx_off, ptd.mat_id << 16);
-					}
-					particles_draws.clear();
+						transparent_batcher.draw(cb);
 
-					cb->end_renderpass();
-				}
-				else
-				{
-					draw_data.reset(PassPickUp, CateMesh); // use pick up to grap all meshes
-					for (auto& n : camera_culled_nodes)
-					{
-						if (n.second->entity->layer & camera->layer)
-							n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
-					}
-
-					cb->image_barrier(t->img_dst_ms.get(), {}, graphics::ImageLayoutAttachment);
-					cb->image_barrier(t->img_dep_ms.get(), {}, graphics::ImageLayoutAttachment);
-					cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutAttachment);
-					cb->image_barrier(t->img_dep.get(), {}, graphics::ImageLayoutAttachment);
-					cb->begin_renderpass(nullptr, t->fb_fwd_clear.get(), { vec4(0.5f, 0.55f, 0.7f, 1.f), vec4(1.f, 0.f, 0.f, 0.f) });
-					t->prm_fwd.bind_dss(cb);
-
-					for (auto& m : draw_data.meshes)
-					{
-						auto& mesh_res = mesh_reses[m.mesh_id];
-						auto& mat_res = mat_reses[m.mat_id];
-						if (!mesh_res.arm)
+						for (auto& dt : draw_data.terrains)
 						{
-							cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-							cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-							cb->bind_pipeline(get_material_pipeline(mode, mat_res, "mesh"_h, 0, "FORCE_FORWARD"_h));
-							cb->draw_indexed(mesh_res.idx_cnt, mesh_res.idx_off, mesh_res.vtx_off, 1, (m.mat_id << 16) + m.ins_id);
+							cb->bind_pipeline(get_material_pipeline(mode, mat_reses[dt.mat_id], "grass_field"_h, 0, 0));
+							t->prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = (dt.mat_id << 16) + dt.ins_id;
+							t->prm_fwd.push_constant(cb);
+							cb->draw(4, dt.blocks.x * dt.blocks.y, 0, 0);
 						}
-						else
+
+						if (post_processing_enable && outline_pp_enable)
 						{
-							cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
-							cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
-							cb->bind_pipeline(get_material_pipeline(mode, mat_res, "mesh"_h, "ARMATURE"_h, "FORCE_FORWARD"_h));
-							cb->draw_indexed(mesh_res.idx_cnt, mesh_res.idx_off, mesh_res.vtx_off, 1, (m.mat_id << 16) + m.ins_id);
+							cb->end_renderpass();
+
+							cb->begin_debug_label("Outline PP");
+							auto n_levels = min((uint)std::bit_width(outline_pp_width), t->img_dep->n_levels);
+							if (n_levels > 0)
+							{
+								auto img_normal = t->img_gbufferB.get();
+
+								for (auto i = 1; i < n_levels; i++)
+								{
+									cb->image_barrier(t->img_dep.get(), { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+									cb->set_viewport(Rect(vec2(0.f), vec2(t->img_dep->levels[i].extent)));
+									cb->begin_renderpass(nullptr, t->img_dep->get_shader_write_dst(i));
+									cb->bind_pipeline(pl_down_sample_depth);
+									cb->bind_descriptor_set(0, t->img_dep->get_shader_read_src(i - 1));
+									t->prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_dep->levels[i - 1].extent);
+									t->prm_box.push_constant(cb);
+									cb->draw(3, 1, 0, 0);
+									cb->end_renderpass();
+
+									cb->image_barrier(img_normal, { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+									cb->set_viewport(Rect(vec2(0.f), vec2(img_normal->levels[i].extent)));
+									cb->begin_renderpass(nullptr, img_normal->get_shader_write_dst(i));
+									cb->bind_pipeline(pl_down_sample);
+									cb->bind_descriptor_set(0, img_normal->get_shader_read_src(i - 1));
+									t->prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(img_normal->levels[i - 1].extent);
+									t->prm_box.push_constant(cb);
+									cb->draw(3, 1, 0, 0);
+									cb->end_renderpass();
+								}
+
+								cb->image_barrier(t->img_dep.get(), { n_levels - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+								cb->image_barrier(img_normal, { n_levels - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+
+								cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(n_levels - 1));
+								cb->bind_pipeline(pl_outline_pp);
+								t->prm_outline_pp.set_ds(""_h, t->dss_outline_pp[n_levels - 1].get());
+								t->prm_outline_pp.bind_dss(cb);
+								t->prm_outline_pp.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_dep->levels[n_levels - 1].extent);
+								t->prm_outline_pp.pc.mark_dirty_c("near"_h).as<float>() = camera->zNear;
+								t->prm_outline_pp.pc.mark_dirty_c("far"_h).as<float>() = camera->zFar;
+								t->prm_outline_pp.pc.mark_dirty_c("depth_scale"_h).as<float>() = outline_pp_depth_scale;
+								t->prm_outline_pp.pc.mark_dirty_c("normal_scale"_h).as<float>() = outline_pp_normal_scale;
+								t->prm_outline_pp.pc.mark_dirty_c("color"_h).as<vec3>() = outline_pp_color;
+								t->prm_outline_pp.push_constant(cb);
+								cb->draw(3, 1, 0, 0);
+								cb->end_renderpass();
+
+								cb->set_viewport(Rect(vec2(0), ext));
+								cb->image_barrier(t->img_back0.get(), { n_levels - 1 }, graphics::ImageLayoutShaderReadOnly);
+								cb->begin_renderpass(nullptr, t->img_dst->get_shader_write_dst());
+								cb->bind_pipeline(pl_blit_blend);
+								cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(n_levels - 1));
+								cb->draw(3, 1, 0, 0);
+								cb->end_renderpass();
+							}
+							cb->end_debug_label();
+
+							cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+							cb->begin_renderpass(nullptr, t->img_dst_ms->get_shader_write_dst());
+							cb->bind_pipeline(pl_blit);
+							cb->bind_descriptor_set(0, t->img_dst->get_shader_read_src(0, 0, sp_nearest));
+							cb->draw(3, 1, 0, 0);
+							cb->end_renderpass();
+
+							cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutAttachment);
+							cb->image_barrier(t->img_dep.get(), {}, graphics::ImageLayoutAttachment);
+							cb->begin_renderpass(nullptr, t->fb_fwd.get());
+							t->prm_fwd.bind_dss(cb);
 						}
-					}
 
-					cb->end_renderpass();
-				}
-			}
-			cb->end_debug_label();
+						cb->bind_vertex_buffer(buf_particles.buf.get(), 0, buf_particles.item_type->size);
+						for (auto& ptd : particles_draws)
+						{
+							cb->bind_pipeline(get_material_pipeline(mode, mat_reses[ptd.mat_id], "particle"_h, 0, 0));
+							cb->draw(ptd.vtx_cnt, 1, ptd.vtx_off, ptd.mat_id << 16);
+						}
+						particles_draws.clear();
 
-			if (mode == RenderModeShaded)
-			{
-				cb->begin_debug_label("Store Last Frame");
-
-				cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
-				cb->image_barrier(t->img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
-
-				cb->begin_renderpass(nullptr, t->img_last_dst->get_shader_write_dst());
-				cb->bind_pipeline(pl_blit);
-				cb->bind_descriptor_set(0, t->img_dst->get_shader_read_src(0, 0, sp_nearest));
-				cb->draw(3, 1, 0, 0);
-				cb->end_renderpass();
-
-				cb->begin_renderpass(nullptr, t->img_last_dep->get_shader_write_dst());
-				cb->bind_pipeline(pl_blit_dep);
-				cb->bind_descriptor_set(0, t->img_dep->get_shader_read_src(0, 0, sp_nearest));
-				cb->draw(3, 1, 0, 0);
-				cb->end_renderpass();
-
-				cb->end_debug_label();
-			}
-
-			auto draw_object = [&](const ObjectDrawData& d, const cvec4& color) {
-				switch (d.type)
-				{
-				case "mesh"_h:
-				{
-					auto& mesh_r = mesh_reses[d.res_id];
-
-					t->prm_fwd.bind_dss(cb);
-					t->prm_fwd.pc.mark_dirty_c("f"_h).as<vec4>() = vec4(color) / 255.f;
-					t->prm_fwd.push_constant(cb);
-
-					if (!mesh_r.arm)
-					{
-						cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
-						cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
-						cb->bind_pipeline(pl_mesh_plain);
-						cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, d.ins_id);
+						cb->end_renderpass();
 					}
 					else
 					{
-						cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
-						cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
-						cb->bind_pipeline(pl_mesh_arm_plain);
-						cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, d.ins_id);
-					}
-				}
-					break;
-				case "terrain"_h:
-				{
-					auto blocks = buf_instance.child("terrains"_h).item(d.ins_id).child("blocks"_h).as<uvec2>();
+						draw_data.reset(PassPickUp, CateMesh); // use pick up to grap all meshes
+						for (auto& n : camera_culled_nodes)
+						{
+							if (n.second->entity->layer & camera->layer)
+								n.second->drawers.call<DrawData&, cCameraPtr>(draw_data, camera);
+						}
 
-					t->prm_fwd.bind_dss(cb);
-					t->prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = d.ins_id;
-					t->prm_fwd.pc.mark_dirty_c("f"_h).as<vec4>() = vec4(color) / 255.f;
-					t->prm_fwd.push_constant(cb);
-					cb->bind_pipeline(pl_terrain_plain);
-					cb->draw(4, blocks.x * blocks.y, 0, 0);
-					cb->end_renderpass();
-				}
-					break;
-				}
-			};
+						cb->image_barrier(t->img_dst_ms.get(), {}, graphics::ImageLayoutAttachment);
+						cb->image_barrier(t->img_dep_ms.get(), {}, graphics::ImageLayoutAttachment);
+						cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutAttachment);
+						cb->image_barrier(t->img_dep.get(), {}, graphics::ImageLayoutAttachment);
+						cb->begin_renderpass(nullptr, t->fb_fwd_clear.get(), { vec4(0.5f, 0.55f, 0.7f, 1.f), vec4(1.f, 0.f, 0.f, 0.f) });
+						t->prm_fwd.bind_dss(cb);
 
-			// post processing
-			if ((mode == RenderModeShaded || mode == RenderModeCameraLight) && post_processing_enable)
-			{
-				cb->begin_debug_label("Post Processing");
+						for (auto& m : draw_data.meshes)
+						{
+							auto& mesh_res = mesh_reses[m.mesh_id];
+							auto& mat_res = mat_reses[m.mat_id];
+							if (!mesh_res.arm)
+							{
+								cb->bind_vertex_buffer(buf_vtx.buf.get(), 0, buf_vtx.item_type->size);
+								cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+								cb->bind_pipeline(get_material_pipeline(mode, mat_res, "mesh"_h, 0, "FORCE_FORWARD"_h));
+								cb->draw_indexed(mesh_res.idx_cnt, mesh_res.idx_off, mesh_res.vtx_off, 1, (m.mat_id << 16) + m.ins_id);
+							}
+							else
+							{
+								cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0, buf_vtx_arm.item_type->size);
+								cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+								cb->bind_pipeline(get_material_pipeline(mode, mat_res, "mesh"_h, "ARMATURE"_h, "FORCE_FORWARD"_h));
+								cb->draw_indexed(mesh_res.idx_cnt, mesh_res.idx_off, mesh_res.vtx_off, 1, (m.mat_id << 16) + m.ins_id);
+							}
+						}
 
-				if (ssao_enable)
-				{
-					cb->begin_debug_label("SSAO");
-					// TODO
-					cb->end_debug_label();
-				}
-
-				if (bloom_enable)
-				{
-					cb->begin_debug_label("Bloom");
-
-					cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
-					cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst());
-					cb->bind_pipeline(pl_bloom_bright);
-					cb->bind_descriptor_set(0, t->img_dst->get_shader_read_src(0, 0, sp_nearest));
-					t->prm_bloom.pc.mark_dirty_c("white_point"_h).as<float>() = white_point;
-					t->prm_bloom.push_constant(cb);
-					cb->draw(3, 1, 0, 0);
-					cb->end_renderpass();
-
-					for (auto i = 1; i < t->img_back0->n_levels; i++)
-					{
-						cb->image_barrier(t->img_back0.get(), { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
-						cb->set_viewport(Rect(vec2(0.f), vec2(t->img_back0->levels[i].extent)));
-						cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(i));
-						cb->bind_pipeline(pl_down_sample);
-						cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(i - 1));
-						t->prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_back0->levels[i - 1].extent);
-						t->prm_box.push_constant(cb);
-						cb->draw(3, 1, 0, 0);
 						cb->end_renderpass();
 					}
-					for (auto i = (int)t->img_back0->n_levels - 1; i > 1; i--)
-					{
-						cb->image_barrier(t->img_back0.get(), { (uint)i, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
-						cb->set_viewport(Rect(vec2(0.f), vec2(t->img_back0->levels[i - 1].extent)));
-						cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(i - 1));
-						cb->bind_pipeline(pl_up_sample);
-						cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(i));
-						t->prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_back0->levels[i].extent);
-						t->prm_box.push_constant(cb);
-						cb->draw(3, 1, 0, 0);
-						cb->end_renderpass();
-					}
-
-					cb->set_viewport(Rect(vec2(0), ext));
-					cb->image_barrier(t->img_back0.get(), { 1U }, graphics::ImageLayoutShaderReadOnly);
-					cb->begin_renderpass(nullptr, t->img_dst->get_shader_write_dst());
-					cb->bind_pipeline(pl_up_sample);
-					cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(1));
-					t->prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_back0->levels[1].extent);
-					t->prm_box.push_constant(cb);
-					cb->draw(3, 1, 0, 0);
-					cb->end_renderpass();
-
-					cb->end_debug_label();
 				}
+				cb->end_debug_label();
 
-				if (dof_enable)
+				if (mode == RenderModeShaded)
 				{
-					cb->begin_debug_label("DOF");
+					cb->begin_debug_label("Store Last Frame");
 
 					cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
 					cb->image_barrier(t->img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
-					cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst());
-					cb->bind_pipeline(pl_dof);
-					t->prm_dof.bind_dss(cb);
-					t->prm_dof.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_dst->extent);
-					t->prm_dof.pc.mark_dirty_c("zFar"_h).as<float>() = camera->zFar;
-					t->prm_dof.pc.mark_dirty_c("focus_point"_h).as<float>() = dof_focus_point;
-					t->prm_dof.pc.mark_dirty_c("focus_scale"_h).as<float>() = dof_focus_scale;
-					t->prm_dof.push_constant(cb);
+
+					cb->begin_renderpass(nullptr, t->img_last_dst->get_shader_write_dst());
+					cb->bind_pipeline(pl_blit);
+					cb->bind_descriptor_set(0, t->img_dst->get_shader_read_src(0, 0, sp_nearest));
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 
-					cb->image_barrier(t->img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
-					cb->begin_renderpass(nullptr, t->img_dst->get_shader_write_dst());
-					cb->bind_pipeline(pl_blit);
-					cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(0, 0, sp_nearest));
+					cb->begin_renderpass(nullptr, t->img_last_dep->get_shader_write_dst());
+					cb->bind_pipeline(pl_blit_dep);
+					cb->bind_descriptor_set(0, t->img_dep->get_shader_read_src(0, 0, sp_nearest));
 					cb->draw(3, 1, 0, 0);
 					cb->end_renderpass();
 
 					cb->end_debug_label();
 				}
 
-				cb->begin_debug_label("Outline (box)");
-				{
-					for (auto& od : outline_groups)
+				auto draw_object = [&](const ObjectDrawData& d, const cvec4& color) {
+					switch (d.type)
 					{
-						if (od.mode != OutlineBox)
-							continue;
-						auto n_levels = min((uint)std::bit_width(od.width), t->img_back0->n_levels);
-						if (n_levels > 0)
+					case "mesh"_h:
+					{
+						auto& mesh_r = mesh_reses[d.res_id];
+
+						t->prm_fwd.bind_dss(cb);
+						t->prm_fwd.pc.mark_dirty_c("f"_h).as<vec4>() = vec4(color) / 255.f;
+						t->prm_fwd.push_constant(cb);
+
+						if (!mesh_r.arm)
 						{
+							cb->bind_vertex_buffer(buf_vtx.buf.get(), 0, buf_vtx.item_type->size);
+							cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
+							cb->bind_pipeline(pl_mesh_plain);
+							cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, d.ins_id);
+						}
+						else
+						{
+							cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0, buf_vtx_arm.item_type->size);
+							cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
+							cb->bind_pipeline(pl_mesh_arm_plain);
+							cb->draw_indexed(mesh_r.idx_cnt, mesh_r.idx_off, mesh_r.vtx_off, 1, d.ins_id);
+						}
+					}
+					break;
+					case "terrain"_h:
+					{
+						auto blocks = buf_instance.child("terrains"_h).item(d.ins_id).child("blocks"_h).as<uvec2>();
+
+						t->prm_fwd.bind_dss(cb);
+						t->prm_fwd.pc.mark_dirty_c("index"_h).as<uint>() = d.ins_id;
+						t->prm_fwd.pc.mark_dirty_c("f"_h).as<vec4>() = vec4(color) / 255.f;
+						t->prm_fwd.push_constant(cb);
+						cb->bind_pipeline(pl_terrain_plain);
+						cb->draw(4, blocks.x * blocks.y, 0, 0);
+						cb->end_renderpass();
+					}
+					break;
+					}
+					};
+
+				// post processing
+				if ((mode == RenderModeShaded || mode == RenderModeCameraLight) && post_processing_enable)
+				{
+					cb->begin_debug_label("Post Processing");
+
+					if (ssao_enable)
+					{
+						cb->begin_debug_label("SSAO");
+						// TODO
+						cb->end_debug_label();
+					}
+
+					if (bloom_enable)
+					{
+						cb->begin_debug_label("Bloom");
+
+						cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst());
+						cb->bind_pipeline(pl_bloom_bright);
+						cb->bind_descriptor_set(0, t->img_dst->get_shader_read_src(0, 0, sp_nearest));
+						t->prm_bloom.pc.mark_dirty_c("white_point"_h).as<float>() = white_point;
+						t->prm_bloom.push_constant(cb);
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+
+						for (auto i = 1; i < t->img_back0->n_levels; i++)
+						{
+							cb->image_barrier(t->img_back0.get(), { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+							cb->set_viewport(Rect(vec2(0.f), vec2(t->img_back0->levels[i].extent)));
+							cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(i));
+							cb->bind_pipeline(pl_down_sample);
+							cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(i - 1));
+							t->prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_back0->levels[i - 1].extent);
+							t->prm_box.push_constant(cb);
+							cb->draw(3, 1, 0, 0);
+							cb->end_renderpass();
+						}
+						for (auto i = (int)t->img_back0->n_levels - 1; i > 1; i--)
+						{
+							cb->image_barrier(t->img_back0.get(), { (uint)i, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+							cb->set_viewport(Rect(vec2(0.f), vec2(t->img_back0->levels[i - 1].extent)));
+							cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(i - 1));
+							cb->bind_pipeline(pl_up_sample);
+							cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(i));
+							t->prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_back0->levels[i].extent);
+							t->prm_box.push_constant(cb);
+							cb->draw(3, 1, 0, 0);
+							cb->end_renderpass();
+						}
+
+						cb->set_viewport(Rect(vec2(0), ext));
+						cb->image_barrier(t->img_back0.get(), { 1U }, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, t->img_dst->get_shader_write_dst());
+						cb->bind_pipeline(pl_up_sample);
+						cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(1));
+						t->prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_back0->levels[1].extent);
+						t->prm_box.push_constant(cb);
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+
+						cb->end_debug_label();
+					}
+
+					if (dof_enable)
+					{
+						cb->begin_debug_label("DOF");
+
+						cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						cb->image_barrier(t->img_dep.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst());
+						cb->bind_pipeline(pl_dof);
+						t->prm_dof.bind_dss(cb);
+						t->prm_dof.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_dst->extent);
+						t->prm_dof.pc.mark_dirty_c("zFar"_h).as<float>() = camera->zFar;
+						t->prm_dof.pc.mark_dirty_c("focus_point"_h).as<float>() = dof_focus_point;
+						t->prm_dof.pc.mark_dirty_c("focus_scale"_h).as<float>() = dof_focus_scale;
+						t->prm_dof.push_constant(cb);
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+
+						cb->image_barrier(t->img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, t->img_dst->get_shader_write_dst());
+						cb->bind_pipeline(pl_blit);
+						cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(0, 0, sp_nearest));
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+
+						cb->end_debug_label();
+					}
+
+					cb->begin_debug_label("Outline (box)");
+					{
+						for (auto& od : outline_groups)
+						{
+							if (od.mode != OutlineBox)
+								continue;
+							auto n_levels = min((uint)std::bit_width(od.width), t->img_back0->n_levels);
+							if (n_levels > 0)
+							{
+								cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+								for (auto& d : od.draws)
+									draw_object(d, od.color);
+								cb->end_renderpass();
+
+								for (auto i = 1; i < n_levels; i++)
+								{
+									cb->image_barrier(t->img_back0.get(), { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+									cb->set_viewport(Rect(vec2(0.f), vec2(t->img_back0->levels[i].extent)));
+									cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(i, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+									cb->bind_pipeline(pl_down_sample);
+									cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(i - 1));
+									t->prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_back0->levels[i - 1].extent);
+									t->prm_box.push_constant(cb);
+									cb->draw(3, 1, 0, 0);
+									cb->end_renderpass();
+								}
+								for (auto i = (int)n_levels - 1; i > 0; i--)
+								{
+									cb->image_barrier(t->img_back0.get(), { (uint)i, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
+									cb->set_viewport(Rect(vec2(0.f), vec2(t->img_back0->levels[i - 1].extent)));
+									cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(i - 1, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
+									cb->bind_pipeline(pl_up_sample);
+									cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(i));
+									t->prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_back0->levels[i].extent);
+									t->prm_box.push_constant(cb);
+									cb->draw(3, 1, 0, 0);
+									cb->end_renderpass();
+								}
+
+								cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+								for (auto& d : od.draws)
+									draw_object(d, cvec4(0));
+								cb->end_renderpass();
+
+								cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutAttachment);
+								cb->image_barrier(t->img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
+								cb->begin_renderpass(nullptr, t->img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
+								cb->bind_pipeline(pl_add);
+								cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(0));
+								cb->draw(3, 1, 0, 0);
+								cb->end_renderpass();
+							}
+						}
+					}
+					cb->end_debug_label();
+
+					if (tone_mapping_enable)
+					{
+						cb->begin_debug_label("Tone Mapping");
+
+						auto& prm_luma = t->prm_luma;
+						cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutGeneral);
+						prm_luma.bind_dss(cb);
+						const auto min_log_luma = -5.f;
+						const auto max_log_luma = +5.f;
+						prm_luma.pc.child("min_log_luma"_h).as<float>() = min_log_luma;
+						prm_luma.pc.child("log_luma_range"_h).as<float>() = max_log_luma - min_log_luma;
+						prm_luma.pc.child("time_coeff"_h).as<float>() = 1.0f;
+						prm_luma.pc.child("num_pixels"_h).as<int>() = ext.x * ext.y;
+						prm_luma.pc.mark_dirty();
+						prm_luma.push_constant(cb);
+						cb->bind_pipeline(pl_luma_hist);
+						cb->dispatch(uvec3(ceil(ext.x / 16), ceil(ext.y / 16), 1));
+						cb->buffer_barrier(buf_luma.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite,
+							graphics::AccessShaderRead | graphics::AccessShaderWrite,
+							graphics::PipelineStageCompShader, graphics::PipelineStageCompShader);
+						cb->bind_pipeline(pl_luma_avg);
+						cb->dispatch(uvec3(256, 1, 1));
+						cb->buffer_barrier(buf_luma.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite,
+							graphics::AccessHostRead,
+							graphics::PipelineStageCompShader, graphics::PipelineStageHost);
+
+						auto avg_luma = buf_luma.child("avg"_h);
+						cb->copy_buffer(buf_luma.buf.get(), buf_luma.stag.get(), graphics::BufferCopy(buf_luma.offset(avg_luma), avg_luma.type->size));
+						cb->buffer_barrier(buf_luma.buf.get(), graphics::AccessHostRead,
+							graphics::AccessShaderRead | graphics::AccessShaderWrite,
+							graphics::PipelineStageHost, graphics::PipelineStageCompShader);
+
+						cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst());
+						cb->bind_pipeline(pl_blit);
+						cb->bind_descriptor_set(0, t->img_dst->get_shader_read_src(0, 0, sp_nearest));
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+
+						cb->image_barrier(t->img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, t->img_back1->get_shader_write_dst());
+						cb->bind_pipeline(pl_tone);
+						t->prm_tone.bind_dss(cb);
+						t->prm_tone.pc.child("average_luminance"_h).as<float>() = *(float*)avg_luma.data;
+						t->prm_tone.pc.child("white_point"_h).as<float>() = white_point;
+						t->prm_tone.pc.child("one_over_gamma"_h).as<float>() = 1.f / gamma;
+						t->prm_tone.pc.mark_dirty();
+						t->prm_tone.push_constant(cb);
+						cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(0, 0, sp_nearest));
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+
+						cb->image_barrier(t->img_back1.get(), {}, graphics::ImageLayoutShaderReadOnly);
+						cb->begin_renderpass(nullptr, t->img_dst->get_shader_write_dst());
+						cb->bind_pipeline(pl_fxaa);
+						t->prm_fxaa.pc.child("pxsz"_h).as<vec2>() = 1.f / (vec2)t->img_dst->extent;
+						t->prm_fxaa.pc.mark_dirty();
+						t->prm_fxaa.push_constant(cb);
+						cb->bind_descriptor_set(0, t->img_back1->get_shader_read_src());
+						cb->draw(3, 1, 0, 0);
+						cb->end_renderpass();
+
+						cb->end_debug_label();
+					}
+
+					cb->end_debug_label();
+				}
+
+				if (mode == RenderModeShaded || mode == RenderModeCameraLight)
+				{
+					cb->begin_debug_label("Outline (max)");
+					{
+						for (auto& od : outline_groups)
+						{
+							if (od.mode != OutlineMax)
+								continue;
 							cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
 							for (auto& d : od.draws)
 								draw_object(d, od.color);
 							cb->end_renderpass();
 
-							for (auto i = 1; i < n_levels; i++)
-							{
-								cb->image_barrier(t->img_back0.get(), { (uint)i - 1, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
-								cb->set_viewport(Rect(vec2(0.f), vec2(t->img_back0->levels[i].extent)));
-								cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(i, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
-								cb->bind_pipeline(pl_down_sample);
-								cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(i - 1));
-								t->prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_back0->levels[i - 1].extent);
-								t->prm_box.push_constant(cb);
-								cb->draw(3, 1, 0, 0);
-								cb->end_renderpass();
-							}
-							for (auto i = (int)n_levels - 1; i > 0; i--)
-							{
-								cb->image_barrier(t->img_back0.get(), { (uint)i, 1, 0, 1 }, graphics::ImageLayoutShaderReadOnly);
-								cb->set_viewport(Rect(vec2(0.f), vec2(t->img_back0->levels[i - 1].extent)));
-								cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(i - 1, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
-								cb->bind_pipeline(pl_up_sample);
-								cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(i));
-								t->prm_box.pc.mark_dirty_c("pxsz"_h).as<vec2>() = 1.f / vec2(t->img_back0->levels[i].extent);
-								t->prm_box.push_constant(cb);
-								cb->draw(3, 1, 0, 0);
-								cb->end_renderpass();
-							}
+							const auto w = od.width;
+							auto len = w * 2 + 1;
+							t->prm_blur.pc.child("off"_h).as<int>() = -w;
+							t->prm_blur.pc.child("len"_h).as<int>() = len;
+							t->prm_blur.pc.child("pxsz"_h).as<vec2>() = 1.f / (vec2)t->img_back0->extent;
+							memcpy(t->prm_blur.pc.child("weights"_h).data, get_gauss_blur_weights(len), sizeof(float) * len);
+							t->prm_blur.pc.mark_dirty();
+							t->prm_blur.push_constant(cb);
+
+							cb->image_barrier(t->img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
+							cb->begin_renderpass(nullptr, t->img_back1->get_shader_write_dst());
+							cb->bind_pipeline(pl_blur_max_h);
+							cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src());
+							cb->draw(3, 1, 0, 0);
+							cb->end_renderpass();
+
+							cb->image_barrier(t->img_back1.get(), {}, graphics::ImageLayoutShaderReadOnly);
+							cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst());
+							cb->bind_pipeline(pl_blur_max_v);
+							cb->bind_descriptor_set(0, t->img_back1->get_shader_read_src());
+							cb->draw(3, 1, 0, 0);
+							cb->end_renderpass();
 
 							cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
 							for (auto& d : od.draws)
 								draw_object(d, cvec4(0));
 							cb->end_renderpass();
 
-							cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutAttachment);
 							cb->image_barrier(t->img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
 							cb->begin_renderpass(nullptr, t->img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-							cb->bind_pipeline(pl_add);
-							cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(0));
+							cb->bind_pipeline(pl_blend);
+							cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src());
 							cb->draw(3, 1, 0, 0);
 							cb->end_renderpass();
 						}
 					}
-				}
-				cb->end_debug_label();
-
-				if (tone_mapping_enable)
-				{
-					cb->begin_debug_label("Tone Mapping");
-
-					auto& prm_luma = t->prm_luma;
-					cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutGeneral);
-					prm_luma.bind_dss(cb);
-					const auto min_log_luma = -5.f;
-					const auto max_log_luma = +5.f;
-					prm_luma.pc.child("min_log_luma"_h).as<float>() = min_log_luma;
-					prm_luma.pc.child("log_luma_range"_h).as<float>() = max_log_luma - min_log_luma;
-					prm_luma.pc.child("time_coeff"_h).as<float>() = 1.0f;
-					prm_luma.pc.child("num_pixels"_h).as<int>() = ext.x * ext.y;
-					prm_luma.pc.mark_dirty();
-					prm_luma.push_constant(cb);
-					cb->bind_pipeline(pl_luma_hist);
-					cb->dispatch(uvec3(ceil(ext.x / 16), ceil(ext.y / 16), 1));
-					cb->buffer_barrier(buf_luma.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite,
-						graphics::AccessShaderRead | graphics::AccessShaderWrite,
-						graphics::PipelineStageCompShader, graphics::PipelineStageCompShader);
-					cb->bind_pipeline(pl_luma_avg);
-					cb->dispatch(uvec3(256, 1, 1));
-					cb->buffer_barrier(buf_luma.buf.get(), graphics::AccessShaderRead | graphics::AccessShaderWrite,
-						graphics::AccessHostRead,
-						graphics::PipelineStageCompShader, graphics::PipelineStageHost);
-
-					auto avg_luma = buf_luma.child("avg"_h);
-					cb->copy_buffer(buf_luma.buf.get(), buf_luma.stag.get(), graphics::BufferCopy(buf_luma.offset(avg_luma), avg_luma.type->size));
-					cb->buffer_barrier(buf_luma.buf.get(), graphics::AccessHostRead,
-						graphics::AccessShaderRead | graphics::AccessShaderWrite,
-						graphics::PipelineStageHost, graphics::PipelineStageCompShader);
-
-					cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutShaderReadOnly);
-					cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst());
-					cb->bind_pipeline(pl_blit);
-					cb->bind_descriptor_set(0, t->img_dst->get_shader_read_src(0, 0, sp_nearest));
-					cb->draw(3, 1, 0, 0);
-					cb->end_renderpass();
-
-					cb->image_barrier(t->img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
-					cb->begin_renderpass(nullptr, t->img_back1->get_shader_write_dst());
-					cb->bind_pipeline(pl_tone);
-					t->prm_tone.bind_dss(cb);
-					t->prm_tone.pc.child("average_luminance"_h).as<float>() = *(float*)avg_luma.data;
-					t->prm_tone.pc.child("white_point"_h).as<float>() = white_point;
-					t->prm_tone.pc.child("one_over_gamma"_h).as<float>() = 1.f / gamma;
-					t->prm_tone.pc.mark_dirty();
-					t->prm_tone.push_constant(cb);
-					cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src(0, 0, sp_nearest));
-					cb->draw(3, 1, 0, 0);
-					cb->end_renderpass();
-
-					cb->image_barrier(t->img_back1.get(), {}, graphics::ImageLayoutShaderReadOnly);
-					cb->begin_renderpass(nullptr, t->img_dst->get_shader_write_dst());
-					cb->bind_pipeline(pl_fxaa);
-					t->prm_fxaa.pc.child("pxsz"_h).as<vec2>() = 1.f / (vec2)t->img_dst->extent;
-					t->prm_fxaa.pc.mark_dirty();
-					t->prm_fxaa.push_constant(cb);
-					cb->bind_descriptor_set(0, t->img_back1->get_shader_read_src());
-					cb->draw(3, 1, 0, 0);
-					cb->end_renderpass();
-
 					cb->end_debug_label();
 				}
 
-				cb->end_debug_label();
-			}
-
-			if (mode == RenderModeShaded || mode == RenderModeCameraLight)
-			{
-				cb->begin_debug_label("Outline (max)");
+				if (mode != RenderModeSimple)
 				{
-					for (auto& od : outline_groups)
+					cb->begin_debug_label("Primitives");
 					{
-						if (od.mode != OutlineMax)
-							continue;
-						cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadClear), { vec4(0.f) });
-						for (auto& d : od.draws)
-							draw_object(d, od.color);
-						cb->end_renderpass();
-
-						const auto w = od.width;
-						auto len = w * 2 + 1;
-						t->prm_blur.pc.child("off"_h).as<int>() = -w;
-						t->prm_blur.pc.child("len"_h).as<int>() = len;
-						t->prm_blur.pc.child("pxsz"_h).as<vec2>() = 1.f / (vec2)t->img_back0->extent;
-						memcpy(t->prm_blur.pc.child("weights"_h).data, get_gauss_blur_weights(len), sizeof(float) * len);
-						t->prm_blur.pc.mark_dirty();
-						t->prm_blur.push_constant(cb);
-
-						cb->image_barrier(t->img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
-						cb->begin_renderpass(nullptr, t->img_back1->get_shader_write_dst());
-						cb->bind_pipeline(pl_blur_max_h);
-						cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src());
-						cb->draw(3, 1, 0, 0);
-						cb->end_renderpass();
-
-						cb->image_barrier(t->img_back1.get(), {}, graphics::ImageLayoutShaderReadOnly);
-						cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst());
-						cb->bind_pipeline(pl_blur_max_v);
-						cb->bind_descriptor_set(0, t->img_back1->get_shader_read_src());
-						cb->draw(3, 1, 0, 0);
-						cb->end_renderpass();
-
-						cb->begin_renderpass(nullptr, t->img_back0->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-						for (auto& d : od.draws)
-							draw_object(d, cvec4(0));
-						cb->end_renderpass();
-
-						cb->image_barrier(t->img_back0.get(), {}, graphics::ImageLayoutShaderReadOnly);
-						cb->begin_renderpass(nullptr, t->img_dst->get_shader_write_dst(0, 0, graphics::AttachmentLoadLoad));
-						cb->bind_pipeline(pl_blend);
-						cb->bind_descriptor_set(0, t->img_back0->get_shader_read_src());
-						cb->draw(3, 1, 0, 0);
-						cb->end_renderpass();
-					}
-				}
-				cb->end_debug_label();
-			}
-
-			if (mode != RenderModeSimple)
-			{
-				cb->begin_debug_label("Primitives");
-				{
-					if (!csm_debug_draws.empty())
-					{
-						for (auto& d : csm_debug_draws)
-							draw_primitives(d.type, d.points.data(), d.points.size(), d.color, d.depth_test);
-					}
-
-					buf_primitives.upload(cb);
-					buf_primitives.reset();
-					cb->image_barrier(t->img_dep.get(), {}, graphics::ImageLayoutAttachment);
-
-					auto& prm_plain = t->prm_plain;
-					cb->begin_renderpass(nullptr, t->fb_primitive.get());
-					cb->bind_vertex_buffer(buf_primitives.buf.get(), 0);
-					cb->bind_pipeline_layout(prm_plain.pll);
-					prm_plain.pc.mark_dirty_c("mvp"_h).as<mat4>() = camera->proj_view_mat;
-					prm_plain.push_constant(cb);
-					{
-						auto vtx_off = 0;
-						for (auto& d : primitives_draws)
+						if (!csm_debug_draws.empty())
 						{
-							prm_plain.pc.mark_dirty_c("col"_h).as<vec4>() = vec4(d.color) / 255.f;
-							prm_plain.push_constant(cb);
-							switch (d.type)
-							{
-							case PrimitivePointList:
-								cb->bind_pipeline(d.depth_test ? pl_point3d_dt : pl_point3d);
-								break;
-							case PrimitiveLineList:
-								cb->bind_pipeline(d.depth_test ? pl_line3d_dt : pl_line3d);
-								break;
-							case PrimitiveLineStrip:
-								cb->bind_pipeline(d.depth_test ? pl_line_strip3d_dt : pl_line_strip3d);
-								break;
-							case PrimitiveTriangleList:
-								cb->bind_pipeline(d.depth_test ? pl_triangle3d_dt : pl_triangle3d);
-								break;
-							}
-							cb->draw(d.vtx_cnt, 1, vtx_off, 0);
-							vtx_off += d.vtx_cnt;
+							for (auto& d : csm_debug_draws)
+								draw_primitives(d.type, d.points.data(), d.points.size(), d.color, d.depth_test);
 						}
+
+						buf_primitives.upload(cb);
+						buf_primitives.reset();
+						cb->image_barrier(t->img_dep.get(), {}, graphics::ImageLayoutAttachment);
+
+						auto& prm_plain = t->prm_plain;
+						cb->begin_renderpass(nullptr, t->fb_primitive.get());
+						cb->bind_vertex_buffer(buf_primitives.buf.get(), 0, buf_primitives.item_type->size);
+						cb->bind_pipeline_layout(prm_plain.pll);
+						prm_plain.pc.mark_dirty_c("mvp"_h).as<mat4>() = camera->proj_view_mat;
+						prm_plain.push_constant(cb);
+						{
+							auto vtx_off = 0;
+							for (auto& d : primitives_draws)
+							{
+								prm_plain.pc.mark_dirty_c("col"_h).as<vec4>() = vec4(d.color) / 255.f;
+								prm_plain.push_constant(cb);
+								switch (d.type)
+								{
+								case PrimitivePointList:
+									cb->bind_pipeline(d.depth_test ? pl_point3d_dt : pl_point3d);
+									break;
+								case PrimitiveLineList:
+									cb->bind_pipeline(d.depth_test ? pl_line3d_dt : pl_line3d);
+									break;
+								case PrimitiveLineStrip:
+									cb->bind_pipeline(d.depth_test ? pl_line_strip3d_dt : pl_line_strip3d);
+									break;
+								case PrimitiveTriangleList:
+									cb->bind_pipeline(d.depth_test ? pl_triangle3d_dt : pl_triangle3d);
+									break;
+								}
+								cb->draw(d.vtx_cnt, 1, vtx_off, 0);
+								vtx_off += d.vtx_cnt;
+							}
+						}
+						cb->end_renderpass();
+						primitives_draws.clear();
 					}
-					cb->end_renderpass();
-					primitives_draws.clear();
+					cb->end_debug_label();
 				}
-				cb->end_debug_label();
 			}
 
-			if (t->canvas)
+			if (auto canvas = t->canvas; canvas)
 			{
 				auto camera_element = camera->element;
 				auto translate = vec2(0.f);
@@ -3213,12 +3240,12 @@ namespace flame
 				cb->begin_debug_label("Elements");
 				{
 					if (auto first_element = sScene::instance()->first_element; first_element)
-						render_element(t->canvas, first_element);
+						render_element(canvas, first_element);
 				}
 				cb->end_debug_label();
 
 				cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutAttachment);
-				t->canvas->render(0, cb, translate, scaling);
+				canvas->render(0, cb, translate, scaling);
 				camera->translate_2d = translate;
 				camera->scaling_2d = scaling;
 			}
@@ -3244,9 +3271,9 @@ namespace flame
 
 	cNodePtr sRendererPrivate::pick_up(const uvec2& screen_pos, vec3* out_pos, const std::function<void(cNodePtr, DrawData&)>& draw_callback)
 	{
-		if (render_tasks.empty())
+		if (render_targets.empty())
 			return nullptr;
-		auto render_task = render_tasks.front().get();
+		auto render_task = render_targets.front().get();
 		if (!render_task->fb_pickup)
 			return nullptr;
 		auto camera = render_task->camera;
@@ -3301,7 +3328,7 @@ namespace flame
 					auto& mesh_res = mesh_reses[m.mesh_id];
 					if (!mesh_res.arm)
 					{
-						cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+						cb->bind_vertex_buffer(buf_vtx.buf.get(), 0, buf_vtx.item_type->size);
 						cb->bind_index_buffer(buf_idx.buf.get(), graphics::IndiceTypeUint);
 						cb->bind_pipeline(pl_mesh_pickup);
 						prm_fwd.pc.mark_dirty_c("i"_h).as<ivec4>() = ivec4((int)nodes.size() + 1, 0, 0, 0);
@@ -3310,7 +3337,7 @@ namespace flame
 					}
 					else
 					{
-						cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0);
+						cb->bind_vertex_buffer(buf_vtx_arm.buf.get(), 0, buf_vtx_arm.item_type->size);
 						cb->bind_index_buffer(buf_idx_arm.buf.get(), graphics::IndiceTypeUint);
 						cb->bind_pipeline(pl_mesh_arm_pickup);
 						prm_fwd.pc.mark_dirty_c("i"_h).as<ivec4>() = ivec4((int)nodes.size() + 1, 0, 0, 0);
@@ -3439,9 +3466,9 @@ namespace flame
 	std::vector<vec3> sRendererPrivate::transform_feedback(cNodePtr node)
 	{
 		std::vector<vec3> ret;
-		if (render_tasks.empty())
+		if (render_targets.empty())
 			return ret;
-		auto render_task = render_tasks.front().get();
+		auto render_task = render_targets.front().get();
 		if (!render_task->fb_pickup)
 			return ret;
 
@@ -3516,13 +3543,13 @@ namespace flame
 		switch (name)
 		{
 		case "GBufferA"_h:
-			return render_tasks.front()->img_gbufferA.get();
+			return render_targets.front()->img_gbufferA.get();
 		case "GBufferB"_h:
-			return render_tasks.front()->img_gbufferB.get();
+			return render_targets.front()->img_gbufferB.get();
 		case "GBufferC"_h:
-			return render_tasks.front()->img_gbufferC.get();
+			return render_targets.front()->img_gbufferC.get();
 		case "GBufferD"_h:
-			return render_tasks.front()->img_gbufferD.get();
+			return render_targets.front()->img_gbufferD.get();
 		}
 		return nullptr;
 	}

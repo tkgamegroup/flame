@@ -28,7 +28,7 @@ namespace flame
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
 				auto world_pos = *(vec3*)inputs[0].data;
 				vec3 clip_coord;
-				*(vec2*)outputs[0].data = sRenderer::instance()->render_tasks.front()->camera->world_to_screen(world_pos, &clip_coord);
+				*(vec2*)outputs[0].data = sRenderer::instance()->render_targets.front()->camera->world_to_screen(world_pos, &clip_coord);
 				*(vec3*)outputs[1].data = clip_coord;
 			}
 		);

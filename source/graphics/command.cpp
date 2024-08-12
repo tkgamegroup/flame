@@ -153,7 +153,6 @@ namespace flame
 #endif
 
 			auto rt_idx = 0;
-			auto cv_idx = 0;
 			for (auto i = 0; i < curr_fb->views.size(); i++)
 			{
 				auto& att = curr_rp->attachments[i];
@@ -186,8 +185,7 @@ namespace flame
 						D3D12_CLEAR_FLAGS flags = D3D12_CLEAR_FLAG_DEPTH;
 						if (att.format >= Format_DepthStencil_Begin && att.format <= Format_DepthStencil_End)
 							flags |= D3D12_CLEAR_FLAG_STENCIL;
-						d3d12_command_list->ClearDepthStencilView(curr_fb->d3d12_dsv_cpu_handle, flags, cvs[cv_idx].x, cvs[cv_idx].y, 0, nullptr);
-						cv_idx++;
+						d3d12_command_list->ClearDepthStencilView(curr_fb->d3d12_dsv_cpu_handle, flags, cvs[i].x, cvs[i].y, 0, nullptr);
 					}
 				}
 				else
@@ -196,8 +194,7 @@ namespace flame
 					{
 						auto handle = curr_fb->d3d12_rtv_cpu_handle;
 						handle.ptr += rt_idx * device->d3d12_rtv_size;
-						d3d12_command_list->ClearRenderTargetView(handle, &cvs[cv_idx][0], 0, nullptr);
-						cv_idx++;
+						d3d12_command_list->ClearRenderTargetView(handle, &cvs[i][0], 0, nullptr);
 					}
 					rt_idx++;
 				}
@@ -339,11 +336,6 @@ namespace flame
 				pt = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST; 
 				break;
 			}
-			if (peeding_vb)
-			{
-				bind_vertex_buffer(peeding_vb, 0);
-				peeding_vb = nullptr;
-			}
 			d3d12_command_list->IASetPrimitiveTopology(pt);
 #elif USE_VULKAN
 			auto vk_pl = curr_gpl->vk_pipeline;
@@ -428,19 +420,14 @@ namespace flame
 #endif
 		}
 
-		void CommandBufferPrivate::bind_vertex_buffer(BufferPtr buf, uint id)
+		void CommandBufferPrivate::bind_vertex_buffer(BufferPtr buf, uint id, uint stride)
 		{
 #if USE_D3D12
-			if (curr_gpl)
-			{
-				D3D12_VERTEX_BUFFER_VIEW view;
-				view.BufferLocation = buf->d3d12_resource->GetGPUVirtualAddress();
-				view.StrideInBytes = curr_gpl->vi_ui()->size;
-				view.SizeInBytes = buf->size;
-				d3d12_command_list->IASetVertexBuffers(0, 1, &view);
-			}
-			else
-				peeding_vb = buf;
+			D3D12_VERTEX_BUFFER_VIEW view;
+			view.BufferLocation = buf->d3d12_resource->GetGPUVirtualAddress();
+			view.StrideInBytes = stride;
+			view.SizeInBytes = buf->size;
+			d3d12_command_list->IASetVertexBuffers(0, 1, &view);
 #elif USE_VULKAN
 			VkDeviceSize offset = 0;
 			vkCmdBindVertexBuffers(vk_command_buffer, id, 1, &buf->vk_buffer, &offset);
@@ -825,7 +812,6 @@ namespace flame
 		void CommandBufferPrivate::copy_buffer_to_image(BufferPtr src, ImagePtr dst, std::span<BufferImageCopy> copies)
 		{
 #if USE_D3D12
-			auto img_desc = dst->d3d12_resource->GetDesc();
 			for (auto& cpy : copies)
 			{
 				auto sub_idx = (cpy.img_sub.base_layer * dst->n_levels) + cpy.img_sub.base_level;
@@ -837,7 +823,7 @@ namespace flame
 				src_location.PlacedFootprint.Footprint.Width = cpy.img_ext.x;
 				src_location.PlacedFootprint.Footprint.Height = cpy.img_ext.y;
 				src_location.PlacedFootprint.Footprint.Depth = cpy.img_ext.z;
-				src_location.PlacedFootprint.Footprint.RowPitch = dst->levels[cpy.img_sub.base_level].pitch;
+				src_location.PlacedFootprint.Footprint.RowPitch = image_pitch(dst->pixel_size * cpy.img_ext.x, 256);
 				D3D12_TEXTURE_COPY_LOCATION dst_location;
 				dst_location.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 				dst_location.pResource = dst->d3d12_resource;

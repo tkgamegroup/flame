@@ -821,7 +821,7 @@ namespace flame
 				};
 				cb->begin_renderpass(rp_load, fb_tars[idx], cvs);
 			}
-			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0);
+			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0, buf_vtx.item_type->size);
 			cb->bind_index_buffer(buf_idx.buf.get(), IndiceTypeUint);
 			cb->bind_pipeline(pl);
 			prm.pc.mark_dirty_c("translate"_h).as<vec2>() = translate;

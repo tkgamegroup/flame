@@ -13,16 +13,27 @@
 #include "systems/audio.h"
 #include "systems/graveyard.h"
 
+struct UniverseApplicationOptions : GraphicsApplicationOptions
+{
+	bool use_tween = true;
+	bool use_scene = true;
+	bool use_input = true;
+	bool use_renderer = true;
+	bool use_hud = true;
+	bool use_audio = true;
+	bool use_graveyard = true;
+};
+
 struct UniverseApplication : GraphicsApplication
 {
 	std::unique_ptr<World> world;
-	sTweenPtr		tween;
-	sInputPtr		input;
-	sScenePtr		scene;
-	sRendererPtr	renderer;
-	sHudPtr			hud;
-	sAudioPtr		audio;
-	sGraveyardPtr	graveyard;
+	sTweenPtr		tween = nullptr;
+	sInputPtr		input = nullptr;
+	sScenePtr		scene = nullptr;
+	sRendererPtr	renderer = nullptr;
+	sHudPtr			hud = nullptr;
+	sAudioPtr		audio = nullptr;
+	sGraveyardPtr	graveyard = nullptr;
 
 	void create(std::string_view title, const uvec2& size = uvec2(1280, 720), 
 		WindowStyleFlags styles = WindowStyleFrame | WindowStyleResizable,

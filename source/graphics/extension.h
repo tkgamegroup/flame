@@ -118,6 +118,13 @@ namespace flame
 				VirtualObject::create(stag->mapped);
 			}
 
+			void upload()
+			{
+				graphics::InstanceCommandBuffer cb;
+				upload(cb.get());
+				cb.excute();
+			}
+
 			void upload(CommandBufferPtr cb)
 			{
 				if (dirty_regions.empty())
@@ -135,6 +142,13 @@ namespace flame
 				if (!copies.empty())
 					cb->copy_buffer(stag.get(), buf.get(), copies);
 				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(usage), PipelineStageTransfer, u2s(usage));
+			}
+
+			void download()
+			{
+				graphics::InstanceCommandBuffer cb;
+				download(cb.get());
+				cb.excute();
 			}
 
 			void download(CommandBufferPtr cb)

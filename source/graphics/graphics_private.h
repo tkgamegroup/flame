@@ -60,8 +60,16 @@ namespace flame
 				return DXGI_FORMAT_R8G8B8A8_UNORM;
 			case Format_B8G8R8A8_UNORM:
 				return DXGI_FORMAT_B8G8R8A8_UNORM;
+			case Format_R16G16B16A16_SFLOAT:
+				return DXGI_FORMAT_R16G16B16A16_FLOAT;
+			case Format_Depth16:
+				return DXGI_FORMAT_D16_UNORM;
+			case Format_Depth32:
+				return DXGI_FORMAT_D32_FLOAT;
 			case Format_Stencil8:
 				return DXGI_FORMAT_D24_UNORM_S8_UINT; // dx has no stencil only formats
+			case Format_Depth24Stencil8:
+				return DXGI_FORMAT_D24_UNORM_S8_UINT;
 			default:
 				assert(0);
 			}
@@ -317,7 +325,10 @@ namespace flame
 
 		inline uint to_dx(const ImageSwizzle& swizzle)
 		{
-			return D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(to_dx(swizzle.r), to_dx(swizzle.g), to_dx(swizzle.b), to_dx(swizzle.a));
+			return D3D12_ENCODE_SHADER_4_COMPONENT_MAPPING(to_dx(swizzle.r == SwizzleIdentity ? SwizzleR : swizzle.r), 
+				to_dx(swizzle.g == SwizzleIdentity ? SwizzleG : swizzle.g), 
+				to_dx(swizzle.b == SwizzleIdentity ? SwizzleB : swizzle.b), 
+				to_dx(swizzle.a == SwizzleIdentity ? SwizzleA : swizzle.a));
 		}
 #elif USE_VULKAN
 		inline void check_vk_result(VkResult res)

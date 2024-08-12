@@ -16,12 +16,12 @@ namespace flame
 			*out_clip_coord = p;
 		if (p.z < -1.f || p.z > 1.f)
 			return vec2(-1.f);
-		for (auto& render_task : sRenderer::instance()->render_tasks)
+		for (auto& render_target : sRenderer::instance()->render_targets)
 		{
-			if (render_task->camera == this)
+			if (render_target->camera == this)
 			{
-				auto ext = render_task->target_extent();
-				auto target_ext = render_task->target_extent();
+				auto ext = render_target->target_extent();
+				auto target_ext = render_target->target_extent();
 				if (target_ext.x <= 0.f || target_ext.y <= 0.f)
 					return vec2(-1.f);
 				return (p.xy() * 0.5f + 0.5f) * target_ext;

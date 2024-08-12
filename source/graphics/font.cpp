@@ -71,7 +71,20 @@ namespace flame
 					{
 						if (auto n = bin_pack_root->find(ivec2(w + 1, h + 1)); n)
 						{
-							StagingBuffer stag(image_pitch(w) * h, bitmap_data);
+							auto dst_pitch = image_pitch(w,
+#if USE_D3D12
+								256
+#else
+								4
+#endif
+							);
+							StagingBuffer stag(dst_pitch * h, nullptr);
+#if USE_D3D12
+							for (auto l = 0; l < h; l++)
+								memcpy((char*)stag->mapped + l * dst_pitch, (char*)bitmap_data + l * w, w);
+#else
+							memcpy(stag->mapped, bitmap_data, stag->size);
+#endif
 
 							InstanceCommandBuffer cb;
 							auto old_layout = image->get_layout();
