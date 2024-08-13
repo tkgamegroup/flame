@@ -33,7 +33,9 @@ int main(int argc, char** args)
 	if (auto debug_crt_path = vs_path / L"VC\\Redist\\MSVC\\14.40.33807\\debug_nonredist\\x64\\Microsoft.VC143.DebugCRT"; std::filesystem::exists(debug_crt_path))
 	{
 		std::filesystem::copy(debug_crt_path / L"msvcp140d.dll", package_path);
+		std::filesystem::copy(debug_crt_path / L"msvcp140_1d.dll", package_path);
 		std::filesystem::copy(debug_crt_path / L"vcruntime140d.dll", package_path);
+		std::filesystem::copy(debug_crt_path / L"vcruntime140_1d.dll", package_path);
 	}
 
 	for (auto& it : std::filesystem::directory_iterator(project_path / L"bin/debug"))
