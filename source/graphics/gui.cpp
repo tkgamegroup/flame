@@ -27,7 +27,7 @@ namespace ImGui
 	void Dialog::close()
 	{
 		assert(!dialogs.empty());
-#ifdef USE_IMGUI
+#if USE_IMGUI
 		ImGui::CloseCurrentPopup();
 #endif
 		add_event([this]() {
@@ -45,7 +45,7 @@ namespace ImGui
 
 		void draw() override
 		{
-#ifdef USE_IMGUI
+#if USE_IMGUI
 			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
 			{
 				ImGui::TextUnformatted(message.c_str());
@@ -64,7 +64,7 @@ namespace ImGui
 
 		void draw() override
 		{
-#ifdef USE_IMGUI
+#if USE_IMGUI
 			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
 			{
 				ImGui::TextUnformatted(prompt.c_str());
@@ -108,7 +108,7 @@ namespace ImGui
 
 		void draw() override
 		{
-#ifdef USE_IMGUI
+#if USE_IMGUI
 			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
 			{
 				ImGui::TextUnformatted(prompt.c_str());
@@ -163,7 +163,7 @@ namespace ImGui
 
 		void draw() override
 		{
-#ifdef USE_IMGUI
+#if USE_IMGUI
 			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
 			{
 				if (ImGui::BeginCombo(prompt.c_str(), index == -1 ? nullptr : options[index].c_str()))
@@ -202,7 +202,7 @@ namespace ImGui
 
 		void draw() override
 		{
-#ifdef USE_IMGUI
+#if USE_IMGUI
 			ImGui::SetNextWindowSize(vec2(800.f, 600.f), ImGuiCond_FirstUseEver);
 			if (ImGui::BeginPopupModal(title.c_str(), nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking))
 			{
@@ -335,6 +335,7 @@ namespace flame
 
 		static void gui_attach_window(WindowPtr w)
 		{
+#if USE_IMGUI
 			auto native_window = w->native;
 			gui_create_fbs(w);
 			native_window->resize_listeners.add([w](const vec2&) {
@@ -373,11 +374,12 @@ namespace flame
 				if (!v)
 					gui_clear_inputs();
 			});
+#endif
 		}
 
 		void* gui_native_handle()
 		{
-#ifdef USE_IMGUI
+#if USE_IMGUI
 			return ImGui::GetCurrentContext();
 #endif
 			return nullptr;
@@ -402,7 +404,7 @@ namespace flame
 
 		void gui_frame()
 		{
-#ifdef USE_IMGUI
+#if USE_IMGUI
 			auto nw = main_window->native;
 			auto sz = nw->cl_rect.size();
 
@@ -472,7 +474,7 @@ namespace flame
 
 		void gui_clear_inputs()
 		{
-#ifdef USE_IMGUI
+#if USE_IMGUI
 			auto& io = ImGui::GetIO();
 			for (auto& btn : io.MouseDown)
 				btn = false;
@@ -501,7 +503,7 @@ namespace flame
 			auto cb = (CommandBufferPtr)_cb;
 			auto windows = Window::get_list(); // get window list here so that the newly created window will render next frame
 
-#ifdef USE_IMGUI
+#if USE_IMGUI
 
 			ImGui::Render();
 			ImGui::UpdatePlatformWindows();
@@ -683,6 +685,7 @@ namespace flame
 
 		static std::unordered_map<uint, std::pair<wchar_t, std::string>> font_icons;
 
+#if USE_IMGUI
 		static void ImGui_CreateWindow(ImGuiViewport* viewport)
 		{
 			auto styles = WindowStyleInvisible;
@@ -780,10 +783,11 @@ namespace flame
 		{
 			// already processed in Window
 		}
+#endif
 
 		void gui_initialize()
 		{
-#ifdef USE_IMGUI
+#if USE_IMGUI
 			assert(!windows.empty());
 			main_window = windows.front();
 

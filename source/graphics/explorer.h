@@ -163,7 +163,13 @@ namespace flame
 			std::string							filter;
 			bool								show_as_list = false;
 
-			int																			select_button = ImGuiMouseButton_Left;
+			int																			select_button =
+#if USE_IMGUI
+				ImGuiMouseButton_Left
+#else
+				0
+#endif
+				;
 			std::function<void(const std::filesystem::path&)>							select_callback;
 			std::function<void(const std::filesystem::path&)>							dbclick_callback;
 			std::function<void(const std::filesystem::path&)>							item_context_menu_callback;
@@ -229,7 +235,7 @@ namespace flame
 						stems.push_back(stem);
 					}
 					return n->find_node(stems, 0);
-					};
+				};
 				if (folder_tree->path == L"*")
 				{
 					for (auto& c : folder_tree->children)
@@ -303,10 +309,10 @@ namespace flame
 								}
 								std::sort(dirs.begin(), dirs.end(), [](const auto& a, const auto& b) {
 									return a->path < b->path;
-									});
+								});
 								std::sort(files.begin(), files.end(), [](const auto& a, const auto& b) {
 									return a->path < b->path;
-									});
+								});
 								for (auto i : dirs)
 								{
 									if (item_created_callback)
@@ -438,7 +444,7 @@ namespace flame
 									draw_node(c.get());
 								ImGui::TreePop();
 							}
-							};
+						};
 						if (folder_tree->path == L"*")
 						{
 							for (auto& c : folder_tree->children)

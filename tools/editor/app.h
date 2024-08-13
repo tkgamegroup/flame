@@ -157,7 +157,7 @@ struct ModelPreviewer
 	float zoom = 1.f;
 	uint vertex_count = 0;
 	uint face_count = 0;
-	RenderTaskPtr render_task = nullptr;
+	RenderTargetPtr render_target = nullptr;
 	uint updated_frame = 0;
 
 	void init();

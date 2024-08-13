@@ -196,7 +196,7 @@ void SceneView::on_draw()
 		ImGui::Combo("Camera", (int*)&camera_idx, names, n);
 	}
 	auto camera = camera_list[camera_idx];
-	app.renderer->render_tasks.front()->camera = camera;
+	app.renderer->render_targets.front()->camera = camera;
 	ImGui::SameLine();
 	if (ImGui::Button(graphics::font_icon_str("gear"_h).c_str()))
 		ImGui::OpenPopup("camera_setup");
@@ -411,12 +411,12 @@ void SceneView::on_draw()
 				render_target->filename = L"#scene_render_target";
 				render_target->change_layout(graphics::ImageLayoutShaderReadOnly);
 				auto iv = render_target->get_view();
-				app.renderer->render_tasks.front()->set_targets({ iv });
+				app.renderer->render_targets.front()->set_targets({ iv });
 			}
 			else
 			{
 				render_target.reset();
-				app.renderer->render_tasks.front()->set_targets({});
+				app.renderer->render_targets.front()->set_targets({});
 			}
 			return false;
 		});
@@ -1080,7 +1080,7 @@ void SceneView::on_draw()
 								auto& b = node->bounds;
 
 								auto renderer = sRenderer::instance();
-								auto rt = renderer->render_tasks.front().get();
+								auto rt = renderer->render_targets.front().get();
 								auto camera = rt->camera;
 								auto canvas = rt->canvas;
 								vec3 clip_pos;

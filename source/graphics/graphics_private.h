@@ -118,7 +118,7 @@ namespace flame
 				if (fmt >= Format_Color_Begin && fmt <= Format_Color_End)
 					return D3D12_RESOURCE_STATE_RENDER_TARGET;
 				else
-					return D3D12_RESOURCE_STATE_DEPTH_WRITE; // TODO: is it true?
+					return D3D12_RESOURCE_STATE_DEPTH_WRITE;
 			case ImageLayoutShaderReadOnly:
 				return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE/*D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE*/; // TOOD: wtf?
 				//case ImageLayoutShaderStorage:
@@ -330,6 +330,7 @@ namespace flame
 				to_dx(swizzle.b == SwizzleIdentity ? SwizzleB : swizzle.b), 
 				to_dx(swizzle.a == SwizzleIdentity ? SwizzleA : swizzle.a));
 		}
+
 #elif USE_VULKAN
 		inline void check_vk_result(VkResult res)
 		{
@@ -430,7 +431,6 @@ namespace flame
 				return VK_FORMAT_D32_SFLOAT;
 			case Format_Depth24Stencil8:
 				return VK_FORMAT_D24_UNORM_S8_UINT;
-
 			default:
 				assert(0);
 			}

@@ -1,0 +1,5 @@
+file(GLOB_RECURSE source_files "*.h" "*.hpp" "*.c" "*.cpp")
+add_executable(project_packager ${source_files})
+set_target_properties(project_packager PROPERTIES FOLDER "tools")
+target_link_libraries(project_packager flame_foundation)
+set_target_properties(project_packager PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")

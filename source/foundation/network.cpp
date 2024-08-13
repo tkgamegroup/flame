@@ -772,6 +772,7 @@ namespace flame
 
 		std::string download_html(const std::string& address)
 		{
+#if USE_CURL
 			if (!curl_inited)
 			{
 				curl_global_init(CURL_GLOBAL_ALL);
@@ -790,6 +791,9 @@ namespace flame
 			curl_easy_cleanup(curl_handle);
 
 			return ret;
+#else
+			return "";
+#endif
 		}
 	}
 }

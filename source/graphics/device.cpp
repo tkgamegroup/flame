@@ -116,7 +116,7 @@ namespace flame
 		void DevicePrivate::set_object_debug_name(BufferPtr obj, const std::string& name)
 		{
 #if USE_D3D12
-
+			obj->d3d12_resource->SetName(s2w(name).c_str());
 #elif USE_VULKAN
 			vk_set_object_debug_name(vk_device, obj->vk_buffer, VK_OBJECT_TYPE_BUFFER, name);
 #endif
@@ -125,12 +125,11 @@ namespace flame
 		void DevicePrivate::set_object_debug_name(ImagePtr obj, const std::string& name)
 		{
 #if USE_D3D12
-
+			obj->d3d12_resource->SetName(s2w(name).c_str());
 #elif USE_VULKAN
 			vk_set_object_debug_name(vk_device, obj->vk_image, VK_OBJECT_TYPE_IMAGE, name);
 #endif
 		}
-
 
 #if USE_VULKAN
 		uint DevicePrivate::find_memory_type(uint type_filter, MemoryPropertyFlags properties) const
@@ -209,6 +208,15 @@ namespace flame
 					}
 				}
 
+				if (adapter)
+				{
+					DXGI_ADAPTER_DESC1 desc;
+					adapter->GetDesc1(&desc);
+					wprintf(L"d3d12: use adapter: %s\n", desc.Description);
+				}
+				else
+					printf("d3d12: no adapter found\n");
+
 				check_dx_result(ret->dxgi_factory->EnumWarpAdapter(IID_PPV_ARGS(&adapter)));
 				check_dx_result(D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&ret->d3d12_device)));
 				ret->d3d12_rtv_size = ret->d3d12_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -216,6 +224,7 @@ namespace flame
 				ret->d3d12_srv_size = ret->d3d12_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 				ret->d3d12_sp_size = ret->d3d12_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 				adapter->Release();
+				printf("d3d12: device created\n");
 #elif USE_VULKAN
 				uint32_t count;
 				vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);

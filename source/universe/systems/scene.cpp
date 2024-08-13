@@ -859,7 +859,7 @@ namespace flame
 
 	void sScenePrivate::navmesh_clear()
 	{
-#ifdef USE_RECASTNAV
+#if USE_RECASTNAV
 		if (dt_tile_cache)
 		{
 			dtFreeTileCache(dt_tile_cache);
@@ -885,6 +885,7 @@ namespace flame
 
 	bool sScenePrivate::navmesh_nearest_point(const vec3& center, const vec3& ext, vec3& res)
 	{
+#if USE_RECASTNAV
 		if (!dt_nav_query)
 			return false;
 
@@ -897,6 +898,9 @@ namespace flame
 		if (!poly)
 			return false;
 		return true;
+#else
+		return false;
+#endif
 	}
 
 	inline bool in_range(const vec3& v1, const vec3& v2, const float r, const float h)
@@ -905,6 +909,7 @@ namespace flame
 		return (d.x * d.x + d.z * d.z) < r * r && fabsf(d.y) < h;
 	}
 
+#if USE_RECASTNAV
 	static int fixup_corridor(dtPolyRef* path, int npath, int max_path,
 		const dtPolyRef* visited, int nvisited)
 	{
@@ -1030,10 +1035,12 @@ namespace flame
 
 		return true;
 	}
+#endif
 
 	std::vector<vec3> sScenePrivate::navmesh_query_path(const vec3& start, const vec3& end, uint max_smooth)
 	{
 		std::vector<vec3> ret;
+#if USE_RECASTNAV
 		if (!dt_nav_query)
 			return ret;
 
@@ -1142,6 +1149,7 @@ namespace flame
 				ret.push_back(iter_pos);
 		}
 
+#endif
 		return ret;
 	}
 

@@ -233,8 +233,13 @@ namespace flame
 				wcex.hIcon = 0;
 				{
 					std::unique_ptr<Bitmap> icon_image(Bitmap::create(Path::get(L"flame\\icon.png")));
-					icon_image->swap_channel(0, 2);
-					wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->extent.x, icon_image->extent.y, 1, icon_image->bpp, nullptr, icon_image->data);
+					if (icon_image)
+					{
+						icon_image->swap_channel(0, 2);
+						wcex.hIcon = CreateIcon(wcex.hInstance, icon_image->extent.x, icon_image->extent.y, 1, icon_image->bpp, nullptr, icon_image->data);
+					}
+					else
+						printf("cannot find flame icon\n");
 				}
 				wcex.hCursor = NULL;
 				wcex.hbrBackground = 0;

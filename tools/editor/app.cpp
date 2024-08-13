@@ -519,7 +519,7 @@ void ModelPreviewer::init()
 {
 	if (!model)
 	{
-		layer = 1 << (int)app.renderer->render_tasks.size();
+		layer = 1 << (int)app.renderer->render_targets.size();
 
 		model = Entity::create();
 		model->layer = layer;
@@ -552,11 +552,11 @@ void ModelPreviewer::init()
 		image = graphics::Image::create(graphics::Format_R8G8B8A8_UNORM, uvec3(256, 256, 1), graphics::ImageUsageAttachment |
 			graphics::ImageUsageTransferSrc | graphics::ImageUsageSampled);
 	}
-	if (!render_task)
+	if (!render_target)
 	{
-		render_task = app.renderer->add_render_task(RenderModeSimple, camera, nullptr, { image->get_view() },
+		render_target = app.renderer->add_render_target(RenderModeSimple, camera, nullptr, { image->get_view() },
 			graphics::ImageLayoutShaderReadOnly, false, false);
-		render_task->mode = RenderModeWireframe;
+		render_target->mode = RenderModeWireframe;
 	}
 
 }
@@ -586,15 +586,15 @@ void ModelPreviewer::destroy()
 		camera = nullptr;
 	}
 
-	if (render_task)
+	if (render_target)
 	{
-		auto _render_task = render_task;
-		add_event([_render_task]() {
+		auto _render_target = render_target;
+		add_event([_render_target]() {
 			graphics::Queue::get()->wait_idle();
-			app.renderer->remove_render_task(_render_task);
+			app.renderer->remove_render_target(_render_target);
 			return false;
 		});
-		render_task = nullptr;
+		render_target = nullptr;
 	}
 
 	layer = 1;
@@ -649,7 +649,7 @@ bool ModelPreviewer::update(uint changed_frame, bool show_image)
 
 	static bool wireframe = true;
 	if (ImGui::Checkbox("Wireframe", &wireframe))
-		render_task->mode = wireframe ? RenderModeWireframe : RenderModeSimple;
+		render_target->mode = wireframe ? RenderModeWireframe : RenderModeSimple;
 	ImGui::InvisibleButton("##image", vec2(image->extent));
 	auto p0 = ImGui::GetItemRectMin();
 	auto p1 = ImGui::GetItemRectMax();
@@ -703,7 +703,7 @@ void App::init()
 	world->update_components = false;
 	input->transfer_events = false;
 	always_render = false;
-	renderer->add_render_task(RenderModeCameraLight, nullptr, nullptr, {}, graphics::ImageLayoutShaderReadOnly);
+	renderer->add_render_target(RenderModeCameraLight, nullptr, nullptr, {}, graphics::ImageLayoutShaderReadOnly);
 
 	auto root = world->root.get();
 	root->add_component<cNode>();
@@ -3111,15 +3111,15 @@ bool App::cmd_stop()
 		{
 			if (fv)
 				fv->camera_idx = 0;
-			sRenderer::instance()->render_tasks.front()->camera = camera_list.front();
+			sRenderer::instance()->render_targets.front()->camera = camera_list.front();
 		}
 		else
 		{
 			if (fv)
 				fv->camera_idx = -1;
-			sRenderer::instance()->render_tasks.front()->camera = nullptr;
+			sRenderer::instance()->render_targets.front()->camera = nullptr;
 		}
-		sRenderer::instance()->render_tasks.front()->mode = RenderModeCameraLight;
+		sRenderer::instance()->render_targets.front()->mode = RenderModeCameraLight;
 
 		listeners.call("game_stopped"_h);
 

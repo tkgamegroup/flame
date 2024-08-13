@@ -7,7 +7,9 @@
 #include "blueprint_library/library.h"
 #include "application.h"
 
+#if USE_EXPRTK
 #include <exprtk.hpp>
+#endif
 
 namespace flame
 {
@@ -36,6 +38,7 @@ namespace flame
 		}
 	}
 
+#if USE_EXPRTK
 	struct exprtk_output_t : public exprtk::igeneric_function<float>
 	{
 		std::string* return_value;
@@ -84,6 +87,7 @@ namespace flame
 			return float(0);
 		}
 	}exprtk_to_str;
+#endif
 
 	struct ExpressionPrivate : Expression
 	{
@@ -94,11 +98,13 @@ namespace flame
 			void* p;
 		};
 
+#if USE_EXPRTK
 		exprtk::symbol_table<float> symbols;
 		exprtk::expression<float> expression;
 		std::string return_value;
 		exprtk_output_t output_function;
 		std::list<Convertion> convertions;
+#endif
 
 		ExpressionPrivate(const std::string& expression_string);
 
@@ -115,25 +121,32 @@ namespace flame
 	{
 		expression_string = _expression_string;
 
+#if USE_EXPRTK
 		auto addr_str = str((uint64)&return_value);
 		symbols.create_stringvar("return_value", addr_str);
 		output_function.return_value = &return_value;
 		symbols.add_function("output", output_function);
 		symbols.add_function("to_str", exprtk_to_str);
+#endif
 	}
 
 	void ExpressionPrivate::set_const_value(const std::string& name, float value)
 	{
+#if USE_EXPRTK
 		symbols.add_constant(name, value);
+#endif
 	}
 
 	void ExpressionPrivate::set_variable(const std::string& name, float* variable)
 	{
+#if USE_EXPRTK
 		symbols.add_variable(name, *variable);
+#endif
 	}
 
 	bool ExpressionPrivate::compile()
 	{
+#if USE_EXPRTK
 		exprtk::symbol_table<float> unknown_symbols;
 		expression.register_symbol_table(unknown_symbols);
 		expression.register_symbol_table(symbols);
@@ -195,15 +208,21 @@ namespace flame
 			ok = parser.compile(expression_string, expression);
 		}
 		return ok;
+#else
+		return false;
+#endif
 	}
 
 	void ExpressionPrivate::set_const_string(const std::string& name, const std::string& value)
 	{
+#if USE_EXPRTK
 		symbols.create_stringvar(name, value);
+#endif
 	}
 
 	bool ExpressionPrivate::update_bindings()
 	{
+#if USE_EXPRTK
 		auto changed = false;
 		for (auto& c : convertions)
 		{
@@ -232,20 +251,31 @@ namespace flame
 			}
 		}
 		return changed;
+#else
+		return false;
+#endif
 	}
 
 	float ExpressionPrivate::get_value()
 	{
+#if USE_EXPRTK
 		return expression.value();
+#else
+		return 0.f;
+#endif
 	}
 
 	std::string ExpressionPrivate::get_string_value()
 	{
+#if USE_EXPRTK
 		return_value.clear();
 		auto float_ret = expression.value();
 		if (!return_value.empty())
 			return return_value;
 		return str(float_ret);
+#else
+		return "";
+#endif
 	}
 
 	Expression* Expression::create(const std::string& expression_string)
