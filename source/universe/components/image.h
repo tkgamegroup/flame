@@ -26,6 +26,7 @@ namespace flame
 		virtual void set_tint_col(const cvec4& col) = 0;
 
 		graphics::ImagePtr image = nullptr;
+		graphics::SamplerPtr sampler = nullptr;
 
 		struct Create
 		{

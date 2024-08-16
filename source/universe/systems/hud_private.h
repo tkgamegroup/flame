@@ -2,8 +2,6 @@
 
 #include "hud.h"
 
-#include "../../graphics/canvas.h"
-
 namespace flame
 {
 	struct HudLayout
@@ -37,6 +35,7 @@ namespace flame
 		std::vector<std::stack<vec4>>					style_vars;
 		std::vector<std::stack<cvec4>>					style_colors;
 		std::vector<std::stack<graphics::ImageDesc>>	style_images;
+		std::vector<std::stack<audio::SourcePtr>>		style_sounds;
 		std::stack<bool>								enables;
 		std::unordered_map<uint, Hud> huds;
 		Hud* last_hud = nullptr;
@@ -44,6 +43,8 @@ namespace flame
 
 		uint current_modal = 0;
 		uint modal_frames = 0;
+		uint last_hovered = 0;
+		uint hover_frames = 0;
 
 		sHudPrivate();
 		sHudPrivate(int); // dummy
@@ -70,6 +71,8 @@ namespace flame
 		void pop_style_color(HudStyleColor idx) override;
 		void push_style_image(HudStyleImage idx, const graphics::ImageDesc& image) override;
 		void pop_style_image(HudStyleImage idx) override;
+		void push_style_sound(HudStyleSound idx, audio::SourcePtr sound) override;
+		void pop_style_sound(HudStyleSound idx) override;
 		void push_enable(bool v) override;
 		void pop_enable() override;
 		void begin_layout(HudLayoutType type, const vec2& size) override;
@@ -85,7 +88,7 @@ namespace flame
 		void image(const vec2& size, const graphics::ImageDesc& image) override;
 		void image_stretched(const vec2& size, const graphics::ImageDesc& image) override;
 		void image_rotated(const vec2& size, const graphics::ImageDesc& image, float angle) override;
-		bool button(std::wstring_view label) override;
+		bool button(std::wstring_view label, uint id) override;
 		void progress_bar(const vec2& size, float progress, const cvec4& color, const cvec4& background_color, std::wstring_view label) override;
 
 		void start() override;

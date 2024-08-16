@@ -3,6 +3,7 @@
 #include "../../audio/device.h"
 #include "../../audio/buffer.h"
 #include "../../audio/source.h"
+#include "../../audio/listener.h"
 #endif
 
 namespace flame
@@ -11,6 +12,7 @@ namespace flame
 	{
 #if USE_AUDIO_MODULE
 		audio::Device::create();
+		audio::Listener::get();
 #endif
 	}
 

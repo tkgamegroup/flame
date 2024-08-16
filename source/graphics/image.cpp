@@ -12,6 +12,10 @@
 #include <nvtt/nvtt.h>
 #include <nvtt/nvtt_lowlevel.h>
 #endif
+#if USE_D3D12
+#undef USING_DIRECTX_HEADERS
+#include <ResourceUploadBatch.h>
+#endif
 
 namespace flame
 {
@@ -974,8 +978,10 @@ namespace flame
 					cpy.img_ext = ret->extent;
 					cb->image_barrier(ret, {}, ImageLayoutTransferDst);
 					cb->copy_buffer_to_image(sb.get(), ret, { &cpy, 1 });
+#if USE_VULKAN
 					if (config.auto_mipmapping)
 					{
+						cb->image_barrier(ret, {}, ImageLayoutShaderReadOnly);
 						for (auto i = 1U; i < ret->n_levels; i++)
 						{
 							cb->image_barrier(ret, { i - 1, 1, 0, 1 }, ImageLayoutTransferSrc);
@@ -992,7 +998,21 @@ namespace flame
 					}
 					else
 						cb->image_barrier(ret, {}, ImageLayoutShaderReadOnly);
+#else
+					cb->image_barrier(ret, {}, ImageLayoutShaderReadOnly);
+#endif
 					cb.excute();
+
+#if USE_D3D12
+					if (config.auto_mipmapping)
+					{
+						DirectX::ResourceUploadBatch batch(device->d3d12_device);
+						batch.Begin();
+						batch.GenerateMips(ret->d3d12_resource);
+						auto finish = batch.End(Queue::get()->d3d12_queue);
+						finish.wait();
+					}
+#endif
 
 					if (config.auto_mipmapping && config.alpha_test > 0.f)
 					{

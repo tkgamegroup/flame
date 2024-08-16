@@ -55,9 +55,7 @@ An ECS 3D-Game-Engine.
 
 *Now we only support windows*
 
-*You need Python3, CMake Vcpkg, and Visual Studio*
-
-*Make sure you have Vulkan 1.3 and above*
+*You need Python3, CMake, Vcpkg, and Visual Studio*
 
 *Make sure you check C++ ATL (x86 & x64) in C++ destop development tab and check C++ ATL (x86 & x64) for lastest v143 in individual components tab in Visual Studio's Tools and Features*
 

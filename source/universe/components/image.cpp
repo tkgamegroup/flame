@@ -22,8 +22,11 @@ namespace flame
 		element->drawers.add([this](graphics::CanvasPtr canvas) {
 			if (image)
 			{
+				auto lvs = 1U;
+				if (sampler && sampler->linear_mipmap)
+					lvs = image->n_levels;
 				if (!element->tilted)
-					canvas->draw_image(image->get_view(), element->global_pos0(), element->global_pos1(), vec4(0.f, 0.f, 1.f, 1.f), tint_col);
+					canvas->draw_image(image->get_view({ 0, lvs, 0, 1 }), element->global_pos0(), element->global_pos1(), vec4(0.f, 0.f, 1.f, 1.f), tint_col, sampler);
 				else
 				{
 					vec2 pts[4];
@@ -33,7 +36,7 @@ namespace flame
 					uvs[1] = vec2(1.f, 0.f);
 					uvs[2] = vec2(1.f, 1.f);
 					uvs[3] = vec2(0.f, 1.f);
-					canvas->draw_image_polygon(image->get_view(), pts, uvs, tint_col);
+					canvas->draw_image_polygon(image->get_view({ 0, lvs, 0, 1 }), pts, uvs, tint_col, sampler);
 				}
 			}
 		}, "image"_h);

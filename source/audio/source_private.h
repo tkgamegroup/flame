@@ -17,6 +17,7 @@ namespace flame
 
 			void add_buffer(BufferPtr buffer) override;
 			void remove_buffer(BufferPtr buffer) override;
+			void set_loop(bool v) override;
 			bool is_player() const override;
 			void play() override;
 			void stop() override;

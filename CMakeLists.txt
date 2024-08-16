@@ -89,6 +89,13 @@ if(RENDERING_BACKEND STREQUAL "D3D12")
 	set(USE_VULKAN off)
 endif()
 
+if(USE_D3D12)
+	find_package(directxtk12 CONFIG REQUIRED)
+	if(NOT directxtk12_FOUND)
+		message(SEND_ERROR "directxtk12 is invalid!")
+	endif()
+endif()
+
 find_package(gli CONFIG REQUIRED)
 if(NOT gli_FOUND)
 	message(SEND_ERROR "required GLI is invalid")

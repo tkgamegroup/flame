@@ -723,15 +723,15 @@ namespace flame
 			{
 				auto uv0 = uvs.xy(); auto uv1 = uvs.zw();
 				ret = // get the pointer to the first vertex
-				draw_image(iv, vec2(p0.x + border.x, p0.y), vec2(p1.x - border.z, p0.y + border.y), vec4(mix(uv0, uv1, vec2(border_uvs.x, 0.f)), mix(uv0, uv1, vec2(border_uvs.z, border_uvs.y))), tint_col, sp); // top border
-				draw_image(iv, vec2(p0.x + border.x, p1.y - border.w), vec2(p1.x - border.z, p1.y), vec4(mix(uv0, uv1, vec2(border_uvs.x, border_uvs.w)), mix(uv0, uv1, vec2(border_uvs.w, 1.f))), tint_col, sp); // bottom border
-				draw_image(iv, vec2(p0.x, p0.y + border.y), vec2(p0.x + border.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(0.f, border_uvs.y)), mix(uv0, uv1, vec2(border_uvs.x, border_uvs.w))), tint_col, sp); // left border
-				draw_image(iv, vec2(p1.x - border.z, p0.y + border.y), vec2(p1.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(border_uvs.w, border_uvs.y)), mix(uv0, uv1, vec2(1.f, border_uvs.w))), tint_col, sp); // right border
+				draw_image(iv, vec2(p0.x + border.x, p0.y), vec2(p1.x - border.z, p0.y + border.y), vec4(mix(uv0, uv1, vec2(border_uvs.x, 0.f)), mix(uv0, uv1, vec2(1.f - border_uvs.z, border_uvs.y))), tint_col, sp); // top border
+				draw_image(iv, vec2(p0.x + border.x, p1.y - border.w), vec2(p1.x - border.z, p1.y), vec4(mix(uv0, uv1, vec2(border_uvs.x, 1.f - border_uvs.w)), mix(uv0, uv1, vec2(1.f - border_uvs.z, 1.f))), tint_col, sp); // bottom border
+				draw_image(iv, vec2(p0.x, p0.y + border.y), vec2(p0.x + border.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(0.f, border_uvs.y)), mix(uv0, uv1, vec2(border_uvs.x, 1.f - border_uvs.w))), tint_col, sp); // left border
+				draw_image(iv, vec2(p1.x - border.z, p0.y + border.y), vec2(p1.x, p1.y - border.w), vec4(mix(uv0, uv1, vec2(1.f - border_uvs.z, border_uvs.y)), mix(uv0, uv1, vec2(1.f, 1.f - border_uvs.w))), tint_col, sp); // right border
 				draw_image(iv, vec2(p0.x, p0.y), vec2(p0.x + border.x, p0.y + border.y), vec4(mix(uv0, uv1, vec2(0.f, 0.f)), mix(uv0, uv1, vec2(border_uvs.x, border_uvs.y))), tint_col, sp); // left-top corner
-				draw_image(iv, vec2(p1.x - border.z, p0.y), vec2(p1.x, p0.y + border.y), vec4(mix(uv0, uv1, vec2(border_uvs.w, 0.f)), mix(uv0, uv1, vec2(1.f, border_uvs.y))), tint_col, sp); // right-top corner
-				draw_image(iv, vec2(p0.x, p1.y - border.w), vec2(p0.x + border.x, p1.y), vec4(mix(uv0, uv1, vec2(0.f, border_uvs.w)), mix(uv0, uv1, vec2(border_uvs.x, 1.f))), tint_col, sp); // left-bottom corner
-				draw_image(iv, vec2(p1.x - border.z, p1.y - border.w), vec2(p1.x, p1.y), vec4(mix(uv0, uv1, vec2(border_uvs.w, border_uvs.w)), mix(uv0, uv1, vec2(1.f, 1.f))), tint_col, sp); // right-bottom corner
-				draw_image(iv, vec2(p0.x + border.x, p0.y + border.y), vec2(p1.x - border.z, p1.y - border.w), vec4(mix(uv0, uv1, vec2(border_uvs.x, border_uvs.y)), mix(uv0, uv1, vec2(border_uvs.z, border_uvs.w))), tint_col, sp); // middle
+				draw_image(iv, vec2(p1.x - border.z, p0.y), vec2(p1.x, p0.y + border.y), vec4(mix(uv0, uv1, vec2(1.f - border_uvs.z, 0.f)), mix(uv0, uv1, vec2(1.f, border_uvs.y))), tint_col, sp); // right-top corner
+				draw_image(iv, vec2(p0.x, p1.y - border.w), vec2(p0.x + border.x, p1.y), vec4(mix(uv0, uv1, vec2(0.f, 1.f - border_uvs.w)), mix(uv0, uv1, vec2(border_uvs.x, 1.f))), tint_col, sp); // left-bottom corner
+				draw_image(iv, vec2(p1.x - border.z, p1.y - border.w), vec2(p1.x, p1.y), vec4(mix(uv0, uv1, vec2(1.f - border_uvs.z, 1.f - border_uvs.w)), mix(uv0, uv1, vec2(1.f, 1.f))), tint_col, sp); // right-bottom corner
+				draw_image(iv, vec2(p0.x + border.x, p0.y + border.y), vec2(p1.x - border.z, p1.y - border.w), vec4(mix(uv0, uv1, vec2(border_uvs.x, border_uvs.y)), mix(uv0, uv1, vec2(1.f - border_uvs.z, 1.f - border_uvs.w))), tint_col, sp); // middle
 			}
 
 			return ret;

@@ -74,7 +74,7 @@ namespace flame
 								graphics::Image::get_config(r->filename, &config);
 								auto sz = (vec2)image.view->image->extent.xy();
 								image.border_uvs.xy = config.border.xy / sz;
-								image.border_uvs.zw = vec2(1.f) - config.border.zw / sz;
+								image.border_uvs.zw = config.border.zw / sz;
 							}
 						}
 					}

@@ -51,26 +51,31 @@ namespace flame
 			auto size = (ivec2)window->cl_rect.size();
 
 #if USE_D3D12
-			if (!d3d12_swapchain)
+			if (size.x != 0U || size.y != 0U)
 			{
-				DXGI_SWAP_CHAIN_DESC1 desc = {};
-				desc.BufferCount = suggested_image_count;
-				desc.Width = size.x;
-				desc.Height = size.y;
-				desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-				desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-				desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-				desc.SampleDesc.Count = 1;
+				if (!d3d12_swapchain)
+				{
+					DXGI_SWAP_CHAIN_DESC1 desc = {};
+					desc.BufferCount = suggested_image_count;
+					desc.Width = size.x;
+					desc.Height = size.y;
+					desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+					desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+					desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+					desc.SampleDesc.Count = 1;
 
-				IDXGISwapChain1* swapchain = nullptr;
-				check_dx_result(device->dxgi_factory->CreateSwapChainForHwnd(Queue::get()->d3d12_queue, (HWND)window->get_hwnd(),
-					&desc, nullptr, nullptr, &swapchain));
-				d3d12_swapchain = (IDXGISwapChain3*)swapchain;
+					IDXGISwapChain1* swapchain = nullptr;
+					check_dx_result(device->dxgi_factory->CreateSwapChainForHwnd(Queue::get()->d3d12_queue, (HWND)window->get_hwnd(),
+						&desc, nullptr, nullptr, &swapchain));
+					d3d12_swapchain = (IDXGISwapChain3*)swapchain;
 
-				images.resize(desc.BufferCount);
+					images.resize(desc.BufferCount);
+				}
+				else
+					d3d12_swapchain->ResizeBuffers(images.size(), size.x, size.y, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
 			}
 			else
-				d3d12_swapchain->ResizeBuffers(images.size(), size.x, size.y, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+				images.clear();
 
 			for (auto i = 0; i < images.size(); i++)
 			{

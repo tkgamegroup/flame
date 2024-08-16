@@ -139,6 +139,18 @@ namespace flame
 				return ret;
 			}
 
+			ImageDesc desc_with_config()
+			{
+				graphics::ImageConfig config;
+				graphics::Image::get_config(filename, &config);
+				ImageDesc ret;
+				ret.view = get_view();
+				ret.uvs = vec4(0.f, 0.f, 1.f, 1.f);
+				auto sz = (vec2)extent;
+				ret.border_uvs = vec4(config.border.xy() / sz, config.border.zw() / sz);
+				return ret;
+			}
+
 			virtual ImageLayout get_layout(const ImageSub& sub = {}) = 0;
 			virtual ImageViewPtr get_view(const ImageSub& sub = {}, const ImageSwizzle& swizzle = {}, bool is_cube = false) = 0;
 			virtual DescriptorSetPtr get_shader_read_src(uint base_level = 0, uint base_layer = 0, SamplerPtr sp = nullptr, const ImageSwizzle& swizzle = {}) = 0;
@@ -249,8 +261,7 @@ namespace flame
 					ret.view = view;
 					ret.uvs = it->second.uvs;
 					auto sz = (vec2)((Image*)image)->extent.xy();
-					ret.border_uvs.xy = it->second.border.xy / sz;
-					ret.border_uvs.zw = vec2(1.f) - it->second.border.zw / sz;
+					ret.border_uvs = vec4(it->second.border.xy() / sz, it->second.border.zw() / sz);
 				}
 				return ret;
 			}

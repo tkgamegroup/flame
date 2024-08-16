@@ -28,6 +28,11 @@ namespace flame
 			alSourceUnqueueBuffers(al_src, 1, &buffer->al_buf);
 		}
 
+		void SourcePrivate::set_loop(bool v)
+		{
+			alSourcei(al_src, AL_LOOPING, v ? AL_TRUE : AL_FALSE);
+		}
+
 		bool SourcePrivate::is_player() const
 		{
 			ALenum state;

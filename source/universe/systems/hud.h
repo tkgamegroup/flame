@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../audio/source.h"
 #include "../../graphics/image.h"
 #include "../../graphics/canvas.h"
 #include "../system.h"
@@ -39,6 +40,10 @@ namespace flame
 		HudStyleColorButtonHovered,
 		HudStyleColorButtonActive,
 		HudStyleColorButtonDisabled,
+		HudStyleColorButtonFrame,
+		HudStyleColorButtonFrameHovered,
+		HudStyleColorButtonFrameActive,
+		HudStyleColorButtonFrameDisabled,
 
 		HudStyleColorCount
 	};
@@ -47,8 +52,20 @@ namespace flame
 	{
 		HudStyleImageBackground,
 		HudStyleImageWindowBackground,
+		HudStyleImageButton,
+		HudStyleImageButtonHovered,
+		HudStyleImageButtonActive,
+		HudStyleImageButtonDisabled,
 
 		HudStyleImageCount
+	};
+
+	enum HudStyleSound
+	{
+		HudStyleSoundButtonHover,
+		HudStyleSoundButtonClicked,
+
+		HudStyleSoundCount
 	};
 
 	// Reflect ctor
@@ -81,6 +98,8 @@ namespace flame
 		virtual void pop_style_color(HudStyleColor idx) = 0;
 		virtual void push_style_image(HudStyleImage idx, const graphics::ImageDesc& image) = 0;
 		virtual void pop_style_image(HudStyleImage idx) = 0;
+		virtual void push_style_sound(HudStyleSound idx, audio::SourcePtr sound) = 0;
+		virtual void pop_style_sound(HudStyleSound idx) = 0;
 		virtual void push_enable(bool v) = 0;
 		virtual void pop_enable() = 0;
 		// layout:
@@ -100,7 +119,7 @@ namespace flame
 		virtual void image_stretched(const vec2& size, const graphics::ImageDesc& image) = 0;
 		virtual void image_rotated(const vec2& size, const graphics::ImageDesc& image, float angle) = 0;
 		// buttons:
-		virtual bool button(std::wstring_view label) = 0;
+		virtual bool button(std::wstring_view label, uint id = 0) = 0;
 		// misc:
 		virtual void progress_bar(const vec2& size, float progress, const cvec4& color, const cvec4& background_color, std::wstring_view label = L"") = 0;
 

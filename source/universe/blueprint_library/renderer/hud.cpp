@@ -407,7 +407,7 @@ namespace flame
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
 				auto& label = *(std::wstring*)inputs[0].data;
-				auto clicked = sHud::instance()->button(label);
+				auto clicked = sHud::instance()->button(label, 0);
 
 				execution.block->max_execute_times =  clicked ? 1 : 0;
 			}

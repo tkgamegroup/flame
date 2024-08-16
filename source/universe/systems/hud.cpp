@@ -32,10 +32,22 @@ namespace flame
 		style_colors[HudStyleColorButtonHovered].push(cvec4(61, 61, 61, 255));
 		style_colors[HudStyleColorButtonActive].push(cvec4(100, 100, 100, 255));
 		style_colors[HudStyleColorButtonDisabled].push(cvec4(46, 46, 46, 255));
+		style_colors[HudStyleColorButtonFrame].push(cvec4(255, 255, 255, 255));
+		style_colors[HudStyleColorButtonFrameHovered].push(cvec4(255, 255, 255, 255));
+		style_colors[HudStyleColorButtonFrameActive].push(cvec4(255, 255, 255, 255));
+		style_colors[HudStyleColorButtonFrameDisabled].push(cvec4(255, 255, 255, 255));
 
 		style_images.resize(HudStyleImageCount);
 		style_images[HudStyleImageBackground].emplace();
 		style_images[HudStyleImageWindowBackground].emplace();
+		style_images[HudStyleImageButton].emplace();
+		style_images[HudStyleImageButtonHovered].emplace();
+		style_images[HudStyleImageButtonActive].emplace();
+		style_images[HudStyleImageButtonDisabled].emplace();
+
+		style_sounds.resize(HudStyleSoundCount);
+		style_sounds[HudStyleSoundButtonHover].emplace();
+		style_sounds[HudStyleSoundButtonClicked].emplace();
 
 		enables.push(true);
 	}
@@ -98,8 +110,10 @@ namespace flame
 
 		auto scaling = style_vars[HudStyleVarScaling].top().xy();
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
-		auto border = style_vars[HudStyleVarWindowBorder].top();
+		auto border = style_vars[HudStyleVarBorder].top();
 		border *= vec4(scaling, scaling);
+		auto window_border = style_vars[HudStyleVarWindowBorder].top();
+		window_border *= vec4(scaling, scaling);
 		auto frame = style_vars[HudStyleVarWindowFrame].top().x;
 		auto spacing = style_vars[HudStyleVarSpacing].top().xy();
 		spacing *= scaling;
@@ -118,14 +132,14 @@ namespace flame
 		else
 			hud.size = size * scaling;
 		hud.pos -= hud.size * pivot;
-		hud.border = border;
+		hud.border = window_border;
 
 		hud.layouts.clear();
 		auto& layout = hud.layouts.emplace_back();
 		layout.type = HudVertical;
-		layout.rect.a = layout.rect.b = hud.pos + hud.border.xy();
 		layout.spacing = spacing;
 		layout.border = border;
+		layout.rect.a = layout.rect.b = hud.pos + hud.border.xy() + border.xy();
 		layout.cursor = layout.rect.a;
 		layout.auto_size = auto_sizing;
 
@@ -138,7 +152,7 @@ namespace flame
 		else
 		{
 			if (color.a > 0)
-				canvas->draw_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, color);
+				canvas->draw_image_stretched(image.view, rect.a, rect.b, image.uvs, window_border, image.border_uvs, color);
 		}
 
 		if (frame > 0.f)
@@ -162,8 +176,10 @@ namespace flame
 		
 		auto scaling = style_vars[HudStyleVarScaling].top().xy();
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
-		auto border = style_vars[HudStyleVarWindowBorder].top();
+		auto border = style_vars[HudStyleVarBorder].top();
 		border *= vec4(scaling, scaling);
+		auto window_border = style_vars[HudStyleVarWindowBorder].top();
+		window_border *= vec4(scaling, scaling);
 		auto frame = style_vars[HudStyleVarWindowFrame].top().x;
 		auto spacing = style_vars[HudStyleVarSpacing].top().xy();
 		spacing *= scaling;
@@ -182,14 +198,14 @@ namespace flame
 		if (hud.pos.y + hud.size.y > canvas->size.y)
 			pivot.y = 1.f;
 		hud.pos -= hud.size * pivot;
-		hud.border = border;
+		hud.border = window_border;
 
 		hud.layouts.clear();
 		auto& layout = hud.layouts.emplace_back();
 		layout.type = HudVertical;
-		layout.rect.a = layout.rect.b = hud.pos + hud.border.xy();
 		layout.spacing = spacing;
 		layout.border = border;
+		layout.rect.a = layout.rect.b = hud.pos + hud.border.xy() + border.xy();
 		layout.cursor = layout.rect.a;
 		layout.auto_size = true;
 
@@ -202,7 +218,7 @@ namespace flame
 		else
 		{
 			if (color.a > 0)
-				canvas->draw_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, color);
+				canvas->draw_image_stretched(image.view, rect.a, rect.b, image.uvs, window_border, image.border_uvs, color);
 		}
 
 		if (frame > 0.f)
@@ -332,6 +348,16 @@ namespace flame
 	void sHudPrivate::pop_style_image(HudStyleImage idx)
 	{
 		style_images[idx].pop();
+	}
+
+	void sHudPrivate::push_style_sound(HudStyleSound idx, audio::SourcePtr sound)
+	{
+		style_sounds[idx].push(sound);
+	}
+
+	void sHudPrivate::pop_style_sound(HudStyleSound idx)
+	{
+		style_sounds[idx].pop();
 	}
 
 	void sHudPrivate::push_enable(bool v)
@@ -511,7 +537,7 @@ namespace flame
 			canvas->draw_image_rotated(image.view, rect.a, rect.b, image.uvs, color, angle);
 	}
 
-	bool sHudPrivate::button(std::wstring_view label)
+	bool sHudPrivate::button(std::wstring_view label, uint id)
 	{
 		if (huds.empty())
 			return false;
@@ -551,13 +577,39 @@ namespace flame
 
 		auto color = style_colors[HudStyleColorButton + state].top();
 		color.a *= alpha;
+		auto image = style_images[HudStyleImageButton + state].top();
 		auto text_color = style_colors[enable ? HudStyleColorText : HudStyleColorTextDisabled].top();
 		text_color.a *= alpha;
 
 		if (color.a > 0)
-			canvas->draw_rect_filled(rect.a, rect.b, color);
+		{
+			if (image.view)
+				canvas->draw_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, color);
+			else
+				canvas->draw_rect_filled(rect.a, rect.b, color);
+		}
 		if (text_color.a > 0)
 			canvas->draw_text(canvas->default_font_atlas, font_size, rect.a + border.xy(), label, text_color, 0.5f, 0.2f, scaling);
+
+		if (id != 0)
+		{
+			if (state == 1)
+			{
+				if (last_hovered != id)
+				{
+					auto sound = style_sounds[HudStyleSoundButtonHover].top();
+					if (sound)
+					{
+						//sound->stop();
+						sound->play();
+					}
+
+					last_hovered = id;
+				}
+				hover_frames = 2;
+			}
+		}
+
 		return enable && pressed;
 	}
 
@@ -603,6 +655,12 @@ namespace flame
 			modal_frames--;
 			if (modal_frames == 0)
 				current_modal = 0;
+		}
+		if (hover_frames > 0)
+		{
+			hover_frames--;
+			if (hover_frames == 0)
+				last_hovered = 0;
 		}
 	}
 
