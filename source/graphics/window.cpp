@@ -37,8 +37,11 @@ namespace flame
 		{
 			if (images.empty())
 				return -1;
-			//check_vk_result(vkAcquireNextImageKHR(device->vk_device, vk_swapchain, UINT64_MAX, image_avalible->vk_semaphore, VK_NULL_HANDLE, &image_index));
+#if USE_D3D12
 			image_index = d3d12_swapchain->GetCurrentBackBufferIndex();
+#elif USE_VULKAN
+			check_vk_result(vkAcquireNextImageKHR(device->vk_device, vk_swapchain, UINT64_MAX, image_avalible->vk_semaphore, VK_NULL_HANDLE, &image_index));
+#endif
 
 			return image_index;
 		}

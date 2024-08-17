@@ -599,14 +599,23 @@ namespace flame
 				{
 					auto sound = style_sounds[HudStyleSoundButtonHover].top();
 					if (sound)
-					{
-						//sound->stop();
 						sound->play();
-					}
-
-					last_hovered = id;
 				}
+				last_hovered = id;
 				hover_frames = 2;
+			}
+			else if (state == 2)
+			{
+				if (last_active != id)
+				{
+					auto sound = style_sounds[HudStyleSoundButtonClicked].top();
+					if (sound)
+						sound->play();
+				}
+				last_hovered = id;
+				hover_frames = 2;
+				last_active = id;
+				active_frames = 2;
 			}
 		}
 
@@ -661,6 +670,12 @@ namespace flame
 			hover_frames--;
 			if (hover_frames == 0)
 				last_hovered = 0;
+		}
+		if (active_frames > 0)
+		{
+			active_frames--;
+			if (active_frames == 0)
+				last_active = 0;
 		}
 	}
 

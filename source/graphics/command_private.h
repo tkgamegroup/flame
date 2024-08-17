@@ -99,6 +99,7 @@ namespace flame
 			void wait_idle() override;
 			void submit(std::span<CommandBufferPtr> commandbuffers, std::span<SemaphorePtr> wait_semaphores, std::span<SemaphorePtr> signal_semaphores, FencePtr signal_fence) override;
 			void present(std::span<SwapchainPtr> swapchains, std::span<SemaphorePtr> wait_semaphores) override;
+			void submit_and_present(std::span<CommandBufferPtr> commandbuffers, std::span<SemaphorePtr> wait_semaphores, SemaphorePtr signal_semaphore, FencePtr signal_fence, std::span<SwapchainPtr> swapchains) override;
 		};
 
 		struct SemaphorePrivate : Semaphore

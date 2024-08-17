@@ -109,22 +109,22 @@ struct GraphicsApplication : Application
 				continue;
 			command_buffer->image_barrier(w->swapchain->current_image(), {}, graphics::ImageLayoutPresent);
 		}
+
 		command_buffer->end();
 
 		auto queue = (graphics::Queue*)graphics::Queue::get();
 		{
-			std::vector<graphics::SemaphorePtr> smps;
-			std::vector<graphics::SwapchainPtr> scs;
+			std::vector<graphics::SemaphorePtr> wait_semaphores;
+			std::vector<graphics::SwapchainPtr> swapchains;
 			for (auto w : windows)
 			{
 				if (w->swapchain->images.empty())
 					continue;
-				smps.push_back(w->swapchain->image_avalible.get());
-				scs.push_back(w->swapchain.get());
+				wait_semaphores.push_back(w->swapchain->image_avalible.get());
+				swapchains.push_back(w->swapchain.get());
 			}
 
-			queue->submit(command_buffer.get(), smps, render_semaphore.get(), render_fence.get());
-			queue->present(scs, render_semaphore.get());
+			queue->submit_and_present(command_buffer.get(), wait_semaphores, render_semaphore.get(), render_fence.get(), swapchains);
 		}
 
 		return true;

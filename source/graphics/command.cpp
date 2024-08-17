@@ -1081,12 +1081,10 @@ namespace flame
 			check_vk_result(vkQueueSubmit(vk_queue, 1, &info, signal_fence ? signal_fence->vk_fence : nullptr));
 #endif
 
-
 			if (signal_fence)
 			{
 #ifdef USE_D3D12
 				d3d12_queue->Signal(signal_fence->d3d12_fence, 1);
-#elif USE_VULKAN
 #endif
 				signal_fence->value = 1;
 			}
@@ -1095,10 +1093,8 @@ namespace flame
 		void QueuePrivate::present(std::span<SwapchainPtr> swapchains, std::span<SemaphorePtr> wait_semaphores)
 		{
 #ifdef USE_D3D12
-			for (auto i = 0; i < swapchains.size(); i++)
-			{
-				swapchains[i]->d3d12_swapchain->Present(1, 0); // TODO: no any waiting for the completion of the commands?
-			}
+			printf("you should present using submit_and_present!!\n");
+			assert(0);
 #elif USE_VULKAN
 			std::vector<VkSemaphore> vk_wait_smps;
 			vk_wait_smps.resize(wait_semaphores.size());
@@ -1122,7 +1118,28 @@ namespace flame
 			info.swapchainCount = vk_scs.size();
 			info.pSwapchains = vk_scs.data();
 			info.pImageIndices = indices.data();
-			//check_vk_result(vkQueuePresentKHR(vk_queue, &info));
+			check_vk_result(vkQueuePresentKHR(vk_queue, &info));
+#endif
+		}
+
+		void QueuePrivate::submit_and_present(std::span<CommandBufferPtr> commandbuffers, std::span<SemaphorePtr> wait_semaphores, SemaphorePtr signal_semaphore, FencePtr signal_fence, std::span<SwapchainPtr> swapchains)
+		{
+#ifdef USE_D3D12
+			std::vector<ID3D12CommandList*> list;
+			list.resize(commandbuffers.size());
+			for (auto i = 0; i < commandbuffers.size(); i++)
+				list[i] = commandbuffers[i]->d3d12_command_list;
+			d3d12_queue->ExecuteCommandLists(list.size(), list.data());
+
+			for (auto i = 0; i < swapchains.size(); i++)
+				swapchains[i]->d3d12_swapchain->Present(1, 0);
+
+			d3d12_queue->Signal(signal_fence->d3d12_fence, 1);
+			signal_fence->value = 1;
+
+#elif USE_VULKAN
+			submit(commandbuffers, wait_semaphores, { &signal_semaphore, 1 }, signal_fence);
+			present(swapchains, wait_semaphores);
 #endif
 		}
 

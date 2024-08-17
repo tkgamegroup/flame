@@ -800,7 +800,7 @@ namespace flame
 			cb->set_viewport_and_scissor(vp);
 			if (clear_framebuffer)
 			{
-				vec4 cvs[] = { vec4(0.4f, 0.4f, 0.58f, 1.f), 
+				vec4 cvs[] = { vec4(0.f),
 #if USE_D3D12
 					vec4(1.f, 0.f, 0.f, 0.f)
 #else

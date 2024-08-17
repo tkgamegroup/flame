@@ -46,6 +46,11 @@ namespace flame
 			alGetSourcei(al_src, AL_SOURCE_STATE, &state);
 			if (state != AL_PLAYING)
 				alSourcePlay(al_src);
+			else if (auto_replay)
+			{
+				alSourceStop(al_src);
+				alSourcePlay(al_src);
+			}
 		}
 
 		void SourcePrivate::stop()

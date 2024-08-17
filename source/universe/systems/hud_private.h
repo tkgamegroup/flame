@@ -44,7 +44,9 @@ namespace flame
 		uint current_modal = 0;
 		uint modal_frames = 0;
 		uint last_hovered = 0;
+		uint last_active = 0;
 		uint hover_frames = 0;
+		uint active_frames = 0;
 
 		sHudPrivate();
 		sHudPrivate(int); // dummy

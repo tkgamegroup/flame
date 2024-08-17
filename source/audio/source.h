@@ -11,6 +11,8 @@ namespace flame
 			vec3 pos = vec3(0.f);
 			virtual void set_pos(const vec3& pos) = 0;
 
+			bool auto_replay = false;
+
 			virtual ~Source() {}
 
 			virtual void add_buffer(BufferPtr buffer) = 0;
