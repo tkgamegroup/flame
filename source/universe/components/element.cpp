@@ -206,7 +206,7 @@ namespace flame
 			m = mat3(1.f);
 			tilted = false;
 		}
-		m = translate(m, pos - pivot * ext);
+		m = translate(m, pos - pivot * ext * scl);
 		m = rotate(m, radians(ang));
 		m = scale(m, scl);
 		transform = m;
