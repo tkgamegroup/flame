@@ -132,7 +132,7 @@ namespace flame
 #elif USE_VULKAN
 			VkFence vk_fence = 0;
 #endif
-			uint value = 0;
+			uint64 value = 1;
 
 			~FencePrivate();
 

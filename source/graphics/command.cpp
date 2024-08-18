@@ -1032,8 +1032,7 @@ namespace flame
 		void QueuePrivate::wait_idle()
 		{
 #if USE_D3D12
-			d3d12_queue->Signal(idle_fence->d3d12_fence, 1);
-			idle_fence->value = 1;
+			d3d12_queue->Signal(idle_fence->d3d12_fence, idle_fence->value);
 			idle_fence->wait();
 #elif USE_VULKAN
 			check_vk_result(vkQueueWaitIdle(vk_queue));
@@ -1081,13 +1080,10 @@ namespace flame
 			check_vk_result(vkQueueSubmit(vk_queue, 1, &info, signal_fence ? signal_fence->vk_fence : nullptr));
 #endif
 
-			if (signal_fence)
-			{
 #ifdef USE_D3D12
-				d3d12_queue->Signal(signal_fence->d3d12_fence, 1);
+			if (signal_fence)
+				d3d12_queue->Signal(signal_fence->d3d12_fence, signal_fence->value);
 #endif
-				signal_fence->value = 1;
-			}
 		}
 
 		void QueuePrivate::present(std::span<SwapchainPtr> swapchains, std::span<SemaphorePtr> wait_semaphores)
@@ -1134,8 +1130,7 @@ namespace flame
 			for (auto i = 0; i < swapchains.size(); i++)
 				swapchains[i]->d3d12_swapchain->Present(1, 0);
 
-			d3d12_queue->Signal(signal_fence->d3d12_fence, 1);
-			signal_fence->value = 1;
+			d3d12_queue->Signal(signal_fence->d3d12_fence, signal_fence->value);
 
 #elif USE_VULKAN
 			submit(commandbuffers, wait_semaphores, { &signal_semaphore, 1 }, signal_fence);
@@ -1185,9 +1180,7 @@ namespace flame
 		{
 			if (app_exiting) return;
 
-#if USE_D3D12
-
-#elif USE_VULKAN
+#if USE_VULKAN
 			vkDestroySemaphore(device->vk_device, vk_semaphore, nullptr);
 			unregister_object(vk_semaphore);
 #endif
@@ -1199,9 +1192,7 @@ namespace flame
 			{
 				auto ret = new SemaphorePrivate;
 
-#if USE_D3D12
-
-#elif USE_VULKAN
+#if USE_VULKAN
 				VkSemaphoreCreateInfo info = {};
 				info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 				check_vk_result(vkCreateSemaphore(device->vk_device, &info, nullptr, &ret->vk_semaphore));
@@ -1217,9 +1208,7 @@ namespace flame
 		{
 			if (app_exiting) return;
 
-#if USE_D3D12
-
-#elif USE_VULKAN
+#if USE_VULKAN
 			vkDestroyEvent(device->vk_device, vk_event, nullptr);
 			unregister_object(vk_event);
 #endif
@@ -1231,9 +1220,7 @@ namespace flame
 			{
 				auto ret = new EventPrivate;
 
-#if USE_D3D12
-
-#elif USE_VULKAN
+#if USE_VULKAN
 				VkEventCreateInfo info = {};
 				info.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
 				check_vk_result(vkCreateEvent(device->vk_device, &info, nullptr, &ret->vk_event));
@@ -1260,25 +1247,25 @@ namespace flame
 
 		void FencePrivate::wait(bool auto_reset)
 		{
+#ifdef USE_D3D12
+			auto v = value;
+			if (d3d12_fence->GetCompletedValue() != v)
+			{
+				check_dx_result(d3d12_fence->SetEventOnCompletion(v, d3d12_event));
+				WaitForSingleObject(d3d12_event, 0xffffffff);
+			}
+			value++;
+#elif USE_VULKAN
 			if (value > 0)
 			{
-#ifdef USE_D3D12
-				if (d3d12_fence->GetCompletedValue() != value)
-				{
-					check_dx_result(d3d12_fence->SetEventOnCompletion(value, d3d12_event));
-					WaitForSingleObject(d3d12_event, 0xffffffff);
-				}
-#elif USE_VULKAN
 				check_vk_result(vkWaitForFences(device->vk_device, 1, &vk_fence, true, UINT64_MAX));
-#endif
 				if (auto_reset)
 				{
-#if USE_VULKAN
 					check_vk_result(vkResetFences(device->vk_device, 1, &vk_fence));
-#endif
 					value = 0;
 				}
 			}
+#endif
 		}
 
 		struct FenceCreate : Fence::Create
