@@ -35,21 +35,27 @@ struct UniverseApplication : GraphicsApplication
 	sAudioPtr		audio = nullptr;
 	sGraveyardPtr	graveyard = nullptr;
 
-	void create(std::string_view title, const uvec2& size = uvec2(1280, 720), 
+	void create(std::string_view title, const uvec2& size = uvec2(1280, 720),
 		WindowStyleFlags styles = WindowStyleFrame | WindowStyleResizable,
-		bool use_gui = false,
-		bool graphics_debug = false, const std::vector<std::pair<uint, uint>>& graphics_configs = {})
+		const UniverseApplicationOptions& options = {})
 	{
-		GraphicsApplication::create(title, size, styles, use_gui, graphics_debug, graphics_configs);
+		GraphicsApplication::create(title, size, styles, options);
 
 		world.reset(World::create());
-		tween		= (sTweenPtr)world->add_system<sTween>();
-		scene		= (sScenePtr)world->add_system<sScene>();
-		input		= (sInputPtr)world->add_system<sInput>();
-		renderer	= (sRendererPtr)world->add_system<sRenderer>();
-		hud			= (sHudPtr)world->add_system<sHud>();
-		audio		= (sAudioPtr)world->add_system<sAudio>();
-		graveyard	= (sGraveyardPtr)world->add_system<sGraveyard>();
+		if (options.use_tween)
+			tween = (sTweenPtr)world->add_system<sTween>();
+		if (options.use_scene)
+			scene = (sScenePtr)world->add_system<sScene>();
+		if (options.use_input)
+			input = (sInputPtr)world->add_system<sInput>();
+		if (options.use_renderer)
+			renderer = (sRendererPtr)world->add_system<sRenderer>();
+		if (options.use_hud)
+			hud = (sHudPtr)world->add_system<sHud>();
+		if (options.use_audio)
+			audio = (sAudioPtr)world->add_system<sAudio>();
+		if (options.use_graveyard)
+			graveyard = (sGraveyardPtr)world->add_system<sGraveyard>();
 
 		((sHud*)hud)->bind_window(main_window);
 	}

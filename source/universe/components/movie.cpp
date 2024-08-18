@@ -29,7 +29,7 @@ namespace flame
 						uvs[1] = vec2(image.uvs.z, image.uvs.y);
 						uvs[2] = vec2(image.uvs.z, image.uvs.w);
 						uvs[3] = vec2(image.uvs.x, image.uvs.w);
-						canvas->draw_image_polygon(image.view, pts, uvs, tint_col);
+						canvas->draw_image_polygon(image.view, vec2(0.f), pts, uvs, tint_col);
 					}
 
 					time += delta_time;

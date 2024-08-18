@@ -26,17 +26,17 @@ namespace flame
 				if (sampler && sampler->linear_mipmap)
 					lvs = image->n_levels;
 				if (!element->tilted)
-					canvas->draw_image(image->get_view({ 0, lvs, 0, 1 }), element->global_pos0(), element->global_pos1(), vec4(0.f, 0.f, 1.f, 1.f), tint_col, sampler);
+					canvas->draw_image(image->get_view({ 0, lvs, 0, 1 }), element->global_pos0(), element->global_pos1(), uvs, tint_col, sampler);
 				else
 				{
 					vec2 pts[4];
 					element->fill_pts(pts);
-					vec2 uvs[4];
-					uvs[0] = vec2(0.f, 0.f);
-					uvs[1] = vec2(1.f, 0.f);
-					uvs[2] = vec2(1.f, 1.f);
-					uvs[3] = vec2(0.f, 1.f);
-					canvas->draw_image_polygon(image->get_view({ 0, lvs, 0, 1 }), pts, uvs, tint_col, sampler);
+					vec2 _uvs[4];
+					_uvs[0] = vec2(uvs.x, uvs.y);
+					_uvs[1] = vec2(uvs.z, uvs.y);
+					_uvs[2] = vec2(uvs.z, uvs.w);
+					_uvs[3] = vec2(uvs.x, uvs.w);
+					canvas->draw_image_polygon(image->get_view({ 0, lvs, 0, 1 }), vec2(0.f), pts, _uvs, tint_col, sampler);
 				}
 			}
 		}, "image"_h);
@@ -96,6 +96,15 @@ namespace flame
 		tint_col = col;
 		element->mark_drawing_dirty();
 		data_changed("tint_col"_h);
+	}
+
+	void cImagePrivate::set_uvs(const vec4& _uvs)
+	{
+		if (uvs == _uvs)
+			return;
+		uvs = _uvs;
+		element->mark_drawing_dirty();
+		data_changed("uvs"_h);
 	}
 
 	struct cImageCreate : cImage::Create

@@ -25,6 +25,11 @@ namespace flame
 		// Reflect
 		virtual void set_tint_col(const cvec4& col) = 0;
 
+		// Reflect
+		vec4 uvs = vec4(0.f, 0.f, 1.f, 1.f);
+		// Reflect
+		virtual void set_uvs(const vec4& uvs) = 0;
+
 		graphics::ImagePtr image = nullptr;
 		graphics::SamplerPtr sampler = nullptr;
 

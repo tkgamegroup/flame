@@ -26,25 +26,24 @@ struct GraphicsApplication : Application
 	std::unique_ptr<graphics::FenceT> render_fence;
 	std::unique_ptr<graphics::SemaphoreT> render_semaphore;
 
-	void create(std::string_view title, 
-		const uvec2& size = uvec2(1280, 720), 
+	void create(std::string_view title,
+		const uvec2& size = uvec2(1280, 720),
 		WindowStyleFlags styles = WindowStyleFrame | WindowStyleResizable,
-		bool _use_gui = false,
-		bool graphics_debug = false, const std::vector<std::pair<uint, uint>>& graphics_configs = {})
+		const GraphicsApplicationOptions& options = {})
 	{
 		Application::create(title, size, styles);
 
-		auto graphics_device = graphics::Device::create(graphics_debug, graphics_configs);
+		auto graphics_device = graphics::Device::create(options.graphics_debug, options.graphics_configs);
 		main_window = graphics::Window::create(Application::main_window);
 
-		use_gui = _use_gui;
+		use_gui = options.use_gui;
 		if (use_gui)
 		{
 			graphics::gui_initialize();
 			graphics::gui_set_current();
 			graphics::gui_callbacks.add([this]() {
 				on_gui();
-			}, "app"_h);
+				}, "app"_h);
 		}
 
 		command_buffer.reset(graphics::CommandBuffer::create(graphics::CommandPool::get()));

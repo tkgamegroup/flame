@@ -71,6 +71,10 @@ namespace flame
 			std::vector<vec2> path;
 			StencilState stencil_state = StencilStateNone;
 
+			vec2 translate = vec2(0.f);
+			vec2 scaling = vec2(1.f);
+			bool enable_clipping = false;
+
 			virtual ~Canvas() {}
 
 			virtual void set_targets(std::span<ImageViewPtr> targets) = 0;
@@ -104,10 +108,10 @@ namespace flame
 			virtual DrawVert*	draw_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs = vec4(0.f, 0.f, 1.f, 1.f), const cvec4& tint_col = cvec4(255), SamplerPtr sp = nullptr) = 0;
 			virtual DrawVert*	draw_image_stretched(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs = vec4(0.f, 0.f, 1.f, 1.f), const vec4& border = vec4(0.f), const vec4& border_uvs = vec4(0.f, 0.f, 1.f, 1.f), const cvec4& tint_col = cvec4(255), SamplerPtr sp = nullptr) = 0;
 			virtual DrawVert*	draw_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs = vec4(0.f, 0.f, 1.f, 1.f), const cvec4& tint_col = cvec4(255), float angle = 0, SamplerPtr sp = nullptr) = 0;
-			virtual DrawVert*	draw_image_polygon(ImageViewPtr view, std::span<vec2> pts, std::span<vec2> uvs, const cvec4& tint_col = cvec4(255), SamplerPtr sp = nullptr) = 0;
+			virtual DrawVert*	draw_image_polygon(ImageViewPtr view, const vec2& pos, std::span<vec2> pts, std::span<vec2> uvs, const cvec4& tint_col = cvec4(255), SamplerPtr sp = nullptr) = 0;
 
 
-			virtual void render(int idx, CommandBufferPtr cb, const vec2& translate = vec2(0.f), const vec2& scaling = vec2(1.f)) = 0;
+			virtual void render(int idx, CommandBufferPtr cb) = 0;
 
 			struct Create
 			{

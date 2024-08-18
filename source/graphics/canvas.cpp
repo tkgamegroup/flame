@@ -477,21 +477,38 @@ namespace flame
 		
 		Canvas::DrawVert* CanvasPrivate::draw_rect(const vec2& a, const vec2& b, float thickness, const cvec4& color)
 		{
+			if (enable_clipping)
+			{
+				if (!Rect(vec2(0), vec2(size)).overlapping(Rect((a + translate) * scaling, (b + translate) * scaling)))
+					return nullptr;
+			}
 			path_rect(a, b);
 			return stroke(thickness, color, true);
 		}
 
 		Canvas::DrawVert* CanvasPrivate::draw_rect_filled(const vec2& a, const vec2& b, const cvec4& color)
 		{
+			if (enable_clipping)
+			{
+				if (!Rect(vec2(0), vec2(size)).overlapping(Rect((a + translate) * scaling, (b + translate) * scaling)))
+					return nullptr;
+			}
 			path_rect(a, b);
 			return fill(color);
 		}
 
 		Canvas::DrawVert* CanvasPrivate::draw_rect_rotated(const vec2& a, const vec2& b, float thickness, const cvec4& color, float angle)
 		{
+			auto c = (a + b) * 0.5f;
+			if (enable_clipping)
+			{
+				auto r = distance(c, a);
+				if (!Rect(vec2(0), vec2(size)).overlapping(Rect((c - r + translate) * scaling, (c + r + translate) * scaling)))
+					return nullptr;
+			}
+
 			path_rect(a, b);
 			auto verts = stroke(thickness, color, true);
-			auto c = (a + b) * 0.5f;
 			auto r = rotate(mat3(1.f), radians(angle));
 			for (auto i = 0; i < 4; i++)
 			{
@@ -503,9 +520,16 @@ namespace flame
 
 		Canvas::DrawVert* CanvasPrivate::draw_rect_filled_rotated(const vec2& a, const vec2& b, const cvec4& color, float angle)
 		{
+			auto c = (a + b) * 0.5f;
+			if (enable_clipping)
+			{
+				auto r = distance(c, a);
+				if (!Rect(vec2(0), vec2(size)).overlapping(Rect((c - r + translate) * scaling, (c + r + translate) * scaling)))
+					return nullptr;
+			}
+
 			path_rect(a, b);
 			auto verts = fill(color);
-			auto c = (a + b) * 0.5f;
 			auto r = rotate(mat3(1.f), radians(angle));
 			for (auto i = 0; i < 4; i++)
 			{
@@ -517,6 +541,12 @@ namespace flame
 
 		Canvas::DrawVert* CanvasPrivate::draw_circle(const vec2& p, float radius, float thickness, const cvec4& color, float begin, float end)
 		{
+			if (enable_clipping)
+			{
+				if (!Rect(vec2(0), vec2(size)).overlapping(Rect((p - radius + translate) * scaling, (p + radius + translate) * scaling)))
+					return nullptr;
+			}
+
 			auto& circle = get_precompute_circle(radius);
 			auto ib = int(circle.size() * clamp(begin, 0.f, 1.f));
 			auto ie = int(circle.size() * clamp(end, 0.f, 1.f));
@@ -528,6 +558,12 @@ namespace flame
 
 		Canvas::DrawVert* CanvasPrivate::draw_circle_filled(const vec2& p, float radius, const cvec4& color, float begin, float end)
 		{
+			if (enable_clipping)
+			{
+				if (!Rect(vec2(0), vec2(size)).overlapping(Rect((p - radius + translate) * scaling, (p + radius + translate) * scaling)))
+					return nullptr;
+			}
+
 			auto& circle = get_precompute_circle(radius);
 			auto ib = int(circle.size() * clamp(begin, 0.f, 1.f));
 			auto ie = int(circle.size() * clamp(end, 0.f, 1.f));
@@ -606,9 +642,9 @@ namespace flame
 			colors.push_back(_color);
 			sizes.push_back(_font_size);
 
+			Rect rect(vec2(0), vec2(size));
 			auto color = colors.back();
 			auto font_size = sizes.back();
-
 			auto font_scale = font_atlas->get_scale(font_size);
 			auto scale = font_scale * scl;
 			auto get_cmd = [&]()->DrawCmd& {
@@ -672,17 +708,19 @@ namespace flame
 				}
 
 				auto& g = font_atlas->get_glyph(ch, font_size);
-				auto o = p + vec2(g.off) * scale;
-				auto s = vec2(g.size) * scale;
-				s.y *= -1.f;
+				auto p0 = p + vec2(g.off) * scale;
+				auto p1 = p0 + vec2(g.size) * vec2(scale.x, -scale.y);
 
-				path_rect(o, o + s);
-				auto verts = fill_path(cmd, color);
-				path.clear();
-				verts[0].uv = g.uv.xy;
-				verts[1].uv = g.uv.xw;
-				verts[2].uv = g.uv.zw;
-				verts[3].uv = g.uv.zy;
+				if (!enable_clipping || rect.overlapping(Rect((p0 + translate) * scaling, (p1 + translate) * scaling)))
+				{
+					path_rect(p0, p1);
+					auto verts = fill_path(cmd, color);
+					path.clear();
+					verts[0].uv = g.uv.xy;
+					verts[1].uv = g.uv.xw;
+					verts[2].uv = g.uv.zw;
+					verts[3].uv = g.uv.zy;
+				}
 
 				p.x += g.advance * scale.x;
 			}
@@ -703,9 +741,14 @@ namespace flame
 
 		Canvas::DrawVert* CanvasPrivate::draw_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, SamplerPtr sp)
 		{
-			auto& cmd = get_blit_cmd(view->get_shader_read_src(sp));
+			if (enable_clipping)
+			{
+				if (!Rect(vec2(0), vec2(size)).overlapping(Rect((a + translate) * scaling, (b + translate) * scaling)))
+					return nullptr;
+			}
 
 			path_rect(a, b);
+			auto& cmd = get_blit_cmd(view->get_shader_read_src(sp));
 			auto verts = fill_path(cmd, tint_col);
 			path.clear();
 			verts[0].uv = uvs.xy;
@@ -718,6 +761,12 @@ namespace flame
 		Canvas::DrawVert* CanvasPrivate::draw_image_stretched(ImageViewPtr iv, const vec2& p0, const vec2& p1, const vec4& uvs, const vec4& border, const vec4& border_uvs, const cvec4& tint_col, SamplerPtr sp)
 		{
 			Canvas::DrawVert* ret = nullptr;
+
+			if (enable_clipping)
+			{
+				if (!Rect(vec2(0), vec2(size)).overlapping(Rect((p0 + translate) * scaling, (p1 + translate) * scaling)))
+					return nullptr;
+			}
 
 			if (p1.x - p0.x > border.x + border.z && p1.y - p0.y > border.y + border.w)
 			{
@@ -739,12 +788,18 @@ namespace flame
 
 		Canvas::DrawVert* CanvasPrivate::draw_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle, SamplerPtr sp)
 		{
-			auto& cmd = get_blit_cmd(view->get_shader_read_src(sp));
+			auto c = (a + b) * 0.5f;
+			if (enable_clipping)
+			{
+				auto r = distance(c, a);
+				if (!Rect(vec2(0), vec2(size)).overlapping(Rect((c - r + translate) * scaling, (c + r + translate) * scaling)))
+					return nullptr;
+			}
 
 			path_rect(a, b);
+			auto& cmd = get_blit_cmd(view->get_shader_read_src(sp));
 			auto verts = fill_path(cmd, tint_col);
 			path.clear();
-			auto c = (a + b) * 0.5f;
 			auto r = rotate(mat3(1.f), radians(angle));
 			{
 				auto& vtx = verts[0];
@@ -769,11 +824,28 @@ namespace flame
 			return verts;
 		}
 
-		Canvas::DrawVert* CanvasPrivate::draw_image_polygon(ImageViewPtr view, std::span<vec2> pts, std::span<vec2> uvs, const cvec4& tint_col, SamplerPtr sp)
+		Canvas::DrawVert* CanvasPrivate::draw_image_polygon(ImageViewPtr view, const vec2& pos, std::span<vec2> pts, std::span<vec2> uvs, const cvec4& tint_col, SamplerPtr sp)
 		{
-			auto& cmd = get_blit_cmd(view->get_shader_read_src(sp));
+			if (enable_clipping)
+			{
+				auto skip = true;
+				Rect rect(vec2(0), vec2(size));
+				for (auto& pt : pts)
+				{
+					if (rect.contains((pos + pt + translate) * scaling))
+					{
+						skip = false;
+						break;
+					}
+				}
+				if (skip)
+					return nullptr;
+			}
 
 			path.assign_range(pts);
+			for (auto& pt : path)
+				pt += pos;
+			auto& cmd = get_blit_cmd(view->get_shader_read_src(sp));
 			auto verts = fill_path(cmd, tint_col);
 			path.clear();
 			for (auto i = 0; i < pts.size(); i++)
@@ -781,7 +853,7 @@ namespace flame
 			return verts;
 		}
 
-		void CanvasPrivate::render(int idx, CommandBufferPtr cb, const vec2& translate, const vec2& scaling)
+		void CanvasPrivate::render(int idx, CommandBufferPtr cb)
 		{
 			if (idx < 0 || iv_tars.empty())
 			{
@@ -825,7 +897,7 @@ namespace flame
 			cb->bind_index_buffer(buf_idx.buf.get(), IndiceTypeUint);
 			cb->bind_pipeline(pl);
 			prm.pc.mark_dirty_c("translate"_h).as<vec2>() = translate;
-			prm.pc.mark_dirty_c("scale"_h).as<vec2>() = scaling * 2.f / vp.b;
+			prm.pc.mark_dirty_c("scale"_h).as<vec2>() = scaling * 2.f / size;
 			prm.push_constant(cb);
 			auto last_pl = pl;
 			auto idx_off = 0;

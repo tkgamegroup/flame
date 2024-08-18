@@ -42,6 +42,7 @@ namespace flame
 	FLAME_UNIVERSE_TYPE(cInputField);
 	FLAME_UNIVERSE_TYPE(cImage);
 	FLAME_UNIVERSE_TYPE(cStretchedImage);
+	FLAME_UNIVERSE_TYPE(cPolygon);
 	FLAME_UNIVERSE_TYPE(cMovie);
 	FLAME_UNIVERSE_TYPE(cReceiver);
 	FLAME_UNIVERSE_TYPE(cLayout);

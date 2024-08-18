@@ -12,5 +12,6 @@ namespace flame
 		void set_auto_size(bool v) override;
 		void set_image_name(const std::filesystem::path& image_name) override;
 		void set_tint_col(const cvec4& col) override;
+		void set_uvs(const vec4& uvs) override;
 	};
 }

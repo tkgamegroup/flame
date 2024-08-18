@@ -71,9 +71,9 @@ namespace flame
 			DrawVert*	draw_image(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, SamplerPtr) override;
 			DrawVert*	draw_image_stretched(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const vec4& border, const vec4& border_uvs, const cvec4& tint_col, SamplerPtr) override;
 			DrawVert*	draw_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs, const cvec4& tint_col, float angle, SamplerPtr) override;
-			DrawVert*	draw_image_polygon(ImageViewPtr view, std::span<vec2> pts, std::span<vec2> uvs, const cvec4& tint_col, SamplerPtr) override;
+			DrawVert*	draw_image_polygon(ImageViewPtr view, const vec2& pos, std::span<vec2> pts, std::span<vec2> uvs, const cvec4& tint_col, SamplerPtr) override;
 
-			void render(int idx, CommandBufferPtr cb, const vec2& translate = vec2(0.f), const vec2& scaling = vec2(1.f)) override;
+			void render(int idx, CommandBufferPtr cb) override;
 		};
 	}
 }

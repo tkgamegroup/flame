@@ -3237,6 +3237,8 @@ namespace flame
 					if (camera->pivot.x != 0.f || camera->pivot.y != 0.f)
 						translate += camera->pivot * view;
 				}
+				canvas->translate = translate;
+				canvas->scaling = scaling;
 				cb->begin_debug_label("Elements");
 				{
 					if (auto first_element = sScene::instance()->first_element; first_element)
@@ -3245,7 +3247,7 @@ namespace flame
 				cb->end_debug_label();
 
 				cb->image_barrier(t->img_dst.get(), {}, graphics::ImageLayoutAttachment);
-				canvas->render(0, cb, translate, scaling);
+				canvas->render(0, cb);
 				camera->translate_2d = translate;
 				camera->scaling_2d = scaling;
 			}
