@@ -2,7 +2,7 @@
 #include "buffer_private.h"
 #include "command_private.h"
 #include "shader_private.h"
-#include "extension.h"
+#include "auxiliary.h"
 
 namespace flame
 {
@@ -34,7 +34,7 @@ namespace flame
 				heap_properties.Type = D3D12_HEAP_TYPE_DEFAULT;
 			else if (mem_prop & MemoryPropertyHost)
 			{
-				if (usage & BufferUsageTransferSrc)
+				if ((usage & BufferUsageTransferSrc) || (usage & BufferUsageVertex) || (usage & BufferUsageIndex) || (usage & BufferUsageIndirect))
 					heap_properties.Type = D3D12_HEAP_TYPE_UPLOAD;
 				else if (usage & BufferUsageTransferDst)
 					heap_properties.Type = D3D12_HEAP_TYPE_READBACK;
@@ -57,12 +57,15 @@ namespace flame
 			resource_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 			resource_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 			auto state = D3D12_RESOURCE_STATE_GENERIC_READ;
-			if (usage & BufferUsageVertex)
-				state = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-			if (usage & BufferUsageIndex)
-				state = D3D12_RESOURCE_STATE_INDEX_BUFFER;
-			if (usage & BufferUsageUniform)
-				state = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+			if (mem_prop & MemoryPropertyDevice)
+			{
+				if (usage & BufferUsageVertex)
+					state = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+				if (usage & BufferUsageIndex)
+					state = D3D12_RESOURCE_STATE_INDEX_BUFFER;
+				if (usage & BufferUsageUniform)
+					state = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+			}
 			check_dx_result(device->d3d12_device->CreateCommittedResource(&heap_properties, D3D12_HEAP_FLAG_NONE, &resource_desc, state, nullptr, IID_PPV_ARGS(&d3d12_resource)));
 			register_object(d3d12_resource, "Buffer", this);
 #elif USE_VULKAN

@@ -277,6 +277,41 @@ namespace flame
 			}
 		};
 
+		struct PushBuffer
+		{
+			uint						item_size;
+			uint 						capacity;
+			std::unique_ptr<BufferT>	buf;
+			char*						dst = nullptr;
+			uint						top = 0;
+
+			void create(uint _item_size, uint _capacity, BufferUsageFlags usage)
+			{
+				item_size = _item_size;
+				capacity = _capacity;
+				buf.reset(Buffer::create(capacity * item_size, usage, MemoryPropertyHost | MemoryPropertyCoherent));
+				buf->map();
+				dst = (char*)buf->mapped;
+			}
+
+			void reset()
+			{
+				top = 0;
+			}
+
+			void add(uint n, void* data)
+			{
+				memcpy(dst + item_size * top, data, n * item_size);
+				top += n;
+			}
+
+			template<class T>
+			T* pitem(uint idx)
+			{
+				return (T*)(dst + idx * item_size);
+			}
+		};
+
 		template<typename T = uint>
 		struct IndexBuffer
 		{
@@ -369,7 +404,7 @@ namespace flame
 
 			inline void add(uint index_count, uint first_index = 0, int vertex_offset = 0, uint instance_count = 1, uint first_instance = 0)
 			{
-				auto c = (DrawIndexedIndirectCommand*)((char*)stag->mapped + top * sizeof(DrawIndexedIndirectCommand));
+				auto c = (DrawIndexedIndirectCommand*)((char*)buf->mapped + top * sizeof(DrawIndexedIndirectCommand));
 				if (top > 0)
 				{
 					c--;

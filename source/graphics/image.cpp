@@ -5,7 +5,7 @@
 #include "image_private.h"
 #include "command_private.h"
 #include "shader_private.h"
-#include "extension.h"
+#include "auxiliary.h"
 
 #include <gli/gli.hpp>
 #ifdef USE_NVTT

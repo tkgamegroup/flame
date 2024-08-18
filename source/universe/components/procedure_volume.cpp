@@ -4,7 +4,7 @@
 #include "../../graphics/image.h"
 #include "../../graphics/command.h"
 #include "../../graphics/renderpass.h"
-#include "../../graphics/extension.h"
+#include "../../graphics/auxiliary.h"
 #include "../../graphics/debug.h"
 #include "../systems/renderer_private.h"
 

@@ -5,7 +5,7 @@
 #include "../../graphics/image.h"
 #include "../../graphics/renderpass.h"
 #include "../../graphics/shader.h"
-#include "../../graphics/extension.h"
+#include "../../graphics/auxiliary.h"
 #include "../../graphics/canvas.h"
 
 namespace flame

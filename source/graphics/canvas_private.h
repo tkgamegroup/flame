@@ -4,7 +4,7 @@
 #include "buffer_private.h"
 #include "shader_private.h"
 #include "command_private.h"
-#include "extension.h"
+#include "auxiliary.h"
 
 namespace flame
 {
@@ -22,8 +22,8 @@ namespace flame
 			std::unique_ptr<Image> stencil_img;
 			RenderpassPtr rp = nullptr;
 			RenderpassPtr rp_load = nullptr;
-			VertexBuffer buf_vtx;
-			IndexBuffer<> buf_idx;
+			PushBuffer buf_vtx;
+			PushBuffer buf_idx;
 			ImagePtr main_img = nullptr;
 			std::unique_ptr<DescriptorSetT> main_ds;
 

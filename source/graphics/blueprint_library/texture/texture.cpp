@@ -6,7 +6,7 @@
 #include "../../command_private.h"
 #include "../../texture.h"
 #include "../../noise.h"
-#include "../../extension.h"
+#include "../../auxiliary.h"
 
 namespace flame
 {

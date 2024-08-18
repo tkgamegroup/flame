@@ -18,7 +18,6 @@
 #include "../../graphics/material.h"
 #include "../../graphics/model.h"
 #include "../../graphics/font.h"
-#include "../../graphics/extension.h"
 #include "../../graphics/debug.h"
 
 namespace flame
@@ -3239,6 +3238,7 @@ namespace flame
 				}
 				canvas->translate = translate;
 				canvas->scaling = scaling;
+				canvas->reset_drawing();
 				cb->begin_debug_label("Elements");
 				{
 					if (auto first_element = sScene::instance()->first_element; first_element)

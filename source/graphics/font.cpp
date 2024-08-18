@@ -6,7 +6,7 @@
 #include "shader_private.h"
 #include "image_private.h"
 #include "font_private.h"
-#include "extension.h"
+#include "auxiliary.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #include <stb_truetype.h>

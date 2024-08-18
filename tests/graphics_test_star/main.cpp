@@ -291,7 +291,9 @@ SPIRV_Cross_Output main(SPIRV_Cross_Input stage_input)
 
 int entry(int argc, char** args)
 {
-	app.create("Graphics Test", uvec2(500, 500), WindowStyleFrame, false, true);
+	GraphicsApplicationOptions app_options;
+	app_options.graphics_debug = true;
+	app.create("Graphics Test", uvec2(500, 500), WindowStyleFrame, app_options);
 	//app.main_window->native->resize_listeners.add([](const uvec2& size) {
 	//	projector.set(size, 45.f, 1.f, 4.f);
 	//});

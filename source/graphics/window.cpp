@@ -5,7 +5,7 @@
 #include "command_private.h"
 #include "shader_private.h"
 #include "window_private.h"
-#include "extension.h"
+#include "auxiliary.h"
 
 namespace flame
 {

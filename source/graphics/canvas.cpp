@@ -66,8 +66,8 @@ namespace flame
 				pl_sdf_stencil_compare = GraphicsPipeline::get(L"flame\\shaders\\canvas.pipeline", defines);
 			}
 			prm.init(pl->layout, PipelineGraphics);
-			buf_vtx.create(sizeof(DrawVert), 360000);
-			buf_idx.create(240000);
+			buf_vtx.create(sizeof(DrawVert), 360000, BufferUsageVertex);
+			buf_idx.create(sizeof(uint), 240000, BufferUsageIndex);
 			default_font_atlas = FontAtlas::get({ L"flame\\fonts\\OpenSans-Regular.ttf" });
 			main_img = default_font_atlas->image.get();
 			main_img->set_staging_pixel(0, 0, 0, 0, vec4(1.f));
@@ -333,12 +333,13 @@ namespace flame
 				}
 			}
 
-			auto buf_vtx_off = buf_vtx.add(vertices.data(), vertices.size());
+			auto buf_vtx_off = buf_vtx.top;
+			buf_vtx.add(vertices.size(), vertices.data());
 			for (auto i = 0; i < indices.size(); i++)
 				indices[i] += buf_vtx_off;
-			buf_idx.add(indices.data(), indices.size());
+			buf_idx.add(indices.size(), indices.data());
 			cmd.idx_cnt += indices.size();
-			return &buf_vtx.item_t<DrawVert>(buf_vtx_off);
+			return buf_vtx.pitem<DrawVert>(buf_vtx_off);
 		}
 
 		CanvasPrivate::DrawVert* CanvasPrivate::fill_path(DrawCmd& cmd, const cvec4& color)
@@ -376,12 +377,13 @@ namespace flame
 				indices.push_back(vtx_off);
 			}
 
-			auto buf_vtx_off = buf_vtx.add(vertices.data(), vertices.size());
+			auto buf_vtx_off = buf_vtx.top;
+			buf_vtx.add(vertices.size(), vertices.data());
 			for (auto i = 0; i < indices.size(); i++)
 				indices[i] += buf_vtx_off;
-			buf_idx.add(indices.data(), indices.size());
+			buf_idx.add(indices.size(), indices.data());
 			cmd.idx_cnt += indices.size();
-			return &buf_vtx.item_t<DrawVert>(buf_vtx_off);
+			return buf_vtx.pitem<DrawVert>(buf_vtx_off);
 		}
 
 		Canvas::DrawVert* CanvasPrivate::stroke(float thickness, const cvec4& color, bool closed)
@@ -861,11 +863,6 @@ namespace flame
 				return;
 			}
 
-			buf_vtx.upload(cb);
-			buf_vtx.reset();
-			buf_idx.upload(cb);
-			buf_idx.reset();
-
 			cb->begin_debug_label("Canvas");
 			idx = fb_tars.size() > 1 ? idx : 0;
 			auto vp = Rect(vec2(0.f), iv_tars.front()->image->extent.xy());
@@ -893,7 +890,7 @@ namespace flame
 				};
 				cb->begin_renderpass(rp_load, fb_tars[idx], cvs);
 			}
-			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0, buf_vtx.item_type->size);
+			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0, buf_vtx.item_size);
 			cb->bind_index_buffer(buf_idx.buf.get(), IndiceTypeUint);
 			cb->bind_pipeline(pl);
 			prm.pc.mark_dirty_c("translate"_h).as<vec2>() = translate;

@@ -110,7 +110,6 @@ namespace flame
 			virtual DrawVert*	draw_image_rotated(ImageViewPtr view, const vec2& a, const vec2& b, const vec4& uvs = vec4(0.f, 0.f, 1.f, 1.f), const cvec4& tint_col = cvec4(255), float angle = 0, SamplerPtr sp = nullptr) = 0;
 			virtual DrawVert*	draw_image_polygon(ImageViewPtr view, const vec2& pos, std::span<vec2> pts, std::span<vec2> uvs, const cvec4& tint_col = cvec4(255), SamplerPtr sp = nullptr) = 0;
 
-
 			virtual void render(int idx, CommandBufferPtr cb) = 0;
 
 			struct Create

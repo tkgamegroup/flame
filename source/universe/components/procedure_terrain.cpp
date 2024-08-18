@@ -6,7 +6,7 @@
 #include "../../foundation/typeinfo_serialize.h"
 #include "../../graphics/image.h"
 #include "../../graphics/renderpass.h"
-#include "../../graphics/extension.h"
+#include "../../graphics/auxiliary.h"
 
 #ifdef USE_FORTUNE_ALGORITHM
 #include <FortuneAlgorithm/FortuneAlgorithm.h>
