@@ -445,12 +445,13 @@ namespace flame
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
 		auto font_size = style_vars[HudStyleVarFontSize].top().x;
 		auto frame = style_vars[HudStyleVarButtonFrame].top().x;
+		auto background_color = style_colors[HudStyleColorBackground].top();
+		background_color.a *= alpha;
 		auto color = style_colors[HudStyleColorText].top();
 		color.a *= alpha;
 
 		auto sz = canvas->calc_text_size(canvas->default_font_atlas, font_size, text);
 		auto rect = add_rect(sz);
-		auto background_color = style_colors[HudStyleColorBackground].top();
 		if (background_color.a > 0)
 			canvas->draw_rect_filled(rect.a, rect.b, background_color);
 		if (color.a > 0)
@@ -463,6 +464,49 @@ namespace flame
 			if (color.a > 0)
 				canvas->draw_rect(rect.a, rect.b, frame, color);
 		}
+	}
+
+	bool sHudPrivate::checkbox(bool* v, std::wstring_view label)
+	{
+		auto scaling = style_vars[HudStyleVarScaling].top().xy();
+		auto alpha = style_vars[HudStyleVarAlpha].top().x;
+		auto font_size = style_vars[HudStyleVarFontSize].top().x;
+		auto text_color = style_colors[HudStyleColorText].top();
+		text_color.a *= alpha;
+
+		auto sz = canvas->calc_text_size(canvas->default_font_atlas, font_size, label);
+		sz.x += 2.f + font_size;
+		auto rect = add_rect(sz);
+
+		auto state = 0;
+		auto pressed = false;
+		if (rect.contains(input->mpos))
+		{
+			state = 1;
+			if (input->mbtn[Mouse_Left])
+				state = 2;
+			if (input->mreleased(Mouse_Left))
+				pressed = true;
+
+			input->mouse_used = true;
+		}
+
+		auto color = style_colors[HudStyleColorButton + state].top();
+		color.a *= alpha;
+
+		if (color.a > 0)
+		{
+			if (*v)
+				canvas->draw_rect_filled(rect.a, rect.a + vec2(font_size), color);
+			else
+				canvas->draw_rect(rect.a, rect.a + vec2(font_size), 1.f, color);
+		}
+		if (text_color.a > 0)
+			canvas->draw_text(canvas->default_font_atlas, font_size, vec2(rect.a.x + 2.f + font_size, rect.a.y), label, text_color, 0.5f, 0.2f, scaling);
+
+		if (pressed)
+			*v = !*v;
+		return pressed;
 	}
 
 	void sHudPrivate::rect(const vec2& size, const cvec4& col)

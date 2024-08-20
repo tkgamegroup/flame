@@ -36,7 +36,8 @@ struct App : GraphicsApplication
 		////command_buffer->push_constant_t(vec4(2.f / vp.b, vec2(-1)));
 		////command_buffer->draw(stars.size() * 6, 1, 0, 0);
 		//command_buffer->end_renderpass();
-		canvas->draw_rect_filled(vec2(0.f), vec2(100.f), cvec4(255));
+		//canvas->draw_rect_filled(vec2(0.f), vec2(100.f), cvec4(255));
+		canvas->draw_rect(vec2(50.f), vec2(100.f), 1.f, cvec4(255));
 		canvas->render(main_window->swapchain->image_index, command_buffer.get());
 	}
 }app;

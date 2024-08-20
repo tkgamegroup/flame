@@ -306,9 +306,22 @@ namespace flame
 			}
 
 			template<class T>
+			void add(const T& v)
+			{
+				memcpy(dst + item_size * top, &v, item_size);
+				top += 1;
+			}
+
+			template<class T>
 			T* pitem(uint idx)
 			{
 				return (T*)(dst + idx * item_size);
+			}
+
+			template<class T>
+			T& item(uint idx)
+			{
+				return *(T*)(dst + idx * item_size);
 			}
 		};
 

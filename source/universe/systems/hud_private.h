@@ -87,6 +87,7 @@ namespace flame
 		Rect add_rect(const vec2& sz);
 		void rect(const vec2& size, const cvec4& col) override;
 		void text(std::wstring_view text) override;
+		bool checkbox(bool* v, std::wstring_view label) override;
 		void image(const vec2& size, const graphics::ImageDesc& image) override;
 		void image_stretched(const vec2& size, const graphics::ImageDesc& image) override;
 		void image_rotated(const vec2& size, const graphics::ImageDesc& image, float angle) override;

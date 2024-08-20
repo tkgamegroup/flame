@@ -113,16 +113,14 @@ namespace flame
 		virtual void end_stencil_write() = 0;
 		virtual void begin_stencil_compare() = 0;
 		virtual void end_stencil_compare() = 0;
-		// basic:
+		// widgets:
 		virtual void rect(const vec2& size, const cvec4& col) = 0;
 		virtual void text(std::wstring_view text) = 0;
-		// images:
+		virtual bool checkbox(bool* v, std::wstring_view label) = 0;
 		virtual void image(const vec2& size, const graphics::ImageDesc& image) = 0;
 		virtual void image_stretched(const vec2& size, const graphics::ImageDesc& image) = 0;
 		virtual void image_rotated(const vec2& size, const graphics::ImageDesc& image, float angle) = 0;
-		// buttons:
 		virtual bool button(std::wstring_view label, uint id = 0) = 0;
-		// misc:
 		virtual void progress_bar(const vec2& size, float progress, const cvec4& color, const cvec4& background_color, std::wstring_view label = L"") = 0;
 
 		virtual void render(int idx, graphics::CommandBufferPtr cb) = 0;

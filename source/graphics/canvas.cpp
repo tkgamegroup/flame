@@ -234,22 +234,12 @@ namespace flame
 
 			auto first_normal = get_normal(path[0], path[1]);
 			vec2 last_normal = first_normal;
+			auto connected = path.back() == path.front();
 			thickness *= 0.5f;
 
-			std::vector<DrawVert> vertices;
-			std::vector<uint> indices;
-			{
-				auto& v = vertices.emplace_back();
-				v.pos = path[0] + first_normal * thickness;
-				v.uv = vec2(0.f);
-				v.col = color;
-			}
-			{
-				auto& v = vertices.emplace_back();
-				v.pos = path[0] - first_normal * thickness;
-				v.uv = vec2(0.f);
-				v.col = color;
-			}
+			auto top0 = buf_vtx.top;
+			buf_vtx.add(DrawVert(path[0] + first_normal * thickness, vec2(0.f), color));
+			buf_vtx.add(DrawVert(path[0] - first_normal * thickness, vec2(0.f), color));
 
 			for (auto i = 1; i < n_pts - 1; i++)
 			{
@@ -258,88 +248,65 @@ namespace flame
 				n = normalize(n + last_normal);
 				auto t = thickness / dot(n, last_normal);
 
-				int vtx_off = vertices.size();
-				{
-					auto& v = vertices.emplace_back();
-					v.pos = path[i] + n * t;
-					v.uv = vec2(0.f);
-					v.col = color;
-				}
-				{
-					auto& v = vertices.emplace_back();
-					v.pos = path[i] - n * t;
-					v.uv = vec2(0.f);
-					v.col = color;
-				}
+				auto top = buf_vtx.top;
+				buf_vtx.add(DrawVert(path[i] + n * t, vec2(0.f), color));
+				buf_vtx.add(DrawVert(path[i] - n * t, vec2(0.f), color));
 
-				indices.push_back(vtx_off - 2);
-				indices.push_back(vtx_off - 1);
-				indices.push_back(vtx_off + 1);
-				indices.push_back(vtx_off - 2);
-				indices.push_back(vtx_off + 1);
-				indices.push_back(vtx_off + 0);
+				buf_idx.add(top - 2);
+				buf_idx.add(top - 1);
+				buf_idx.add(top + 1);
+				buf_idx.add(top - 2);
+				buf_idx.add(top + 1);
+				buf_idx.add(top + 0);
 			}
 
-			int vtx_off = vertices.size();
-			{
-				auto& v = vertices.emplace_back();
-				v.pos = path[n_pts - 1] + last_normal * thickness;
-				v.uv = vec2(0.f);
-				v.col = color;
-			}
-			{
-				auto& v = vertices.emplace_back();
-				v.pos = path[n_pts - 1] - last_normal * thickness;
-				v.uv = vec2(0.f);
-				v.col = color;
-			}
-			indices.push_back(vtx_off - 2);
-			indices.push_back(vtx_off - 1);
-			indices.push_back(vtx_off + 1);
-			indices.push_back(vtx_off - 2);
-			indices.push_back(vtx_off + 1);
-			indices.push_back(vtx_off + 0);
+			auto top = buf_vtx.top;
+			buf_vtx.add(DrawVert(path.back() + last_normal * thickness, vec2(0.f), color));
+			buf_vtx.add(DrawVert(path.back() - last_normal * thickness, vec2(0.f), color));
+			buf_idx.add(top - 2);
+			buf_idx.add(top - 1);
+			buf_idx.add(top + 1);
+			buf_idx.add(top - 2);
+			buf_idx.add(top + 1);
+			buf_idx.add(top + 0);
 
 			if (closed)
 			{
-				if (path[n_pts - 1] != path[0])
+				if (!connected)
 				{
-					auto n = get_normal(path[n_pts - 1], path[0]);
+					auto n = get_normal(path.back(), path.front());
 					auto n1 = normalize(n + last_normal);
 					auto t1 = thickness / dot(n1, last_normal);
-					vertices[vtx_off + 0].pos = path[n_pts - 1] + n1 * t1;
-					vertices[vtx_off + 1].pos = path[n_pts - 1] - n1 * t1;
+					buf_vtx.item<DrawVert>(top + 0).pos = path.back() + n1 * t1;
+					buf_vtx.item<DrawVert>(top + 1).pos = path.back() - n1 * t1;
 					auto n2 = normalize(n + first_normal);
 					auto t2 = thickness / dot(n2, first_normal);
-					vertices[0].pos = path[0] + n2 * t2;
-					vertices[1].pos = path[0] - n2 * t2;
+					buf_vtx.item<DrawVert>(top0 + 0).pos = path.front() + n2 * t2;
+					buf_vtx.item<DrawVert>(top0 + 1).pos = path.front() - n2 * t2;
 
-					indices.push_back(vtx_off + 0);
-					indices.push_back(vtx_off + 1);
-					indices.push_back(1);
-					indices.push_back(vtx_off + 0);
-					indices.push_back(1);
-					indices.push_back(0);
+					buf_idx.add(top + 0);
+					buf_idx.add(top + 1);
+					buf_idx.add(top0 + 1);
+					buf_idx.add(top + 0);
+					buf_idx.add(top0 + 1);
+					buf_idx.add(top0 + 0);
 				}
 				else
 				{
 					auto n = normalize(first_normal + last_normal);
 					auto t1 = thickness / dot(n, last_normal);
-					vertices[vtx_off + 0].pos = path[n_pts - 1] + n * t1;
-					vertices[vtx_off + 1].pos = path[n_pts - 1] - n * t1;
+					buf_vtx.item<DrawVert>(top + 0).pos = path.back() + n * t1;
+					buf_vtx.item<DrawVert>(top + 1).pos = path.back() - n * t1;
 					auto t2 = thickness / dot(n, first_normal);
-					vertices[0].pos = path[0] + n * t2;
-					vertices[1].pos = path[0] - n * t2;
+					buf_vtx.item<DrawVert>(top0 + 0).pos = path.front() + n * t2;
+					buf_vtx.item<DrawVert>(top0 + 1).pos = path.front() - n * t2;
 				}
 			}
 
-			auto buf_vtx_off = buf_vtx.top;
-			buf_vtx.add(vertices.size(), vertices.data());
-			for (auto i = 0; i < indices.size(); i++)
-				indices[i] += buf_vtx_off;
-			buf_idx.add(indices.size(), indices.data());
-			cmd.idx_cnt += indices.size();
-			return buf_vtx.pitem<DrawVert>(buf_vtx_off);
+			cmd.idx_cnt += (n_pts - 1) * 6;
+			if (closed && !connected)
+				cmd.idx_cnt += 6;
+			return buf_vtx.pitem<DrawVert>(top0);
 		}
 
 		CanvasPrivate::DrawVert* CanvasPrivate::fill_path(DrawCmd& cmd, const cvec4& color)
@@ -348,42 +315,21 @@ namespace flame
 			if (n_pts < 3)
 				return nullptr;
 
-			std::vector<DrawVert> vertices;
-			std::vector<uint> indices;
-			{
-				auto& v = vertices.emplace_back();
-				v.pos = path[0];
-				v.uv = vec2(0.f);
-				v.col = color;
-			}
-			{
-				auto& v = vertices.emplace_back();
-				v.pos = path[1];
-				v.uv = vec2(0.f);
-				v.col = color;
-			}
+			auto top0 = buf_vtx.top;
+			buf_vtx.add(DrawVert(path[0], vec2(0.f), color));
+			buf_vtx.add(DrawVert(path[1], vec2(0.f), color));
 			for (auto i = 0; i < n_pts - 2; i++)
 			{
-				auto vtx_off = vertices.size();
-				{
-					auto& v = vertices.emplace_back();
-					v.pos = path[i + 2];
-					v.uv = vec2(0.f);
-					v.col = color;
-				}
+				auto top = buf_vtx.top;
+				buf_vtx.add(DrawVert(path[i + 2], vec2(0.f), color));
 
-				indices.push_back(0); 
-				indices.push_back(vtx_off - 1);
-				indices.push_back(vtx_off);
+				buf_idx.add(top0);
+				buf_idx.add(top - 1);
+				buf_idx.add(top);
 			}
 
-			auto buf_vtx_off = buf_vtx.top;
-			buf_vtx.add(vertices.size(), vertices.data());
-			for (auto i = 0; i < indices.size(); i++)
-				indices[i] += buf_vtx_off;
-			buf_idx.add(indices.size(), indices.data());
-			cmd.idx_cnt += indices.size();
-			return buf_vtx.pitem<DrawVert>(buf_vtx_off);
+			cmd.idx_cnt += (n_pts - 2) * 3;
+			return buf_vtx.pitem<DrawVert>(top0);
 		}
 
 		Canvas::DrawVert* CanvasPrivate::stroke(float thickness, const cvec4& color, bool closed)
