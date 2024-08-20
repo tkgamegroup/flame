@@ -94,14 +94,14 @@ namespace flame
 		virtual bool item_clicked() = 0;
 		virtual bool is_modal() = 0;
 		// styles:
-		virtual void push_style_var(HudStyleVar idx, const vec4& value) = 0;
-		virtual void pop_style_var(HudStyleVar idx) = 0;
-		virtual void push_style_color(HudStyleColor idx, const cvec4& color) = 0;
-		virtual void pop_style_color(HudStyleColor idx) = 0;
-		virtual void push_style_image(HudStyleImage idx, const graphics::ImageDesc& image) = 0;
-		virtual void pop_style_image(HudStyleImage idx) = 0;
-		virtual void push_style_sound(HudStyleSound idx, audio::SourcePtr sound) = 0;
-		virtual void pop_style_sound(HudStyleSound idx) = 0;
+		virtual void push_style_var(HudStyleVar idx, const vec4& value, uint num_styles = 1) = 0;
+		virtual void pop_style_var(HudStyleVar idx, uint num_styles = 1) = 0;
+		virtual void push_style_color(HudStyleColor idx, const cvec4& color, uint num_styles = 1) = 0;
+		virtual void pop_style_color(HudStyleColor idx, uint num_styles = 1) = 0;
+		virtual void push_style_image(HudStyleImage idx, const graphics::ImageDesc& image, uint num_styles = 1) = 0;
+		virtual void pop_style_image(HudStyleImage idx, uint num_styles = 1) = 0;
+		virtual void push_style_sound(HudStyleSound idx, audio::SourcePtr sound, uint num_styles = 1) = 0;
+		virtual void pop_style_sound(HudStyleSound idx, uint num_styles = 1) = 0;
 		virtual void push_enable(bool v) = 0;
 		virtual void pop_enable() = 0;
 		// layout:

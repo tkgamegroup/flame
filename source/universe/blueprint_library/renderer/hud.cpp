@@ -259,12 +259,12 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				sHud::instance()->push_style_var(HudStyleVarScaling, *(vec4*)inputs[0].data);
+				sHud::instance()->push_style_var(HudStyleVarScaling, *(vec4*)inputs[0].data, 1);
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sHud::instance()->pop_style_var(HudStyleVarScaling);
+				sHud::instance()->pop_style_var(HudStyleVarScaling, 1);
 			}
 		);
 
@@ -280,12 +280,12 @@ namespace flame
 			},
 			true,
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs, BlueprintExecutionData& execution) {
-				sHud::instance()->push_style_var(HudStyleVarAlpha, vec4(*(float*)inputs[0].data, 0.f, 0.f, 0.f));
+				sHud::instance()->push_style_var(HudStyleVarAlpha, vec4(*(float*)inputs[0].data, 0.f, 0.f, 0.f), 1);
 
 				execution.block->max_execute_times = 1;
 			},
 			[](uint inputs_count, BlueprintAttribute* inputs, uint outputs_count, BlueprintAttribute* outputs) {
-				sHud::instance()->pop_style_var(HudStyleVarAlpha);
+				sHud::instance()->pop_style_var(HudStyleVarAlpha, 1);
 			}
 		);
 

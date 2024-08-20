@@ -275,44 +275,52 @@ namespace flame
 		return current_modal != 0;
 	}
 
-	void sHudPrivate::push_style_var(HudStyleVar idx, const vec4& value)
+	void sHudPrivate::push_style_var(HudStyleVar idx, const vec4& value, uint num_styles)
 	{
-		style_vars[idx].push(value);
+		for (auto i = 0; i < num_styles; i++)
+			style_vars[idx + i].push(value);
 	}
 
-	void sHudPrivate::pop_style_var(HudStyleVar idx)
+	void sHudPrivate::pop_style_var(HudStyleVar idx, uint num_styles)
 	{
-		style_vars[idx].pop();
+		for (auto i = 0; i < num_styles; i++)
+			style_vars[idx + i].pop();
 	}
 
-	void sHudPrivate::push_style_color(HudStyleColor idx, const cvec4& color)
+	void sHudPrivate::push_style_color(HudStyleColor idx, const cvec4& color, uint num_styles)
 	{
-		style_colors[idx].push(color);
+		for (auto i = 0; i < num_styles; i++)
+			style_colors[idx + i].push(color);
 	}
 
-	void sHudPrivate::pop_style_color(HudStyleColor idx)
+	void sHudPrivate::pop_style_color(HudStyleColor idx, uint num_styles)
 	{
-		style_colors[idx].pop();
+		for (auto i = 0; i < num_styles; i++)
+			style_colors[idx + i].pop();
 	}
 
-	void sHudPrivate::push_style_image(HudStyleImage idx, const graphics::ImageDesc& image)
+	void sHudPrivate::push_style_image(HudStyleImage idx, const graphics::ImageDesc& image, uint num_styles)
 	{
-		style_images[idx].push(image);
+		for (auto i = 0; i < num_styles; i++)
+			style_images[idx + i].push(image);
 	}
 
-	void sHudPrivate::pop_style_image(HudStyleImage idx)
+	void sHudPrivate::pop_style_image(HudStyleImage idx, uint num_styles)
 	{
-		style_images[idx].pop();
+		for (auto i = 0; i < num_styles; i++)
+			style_images[idx + i].pop();
 	}
 
-	void sHudPrivate::push_style_sound(HudStyleSound idx, audio::SourcePtr sound)
+	void sHudPrivate::push_style_sound(HudStyleSound idx, audio::SourcePtr sound, uint num_styles)
 	{
-		style_sounds[idx].push(sound);
+		for (auto i = 0; i < num_styles; i++)
+			style_sounds[idx + i].push(sound);
 	}
 
-	void sHudPrivate::pop_style_sound(HudStyleSound idx)
+	void sHudPrivate::pop_style_sound(HudStyleSound idx, uint num_styles)
 	{
-		style_sounds[idx].pop();
+		for (auto i = 0; i < num_styles; i++)
+			style_sounds[idx + i].pop();
 	}
 
 	void sHudPrivate::push_enable(bool v)
