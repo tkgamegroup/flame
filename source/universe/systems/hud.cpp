@@ -15,7 +15,9 @@ namespace flame
 		style_vars[HudStyleVarAlpha].push(vec4(1.f, 0.f, 0.f, 0.f));
 		style_vars[HudStyleVarFontSize].push(vec4(24.f, 0.f, 0.f, 0.f));
 		style_vars[HudStyleVarBorder].push(vec4(2.f, 2.f, 2.f, 2.f));
+		style_vars[HudStyleVarButtonBorder].push(vec4(2.f, 2.f, 2.f, 2.f));
 		style_vars[HudStyleVarFrame].push(vec4(0.f, 0.f, 0.f, 0.f));
+		style_vars[HudStyleVarButtonFrame].push(vec4(0.f, 0.f, 0.f, 0.f));
 		style_vars[HudStyleVarSpacing].push(vec4(2.f, 2.f, 0.f, 0.f));
 		style_vars[HudStyleVarWindowBorder].push(vec4(2.f, 2.f, 2.f, 2.f));
 		style_vars[HudStyleVarWindowFrame].push(vec4(0.f, 0.f, 0.f, 0.f));
@@ -171,66 +173,19 @@ namespace flame
 	{
 		auto id = "popup"_h;
 		auto& hud = huds[id];
-		hud.id = id;
-		last_hud = &hud;
-		
-		auto scaling = style_vars[HudStyleVarScaling].top().xy();
-		auto alpha = style_vars[HudStyleVarAlpha].top().x;
-		auto border = style_vars[HudStyleVarBorder].top();
-		border *= vec4(scaling, scaling);
-		auto window_border = style_vars[HudStyleVarWindowBorder].top();
-		window_border *= vec4(scaling, scaling);
-		auto frame = style_vars[HudStyleVarWindowFrame].top().x;
-		auto spacing = style_vars[HudStyleVarSpacing].top().xy();
-		spacing *= scaling;
-		auto color = style_colors[HudStyleColorWindowBackground].top();
-		color.a *= alpha;
-		auto& image = style_images[HudStyleImageWindowBackground].top();
 
-		hud.pos = input->mpos + vec2(16.f, 0.f);
-		hud.size = hud.suggested_size;
+		auto pos = input->mpos + vec2(16.f, 0.f);
+		auto size = hud.suggested_size;
 		auto pivot = vec2(0.f);
-		if (hud.pos.x + hud.size.x > canvas->size.x)
+		if (pos.x + size.x > canvas->size.x)
 		{
-			hud.pos = input->mpos + vec2(-4.f, 0.f);
+			pos = input->mpos + vec2(-4.f, 0.f);
 			pivot.x = 1.f;
 		}
-		if (hud.pos.y + hud.size.y > canvas->size.y)
+		if (pos.y + size.y > canvas->size.y)
 			pivot.y = 1.f;
-		hud.pos -= hud.size * pivot;
-		hud.border = window_border;
 
-		hud.layouts.clear();
-		auto& layout = hud.layouts.emplace_back();
-		layout.type = HudVertical;
-		layout.spacing = spacing;
-		layout.border = border;
-		layout.rect.a = layout.rect.b = hud.pos + hud.border.xy() + border.xy();
-		layout.cursor = layout.rect.a;
-		layout.auto_size = true;
-
-		Rect rect(hud.pos, hud.pos + hud.size);
-		if (!image.view)
-		{
-			if (color.a > 0)
-				canvas->draw_rect_filled(rect.a, rect.b, color);
-		}
-		else
-		{
-			if (color.a > 0)
-				canvas->draw_image_stretched(image.view, rect.a, rect.b, image.uvs, window_border, image.border_uvs, color);
-		}
-
-		if (frame > 0.f)
-		{
-			auto color = style_colors[HudStyleColorWindowFrame].top();
-			color.a *= alpha;
-			if (color.a > 0)
-				canvas->draw_rect(rect.a, rect.b, frame, color);
-		}
-
-		if (color.a > 0 && rect.contains(input->mpos))
-			input->mouse_used = true;
+		begin(id, pos, vec2(0.f), pivot, false);
 	}
 
 	void sHudPrivate::end()
@@ -481,6 +436,7 @@ namespace flame
 		auto scaling = style_vars[HudStyleVarScaling].top().xy();
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
 		auto font_size = style_vars[HudStyleVarFontSize].top().x;
+		auto frame = style_vars[HudStyleVarButtonFrame].top().x;
 		auto color = style_colors[HudStyleColorText].top();
 		color.a *= alpha;
 
@@ -491,6 +447,14 @@ namespace flame
 			canvas->draw_rect_filled(rect.a, rect.b, background_color);
 		if (color.a > 0)
 			canvas->draw_text(canvas->default_font_atlas, font_size, rect.a, text, color, 0.5f, 0.2f, scaling);
+
+		if (frame > 0.f)
+		{
+			auto color = style_colors[HudStyleColorButtonFrame].top();
+			color.a *= alpha;
+			if (color.a > 0)
+				canvas->draw_rect(rect.a, rect.b, frame, color);
+		}
 	}
 
 	void sHudPrivate::rect(const vec2& size, const cvec4& col)
@@ -504,26 +468,44 @@ namespace flame
 	void sHudPrivate::image(const vec2& size, const graphics::ImageDesc& image)
 	{
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
+		auto frame = style_vars[HudStyleVarButtonFrame].top().x;
 		auto color = style_colors[HudStyleColorImage].top();
 		color.a *= alpha;
 
 		auto rect = add_rect(size);
 		if (color.a > 0)
 			canvas->draw_image(image.view, rect.a, rect.b, image.uvs, color);
+
+		if (frame > 0.f)
+		{
+			auto color = style_colors[HudStyleColorButtonFrame].top();
+			color.a *= alpha;
+			if (color.a > 0)
+				canvas->draw_rect(rect.a, rect.b, frame, color);
+		}
 	}
 
 	void sHudPrivate::image_stretched(const vec2& size, const graphics::ImageDesc& image)
 	{
 		auto scaling = style_vars[HudStyleVarScaling].top().xy();
+		auto alpha = style_vars[HudStyleVarAlpha].top().x;
 		auto border = style_vars[HudStyleVarBorder].top();
 		border *= vec4(scaling, scaling);
-		auto alpha = style_vars[HudStyleVarAlpha].top().x;
+		auto frame = style_vars[HudStyleVarButtonFrame].top().x;
 		auto color = style_colors[HudStyleColorImage].top();
 		color.a *= alpha;
 
 		auto rect = add_rect(size);
 		if (color.a > 0)
 			canvas->draw_image_stretched(image.view, rect.a, rect.b, image.uvs, border, image.border_uvs, color);
+
+		if (frame > 0.f)
+		{
+			auto color = style_colors[HudStyleColorButtonFrame].top();
+			color.a *= alpha;
+			if (color.a > 0)
+				canvas->draw_rect(rect.a, rect.b, frame, color);
+		}
 	}
 
 	void sHudPrivate::image_rotated(const vec2& size, const graphics::ImageDesc& image, float angle)
@@ -546,8 +528,9 @@ namespace flame
 		auto scaling = style_vars[HudStyleVarScaling].top().xy();
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
 		auto font_size = style_vars[HudStyleVarFontSize].top().x;
-		auto border = style_vars[HudStyleVarBorder].top();
+		auto border = style_vars[HudStyleVarButtonBorder].top();
 		border *= vec4(scaling, scaling);
+		auto frame = style_vars[HudStyleVarButtonFrame].top().x;
 		auto enable = enables.top();
 
 		auto sz = canvas->calc_text_size(canvas->default_font_atlas, font_size, label);
@@ -590,6 +573,14 @@ namespace flame
 		}
 		if (text_color.a > 0)
 			canvas->draw_text(canvas->default_font_atlas, font_size, rect.a + border.xy(), label, text_color, 0.5f, 0.2f, scaling);
+
+		if (frame > 0.f)
+		{
+			auto color = style_colors[HudStyleColorButtonFrame].top();
+			color.a *= alpha;
+			if (color.a > 0)
+				canvas->draw_rect(rect.a, rect.b, frame, color);
+		}
 
 		if (id != 0)
 		{

@@ -146,6 +146,13 @@ namespace flame
 		}
 	}
 
+	template<typename T>
+	T random_item(const std::vector<T>& list)
+	{
+		auto i = linearRand(0, (int)list.size() - 1);
+		return list[i];
+	}
+
 	inline float cross2(const vec2& a, const vec2& b)
 	{
 		return a.x * b.y - a.y * b.x;
