@@ -1,0 +1,5 @@
+file(GLOB_RECURSE source_files "*.c*")
+add_executable(hud_test ${source_files})
+set_target_properties(hud_test PROPERTIES FOLDER "tests")
+target_link_options(hud_test PRIVATE /FIXED:NO)
+target_link_libraries(hud_test flame_universe)

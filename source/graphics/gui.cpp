@@ -498,13 +498,19 @@ namespace flame
 			return want_keyboard;
 		}
 
-		void gui_render(CommandBuffer* _cb)
+		void gui_render(CommandBuffer* _cb, bool cleanup)
 		{
+			if (cleanup)
+			{
+				imgui_buf_vtx.reset();
+				imgui_buf_idx.reset();
+				return;
+			}
+
 			auto cb = (CommandBufferPtr)_cb;
 			auto windows = Window::get_list(); // get window list here so that the newly created window will render next frame
 
 #if USE_IMGUI
-
 			ImGui::Render();
 			ImGui::UpdatePlatformWindows();
 

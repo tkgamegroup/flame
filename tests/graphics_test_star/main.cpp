@@ -13,6 +13,7 @@ struct App : GraphicsApplication
 {
 	//graphics::GraphicsPipelinePtr pl = nullptr;
 	CanvasPtr canvas = nullptr;
+	bool clicked = false;
 
 	void on_render() override
 	{
@@ -37,7 +38,15 @@ struct App : GraphicsApplication
 		////command_buffer->draw(stars.size() * 6, 1, 0, 0);
 		//command_buffer->end_renderpass();
 		//canvas->draw_rect_filled(vec2(0.f), vec2(100.f), cvec4(255));
-		canvas->draw_rect(vec2(50.f), vec2(100.f), 1.f, cvec4(255));
+		if (clicked)
+			canvas->draw_rect(vec2(0.f), vec2(50.f), 1.f, cvec4(255));
+		else
+			canvas->draw_rect_filled(vec2(0.f), vec2(50.f), cvec4(255));
+		for (auto i = 0; i < 100; i++)
+		{
+			auto p = vec2(100.f + (i % 100) * 10 + i / 100);
+			canvas->draw_rect(p, p + vec2(100.f), 1.f, cvec4(255));
+		}
 		canvas->render(main_window->swapchain->image_index, command_buffer.get());
 	}
 }app;
@@ -294,7 +303,11 @@ int entry(int argc, char** args)
 {
 	GraphicsApplicationOptions app_options;
 	app_options.graphics_debug = true;
-	app.create("Graphics Test", uvec2(500, 500), WindowStyleFrame, app_options);
+	app.create("Graphics Test", uvec2(1500, 900), WindowStyleFrame, app_options);
+	app.main_window->native->mouse_listeners.add([](MouseButton btn, bool down) {
+		app.clicked = down;
+	});
+
 	//app.main_window->native->resize_listeners.add([](const uvec2& size) {
 	//	projector.set(size, 45.f, 1.f, 4.f);
 	//});

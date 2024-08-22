@@ -96,6 +96,6 @@ namespace flame
 
 		void start() override;
 		void update() override;
-		void render(int idx, graphics::CommandBufferPtr cb) override;
+		void render(int idx, graphics::CommandBufferPtr cb, bool cleanup) override;
 	};
 }

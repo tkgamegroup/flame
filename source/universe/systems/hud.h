@@ -75,6 +75,8 @@ namespace flame
 	{
 		graphics::CanvasPtr canvas = nullptr;
 
+		Listeners<void()> callbacks;
+
 		virtual void bind_window(graphics::WindowPtr window) = 0;
 
 		virtual void begin(uint id, const vec2& pos, const vec2& size = vec2(0.f) /* (0,0) means auto size */, const vec2& pivot = vec2(0.f), bool is_modal = false) = 0;
@@ -123,7 +125,7 @@ namespace flame
 		virtual bool button(std::wstring_view label, uint id = 0) = 0;
 		virtual void progress_bar(const vec2& size, float progress, const cvec4& color, const cvec4& background_color, std::wstring_view label = L"") = 0;
 
-		virtual void render(int idx, graphics::CommandBufferPtr cb) = 0;
+		virtual void render(int idx, graphics::CommandBufferPtr cb, bool cleanup) = 0;
 
 		struct Instance
 		{

@@ -2105,8 +2105,14 @@ namespace flame
 		}
 	}
 
-	void sRendererPrivate::render(graphics::CommandBufferPtr cb)
+	void sRendererPrivate::render(graphics::CommandBufferPtr cb, bool cleanup)
 	{
+		if (cleanup)
+		{
+			outline_groups.clear();
+			return;
+		}
+
 		if (mark_clear_pipelines)
 		{
 			gbuffer_batcher.batches.clear();
@@ -2131,16 +2137,6 @@ namespace flame
 
 			mark_clear_pipelines = false;
 		}
-
-		world->root->traversal_bfs([](EntityPtr e, int) {
-			if (!e->global_enable)
-				return false;
-
-			if (auto ins = e->get_component<cBpInstance>(); ins)
-				ins->call("on_gui"_h);
-
-			return true;
-		});
 
 		auto first = true;
 		for (auto& t : render_targets)

@@ -12,18 +12,20 @@ namespace flame
 		struct InstanceCommandBuffer : std::unique_ptr<CommandBufferT>
 		{
 			FencePtr fence;
+			QueueFamily queue_family;
 
-			InstanceCommandBuffer(FencePtr fence = nullptr) :
-				fence(fence)
+			InstanceCommandBuffer(FencePtr fence = nullptr, QueueFamily queue_family = QueueGraphics) :
+				fence(fence),
+				queue_family(queue_family)
 			{
-				reset(CommandBuffer::create(CommandPool::get()));
+				reset(CommandBuffer::create(CommandPool::get(queue_family)));
 				get()->begin(true);
 			}
 
 			void excute()
 			{
 				get()->end();
-				auto q = (Queue*)Queue::get();
+				auto q = (Queue*)Queue::get(queue_family);
 				q->submit(get(), fence);
 				if (!fence)
 					q->wait_idle();
@@ -277,54 +279,6 @@ namespace flame
 			}
 		};
 
-		struct PushBuffer
-		{
-			uint						item_size;
-			uint 						capacity;
-			std::unique_ptr<BufferT>	buf;
-			char*						dst = nullptr;
-			uint						top = 0;
-
-			void create(uint _item_size, uint _capacity, BufferUsageFlags usage)
-			{
-				item_size = _item_size;
-				capacity = _capacity;
-				buf.reset(Buffer::create(capacity * item_size, usage, MemoryPropertyHost | MemoryPropertyCoherent));
-				buf->map();
-				dst = (char*)buf->mapped;
-			}
-
-			void reset()
-			{
-				top = 0;
-			}
-
-			void add(uint n, void* data)
-			{
-				memcpy(dst + item_size * top, data, n * item_size);
-				top += n;
-			}
-
-			template<class T>
-			void add(const T& v)
-			{
-				memcpy(dst + item_size * top, &v, item_size);
-				top += 1;
-			}
-
-			template<class T>
-			T* pitem(uint idx)
-			{
-				return (T*)(dst + idx * item_size);
-			}
-
-			template<class T>
-			T& item(uint idx)
-			{
-				return *(T*)(dst + idx * item_size);
-			}
-		};
-
 		template<typename T = uint>
 		struct IndexBuffer
 		{
@@ -397,6 +351,69 @@ namespace flame
 				if (!copies.empty())
 					cb->copy_buffer(stag.get(), buf.get(), copies);
 				cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageIndex), PipelineStageTransfer, u2s(BufferUsageIndex));
+			}
+		};
+
+		struct PushBuffer
+		{
+			uint						item_size;
+			uint 						capacity;
+			std::unique_ptr<BufferT>	buf;
+			std::unique_ptr<BufferT>	stag;
+			char* dst = nullptr;
+			uint						top = 0;
+
+			void create(uint _item_size, uint _capacity, BufferUsageFlags usage)
+			{
+				item_size = _item_size;
+				capacity = _capacity;
+				buf.reset(Buffer::create(capacity * item_size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
+				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
+				stag->map();
+				dst = (char*)stag->mapped;
+			}
+
+			void reset()
+			{
+				top = 0;
+			}
+
+			void add(uint n, void* data)
+			{
+				memcpy(dst + item_size * top, data, n * item_size);
+				top += n;
+			}
+
+			template<class T>
+			void add(const T& v)
+			{
+				memcpy(dst + item_size * top, &v, item_size);
+				top += 1;
+			}
+
+			template<class T>
+			T* pitem(uint idx)
+			{
+				return (T*)(dst + idx * item_size);
+			}
+
+			template<class T>
+			T& item(uint idx)
+			{
+				return *(T*)(dst + idx * item_size);
+			}
+
+			void upload(CommandBufferPtr cb)
+			{
+				if (top > 0)
+				{
+					BufferCopy cpy;
+					cpy.size = top * item_size;
+					cb->buffer_barrier(buf.get(), u2a(BufferUsageVertex), AccessTransferWrite, u2s(BufferUsageVertex), PipelineStageTransfer);
+					cb->copy_buffer(stag.get(), buf.get(), { &cpy, 1 });
+					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageVertex), PipelineStageTransfer, u2s(BufferUsageVertex));
+					top = 0;
+				}
 			}
 		};
 

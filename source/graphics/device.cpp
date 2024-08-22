@@ -225,6 +225,13 @@ namespace flame
 				ret->d3d12_sp_size = ret->d3d12_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 				adapter->Release();
 				printf("d3d12: device created\n");
+				device = ret;
+
+				descriptorset_pool.reset(DescriptorPool::create());
+				graphics_command_pool.reset(CommandPool::create(0));
+				transfer_command_pool.reset(CommandPool::create(0));
+				graphics_queue.reset(QueuePrivate::create(0));
+				transfer_queue.reset(QueuePrivate::create(0));
 #elif USE_VULKAN
 				uint32_t count;
 				vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr);
@@ -424,6 +431,7 @@ namespace flame
 				device_info.ppEnabledExtensionNames = required_device_extensions.data();
 				check_vk_result(vkCreateDevice(physical_device, &device_info, nullptr, &ret->vk_device));
 				printf("vulkan: device created\n");
+				device = ret;
 
 				if (use_mesh_shader)
 					vkCmdDrawMeshTasks = (PFN_vkCmdDrawMeshTasksEXT)vkGetDeviceProcAddr(ret->vk_device, "vkCmdDrawMeshTasksEXT");
@@ -433,11 +441,6 @@ namespace flame
 				graphics_queue.reset(graphics_queue_index != -1 ? QueuePrivate::create(graphics_queue_index) : nullptr);
 				transfer_queue.reset(transfer_queue_index != -1 ? QueuePrivate::create(transfer_queue_index) : nullptr);
 #endif
-
-				device = ret;
-				descriptorset_pool.reset(DescriptorPool::create());
-				graphics_command_pool.reset(CommandPool::create(0));
-				graphics_queue.reset(QueuePrivate::create(0));
 				return ret;
 			}
 		}Device_create;

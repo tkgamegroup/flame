@@ -1,5 +1,8 @@
 #include "../../foundation/window.h"
+#include "../../foundation/blueprint.h"
 #include "../../graphics/window.h"
+#include "../world_private.h"
+#include "../components/bp_instance_private.h"
 #include "hud_private.h"
 #include "input_private.h"
 
@@ -722,8 +725,26 @@ namespace flame
 		}
 	}
 
-	void sHudPrivate::render(int idx, graphics::CommandBufferPtr cb)
+	void sHudPrivate::render(int idx, graphics::CommandBufferPtr cb, bool cleanup)
 	{
+		if (cleanup)
+		{
+			canvas->reset_drawing();
+			return;
+		}
+
+		world->root->traversal_bfs([](EntityPtr e, int) {
+			if (!e->global_enable)
+				return false;
+
+			if (auto ins = e->get_component<cBpInstance>(); ins)
+				ins->call("on_hud"_h);
+
+			return true;
+		});
+
+		callbacks.call();
+
 		canvas->render(idx, cb);
 	}
 

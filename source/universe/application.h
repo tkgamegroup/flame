@@ -57,14 +57,22 @@ struct UniverseApplication : GraphicsApplication
 		if (options.use_graveyard)
 			graveyard = (sGraveyardPtr)world->add_system<sGraveyard>();
 
-		((sHud*)hud)->bind_window(main_window);
+		if (hud)
+		{
+			((sHud*)hud)->bind_window(main_window);
+			((sHud*)hud)->callbacks.add([this]() {
+				on_hud();
+			}, "app"_h);
+		}
 	}
 
-	virtual void on_render()
+	virtual void on_render(bool cleanup)
 	{
-		GraphicsApplication::on_render();
-		((sRenderer*)renderer)->render(command_buffer.get());
-		((sHud*)hud)->render(main_window->swapchain->image_index, command_buffer.get());
+		GraphicsApplication::on_render(cleanup);
+		if (renderer)
+			((sRenderer*)renderer)->render(command_buffer.get(), cleanup);
+		if (hud)
+			((sHud*)hud)->render(main_window->swapchain->image_index, command_buffer.get(), cleanup);
 	}
 
 	bool on_update() override
@@ -72,5 +80,9 @@ struct UniverseApplication : GraphicsApplication
 		world->update();
 		GraphicsApplication::on_update();
 		return true;
+	}
+
+	virtual void on_hud()
+	{
 	}
 };

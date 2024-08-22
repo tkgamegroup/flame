@@ -346,7 +346,7 @@ namespace flame
 		virtual void draw_particles(uint mat_id, const std::vector<ParticleDrawData::Ptc>& ptcs) = 0;
 
 		// Reflect
-		virtual void render(graphics::CommandBufferPtr cb) = 0;
+		virtual void render(graphics::CommandBufferPtr cb, bool cleanup) = 0;
 
 		// Reflect
 		virtual cNodePtr pick_up(const uvec2& screen_pos, vec3* out_pos = nullptr, const std::function<void(cNodePtr, DrawData&)>& draw_callback = {}) = 0;

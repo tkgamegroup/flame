@@ -483,7 +483,7 @@ namespace flame
 	FLAME_FOUNDATION_API extern float total_time; // second
 	FLAME_FOUNDATION_API extern bool app_exiting;
 
-	FLAME_FOUNDATION_API int run(const std::function<bool()>& callback);
+	FLAME_FOUNDATION_API int main_loop(const std::function<bool()>& callback);
 
 	FLAME_FOUNDATION_API void* add_event(const std::function<bool /* return false to end the event*/()>& callback, float time = 0.f, uint frames = 0);
 	FLAME_FOUNDATION_API void reset_event(void* ev);

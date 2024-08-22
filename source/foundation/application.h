@@ -22,7 +22,7 @@ struct Application
 
 	void run()
 	{
-		::run([this]() {
+		main_loop([this]() {
 			return on_update();
 		});
 	}

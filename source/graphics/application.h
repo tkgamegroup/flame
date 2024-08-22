@@ -43,7 +43,7 @@ struct GraphicsApplication : Application
 			graphics::gui_set_current();
 			graphics::gui_callbacks.add([this]() {
 				on_gui();
-				}, "app"_h);
+			}, "app"_h);
 		}
 
 		command_buffer.reset(graphics::CommandBuffer::create(graphics::CommandPool::get()));
@@ -52,12 +52,13 @@ struct GraphicsApplication : Application
 		render_semaphore.reset(graphics::Semaphore::create());
 	}
 
-	virtual void on_render()
+	virtual void on_render(bool clean_up)
 	{
 		if (use_gui)
 		{
-			graphics::gui_frame();
-			graphics::gui_render(command_buffer.get());
+			if (!clean_up)
+				graphics::gui_frame();
+			graphics::gui_render(command_buffer.get(), clean_up);
 		}
 	}
 
@@ -76,14 +77,22 @@ struct GraphicsApplication : Application
 				has_input = true;
 		}
 
+		auto ok = true;
 		if (all_minimized)
-			return true;
+			ok = false;
 		if (has_input)
 			render_frames = 3;
 		if (always_render)
 			render_frames = max(render_frames, 1);
 		if (render_frames <= 0)
+			ok = false;
+
+		if (!ok)
+		{
+			on_render(true);
 			return true;
+		}
+
 		render_frames--;
 
 		render_fence->wait();
@@ -100,7 +109,7 @@ struct GraphicsApplication : Application
 			w->swapchain->acquire_image();
 		}
 
-		on_render();
+		on_render(false);
 
 		for (auto w : windows)
 		{

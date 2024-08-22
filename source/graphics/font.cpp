@@ -86,7 +86,7 @@ namespace flame
 							memcpy(stag->mapped, bitmap_data, stag->size);
 #endif
 
-							InstanceCommandBuffer cb;
+							InstanceCommandBuffer cb(nullptr, QueueTransfer);
 							auto old_layout = image->get_layout();
 							cb->image_barrier(image.get(), {}, ImageLayoutTransferDst);
 							BufferImageCopy cpy;

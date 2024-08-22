@@ -836,6 +836,10 @@ namespace flame
 				};
 				cb->begin_renderpass(rp_load, fb_tars[idx], cvs);
 			}
+
+			buf_vtx.upload(cb);
+			buf_idx.upload(cb);
+
 			cb->bind_vertex_buffer(buf_vtx.buf.get(), 0, buf_vtx.item_size);
 			cb->bind_index_buffer(buf_idx.buf.get(), IndiceTypeUint);
 			cb->bind_pipeline(pl);

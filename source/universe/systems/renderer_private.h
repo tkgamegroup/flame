@@ -195,7 +195,7 @@ namespace flame
 		void draw_primitives(PrimitiveType type, const vec3* points, uint count, const cvec4& color, bool depth_test) override;
 		void draw_particles(uint mat_id, const std::vector<ParticleDrawData::Ptc>& ptcs) override;
 
-		void render(graphics::CommandBufferPtr cb) override;
+		void render(graphics::CommandBufferPtr cb, bool cleanup) override;
 
 		void update() override;
 

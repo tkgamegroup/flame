@@ -59,7 +59,6 @@ namespace flame
 			CommandPoolPtr operator()(int queue_family_idx) override
 			{
 				auto ret = new CommandPoolPrivate;
-
 #if USE_D3D12
 				device->d3d12_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&ret->d3d12_command_allocator));
 				register_object(ret->d3d12_command_allocator, "Command Buffer Pool", ret);
@@ -1032,6 +1031,7 @@ namespace flame
 		void QueuePrivate::wait_idle()
 		{
 #if USE_D3D12
+			idle_fence->value++;
 			d3d12_queue->Signal(idle_fence->d3d12_fence, idle_fence->value);
 			idle_fence->wait();
 #elif USE_VULKAN
@@ -1082,7 +1082,10 @@ namespace flame
 
 #ifdef USE_D3D12
 			if (signal_fence)
+			{
+				signal_fence->value++;
 				d3d12_queue->Signal(signal_fence->d3d12_fence, signal_fence->value);
+			}
 #endif
 		}
 
@@ -1130,6 +1133,7 @@ namespace flame
 			for (auto i = 0; i < swapchains.size(); i++)
 				swapchains[i]->d3d12_swapchain->Present(1, 0);
 
+			signal_fence->value++;
 			d3d12_queue->Signal(signal_fence->d3d12_fence, signal_fence->value);
 
 #elif USE_VULKAN
@@ -1248,13 +1252,11 @@ namespace flame
 		void FencePrivate::wait(bool auto_reset)
 		{
 #ifdef USE_D3D12
-			auto v = value;
-			if (d3d12_fence->GetCompletedValue() != v)
+			if (d3d12_fence->GetCompletedValue() != value)
 			{
-				check_dx_result(d3d12_fence->SetEventOnCompletion(v, d3d12_event));
+				check_dx_result(d3d12_fence->SetEventOnCompletion(value, d3d12_event));
 				WaitForSingleObject(d3d12_event, 0xffffffff);
 			}
-			value++;
 #elif USE_VULKAN
 			if (value > 0)
 			{

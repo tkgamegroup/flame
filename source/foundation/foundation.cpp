@@ -373,7 +373,7 @@ namespace flame
 	static const uint64 counter_freq = performance_frequency();
 	static const auto limited_fps = 60;
 
-	int run(const std::function<bool()>& callback)
+	int main_loop(const std::function<bool()>& callback)
 	{
 		if (!callback)
 		{
