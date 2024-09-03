@@ -305,11 +305,11 @@ namespace flame
 	inline vec<N, T> s2t(const std::basic_string<CH>& s)
 	{
 		vec<N, T> ret;
-		std::basic_istringstream ss(s);
-		std::string token;
+		std::basic_istringstream<CH> ss(s);
+		std::basic_string<CH> token;
 		for (auto i = 0; i < N; i++)
 		{
-			std::getline(ss, token, ',');
+			std::getline(ss, token, CH(','));
 			ret[i] = s2t<T, CH>(token);
 		}
 		return ret;
@@ -325,13 +325,13 @@ namespace flame
 	inline mat<C, R, T> s2t(const std::basic_string<CH>& s)
 	{
 		mat<C, R, T> ret;
-		std::basic_istringstream ss(s);
-		std::string token;
+		std::basic_istringstream<CH> ss(s);
+		std::basic_string<CH> token;
 		for (auto i = 0; i < C; i++)
 		{
 			for (auto j = 0; j < R; j++)
 			{
-				std::getline(ss, token, ',');
+				std::getline(ss, token, CH(','));
 				ret[i][j] = s2t<T, CH>(token);
 			}
 		}
@@ -502,7 +502,9 @@ namespace flame
 			auto it = std::search(
 				str.begin(), str.end(),
 				token.begin(), token.end(),
-				[](CH ch1, CH ch2) { return std::toupper(ch1) == std::toupper(ch2); }
+				[](CH ch1, CH ch2) {
+					return std::toupper(ch1) == std::toupper(ch2);
+				}
 			);
 			return (it != str.end());
 		}

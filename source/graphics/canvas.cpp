@@ -1,4 +1,5 @@
 #include "../foundation/window.h"
+#include "device_private.h"
 #include "canvas_private.h"
 #include "image_private.h"
 #include "font_private.h"
@@ -67,7 +68,9 @@ namespace flame
 			}
 			prm.init(pl->layout, PipelineGraphics);
 			buf_vtx.create(sizeof(DrawVert), 360000, BufferUsageVertex);
+			Device::current()->set_object_debug_name(buf_vtx.buf.get(), "Vertex Buffer");
 			buf_idx.create(sizeof(uint), 240000, BufferUsageIndex);
+			Device::current()->set_object_debug_name(buf_idx.buf.get(), "Index Buffer");
 			default_font_atlas = FontAtlas::get({ L"flame\\fonts\\OpenSans-Regular.ttf" });
 			main_img = default_font_atlas->image.get();
 			main_img->set_staging_pixel(0, 0, 0, 0, vec4(1.f));

@@ -523,7 +523,7 @@ namespace flame
 	void sHudPrivate::image(const vec2& size, const graphics::ImageDesc& image)
 	{
 		auto alpha = style_vars[HudStyleVarAlpha].top().x;
-		auto frame = style_vars[HudStyleVarButtonFrame].top().x;
+		auto frame = style_vars[HudStyleVarFrame].top().x;
 		auto color = style_colors[HudStyleColorImage].top();
 		color.a *= alpha;
 
@@ -533,7 +533,7 @@ namespace flame
 
 		if (frame > 0.f)
 		{
-			auto color = style_colors[HudStyleColorButtonFrame].top();
+			auto color = style_colors[HudStyleColorFrame].top();
 			color.a *= alpha;
 			if (color.a > 0)
 				canvas->draw_rect(rect.a, rect.b, frame, color);

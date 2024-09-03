@@ -10,7 +10,7 @@ FontAtlasPtr sdf_font;
 
 struct MyApp : GraphicsApplication
 {
-	void on_render() override
+	void on_render(bool clean_up) override
 	{
 		canvas->add_rect_filled(vec2(0.f), vec2(100.f), cvec4(255, 127, 60, 255));
 		canvas->add_text(sdf_font, 32, vec2(0.f), L"Hello World", cvec4(0, 0, 0, 255), 0.5f, 0.f);

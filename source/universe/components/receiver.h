@@ -7,8 +7,17 @@ namespace flame
 	// Reflect ctor
 	struct cReceiver : Component
 	{
+		enum Type
+		{
+			TypeRect,
+			TypeCircle
+		};
+
 		// Reflect requires
 		cElementPtr element = nullptr;
+
+		// Reflect
+		Type type = TypeRect;
 
 		Listeners<void(uint type, const vec2& value)> event_listeners;
 

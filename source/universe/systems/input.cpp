@@ -69,8 +69,22 @@ namespace flame
 								last_hovering_valid = true;
 							if (receiver == last_active)
 								last_active_valid = true;
-							if (receiver->element->contains(mpos, translate, scaling))
-								hovering_receiver = receiver;
+							if (receiver->type == cReceiver::TypeRect)
+							{
+								if (receiver->element->contains(mpos, translate, scaling))
+									hovering_receiver = receiver;
+							}
+							else if (receiver->type == cReceiver::TypeCircle)
+							{
+								auto p0 = receiver->element->global_pos0();
+								auto p1 = receiver->element->global_pos1();
+								auto c = (p0 + p1) * 0.5f;
+								c = (c + translate) * scaling;
+								auto r = p1.x - p0.x;
+								r = r * scaling.x;
+								if (distance(mpos, c) <= r)
+									hovering_receiver = receiver;
+							}
 						}
 
 						return true;

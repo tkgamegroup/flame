@@ -75,7 +75,7 @@ else()
 endif()
 
 if(HAS_RENDERDOC)
-	target_compile_definitions(flame_graphics PUBLIC HAS_RENDERDOC)
+	target_compile_definitions(flame_graphics PRIVATE HAS_RENDERDOC)
 	target_compile_definitions(flame_graphics PRIVATE RENDERDOC_HEADER="${RENDERDOC_DIR}/renderdoc_app.h")
 endif()
 

@@ -358,15 +358,17 @@ namespace flame
 		{
 			uint						item_size;
 			uint 						capacity;
+			BufferUsageFlags			usage;
 			std::unique_ptr<BufferT>	buf;
 			std::unique_ptr<BufferT>	stag;
 			char* dst = nullptr;
 			uint						top = 0;
 
-			void create(uint _item_size, uint _capacity, BufferUsageFlags usage)
+			void create(uint _item_size, uint _capacity, BufferUsageFlags _usage)
 			{
 				item_size = _item_size;
 				capacity = _capacity;
+				usage = _usage;
 				buf.reset(Buffer::create(capacity * item_size, BufferUsageTransferDst | usage, MemoryPropertyDevice));
 				stag.reset(Buffer::create(buf->size, BufferUsageTransferSrc, MemoryPropertyHost | MemoryPropertyCoherent));
 				stag->map();
@@ -409,9 +411,9 @@ namespace flame
 				{
 					BufferCopy cpy;
 					cpy.size = top * item_size;
-					cb->buffer_barrier(buf.get(), u2a(BufferUsageVertex), AccessTransferWrite, u2s(BufferUsageVertex), PipelineStageTransfer);
+					cb->buffer_barrier(buf.get(), u2a(usage), AccessTransferWrite, u2s(usage), PipelineStageTransfer);
 					cb->copy_buffer(stag.get(), buf.get(), { &cpy, 1 });
-					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(BufferUsageVertex), PipelineStageTransfer, u2s(BufferUsageVertex));
+					cb->buffer_barrier(buf.get(), AccessTransferWrite, u2a(usage), PipelineStageTransfer, u2s(usage));
 					top = 0;
 				}
 			}
